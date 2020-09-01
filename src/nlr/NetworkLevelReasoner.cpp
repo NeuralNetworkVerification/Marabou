@@ -364,12 +364,11 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
 
 // todo new code - START
 
-void NetworkLevelReasoner::mergeWSLayers( )
+void NetworkLevelReasoner::mergeWSLayers()
 {
     // Iterate over all layers
     for ( unsigned i = 0; i < getNumberOfLayers() - 1; ++i )
     {
-
         unsigned firstLayerIndex = i;
         unsigned secondLayerIndex = i + 1;
 
@@ -385,14 +384,13 @@ void NetworkLevelReasoner::mergeWSLayers( )
         {
             continue;
         }
-        if ( ! secondLayer->getSourceLayers().exists( firstLayerIndex ) )
+        if ( !secondLayer->getSourceLayers().exists( firstLayerIndex ) )
         {
             continue;
         }
 
         // If the first layer's input is the second layer
-
-        if ( ! isReductionPossible( firstLayerIndex, secondLayerIndex ) )
+        if ( !isReductionPossible( firstLayerIndex, secondLayerIndex ) )
         {
             continue;
         }
@@ -403,20 +401,23 @@ void NetworkLevelReasoner::mergeWSLayers( )
 
         // Reduce -1 from all indexes
         reduceLayerIndex( secondLayerIndex );
-
     }
+
+    // Guy K: Another thought that has occurred to me: the layer being
+    // merged need not have subseuqent indices, i.e. we could have
+    // layers 3 and 5 that need to be merged. Maybe a better approach
+    // is to iterate over all layers, and for each of them ask - are
+    // you eligible for merging? And from within that layer, check if
+    // the conditions hold, etc. If this is unclear, lets talk.
 }
 
-
-
 // Change matrix of first layer,
-void NetworkLevelReasoner::mergeSubsequentLayers ( unsigned firstLayerIndex,  unsigned secondLayerIndex)
+void NetworkLevelReasoner::mergeSubsequentLayers( unsigned firstLayerIndex,  unsigned secondLayerIndex )
 {
     // todo make sure I don't start with INPUT LAYER
     Layer *inputLayerToFirst = _layerIndexToLayer[firstLayerIndex - 1];
     Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
     Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
-
 
     unsigned inputDimension = inputLayerToFirst->getSize();
     unsigned middleDimension = firstLayer->getSize();
@@ -433,6 +434,34 @@ void NetworkLevelReasoner::mergeSubsequentLayers ( unsigned firstLayerIndex,  un
 
     auto weightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getWeightsMap(), firstLayerIndex );
     secondLayer->setWeightsMap( weightsOfSecondAfterPop );
+
+    /*
+      Guy K: some comments:
+
+      1. After you compute the weights, you don't need to compute the
+      negative and positive weights using matrix multiplication. The
+      positive wegiths are just the original weights with each
+      negative entry replaced with 0, and symmetrically for the
+      negative weights. So, just re-use the weight matrix you've
+      already computed.
+
+      2. The interfaces to Layer.h should be refined a little
+      bit. What I think we need is:
+
+      - A method to get a const reference to the weights from a
+        specific input layer i
+
+      - A method to remove an existing source layer, which also
+        removes the weight matrices (the negative version of
+        addSourceLayer).
+
+      For the remaining operations, I think you can use the existing
+      addSourceLayer and setWeight, which will also take care of the
+      positive/negative weight computation.
+
+      3. The current code has a memory leak. When you pop a layer, you
+      don't free the actual weight matrix.
+    */
 
     // Multiply both matrices - positive weights
     double *firstLayerPositiveMatrix = firstLayer->getPositiveWeights()[firstLayerIndex - 1];
@@ -459,30 +488,38 @@ void NetworkLevelReasoner::mergeSubsequentLayers ( unsigned firstLayerIndex,  un
     secondLayer->setNegativeWeights( negWeightsOfSecondAfterPop );
 }
 
-
 // TODO check thoroughly!!!!
-double *NetworkLevelReasoner:: multiplyWeights ( double *firstMatrix, double *secondMatrix, unsigned inputDimension,unsigned middleDimension, unsigned outputDimension ) {
+double *NetworkLevelReasoner::multiplyWeights( double *firstMatrix,
+                                                double *secondMatrix,
+                                                unsigned inputDimension,
+                                                unsigned middleDimension,
+                                                unsigned outputDimension )
+{
+    // Guy K: This appears to be correct. However, to simplify, see
+    // the file src/common/MatrixMultiplication.h, and use the method
+    // that it provides. Under the hood it uses an external package
+    // that is more efficient than naive matrix multiplication.
 
-        double *newMatrix = new double[inputDimension * outputDimension];
-        unsigned indexInNewMatrix = 0;
+    double *newMatrix = new double[inputDimension * outputDimension];
+    unsigned indexInNewMatrix = 0;
 
-        for (unsigned row = 0; row < inputDimension; ++row)
+    for ( unsigned row = 0; row < inputDimension; ++row )
+    {
+        for ( unsigned column = 0; column < outputDimension; ++column )
         {
-            for (unsigned column = 0; column < outputDimension; ++column)
+            // Calculate [i, j]
+            double sum = 0;
+            for ( unsigned index = 0; index < middleDimension; ++index )
             {
-                // Calculate [i, j]
-                double sum = 0;
-                for (unsigned index = 0; index < middleDimension; ++index) {
-                    sum += firstMatrix[(row * middleDimension) + index] *
-                           secondMatrix[(index * outputDimension) + column];
-                }
-                newMatrix[indexInNewMatrix] = sum;
-                ++indexInNewMatrix;
+                sum += firstMatrix[(row * middleDimension) + index] *
+                    secondMatrix[(index * outputDimension) + column];
             }
+            newMatrix[indexInNewMatrix] = sum;
+            ++indexInNewMatrix;
         }
-        return newMatrix;
+    }
+    return newMatrix;
 }
-
 
 // Assume we get two subsequent WS layers with WS -> WS
 bool NetworkLevelReasoner::isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex )
