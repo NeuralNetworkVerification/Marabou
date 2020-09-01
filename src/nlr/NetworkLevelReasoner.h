@@ -20,6 +20,7 @@
 #include "Layer.h"
 #include "LayerOwner.h"
 #include "Map.h"
+#include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
@@ -167,17 +168,11 @@ private:
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
 
-    void mergeSubsequentLayers( unsigned firstLayerIndex, unsigned secondLayerIndex ); // todo added
+    void mergeSubsequentLayers( unsigned previousToFirstLayerIndex, unsigned firstLayerIndex,  unsigned secondLayerIndex); // todo added
     bool isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex ); // todo added
-    double *multiplyWeights ( double *firstMat, double *secondMatrix, unsigned inputDimension, unsigned middleDimension, unsigned outputDimension ); // todo added
-
-    template <typename T>
-    Map <unsigned, T> reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, T> layerMap ); // todo added
     void reduceLayerIndex( unsigned indexToStart ); // todo added
-
-
-
-
+    Map <unsigned, Layer*> reduceLayerIndexToLayerHelper( unsigned indexToStart ); // todo added
+    double *multiplyWeights ( double *firstMat, double *secondMatrix, unsigned inputDimension, unsigned middleDimension, unsigned outputDimension ); // todo make PRIVATE
 };
 
 } // namespace NLR

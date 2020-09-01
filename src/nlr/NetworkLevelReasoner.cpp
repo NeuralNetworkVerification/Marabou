@@ -21,6 +21,7 @@
 #include "MILPFormulator.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "MatrixMultiplication.h"
 #include "NLRError.h"
 #include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
@@ -367,122 +368,93 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
 void NetworkLevelReasoner::mergeWSLayers( )
 {
     // Iterate over all layers
-    for ( unsigned i = 0; i < getNumberOfLayers() - 1; ++i )
+    for ( unsigned firstLayerIndex = 1; firstLayerIndex < getNumberOfLayers() - 1; ++firstLayerIndex )
     {
-
-        unsigned firstLayerIndex = i;
-        unsigned secondLayerIndex = i + 1;
-
-        const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
-        const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
-
-        // If two subsequent layers are WS
-        if ( firstLayer->getLayerType() != Layer::WEIGHTED_SUM )
+        for ( unsigned secondLayerIndex = firstLayerIndex + 1; secondLayerIndex < getNumberOfLayers() - 1; ++secondLayerIndex )
         {
-            continue;
+            const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+            const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
+
+            // If two subsequent layers are WS
+            if ( firstLayer->getLayerType() != Layer::WEIGHTED_SUM )
+            {
+                continue;
+            }
+            if ( secondLayer->getLayerType() != Layer::WEIGHTED_SUM )
+            {
+                continue;
+            }
+            if ( !secondLayer->getSourceLayers().exists( firstLayerIndex ) )
+            {
+                continue;
+            }
+
+            // If the first layer's input is the second layer
+            if ( !isReductionPossible( firstLayerIndex, secondLayerIndex ) )
+            {
+                continue;
+            }
+
+            // Remove both layers and insert *new* first layer
+            for ( auto it = firstLayer->getSourceLayers().begin(); it != firstLayer->getSourceLayers().end(); ++it)
+            {
+
+                // Input layer to the first WS layer
+                unsigned previousToFirstLayerIndex = it->first;
+                mergeSubsequentLayers( previousToFirstLayerIndex, firstLayerIndex, secondLayerIndex );
+
+                // Reduce -1 from all indexes
+                reduceLayerIndex( secondLayerIndex );
+            }
         }
-        if ( secondLayer->getLayerType() != Layer::WEIGHTED_SUM )
-        {
-            continue;
-        }
-        if ( ! secondLayer->getSourceLayers().exists( firstLayerIndex ) )
-        {
-            continue;
-        }
-
-        // If the first layer's input is the second layer
-
-        if ( ! isReductionPossible( firstLayerIndex, secondLayerIndex ) )
-        {
-            continue;
-        }
-
-        // Remove both layers and insert *new* first layer
-        // todo continue - call mergeSubsequentLayers()
-        mergeSubsequentLayers( firstLayerIndex, secondLayerIndex );
-
-        // Reduce -1 from all indexes
-        reduceLayerIndex( secondLayerIndex );
-
     }
 }
 
-
-
 // Change matrix of first layer,
-void NetworkLevelReasoner::mergeSubsequentLayers ( unsigned firstLayerIndex,  unsigned secondLayerIndex)
+void NetworkLevelReasoner::mergeSubsequentLayers( unsigned previousToFirstLayerIndex, unsigned firstLayerIndex,  unsigned secondLayerIndex)
 {
-    // todo make sure I don't start with INPUT LAYER
-    Layer *inputLayerToFirst = _layerIndexToLayer[firstLayerIndex - 1];
+    Layer *inputLayerToFirst = _layerIndexToLayer[previousToFirstLayerIndex];
     Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
     Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
-
 
     unsigned inputDimension = inputLayerToFirst->getSize();
     unsigned middleDimension = firstLayer->getSize();
     unsigned outputDimension = secondLayer->getSize();
 
     // Multiply both layers - all weights
-    double *firstLayerMatrix = firstLayer->getWeightsMap()[firstLayerIndex - 1];
+    double *firstLayerMatrix = firstLayer->getWeightsMap()[previousToFirstLayerIndex];
     double *secondLayerMatrix = secondLayer->getWeightsMap()[firstLayerIndex];
     double *newWeightsMatrix = multiplyWeights( firstLayerMatrix, secondLayerMatrix, inputDimension, middleDimension, outputDimension );
 
-    auto weightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getWeightsMap(), firstLayerIndex - 1 );
-    auto weightsOfFirstAfterUpdate = firstLayer->addLayerWeights( weightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsMatrix );
-    firstLayer->setWeightsMap( weightsOfFirstAfterUpdate );
 
-    auto weightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getWeightsMap(), firstLayerIndex );
-    secondLayer->setWeightsMap( weightsOfSecondAfterPop );
+    // Delete 1st WS layer
+    delete inputLayerToFirst;
 
-    // Multiply both matrices - positive weights
-    double *firstLayerPositiveMatrix = firstLayer->getPositiveWeights()[firstLayerIndex - 1];
-    double *secondLayerPositiveMatrix = secondLayer->getPositiveWeights()[firstLayerIndex];
-    double *newWeightsPositiveMatrix = multiplyWeights( firstLayerPositiveMatrix, secondLayerPositiveMatrix, inputDimension, middleDimension, outputDimension );
+    // Update 2nd WS layer
+    secondLayer->removeSourceLayer( firstLayerIndex );
+    secondLayer->addSourceLayer( previousToFirstLayerIndex, _layerIndexToLayer[previousToFirstLayerIndex]->getSize() );
 
-    auto posWeightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getPositiveWeights(), firstLayerIndex - 1 );
-    auto posWeightsOfFirstAfterUpdate = firstLayer->addLayerWeights( posWeightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsPositiveMatrix );
-    firstLayer->setPositiveWeights( posWeightsOfFirstAfterUpdate );
-
-    auto posWeightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getPositiveWeights(), firstLayerIndex );
-    secondLayer->setPositiveWeights( posWeightsOfSecondAfterPop );
-
-    // Multiply both matrices - negative weights
-    double *firstLayerNegativeMatrix = firstLayer->getNegativeWeights()[firstLayerIndex - 1];
-    double *secondLayerNegativeMatrix = secondLayer->getNegativeWeights()[firstLayerIndex];
-    double *newWeightsNegativeMatrix = multiplyWeights( firstLayerNegativeMatrix, secondLayerNegativeMatrix, inputDimension, middleDimension, outputDimension );
-
-    auto negWeightsOfFirstAfterPop = firstLayer->popLayerWeights( firstLayer->getNegativeWeights(), firstLayerIndex - 1 );
-    auto negWeightsOfFirstAfterUpdate = firstLayer->addLayerWeights( negWeightsOfFirstAfterPop, firstLayerIndex - 1, newWeightsNegativeMatrix );
-    firstLayer->setNegativeWeights( negWeightsOfFirstAfterPop );
-
-    auto negWeightsOfSecondAfterPop = secondLayer->popLayerWeights( secondLayer->getNegativeWeights(), firstLayerIndex );
-    secondLayer->setNegativeWeights( negWeightsOfSecondAfterPop );
-}
-
-
-// TODO check thoroughly!!!!
-double *NetworkLevelReasoner:: multiplyWeights ( double *firstMatrix, double *secondMatrix, unsigned inputDimension,unsigned middleDimension, unsigned outputDimension ) {
-
-        double *newMatrix = new double[inputDimension * outputDimension];
-        unsigned indexInNewMatrix = 0;
-
-        for (unsigned row = 0; row < inputDimension; ++row)
+    // Update weight matrix of (originally) 2nd WS layer after the matrix multiplication
+    // For readability - same as outputDimension
+    auto secondLayerSize = secondLayer->getSize();
+    for ( unsigned sourceNeuron = 0; sourceNeuron < inputDimension; ++sourceNeuron )
+    {
+        for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
         {
-            for (unsigned column = 0; column < outputDimension; ++column)
-            {
-                // Calculate [i, j]
-                double sum = 0;
-                for (unsigned index = 0; index < middleDimension; ++index) {
-                    sum += firstMatrix[(row * middleDimension) + index] *
-                           secondMatrix[(index * outputDimension) + column];
-                }
-                newMatrix[indexInNewMatrix] = sum;
-                ++indexInNewMatrix;
-            }
+            auto weight = newWeightsMatrix [sourceNeuron * secondLayerSize + targetNeuron];
+            secondLayer->setWeight(previousToFirstLayerIndex, sourceNeuron, targetNeuron, weight );
         }
-        return newMatrix;
+    }
 }
 
+double *NetworkLevelReasoner:: multiplyWeights( double *firstMatrix, double *secondMatrix, unsigned inputDimension,unsigned middleDimension, unsigned outputDimension )
+{
+    double *newMatrix = new double[inputDimension * outputDimension];
+    std::fill_n (newMatrix, inputDimension * outputDimension, 0);
+
+    matrixMultiplication(firstMatrix, secondMatrix, newMatrix, inputDimension, middleDimension, outputDimension);
+    return newMatrix;
+}
 
 // Assume we get two subsequent WS layers with WS -> WS
 bool NetworkLevelReasoner::isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex )
@@ -501,53 +473,34 @@ bool NetworkLevelReasoner::isReductionPossible( unsigned firstLayerIndex, unsign
             return false;
         }
     }
-
     // The 2nd input index is the only one for which the source is the later at the 1st input index
     return true;
 }
 
 // Reduce -1 from all layer indexes starting from (including) the given input index
-void NetworkLevelReasoner::reduceLayerIndex ( unsigned indexToStart )
+void NetworkLevelReasoner::reduceLayerIndex( unsigned indexToStart )
 {
+    // update NLR-level map
+    auto newIdxToLayerMap = reduceLayerIndexToLayerHelper( indexToStart );
+    _layerIndexToLayer = newIdxToLayerMap;
+
+    // update Layer-level maps
     for ( unsigned layerIndex = 0; layerIndex < getNumberOfLayers(); ++layerIndex )
     {
         Layer *layer = _layerIndexToLayer[layerIndex];
-
-        auto layerSourceMap = layer->getSourceLayers();
-        auto newSourceMap = reduceLayerIndexHelper( indexToStart , layerSourceMap );
-        layer->setSourceLayers( newSourceMap );
-
-        auto layerWeightsMap = layer->getWeightsMap();
-        auto newWeightsMap = reduceLayerIndexHelper( indexToStart , layerWeightsMap );
-        layer->setWeightsMap ( newWeightsMap );
-
-        auto layerPositiveWeightMap = layer->getPositiveWeights();
-        auto newPositiveWeightsMap = reduceLayerIndexHelper( indexToStart , layerPositiveWeightMap );
-        layer->setPositiveWeights( newPositiveWeightsMap );
-
-        auto layerNegativeWeightMap = layer->getNegativeWeights();
-        auto newNegativeWeightsMap = reduceLayerIndexHelper( indexToStart , layerNegativeWeightMap );
-        layer->setNegativeWeights( newNegativeWeightsMap );
-
-        auto newIdxToLayerMap = reduceLayerIndexHelper( indexToStart , _layerIndexToLayer );
-        _layerIndexToLayer = newIdxToLayerMap;
-
+        layer->reduceIndexFromAllMaps( indexToStart );
     }
 }
 
-
-template <typename T>
-Map <unsigned, T> NetworkLevelReasoner::reduceLayerIndexHelper ( unsigned indexToStart , Map <unsigned, T> layerMap )
+Map <unsigned, Layer*> NetworkLevelReasoner::reduceLayerIndexToLayerHelper( unsigned indexToStart )
 {
+    Map <unsigned, Layer*> newMap = Map <unsigned, Layer*>();
 
-    Map <unsigned, T> newMap = Map <unsigned, T>();
-
-    for (  auto pair = layerMap.begin() ; pair != layerMap.end(); ++pair )
+    for (  auto pair = _layerIndexToLayer.begin() ; pair != _layerIndexToLayer.end(); ++pair )
     {
 
         auto layerKey = pair->first;
         auto layerValue = pair->second;
-
 
         if  ( layerKey < indexToStart )
         {
@@ -562,7 +515,6 @@ Map <unsigned, T> NetworkLevelReasoner::reduceLayerIndexHelper ( unsigned indexT
     }
 
     return newMap;
-
 }
 
 

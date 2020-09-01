@@ -218,53 +218,22 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
-void Layer::setSourceLayers( Map<unsigned, unsigned> inputMap )
-{
-    _sourceLayers = inputMap;
-}
-
 const Map<unsigned, double*> &Layer::getWeightsMap() const
 {
     return _layerToWeights;
 }
 
-void Layer::setWeightsMap( Map<unsigned, double*> inputMap )
-{
-    _layerToWeights = inputMap;
-}
 
-const Map<unsigned, double*> &Layer::getPositiveWeights() const
+void Layer::removeSourceLayer( unsigned layerNumber )
 {
-    return _layerToPositiveWeights;
-}
+    // TODO CHECK - Guy K
+    delete _layerToWeights[layerNumber];
+    delete _layerToPositiveWeights[layerNumber];
+    delete _layerToNegativeWeights[layerNumber];
 
-void Layer::setPositiveWeights( Map<unsigned, double*> inputMap )
-{
-    _layerToPositiveWeights = inputMap;
-}
-
-const Map<unsigned, double*> &Layer::getNegativeWeights() const
-{
-    return _layerToNegativeWeights;
-}
-
-void Layer::setNegativeWeights( Map<unsigned, double*> inputMap )
-{
-    _layerToNegativeWeights = inputMap;
-}
-
-Map<unsigned, double*> Layer::addLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex, double* newWeightValue )
-{
-    // todo - make sure the updated map is returned! with the new value of the index
-    inputMap[layerIndex] = newWeightValue;
-    return inputMap;
-}
-
-Map<unsigned, double*> Layer::popLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex )
-{
-    // todo - make sure the updated map is returned!
-    inputMap.erase( layerIndex );
-    return inputMap;
+    _layerToWeights.erase(layerNumber);
+    _layerToPositiveWeights.erase(layerNumber);
+    _layerToNegativeWeights.erase(layerNumber);
 }
 
 
@@ -1531,5 +1500,66 @@ double Layer::getEliminatedNeuronValue( unsigned neuron ) const
     ASSERT( _eliminatedNeurons.exists( neuron ) );
     return _eliminatedNeurons[neuron];
 }
+
+
+void Layer::reduceIndexFromAllMaps ( unsigned indexToStart )
+{
+    _sourceLayers = reduceLayerIndexHelper( indexToStart, _sourceLayers );
+    _layerToPositiveWeights = reduceLayerIndexHelper( indexToStart, _layerToPositiveWeights );
+    _layerToNegativeWeights = reduceLayerIndexHelper( indexToStart, _layerToNegativeWeights );
+}
+
+
+Map <unsigned, double *> Layer::reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, double *> layerMap )
+{
+    Map <unsigned, double *> newMap = Map <unsigned, double *>();
+
+    for (  auto pair = layerMap.begin() ; pair != layerMap.end(); ++pair )
+    {
+
+        auto layerKey = pair->first;
+        auto layerValue = pair->second;
+
+        if  ( layerKey < indexToStart )
+        {
+            newMap.insert( layerKey , layerValue );
+        }
+
+        // layerKey >= indexToStart
+        else
+        {
+            newMap.insert( layerKey - 1 , layerValue );
+        }
+    }
+    return newMap;
+
+}
+
+Map <unsigned, unsigned> Layer::reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, unsigned> layerMap )
+{
+    Map <unsigned, unsigned> newMap = Map <unsigned, unsigned>();
+
+    for (  auto pair = layerMap.begin() ; pair != layerMap.end(); ++pair )
+    {
+
+        auto layerKey = pair->first;
+        auto layerValue = pair->second;
+
+        if  ( layerKey < indexToStart )
+        {
+            newMap.insert( layerKey , layerValue );
+        }
+
+        // layerKey >= indexToStart
+        else
+        {
+            newMap.insert( layerKey - 1 , layerValue );
+        }
+    }
+    return newMap;
+}
+
+
+
 
 } // namespace NLR

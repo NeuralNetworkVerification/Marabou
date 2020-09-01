@@ -53,21 +53,12 @@ public:
 
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
+
     const Map<unsigned, unsigned> &getSourceLayers() const;
-//    Map<unsigned, unsigned> &getSourceLayers(); // todo added
+
     const Map<unsigned, double*> &getWeightsMap() const; // todo added
-    const Map<unsigned, double*> &getPositiveWeights() const; // todo added
-    const Map<unsigned, double*> &getNegativeWeights() const; // todo added
-
-    void setSourceLayers( Map<unsigned, unsigned> inputMap ); // todo added
-    void setWeightsMap( Map<unsigned, double*> inputMap ); // todo added
-    void setPositiveWeights( Map<unsigned, double*> inputMap ); // todo added
-    void setNegativeWeights( Map<unsigned, double*> inputMap ); // todo added
-    Map<unsigned, double*> addLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex, double* newWeightValue ); // todo added
-    Map<unsigned, double*> popLayerWeights( Map<unsigned, double*> inputMap, unsigned layerIndex ); // todo added
-
-
-
+    void reduceIndexFromAllMaps ( unsigned indexToStart ); // todo added
+    void removeSourceLayer( unsigned layerNumber );  // todo added
 
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,
@@ -193,7 +184,13 @@ private:
     double getSymbolicUbOfLb( unsigned neuron ) const;
     double getSymbolicLbOfUb( unsigned neuron ) const;
     double getSymbolicUbOfUb( unsigned neuron ) const;
-};
+
+
+    Map <unsigned, double *> reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, double *> layerMap ); // todo make PRIVATE
+    Map <unsigned, unsigned > reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, unsigned> layerMap ); // todo make PRIVATE
+
+
+    };
 
 } // namespace NLR
 
