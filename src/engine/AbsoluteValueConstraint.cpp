@@ -160,7 +160,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
                 _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
         }
 
-        // Any lower bound tightneing on the aux variables, if they
+        // Any lower bound tightening on the aux variables, if they
         // are used, must have already fixed the phase, and needs not
         // be considered
     }
