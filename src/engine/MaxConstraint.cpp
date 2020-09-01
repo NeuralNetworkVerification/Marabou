@@ -86,7 +86,8 @@ void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _f );
-    for ( unsigned element : _elements ) {
+    for ( unsigned element : _elements )
+    {
         if ( element == _f )
             continue;
         tableau->registerToWatchVariable( this, element );
@@ -96,7 +97,8 @@ void MaxConstraint::registerAsWatcher( ITableau *tableau )
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _f );
-    for ( unsigned element : _elements ) {
+    for ( unsigned element : _elements )
+    {
         if ( element == _f )
             continue;
         tableau->unregisterToWatchVariable( this, element );
@@ -105,10 +107,12 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-    if ( ( _elements.exists ( _f ) || variable != _f ) && ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
+    if ( ( _elements.exists( _f ) || variable != _f )
+         &&
+         ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
 	  {
-        _maxIndex = variable;
-        _maxIndexSet = true;
+          _maxIndex = variable;
+          _maxIndexSet = true;
 	  }
     _assignment[variable] = value;
 }
@@ -131,7 +135,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         List<unsigned> toRemove;
         for ( auto element : _elements )
         {
-			if ( element == variable || element == _f)
+			if ( element == variable || element == _f )
 				continue;
             if ( _upperBounds.exists( element ) &&
                  FloatUtils::lt( _upperBounds[element], value ) )
@@ -260,8 +264,8 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
     List<unsigned> result;
     for ( auto element : _elements )
         result.append( element );
-    
-    if ( !_elements.exists( _f ))
+
+    if ( !_elements.exists( _f ) )
         result.append( _f );
     return result;
 }
@@ -467,7 +471,7 @@ void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
         // If element is equal to _f, skip this step.
         // The reason is to avoid adding equations like `1.00x00 -1.00x00 -1.00x01 = 0.00`.
         if ( element == _f )
-            continue; 
+            continue;
 
         // Create an aux variable
         unsigned auxVariable = inputQuery.getNumberOfVariables();

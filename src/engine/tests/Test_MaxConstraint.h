@@ -128,7 +128,7 @@ public:
 
 		max2.notifyVariableValue( f, 5 );
 		max2.notifyVariableValue( 8, 10 );
-		
+
 		TS_ASSERT( !max2.satisfied() );
 
 		// now f = 4
@@ -151,7 +151,7 @@ public:
 
 		TS_ASSERT( max2.satisfied() );
 
-		// now x_7 = 6
+		// now x_7 = 12
 		max2.notifyVariableValue( 7, 12 );
 
 		TS_ASSERT( !max2.satisfied() );
@@ -217,7 +217,7 @@ public:
 
 		//
 		// From here, the test is going to run tests for the case that f is included in elements.
-		// 
+		//
 		elements.insert( f );
 
 		MaxConstraint max2( f, elements );
@@ -230,7 +230,7 @@ public:
 
 		// no possible fix
 		fixes = max2.getPossibleFixes();
-		TS_ASSERT_EQUALS ( fixes.size(), 0U );
+		TS_ASSERT( fixes.empty() );
 
 		// f = 5, x_2 = 6, x_3 = 4
 		max2.notifyVariableValue( f, 5 );
@@ -239,7 +239,7 @@ public:
 
 		// possible fixes: set f to 6, x_2 to 5
 		fixes = max2.getPossibleFixes();
-		TS_ASSERT_EQUALS ( fixes.size(), 2U );
+		TS_ASSERT_EQUALS( fixes.size(), 2U );
 
 		it = fixes.begin();
 		TS_ASSERT_EQUALS( it->_variable, f );
@@ -256,12 +256,11 @@ public:
 
 		// possible fixes: set f to 7
 		fixes = max2.getPossibleFixes();
-		TS_ASSERT_EQUALS ( fixes.size(), 1U );
+		TS_ASSERT_EQUALS( fixes.size(), 1U );
 
 		it = fixes.begin();
 		TS_ASSERT_EQUALS( it->_variable, f );
 		TS_ASSERT_EQUALS( it->_value, 7 );
-
 	}
 
 	void test_max_case_splits()
@@ -280,7 +279,6 @@ public:
 		max.notifyVariableValue( f, 1 );
 		// f = max(x_2 ... x_9)
 		// f = 1
-		
 
 		List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
 
@@ -341,7 +339,7 @@ public:
 
 		//
 		// From here, the test is going to run tests for the case that f is included in elements.
-		// 
+		//
 		elements.insert( f );
 		MaxConstraint max2( f, elements );
 
@@ -462,7 +460,7 @@ public:
 
 		//
 		// From here, the test is going to run tests for the case that f is included in elements.
-		// 
+		//
 		MaxConstraint max2( f, elements );
 
 		// all variables initially between 1 and 10
@@ -537,7 +535,7 @@ public:
 
 		//
 		// From here, the test is going to run tests for the case that f is included in elements.
-		// 
+		//
 		Set<unsigned> elements2;
 
 		elements2.insert( 1 );
@@ -742,7 +740,7 @@ public:
 		unsigned f = 1;
 		Set<unsigned> elements;
 		for ( unsigned i = 1; i < 4; ++i )
-			elements.insert( i );		
+			elements.insert( i );
 		MaxConstraint max( f, elements );
 
 		InputQuery inputQuery;
