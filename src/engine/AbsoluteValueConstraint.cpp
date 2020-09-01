@@ -33,7 +33,8 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
-    : _haveEliminatedVariables( false )
+    : _auxVarsInUse( false )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedAbs.substring( 0, 13 );
     ASSERT( constraintType == String( "absoluteValue" ) );
@@ -209,7 +210,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
             if ( -bound > _lowerBounds[_b] )
                 _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
 
-            if ( _auxVarsInUse )
+            if ( _auxVarsInUse && _lowerBounds.exists( _b ) )
             {
                 // And also the upper bounds of both aux variables
                 _constraintBoundTightener->
@@ -226,26 +227,42 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
                 // posAux.ub = f.ub - b.lb, and so this tightening can cause:
                 //    1. f.ub = b.lb + posAux.ub
                 //    2. b.lb = f.ub - posAux.ub
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _f, _lowerBounds[_b] + bound );
-                _constraintBoundTightener->
-                    registerTighterLowerBound( _b, _upperBounds[_f] - bound );
+
+                if ( _lowerBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _f, _lowerBounds[_b] + bound );
+                }
+
+                if ( _upperBounds.exists( _f ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterLowerBound( _b, _upperBounds[_f] - bound );
+                }
             }
             else if ( variable == _negAux )
             {
                 // negAux.ub = f.ub + b.ub, and so this tightening can cause:
                 //    1. f.ub = negAux.ub - b.ub
                 //    2. b.ub = negAux.ub - f.ub
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _f, bound - _upperBounds[_b] );
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _b, bound - _upperBounds[_f] );
+
+                if ( _upperBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _f, bound - _upperBounds[_b] );
+                }
+
+                if ( _upperBounds.exists( _f ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _b, bound - _upperBounds[_f] );
+                }
             }
         }
     }
 }
 
-bool AbsoluteValueConstraint::participatingVariable(unsigned variable ) const
+bool AbsoluteValueConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f )
         || ( _auxVarsInUse && ( variable == _posAux || variable == _negAux ) );
@@ -406,12 +423,12 @@ void AbsoluteValueConstraint::dump( String &output ) const
 
     if ( _auxVarsInUse )
     {
-        output += Stringf( ". PosAux: %u. Range: [%s, %s]\n",
+        output += Stringf( ". PosAux: %u. Range: [%s, %s]",
                            _posAux,
                            _lowerBounds.exists( _posAux ) ? Stringf( "%lf", _lowerBounds[_posAux] ).ascii() : "-inf",
                            _upperBounds.exists( _posAux ) ? Stringf( "%lf", _upperBounds[_posAux] ).ascii() : "inf" );
 
-        output += Stringf( ". NegAux: %u. Range: [%s, %s]\n",
+        output += Stringf( ". NegAux: %u. Range: [%s, %s]",
                            _negAux,
                            _lowerBounds.exists( _negAux ) ? Stringf( "%lf", _lowerBounds[_negAux] ).ascii() : "-inf",
                            _upperBounds.exists( _negAux ) ? Stringf( "%lf", _upperBounds[_negAux] ).ascii() : "inf" );
@@ -421,7 +438,7 @@ void AbsoluteValueConstraint::dump( String &output ) const
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f ||
-            ( _auxVarsInUse && ( variable == _posAux || variable == _negAux ) ) );
+            ( _auxVarsInUse && ( oldIndex == _posAux || oldIndex == _negAux ) ) );
 
     ASSERT( !_assignment.exists( newIndex ) &&
             !_lowerBounds.exists( newIndex ) &&
@@ -611,9 +628,10 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.setLowerBound( _posAux, 0 );
     inputQuery.setLowerBound( _negAux, 0 );
 
-    // Set their upper bounds
-    inputQuery.setUpperBound( _posAux, _upperBounds[_f] - _lowerBounds[_b] );
-    inputQuery.setUpperBound( _negAux, _upperBounds[_f] + _lowerBounds[_b] );
+    _lowerBounds[_posAux] = 0;
+    _lowerBounds[_negAux] = 0;
+    _upperBounds[_posAux] = FloatUtils::infinity();
+    _upperBounds[_negAux] = FloatUtils::infinity();
 
     // Mark that the aux vars are in use
     _auxVarsInUse = true;
@@ -623,7 +641,7 @@ String AbsoluteValueConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b,posAux,NegAux
     return _auxVarsInUse ?
-        Stringf( "absoluteValue,%u,%u", _f, _b, _posAux, _negAux ) :
+        Stringf( "absoluteValue,%u,%u,%u,%u", _f, _b, _posAux, _negAux ) :
         Stringf( "absoluteValue,%u,%u", _f, _b );
 }
 
@@ -674,7 +692,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
 
         // Option 6: posAux can never be zero, phase is negative
         if ( _lowerBounds.exists( _posAux )
-             && FloatUtils::isPositive( _upperBounds[_posAux] ) )
+             && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
         {
             setPhaseStatus( PHASE_NEGATIVE );
             return;

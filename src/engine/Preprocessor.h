@@ -61,6 +61,12 @@ private:
     */
     void makeAllEquationsEqualities();
 
+    /*
+      Set any missing upper bound to +INF, and any missing lower bound
+      to -INF.
+    */
+    void setMissingBoundsToInfinity();
+
 	/*
       Tighten bounds using the linear equations
 	*/
