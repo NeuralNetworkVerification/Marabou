@@ -363,162 +363,136 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
     }
 }
 
-// todo new code - START
-
-void NetworkLevelReasoner::mergeWSLayers( )
+void NetworkLevelReasoner::mergeConsecutiveWSLayers()
 {
-    // Iterate over all layers
-    for ( unsigned firstLayerIndex = 1; firstLayerIndex < getNumberOfLayers() - 1; ++firstLayerIndex )
+    // Iterate over all layers, except the input layer
+    unsigned layer = 1;
+
+    while ( layer < _layerIndexToLayer.size() )
     {
-        for ( unsigned secondLayerIndex = firstLayerIndex + 1; secondLayerIndex < getNumberOfLayers() - 1; ++secondLayerIndex )
-        {
-            const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
-            const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
-
-            // If two subsequent layers are WS
-            if ( firstLayer->getLayerType() != Layer::WEIGHTED_SUM )
-            {
-                continue;
-            }
-            if ( secondLayer->getLayerType() != Layer::WEIGHTED_SUM )
-            {
-                continue;
-            }
-            if ( !secondLayer->getSourceLayers().exists( firstLayerIndex ) )
-            {
-                continue;
-            }
-
-            // If the first layer's input is the second layer
-            if ( !isReductionPossible( firstLayerIndex, secondLayerIndex ) )
-            {
-                continue;
-            }
-
-            // Remove both layers and insert *new* first layer
-            for ( auto it = firstLayer->getSourceLayers().begin(); it != firstLayer->getSourceLayers().end(); ++it)
-            {
-
-                // Input layer to the first WS layer
-                unsigned previousToFirstLayerIndex = it->first;
-                mergeSubsequentLayers( previousToFirstLayerIndex, firstLayerIndex, secondLayerIndex );
-
-                // Reduce -1 from all indexes
-                reduceLayerIndex( secondLayerIndex );
-            }
-        }
+        if ( suitableForMerging( layer ) )
+            mergeWSLayers( layer );
+        else
+            ++layer;
     }
 }
 
-// Change matrix of first layer,
-void NetworkLevelReasoner::mergeSubsequentLayers( unsigned previousToFirstLayerIndex, unsigned firstLayerIndex,  unsigned secondLayerIndex)
+bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex )
 {
-    Layer *inputLayerToFirst = _layerIndexToLayer[previousToFirstLayerIndex];
-    Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
-    Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
+    /*
+      The given layer index is a candidate layer. We now check whether
+      it is an eligible second WS layer that can be merged with its
+      predecessor
+    */
+    const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
 
-    unsigned inputDimension = inputLayerToFirst->getSize();
-    unsigned middleDimension = firstLayer->getSize();
-    unsigned outputDimension = secondLayer->getSize();
+    // Layer should be a Weighted Sum layer
+    if ( secondLayer->getLayerType() != Layer::WEIGHTED_SUM )
+        return false;
 
-    // Multiply both layers - all weights
-    double *firstLayerMatrix = firstLayer->getWeightsMap()[previousToFirstLayerIndex];
-    double *secondLayerMatrix = secondLayer->getWeightsMap()[firstLayerIndex];
-    double *newWeightsMatrix = multiplyWeights( firstLayerMatrix, secondLayerMatrix, inputDimension, middleDimension, outputDimension );
+    // Layer should have a single source
+    if ( secondLayer->getSourceLayers().size() != 1 )
+        return false;
 
+    // Grab the predecessor layer
+    unsigned firstLayerIndex = secondLayer->getSourceLayers().begin()->first;
+    const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
 
-    // Delete 1st WS layer
-    delete inputLayerToFirst;
+    // First layer should also be a weighted sum
+    if ( firstLayer->getLayerType() != Layer::WEIGHTED_SUM )
+        return false;
 
-    // Update 2nd WS layer
-    secondLayer->removeSourceLayer( firstLayerIndex );
-    secondLayer->addSourceLayer( previousToFirstLayerIndex, _layerIndexToLayer[previousToFirstLayerIndex]->getSize() );
-
-    // Update weight matrix of (originally) 2nd WS layer after the matrix multiplication
-    // For readability - same as outputDimension
-    auto secondLayerSize = secondLayer->getSize();
-    for ( unsigned sourceNeuron = 0; sourceNeuron < inputDimension; ++sourceNeuron )
+    // First layer should not feed into any other layer
+    for ( unsigned i = secondLayerIndex + 1; i < getNumberOfLayers(); ++i )
     {
-        for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
-        {
-            auto weight = newWeightsMatrix [sourceNeuron * secondLayerSize + targetNeuron];
-            secondLayer->setWeight(previousToFirstLayerIndex, sourceNeuron, targetNeuron, weight );
-        }
-    }
-}
+        const Layer *layer = _layerIndexToLayer[i];
 
-double *NetworkLevelReasoner:: multiplyWeights( double *firstMatrix, double *secondMatrix, unsigned inputDimension,unsigned middleDimension, unsigned outputDimension )
-{
-    double *newMatrix = new double[inputDimension * outputDimension];
-    std::fill_n (newMatrix, inputDimension * outputDimension, 0);
-
-    matrixMultiplication(firstMatrix, secondMatrix, newMatrix, inputDimension, middleDimension, outputDimension);
-    return newMatrix;
-}
-
-// Assume we get two subsequent WS layers with WS -> WS
-bool NetworkLevelReasoner::isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex )
-{
-    for ( unsigned i = 0; i < getNumberOfLayers(); ++i ) // here without '-1' an end
-    {
-        // Found a third layer which the first layer is a source to
-        if ( ( i != secondLayerIndex ) && ( _layerIndexToLayer[i]->getSourceLayers().exists( firstLayerIndex ) ) )
-        {
+        if ( layer->getSourceLayers().exists( firstLayerIndex ) )
             return false;
-        }
-
-        // Found a third layer which the second layer is a sink to
-        if ( ( i != firstLayerIndex ) && ( _layerIndexToLayer[secondLayerIndex]->getSourceLayers().exists( i ) ) )
-        {
-            return false;
-        }
     }
-    // The 2nd input index is the only one for which the source is the later at the 1st input index
+
     return true;
 }
 
-// Reduce -1 from all layer indexes starting from (including) the given input index
-void NetworkLevelReasoner::reduceLayerIndex( unsigned indexToStart )
+void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
 {
-    // update NLR-level map
-    auto newIdxToLayerMap = reduceLayerIndexToLayerHelper( indexToStart );
-    _layerIndexToLayer = newIdxToLayerMap;
+    Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
+    unsigned firstLayerIndex = secondLayer->getSourceLayers().begin()->first;
+    Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+    unsigned lastLayerIndex = _layerIndexToLayer.size() - 1;
 
+    // Iterate over all inputs to the first layer
+    for ( const auto &pair : firstLayer->getSourceLayers() )
+    {
+        unsigned previousToFirstLayerIndex = pair.first;
+        const Layer *inputLayerToFirst = _layerIndexToLayer[previousToFirstLayerIndex];
+
+        unsigned inputDimension = inputLayerToFirst->getSize();
+        unsigned middleDimension = firstLayer->getSize();
+        unsigned outputDimension = secondLayer->getSize();
+
+        // Compute new weights
+        const double *firstLayerMatrix = firstLayer->getWeightMatrix( previousToFirstLayerIndex );
+        const double *secondLayerMatrix = secondLayer->getWeightMatrix( firstLayerIndex );
+
+        double *newWeightMatrix = multiplyWeights( firstLayerMatrix,
+                                                   secondLayerMatrix,
+                                                   inputDimension,
+                                                   middleDimension,
+                                                   outputDimension );
+
+        // Adjust the sources of the second layer
+        secondLayer->addSourceLayer( previousToFirstLayerIndex, inputLayerToFirst->getSize() );
+        for ( unsigned sourceNeuron = 0; sourceNeuron < inputDimension; ++sourceNeuron )
+        {
+            for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
+            {
+                double weight = newWeightMatrix[sourceNeuron * outputDimension + targetNeuron];
+                secondLayer->setWeight( previousToFirstLayerIndex, sourceNeuron, targetNeuron, weight );
+            }
+        }
+
+        delete newWeightMatrix;
+    }
+
+    // Remove the first layer from second layer's sources
+    secondLayer->removeSourceLayer( firstLayerIndex );
+
+    // Finally, remove the first layer from the map and delete it
+    _layerIndexToLayer.erase( firstLayerIndex );
+    delete firstLayer;
+
+    // Adjust the indices of all layers starting from secondLayerIndex
+    // and higher
+    for ( unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i )
+        reduceLayerIndex( i, firstLayerIndex );
+}
+
+double *NetworkLevelReasoner::multiplyWeights( const double *firstMatrix,
+                                               const double *secondMatrix,
+                                               unsigned inputDimension,
+                                               unsigned middleDimension,
+                                               unsigned outputDimension )
+{
+    double *newMatrix = new double[inputDimension * outputDimension];
+    std::fill_n( newMatrix, inputDimension * outputDimension, 0 );
+    matrixMultiplication( firstMatrix,
+                          secondMatrix,
+                          newMatrix,
+                          inputDimension,
+                          middleDimension,
+                          outputDimension );
+    return newMatrix;
+}
+
+void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex )
+{
     // update Layer-level maps
-    for ( unsigned layerIndex = 0; layerIndex < getNumberOfLayers(); ++layerIndex )
-    {
-        Layer *layer = _layerIndexToLayer[layerIndex];
-        layer->reduceIndexFromAllMaps( indexToStart );
-    }
+    _layerIndexToLayer[layer]->reduceIndexFromAllMaps( startIndex );
+
+    // Update the mapping in the NLR
+    _layerIndexToLayer[layer - 1] = _layerIndexToLayer[layer];
+    _layerIndexToLayer.erase( layer );
 }
-
-Map <unsigned, Layer*> NetworkLevelReasoner::reduceLayerIndexToLayerHelper( unsigned indexToStart )
-{
-    Map <unsigned, Layer*> newMap = Map <unsigned, Layer*>();
-
-    for (  auto pair = _layerIndexToLayer.begin() ; pair != _layerIndexToLayer.end(); ++pair )
-    {
-
-        auto layerKey = pair->first;
-        auto layerValue = pair->second;
-
-        if  ( layerKey < indexToStart )
-        {
-            newMap.insert( layerKey , layerValue );
-        }
-
-        // layerKey >= indexToStart
-        else
-        {
-            newMap.insert( layerKey - 1 , layerValue );
-        }
-    }
-
-    return newMap;
-}
-
-
-// todo new code - END
-
 
 } // namespace NLR

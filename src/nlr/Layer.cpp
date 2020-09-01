@@ -218,25 +218,24 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
-const Map<unsigned, double*> &Layer::getWeightsMap() const
+const double *Layer::getWeightMatrix( unsigned sourceLayer ) const
 {
-    return _layerToWeights;
+    ASSERT( _layerToWeights.exists( sourceLayer ) );
+    return _layerToWeights[sourceLayer];
 }
 
-
-void Layer::removeSourceLayer( unsigned layerNumber )
+void Layer::removeSourceLayer( unsigned sourceLayer )
 {
-    // TODO CHECK - Guy K
-    delete _layerToWeights[layerNumber];
-    delete _layerToPositiveWeights[layerNumber];
-    delete _layerToNegativeWeights[layerNumber];
+    ASSERT( _sourceLayers.exists( sourceLayer ) );
 
-    _layerToWeights.erase(layerNumber);
-    _layerToPositiveWeights.erase(layerNumber);
-    _layerToNegativeWeights.erase(layerNumber);
+    delete _layerToWeights[sourceLayer];
+    delete _layerToPositiveWeights[sourceLayer];
+    delete _layerToNegativeWeights[sourceLayer];
+
+    _layerToWeights.erase( sourceLayer );
+    _layerToPositiveWeights.erase( sourceLayer );
+    _layerToNegativeWeights.erase( sourceLayer );
 }
-
-
 
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
 {
@@ -1501,65 +1500,36 @@ double Layer::getEliminatedNeuronValue( unsigned neuron ) const
     return _eliminatedNeurons[neuron];
 }
 
-
-void Layer::reduceIndexFromAllMaps ( unsigned indexToStart )
+void Layer::reduceIndexFromAllMaps( unsigned startIndex )
 {
-    _sourceLayers = reduceLayerIndexHelper( indexToStart, _sourceLayers );
-    _layerToPositiveWeights = reduceLayerIndexHelper( indexToStart, _layerToPositiveWeights );
-    _layerToNegativeWeights = reduceLayerIndexHelper( indexToStart, _layerToNegativeWeights );
-}
+    // Adjsut the source layers
+    Map<unsigned, unsigned> copyOfSources = _sourceLayers;
+    _sourceLayers.clear();
+    for ( const auto &pair : copyOfSources )
+        _sourceLayers[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
 
+    // Adjust all weight maps
+    adjustWeightMapIndexing( _layerToWeights, startIndex );
+    adjustWeightMapIndexing( _layerToPositiveWeights, startIndex );
+    adjustWeightMapIndexing( _layerToNegativeWeights, startIndex );
 
-Map <unsigned, double *> Layer::reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, double *> layerMap )
-{
-    Map <unsigned, double *> newMap = Map <unsigned, double *>();
-
-    for (  auto pair = layerMap.begin() ; pair != layerMap.end(); ++pair )
+    // Adjust the neuron activations
+    for ( auto &neuronToSources : _neuronToActivationSources )
     {
-
-        auto layerKey = pair->first;
-        auto layerValue = pair->second;
-
-        if  ( layerKey < indexToStart )
+        for ( auto &source : neuronToSources.second )
         {
-            newMap.insert( layerKey , layerValue );
-        }
-
-        // layerKey >= indexToStart
-        else
-        {
-            newMap.insert( layerKey - 1 , layerValue );
+            if ( source._layer >= startIndex )
+                --source._layer;
         }
     }
-    return newMap;
-
 }
 
-Map <unsigned, unsigned> Layer::reduceLayerIndexHelper( unsigned indexToStart , Map <unsigned, unsigned> layerMap )
+void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned startIndex )
 {
-    Map <unsigned, unsigned> newMap = Map <unsigned, unsigned>();
-
-    for (  auto pair = layerMap.begin() ; pair != layerMap.end(); ++pair )
-    {
-
-        auto layerKey = pair->first;
-        auto layerValue = pair->second;
-
-        if  ( layerKey < indexToStart )
-        {
-            newMap.insert( layerKey , layerValue );
-        }
-
-        // layerKey >= indexToStart
-        else
-        {
-            newMap.insert( layerKey - 1 , layerValue );
-        }
-    }
-    return newMap;
+    Map<unsigned, double *> copyOfWeights = map;
+    map.clear();
+    for ( const auto &pair : copyOfWeights )
+        map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
 }
-
-
-
 
 } // namespace NLR

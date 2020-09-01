@@ -145,10 +145,11 @@ public:
     InputQuery generateInputQuery();
 
     /*
-        Finds subsequent WS layers and merges them, in order to reduce the number of total layers
-        and variables in the created inputQuery object
+      Finds logically consecutive WS layers and merges them, in order
+      to reduce the total number of layers and variables in the
+      network
     */
-    void mergeWSLayers(); // todo added
+    void mergeConsecutiveWSLayers();
 
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
@@ -168,11 +169,14 @@ private:
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
 
-    void mergeSubsequentLayers( unsigned previousToFirstLayerIndex, unsigned firstLayerIndex,  unsigned secondLayerIndex); // todo added
-    bool isReductionPossible( unsigned firstLayerIndex, unsigned secondLayerIndex ); // todo added
-    void reduceLayerIndex( unsigned indexToStart ); // todo added
-    Map <unsigned, Layer*> reduceLayerIndexToLayerHelper( unsigned indexToStart ); // todo added
-    double *multiplyWeights ( double *firstMat, double *secondMatrix, unsigned inputDimension, unsigned middleDimension, unsigned outputDimension ); // todo make PRIVATE
+    bool suitableForMerging( unsigned secondLayerIndex );
+    void mergeWSLayers( unsigned secondLayerIndex );
+    double *multiplyWeights( const double *firstMatrix,
+                             const double *secondMatrix,
+                             unsigned inputDimension,
+                             unsigned middleDimension,
+                             unsigned outputDimension );
+    void reduceLayerIndex( unsigned layer, unsigned startIndex );
 };
 
 } // namespace NLR
