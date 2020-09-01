@@ -48,6 +48,7 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
+    , _lastSplitInterval( false )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -2031,43 +2032,43 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
 {
-  // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
-  ENGINE_LOG( Stringf( "Using LargestInterval heuristics..." ).ascii() );
+    // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
+    ENGINE_LOG( Stringf( "Using LargestInterval heuristics..." ).ascii() );
 
-  unsigned inputVariableWithLargestInterval = 0;
-  double largestIntervalSoFar = 0;
-  for ( const auto&variable : _preprocessedQuery.getInputVariables() )
-  {
-    double interval = _tableau->getUpperBound( variable ) -
-      _tableau->getLowerBound( variable );
-    if ( interval > largestIntervalSoFar )
+    unsigned inputVariableWithLargestInterval = 0;
+    double largestIntervalSoFar = 0;
+    for ( const auto&variable : _preprocessedQuery.getInputVariables() )
     {
-      inputVariableWithLargestInterval = variable;
-      largestIntervalSoFar = interval;
+        double interval = _tableau->getUpperBound( variable ) -
+            _tableau->getLowerBound( variable );
+        if ( interval > largestIntervalSoFar )
+        {
+            inputVariableWithLargestInterval = variable;
+            largestIntervalSoFar = interval;
+        }
     }
-  }
 
-  if ( largestIntervalSoFar == 0 )
-    return NULL;
-  else
-  {
-    double mid = ( _tableau->getLowerBound( inputVariableWithLargestInterval )
-                   + _tableau->getUpperBound( inputVariableWithLargestInterval )
-                   ) / 2;
-    PiecewiseLinearCaseSplit s1;
-    s1.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
-                                         mid, Tightening::UB ) );
-    PiecewiseLinearCaseSplit s2;
-    s2.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
-                                         mid, Tightening::LB ) );
+    if ( largestIntervalSoFar == 0 )
+        return NULL;
+    else
+    {
+        double mid = ( _tableau->getLowerBound( inputVariableWithLargestInterval )
+                       + _tableau->getUpperBound( inputVariableWithLargestInterval )
+                       ) / 2;
+        PiecewiseLinearCaseSplit s1;
+        s1.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                             mid, Tightening::UB ) );
+        PiecewiseLinearCaseSplit s2;
+        s2.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                             mid, Tightening::LB ) );
 
-    List<PiecewiseLinearCaseSplit> splits;
-    splits.append( s1 );
-    splits.append( s2 );
-    DisjunctionConstraint *bisection = new DisjunctionConstraint( splits );
-    bisection->setTemporary( true );
-    return bisection;
-  }
+        List<PiecewiseLinearCaseSplit> splits;
+        splits.append( s1 );
+        splits.append( s2 );
+        DisjunctionConstraint *bisection = new DisjunctionConstraint( splits );
+        bisection->setTemporary( true );
+        return bisection;
+    }
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
@@ -2080,7 +2081,15 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval )
-      candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
+    {
+        if ( _lastSplitInterval )
+            _lastSplitInterval = false;
+        else
+        {
+            candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
+            _lastSplitInterval = true;
+        }
+    }
 
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
                            "Picked..." :

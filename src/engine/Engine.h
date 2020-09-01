@@ -332,6 +332,11 @@ private:
     unsigned long long _lastIterationWithProgress;
 
     /*
+      Interval split is performed previously.
+    */
+    bool _lastSplitInterval;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
