@@ -211,11 +211,6 @@ String DisjunctionConstraint::serializeToString() const
                         "Serialize DisjunctionConstraint to String" );
 }
 
-bool DisjunctionConstraint::supportsSymbolicBoundTightening() const
-{
-    return false;
-}
-
 void DisjunctionConstraint::extractParticipatingVariables()
 {
     _participatingVariables.clear();

@@ -207,15 +207,6 @@ public:
 
     /*
       Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    virtual bool supportsSymbolicBoundTightening() const
-    {
-        return false;
-    }
-
-    /*
-      Return true if and only if this piecewise linear constraint supports
       the polarity metric
     */
     virtual bool supportPolarity() const
