@@ -108,6 +108,8 @@ void Marabou::prepareInputQuery()
     }
 
     extractSplittingThreshold();
+    unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
+    _engine.setNumberOfWorkers( numberOfWorkers );
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )

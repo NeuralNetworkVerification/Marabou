@@ -122,9 +122,9 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
-void NetworkLevelReasoner::lpRelaxationPropagation()
+void NetworkLevelReasoner::lpRelaxationPropagation( unsigned numberOfWorkers )
 {
-    LPFormulator lpFormulator( this );
+    LPFormulator lpFormulator( this, numberOfWorkers );
     lpFormulator.setCutoff( 0 );
 
     if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==

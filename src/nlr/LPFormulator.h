@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <boost/lockfree/queue.hpp>
+#include <boost/chrono.hpp>
 #include <mutex>
 
 namespace NLR {
@@ -38,6 +39,49 @@ public:
 
     typedef boost::lockfree::queue
     <GurobiWrapper *, boost::lockfree::fixed_sized<true>> SolverQueue;
+
+    struct ThreadArgument{
+
+        ThreadArgument( GurobiWrapper *gurobi, Layer *layer,
+                        unsigned index, double currentLb, double currentUb,
+                        bool cutoffInUse, double cutoffValue,
+                        LayerOwner *layerOwner, SolverQueue &freeSolvers,
+                        std::mutex &mtx, std::atomic_bool &infeasible,
+                        std::atomic_uint &tighterBoundCounter,
+                        std::atomic_uint &signChanges,
+                        std::atomic_uint &cutoffs )
+        : _gurobi( gurobi )
+        , _layer( layer )
+        , _index( index )
+        , _currentLb(currentLb )
+        , _currentUb(currentUb )
+        , _cutoffInUse( cutoffInUse )
+        , _cutoffValue( cutoffValue )
+        , _layerOwner( layerOwner )
+        , _freeSolvers( freeSolvers )
+        , _mtx( mtx )
+        , _infeasible( infeasible )
+        , _tighterBoundCounter( tighterBoundCounter )
+        , _signChanges( signChanges )
+        , _cutoffs( cutoffs )
+        {
+        }
+
+        GurobiWrapper *_gurobi;
+        Layer *_layer;
+        unsigned _index;
+        double _currentLb;
+        double _currentUb;
+        bool _cutoffInUse;
+        double _cutoffValue;
+        LayerOwner *_layerOwner;
+        SolverQueue &_freeSolvers;
+        std::mutex &_mtx;
+        std::atomic_bool &_infeasible;
+        std::atomic_uint &_tighterBoundCounter;
+        std::atomic_uint &_signChanges;
+        std::atomic_uint &_cutoffs;
+    };
 
     LPFormulator( LayerOwner *layerOwner, unsigned numWorkers = 1 );
     ~LPFormulator();
@@ -83,6 +127,7 @@ private:
     bool _cutoffInUse;
     double _cutoffValue;
     unsigned _numWorkers;
+    boost::chrono::milliseconds _waitTime;
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
@@ -97,13 +142,10 @@ private:
                                             const Layer *layer );
 
     static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
-                                      String variableName, double cutoffValue );
+                                      String variableName, double cutoffValue,
+                                      std::atomic_bool *infeasible = NULL );
 
-    static void tightenBounds( GurobiWrapper *gurobi, Layer *layer,
-                               unsigned index, double currentLb, double currentUb,
-                               bool cutoffInUse, double cutoffValue,
-                               LayerOwner *layerOwner, SolverQueue &freeSolvers,
-                               std::mutex &mtx, std::atomic_bool &infeasible );
+    static void tightenBounds( ThreadArgument &argument );
 
 };
 
