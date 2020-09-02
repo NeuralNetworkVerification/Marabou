@@ -65,7 +65,10 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     gurobi.solve();
 
     if ( gurobi.infeasbile() )
+    {
+        std::cout << "Infeasible!!!" << std::endl;
         throw InfeasibleQueryException();
+    }
 
     if ( gurobi.cutoffOccurred() )
         return cutoffValue;
