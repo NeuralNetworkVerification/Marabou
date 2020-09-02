@@ -334,7 +334,7 @@ private:
     /*
       Interval split is performed previously.
     */
-    bool _lastSplitInterval;
+    unsigned _splitsSinceLastSplitInterval;
 
     /*
       Perform a simplex step: compute the cost function, pick the

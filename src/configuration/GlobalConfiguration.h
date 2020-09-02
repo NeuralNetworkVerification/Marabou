@@ -114,6 +114,9 @@ public:
 
     static const DivideStrategy SPLITTING_HEURISTICS;
 
+    // The frequency to use interval splitting when largest interval splitting strategy is in use.
+    static const unsigned INTERVAL_SPLITTING_FREQUENCY;
+
     // When automatically deciding which splitting strategy to use, we use relu-splitting if
     // the number of inputs is larger than this number.
     static const unsigned INTERVAL_SPLITTING_THRESHOLD;

@@ -48,7 +48,7 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _lastSplitInterval( false )
+    , _splitsSinceLastSplitInterval( 0 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -2080,30 +2080,13 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( strategy == DivideStrategy::LargestInterval )
-    {
-        if ( _lastSplitInterval )
-            _lastSplitInterval = false;
-        else
-        {
-            candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
-            _lastSplitInterval = true;
-        }
-    }
+    else if ( strategy == DivideStrategy::LargestInterval &&
+              _smtCore.getStackDepth() % GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
 
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
                            "Picked..." :
                            "Unable to pick using the current strategy..." ) ).ascii() );
-
-    DEBUG({
-        if ( candidatePLConstraint )
-        {
-          String s;
-          candidatePLConstraint->dump( s );
-          printf( "PLConstraint picked: \n" );
-          std::cout << s.ascii();
-        }
-      });
 
     return candidatePLConstraint;
 }
