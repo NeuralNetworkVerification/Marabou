@@ -20,6 +20,10 @@
 #include "LayerOwner.h"
 #include <climits>
 
+#include <atomic>
+#include <boost/lockfree/queue.hpp>
+#include <mutex>
+
 namespace NLR {
 
 #define LPFormulator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x)
@@ -32,7 +36,10 @@ public:
         MAX = 1,
     };
 
-    LPFormulator( LayerOwner *layerOwner );
+    typedef boost::lockfree::queue
+    <GurobiWrapper *, boost::lockfree::fixed_sized<true>> SolverQueue;
+
+    LPFormulator( LayerOwner *layerOwner, unsigned numWorkers = 1 );
     ~LPFormulator();
 
     /*
@@ -60,19 +67,22 @@ public:
     */
     void createLPRelaxation( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
-                             unsigned lastLayer = UINT_MAX);
+                             unsigned lastLayer = UINT_MAX );
 
-    double solveLPRelaxation( const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax,
-                              String variableName,
+    double solveLPRelaxation( GurobiWrapper &gurobi,
+                              const Map<unsigned, Layer *> &layers,
+                              MinOrMax minOrMax, String variableName,
+                              double cutoffValue,
                               unsigned lastLayer = UINT_MAX );
+
     void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 
 private:
+
     LayerOwner *_layerOwner;
     bool _cutoffInUse;
     double _cutoffValue;
-    GurobiWrapper _gurobi;
+    unsigned _numWorkers;
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
@@ -85,6 +95,16 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
+
+    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
+                                      String variableName, double cutoffValue );
+
+    static void tightenBounds( GurobiWrapper *gurobi, Layer *layer,
+                               unsigned index, double currentLb, double currentUb,
+                               bool cutoffInUse, double cutoffValue,
+                               LayerOwner *layerOwner, SolverQueue &freeSolvers,
+                               std::mutex &mtx, std::atomic_bool &infeasible );
+
 };
 
 } // namespace NLR

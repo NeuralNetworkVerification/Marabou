@@ -46,7 +46,6 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
     _cutoffs = 0;
 
     GurobiWrapper gurobi;
-
     gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
     double currentLb;
@@ -144,6 +143,9 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
 void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers )
 {
+    GurobiWrapper gurobi;
+    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+
     _tighterBoundCounter = 0;
     _signChanges = 0;
     _cutoffs = 0;
@@ -189,7 +191,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             Stringf variableName( "x%u", variable );
 
             // LP relaxation, lower bound
-            newLb = _lpFormulator.solveLPRelaxation( layers, LPFormulator::MIN, variableName, layerIndex );
+            newLb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MIN, variableName, _cutoffs, layerIndex );
             storeLbIfNeeded( layer, i, variable, newLb );
             if ( _cutoffInUse && newLb > _cutoffValue )
             {
@@ -198,7 +200,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             }
 
             // LP relaxation, upper bound
-            newUb = _lpFormulator.solveLPRelaxation( layers, LPFormulator::MAX, variableName, layerIndex );
+            newUb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MAX, variableName, _cutoffs, layerIndex );
             storeUbIfNeeded( layer, i, variable, newUb );
             if ( _cutoffInUse && newUb < _cutoffValue )
             {
@@ -207,7 +209,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             }
 
             // MILP encoding, lower bound
-            newLb = solveMILPEncoding( layers, MinOrMax::MIN, variableName, layerIndex );
+            newLb = solveMILPEncoding( gurobi, layers, MinOrMax::MIN, variableName, layerIndex );
             storeLbIfNeeded( layer, i, variable, newLb );
             if ( _cutoffInUse && newLb > _cutoffValue )
             {
@@ -216,7 +218,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             }
 
             // MILP encoding, upper bound
-            newUb = solveMILPEncoding( layers, MinOrMax::MAX, variableName, layerIndex );
+            newUb = solveMILPEncoding( gurobi, layers, MinOrMax::MAX, variableName, layerIndex );
             storeUbIfNeeded( layer, i, variable, newUb );
             if ( _cutoffInUse && newUb < _cutoffValue )
             {
@@ -332,14 +334,13 @@ void MILPFormulator::addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
     }
 }
 
-double MILPFormulator::solveMILPEncoding( const Map<unsigned, Layer *> &layers,
+double MILPFormulator::solveMILPEncoding( GurobiWrapper &gurobi,
+                                          const Map<unsigned, Layer *> &layers,
                                           MinOrMax minOrMax,
                                           String variableName,
                                           unsigned lastLayer )
 {
-    GurobiWrapper gurobi;
-
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+    gurobi.resetModel();
 
     createMILPEncoding( layers, gurobi, lastLayer );
 
