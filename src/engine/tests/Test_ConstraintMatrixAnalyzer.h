@@ -41,257 +41,144 @@ public:
 		TS_ASSERT_THROWS_NOTHING( delete mock );
 	}
 
+    bool sameColumns( List<unsigned> a, Set<unsigned> b )
+    {
+        if ( a.size() != b.size() )
+            return false;
+
+        for ( const auto &it : a )
+            if ( !b.exists( it ) )
+                return false;
+
+        return true;
+    }
+
     void test_analyze__gaussian_eliminiation()
     {
-        double result[15];
+        ConstraintMatrixAnalyzer analyzer;
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 1, 0, 0, 0, 0,
                 0, 0, 1, 0, 0,
                 0, 0, 0, 1, 0,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                1, 0, 0, 0, 0,
-                0, 1, 0, 0, 0,
-                0, 0, 1, 0, 0,
-            };
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            TS_ASSERT( analyzer.getRedundantRows().empty() );
+            Set<unsigned> expectedColumns( { 0, 2, 3 } );
+            TS_ASSERT( sameColumns( analyzer.getIndependentColumns(), expectedColumns ) );
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 1, 0, 0, 0, 0,
                 0, 0, 1, 0, 0,
                 0, 1, 0, 1, 0,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                1, 0, 0, 0, 0,
-                0, 1, 0, 0, 0,
-                0, 0, 1, 1, 0,
-            };
+            TS_ASSERT( analyzer.getRedundantRows().empty() );
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
-
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            Set<unsigned> expectedColumns1( { 0, 1, 2 } );
+            Set<unsigned> expectedColumns2( { 0, 2, 3 } );
+            TS_ASSERT( sameColumns( analyzer.getIndependentColumns(), expectedColumns1 )
+                       ||
+                       sameColumns( analyzer.getIndependentColumns(), expectedColumns2 )
+                       );
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 1, 0, 0, 0, 0,
                 1, 0, 0, 0, 0,
                 0, 1, 0, 2, 0,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                2, 0, 0, 1, 0,
-                0, 1, 0, 0, 0,
-                0, 0, 0, 0, 0,
-            };
+            Set<unsigned> expectedRows( { 1 } );
+            TS_ASSERT_EQUALS( analyzer.getRedundantRows(), expectedRows );
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 2U );
-
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            Set<unsigned> expectedColumns1( { 0, 1 } );
+            Set<unsigned> expectedColumns2( { 0, 3 } );
+            TS_ASSERT( sameColumns( analyzer.getIndependentColumns(), expectedColumns1 )
+                       ||
+                       sameColumns( analyzer.getIndependentColumns(), expectedColumns2 )
+                       );
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 1, 1, 0, 1, 0,
                 0, 0, 3, 0, 0,
                 2, 2, 0, 0, 0,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                3, 0, 0, 0, 0,
-                0, 2, 0, 2, 0,
-                0, 0, 1, 0, 0,
-            };
+            TS_ASSERT( analyzer.getRedundantRows().empty() );
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 3U );
-
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            Set<unsigned> expectedColumns1( { 0, 2, 3 } );
+            Set<unsigned> expectedColumns2( { 1, 2, 3 } );
+            TS_ASSERT( sameColumns( analyzer.getIndependentColumns(), expectedColumns1 )
+                       ||
+                       sameColumns( analyzer.getIndependentColumns(), expectedColumns2 )
+                       );
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 15, 3,  0, 1, 0,
                 0 , 0, -1, 1, 4,
                 15, 3, -1, 2, 4,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                15, 0,  0, 1, 3,
-                0 , 4, -1, 1, 0,
-                0 , 0,  0, 0, 0,
-            };
+            TS_ASSERT_EQUALS( analyzer.getRedundantRows().size(), 1U );
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 2U );
+            List<unsigned> columns = analyzer.getIndependentColumns();
+            TS_ASSERT_EQUALS( columns.size(), 2U );
 
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            // Can have at most 1 of columns 0 and 1
+            TS_ASSERT( !columns.exists( 0 ) || !columns.exists( 1 ) );
+
+            // Can have at most 1 of columns 2 and 4
+            TS_ASSERT( !columns.exists( 2 ) || !columns.exists( 4 ) );
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-            };
+            TS_ASSERT( analyzer.getIndependentColumns().empty() );
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 0U );
-
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            TS_ASSERT_EQUALS( analyzer.getRedundantRows().size(), 3U );
         }
 
         {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
             double A1[] = {
                 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0,
                 0, 2, 3, 14, 1,
             };
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
+            TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
 
-            double expectedResult[] = {
-                14, 2, 3, 0, 1,
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-            };
+            TS_ASSERT_EQUALS( analyzer.getRedundantRows(),
+                              Set<unsigned>( { 0, 1 } ) );
 
-            TS_ASSERT_THROWS_NOTHING( analyzer->getCanonicalForm( result ) );
-            TS_ASSERT_SAME_DATA( result, expectedResult, sizeof(expectedResult) );
-            TS_ASSERT_EQUALS( analyzer->getRank(), 1U );
-
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
-        }
-    }
-
-    void test_independent_columns()
-    {
-        {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
-            double A1[] = {
-                1, 0, 0, 0, 0,
-                0, 1, 0, 0, 0,
-                0, 0, 1, 0, 0,
-            };
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
-
-            List<unsigned> cols = analyzer->getIndependentColumns();
-            TS_ASSERT_EQUALS( cols.size(), 3U );
-            auto it = cols.begin();
-            TS_ASSERT_EQUALS( *it, 0U );
-            ++it;
-            TS_ASSERT_EQUALS( *it, 1U );
-            ++it;
-            TS_ASSERT_EQUALS( *it, 2U );
-            ++it;
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
-        }
-
-        {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
-            double A1[] = {
-                0, 1, 0, 0, 0,
-                0, 0, 1, 1, 0,
-                0, 0, 0, 0, 1,
-            };
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
-
-            List<unsigned> cols = analyzer->getIndependentColumns();
-            TS_ASSERT_EQUALS( cols.size(), 3U );
-            auto it = cols.begin();
-            TS_ASSERT_EQUALS( *it, 1U );
-            ++it;
-            TS_ASSERT_EQUALS( *it, 2U );
-            ++it;
-            TS_ASSERT_EQUALS( *it, 4U );
-            ++it;
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
-        }
-
-        {
-            ConstraintMatrixAnalyzer *analyzer = NULL;
-            TS_ASSERT( analyzer = new ConstraintMatrixAnalyzer );
-
-            double A1[] = {
-                1, 0, 0, 0, 0,
-                0, 1, 1, 1, 0,
-                0, 0, 0, 0, 1,
-            };
-
-            TS_ASSERT_THROWS_NOTHING( analyzer->analyze( A1, 3, 5 ) );
-
-            List<unsigned> cols = analyzer->getIndependentColumns();
-            TS_ASSERT_EQUALS( cols.size(), 3U );
-            auto it = cols.begin();
-            TS_ASSERT_EQUALS( *it, 0U );
-            ++it;
-            TS_ASSERT_EQUALS( *it, 1U );
-            ++it;
-            TS_ASSERT_EQUALS( *it, 4U );
-            ++it;
-            TS_ASSERT_THROWS_NOTHING( delete analyzer );
+            List<unsigned> columns = analyzer.getIndependentColumns();
+            TS_ASSERT_EQUALS( columns.size(), 1U );
+            TS_ASSERT( !columns.exists( 0 ) );
         }
     }
 };
