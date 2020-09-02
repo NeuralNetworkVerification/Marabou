@@ -168,12 +168,6 @@ public:
     bool auxVariableInUse() const;
     unsigned getAux() const;
 
-    /*
-      Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    bool supportsSymbolicBoundTightening() const;
-
     bool supportPolarity() const;
 
     /*
