@@ -51,6 +51,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     if ( query._networkLevelReasoner )
     {
         query._networkLevelReasoner->mergeConsecutiveWSLayers();
+        _preprocessed = query._networkLevelReasoner->generateInputQuery();
     }
 
     // todo - add printing of summary after preprocessing?
