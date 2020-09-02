@@ -252,7 +252,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         GurobiWrapper *gurobi = new GurobiWrapper();
         gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
         if ( !freeSolvers.push( gurobi ) )
+        {
             ASSERT( false );
+        }
     }
 
     std::list<boost::thread> threads;
