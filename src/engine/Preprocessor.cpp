@@ -48,6 +48,9 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
     _preprocessed.constructNetworkLevelReasoner();
 
+    /*
+     * Merge subsequent WS layers
+     */
     if ( query._networkLevelReasoner )
     {
         query._networkLevelReasoner->mergeConsecutiveWSLayers();
