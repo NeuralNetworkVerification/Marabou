@@ -77,16 +77,16 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
         return cutoffValue;
 
     if ( gurobi.optimal() )
-        {
-            Map<String, double> dontCare;
-            double result = 0;
-            gurobi.extractSolution( dontCare, result );
-            return result;
-        }
+    {
+        Map<String, double> dontCare;
+        double result = 0;
+        gurobi.extractSolution( dontCare, result );
+        return result;
+    }
     else if ( gurobi.timeout() )
-        {
-            return gurobi.getObjectiveBound();
-        }
+    {
+        return gurobi.getObjectiveBound();
+    }
 
     throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
 }
