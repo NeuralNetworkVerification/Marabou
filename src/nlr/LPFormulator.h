@@ -40,6 +40,10 @@ public:
     typedef boost::lockfree::queue
     <GurobiWrapper *, boost::lockfree::fixed_sized<true>> SolverQueue;
 
+    /*
+      Arguments for the spawned thread. This is needed because Boost::thread does
+      not seem to support functions with more than 7 arguments.
+    */
     struct ThreadArgument{
 
         ThreadArgument( GurobiWrapper *gurobi, Layer *layer,
@@ -141,11 +145,18 @@ private:
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
 
+    /*
+      Optimize for the min/max value of variableName with respect to the constraints
+      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
+    */
     static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
                                       String variableName, double cutoffValue,
                                       std::atomic_bool *infeasible = NULL );
 
-    static void tightenBounds( ThreadArgument &argument );
+    /*
+      Tighten the upper- and lower- bound of a varaible with LPRelaxation
+    */
+    static void tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument );
 
 };
 

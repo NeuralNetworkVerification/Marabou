@@ -318,7 +318,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                      std::ref( signChanges ),
                                      std::ref( cutoffs ) );
 
-            threads.push_back( boost::thread( tightenBounds, argument ) );
+            threads.push_back( boost::thread
+                               ( tightenSingleVariableBoundsWithLPRelaxation,
+                                 argument ) );
         }
     }
 
@@ -339,7 +341,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
 }
 
-void LPFormulator::tightenBounds( ThreadArgument &argument )
+void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument )
 {
     GurobiWrapper *gurobi = argument._gurobi;
     Layer *layer = argument._layer;
