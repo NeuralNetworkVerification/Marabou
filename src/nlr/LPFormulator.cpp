@@ -19,18 +19,17 @@
 #include "Layer.h"
 #include "MStringf.h"
 #include "NLRError.h"
+#include "Options.h"
 #include "TimeUtils.h"
 
 #include <boost/thread.hpp>
 
 namespace NLR {
 
-LPFormulator::LPFormulator( LayerOwner *layerOwner, unsigned numWorkers )
+LPFormulator::LPFormulator( LayerOwner *layerOwner )
     : _layerOwner( layerOwner )
     , _cutoffInUse( false )
     , _cutoffValue( 0 )
-    , _numWorkers( numWorkers )
-    , _waitTime( ( numWorkers - 1 ) )
 {
 }
 
@@ -245,12 +244,18 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
 
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
+    unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
+
+    // Time to wait if no idle worker is availble
+    boost::chrono::milliseconds waitTime ( numberOfWorkers - 1 );
+
+
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
     // is added back to the queue.
-    SolverQueue freeSolvers ( _numWorkers );
-    for ( unsigned i = 0; i < _numWorkers; ++i )
+    SolverQueue freeSolvers ( numberOfWorkers );
+    for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
         GurobiWrapper *gurobi = new GurobiWrapper();
         gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
@@ -258,7 +263,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         enqueue( freeSolvers, gurobi );
     }
 
-    boost::thread *threads = new boost::thread[_numWorkers];
+    boost::thread *threads = new boost::thread[numberOfWorkers];
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
@@ -294,7 +299,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             if ( infeasible )
             {
                 // infeasibility is derived, interupt all active threads
-                for ( unsigned i = 0; i < _numWorkers; ++i )
+                for ( unsigned i = 0; i < numberOfWorkers; ++i )
                 {
                     threads[i].interrupt();
                     threads[i].join();
@@ -306,7 +311,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             // Wait until there is an idle solver
             GurobiWrapper *freeSolver;
             while ( !freeSolvers.pop( freeSolver ) )
-                boost::this_thread::sleep_for( _waitTime );
+                boost::this_thread::sleep_for( waitTime );
 
             freeSolver->resetModel();
             mtx.lock();
@@ -328,7 +333,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         }
     }
 
-    for ( unsigned i = 0; i < _numWorkers; ++i )
+    for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
         threads[i].join();
     }

@@ -47,7 +47,6 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _numberOfWorkers( 1 )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -73,11 +72,6 @@ Engine::~Engine()
 void Engine::setVerbosity( unsigned verbosity )
 {
     _verbosity = verbosity;
-}
-
-void Engine::setNumberOfWorkers( unsigned numberOfWorkers )
-{
-    _numberOfWorkers = numberOfWorkers;
 }
 
 void Engine::adjustWorkMemorySize()
@@ -1143,7 +1137,7 @@ void Engine::performMILPSolverBoundedTightening()
         {
         case GlobalConfiguration::LP_RELAXATION:
         case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
-            _networkLevelReasoner->lpRelaxationPropagation( _numberOfWorkers );
+            _networkLevelReasoner->lpRelaxationPropagation();
             break;
 
         case GlobalConfiguration::MILP_ENCODING:

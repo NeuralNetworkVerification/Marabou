@@ -341,7 +341,6 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>( _verbosity );
-    _baseEngine->setNumberOfWorkers( _numWorkers );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;

@@ -135,11 +135,6 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Set the maximal number of threads to spawn
-    */
-    void setNumberOfWorkers( unsigned numberOfWorkers );
-
-    /*
       Apply the stack to the newly created SmtCore, returns false if UNSAT is
       found in this process.
     */
@@ -335,11 +330,6 @@ private:
     */
     unsigned _lastNumVisitedStates;
     unsigned long long _lastIterationWithProgress;
-
-    /*
-      Maximum number of workers to spawn
-    */
-    unsigned _numberOfWorkers;
 
     /*
       Perform a simplex step: compute the cost function, pick the

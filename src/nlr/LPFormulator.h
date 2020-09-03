@@ -87,7 +87,7 @@ public:
         std::atomic_uint &_cutoffs;
     };
 
-    LPFormulator( LayerOwner *layerOwner, unsigned numWorkers = 1 );
+    LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
 
     /*
@@ -129,12 +129,6 @@ private:
     LayerOwner *_layerOwner;
     bool _cutoffInUse;
     double _cutoffValue;
-    unsigned _numWorkers;
-
-    /*
-      Time to wait if no idle worker is availble
-    */
-    boost::chrono::milliseconds _waitTime;
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );

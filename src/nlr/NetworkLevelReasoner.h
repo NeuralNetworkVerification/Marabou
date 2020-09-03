@@ -104,7 +104,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
-    void lpRelaxationPropagation( unsigned numberOfWorkers );
+    void lpRelaxationPropagation();
     void MILPPropagation();
 
     void receiveTighterBound( Tightening tightening );
