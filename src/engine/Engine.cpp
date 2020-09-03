@@ -1106,6 +1106,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         performMILPSolverBoundedTightening();
 
+        if ( _splittingStrategy == DivideStrategy::Auto )
+        {
+            _splittingStrategy =
+                ( _preprocessedQuery.getInputVariables().size() <
+                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
+                DivideStrategy::LargestInterval : DivideStrategy::ReLUViolation;
+        }
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
