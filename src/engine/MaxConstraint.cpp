@@ -20,9 +20,9 @@
 #include "InputQuery.h"
 #include "List.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "MarabouError.h"
 #include "Statistics.h"
 #include <algorithm>
 
@@ -85,35 +85,39 @@ void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
-    tableau->registerToWatchVariable( this, _f );
     for ( unsigned element : _elements )
-    {
-        if ( element == _f )
-            continue;
         tableau->registerToWatchVariable( this, element );
-    }
+
+    if ( !_elements.exists( _f ) )
+        tableau->registerToWatchVariable( this, _f );
 }
 
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
-    tableau->unregisterToWatchVariable( this, _f );
+    // Guy: I think there's a bug here, not related to the recent changes:
+    // the list of _elements can change, and so some of them might not
+    // get propertly unregistered.
     for ( unsigned element : _elements )
-    {
-        if ( element == _f )
-            continue;
         tableau->unregisterToWatchVariable( this, element );
-    }
+
+    if ( !_elements.exists( _f ) )
+        tableau->unregisterToWatchVariable( this, _f );
 }
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    /*
+      Guy: I'm not sure I understand this condition. If _f is an
+      element, what is the _maxIndex? Is it always _f? Is it the
+      highest element if that's not _f?
+    */
     if ( ( _elements.exists( _f ) || variable != _f )
          &&
          ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
-	  {
-          _maxIndex = variable;
-          _maxIndexSet = true;
-	  }
+    {
+        _maxIndex = variable;
+        _maxIndexSet = true;
+    }
     _assignment[variable] = value;
 }
 
@@ -284,6 +288,8 @@ void MaxConstraint::resetMaxIndex()
     double maxValue = FloatUtils::negativeInfinity();
     _maxIndexSet = false;
 
+    // Guy: it looks to me like the max index should be set even if
+    // only _f is assigned, if _f is in _elements. What do you think?
     if ( _assignment.empty() ||
          ( _assignment.size() == 1 && _assignment.begin()->first == _f ) )
     {
@@ -348,7 +354,7 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 
         unsigned greaterVar;
         unsigned numGreater = 0;
-        for ( auto elem: _elements )
+        for ( auto elem : _elements )
         {
             if ( _assignment.exists( elem ) && FloatUtils::gt( _assignment[elem], fValue ) )
             {
@@ -391,9 +397,12 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
         }
     }
     else
-        // if elements includes _f, 
-        // this should return not a piecewise linear constraint but the linear constratint such as _f >= x1 /\ _f >= x2.
+    {
+        // if elements includes _f, this piecewise linear constraint
+        // can immediately be transformed into a conjunction of linear
+        // constraints
         splits.append( getSplit( _f ) );
+    }
 
     return splits;
 }
@@ -409,9 +418,12 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
     if ( !_elements.exists( _f ) )
         return getSplit( *( _elements.begin() ) );
     else
-        // if elements includes _f, 
-        // this should return not a piecewise linear constraint but the linear constratint such as _f >= x1 /\ _f >= x2.
+    {
+        // if elements includes _f, this piecewise linear constraint
+        // can immediately be transformed into a conjunction of linear
+        // constraints
         return getSplit( _f );
+    }
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
@@ -460,9 +472,11 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     _lowerBounds[newIndex] = _lowerBounds[oldIndex];
     _upperBounds[newIndex] = _upperBounds[oldIndex];
+
     if ( oldIndex == _f )
         _f = newIndex;
-    else
+
+    if ( _elements.exists( oldIndex ) )
 	{
 	    _elements.erase( oldIndex );
 	    _elements.insert( newIndex );
