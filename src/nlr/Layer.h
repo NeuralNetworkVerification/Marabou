@@ -117,11 +117,16 @@ public:
     bool neuronEliminated( unsigned neuron ) const;
     double getEliminatedNeuronValue( unsigned neuron ) const;
 
+    void reduceIndexAfterMerge (unsigned startIndex);
+
     /*
       For debugging purposes
     */
     void dump() const;
     static String typeToString( Type type );
+    bool operator==(const Layer & layer) const;
+    bool compareWights(const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer) const;
+
 
 private:
     unsigned _layerIndex;

@@ -228,10 +228,11 @@ void Layer::removeSourceLayer( unsigned sourceLayer )
 {
     ASSERT( _sourceLayers.exists( sourceLayer ) );
 
-    delete _layerToWeights[sourceLayer];
-    delete _layerToPositiveWeights[sourceLayer];
-    delete _layerToNegativeWeights[sourceLayer];
+    delete[] _layerToWeights[sourceLayer];
+    delete[] _layerToPositiveWeights[sourceLayer];
+    delete[] _layerToNegativeWeights[sourceLayer];
 
+    _sourceLayers.erase( sourceLayer );
     _layerToWeights.erase( sourceLayer );
     _layerToPositiveWeights.erase( sourceLayer );
     _layerToNegativeWeights.erase( sourceLayer );
@@ -1531,5 +1532,105 @@ void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned star
     for ( const auto &pair : copyOfWeights )
         map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
 }
+
+void Layer::reduceIndexAfterMerge (unsigned startIndex)
+{
+    if ( _layerIndex >= startIndex )
+    {
+        _layerIndex--;
+    }
+}
+
+bool Layer::operator==(const Layer & layer) const
+{
+    if ( _layerIndex != layer._layerIndex)
+    {
+        return false;
+    }
+
+    if ( _type != layer._type)
+    {
+        return false;
+    }
+
+    if ( _size != layer._size)
+    {
+        return false;
+    }
+
+    if ( _inputLayerSize != layer._inputLayerSize)
+    {
+        return false;
+    }
+
+    if ( ( _bias && !layer._bias) || ( !_bias && layer._bias) )
+    {
+        return false;
+    }
+
+    if (_bias && layer._bias )
+    {
+        if ( std::memcmp(_bias, layer._bias, _size) != 0)
+        {
+            return false;
+        }
+    }
+
+    if (! compareWights( _layerToWeights, layer._layerToWeights) )
+    {
+        return false;
+    }
+
+    if (! compareWights( _layerToPositiveWeights, layer._layerToPositiveWeights) )
+    {
+        return false;
+    }
+
+    if (! compareWights( _layerToNegativeWeights, layer._layerToNegativeWeights) )
+    {
+        return false;
+    }
+
+    if ( _sourceLayers != layer._sourceLayers)
+    {
+        return false;
+    }
+
+
+    return true;
+}
+
+
+bool Layer::compareWights(const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer) const
+{
+    if (map.size() != mapOfOtherLayer.size())
+    {
+        return false;
+    }
+    for ( const auto &pair : map )
+    {
+        unsigned key = pair.first;
+        double* value = pair.second;
+
+        if (! mapOfOtherLayer.exists(key))
+        {
+            return false;
+        }
+        if (sizeof(*value)/ sizeof(double) != sizeof(*mapOfOtherLayer[key])/ sizeof(double))
+        {
+            return false;
+        }
+        if ( std::memcmp(value, mapOfOtherLayer[key], sizeof(*value)/ sizeof(double)) != 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
+
+
 
 } // namespace NLR
