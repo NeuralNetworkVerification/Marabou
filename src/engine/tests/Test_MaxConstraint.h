@@ -337,109 +337,87 @@ public:
             }
 		}
 
-		//
-		// From here, the test is going to run tests for the case that f is included in elements.
-		//
-		elements.insert( f );
-		MaxConstraint max2( f, elements );
+        //
+        // From here, the test is going to run tests for the case that f is included in elements.
+        //
+        elements.insert( f );
+        MaxConstraint max2( f, elements );
 
-		for ( unsigned i = 1; i < 10; ++i )
-			max2.notifyVariableValue( i, i );
+        for ( unsigned i = 1; i < 10; ++i )
+            max2.notifyVariableValue( i, i );
 
-		// f = max(x_1 ... x_9)
-		// f = 1
-		max2.notifyVariableValue( f, 1 );
+        // f = max(x_1 ... x_9)
+        // f = 1
+        max2.notifyVariableValue( f, 1 );
 
-		splits = max2.getCaseSplits();
+        splits = max2.getCaseSplits();
 
-		// there are 9 possible phases
-		TS_ASSERT_EQUALS( splits.size(), 9U );
+        // there are 1 possible phases
+        TS_ASSERT_EQUALS( splits.size(), 1U );
 
-		split = splits.begin();
-		for ( unsigned i = 1; i < 10; ++i, ++split )
+        split = splits.begin();
+
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        // Since no upper bounds known for any of the variables, no bounds
+        TS_ASSERT_EQUALS( bounds.size(), 0U );
+
+        auto equations = split->getEquations();
+
+        TS_ASSERT_EQUALS( equations.size(), 8U );
+
+        auto cur = equations.begin();
+
+        for ( unsigned i = 2; i < 10;  ++i )
 		{
-            List<Tightening> bounds = split->getBoundTightenings();
-
-            // Since no upper bounds known for any of the variables, no bounds
-            TS_ASSERT_EQUALS( bounds.size(), 0U );
-
-            auto equations = split->getEquations();
-
-            TS_ASSERT_EQUALS( equations.size(), 9U );
-
-            auto cur = equations.begin();
-
             TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
             TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
-            TS_ASSERT_EQUALS( cur->_type, Equation::EQ );
+            TS_ASSERT_EQUALS( cur->_type, Equation::GE );
 
             auto addend = cur->_addends.begin();
 
-            TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+            TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
             TS_ASSERT_EQUALS( addend->_variable, i );
 
             ++addend;
 
-            TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+            TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
             TS_ASSERT_EQUALS( addend->_variable, f );
 
             ++cur;
-
-            for ( unsigned j = 1; j < 10;  ++j )
-            {
-                if ( i == j ) continue;
-
-                TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
-                TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
-                TS_ASSERT_EQUALS( cur->_type, Equation::GE );
-
-                auto addend = cur->_addends.begin();
-
-                TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
-                TS_ASSERT_EQUALS( addend->_variable, j );
-
-                ++addend;
-
-                TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-                TS_ASSERT_EQUALS( addend->_variable, i );
-
-                ++cur;
-            }
-		}
+        }
 	}
 
 	void test_max_phase_fixed()
     {
-		unsigned f = 1;
-		Set<unsigned> elements;
+        unsigned f = 1;
+        Set<unsigned> elements;
 
-		for ( unsigned i = 2; i < 10; ++i )
-			elements.insert( i );
+        for ( unsigned i = 2; i < 10; ++i )
+            elements.insert( i );
 
-		MaxConstraint max( f, elements );
+        MaxConstraint max( f, elements );
 
-		// all variables initially between 1 and 10
-		for ( unsigned i = 2; i < 10; i++ )
+        // all variables initially between 1 and 10
+        for ( unsigned i = 2; i < 10; i++ )
         {
-			max.notifyUpperBound( i, 10 );
-			max.notifyLowerBound( i, 1 );
-		}
+            max.notifyUpperBound( i, 10 );
+            max.notifyLowerBound( i, 1 );
+        }
 
-		TS_ASSERT( !max.phaseFixed() );
+        TS_ASSERT( !max.phaseFixed() );
 
-		// set x_2 to be at least 6, others to be at most 5
-		max.notifyLowerBound( 2, 6 );
-		for( unsigned i = 3; i < 10; i++ )
-			max.notifyUpperBound( i, 5 );
+        // set x_2 to be at least 6, others to be at most 5
+        max.notifyLowerBound( 2, 6 );
+        for( unsigned i = 3; i < 10; i++ )
+            max.notifyUpperBound( i, 5 );
 
-		// now, phase should be fixed to x_2; all other variables should be removed
-		TS_ASSERT( max.phaseFixed() );
-		TS_ASSERT_EQUALS( max.getParticipatingVariables().size(), 2U );
-
-        max.notifyVariableValue( 2, 7);
+        // now, phase should be fixed to x_2; all other variables should be removed
+        TS_ASSERT( max.phaseFixed() );
+        TS_ASSERT_EQUALS( max.getParticipatingVariables().size(), 2U );
 
         PiecewiseLinearCaseSplit validSplit = max.getValidCaseSplit();
-		auto equations = validSplit.getEquations();
+        auto equations = validSplit.getEquations();
 
         TS_ASSERT_EQUALS( equations.size(), 1U );
 
@@ -458,52 +436,70 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
-		//
-		// From here, the test is going to run tests for the case that f is included in elements.
-		//
-		MaxConstraint max2( f, elements );
+        //
+        // From here, the test is going to run tests for the case that f is included in elements.
+        //
+        Set<unsigned> elements2;
 
-		// all variables initially between 1 and 10
-		for ( unsigned i = 1; i < 10; i++ )
+        for ( unsigned i = 1; i < 10; ++i )
+            elements2.insert( i );
+
+        MaxConstraint max2( f, elements2 );
+
+        // all variables initially between 1 and 10
+        for ( unsigned i = 1; i < 10; i++ )
         {
-			max2.notifyUpperBound( i, 10 );
-			max2.notifyLowerBound( i, 1 );
+            max2.notifyUpperBound( i, 10 );
+            max2.notifyLowerBound( i, 1 );
 		}
 
-		TS_ASSERT( !max2.phaseFixed() );
 
-		// set x_2 to be at least 6, others to be at most 5
-		max2.notifyLowerBound( 2, 6 );
-		for( unsigned i = 3; i < 10; i++ )
-			max2.notifyUpperBound( i, 5 );
-		max2.notifyUpperBound( f, 5 );
+        // set x_2 and x_3 to be at least 6, others to be at most 5
+        max2.notifyLowerBound( 2, 6 );
+        max2.notifyLowerBound( 3, 6 );
+        for( unsigned i = 4; i < 10; i++ )
+            max2.notifyUpperBound( i, 5 );
+        max2.notifyUpperBound( f, 5 );
 
-		// now, phase should be fixed to x_2; all other variables should be removed
-		TS_ASSERT( max2.phaseFixed() );
-		TS_ASSERT_EQUALS( max2.getParticipatingVariables().size(), 2U );
-
-        max2.notifyVariableValue( 2, 7);
+        // now, phase should be fixed to x_2 and x_3; all other variables should be removed
+        TS_ASSERT( max2.phaseFixed() );
+        TS_ASSERT_EQUALS( max2.getParticipatingVariables().size(), 3U );
 
         validSplit = max2.getValidCaseSplit();
-		equations = validSplit.getEquations();
+        equations = validSplit.getEquations();
 
-        TS_ASSERT_EQUALS( equations.size(), 1U );
+        TS_ASSERT_EQUALS( equations.size(), 2U );
 
         cur = equations.begin();
         TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
         TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
-        TS_ASSERT_EQUALS( cur->_type, Equation::EQ );
+        TS_ASSERT_EQUALS( cur->_type, Equation::GE );
 
         addend = cur->_addends.begin();
 
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
         TS_ASSERT_EQUALS( addend->_variable, 2U );
 
         ++addend;
 
-        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
-	}
+
+        ++cur;
+        TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
+        TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
+        TS_ASSERT_EQUALS( cur->_type, Equation::GE );
+
+        addend = cur->_addends.begin();
+
+        TS_ASSERT_EQUALS( addend->_coefficient, -1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 3U );
+
+        ++addend;
+
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, f );
+    }
 
 	void test_max_var_elims()
 	{

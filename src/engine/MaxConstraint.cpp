@@ -376,28 +376,42 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
 
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
-    if ( phaseFixed() )
+    if ( phaseFixed() && !_elements.exists( _f ) )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     ASSERT(	_assignment.exists( _f ) );
 
     List<PiecewiseLinearCaseSplit> splits;
-    for ( unsigned element : _elements )
-	{
-        splits.append( getSplit( element ) );
-	}
+
+    if ( !_elements.exists( _f ) )
+    {
+        for ( unsigned element : _elements )
+        {
+            splits.append( getSplit( element ) );
+        }
+    }
+    else
+        // if elements includes _f, 
+        // this should return not a piecewise linear constraint but the linear constratint such as _f >= x1 /\ _f >= x2.
+        splits.append( getSplit( _f ) );
+
     return splits;
 }
 
 bool MaxConstraint::phaseFixed() const
 {
-    return _elements.size() == 1;
+    return _elements.size() == 1 || _elements.exists( _f );
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
-    return getSplit( *( _elements.begin() ) );
+    if ( !_elements.exists( _f ) )
+        return getSplit( *( _elements.begin() ) );
+    else
+        // if elements includes _f, 
+        // this should return not a piecewise linear constraint but the linear constratint such as _f >= x1 /\ _f >= x2.
+        return getSplit( _f );
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
@@ -405,36 +419,39 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
 
-    // maxArg - f = 0
-    Equation maxEquation( Equation::EQ );
-    maxEquation.addAddend( 1, argMax );
-    maxEquation.addAddend( -1, _f );
-    maxEquation.setScalar( 0 );
-    maxPhase.addEquation( maxEquation );
+    if ( argMax != _f )
+    {
+        // maxArg - f = 0
+        Equation maxEquation( Equation::EQ );
+        maxEquation.addAddend( 1, argMax );
+        maxEquation.addAddend( -1, _f );
+        maxEquation.setScalar( 0 );
+        maxPhase.addEquation( maxEquation );
+    }
 
     // store bound tightenings as well
     // go over all other elements;
     // their upper bound cannot exceed upper bound of argmax
     for ( unsigned other : _elements )
-	{
-	    if ( argMax == other )
+    {
+        if ( argMax == other )
             continue;
 
-	    Equation gtEquation( Equation::GE );
+        Equation gtEquation( Equation::GE );
 
-	    // argMax >= other
-	    gtEquation.addAddend( -1, other );
-	    gtEquation.addAddend( 1, argMax );
-	    gtEquation.setScalar( 0 );
-	    maxPhase.addEquation( gtEquation );
+        // argMax >= other
+        gtEquation.addAddend( -1, other );
+        gtEquation.addAddend( 1, argMax );
+        gtEquation.setScalar( 0 );
+        maxPhase.addEquation( gtEquation );
 
         if ( _upperBounds.exists( argMax ) )
         {
             if ( !_upperBounds.exists( other ) ||
-                 FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
+                FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
                 maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
         }
-	}
+    }
 
     return maxPhase;
 }
