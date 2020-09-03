@@ -245,6 +245,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
 
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
+    Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
     // is added back to the queue.
@@ -253,10 +254,11 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     {
         GurobiWrapper *gurobi = new GurobiWrapper();
         gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+        solverToIndex[gurobi] = i;
         enqueue( freeSolvers, gurobi );
     }
 
-    std::list<boost::thread> threads;
+    boost::thread threads[_numWorkers];
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
@@ -291,10 +293,11 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
             if ( infeasible )
             {
-                for ( auto &thread : threads )
+                // infeasibility is derived, interupt all active threads
+                for ( unsigned i = 0; i < _numWorkers; ++i )
                 {
-                    thread.interrupt();
-                    thread.join();
+                    threads[i].interrupt();
+                    threads[i].join();
                 }
                 clearSolverQueue( freeSolvers );
                 throw InfeasibleQueryException();
@@ -318,15 +321,14 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                      std::ref( signChanges ),
                                      std::ref( cutoffs ) );
 
-            threads.push_back( boost::thread
-                               ( tightenSingleVariableBoundsWithLPRelaxation,
-                                 argument ) );
+            threads[solverToIndex[freeSolver]] = boost::thread
+                ( tightenSingleVariableBoundsWithLPRelaxation, argument );
         }
     }
 
-    for ( auto &thread : threads )
+    for ( unsigned i = 0; i < _numWorkers; ++i )
     {
-        thread.join();
+        threads[i].join();
     }
 
     gurobiEnd = TimeUtils::sampleMicro();
