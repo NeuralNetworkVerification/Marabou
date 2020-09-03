@@ -258,7 +258,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         enqueue( freeSolvers, gurobi );
     }
 
-    boost::thread threads[_numWorkers];
+    boost::thread *threads = new boost::thread[_numWorkers];
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
