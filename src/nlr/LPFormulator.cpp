@@ -303,6 +303,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                 throw InfeasibleQueryException();
             }
 
+            // Wait until there is an idle solver
             GurobiWrapper *freeSolver;
             while ( !freeSolvers.pop( freeSolver ) )
                 boost::this_thread::sleep_for( _waitTime );
@@ -312,6 +313,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             createLPRelaxation( layers, *freeSolver, layer->getLayerIndex() );
             mtx.unlock();
 
+            // spawn a thread to tighten the bounds for the current variable
             ThreadArgument argument( freeSolver, layer,
                                      i, currentLb, currentUb,
                                      _cutoffInUse, _cutoffValue,
