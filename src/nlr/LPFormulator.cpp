@@ -338,6 +338,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
 
     clearSolverQueue( freeSolvers );
+
+    if ( infeasible )
+        throw InfeasibleQueryException();
 }
 
 void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument )
