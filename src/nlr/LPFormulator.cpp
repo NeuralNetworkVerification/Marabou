@@ -245,15 +245,15 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
 
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
+    // Create a queue of free workers
+    // When a worker is working, it is popped off the queue, when it is done, it
+    // is added back to the queue.
     SolverQueue freeSolvers ( _numWorkers );
     for ( unsigned i = 0; i < _numWorkers; ++i )
     {
         GurobiWrapper *gurobi = new GurobiWrapper();
         gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
-        if ( !freeSolvers.push( gurobi ) )
-        {
-            ASSERT( false );
-        }
+        enqueue( freeSolvers, gurobi );
     }
 
     std::list<boost::thread> threads;
@@ -296,6 +296,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                     thread.interrupt();
                     thread.join();
                 }
+                clearSolverQueue( freeSolvers );
                 throw InfeasibleQueryException();
             }
 
@@ -334,113 +335,94 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ).ascii() );
     LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
 
-    GurobiWrapper *freeSolver;
-    while ( freeSolvers.pop( freeSolver ) )
-        delete freeSolver;
-
+    clearSolverQueue( freeSolvers );
 }
 
 void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument )
 {
-    GurobiWrapper *gurobi = argument._gurobi;
-    Layer *layer = argument._layer;
-    unsigned index = argument._index;
-    double currentLb = argument._currentLb;
-    double currentUb = argument._currentUb;
-    bool cutoffInUse = argument._cutoffInUse;
-    double cutoffValue = argument._cutoffValue;
-    LayerOwner *layerOwner = argument._layerOwner;
-    SolverQueue &freeSolvers = argument._freeSolvers;
-    std::mutex &mtx = argument._mtx;
-    std::atomic_bool &infeasible = argument._infeasible;
-    std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
-    std::atomic_uint &signChanges = argument._signChanges;
-    std::atomic_uint &cutoffs = argument._cutoffs;
-
-    LPFormulator_LOG( Stringf( "Tightening bounds for layer %u index %u",
-                               layer->getLayerIndex(), index ).ascii() );
-
-    unsigned variable = layer->neuronToVariable( index );
-    Stringf variableName( "x%u", variable );
-
-    LPFormulator_LOG( Stringf( "Computing upperbound..." ).ascii() );
-    double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
-                                    cutoffValue, &infeasible );
-    if ( infeasible )
+    try
     {
-        if ( !freeSolvers.push( gurobi ) )
+        GurobiWrapper *gurobi = argument._gurobi;
+        Layer *layer = argument._layer;
+        unsigned index = argument._index;
+        double currentLb = argument._currentLb;
+        double currentUb = argument._currentUb;
+        bool cutoffInUse = argument._cutoffInUse;
+        double cutoffValue = argument._cutoffValue;
+        LayerOwner *layerOwner = argument._layerOwner;
+        SolverQueue &freeSolvers = argument._freeSolvers;
+        std::mutex &mtx = argument._mtx;
+        std::atomic_bool &infeasible = argument._infeasible;
+        std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
+        std::atomic_uint &signChanges = argument._signChanges;
+        std::atomic_uint &cutoffs = argument._cutoffs;
+
+        LPFormulator_LOG( Stringf( "Tightening bounds for layer %u index %u",
+                                   layer->getLayerIndex(), index ).ascii() );
+
+        unsigned variable = layer->neuronToVariable( index );
+        Stringf variableName( "x%u", variable );
+
+        LPFormulator_LOG( Stringf( "Computing upperbound..." ).ascii() );
+        double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
+                                        cutoffValue, &infeasible );
+        LPFormulator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
+
+        // Store the new bound if it is tighter
+        if ( ub < currentUb )
         {
-            ASSERT( false );
-        }
-        return;
-    }
-    LPFormulator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
+            if ( FloatUtils::isPositive( currentUb ) &&
+                 !FloatUtils::isPositive( ub ) )
+                ++signChanges;
 
-    // Store the new bound if it is tighter
-    if ( ub < currentUb )
-    {
-        if ( FloatUtils::isPositive( currentUb ) &&
-             !FloatUtils::isPositive( ub ) )
-            ++signChanges;
+            mtx.lock();
+            layer->setUb( index, ub );
+            layerOwner->receiveTighterBound( Tightening( variable,
+                                                         ub,
+                                                         Tightening::UB ) );
+            mtx.unlock();
 
-        mtx.lock();
-        layer->setUb( index, ub );
-        layerOwner->receiveTighterBound( Tightening( variable,
-                                                     ub,
-                                                     Tightening::UB ) );
-        mtx.unlock();
+            ++tighterBoundCounter;
 
-        ++tighterBoundCounter;
-
-        if ( cutoffInUse && ub < cutoffValue )
-        {
-            ++cutoffs;
-            if ( !freeSolvers.push( gurobi ) )
+            if ( cutoffInUse && ub < cutoffValue )
             {
-                ASSERT( false );
+                ++cutoffs;
+                enqueue( freeSolvers, gurobi );
+                return;
             }
-            return;
         }
-    }
 
-    LPFormulator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
-    gurobi->reset();
-    double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
-                                    cutoffValue, &infeasible );
-    if ( infeasible )
-    {
-        if ( !freeSolvers.push( gurobi ) )
+        LPFormulator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
+        gurobi->reset();
+        double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                        cutoffValue, &infeasible );
+        LPFormulator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
+
+        // Store the new bound if it is tighter
+        if ( lb > currentLb )
         {
-            ASSERT( false );
+            if ( FloatUtils::isNegative( currentLb ) &&
+                 !FloatUtils::isNegative( lb ) )
+                ++signChanges;
+
+            mtx.lock();
+            layer->setLb( index, lb );
+            layerOwner->receiveTighterBound( Tightening( variable,
+                                                         lb,
+                                                         Tightening::LB ) );
+            mtx.unlock();
+            ++tighterBoundCounter;
+
+            if ( cutoffInUse && lb > cutoffValue )
+            {
+                ++cutoffs;
+            }
         }
-        return;
+        enqueue( freeSolvers, gurobi );
     }
-    LPFormulator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
-
-    // Store the new bound if it is tighter
-    if ( lb > currentLb )
+    catch ( boost::thread_interrupted& )
     {
-        if ( FloatUtils::isNegative( currentLb ) &&
-             !FloatUtils::isNegative( lb ) )
-            ++signChanges;
-
-        mtx.lock();
-        layer->setLb( index, lb );
-        layerOwner->receiveTighterBound( Tightening( variable,
-                                                     lb,
-                                                     Tightening::LB ) );
-        mtx.unlock();
-        ++tighterBoundCounter;
-
-        if ( cutoffInUse && lb > cutoffValue )
-        {
-            ++cutoffs;
-        }
-    }
-
-    if ( !freeSolvers.push( gurobi ) )
-    {
-        ASSERT( false );
+        enqueue( argument._freeSolvers, argument._gurobi );
     }
 }
 
@@ -711,6 +693,22 @@ void LPFormulator::setCutoff( double cutoff )
 {
     _cutoffInUse = true;
     _cutoffValue = cutoff;
+}
+
+void LPFormulator::clearSolverQueue( SolverQueue &freeSolvers )
+{
+    // Remove the solvers
+    GurobiWrapper *freeSolver;
+    while ( freeSolvers.pop( freeSolver ) )
+        delete freeSolver;
+}
+
+void LPFormulator::enqueue( SolverQueue &solvers, GurobiWrapper *solver )
+{
+    if ( !solvers.push( solver ) )
+    {
+        ASSERT( false );
+    }
 }
 
 } // namespace NLR

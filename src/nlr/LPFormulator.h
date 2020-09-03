@@ -161,6 +161,12 @@ private:
     */
     static void tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument );
 
+    /*
+      Free all the solvers in the SolverQueue
+    */
+    static void clearSolverQueue( SolverQueue &freeSolvers );
+
+    static void enqueue( SolverQueue &solvers, GurobiWrapper *solver );
 };
 
 } // namespace NLR
