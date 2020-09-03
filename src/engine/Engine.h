@@ -135,6 +135,11 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
+      Set the internal splitting strategy
+    */
+    void setSplittingStrategy( DivideStrategy strategy );
+
+    /*
       Apply the stack to the newly created SmtCore, returns false if UNSAT is
       found in this process.
     */
@@ -148,7 +153,7 @@ public:
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
 
     /*
       Call-back from QueryDividers
@@ -335,6 +340,11 @@ private:
       Interval split is performed previously.
     */
     unsigned _splitsSinceLastSplitInterval;
+
+    /*
+      Strategy used for internal splitting
+    */
+    DivideStrategy _splittingStrategy;
 
     /*
       Perform a simplex step: compute the cost function, pick the

@@ -69,6 +69,7 @@ void Options::initializeDefaultValues()
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[SPLITTING_STRATEGY] = "";
+    _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
 }
 
@@ -102,10 +103,27 @@ SnCDivideStrategy Options::getSnCDivideStrategy( unsigned option ) const
     String strategyString = String( _stringOptions.get( option ) );
     if ( strategyString == "polarity" )
         return SnCDivideStrategy::Polarity;
+    else if ( strategyString == "earliest-relu" )
+        return SnCDivideStrategy::EarliestReLU;
     else if ( strategyString == "largest-interval" )
         return SnCDivideStrategy::LargestInterval;
     else
         return SnCDivideStrategy::Auto;
+}
+
+DivideStrategy Options::getDivideStrategy( unsigned option ) const
+{
+    String strategyString = String( _stringOptions.get( option ) );
+    if ( strategyString == "polarity" )
+        return DivideStrategy::Polarity;
+    else if ( strategyString == "earliest-relu" )
+        return DivideStrategy::EarliestReLU;
+    else if ( strategyString == "relu-violation" )
+        return DivideStrategy::ReLUViolation;
+    else if ( strategyString == "largest-interval" )
+        return DivideStrategy::LargestInterval;
+    else
+        return DivideStrategy::Auto;
 }
 
 //

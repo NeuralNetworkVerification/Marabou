@@ -19,6 +19,7 @@
 #include "MString.h"
 #include "Map.h"
 #include "OptionParser.h"
+#include "DivideStrategy.h"
 #include "SnCDivideStrategy.h"
 
 #include "boost/program_options.hpp"
@@ -73,6 +74,7 @@ public:
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
         SPLITTING_STRATEGY,
+        SNC_SPLITTING_STRATEGY,
         QUERY_DUMP_FILE,
     };
 
@@ -94,6 +96,7 @@ public:
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
     SnCDivideStrategy getSnCDivideStrategy( unsigned option ) const;
+    DivideStrategy getDivideStrategy( unsigned option ) const;
 
     /*
       Options that are determined at compile time

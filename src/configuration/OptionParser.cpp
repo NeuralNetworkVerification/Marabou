@@ -68,7 +68,10 @@ void OptionParser::initialize()
           "(DNC) Number of workers" )
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) ),
-          "The splitting strategy" )
+          "The internal splitting strategy" )
+        ( "snc-split-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
+          "The splitting strategy for the SnC mode" )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) ),
           "(DNC) Number of times to initially bisect the input region" )

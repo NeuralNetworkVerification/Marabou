@@ -43,7 +43,8 @@ public:
 
     DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
                 initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                SnCDivideStrategy divideStrategy, InputQuery *inputQuery,
+                DivideStrategy splittingStrategy,  SnCDivideStrategy
+                snCSplittingStrategy, InputQuery *inputQuery,
                 unsigned verbosity );
 
     ~DnCManager();
@@ -158,9 +159,14 @@ private:
     float _timeoutFactor;
 
     /*
+      The strategy for internal splitting
+    */
+    DivideStrategy _splittingStrategy;
+
+    /*
       The strategy for dividing a query
     */
-    SnCDivideStrategy _divideStrategy;
+    SnCDivideStrategy _snCSplittingStrategy;
 
     /*
       Alternatively, we could construct the DnCManager by directly providing the

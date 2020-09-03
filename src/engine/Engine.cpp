@@ -49,6 +49,7 @@ Engine::Engine( unsigned verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splitsSinceLastSplitInterval( 0 )
+    , _splittingStrategy( GlobalConfiguration::SPLITTING_HEURISTICS )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -74,6 +75,11 @@ Engine::~Engine()
 void Engine::setVerbosity( unsigned verbosity )
 {
     _verbosity = verbosity;
+}
+
+void Engine::setSplittingStrategy( DivideStrategy strategy )
+{
+    _splittingStrategy = strategy;
 }
 
 void Engine::adjustWorkMemorySize()
@@ -2071,17 +2077,18 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
     }
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( strategy == DivideStrategy::Polarity )
+    if ( _splittingStrategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
-    else if ( strategy == DivideStrategy::EarliestReLU )
+    else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( strategy == DivideStrategy::LargestInterval &&
-              _smtCore.getStackDepth() % GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+    else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
+              _smtCore.getStackDepth() %
+              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
 
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
