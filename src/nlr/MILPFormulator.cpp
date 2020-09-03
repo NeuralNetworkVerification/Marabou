@@ -191,7 +191,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             Stringf variableName( "x%u", variable );
 
             // LP relaxation, lower bound
-            newLb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MIN, variableName, _cutoffs, layerIndex );
+            newLb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MIN, variableName, layerIndex );
             storeLbIfNeeded( layer, i, variable, newLb );
             if ( _cutoffInUse && newLb > _cutoffValue )
             {
@@ -200,7 +200,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             }
 
             // LP relaxation, upper bound
-            newUb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MAX, variableName, _cutoffs, layerIndex );
+            newUb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MAX, variableName, layerIndex );
             storeUbIfNeeded( layer, i, variable, newUb );
             if ( _cutoffInUse && newUb < _cutoffValue )
             {

@@ -120,7 +120,6 @@ public:
     double solveLPRelaxation( GurobiWrapper &gurobi,
                               const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax, String variableName,
-                              double cutoffValue,
                               unsigned lastLayer = UINT_MAX );
 
     void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
@@ -131,6 +130,10 @@ private:
     bool _cutoffInUse;
     double _cutoffValue;
     unsigned _numWorkers;
+
+    /*
+      Time to wait if no idle worker is availble
+    */
     boost::chrono::milliseconds _waitTime;
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,

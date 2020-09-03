@@ -21,7 +21,6 @@
 #include "NLRError.h"
 #include "TimeUtils.h"
 
-#include "Vector.h"
 #include <boost/thread.hpp>
 
 namespace NLR {
@@ -42,11 +41,11 @@ LPFormulator::~LPFormulator()
 double LPFormulator::solveLPRelaxation( GurobiWrapper &gurobi,
                                         const Map<unsigned, Layer *> &layers,
                                         MinOrMax minOrMax, String variableName,
-                                        double cutoffValue, unsigned lastLayer )
+                                        unsigned lastLayer )
 {
     gurobi.resetModel();
     createLPRelaxation( layers, gurobi, lastLayer );
-    return optimizeWithGurobi( gurobi, minOrMax, variableName, cutoffValue );
+    return optimizeWithGurobi( gurobi, minOrMax, variableName, _cutoffValue );
 }
 
 double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
