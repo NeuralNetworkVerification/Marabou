@@ -178,7 +178,9 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         other._layerIndexToLayer[newLayer->getLayerIndex()] = newLayer;
     }
 
-    other._constraintsInTopologicalOrder = _constraintsInTopologicalOrder;
+    // Other has fresh copies of the PLCs, so its topological order
+    // shouldn't contain any stale data
+    other._constraintsInTopologicalOrder.clear();
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -275,9 +277,7 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
         result.setUpperBound( variable, inputLayer->getUb( i ) );
     }
 
-    result._networkLevelReasoner = new NLR::NetworkLevelReasoner;
-    storeIntoOther( *result._networkLevelReasoner );
-
+    result.constructNetworkLevelReasoner();
     return result;
 }
 
@@ -393,8 +393,6 @@ void NetworkLevelReasoner::mergeConsecutiveWSLayers()
         else
             ++layer;
     }
-
-    reindexNeurons();
 }
 
 bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex )

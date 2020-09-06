@@ -53,8 +53,10 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
      */
     if ( query._networkLevelReasoner )
     {
-        query._networkLevelReasoner->mergeConsecutiveWSLayers();
-        _preprocessed = query._networkLevelReasoner->generateInputQuery();
+        unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
+        _preprocessed._networkLevelReasoner->mergeConsecutiveWSLayers();
+        _preprocessed = _preprocessed._networkLevelReasoner->generateInputQuery();
+        _preprocessed.setNumberOfVariables( oldNumberOfVariables );
     }
 
     // todo - add printing of summary after preprocessing?
@@ -562,7 +564,9 @@ void Preprocessor::collectFixedValues()
         else if ( !usedVariables.exists( i ) )
         {
             // If possible, choose a value that matches the debugging
-            // solution. Otherwise, pick the lower bound
+            // solution. Otherwise, pick an arbitrary values. If the
+            // bounds are infinite for this variable, set them
+            // arbitrarily as well.
             if ( _preprocessed._debuggingSolution.exists( i ) &&
                  _preprocessed._debuggingSolution[i] >= _preprocessed.getLowerBound( i ) &&
                  _preprocessed._debuggingSolution[i] <= _preprocessed.getUpperBound( i ) )
@@ -571,14 +575,24 @@ void Preprocessor::collectFixedValues()
             }
             else
             {
-                _fixedVariables[i] = _preprocessed.getLowerBound( i );
+                if ( FloatUtils::isFinite( _preprocessed.getLowerBound( i ) ) )
+                    _fixedVariables[i] = _preprocessed.getLowerBound( i );
+                else if ( FloatUtils::isFinite( _preprocessed.getUpperBound( i ) ) )
+                    _fixedVariables[i] = _preprocessed.getUpperBound( i );
+                else
+                    _fixedVariables[i] = 0;
             }
+
+            _preprocessed.setLowerBound( i, _fixedVariables[i] );
+            _preprocessed.setUpperBound( i, _fixedVariables[i] );
         }
-	}
+    }
 }
 
 void Preprocessor::eliminateVariables()
 {
+    printf( "PP: eliminateVariables starting!\n" );
+
     // If there's nothing to eliminate, we're done
     if ( _fixedVariables.empty() && _mergedVariables.empty() )
         return;
