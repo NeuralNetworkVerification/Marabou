@@ -20,7 +20,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 
-#define INPUT_QUERY_LOG( x, ... ) LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Preprocessor: %s\n", x )
+#define INPUT_QUERY_LOG( x, ... ) LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
 
 InputQuery::InputQuery()
     : _networkLevelReasoner( NULL )

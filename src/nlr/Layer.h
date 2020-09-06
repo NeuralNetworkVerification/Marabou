@@ -117,7 +117,7 @@ public:
     bool neuronEliminated( unsigned neuron ) const;
     double getEliminatedNeuronValue( unsigned neuron ) const;
 
-    void reduceIndexAfterMerge (unsigned startIndex);
+    void reduceIndexAfterMerge( unsigned startIndex );
 
     /*
       For debugging purposes

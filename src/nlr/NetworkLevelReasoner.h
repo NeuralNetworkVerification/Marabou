@@ -177,6 +177,13 @@ private:
                              unsigned middleDimension,
                              unsigned outputDimension );
     void reduceLayerIndex( unsigned layer, unsigned startIndex );
+
+    /*
+      If the NLR is manipulated manually in order to generate a new
+      input query, this method can be used to assign variable indices
+      to all neurons in the network
+    */
+    void reindexNeurons();
 };
 
 } // namespace NLR

@@ -177,6 +177,8 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         newLayer->setLayerOwner( &other );
         other._layerIndexToLayer[newLayer->getLayerIndex()] = newLayer;
     }
+
+    other._constraintsInTopologicalOrder = _constraintsInTopologicalOrder;
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -273,7 +275,23 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
         result.setUpperBound( variable, inputLayer->getUb( i ) );
     }
 
+    result._networkLevelReasoner = new NLR::NetworkLevelReasoner;
+    storeIntoOther( *result._networkLevelReasoner );
+
     return result;
+}
+
+void NetworkLevelReasoner::reindexNeurons()
+{
+    unsigned index = 0;
+    for ( auto &it : _layerIndexToLayer )
+    {
+        for ( unsigned i = 0; i < it.second->getSize(); ++i )
+        {
+            it.second->setNeuronVariable( i, index );
+            ++index;
+        }
+    }
 }
 
 void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
@@ -371,12 +389,12 @@ void NetworkLevelReasoner::mergeConsecutiveWSLayers()
     while ( layer < _layerIndexToLayer.size() )
     {
         if ( suitableForMerging( layer ) )
-        {
-            mergeWSLayers(layer);
-        }
+            mergeWSLayers( layer );
         else
             ++layer;
     }
+
+    reindexNeurons();
 }
 
 bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex )
@@ -434,8 +452,8 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
         unsigned outputDimension = secondLayer->getSize();
 
         // Compute new weights
-        const double *firstLayerMatrix = firstLayer->getWeightMatrix(previousToFirstLayerIndex);
-        const double *secondLayerMatrix = secondLayer->getWeightMatrix(firstLayerIndex);
+        const double *firstLayerMatrix = firstLayer->getWeightMatrix( previousToFirstLayerIndex );
+        const double *secondLayerMatrix = secondLayer->getWeightMatrix( firstLayerIndex );
 
         double *newWeightMatrix = multiplyWeights(firstLayerMatrix,
                                                   secondLayerMatrix,
@@ -444,21 +462,21 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
                                                   outputDimension);
 
         // Update bias for second layer
-        for (unsigned targetNeuron = 0; targetNeuron < secondLayer->getSize(); ++targetNeuron )
+        for ( unsigned targetNeuron = 0; targetNeuron < secondLayer->getSize(); ++targetNeuron )
         {
             auto newBias = secondLayer->getBias( targetNeuron );
-            for ( unsigned sourceNeuron = 0; sourceNeuron < firstLayer->getSize(); ++sourceNeuron)
+            for ( unsigned sourceNeuron = 0; sourceNeuron < firstLayer->getSize(); ++sourceNeuron )
             {
-                newBias += ( firstLayer->getBias( sourceNeuron ) * secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron) );
+                newBias += ( firstLayer->getBias( sourceNeuron ) * secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron ) );
             }
             secondLayer->setBias( targetNeuron, newBias );
         }
 
         // Adjust the sources of the second layer
-        secondLayer->addSourceLayer(previousToFirstLayerIndex, inputLayerToFirst->getSize());
-        for (unsigned sourceNeuron = 0; sourceNeuron < inputDimension; ++sourceNeuron)
+        secondLayer->addSourceLayer( previousToFirstLayerIndex, inputLayerToFirst->getSize() );
+        for ( unsigned sourceNeuron = 0; sourceNeuron < inputDimension; ++sourceNeuron )
         {
-            for (unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron)
+            for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
             {
                 double weight = newWeightMatrix[sourceNeuron * outputDimension + targetNeuron];
                 secondLayer->setWeight(previousToFirstLayerIndex, sourceNeuron, targetNeuron,
@@ -470,17 +488,17 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
     }
 
     // Remove the first layer from second layer's sources
-    secondLayer->removeSourceLayer(firstLayerIndex);
+    secondLayer->removeSourceLayer( firstLayerIndex );
 
     // Finally, remove the first layer from the map and delete it
-    _layerIndexToLayer.erase(firstLayerIndex);
+    _layerIndexToLayer.erase( firstLayerIndex );
     delete firstLayer;
 
     // Adjust the indices of all layers starting from secondLayerIndex
     // and higher
     for (unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i)
     {
-        reduceLayerIndex(i, firstLayerIndex);
+        reduceLayerIndex( i, firstLayerIndex );
     }
 }
 
