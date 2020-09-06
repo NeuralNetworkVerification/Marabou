@@ -94,9 +94,6 @@ void MaxConstraint::registerAsWatcher( ITableau *tableau )
 
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
-    // Guy: I think there's a bug here, not related to the recent changes:
-    // the list of _elements can change, and so some of them might not
-    // get propertly unregistered.
     for ( unsigned element : _elements )
         tableau->unregisterToWatchVariable( this, element );
 
@@ -106,11 +103,6 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-    /*
-      Guy: I'm not sure I understand this condition. If _f is an
-      element, what is the _maxIndex? Is it always _f? Is it the
-      highest element if that's not _f?
-    */
     if ( ( _elements.exists( _f ) || variable != _f )
          &&
          ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
