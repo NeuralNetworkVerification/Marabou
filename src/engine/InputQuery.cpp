@@ -692,9 +692,14 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
+
+    auto *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] );
+        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] );
 
         // Add the new neuron
         nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
