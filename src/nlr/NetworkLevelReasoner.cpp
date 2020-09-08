@@ -257,7 +257,12 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
     // Number of variables
     unsigned numberOfVariables = 0;
     for ( const auto &it : _layerIndexToLayer )
-        numberOfVariables += it.second->getSize();
+    {
+        unsigned maxVariable = it.second->getMaxVariable();
+        if ( maxVariable > numberOfVariables )
+            numberOfVariables = maxVariable;
+    }
+    ++numberOfVariables;
     result.setNumberOfVariables( numberOfVariables );
 
     // Handle the various layers
