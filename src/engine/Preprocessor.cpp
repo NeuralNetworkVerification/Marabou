@@ -49,8 +49,8 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed.constructNetworkLevelReasoner();
 
     /*
-     * Merge subsequent WS layers
-     */
+      Merge subsequent WS layers
+    */
     if ( query._networkLevelReasoner )
     {
         unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
