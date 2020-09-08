@@ -598,8 +598,8 @@ bool InputQuery::constructNetworkLevelReasoner()
         nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );
         handledVariableToLayer[inputVariable] = 0;
 
-        layer->setLb( inputVariable, _lowerBounds[inputVariable] );
-        layer->setUb( inputVariable, _upperBounds[inputVariable] );
+        layer->setLb( index, _lowerBounds[inputVariable] );
+        layer->setUb( index, _upperBounds[inputVariable] );
 
         ++index;
     }

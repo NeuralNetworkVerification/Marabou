@@ -275,10 +275,9 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
         result.markOutputVariable( outputLayer->neuronToVariable( i ), i );
 
     // Store any known bounds of all layers
-
-    for ( unsigned layerIndex = 0;  layerIndex < getNumberOfLayers(); ++layerIndex )
+    for ( const auto &layerPair : _layerIndexToLayer )
     {
-        auto layer = _layerIndexToLayer[layerIndex];
+        const Layer *layer = layerPair.second;
         for ( unsigned i = 0; i < layer->getSize(); ++i )
         {
             unsigned variable = layer->neuronToVariable( i );
@@ -286,8 +285,6 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
             result.setUpperBound( variable, layer->getUb( i ) );
         }
     }
-
-
 
     result.constructNetworkLevelReasoner();
     return result;
