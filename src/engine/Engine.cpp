@@ -1096,7 +1096,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
-        performMILPSolverBoundedTightening();
+        if ( preprocess )
+            performMILPSolverBoundedTightening();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
