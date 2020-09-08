@@ -183,7 +183,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( _tableau->basisMatrixAvailable() )
             {
-                // explicitBasisBoundTightening();
+//                if ( explicitBasisBoundTighteningFlag )
+//                {
+//                    explicitBasisBoundTightening();
+//                }
+
                 applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
             }
@@ -1054,12 +1058,7 @@ void Engine::initializeNetworkLevelReasoning()
 
     if ( _networkLevelReasoner )
     {
-        _networkLevelReasoner->setTableau( _tableau );
-        _networkLevelReasoner->dumpTopology();
-    }
-    else
-    {
-        printf( "Engine: no NLR!\n" );
+        _networkLevelReasoner->setTableau(_tableau);
     }
 }
 

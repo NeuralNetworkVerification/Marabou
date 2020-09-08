@@ -54,13 +54,9 @@ public:
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
     void removeSourceLayer( unsigned sourceLayer );
-
     const Map<unsigned, unsigned> &getSourceLayers() const;
-
     const double *getWeightMatrix( unsigned sourceLayer ) const;
-
-    void reduceIndexFromAllMaps( unsigned startIndex ); // todo added
-
+    void reduceIndexFromAllMaps( unsigned startIndex );
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,
                     unsigned targetNeuron,
@@ -114,10 +110,8 @@ public:
     void eliminateVariable( unsigned variable, double value );
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
-
     bool neuronEliminated( unsigned neuron ) const;
     double getEliminatedNeuronValue( unsigned neuron ) const;
-
     void reduceIndexAfterMerge( unsigned startIndex );
 
     /*
@@ -125,8 +119,8 @@ public:
     */
     void dump() const;
     static String typeToString( Type type );
-    bool operator==(const Layer & layer) const;
-    bool compareWights(const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer) const;
+    bool operator==( const Layer & layer ) const;
+    bool compareWights( const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer ) const;
 
 
 private:

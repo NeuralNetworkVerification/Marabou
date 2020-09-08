@@ -355,7 +355,7 @@ public:
             nlr.evaluate(input, output);
             expectedNlr.evaluate(input, expectedOutput);
 
-            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0)
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 )
         }
 
         delete[] input;
@@ -612,7 +612,7 @@ public:
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
 
-            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0)
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 )
         }
 
         delete[] input;
@@ -821,10 +821,10 @@ public:
             input[0] = ( i+19 )/2 -7;
             input[1] = ( 3*i )/4 -1;
 
-            nlr.evaluate(input, output);
-            expectedNlr.evaluate(input, expectedOutput);
+            nlr.evaluate( input, output );
+            expectedNlr.evaluate( input, expectedOutput );
 
-            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0)
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 )
         }
 
         delete[] input;
