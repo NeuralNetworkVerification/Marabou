@@ -48,7 +48,7 @@ void Options::initializeDefaultValues()
     /*
       Int options
     */
-    _intOptions[NUM_WORKERS] = 4;
+    _intOptions[NUM_WORKERS] = 1;
     _intOptions[NUM_INITIAL_DIVIDES] = 0;
     _intOptions[NUM_ONLINE_DIVIDES] = 2;
     _intOptions[INITIAL_TIMEOUT] = 5;
