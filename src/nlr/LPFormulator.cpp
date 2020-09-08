@@ -260,7 +260,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         GurobiWrapper *gurobi = new GurobiWrapper();
         gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
         solverToIndex[gurobi] = i;
-        enqueue( freeSolvers, gurobi );
+        enqueueSolver( freeSolvers, gurobi );
     }
 
     boost::thread *threads = new boost::thread[numberOfWorkers];
@@ -399,7 +399,7 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
             if ( cutoffInUse && ub < cutoffValue )
             {
                 ++cutoffs;
-                enqueue( freeSolvers, gurobi );
+                enqueueSolver( freeSolvers, gurobi );
                 return;
             }
         }
@@ -430,11 +430,11 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
                 ++cutoffs;
             }
         }
-        enqueue( freeSolvers, gurobi );
+        enqueueSolver( freeSolvers, gurobi );
     }
     catch ( boost::thread_interrupted& )
     {
-        enqueue( argument._freeSolvers, argument._gurobi );
+        enqueueSolver( argument._freeSolvers, argument._gurobi );
     }
 }
 
@@ -715,7 +715,7 @@ void LPFormulator::clearSolverQueue( SolverQueue &freeSolvers )
         delete freeSolver;
 }
 
-void LPFormulator::enqueue( SolverQueue &solvers, GurobiWrapper *solver )
+void LPFormulator::enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver )
 {
     if ( !solvers.push( solver ) )
     {

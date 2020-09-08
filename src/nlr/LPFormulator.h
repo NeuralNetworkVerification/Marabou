@@ -160,7 +160,7 @@ private:
     */
     static void clearSolverQueue( SolverQueue &freeSolvers );
 
-    static void enqueue( SolverQueue &solvers, GurobiWrapper *solver );
+    static void enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver );
 };
 
 } // namespace NLR
