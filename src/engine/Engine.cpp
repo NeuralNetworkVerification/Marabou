@@ -183,7 +183,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( _tableau->basisMatrixAvailable() )
             {
-                explicitBasisBoundTightening();
+                // explicitBasisBoundTightening();
                 applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
             }
