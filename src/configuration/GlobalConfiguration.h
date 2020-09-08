@@ -80,6 +80,11 @@ public:
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
 
+    // If the flag is true, the preprocessor will try to merge two
+    // logically-consecutive weighted sum layers into a single
+    // weighted sum layer, to reduce the number of variables
+    static const bool PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS;
+
     // Try to set the initial tableau assignment to an assignment that is legal with
     // respect to the input network.
     static const bool WARM_START;
@@ -155,6 +160,8 @@ public:
         COMPUTE_INVERTED_BASIS_MATRIX = 0,
         // Use the inverted basis matrix without using it, via transformations
         USE_IMPLICIT_INVERTED_BASIS_MATRIX = 1,
+        // Disable explicit basis bound tightening
+        DISABLE_EXPLICIT_BASIS_TIGHTENING = 2,
     };
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?

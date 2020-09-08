@@ -183,11 +183,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( _tableau->basisMatrixAvailable() )
             {
-//                if ( explicitBasisBoundTighteningFlag )
-//                {
-//                    explicitBasisBoundTightening();
-//                }
-
+                explicitBasisBoundTightening();
                 applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
             }
@@ -1654,6 +1650,9 @@ void Engine::explicitBasisBoundTightening()
 
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
         _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
+        break;
+
+    case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
         break;
     }
 

@@ -51,15 +51,16 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     /*
       Merge subsequent WS layers
     */
-    if ( query._networkLevelReasoner )
+    if ( GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS )
     {
-        unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
-        _preprocessed._networkLevelReasoner->mergeConsecutiveWSLayers();
-        _preprocessed = _preprocessed._networkLevelReasoner->generateInputQuery();
-        _preprocessed.setNumberOfVariables( oldNumberOfVariables );
+        if ( query._networkLevelReasoner )
+        {
+            unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
+            _preprocessed._networkLevelReasoner->mergeConsecutiveWSLayers();
+            _preprocessed = _preprocessed._networkLevelReasoner->generateInputQuery();
+            _preprocessed.setNumberOfVariables( oldNumberOfVariables );
+        }
     }
-
-    // todo - add printing of summary after preprocessing?
 
     /*
       Collect input and output variables
