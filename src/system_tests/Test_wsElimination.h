@@ -14,15 +14,12 @@
 **/
 
 
-
-
 #ifndef MARABOU_TEST_WSELIMINATION_H
 #define MARABOU_TEST_WSELIMINATION_H
 
 
 
 #include <cxxtest/TestSuite.h>
-
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
@@ -44,27 +41,139 @@ public:
     {
     }
 
-    void test_nlr_to_query_and_back()
+    void test_nlr_to_query_and_back_1()
     {
-
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery (RESOURCES_DIR "/bnn_queries/smallBNN_original");
-        for (unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable)
+        InputQuery inputQuery = QueryLoader::loadQuery (
+                RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+
+        // Fix the input
+        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
         {
-            auto pixel = inputVariable / 784 ;
+            auto pixel = 0.5;
 
-            inputQuery.setLowerBound(inputVariable, pixel);
-            inputQuery.setUpperBound(inputVariable, pixel);
+            inputQuery.setLowerBound( inputVariable, pixel );
+            inputQuery.setUpperBound( inputVariable, pixel );
         }
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
-        TS_ASSERT_THROWS_NOTHING( engine.solve() ); // todo fix
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
-        inputQuery.getSolutionValue(0); // todo fix for output variables
 
+        // The output vector is - [-2.0, -8.0, 10.0, 16.0, -18.0, 2.0, 6.0, 0.0, 2.0, 2.0]
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 784 ), -2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 785 ), -8 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 786 ), 10 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 787 ), 16 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 788 ), -18 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 789 ), 2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 790 ), 6 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 791 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 792 ), 2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 2 );
     }
 
+
+    void test_nlr_to_query_and_back_2()
+    {
+        Engine engine;
+        InputQuery inputQuery = QueryLoader::loadQuery (
+                RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+
+        // Fix the input
+        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        {
+            auto pixel = 0.5;
+
+            inputQuery.setLowerBound( inputVariable, pixel );
+            inputQuery.setUpperBound( inputVariable, pixel );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+
+        engine.extractSolution( inputQuery );
+
+        // The output vector is - [-2.0, -8.0, 10.0, 16.0, -18.0, 2.0, 6.0, 0.0, 2.0, 2.0]
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 784 ), -2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 785 ), -8 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 786 ), 10 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 787 ), 16 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 788 ), -18 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 789 ), 2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 790 ), 6 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 791 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 792 ), 2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 2 );
+    }
+
+
+    void test_nlr_to_query_and_back_3()
+    {
+        Engine engine;
+        InputQuery inputQuery = QueryLoader::loadQuery (
+                RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+
+        // Fix the input
+        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        {
+            auto pixel = 0.123;
+
+            inputQuery.setLowerBound( inputVariable, pixel );
+            inputQuery.setUpperBound( inputVariable, pixel );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+
+        engine.extractSolution( inputQuery );
+
+        // The output vector is - [0.0, -2.0, 8.0, 14.0, -24.0, 4.0, 0.0, 6.0, 0.0, 0.0]
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 784 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 785 ), -2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 786 ), 8 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 787 ), 14 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 788 ), -24 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 789 ), 4 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 790 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 791 ), 6 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 792 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 0 );
+    }
+
+    void test_nlr_to_query_and_back_4()
+    {
+        Engine engine;
+        InputQuery inputQuery = QueryLoader::loadQuery (
+                RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+
+        // Fix the input
+        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        {
+            auto pixel = 0.123;
+
+            inputQuery.setLowerBound( inputVariable, pixel );
+            inputQuery.setUpperBound( inputVariable, pixel );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
+
+        engine.extractSolution( inputQuery );
+
+        // The output vector is - [0.0, -2.0, 8.0, 14.0, -24.0, 4.0, 0.0, 6.0, 0.0, 0.0]
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 784 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 785 ), -2 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 786 ), 8 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 787 ), 14 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 788 ), -24 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 789 ), 4 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 790 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 791 ), 6 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 792 ), 0 );
+        TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 0 );
+    }
 };
 
 //
