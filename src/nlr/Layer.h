@@ -81,6 +81,7 @@ public:
     bool neuronHasVariable( unsigned neuron ) const;
     unsigned neuronToVariable( unsigned neuron ) const;
     unsigned variableToNeuron( unsigned variable ) const;
+    unsigned getMaxVariable() const;
 
     unsigned getSize() const;
     unsigned getLayerIndex() const;

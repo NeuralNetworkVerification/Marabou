@@ -1600,7 +1600,6 @@ bool Layer::operator==(const Layer & layer) const
     return true;
 }
 
-
 bool Layer::compareWights(const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer) const
 {
     if (map.size() != mapOfOtherLayer.size())
@@ -1628,9 +1627,14 @@ bool Layer::compareWights(const Map<unsigned, double*> &map, const Map<unsigned,
     return true;
 }
 
+unsigned Layer::getMaxVariable() const
+{
+    unsigned result = 0;
+    for ( const auto &pair : _neuronToVariable )
+        if ( pair.second > result )
+            result = pair.second;
 
-
-
-
+    return result;
+}
 
 } // namespace NLR

@@ -598,8 +598,10 @@ bool InputQuery::constructNetworkLevelReasoner()
         nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );
         handledVariableToLayer[inputVariable] = 0;
 
-        layer->setLb( inputVariable, _lowerBounds[inputVariable] );
-        layer->setUb( inputVariable, _upperBounds[inputVariable] );
+        layer->setLb( index, _lowerBounds.exists( inputVariable ) ?
+                      _lowerBounds[inputVariable] : FloatUtils::negativeInfinity() );
+        layer->setUb( index, _upperBounds.exists( inputVariable ) ?
+                      _upperBounds[inputVariable] : FloatUtils::infinity() );
 
         ++index;
     }
@@ -700,13 +702,15 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
 
-    auto *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
 
-        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] );
-        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] );
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
 
         // Add the new neuron
         nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
@@ -809,13 +813,15 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
 
-    auto *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
 
-        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] );
-        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] );
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
 
         unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
         unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
@@ -896,13 +902,15 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::ABSOLUTE_VALUE, newNeurons.size() );
 
-    auto *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
 
-        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] );
-        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] );
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
 
         unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
         unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
@@ -983,13 +991,15 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
 
-    auto *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
 
-        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] );
-        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] );
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
 
         unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
         unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
