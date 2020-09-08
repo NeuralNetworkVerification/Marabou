@@ -58,6 +58,7 @@ public:
 
     unsigned getNumberOfLayers() const;
     const Layer *getLayer( unsigned index ) const;
+    Layer * getLayerToUpdate( unsigned index ); // todo added
 
     /*
       Bind neurons in the NLR to the Tableau variables that represent them.

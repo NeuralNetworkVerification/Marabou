@@ -93,6 +93,11 @@ const Layer *NetworkLevelReasoner::getLayer( unsigned index ) const
     return _layerIndexToLayer[index];
 }
 
+Layer *NetworkLevelReasoner::getLayerToUpdate( unsigned index ) // todo added
+{
+    return _layerIndexToLayer[index];
+}
+
 void NetworkLevelReasoner::evaluate( double *input, double *output )
 {
     _layerIndexToLayer[0]->setAssignment( input );
@@ -245,7 +250,7 @@ void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinear
         _constraintsInTopologicalOrder.erase( constraint );
 }
 
-InputQuery NetworkLevelReasoner::generateInputQuery()
+InputQuery NetworkLevelReasoner::generateInputQuery() // todo fix! input query <- nlr
 {
     InputQuery result;
 
@@ -269,13 +274,20 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
     for ( unsigned i = 0; i < outputLayer->getSize(); ++i )
         result.markOutputVariable( outputLayer->neuronToVariable( i ), i );
 
-    // Store any known bounds of the input layer
-    for ( unsigned i = 0; i < inputLayer->getSize(); ++i )
+    // Store any known bounds of all layers // todo added
+
+    for ( unsigned layerIndex = 0;  layerIndex < getNumberOfLayers(); ++layerIndex )
     {
-        unsigned variable = inputLayer->neuronToVariable( i );
-        result.setLowerBound( variable, inputLayer->getLb( i ) );
-        result.setUpperBound( variable, inputLayer->getUb( i ) );
+        auto layer = _layerIndexToLayer[layerIndex];
+        for ( unsigned i = 0; i < layer->getSize(); ++i )
+        {
+            unsigned variable = layer->neuronToVariable( i );
+            result.setLowerBound( variable, layer->getLb( i ) );
+            result.setUpperBound( variable, layer->getUb( i ) );
+        }
     }
+
+
 
     result.constructNetworkLevelReasoner();
     return result;

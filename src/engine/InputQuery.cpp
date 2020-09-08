@@ -590,10 +590,18 @@ bool InputQuery::constructNetworkLevelReasoner()
     List<unsigned> inputs = getInputVariables();
     nlr->addLayer( 0, NLR::Layer::INPUT, inputs.size() );
     unsigned index = 0;
+
+    auto *layer = nlr->getLayerToUpdate( 0 ); // todo added
+
+
     for ( const auto &inputVariable : inputs )
     {
         nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );
         handledVariableToLayer[inputVariable] = 0;
+
+        layer->setLb( inputVariable, _lowerBounds[inputVariable] ); // todo added
+        layer->setUb( inputVariable, _upperBounds[inputVariable] ); // todo added
+
         ++index;
     }
 
@@ -693,13 +701,13 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
 
-    auto *layer = nlr->getLayer( newLayerIndex );
+    auto *layer = nlr->getLayerToUpdate( newLayerIndex ); // todo added
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
 
-        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] );
-        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] );
+        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] ); // todo added
+        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] ); // todo added
 
         // Add the new neuron
         nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
@@ -801,9 +809,14 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
+
+    auto *layer = nlr->getLayerToUpdate( newLayerIndex ); // todo added
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] ); // todo added
+        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] ); // todo added
 
         unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
         unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
@@ -883,9 +896,14 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::ABSOLUTE_VALUE, newNeurons.size() );
+
+    auto *layer = nlr->getLayerToUpdate( newLayerIndex ); // todo added
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] ); // todo added
+        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] ); // todo added
 
         unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
         unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
@@ -965,9 +983,14 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
+
+    auto *layer = nlr->getLayerToUpdate( newLayerIndex ); // todo added
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds[newNeuron._variable] ); // todo added
+        layer->setUb( newNeuron._neuron, _upperBounds[newNeuron._variable] ); // todo added
 
         unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
         unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
