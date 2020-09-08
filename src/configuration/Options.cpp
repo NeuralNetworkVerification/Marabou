@@ -97,6 +97,26 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
+void Options::setBool( unsigned option, bool value )
+{
+    _boolOptions[option] = value;
+}
+
+void Options::setInt( unsigned option, int value )
+{
+    _intOptions[option] = value;
+}
+
+void Options::setFloat( unsigned option, float value )
+{
+    _floatOptions[option] = value;
+}
+
+void Options::setString( unsigned option, std::string value )
+{
+    _stringOptions[option] = value;
+}
+
 SnCDivideStrategy Options::getSnCDivideStrategy( unsigned option ) const
 {
     String strategyString = String( _stringOptions.get( option ) );

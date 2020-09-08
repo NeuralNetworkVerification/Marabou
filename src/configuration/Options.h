@@ -96,6 +96,14 @@ public:
     SnCDivideStrategy getSnCDivideStrategy( unsigned option ) const;
 
     /*
+      Retrieve the value of the various options, by type
+    */
+    void setBool( unsigned option, bool );
+    void setInt( unsigned option, int );
+    void setFloat( unsigned option, float );
+    void setString( unsigned option, std::string );
+
+    /*
       Options that are determined at compile time
     */
     bool gurobiEnabled() const
