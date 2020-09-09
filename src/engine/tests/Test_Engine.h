@@ -24,6 +24,7 @@
 #include "MockProjectedSteepestEdgeFactory.h"
 #include "MockRowBoundTightenerFactory.h"
 #include "MockTableauFactory.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 
 #include <string.h>
@@ -456,6 +457,107 @@ public:
         TS_ASSERT( !firstConstraintInTopologicalOrder->phaseFixed() );
         TS_ASSERT( firstConstraintInTopologicalOrder->isActive() );
         TS_ASSERT_EQUALS( firstConstraintInTopologicalOrder, constraintToSplit );
+    }
+
+    void test_pick_split_pl_constraint_largest_interval()
+    {
+        // x0 --> relu(x2,x4) --> relu(x6,x8)
+        //    x               x
+        // x1 --> relu(x3,x5) --> relu(x7,x9)
+
+        // x0 \in [-1, 1]
+        // x1 \in [-1, 2]
+        // x2 = 2 x0 - 3 x1    ( x2 \in [-8, 5] )
+        // x3 = 2 x0 - x1    ( x2 \in [-4, 3] )
+        // x4 \in [0, 5]
+        // x5 \in [0, 3]
+        // x6 = -x4 + x5  ( x6 \in [-2, 8] )
+        // x7 = -x4 + x5 - 3 ( x7 \in [-5, 5] )
+
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 10 );
+        inputQuery.markInputVariable( 0, 0 );
+        inputQuery.markInputVariable( 1, 1 );
+
+        Equation equation;
+        equation.addAddend( 2, 0 );
+        equation.addAddend( -3, 1 );
+        equation.addAddend( -1, 2 );
+        equation.setScalar( 0 );
+        inputQuery.addEquation( equation );
+
+        Equation equation1;
+        equation1.addAddend( 2, 0 );
+        equation1.addAddend( -1, 1 );
+        equation1.addAddend( -1, 3 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        Equation equation3;
+        equation3.addAddend( -1, 4 );
+        equation3.addAddend( 1, 5 );
+        equation3.addAddend( -1, 6 );
+        equation3.setScalar( 0 );
+        inputQuery.addEquation( equation3 );
+
+        Equation equation4;
+        equation4.addAddend( -1, 4 );
+        equation4.addAddend( 1, 5 );
+        equation4.addAddend( -1, 7 );
+        equation4.setScalar( 0 );
+        inputQuery.addEquation( equation4 );
+
+        ReluConstraint *relu1 = new ReluConstraint( 2, 4 );
+        ReluConstraint *relu2 = new ReluConstraint( 3, 5 );
+        ReluConstraint *relu3 = new ReluConstraint( 6, 8 );
+        ReluConstraint *relu4 = new ReluConstraint( 7, 9 );
+
+        inputQuery.addPiecewiseLinearConstraint( relu1 );
+        inputQuery.addPiecewiseLinearConstraint( relu2 );
+        inputQuery.addPiecewiseLinearConstraint( relu3 );
+        inputQuery.addPiecewiseLinearConstraint( relu4 );
+
+        inputQuery.setLowerBound( 0, -1 );
+        inputQuery.setUpperBound( 0, 1 );
+        inputQuery.setLowerBound( 1, -1 );
+        inputQuery.setUpperBound( 1, 2 );
+        inputQuery.setLowerBound( 2, -8 );
+        inputQuery.setUpperBound( 2, 5 );
+        inputQuery.setLowerBound( 3, -4 );
+        inputQuery.setUpperBound( 3, 3 );
+        inputQuery.setLowerBound( 4, 0 );
+        inputQuery.setUpperBound( 4, 5 );
+        inputQuery.setLowerBound( 5, 0 );
+        inputQuery.setUpperBound( 5, 3 );
+        inputQuery.setLowerBound( 6, -2 );
+        inputQuery.setUpperBound( 6, 8 );
+        inputQuery.setLowerBound( 7, -5 );
+        inputQuery.setUpperBound( 7, 5 );
+        inputQuery.setLowerBound( 8, 0 );
+        inputQuery.setUpperBound( 8, 8 );
+        inputQuery.setLowerBound( 9, 0 );
+        inputQuery.setUpperBound( 9, 5 );
+
+        Engine engine;
+        engine.setSplittingStrategy( DivideStrategy::LargestInterval );
+        TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
+        engine.processInputQuery( inputQuery, false );
+        PiecewiseLinearConstraint *constraintToSplit;
+        constraintToSplit = engine.pickSplitPLConstraint();
+
+        PiecewiseLinearCaseSplit interval1;
+        interval1.storeBoundTightening( Tightening( 1, 0.5, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit interval2;
+        interval2.storeBoundTightening( Tightening( 1, 0.5, Tightening::LB ) );
+
+        List<PiecewiseLinearCaseSplit> caseSplits = constraintToSplit->getCaseSplits();
+
+        TS_ASSERT_EQUALS( caseSplits.size(), 2u );
+        TS_ASSERT_EQUALS( *caseSplits.begin(), interval1 );
+        TS_ASSERT_EQUALS( *( ++caseSplits.begin() ), interval2 );
+        TS_ASSERT( constraintToSplit->temporary() );
+        TS_ASSERT_THROWS_NOTHING( delete constraintToSplit );
     }
 
     void test_todo()
