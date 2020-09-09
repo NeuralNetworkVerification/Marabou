@@ -59,7 +59,7 @@ public:
         // Global timeout
         TIMEOUT,
 
-        SPLIT_THRESHOLD,
+        CONSTRAINT_VIOLATION_THRESHOLD,
     };
 
     enum FloatOptions{

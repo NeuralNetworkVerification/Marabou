@@ -305,6 +305,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                     threads[i].join();
                 }
                 clearSolverQueue( freeSolvers );
+                delete threads;
                 throw InfeasibleQueryException();
             }
 
@@ -345,7 +346,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
 
     clearSolverQueue( freeSolvers );
-
+    delete threads;
     if ( infeasible )
         throw InfeasibleQueryException();
 }

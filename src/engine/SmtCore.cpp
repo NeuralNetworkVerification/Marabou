@@ -31,7 +31,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
-    , _constraintViolationThreshold( Options::get()->getInt( Options::SPLIT_THRESHOLD ) )
+    , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
 {
 }
 

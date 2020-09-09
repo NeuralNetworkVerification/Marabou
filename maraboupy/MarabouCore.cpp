@@ -131,7 +131,7 @@ struct MarabouOptions {
         , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
-        , _snCDivideStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ) )
+        , _snCDivideStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
 
   void setOptions()
