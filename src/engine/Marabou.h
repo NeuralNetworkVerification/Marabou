@@ -23,7 +23,7 @@
 class Marabou
 {
 public:
-    Marabou( unsigned verbosity = 2 );
+    Marabou();
     ~Marabou();
 
     /*

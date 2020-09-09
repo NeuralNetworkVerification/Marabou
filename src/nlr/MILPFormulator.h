@@ -76,7 +76,8 @@ private:
                            const Layer *layer,
                            unsigned neuron );
 
-    double solveMILPEncoding( const Map<unsigned, Layer *> &layers,
+    double solveMILPEncoding( GurobiWrapper &gurobi,
+                              const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax,
                               String variableName,
                               unsigned lastLayer = UINT_MAX );

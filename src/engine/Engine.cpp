@@ -30,7 +30,7 @@
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
-Engine::Engine( unsigned verbosity )
+Engine::Engine()
     : _rowBoundTightener( *_tableau )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
@@ -45,7 +45,7 @@ Engine::Engine( unsigned verbosity )
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
-    , _verbosity( verbosity )
+    , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( GlobalConfiguration::SPLITTING_HEURISTICS )
@@ -1103,7 +1103,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
-        performMILPSolverBoundedTightening();
+        if ( preprocess )
+            performMILPSolverBoundedTightening();
 
         if ( _splittingStrategy == DivideStrategy::Auto )
         {
@@ -1887,8 +1888,7 @@ void Engine::clearViolatedPLConstraints()
 
 void Engine::resetSmtCore()
 {
-    _smtCore.freeMemory();
-    _smtCore = SmtCore( this );
+    _smtCore.reset();
 }
 
 void Engine::resetExitCode()
@@ -2181,9 +2181,4 @@ bool Engine::restoreSmtState( SmtState & smtState )
 void Engine::storeSmtState( SmtState & smtState )
 {
     _smtCore.storeSmtState( smtState );
-}
-
-void Engine::setConstraintViolationThreshold( unsigned threshold )
-{
-    _smtCore.setConstraintViolationThreshold( threshold );
 }

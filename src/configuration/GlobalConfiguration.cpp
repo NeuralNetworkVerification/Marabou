@@ -43,7 +43,6 @@ const double GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD = 0.0001;
 const bool GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS = false;
 const double GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD = 0.1;
 const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
-const unsigned GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD = 20;
 const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy::ReLUViolation;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY = 5;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 10;
@@ -135,7 +134,6 @@ void GlobalConfiguration::print()
     printf( "  USE_COLUMN_MERGING_EQUATIONS: %s\n", USE_COLUMN_MERGING_EQUATIONS ? "Yes" : "No" );
     printf( "  GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD: %.15lf\n", GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD );
     printf( "  MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS: %u\n", MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS );
-    printf( "  CONSTRAINT_VIOLATION_THRESHOLD: %u\n", CONSTRAINT_VIOLATION_THRESHOLD );
     printf( "  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
             BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY );
     printf( "  COST_FUNCTION_ERROR_THRESHOLD: %.15lf\n", COST_FUNCTION_ERROR_THRESHOLD );
