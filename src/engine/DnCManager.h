@@ -41,10 +41,7 @@ public:
             NOT_DONE = 999,
         };
 
-    DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
-                initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                SnCDivideStrategy divideStrategy, InputQuery *inputQuery,
-                unsigned verbosity );
+    DnCManager( InputQuery *inputQuery );
 
     ~DnCManager();
 
@@ -53,7 +50,7 @@ public:
     /*
       Perform the Divide-and-conquer solving
     */
-    void solve( unsigned timeoutInSeconds, bool restoreTreeStates = false );
+    void solve();
 
     /*
       Return the DnCExitCode of the DnCManager
@@ -75,8 +72,6 @@ public:
     */
     void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
 
-    void setConstraintViolationThreshold( unsigned threshold );
-
 private:
     /*
       Create and run a DnCWorker
@@ -93,7 +88,7 @@ private:
       Create the base engine from the network and property files,
       and if necessary, create engines for workers
     */
-    bool createEngines();
+    bool createEngines( unsigned numberOfEngines );
 
     /*
       Divide up the input region and store them in subqueries
@@ -128,41 +123,6 @@ private:
     std::shared_ptr<Engine> _engineWithSATAssignment;
 
     /*
-      Hyperparameters of the DnC algorithm
-    */
-
-    /*
-      The number of threads to spawn
-    */
-    unsigned _numWorkers;
-
-    /*
-      The number of times to initially bisect the input region
-    */
-    unsigned _initialDivides;
-
-    /*
-      The timeout given to the initial subqueries
-    */
-    unsigned _initialTimeout;
-
-    /*
-      The number of times to bisect the sub-input-region if a subquery times out
-    */
-    unsigned _onlineDivides;
-
-    /*
-      When a subQuery is created from dividing a query, the new timeout is the
-      old timeout times this factor
-    */
-    float _timeoutFactor;
-
-    /*
-      The strategy for dividing a query
-    */
-    SnCDivideStrategy _divideStrategy;
-
-    /*
       Alternatively, we could construct the DnCManager by directly providing the
       inputQuery instead of the network and property filepaths.
     */
@@ -194,10 +154,9 @@ private:
     unsigned _verbosity;
 
     /*
-      The constraint violation threshold for each worker engine
+      The strategy for dividing a query
     */
-    unsigned _constraintViolationThreshold;
-
+    SnCDivideStrategy _sncSplittingStrategy;
 };
 
 #endif // __DnCManager_h__

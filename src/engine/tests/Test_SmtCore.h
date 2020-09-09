@@ -15,10 +15,10 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "MockEngine.h"
 #include "MockErrno.h"
+#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
@@ -173,7 +173,7 @@ public:
 
         SmtCore smtCore( engine );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD - 1; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) - 1; ++i )
         {
             smtCore.reportViolatedConstraint( &constraint1 );
             TS_ASSERT( !smtCore.needToSplit() );
@@ -233,7 +233,7 @@ public:
         constraint.nextSplits.append( split2 );
         constraint.nextSplits.append( split3 );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         engine->lastStoredState = NULL;
@@ -380,7 +380,7 @@ public:
         constraint.nextSplits.append( split2 );
         constraint.nextSplits.append( split3 );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = false;
@@ -436,7 +436,7 @@ public:
         constraint.nextSplits.append( split1 );
         constraint.nextSplits.append( split2 );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = true;
@@ -469,7 +469,7 @@ public:
         constraint2.nextSplits.append( split4 );
         constraint2.nextSplits.append( split5 );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint2 );
 
         constraint2.nextIsActive = true;
@@ -513,7 +513,7 @@ public:
         split1.storeBoundTightening( bound1 );
         TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split1 ) );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &relu1 );
 
         TS_ASSERT( smtCore.needToSplit() );
@@ -525,7 +525,7 @@ public:
         split2.storeBoundTightening( bound2 );
         TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split2 ) );
 
-        for ( unsigned i = 0; i < GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD; ++i )
+        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &relu2 );
 
         TS_ASSERT( smtCore.needToSplit() );

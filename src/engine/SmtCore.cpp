@@ -21,6 +21,7 @@
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "Options.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
 
@@ -30,8 +31,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
-    , _constraintViolationThreshold
-      ( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
+    , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
 {
 }
 
@@ -49,6 +49,16 @@ void SmtCore::freeMemory()
     }
 
     _stack.clear();
+}
+
+void SmtCore::reset()
+{
+    freeMemory();
+    _impliedValidSplitsAtRoot.clear();
+    _needToSplit = false;
+    _constraintForSplitting = NULL;
+    _stateId = 0;
+    _constraintToViolationCount.clear();
 }
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
@@ -357,11 +367,6 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     }
 
     return true;
-}
-
-void SmtCore::setConstraintViolationThreshold( unsigned threshold )
-{
-    _constraintViolationThreshold = threshold;
 }
 
 PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
