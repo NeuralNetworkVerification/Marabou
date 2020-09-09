@@ -93,7 +93,7 @@ const Layer *NetworkLevelReasoner::getLayer( unsigned index ) const
     return _layerIndexToLayer[index];
 }
 
-Layer *NetworkLevelReasoner::getLayerToUpdate( unsigned index )
+Layer *NetworkLevelReasoner::getLayer( unsigned index )
 {
     return _layerIndexToLayer[index];
 }
@@ -466,13 +466,11 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
         // Compute new weights
         const double *firstLayerMatrix = firstLayer->getWeightMatrix( previousToFirstLayerIndex );
         const double *secondLayerMatrix = secondLayer->getWeightMatrix( firstLayerIndex );
-
         double *newWeightMatrix = multiplyWeights(firstLayerMatrix,
                                                   secondLayerMatrix,
                                                   inputDimension,
                                                   middleDimension,
                                                   outputDimension);
-
         // Update bias for second layer
         for ( unsigned targetNeuron = 0; targetNeuron < secondLayer->getSize(); ++targetNeuron )
         {
@@ -495,8 +493,7 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
                                        weight);
             }
         }
-
-        delete[] newWeightMatrix; // was without []
+        delete[] newWeightMatrix;
     }
 
     // Remove the first layer from second layer's sources
@@ -508,10 +505,8 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
 
     // Adjust the indices of all layers starting from secondLayerIndex
     // and higher
-    for (unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i)
-    {
+    for ( unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i )
         reduceLayerIndex( i, firstLayerIndex );
-    }
 }
 
 double *NetworkLevelReasoner::multiplyWeights( const double *firstMatrix,
@@ -541,6 +536,5 @@ void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex
     _layerIndexToLayer[layer - 1] = _layerIndexToLayer[layer];
     _layerIndexToLayer.erase( layer );
 }
-
 
 } // namespace NLR

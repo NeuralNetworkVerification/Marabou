@@ -49,7 +49,7 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed.constructNetworkLevelReasoner();
 
     /*
-      Merge subsequent WS layers
+      Merge consecutive WS layers
     */
     if ( GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS )
     {
@@ -592,8 +592,6 @@ void Preprocessor::collectFixedValues()
 
 void Preprocessor::eliminateVariables()
 {
-    printf( "PP: eliminateVariables starting!\n" );
-
     // If there's nothing to eliminate, we're done
     if ( _fixedVariables.empty() && _mergedVariables.empty() )
         return;

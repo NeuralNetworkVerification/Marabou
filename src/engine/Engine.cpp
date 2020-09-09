@@ -1053,13 +1053,7 @@ void Engine::initializeNetworkLevelReasoning()
     _networkLevelReasoner = _preprocessedQuery.getNetworkLevelReasoner();
 
     if ( _networkLevelReasoner )
-    {
         _networkLevelReasoner->setTableau( _tableau );
-    }
-    else
-    {
-        printf( "Engine: no NLR!\n" );
-    }
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )

@@ -591,16 +591,16 @@ bool InputQuery::constructNetworkLevelReasoner()
     nlr->addLayer( 0, NLR::Layer::INPUT, inputs.size() );
     unsigned index = 0;
 
-    auto *layer = nlr->getLayerToUpdate( 0 );
+    NLR::Layer *inputLayer = nlr->getLayer( 0 );
 
     for ( const auto &inputVariable : inputs )
     {
         nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );
         handledVariableToLayer[inputVariable] = 0;
 
-        layer->setLb( index, _lowerBounds.exists( inputVariable ) ?
+        inputLayer->setLb( index, _lowerBounds.exists( inputVariable ) ?
                       _lowerBounds[inputVariable] : FloatUtils::negativeInfinity() );
-        layer->setUb( index, _upperBounds.exists( inputVariable ) ?
+        inputLayer->setUb( index, _upperBounds.exists( inputVariable ) ?
                       _upperBounds[inputVariable] : FloatUtils::infinity() );
 
         ++index;
@@ -702,7 +702,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
 
-    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
@@ -813,7 +813,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
 
-    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
@@ -902,7 +902,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::ABSOLUTE_VALUE, newNeurons.size() );
 
-    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
@@ -991,7 +991,7 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
 
     nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
 
-    NLR::Layer *layer = nlr->getLayerToUpdate( newLayerIndex );
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;

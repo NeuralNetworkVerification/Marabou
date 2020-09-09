@@ -1503,7 +1503,7 @@ double Layer::getEliminatedNeuronValue( unsigned neuron ) const
 
 void Layer::reduceIndexFromAllMaps( unsigned startIndex )
 {
-    // Adjsut the source layers
+    // Adjust the source layers
     Map<unsigned, unsigned> copyOfSources = _sourceLayers;
     _sourceLayers.clear();
     for ( const auto &pair : copyOfSources )
@@ -1533,95 +1533,68 @@ void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned star
         map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
 }
 
-void Layer::reduceIndexAfterMerge (unsigned startIndex)
+void Layer::reduceIndexAfterMerge ( unsigned startIndex )
 {
     if ( _layerIndex >= startIndex )
-    {
-        _layerIndex--;
-    }
+        --_layerIndex;
 }
 
-bool Layer::operator==( const Layer & layer ) const
+bool Layer::operator==( const Layer &layer ) const
 {
     if ( _layerIndex != layer._layerIndex )
-    {
         return false;
-    }
 
     if ( _type != layer._type )
-    {
         return false;
-    }
 
     if ( _size != layer._size )
-    {
         return false;
-    }
 
     if ( _inputLayerSize != layer._inputLayerSize )
-    {
         return false;
-    }
 
     if ( ( _bias && !layer._bias ) || ( !_bias && layer._bias ) )
-    {
         return false;
-    }
 
-    if (_bias && layer._bias )
+    if ( _bias && layer._bias )
     {
-        if ( std::memcmp(_bias, layer._bias, _size ) != 0 )
-        {
+        if ( std::memcmp( _bias, layer._bias, _size ) != 0 )
             return false;
-        }
-    }
-
-    if ( !compareWights( _layerToWeights, layer._layerToWeights ) )
-    {
-        return false;
-    }
-
-    if (!compareWights( _layerToPositiveWeights, layer._layerToPositiveWeights ) )
-    {
-        return false;
-    }
-
-    if ( !compareWights( _layerToNegativeWeights, layer._layerToNegativeWeights ) )
-    {
-        return false;
     }
 
     if ( _sourceLayers != layer._sourceLayers )
-    {
+    return false;
+
+    if ( !compareWights( _layerToWeights, layer._layerToWeights ) )
         return false;
-    }
+
+    if ( !compareWights( _layerToPositiveWeights, layer._layerToPositiveWeights ) )
+        return false;
+
+    if ( !compareWights( _layerToNegativeWeights, layer._layerToNegativeWeights ) )
+        return false;
+
+
 
     return true;
 }
 
-bool Layer::compareWights( const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer ) const
+bool Layer::compareWights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const
 {
     if ( map.size() != mapOfOtherLayer.size() )
-    {
         return false;
-    }
 
     for ( const auto &pair : map )
     {
         unsigned key = pair.first;
-        double* value = pair.second;
+        double *value = pair.second;
 
         if ( !mapOfOtherLayer.exists( key ) )
         {
             return false;
         }
 
-        if ( sizeof( *value ) / sizeof( double ) != sizeof( *mapOfOtherLayer[key] ) / sizeof( double ) )
-        {
-            return false;
-        }
-
-        if ( std::memcmp( value, mapOfOtherLayer[key], sizeof( *value ) / sizeof( double ) ) != 0 )
+        if ( std::memcmp( value, mapOfOtherLayer[key], _size * _sourceLayers[key] * sizeof( double ) ) != 0 )
         {
             return false;
         }

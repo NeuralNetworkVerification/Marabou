@@ -1,8 +1,3 @@
-
-#ifndef MARABOU_TEST_WSLAYERELIMINATION_H
-#define MARABOU_TEST_WSLAYERELIMINATION_H
-
-
 /**********************/
 /*! \file Test_WsLayerElimination.h
  ** \verbatim
@@ -19,17 +14,13 @@
 **/
 
 #include <cxxtest/TestSuite.h>
-
-#include "../../engine/tests/MockTableau.h" // TODO: fix this
+#include "../../engine/tests/MockTableau.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "Layer.h"
 #include "NetworkLevelReasoner.h"
 #include "Tightening.h"
 #include "Map.h"
-
-
-//namespace NLR
 
 class MockForNetworkLevelReasoner
 {
@@ -50,7 +41,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    // Test number 1 - a NN with no subsequent WS layers to merge
+    // A NN with no subsequent WS layers to merge
     void populateNetwork_CaseA( NLR::NetworkLevelReasoner &nlr )
     {
         /*
@@ -147,8 +138,7 @@ public:
         double *input = new double[2];
         double *output = new double[2];
         double *expectedOutput = new double[2];
-
-        for (auto i = -250; i < 250; ++i)
+        for ( int i = -250; i < 250; ++i )
         {
             input[0] = ( i+4 )/2;
             input[1] = ( 2*i )/3 -3;
@@ -164,7 +154,7 @@ public:
         delete[] expectedOutput;
     }
 
-    // Test number 2 - a simple NN with one pair of subsequent WS layers
+    // A simple NN with one pair of subsequent WS layers
     void populateNetwork_CaseB( NLR::NetworkLevelReasoner &nlr )
     {
         // Create the layers
@@ -346,9 +336,9 @@ public:
         double *input = new double[2];
         double *output = new double[2];
         double *expectedOutput = new double[2];
-
-        for ( auto i = -250; i < 250; ++i )
+        for ( int i = -250; i < 250; ++i )
         {
+
             input[0] = ( i-99 )/2 + 1;
             input[1] = ( 12*i )/3 -7;
 
@@ -363,7 +353,7 @@ public:
         delete[] expectedOutput;
     }
 
-    // Test number 3 - a NN with a single pair of subsequent WS layers, but 3 different activation
+    // A NN with a single pair of subsequent WS layers, but 3 different activation
     // layers are input for the 1st WS out of the pair
     void populateNetwork_CaseC( NLR::NetworkLevelReasoner &nlr)
     {
@@ -602,8 +592,7 @@ public:
         double *input = new double[3];
         double *output = new double[2];
         double *expectedOutput = new double[2];
-
-        for ( auto i = -250; i < 250; ++i )
+        for ( int i = -250; i < 250; ++i )
         {
             input[0] = ( i+4 )/2;
             input[1] = ( 2*i )/3 -3;
@@ -620,7 +609,6 @@ public:
         delete[] expectedOutput;
     }
 
-    // Test number 4
     void populateNetwork_CaseD( NLR::NetworkLevelReasoner &nlr )
     {
         // Create the layers
@@ -816,7 +804,7 @@ public:
         double *output = new double[3];
         double *expectedOutput = new double[3];
 
-        for ( auto i = -250; i < 250; ++i ) // was -25 -> 25
+        for ( int i = -250; i < 250; ++i )
         {
             input[0] = ( i+19 )/2 -7;
             input[1] = ( 3*i )/4 -1;
@@ -831,9 +819,4 @@ public:
         delete[] output;
         delete[] expectedOutput;
     }
-
 };
-
-
-
-#endif //MARABOU_TEST_WSLAYERELIMINATION_H

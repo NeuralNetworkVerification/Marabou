@@ -13,21 +13,15 @@
 
 **/
 
-
-#ifndef MARABOU_TEST_WSELIMINATION_H
-#define MARABOU_TEST_WSELIMINATION_H
-
-
-
 #include <cxxtest/TestSuite.h>
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
+#include "MarabouError.h"
 #include "Preprocessor.h"
 #include "QueryLoader.h"
-#include "MarabouError.h"
 
 class wsEliminationTestSuite : public CxxTest::TestSuite
 {
@@ -74,7 +68,6 @@ public:
         TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 2 );
     }
 
-
     void test_nlr_to_query_and_back_2()
     {
         Engine engine;
@@ -107,7 +100,6 @@ public:
         TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 792 ), 2 );
         TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 2 );
     }
-
 
     void test_nlr_to_query_and_back_3()
     {
@@ -183,7 +175,3 @@ public:
 // c-basic-offset: 4
 // End:
 //
-
-
-
-#endif //MARABOU_TEST_WSELIMINATION_H
