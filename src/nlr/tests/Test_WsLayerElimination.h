@@ -14,13 +14,12 @@
 **/
 
 #include <cxxtest/TestSuite.h>
-#include "../../engine/tests/MockTableau.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "Layer.h"
+#include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "Tightening.h"
-#include "Map.h"
 
 class MockForNetworkLevelReasoner
 {
@@ -37,7 +36,8 @@ public:
         TS_ASSERT( mock = new MockForNetworkLevelReasoner );
     }
 
-    void tearDown() {
+    void tearDown()
+    {
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
@@ -140,8 +140,8 @@ public:
         double *expectedOutput = new double[2];
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+4 )/2;
-            input[1] = ( 2*i )/3 -3;
+            input[0] = ( i+4 ) / 2;
+            input[1] = ( 2*i ) / 3 - 3;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
@@ -338,12 +338,11 @@ public:
         double *expectedOutput = new double[2];
         for ( int i = -250; i < 250; ++i )
         {
+            input[0] = ( i - 99 ) / 2 + 1;
+            input[1] = ( 12 * i ) / 3 - 7;
 
-            input[0] = ( i-99 )/2 + 1;
-            input[1] = ( 12*i )/3 -7;
-
-            nlr.evaluate(input, output);
-            expectedNlr.evaluate(input, expectedOutput);
+            nlr.evaluate( input, output );
+            expectedNlr.evaluate( input, expectedOutput );
 
             TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 )
         }
@@ -355,7 +354,7 @@ public:
 
     // A NN with a single pair of subsequent WS layers, but 3 different activation
     // layers are input for the 1st WS out of the pair
-    void populateNetwork_CaseC( NLR::NetworkLevelReasoner &nlr)
+    void populateNetwork_CaseC( NLR::NetworkLevelReasoner &nlr )
     {
         // Create the layers
         nlr.addLayer( 0, NLR::Layer::INPUT, 3 );
@@ -594,8 +593,8 @@ public:
         double *expectedOutput = new double[2];
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+4 )/2;
-            input[1] = ( 2*i )/3 -3;
+            input[0] = ( i+4 ) / 2;
+            input[1] = ( 2*i ) / 3 -3;
             input[2] = 15;
 
             nlr.evaluate( input, output );
@@ -806,8 +805,8 @@ public:
 
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+19 )/2 -7;
-            input[1] = ( 3*i )/4 -1;
+            input[0] = ( i+19 ) / 2 -7;
+            input[1] = ( 3*i ) / 4 -1;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );

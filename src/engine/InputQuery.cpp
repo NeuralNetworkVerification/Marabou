@@ -592,7 +592,6 @@ bool InputQuery::constructNetworkLevelReasoner()
     unsigned index = 0;
 
     NLR::Layer *inputLayer = nlr->getLayer( 0 );
-
     for ( const auto &inputVariable : inputs )
     {
         nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );

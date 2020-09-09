@@ -127,7 +127,7 @@ public:
     void dump() const;
     static String typeToString( Type type );
     bool operator==( const Layer &layer ) const;
-    bool compareWights( const Map<unsigned, double*> &map, const Map<unsigned, double*> &mapOfOtherLayer ) const;
+    bool compareWeights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const;
 
 private:
     unsigned _layerIndex;

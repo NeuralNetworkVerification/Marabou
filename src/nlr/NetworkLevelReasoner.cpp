@@ -454,7 +454,7 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
     unsigned lastLayerIndex = _layerIndexToLayer.size() - 1;
 
     // Iterate over all inputs to the first layer
-    for (const auto &pair : firstLayer->getSourceLayers())
+    for ( const auto &pair : firstLayer->getSourceLayers() )
     {
         unsigned previousToFirstLayerIndex = pair.first;
         const Layer *inputLayerToFirst = _layerIndexToLayer[previousToFirstLayerIndex];
@@ -466,19 +466,23 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
         // Compute new weights
         const double *firstLayerMatrix = firstLayer->getWeightMatrix( previousToFirstLayerIndex );
         const double *secondLayerMatrix = secondLayer->getWeightMatrix( firstLayerIndex );
-        double *newWeightMatrix = multiplyWeights(firstLayerMatrix,
-                                                  secondLayerMatrix,
-                                                  inputDimension,
-                                                  middleDimension,
-                                                  outputDimension);
+        double *newWeightMatrix = multiplyWeights( firstLayerMatrix,
+                                                   secondLayerMatrix,
+                                                   inputDimension,
+                                                   middleDimension,
+                                                   outputDimension );
         // Update bias for second layer
         for ( unsigned targetNeuron = 0; targetNeuron < secondLayer->getSize(); ++targetNeuron )
         {
-            auto newBias = secondLayer->getBias( targetNeuron );
-            for ( unsigned sourceNeuron = 0; sourceNeuron < firstLayer->getSize(); ++sourceNeuron )
+            double newBias = secondLayer->getBias( targetNeuron );
+            for ( unsigned sourceNeuron = 0;
+                  sourceNeuron < firstLayer->getSize();
+                  ++sourceNeuron )
             {
-                newBias += ( firstLayer->getBias( sourceNeuron ) * secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron ) );
+                newBias += ( firstLayer->getBias( sourceNeuron ) *
+                             secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron ) );
             }
+
             secondLayer->setBias( targetNeuron, newBias );
         }
 

@@ -1563,23 +1563,21 @@ bool Layer::operator==( const Layer &layer ) const
     }
 
     if ( _sourceLayers != layer._sourceLayers )
-    return false;
-
-    if ( !compareWights( _layerToWeights, layer._layerToWeights ) )
         return false;
 
-    if ( !compareWights( _layerToPositiveWeights, layer._layerToPositiveWeights ) )
+    if ( !compareWeights( _layerToWeights, layer._layerToWeights ) )
         return false;
 
-    if ( !compareWights( _layerToNegativeWeights, layer._layerToNegativeWeights ) )
+    if ( !compareWeights( _layerToPositiveWeights, layer._layerToPositiveWeights ) )
         return false;
 
-
+    if ( !compareWeights( _layerToNegativeWeights, layer._layerToNegativeWeights ) )
+        return false;
 
     return true;
 }
 
-bool Layer::compareWights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const
+bool Layer::compareWeights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const
 {
     if ( map.size() != mapOfOtherLayer.size() )
         return false;
@@ -1590,15 +1588,16 @@ bool Layer::compareWights( const Map<unsigned, double *> &map, const Map<unsigne
         double *value = pair.second;
 
         if ( !mapOfOtherLayer.exists( key ) )
-        {
             return false;
-        }
 
-        if ( std::memcmp( value, mapOfOtherLayer[key], _size * _sourceLayers[key] * sizeof( double ) ) != 0 )
+        if ( std::memcmp( value,
+                          mapOfOtherLayer[key],
+                          _size * _sourceLayers[key] * sizeof(double) ) != 0 )
         {
             return false;
         }
     }
+
     return true;
 }
 

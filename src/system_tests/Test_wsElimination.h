@@ -38,13 +38,13 @@ public:
     void test_nlr_to_query_and_back_1()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery (
-                RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        InputQuery inputQuery = QueryLoader::loadQuery
+            ( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
         {
-            auto pixel = 0.5;
+            double pixel = 0.5;
 
             inputQuery.setLowerBound( inputVariable, pixel );
             inputQuery.setUpperBound( inputVariable, pixel );
@@ -71,13 +71,13 @@ public:
     void test_nlr_to_query_and_back_2()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery (
-                RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        InputQuery inputQuery = QueryLoader::loadQuery
+            ( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
         {
-            auto pixel = 0.5;
+            double pixel = 0.5;
 
             inputQuery.setLowerBound( inputVariable, pixel );
             inputQuery.setUpperBound( inputVariable, pixel );
@@ -104,13 +104,13 @@ public:
     void test_nlr_to_query_and_back_3()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery (
-                RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        InputQuery inputQuery = QueryLoader::loadQuery
+            ( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
         {
-            auto pixel = 0.123;
+            double pixel = 0.123;
 
             inputQuery.setLowerBound( inputVariable, pixel );
             inputQuery.setUpperBound( inputVariable, pixel );
@@ -137,13 +137,13 @@ public:
     void test_nlr_to_query_and_back_4()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery (
-                RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        InputQuery inputQuery = QueryLoader::loadQuery
+            ( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
 
         // Fix the input
         for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
         {
-            auto pixel = 0.123;
+            double pixel = 0.123;
 
             inputQuery.setLowerBound( inputVariable, pixel );
             inputQuery.setUpperBound( inputVariable, pixel );
@@ -167,11 +167,3 @@ public:
         TS_ASSERT_EQUALS( inputQuery.getSolutionValue( 793 ), 0 );
     }
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//
