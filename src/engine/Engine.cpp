@@ -2097,6 +2097,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
     else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
               _smtCore.getStackDepth() %
               GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+        // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
 
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
