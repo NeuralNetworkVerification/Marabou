@@ -275,8 +275,11 @@ public:
 
         nlr.setBias( 1, 0, 1 );
 
-        // Bias of new merged WS layer: 25 = 5 + (2*1) +(3*6)
+        // Bias of 1st neuron of new merged WS layer: 25 = 5 + (2*1) +(3*6)
         nlr.setBias( 3, 0, 25 );
+
+        // Bias of 2nd neuron of new merged WS layer: 28 = 0 + (2*2) +(4*6)
+        nlr.setBias( 3, 1, 28 );
 
         // Mark the ReLU sources
         nlr.addActivationSource( 1, 0, 2, 0 );
@@ -530,8 +533,12 @@ public:
 
         nlr.setBias( 1, 0, 1 );
 
-        // The bias of the 2nd subsequent WS payer
+        // Bias of 1st neuron of new merged WS layer: 25 = 5 + (2*1) +(3*6)
         nlr.setBias( 7, 0, 25 );
+
+        // Bias of 2nd neuron of new merged WS layer: 28 = 0 + (2*2) +(4*6)
+        nlr.setBias( 7, 1, 28 );
+
 
         // Mark the SIGN, ReLU, MAX sources, after the INPUT layer
         nlr.addActivationSource( 1, 0, 4, 0 );
@@ -745,8 +752,11 @@ public:
 
         nlr.setBias( 1, 0, 1 );
 
-        // The bias of the WS layer created by the merge of the first subsequent WS layers
+        // Bias of 1st neuron of new merged WS layer: 25 = 5 + (2*1) +(3*6)
         nlr.setBias( 3, 0, 25 );
+
+        // Bias of 2nd neuron of new merged WS layer: 28 = 0 + (2*2) +(4*6)
+        nlr.setBias( 3, 1, 28 );
 
         // Mark the ReLU sources
         nlr.addActivationSource( 1, 0, 2, 0 );
