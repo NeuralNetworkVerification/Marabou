@@ -48,7 +48,6 @@ Engine::Engine( unsigned verbosity )
     , _verbosity( verbosity )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _splitsSinceLastSplitInterval( 0 )
     , _splittingStrategy( GlobalConfiguration::SPLITTING_HEURISTICS )
 {
     _smtCore.setStatistics( &_statistics );

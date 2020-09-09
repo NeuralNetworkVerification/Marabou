@@ -337,11 +337,6 @@ private:
     unsigned long long _lastIterationWithProgress;
 
     /*
-      Interval split is performed previously.
-    */
-    unsigned _splitsSinceLastSplitInterval;
-
-    /*
       Strategy used for internal splitting
     */
     DivideStrategy _splittingStrategy;
