@@ -493,8 +493,10 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
             for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
             {
                 double weight = newWeightMatrix[sourceNeuron * outputDimension + targetNeuron];
-                secondLayer->setWeight(previousToFirstLayerIndex, sourceNeuron, targetNeuron,
-                                       weight);
+                secondLayer->setWeight( previousToFirstLayerIndex,
+                                        sourceNeuron,
+                                        targetNeuron,
+                                        weight );
             }
         }
         delete[] newWeightMatrix;

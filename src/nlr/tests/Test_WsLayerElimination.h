@@ -327,7 +327,7 @@ public:
         populateNetworkAfterMerge_CaseB( expectedNlr );
 
         // Check the layers are correct
-        for (unsigned layerNumber = 0; layerNumber < originalNumberOfLayer - 1; ++layerNumber)
+        for ( unsigned layerNumber = 0; layerNumber < originalNumberOfLayer - 1; ++layerNumber )
         {
             TS_ASSERT( *nlr.getLayer( layerNumber ) == *expectedNlr.getLayer( layerNumber ) )
         }
@@ -468,7 +468,6 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 10, 0 ), 15 );
         nlr.setNeuronVariable( NLR::NeuronIndex( 10, 1 ), 16 );
     }
-
 
     void populateNetworkAfterMerge_CaseC( NLR::NetworkLevelReasoner &nlr )
     {
