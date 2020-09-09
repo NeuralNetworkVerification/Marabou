@@ -20,8 +20,8 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
-#include "Preprocessor.h"
 #include "MarabouError.h"
+#include "Preprocessor.h"
 
 class AcasTestSuite : public CxxTest::TestSuite
 {

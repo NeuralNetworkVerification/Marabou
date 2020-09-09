@@ -53,7 +53,16 @@ public:
 
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
+    void removeSourceLayer( unsigned sourceLayer );
     const Map<unsigned, unsigned> &getSourceLayers() const;
+    const double *getWeightMatrix( unsigned sourceLayer ) const;
+
+    /*
+     Receives an index of a layer and updates all the layer maps (for weights, source layers and
+     activations) so any layer index in the map, which is equal or higher than the given startIndex,
+     will be reduced by -1. This is part of the reduction of consecutive WS layers.
+    */
+    void reduceIndexFromAllMaps( unsigned startIndex );
 
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,
@@ -75,6 +84,7 @@ public:
     bool neuronHasVariable( unsigned neuron ) const;
     unsigned neuronToVariable( unsigned neuron ) const;
     unsigned variableToNeuron( unsigned variable ) const;
+    unsigned getMaxVariable() const;
 
     unsigned getSize() const;
     unsigned getLayerIndex() const;
@@ -107,15 +117,17 @@ public:
     void eliminateVariable( unsigned variable, double value );
     void updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
                                 const Map<unsigned, unsigned> &mergedVariables );
-
     bool neuronEliminated( unsigned neuron ) const;
     double getEliminatedNeuronValue( unsigned neuron ) const;
+    void reduceIndexAfterMerge( unsigned startIndex );
 
     /*
       For debugging purposes
     */
     void dump() const;
     static String typeToString( Type type );
+    bool operator==( const Layer &layer ) const;
+    bool compareWeights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const;
 
 private:
     unsigned _layerIndex;
@@ -179,7 +191,10 @@ private:
     double getSymbolicUbOfLb( unsigned neuron ) const;
     double getSymbolicLbOfUb( unsigned neuron ) const;
     double getSymbolicUbOfUb( unsigned neuron ) const;
-};
+
+    void adjustWeightMapIndexing( Map<unsigned, double *> &map,
+                                  unsigned indexToStart );
+    };
 
 } // namespace NLR
 
