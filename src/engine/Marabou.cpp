@@ -28,9 +28,9 @@
 #undef ERROR
 #endif
 
-Marabou::Marabou( unsigned verbosity )
+Marabou::Marabou()
     : _acasParser( NULL )
-    , _engine( verbosity )
+    , _engine()
 {
 }
 
@@ -106,8 +106,6 @@ void Marabou::prepareInputQuery()
 
         printf( "\n" );
     }
-
-    extractSplittingThreshold();
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )
@@ -191,19 +189,6 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         summaryFile.write( "\n" );
     }
-}
-
-void Marabou::extractSplittingThreshold()
-{
-    int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
-    if ( splitThreshold < 0 )
-    {
-        printf( "Invalid constraint violation threshold value %d,"
-                " using default value %u.\n\n", splitThreshold,
-                GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
-        splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
-    }
-    _engine.setConstraintViolationThreshold( splitThreshold );
 }
 
 //

@@ -117,14 +117,14 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 
     return [vals, stats]
 
-def createOptions(numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivides=2,
+def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, dnc=False,
-                  divideStrategy="auto" ):
+                  sncSplittingStrategy="auto" ):
     """Create an options object for how Marabou should solve the query
 
     Args:
         numWorkers (int, optional): Number of workers to use in DNC mode, defaults to 4
-        initialTimeout (int, optional): Initial timeout in seconds for DNC mode before dividing, defaults to 5 
+        initialTimeout (int, optional): Initial timeout in seconds for DNC mode before dividing, defaults to 5
         initialDivides (int, optional): Number of time sto perform the initial partitioning.
             This creates 2^(initialDivides) sub-problems for DNC mode, defaults to 0
         onlineDivides (int, optional): Number of times to perform the online partitioning when a sub-query
@@ -133,7 +133,7 @@ def createOptions(numWorkers=4, initialTimeout=5, initialDivides=0, onlineDivide
         timeoutFactor (float, optional): Timeout factor for DNC mode, defaults to 1.5
         verbosity (int, optional): Verbosity level for Marabou, defaults to 2
         dnc (bool, optional): If DNC mode should be used, defaults to False
-        dnc (string, optional): Specifies which partitioning strategy to use in the DNC mode (auto/largest-interval/polarity).
+        sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the DNC mode (auto/largest-interval/polarity).
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
