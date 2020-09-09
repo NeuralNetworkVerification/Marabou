@@ -1558,7 +1558,7 @@ bool Layer::operator==( const Layer &layer ) const
 
     if ( _bias && layer._bias )
     {
-        if ( std::memcmp( _bias, layer._bias, _size ) != 0 )
+        if ( std::memcmp( _bias, layer._bias, _size * sizeof(double) ) != 0 )
             return false;
     }
 
