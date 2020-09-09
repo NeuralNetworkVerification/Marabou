@@ -19,6 +19,7 @@
 #include "List.h"
 #include "MString.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "SmtState.h"
 
 #include <boost/lockfree/queue.hpp>
 #include <utility>
@@ -30,16 +31,11 @@ struct SubQuery
     {
     }
 
-    SubQuery( const String &queryId, std::unique_ptr<PiecewiseLinearCaseSplit> &split, unsigned timeoutInSeconds )
-        : _queryId( queryId )
-        , _split( std::move( split ) )
-        , _timeoutInSeconds( timeoutInSeconds )
-    {
-    }
-
     String _queryId;
     std::unique_ptr<PiecewiseLinearCaseSplit> _split;
+    std::unique_ptr<SmtState> _smtState;
     unsigned _timeoutInSeconds;
+    unsigned _depth;
 };
 
 // Synchronized Queue containing the Sub-Queries shared by workers

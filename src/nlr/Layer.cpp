@@ -168,6 +168,17 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == SIGN )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = FloatUtils::isNegative( inputValue ) ? -1 : 1;
+        }
+    }
+
     else
     {
         printf( "Error! Neuron type %u unsupported\n", _type );
@@ -207,6 +218,26 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
+const double *Layer::getWeightMatrix( unsigned sourceLayer ) const
+{
+    ASSERT( _layerToWeights.exists( sourceLayer ) );
+    return _layerToWeights[sourceLayer];
+}
+
+void Layer::removeSourceLayer( unsigned sourceLayer )
+{
+    ASSERT( _sourceLayers.exists( sourceLayer ) );
+
+    delete[] _layerToWeights[sourceLayer];
+    delete[] _layerToPositiveWeights[sourceLayer];
+    delete[] _layerToNegativeWeights[sourceLayer];
+
+    _sourceLayers.erase( sourceLayer );
+    _layerToWeights.erase( sourceLayer );
+    _layerToPositiveWeights.erase( sourceLayer );
+    _layerToNegativeWeights.erase( sourceLayer );
+}
+
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
 {
     unsigned index = sourceNeuron * _size + targetNeuron;
@@ -244,7 +275,7 @@ double Layer::getBias( unsigned neuron ) const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX );
+    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -252,7 +283,7 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
     _neuronToActivationSources[targetNeuron].append( NeuronIndex( sourceLayer, sourceNeuron ) );
 
     DEBUG({
-            if ( _type == RELU || _type == ABSOLUTE_VALUE )
+            if ( _type == RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
 }
@@ -345,10 +376,14 @@ void Layer::computeIntervalArithmeticBounds()
         computeIntervalArithmeticBoundsForAbs();
         break;
 
+    case SIGN:
+        computeIntervalArithmeticBoundsForSign();
+        break;
+
     case MAX:
 
     default:
-        printf( "Error! Actiation type %u unsupported\n", _type );
+        printf( "Error! Activation type %u unsupported\n", _type );
         throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
         break;
     }
@@ -501,6 +536,37 @@ void Layer::computeIntervalArithmeticBoundsForAbs()
     }
 }
 
+void Layer::computeIntervalArithmeticBoundsForSign()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _eliminatedNeurons.exists( i ) )
+            continue;
+
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        double lb = sourceLayer->getLb( sourceIndex._neuron );
+        double ub = sourceLayer->getUb( sourceIndex._neuron );
+
+        if ( !FloatUtils::isNegative( lb ) )
+        {
+            _lb[i] = 1;
+            _ub[i] = 1;
+        }
+        else if ( FloatUtils::isNegative( ub ) )
+        {
+            _lb[i] = -1;
+            _ub[i] = -1;
+        }
+        else
+        {
+            _lb[i] = -1;
+            _ub[i] = 1;
+        }
+    }
+}
+
 void Layer::computeSymbolicBounds()
 {
     switch ( _type )
@@ -522,12 +588,44 @@ void Layer::computeSymbolicBounds()
         computeSymbolicBoundsForAbsoluteValue();
         break;
 
-    case MAX:
-
     default:
-        printf( "Error! Actiation type %u unsupported\n", _type );
-        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+        computeSymbolicBoundsDefault();
         break;
+    }
+}
+
+void Layer::computeSymbolicBoundsDefault()
+{
+    // This is the default operation, for layers that are not
+    // supported yet. The "symbolic" bounds computed are just the
+    // concrete bounds.
+
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        double lb;
+        double ub;
+
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            lb = _eliminatedNeurons[i];
+            ub = _eliminatedNeurons[i];
+        }
+        else
+        {
+            lb = _lb[i];
+            ub = _ub[i];
+        }
+
+        _symbolicLowerBias[i] = lb;
+        _symbolicUpperBias[i] = ub;
+
+        _symbolicLbOfLb[i] = lb;
+        _symbolicUbOfLb[i] = ub;
+        _symbolicLbOfUb[i] = lb;
+        _symbolicUbOfUb[i] = ub;
     }
 }
 
@@ -1281,6 +1379,10 @@ String Layer::typeToString( Type type )
         return "MAX";
         break;
 
+    case SIGN:
+        return "SIGN";
+        break;
+
     default:
         return "UNKNOWN TYPE";
         break;
@@ -1337,6 +1439,7 @@ void Layer::dump() const
     case RELU:
     case ABSOLUTE_VALUE:
     case MAX:
+    case SIGN:
 
         for ( unsigned i = 0; i < _size; ++i )
         {
@@ -1396,6 +1499,116 @@ double Layer::getEliminatedNeuronValue( unsigned neuron ) const
 {
     ASSERT( _eliminatedNeurons.exists( neuron ) );
     return _eliminatedNeurons[neuron];
+}
+
+void Layer::reduceIndexFromAllMaps( unsigned startIndex )
+{
+    // Adjust the source layers
+    Map<unsigned, unsigned> copyOfSources = _sourceLayers;
+    _sourceLayers.clear();
+    for ( const auto &pair : copyOfSources )
+        _sourceLayers[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
+
+    // Adjust all weight maps
+    adjustWeightMapIndexing( _layerToWeights, startIndex );
+    adjustWeightMapIndexing( _layerToPositiveWeights, startIndex );
+    adjustWeightMapIndexing( _layerToNegativeWeights, startIndex );
+
+    // Adjust the neuron activations
+    for ( auto &neuronToSources : _neuronToActivationSources )
+    {
+        for ( auto &source : neuronToSources.second )
+        {
+            if ( source._layer >= startIndex )
+                --source._layer;
+        }
+    }
+}
+
+void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned startIndex )
+{
+    Map<unsigned, double *> copyOfWeights = map;
+    map.clear();
+    for ( const auto &pair : copyOfWeights )
+        map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
+}
+
+void Layer::reduceIndexAfterMerge ( unsigned startIndex )
+{
+    if ( _layerIndex >= startIndex )
+        --_layerIndex;
+}
+
+bool Layer::operator==( const Layer &layer ) const
+{
+    if ( _layerIndex != layer._layerIndex )
+        return false;
+
+    if ( _type != layer._type )
+        return false;
+
+    if ( _size != layer._size )
+        return false;
+
+    if ( _inputLayerSize != layer._inputLayerSize )
+        return false;
+
+    if ( ( _bias && !layer._bias ) || ( !_bias && layer._bias ) )
+        return false;
+
+    if ( _bias && layer._bias )
+    {
+        if ( std::memcmp( _bias, layer._bias, _size * sizeof(double) ) != 0 )
+            return false;
+    }
+
+    if ( _sourceLayers != layer._sourceLayers )
+        return false;
+
+    if ( !compareWeights( _layerToWeights, layer._layerToWeights ) )
+        return false;
+
+    if ( !compareWeights( _layerToPositiveWeights, layer._layerToPositiveWeights ) )
+        return false;
+
+    if ( !compareWeights( _layerToNegativeWeights, layer._layerToNegativeWeights ) )
+        return false;
+
+    return true;
+}
+
+bool Layer::compareWeights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const
+{
+    if ( map.size() != mapOfOtherLayer.size() )
+        return false;
+
+    for ( const auto &pair : map )
+    {
+        unsigned key = pair.first;
+        double *value = pair.second;
+
+        if ( !mapOfOtherLayer.exists( key ) )
+            return false;
+
+        if ( std::memcmp( value,
+                          mapOfOtherLayer[key],
+                          _size * _sourceLayers[key] * sizeof(double) ) != 0 )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+unsigned Layer::getMaxVariable() const
+{
+    unsigned result = 0;
+    for ( const auto &pair : _neuronToVariable )
+        if ( pair.second > result )
+            result = pair.second;
+
+    return result;
 }
 
 } // namespace NLR

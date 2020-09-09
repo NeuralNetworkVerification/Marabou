@@ -16,13 +16,16 @@
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "InputQuery.h"
 #include "LPFormulator.h"
 #include "MILPFormulator.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "MatrixMultiplication.h"
 #include "NLRError.h"
 #include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
+#include "SignConstraint.h"
 #include <cstring>
 
 namespace NLR {
@@ -43,6 +46,9 @@ bool NetworkLevelReasoner::functionTypeSupported( PiecewiseLinearFunctionType ty
         return true;
 
     if ( type == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+        return true;
+
+    if ( type == PiecewiseLinearFunctionType::SIGN )
         return true;
 
     return false;
@@ -76,13 +82,18 @@ void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias
 
 void NetworkLevelReasoner::addActivationSource( unsigned sourceLayer,
                                                 unsigned sourceNeuron,
-                                                unsigned targetLeyer,
+                                                unsigned targetLayer,
                                                 unsigned targetNeuron )
 {
-    _layerIndexToLayer[targetLeyer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
+    _layerIndexToLayer[targetLayer]->addActivationSource( sourceLayer, sourceNeuron, targetNeuron );
 }
 
 const Layer *NetworkLevelReasoner::getLayer( unsigned index ) const
+{
+    return _layerIndexToLayer[index];
+}
+
+Layer *NetworkLevelReasoner::getLayer( unsigned index )
 {
     return _layerIndexToLayer[index];
 }
@@ -172,7 +183,9 @@ void NetworkLevelReasoner::storeIntoOther( NetworkLevelReasoner &other ) const
         other._layerIndexToLayer[newLayer->getLayerIndex()] = newLayer;
     }
 
-    other._constraintsInTopologicalOrder = _constraintsInTopologicalOrder;
+    // Other has fresh copies of the PLCs, so its topological order
+    // shouldn't contain any stale data
+    other._constraintsInTopologicalOrder.clear();
 }
 
 void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -229,6 +242,305 @@ List<PiecewiseLinearConstraint *> NetworkLevelReasoner::getConstraintsInTopologi
 void NetworkLevelReasoner::addConstraintInTopologicalOrder( PiecewiseLinearConstraint *constraint )
 {
     _constraintsInTopologicalOrder.append( constraint );
+}
+
+void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint )
+{
+    if ( _constraintsInTopologicalOrder.exists( constraint ) )
+        _constraintsInTopologicalOrder.erase( constraint );
+}
+
+InputQuery NetworkLevelReasoner::generateInputQuery()
+{
+    InputQuery result;
+
+    // Number of variables
+    unsigned numberOfVariables = 0;
+    for ( const auto &it : _layerIndexToLayer )
+    {
+        unsigned maxVariable = it.second->getMaxVariable();
+        if ( maxVariable > numberOfVariables )
+            numberOfVariables = maxVariable;
+    }
+    ++numberOfVariables;
+    result.setNumberOfVariables( numberOfVariables );
+
+    // Handle the various layers
+    for ( const auto &it : _layerIndexToLayer )
+        generateInputQueryForLayer( result, *it.second );
+
+    // Mark the input variables
+    const Layer *inputLayer = _layerIndexToLayer[0];
+    for ( unsigned i = 0; i < inputLayer->getSize(); ++i )
+        result.markInputVariable( inputLayer->neuronToVariable( i ), i );
+
+    // Mark the output variables
+    const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
+    for ( unsigned i = 0; i < outputLayer->getSize(); ++i )
+        result.markOutputVariable( outputLayer->neuronToVariable( i ), i );
+
+    // Store any known bounds of all layers
+    for ( const auto &layerPair : _layerIndexToLayer )
+    {
+        const Layer *layer = layerPair.second;
+        for ( unsigned i = 0; i < layer->getSize(); ++i )
+        {
+            unsigned variable = layer->neuronToVariable( i );
+            result.setLowerBound( variable, layer->getLb( i ) );
+            result.setUpperBound( variable, layer->getUb( i ) );
+        }
+    }
+
+    result.constructNetworkLevelReasoner();
+    return result;
+}
+
+void NetworkLevelReasoner::reindexNeurons()
+{
+    unsigned index = 0;
+    for ( auto &it : _layerIndexToLayer )
+    {
+        for ( unsigned i = 0; i < it.second->getSize(); ++i )
+        {
+            it.second->setNeuronVariable( i, index );
+            ++index;
+        }
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
+                                                       const Layer &layer )
+{
+    switch ( layer.getLayerType() )
+    {
+    case Layer::INPUT:
+        break;
+
+    case Layer::WEIGHTED_SUM:
+        generateInputQueryForWeightedSumLayer( inputQuery, layer );
+        break;
+
+    case Layer::RELU:
+        generateInputQueryForReluLayer( inputQuery, layer );
+        break;
+
+    case Layer::SIGN:
+        generateInputQueryForSignLayer( inputQuery, layer );
+        break;
+
+    case Layer::ABSOLUTE_VALUE:
+        generateInputQueryForAbsoluteValueLayer( inputQuery, layer );
+        break;
+
+    default:
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
+                        Stringf( "Layer %u not yet supported", layer.getLayerType() ).ascii() );
+        break;
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        ReluConstraint *relu = new ReluConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( relu );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        SignConstraint *sign = new SignConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( sign );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        AbsoluteValueConstraint *absoluteValue = new AbsoluteValueConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( absoluteValue );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        Equation eq;
+        eq.setScalar( -layer.getBias( i ) );
+        eq.addAddend( -1, layer.neuronToVariable( i ) );
+
+        for ( const auto &it : layer.getSourceLayers() )
+        {
+            const Layer *sourceLayer = _layerIndexToLayer[it.first];
+
+            for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
+            {
+                double coefficient = layer.getWeight( sourceLayer->getLayerIndex(), j, i );
+                eq.addAddend( coefficient, sourceLayer->neuronToVariable( j ) );
+            }
+        }
+
+        inputQuery.addEquation( eq );
+    }
+}
+
+void NetworkLevelReasoner::mergeConsecutiveWSLayers()
+{
+    // Iterate over all layers, except the input layer
+    unsigned layer = 1;
+
+    while ( layer < _layerIndexToLayer.size() )
+    {
+        if ( suitableForMerging( layer ) )
+            mergeWSLayers( layer );
+        else
+            ++layer;
+    }
+}
+
+bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex )
+{
+    /*
+      The given layer index is a candidate layer. We now check whether
+      it is an eligible second WS layer that can be merged with its
+      predecessor
+    */
+    const Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
+
+    // Layer should be a Weighted Sum layer
+    if ( secondLayer->getLayerType() != Layer::WEIGHTED_SUM )
+        return false;
+
+    // Layer should have a single source
+    if ( secondLayer->getSourceLayers().size() != 1 )
+        return false;
+
+    // Grab the predecessor layer
+    unsigned firstLayerIndex = secondLayer->getSourceLayers().begin()->first;
+    const Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+
+    // First layer should also be a weighted sum
+    if ( firstLayer->getLayerType() != Layer::WEIGHTED_SUM )
+        return false;
+
+    // First layer should not feed into any other layer
+    for ( unsigned i = secondLayerIndex + 1; i < getNumberOfLayers(); ++i )
+    {
+        const Layer *layer = _layerIndexToLayer[i];
+
+        if ( layer->getSourceLayers().exists( firstLayerIndex ) )
+            return false;
+    }
+
+    return true;
+}
+
+void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
+{
+    Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
+    unsigned firstLayerIndex = secondLayer->getSourceLayers().begin()->first;
+    Layer *firstLayer = _layerIndexToLayer[firstLayerIndex];
+    unsigned lastLayerIndex = _layerIndexToLayer.size() - 1;
+
+    // Iterate over all inputs to the first layer
+    for ( const auto &pair : firstLayer->getSourceLayers() )
+    {
+        unsigned previousToFirstLayerIndex = pair.first;
+        const Layer *inputLayerToFirst = _layerIndexToLayer[previousToFirstLayerIndex];
+
+        unsigned inputDimension = inputLayerToFirst->getSize();
+        unsigned middleDimension = firstLayer->getSize();
+        unsigned outputDimension = secondLayer->getSize();
+
+        // Compute new weights
+        const double *firstLayerMatrix = firstLayer->getWeightMatrix( previousToFirstLayerIndex );
+        const double *secondLayerMatrix = secondLayer->getWeightMatrix( firstLayerIndex );
+        double *newWeightMatrix = multiplyWeights( firstLayerMatrix,
+                                                   secondLayerMatrix,
+                                                   inputDimension,
+                                                   middleDimension,
+                                                   outputDimension );
+        // Update bias for second layer
+        for ( unsigned targetNeuron = 0; targetNeuron < secondLayer->getSize(); ++targetNeuron )
+        {
+            double newBias = secondLayer->getBias( targetNeuron );
+            for ( unsigned sourceNeuron = 0;
+                  sourceNeuron < firstLayer->getSize();
+                  ++sourceNeuron )
+            {
+                newBias += ( firstLayer->getBias( sourceNeuron ) *
+                             secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron ) );
+            }
+
+            secondLayer->setBias( targetNeuron, newBias );
+        }
+
+        // Adjust the sources of the second layer
+        secondLayer->addSourceLayer( previousToFirstLayerIndex, inputLayerToFirst->getSize() );
+        for ( unsigned sourceNeuron = 0; sourceNeuron < inputDimension; ++sourceNeuron )
+        {
+            for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
+            {
+                double weight = newWeightMatrix[sourceNeuron * outputDimension + targetNeuron];
+                secondLayer->setWeight( previousToFirstLayerIndex,
+                                        sourceNeuron,
+                                        targetNeuron,
+                                        weight );
+            }
+        }
+        delete[] newWeightMatrix;
+    }
+
+    // Remove the first layer from second layer's sources
+    secondLayer->removeSourceLayer( firstLayerIndex );
+
+    // Finally, remove the first layer from the map and delete it
+    _layerIndexToLayer.erase( firstLayerIndex );
+    delete firstLayer;
+
+    // Adjust the indices of all layers starting from secondLayerIndex
+    // and higher
+    for ( unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i )
+        reduceLayerIndex( i, firstLayerIndex );
+}
+
+double *NetworkLevelReasoner::multiplyWeights( const double *firstMatrix,
+                                               const double *secondMatrix,
+                                               unsigned inputDimension,
+                                               unsigned middleDimension,
+                                               unsigned outputDimension )
+{
+    double *newMatrix = new double[inputDimension * outputDimension];
+    std::fill_n( newMatrix, inputDimension * outputDimension, 0 );
+    matrixMultiplication( firstMatrix,
+                          secondMatrix,
+                          newMatrix,
+                          inputDimension,
+                          middleDimension,
+                          outputDimension );
+    return newMatrix;
+}
+
+void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex )
+{
+    // update Layer-level maps
+    _layerIndexToLayer[layer]->reduceIndexFromAllMaps( startIndex );
+    _layerIndexToLayer[layer]->reduceIndexAfterMerge( startIndex );
+
+    // Update the mapping in the NLR
+    _layerIndexToLayer[layer - 1] = _layerIndexToLayer[layer];
+    _layerIndexToLayer.erase( layer );
 }
 
 } // namespace NLR

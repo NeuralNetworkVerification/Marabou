@@ -32,11 +32,14 @@
 #include "MarabouError.h"
 #include "MString.h"
 #include "MaxConstraint.h"
+#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+#include "SnCDivideStrategy.h"
+#include "SignConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -88,6 +91,11 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     ipq.addPiecewiseLinearConstraint(r);
 }
 
+void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    PiecewiseLinearConstraint* r = new SignConstraint(var1, var2);
+    ipq.addPiecewiseLinearConstraint(r);
+}
+
 void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     Set<unsigned> e;
     for(unsigned var: elements)
@@ -115,24 +123,46 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
 
 struct MarabouOptions {
     MarabouOptions()
-        : _numWorkers( 4 )
-        , _initialTimeout( 5 )
-        , _initialDivides( 0 )
-        , _onlineDivides( 2 )
-        , _timeoutInSeconds( 0 )
-        , _timeoutFactor( 1.5 )
-        , _verbosity( 2 )
-        , _dnc( false )
+        : _dnc( Options::get()->getBool( Options::DNC_MODE ) )
+        , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
+        , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
+        , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
+        , _onlineDivides( Options::get()->getInt( Options::NUM_ONLINE_DIVIDES ) )
+        , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
+        , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
+        , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
+        , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
 
+  void setOptions()
+  {
+    // Bool options
+    Options::get()->setBool( Options::DNC_MODE, _dnc );
+
+    // int options
+    Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
+    Options::get()->setInt( Options::INITIAL_TIMEOUT, _initialTimeout );
+    Options::get()->setInt( Options::NUM_INITIAL_DIVIDES, _initialDivides );
+    Options::get()->setInt( Options::NUM_ONLINE_DIVIDES, _onlineDivides );
+    Options::get()->setInt( Options::VERBOSITY, _verbosity );
+    Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
+
+    // float options
+    Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
+
+    // string options
+    Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
+  }
+
+    bool _dnc;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
+    unsigned _verbosity;
     unsigned _timeoutInSeconds;
     float _timeoutFactor;
-    unsigned _verbosity;
-    bool _dnc;
+    std::string _sncSplittingStrategyString;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -147,28 +177,19 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        bool verbosity = options._verbosity;
-        unsigned timeoutInSeconds = options._timeoutInSeconds;
-        bool dnc = options._dnc;
+
+        options.setOptions();
+
+        bool dnc = Options::get()->getBool( Options::DNC_MODE );
 
         Engine engine;
-        engine.setVerbosity(verbosity);
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
         if ( dnc )
         {
-            unsigned initialDivides = options._initialDivides;
-            unsigned initialTimeout = options._initialTimeout;
-            unsigned numWorkers = options._numWorkers;
-            unsigned onlineDivides = options._onlineDivides;
-            float timeoutFactor = options._timeoutFactor;
+            auto dncManager = std::unique_ptr<DnCManager>( new DnCManager( &inputQuery ) );
 
-            auto dncManager = std::unique_ptr<DnCManager>
-                ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
-                                  timeoutFactor, DivideStrategy::LargestInterval,
-                                  &inputQuery, verbosity ) );
-
-            dncManager->solve( timeoutInSeconds );
+            dncManager->solve();
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
@@ -188,6 +209,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             }
         } else
         {
+            unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
@@ -260,6 +282,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addSignConstraint", &addSignConstraint, R"pbdoc(
+        Add a Sign constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Sign constraint
+            var2 (int): Output variable to Sign constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
     m.def("addMaxConstraint", &addMaxConstraint, R"pbdoc(
         Add a Max constraint to the InputQuery
 
@@ -304,7 +335,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_dnc", &MarabouOptions::_dnc);
+        .def_readwrite("_dnc", &MarabouOptions::_dnc)
+        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)

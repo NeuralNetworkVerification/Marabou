@@ -80,6 +80,11 @@ public:
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
 
+    // If the flag is true, the preprocessor will try to merge two
+    // logically-consecutive weighted sum layers into a single
+    // weighted sum layer, to reduce the number of variables
+    static const bool PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS;
+
     // Try to set the initial tableau assignment to an assignment that is legal with
     // respect to the input network.
     static const bool WARM_START;
@@ -109,10 +114,11 @@ public:
     // How many potential pivots should the engine inspect (at most) in every simplex iteration?
     static const unsigned MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
 
-    // The number of violations of a constraints after which the SMT core will initiate a case split
-    static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
-
     static const DivideStrategy SPLITTING_HEURISTICS;
+
+    // When automatically deciding which splitting strategy to use, we use relu-splitting if
+    // the number of inputs is larger than this number.
+    static const unsigned INTERVAL_SPLITTING_THRESHOLD;
 
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
@@ -151,6 +157,8 @@ public:
         COMPUTE_INVERTED_BASIS_MATRIX = 0,
         // Use the inverted basis matrix without using it, via transformations
         USE_IMPLICIT_INVERTED_BASIS_MATRIX = 1,
+        // Disable explicit basis bound tightening
+        DISABLE_EXPLICIT_BASIS_TIGHTENING = 2,
     };
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
@@ -222,7 +230,18 @@ public:
     /* In the polarity-based branching heuristics, only this many earliest nodes
        are considered to branch on.
     */
-    static const unsigned RUNTIME_ESTIMATE_THRESHOLD;
+    static const unsigned POLARITY_CANDIDATES_THRESHOLD;
+
+    /* The max number of DnC splits
+    */
+    static const unsigned DNC_DEPTH_THRESHOLD;
+
+#ifdef ENABLE_GUROBI
+    /*
+      The number of threads Gurobi spawns
+    */
+    static const unsigned GUROBI_NUMBER_OF_THREADS;
+#endif // ENABLE_GUROBI
 
     /*
       Logging options

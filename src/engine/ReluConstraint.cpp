@@ -867,11 +867,6 @@ ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
     return _phaseStatus;
 }
 
-bool ReluConstraint::supportsSymbolicBoundTightening() const
-{
-    return true;
-}
-
 bool ReluConstraint::supportPolarity() const
 {
     return true;
@@ -908,7 +903,7 @@ ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
     return _direction;
 }
 
-void ReluConstraint::updateScore()
+void ReluConstraint::updateScoreBasedOnPolarity()
 {
     _score = std::abs( computePolarity() );
 }

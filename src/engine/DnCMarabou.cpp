@@ -91,33 +91,12 @@ void DnCMarabou::run()
     /*
       Step 3: initialize the DNC core
     */
-    unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
-    unsigned initialTimeout = Options::get()->getInt( Options::INITIAL_TIMEOUT );
-    unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
-    unsigned onlineDivides = Options::get()->getInt( Options::NUM_ONLINE_DIVIDES );
-    unsigned verbosity = Options::get()->getInt( Options::VERBOSITY );
-    unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-    float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
-
-    int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
-    if ( splitThreshold < 0 )
-    {
-        printf( "Invalid constraint violation threshold value %d,"
-                " using default value %u.\n\n", splitThreshold,
-                GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD );
-        splitThreshold = GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD;
-    }
-
     _dncManager = std::unique_ptr<DnCManager>
-      ( new DnCManager( numWorkers, initialDivides, initialTimeout,
-                        onlineDivides, timeoutFactor,
-                        DivideStrategy::LargestInterval, &_inputQuery,
-                        verbosity ) );
-    _dncManager->setConstraintViolationThreshold( splitThreshold );
+        ( new DnCManager( &_inputQuery ) );
 
     struct timespec start = TimeUtils::sampleMicro();
 
-    _dncManager->solve( timeoutInSeconds );
+    _dncManager->solve();
 
     struct timespec end = TimeUtils::sampleMicro();
 

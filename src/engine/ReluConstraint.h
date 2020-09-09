@@ -152,7 +152,7 @@ public:
     String serializeToString() const;
 
     /*
-      Get the index of the B variable.
+      Get the index of the B and F variables.
     */
     unsigned getB() const;
     unsigned getF() const;
@@ -167,12 +167,6 @@ public:
     */
     bool auxVariableInUse() const;
     unsigned getAux() const;
-
-    /*
-      Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    bool supportsSymbolicBoundTightening() const;
 
     bool supportPolarity() const;
 
@@ -197,7 +191,7 @@ public:
 
     PhaseStatus getDirection() const;
 
-    void updateScore();
+    void updateScoreBasedOnPolarity();
 
 private:
     unsigned _b, _f;

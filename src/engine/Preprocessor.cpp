@@ -44,9 +44,23 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     makeAllEquationsEqualities();
 
     /*
-      Attempt to construct a network level reasonor
+      Attempt to construct a network level reasoner
     */
     _preprocessed.constructNetworkLevelReasoner();
+
+    /*
+      Merge consecutive WS layers
+    */
+    if ( GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS )
+    {
+        if ( query._networkLevelReasoner )
+        {
+            unsigned oldNumberOfVariables = _preprocessed.getNumberOfVariables();
+            _preprocessed._networkLevelReasoner->mergeConsecutiveWSLayers();
+            _preprocessed = _preprocessed._networkLevelReasoner->generateInputQuery();
+            _preprocessed.setNumberOfVariables( oldNumberOfVariables );
+        }
+    }
 
     /*
       Collect input and output variables
@@ -62,6 +76,11 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
     if ( GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
         addPlAuxiliaryEquations();
+
+    /*
+      Set any missing bounds
+    */
+    setMissingBoundsToInfinity();
 
     /*
       Do the preprocessing steps:
@@ -546,7 +565,9 @@ void Preprocessor::collectFixedValues()
         else if ( !usedVariables.exists( i ) )
         {
             // If possible, choose a value that matches the debugging
-            // solution. Otherwise, pick the lower bound
+            // solution. Otherwise, pick an arbitrary values. If the
+            // bounds are infinite for this variable, set them
+            // arbitrarily as well.
             if ( _preprocessed._debuggingSolution.exists( i ) &&
                  _preprocessed._debuggingSolution[i] >= _preprocessed.getLowerBound( i ) &&
                  _preprocessed._debuggingSolution[i] <= _preprocessed.getUpperBound( i ) )
@@ -555,10 +576,18 @@ void Preprocessor::collectFixedValues()
             }
             else
             {
-                _fixedVariables[i] = _preprocessed.getLowerBound( i );
+                if ( FloatUtils::isFinite( _preprocessed.getLowerBound( i ) ) )
+                    _fixedVariables[i] = _preprocessed.getLowerBound( i );
+                else if ( FloatUtils::isFinite( _preprocessed.getUpperBound( i ) ) )
+                    _fixedVariables[i] = _preprocessed.getUpperBound( i );
+                else
+                    _fixedVariables[i] = 0;
             }
+
+            _preprocessed.setLowerBound( i, _fixedVariables[i] );
+            _preprocessed.setUpperBound( i, _fixedVariables[i] );
         }
-	}
+    }
 }
 
 void Preprocessor::eliminateVariables()
@@ -709,6 +738,9 @@ void Preprocessor::eliminateVariables()
             if ( _statistics )
                 _statistics->ppIncNumConstraintsRemoved();
 
+            if ( _preprocessed._networkLevelReasoner )
+                _preprocessed._networkLevelReasoner->
+                    removeConstraintFromTopologicalOrder( *constraint );
             delete *constraint;
             *constraint = NULL;
             constraint = constraints.erase( constraint );
@@ -801,6 +833,17 @@ unsigned Preprocessor::getNewIndex( unsigned oldIndex ) const
 void Preprocessor::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void Preprocessor::setMissingBoundsToInfinity()
+{
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        if ( !_preprocessed.getLowerBounds().exists( i ) )
+            _preprocessed.setLowerBound( i, FloatUtils::negativeInfinity() );
+        if ( !_preprocessed.getUpperBounds().exists( i ) )
+            _preprocessed.setUpperBound( i, FloatUtils::infinity() );
+    }
 }
 
 void Preprocessor::addPlAuxiliaryEquations()
