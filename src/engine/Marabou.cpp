@@ -108,8 +108,6 @@ void Marabou::prepareInputQuery()
     }
 
     extractSplittingThreshold();
-    DivideStrategy strategy = Options::get()->getDivideStrategy( Options::SPLITTING_STRATEGY );
-    _engine.setSplittingStrategy( strategy );
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )

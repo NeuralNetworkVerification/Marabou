@@ -100,9 +100,7 @@ void DnCMarabou::run()
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
 
-    SnCDivideStrategy snCStrategy = Options::get()->getSnCDivideStrategy
-        ( Options::SNC_SPLITTING_STRATEGY );
-    DivideStrategy strategy = Options::get()->getDivideStrategy
+    SnCDivideStrategy strategy = Options::get()->getSnCDivideStrategy
         ( Options::SPLITTING_STRATEGY );
 
     int splitThreshold = Options::get()->getInt( Options::SPLIT_THRESHOLD );
@@ -117,7 +115,7 @@ void DnCMarabou::run()
     _dncManager = std::unique_ptr<DnCManager>
       ( new DnCManager( numWorkers, initialDivides, initialTimeout,
                         onlineDivides, timeoutFactor,
-                        strategy, snCStrategy, &_inputQuery,
+                        strategy, &_inputQuery,
                         verbosity ) );
     _dncManager->setConstraintViolationThreshold( splitThreshold );
 

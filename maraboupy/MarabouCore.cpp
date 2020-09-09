@@ -131,8 +131,7 @@ struct MarabouOptions {
         , _timeoutFactor( 1.5 )
         , _verbosity( 2 )
         , _dnc( false )
-        , _splittingStrategyString( "" )
-        , _snCSplittingStrategyString( "" )
+        , _snCDivideStrategyString( "auto" )
     {};
 
     unsigned _numWorkers;
@@ -143,33 +142,16 @@ struct MarabouOptions {
     float _timeoutFactor;
     unsigned _verbosity;
     bool _dnc;
-    std::string _splittingStrategyString;
-    std::string _snCSplittingStrategyString;
+    std::string _snCDivideStrategyString;
 
     SnCDivideStrategy getSnCDivideStrategyFromString() const
     {
-        if ( _snCSplittingStrategyString == "polarity" )
-            return SnCDivideStrategy::Polarity;
-        else if ( _snCSplittingStrategyString == "earliest-relu" )
-            return SnCDivideStrategy::EarliestReLU;
-        else if ( _snCSplittingStrategyString == "largest-interval" )
-            return SnCDivideStrategy::LargestInterval;
-        else
-            return SnCDivideStrategy::Auto;
-    }
-
-    DivideStrategy getDivideStrategyFromString() const
-    {
-        if ( _splittingStrategyString == "polarity" )
-            return DivideStrategy::Polarity;
-        else if ( _splittingStrategyString == "earliest-relu" )
-            return DivideStrategy::EarliestReLU;
-        else if ( _splittingStrategyString == "relu-violation" )
-            return DivideStrategy::ReLUViolation;
-        else if ( _splittingStrategyString == "largest-interval" )
-            return DivideStrategy::LargestInterval;
-        else
-            return DivideStrategy::Auto;
+      if ( _snCDivideStrategyString == "polarity" )
+        return SnCDivideStrategy::Polarity;
+      else if ( _snCDivideStrategyString == "largest-interval" )
+        return SnCDivideStrategy::LargestInterval;
+      else
+        return SnCDivideStrategy::Auto;
     }
 };
 
@@ -191,7 +173,6 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
         Engine engine;
         engine.setVerbosity(verbosity);
-        engine.setSplittingStrategy(options.getDivideStrategyFromString());
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
         if ( dnc )
@@ -204,8 +185,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
             auto dncManager = std::unique_ptr<DnCManager>
                 ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
-                                  timeoutFactor, options.getDivideStrategyFromString(),
-                                  options.getSnCDivideStrategyFromString(),
+                                  timeoutFactor, options.getSnCDivideStrategyFromString(),
                                   &inputQuery, verbosity ) );
 
             dncManager->solve( timeoutInSeconds );
@@ -354,8 +334,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc)
-        .def_readwrite("_splittingStrategyString", &MarabouOptions::_splittingStrategyString)
-        .def_readwrite("_snCSplittingStrategyString", &MarabouOptions::_snCSplittingStrategyString);
+        .def_readwrite("_snCDivideStrategyString", &MarabouOptions::_snCDivideStrategyString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)

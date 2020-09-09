@@ -60,8 +60,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 
 DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
                         unsigned initialTimeout, unsigned onlineDivides,
-                        float timeoutFactor, DivideStrategy splittingStrategy,
-                        SnCDivideStrategy snCSplittingStrategy,
+                        float timeoutFactor, SnCDivideStrategy divideStrategy,
                         InputQuery *inputQuery, unsigned verbosity )
     : _numWorkers( numWorkers )
     , _initialDivides( initialDivides )
@@ -76,25 +75,23 @@ DnCManager::DnCManager( unsigned numWorkers, unsigned initialDivides,
     , _verbosity( verbosity )
     , _constraintViolationThreshold( GlobalConfiguration::CONSTRAINT_VIOLATION_THRESHOLD )
 {
-    _splittingStrategy = splittingStrategy;
-
-    if ( snCSplittingStrategy == SnCDivideStrategy::Auto )
+    if ( divideStrategy == SnCDivideStrategy::Auto )
     {
         DNC_MANAGER_LOG( Stringf( "Deciding splitting strategy automatically...\n" ).ascii() );
         if ( inputQuery->getNumInputVariables() <
              GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
             DNC_MANAGER_LOG( Stringf( "\tUsing Largest Interval Heuristics\n" ).ascii() );
-            _snCSplittingStrategy = SnCDivideStrategy::LargestInterval;
+            _divideStrategy = SnCDivideStrategy::LargestInterval;
         }
         else
         {
             DNC_MANAGER_LOG( Stringf( "\tUsing Polarity-based Heuristics\n" ).ascii() );
-            _snCSplittingStrategy = SnCDivideStrategy::Polarity;
+            _divideStrategy = SnCDivideStrategy::Polarity;
         }
     }
     else
-        _snCSplittingStrategy = snCSplittingStrategy;
+        _divideStrategy = divideStrategy;
 }
 
 DnCManager::~DnCManager()
@@ -173,7 +170,7 @@ void DnCManager::solve( unsigned timeoutInSeconds, bool restoreTreeStates )
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, _onlineDivides,
-                                        _timeoutFactor, _snCSplittingStrategy,
+                                        _timeoutFactor, _divideStrategy,
                                         restoreTreeStates, _verbosity ) );
     }
 
@@ -344,7 +341,6 @@ bool DnCManager::createEngines()
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>( _verbosity );
-    _baseEngine->setSplittingStrategy( _splittingStrategy );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
@@ -353,7 +349,6 @@ bool DnCManager::createEngines()
     {
         auto engine = std::make_shared<Engine>( 0 );
         engine->setConstraintViolationThreshold( _constraintViolationThreshold );
-        _baseEngine->setSplittingStrategy( _splittingStrategy );
         _engines.append( engine );
     }
 
@@ -365,7 +360,7 @@ void DnCManager::initialDivide( SubQueries &subQueries )
     auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
         ( new PiecewiseLinearCaseSplit() );
     std::unique_ptr<QueryDivider> queryDivider = nullptr;
-    if ( _snCSplittingStrategy == SnCDivideStrategy::Polarity )
+    if ( _divideStrategy == SnCDivideStrategy::Polarity )
     {
         queryDivider = std::unique_ptr<QueryDivider>
             ( new PolarityBasedDivider( _baseEngine ) );
