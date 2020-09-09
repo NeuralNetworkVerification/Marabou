@@ -108,17 +108,32 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
 
-void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
-  AcasParser* acasParser = new AcasParser( String(networkFilePath) );
-  acasParser->generateQuery( inputQuery );
-  String propertyFilePathM = String(propertyFilePath);
-  if ( propertyFilePath != "" )
-    {
-      printf( "Property: %s\n", propertyFilePathM.ascii() );
-      PropertyParser().parse( propertyFilePathM, inputQuery );
-    }
-  else
-    printf( "Property: None\n" );
+void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath,
+                      bool constructNLR=false){
+  try{
+    AcasParser* acasParser = new AcasParser( String(networkFilePath) );
+    acasParser->generateQuery( inputQuery );
+    if ( constructNLR )
+      {
+        bool success = inputQuery.constructNetworkLevelReasoner();
+        if ( success )
+          printf("Successfully created a network level reasoner.\n");
+        else
+          printf("Warning: network level reasoner construction failed.\n");
+      }
+    String propertyFilePathM = String(propertyFilePath);
+    if ( propertyFilePath != "" )
+      {
+        printf( "Property: %s\n", propertyFilePathM.ascii() );
+        PropertyParser().parse( propertyFilePathM, inputQuery );
+      }
+    else
+      printf( "Property: None\n" );
+  }
+  catch(const MarabouError &e){
+        printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        exit(1);
+  }
 }
 
 struct MarabouOptions {
