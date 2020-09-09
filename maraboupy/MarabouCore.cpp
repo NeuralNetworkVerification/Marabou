@@ -131,7 +131,7 @@ struct MarabouOptions {
         , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
-        , _snCDivideStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
+        , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
 
   void setOptions()
@@ -151,7 +151,7 @@ struct MarabouOptions {
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
 
     // string options
-    Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _snCDivideStrategyString );
+    Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
   }
 
     bool _dnc;
@@ -161,10 +161,8 @@ struct MarabouOptions {
     unsigned _onlineDivides;
     unsigned _verbosity;
     unsigned _timeoutInSeconds;
-
     float _timeoutFactor;
-
-    std::string _snCDivideStrategyString;
+    std::string _sncSplittingStrategyString;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -338,7 +336,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_dnc", &MarabouOptions::_dnc)
-        .def_readwrite("_snCDivideStrategyString", &MarabouOptions::_snCDivideStrategyString);
+        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)

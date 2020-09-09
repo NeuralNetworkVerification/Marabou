@@ -146,4 +146,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._timeoutFactor = timeoutFactor
     options._verbosity = verbosity
     options._dnc = dnc
+    options._sncSplittingStrategy = sncSplittingStrategy
     return options
