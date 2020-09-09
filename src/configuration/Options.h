@@ -59,7 +59,7 @@ public:
         // Global timeout
         TIMEOUT,
 
-        SPLIT_THRESHOLD,
+        CONSTRAINT_VIOLATION_THRESHOLD,
     };
 
     enum FloatOptions{
@@ -72,7 +72,7 @@ public:
         PROPERTY_FILE_PATH,
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
-        SPLITTING_STRATEGY,
+        SNC_SPLITTING_STRATEGY,
         QUERY_DUMP_FILE,
     };
 
@@ -93,7 +93,15 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
-    SnCDivideStrategy getSnCDivideStrategy( unsigned option ) const;
+    SnCDivideStrategy getSnCDivideStrategy() const;
+
+    /*
+      Retrieve the value of the various options, by type
+    */
+    void setBool( unsigned option, bool );
+    void setInt( unsigned option, int );
+    void setFloat( unsigned option, float );
+    void setString( unsigned option, std::string );
 
     /*
       Options that are determined at compile time
