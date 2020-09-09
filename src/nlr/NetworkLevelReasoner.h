@@ -20,6 +20,7 @@
 #include "Layer.h"
 #include "LayerOwner.h"
 #include "Map.h"
+#include "MatrixMultiplication.h"
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
@@ -57,6 +58,7 @@ public:
 
     unsigned getNumberOfLayers() const;
     const Layer *getLayer( unsigned index ) const;
+    Layer *getLayer( unsigned index );
 
     /*
       Bind neurons in the NLR to the Tableau variables that represent them.
@@ -143,6 +145,13 @@ public:
     */
     InputQuery generateInputQuery();
 
+    /*
+      Finds logically consecutive WS layers and merges them, in order
+      to reduce the total number of layers and variables in the
+      network
+    */
+    void mergeConsecutiveWSLayers();
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
@@ -160,6 +169,22 @@ private:
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
+
+    bool suitableForMerging( unsigned secondLayerIndex );
+    void mergeWSLayers( unsigned secondLayerIndex );
+    double *multiplyWeights( const double *firstMatrix,
+                             const double *secondMatrix,
+                             unsigned inputDimension,
+                             unsigned middleDimension,
+                             unsigned outputDimension );
+    void reduceLayerIndex( unsigned layer, unsigned startIndex );
+
+    /*
+      If the NLR is manipulated manually in order to generate a new
+      input query, this method can be used to assign variable indices
+      to all neurons in the network
+    */
+    void reindexNeurons();
 };
 
 } // namespace NLR

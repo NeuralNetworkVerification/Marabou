@@ -1650,6 +1650,9 @@ void Engine::explicitBasisBoundTightening()
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
         _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
         break;
+
+    case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
+        break;
     }
 
     struct timespec end = TimeUtils::sampleMicro();
