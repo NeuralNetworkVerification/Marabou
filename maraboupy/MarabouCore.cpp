@@ -131,7 +131,7 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
   }
   catch(const InputParserError &e){
         printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        exit(1);
+        return;
   }
 }
 
