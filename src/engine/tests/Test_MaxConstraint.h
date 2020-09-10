@@ -222,15 +222,6 @@ public:
 
 		MaxConstraint max2( f, elements );
 
-		// f = max(x_1 ... x_9)
-		// f = 7, x_2 = 6, x_3 = 4
-		max2.notifyVariableValue( f, 7 );
-		max2.notifyVariableValue( 2, 6 );
-		max2.notifyVariableValue( 3, 4 );
-
-		// no possible fix
-		fixes = max2.getPossibleFixes();
-		TS_ASSERT( fixes.empty() );
 
 		// f = 5, x_2 = 6, x_3 = 4
 		max2.notifyVariableValue( f, 5 );
@@ -249,18 +240,6 @@ public:
 		TS_ASSERT_EQUALS ( it->_variable, 2U );
 		TS_ASSERT_EQUALS ( it->_value, 5 );
 
-		// f = 5, x_2 = 6, x_3 = 7
-		max2.notifyVariableValue( f, 5 );
-		max2.notifyVariableValue( 2, 6 );
-		max2.notifyVariableValue( 3, 7 );
-
-		// possible fixes: set f to 7
-		fixes = max2.getPossibleFixes();
-		TS_ASSERT_EQUALS( fixes.size(), 1U );
-
-		it = fixes.begin();
-		TS_ASSERT_EQUALS( it->_variable, f );
-		TS_ASSERT_EQUALS( it->_value, 7 );
 	}
 
 	void test_max_case_splits()
@@ -412,6 +391,7 @@ public:
         for( unsigned i = 3; i < 10; i++ )
             max.notifyUpperBound( i, 5 );
 
+		max.notifyVariableValue( 2, 7);
         // now, phase should be fixed to x_2; all other variables should be removed
         TS_ASSERT( max.phaseFixed() );
         TS_ASSERT_EQUALS( max.getParticipatingVariables().size(), 2U );
@@ -461,6 +441,7 @@ public:
             max2.notifyUpperBound( i, 5 );
         max2.notifyUpperBound( f, 5 );
 
+        max2.notifyVariableValue( f, 5);
         // now, phase should be fixed to x_2 and x_3; all other variables should be removed
         TS_ASSERT( max2.phaseFixed() );
         TS_ASSERT_EQUALS( max2.getParticipatingVariables().size(), 3U );
