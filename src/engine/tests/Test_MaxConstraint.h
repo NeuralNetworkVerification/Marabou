@@ -712,21 +712,6 @@ public:
         TS_TRACE( "TODO: add a test for duplicate" );
     }
 
-	void test_max_add_auxiliary_equations()
-	{
-		unsigned f = 1;
-		Set<unsigned> elements;
-		for ( unsigned i = 1; i < 4; ++i )
-			elements.insert( i );
-		MaxConstraint max( f, elements );
-
-		InputQuery inputQuery;
-
-		max.addAuxiliaryEquations( inputQuery );
-
-		TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables() , 2U );
-	}
-
     void test_serialize_and_unserialize()
     {
         unsigned f = 42;
