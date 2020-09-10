@@ -30,6 +30,7 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
+#include "InputParserError.h"
 #include "MString.h"
 #include "MaxConstraint.h"
 #include "Options.h"
@@ -109,16 +110,29 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
 }
 
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
-  AcasParser* acasParser = new AcasParser( String(networkFilePath) );
-  acasParser->generateQuery( inputQuery );
-  String propertyFilePathM = String(propertyFilePath);
-  if ( propertyFilePath != "" )
-    {
-      printf( "Property: %s\n", propertyFilePathM.ascii() );
-      PropertyParser().parse( propertyFilePathM, inputQuery );
-    }
-  else
-    printf( "Property: None\n" );
+  try{
+    AcasParser* acasParser = new AcasParser( String(networkFilePath) );
+    acasParser->generateQuery( inputQuery );
+
+    bool success = inputQuery.constructNetworkLevelReasoner();
+    if ( success )
+      printf("Successfully created a network level reasoner.\n");
+    else
+      printf("Warning: network level reasoner construction failed.\n");
+
+    String propertyFilePathM = String(propertyFilePath);
+    if ( propertyFilePath != "" )
+      {
+        printf( "Property: %s\n", propertyFilePathM.ascii() );
+        PropertyParser().parse( propertyFilePathM, inputQuery );
+      }
+    else
+      printf( "Property: None\n" );
+  }
+  catch(const InputParserError &e){
+        printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        exit(1);
+  }
 }
 
 struct MarabouOptions {
