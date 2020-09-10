@@ -110,7 +110,7 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
 }
 
 void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath,
-                      bool construct_nlr=false){
+                      bool construct_nlr=0){
   try{
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );
     acasParser->generateQuery( inputQuery );
