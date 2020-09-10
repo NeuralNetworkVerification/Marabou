@@ -280,10 +280,8 @@ void MaxConstraint::resetMaxIndex()
     double maxValue = FloatUtils::negativeInfinity();
     _maxIndexSet = false;
 
-    // Guy: it looks to me like the max index should be set even if
-    // only _f is assigned, if _f is in _elements. What do you think?
     if ( _assignment.empty() ||
-         ( _assignment.size() == 1 && _assignment.begin()->first == _f ) )
+         ( _assignment.size() == 1 && !_elements.exists( _f ) && _assignment.begin()->first == _f ) )
     {
         // If none of the variables has been assigned, the max index is
         // not set
