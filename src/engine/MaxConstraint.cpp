@@ -20,9 +20,9 @@
 #include "InputQuery.h"
 #include "List.h"
 #include "MStringf.h"
+#include "MarabouError.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "MarabouError.h"
 #include "Statistics.h"
 #include <algorithm>
 
@@ -85,25 +85,31 @@ void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
-    tableau->registerToWatchVariable( this, _f );
     for ( unsigned element : _elements )
         tableau->registerToWatchVariable( this, element );
+
+    if ( !_elements.exists( _f ) )
+        tableau->registerToWatchVariable( this, _f );
 }
 
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
-    tableau->unregisterToWatchVariable( this, _f );
     for ( unsigned element : _elements )
         tableau->unregisterToWatchVariable( this, element );
+
+    if ( !_elements.exists( _f ) )
+        tableau->unregisterToWatchVariable( this, _f );
 }
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-    if ( variable != _f && ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
-	  {
+    if ( ( _elements.exists( _f ) || variable != _f )
+         &&
+         ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
+    {
         _maxIndex = variable;
         _maxIndexSet = true;
-	  }
+    }
     _assignment[variable] = value;
 }
 
@@ -125,7 +131,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         List<unsigned> toRemove;
         for ( auto element : _elements )
         {
-			if ( element == variable )
+			if ( element == variable || element == _f )
 				continue;
             if ( _upperBounds.exists( element ) &&
                  FloatUtils::lt( _upperBounds[element], value ) )
@@ -170,7 +176,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     _upperBounds[variable] = value;
 
-    if ( _elements.exists( variable ) && FloatUtils::lt( value, _maxLowerBound ) )
+    if ( _elements.exists( variable ) && _f != variable && FloatUtils::lt( value, _maxLowerBound ) )
     {
         _elements.erase( variable );
     }
@@ -254,7 +260,9 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
     List<unsigned> result;
     for ( auto element : _elements )
         result.append( element );
-    result.append( _f );
+
+    if ( !_elements.exists( _f ) )
+        result.append( _f );
     return result;
 }
 
@@ -273,7 +281,7 @@ void MaxConstraint::resetMaxIndex()
     _maxIndexSet = false;
 
     if ( _assignment.empty() ||
-         ( _assignment.size() == 1 && _assignment.begin()->first == _f ) )
+         ( _assignment.size() == 1 && !_elements.exists( _f ) && _assignment.begin()->first == _f ) )
     {
         // If none of the variables has been assigned, the max index is
         // not set
@@ -336,7 +344,7 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 
         unsigned greaterVar;
         unsigned numGreater = 0;
-        for ( auto elem: _elements )
+        for ( auto elem : _elements )
         {
             if ( _assignment.exists( elem ) && FloatUtils::gt( _assignment[elem], fValue ) )
             {
@@ -364,28 +372,48 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
 
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
-    if ( phaseFixed() )
+    if ( phaseFixed() && !_elements.exists( _f ) )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     ASSERT(	_assignment.exists( _f ) );
 
     List<PiecewiseLinearCaseSplit> splits;
-    for ( unsigned element : _elements )
-	{
-        splits.append( getSplit( element ) );
-	}
+
+    if ( !_elements.exists( _f ) )
+    {
+        for ( unsigned element : _elements )
+        {
+            splits.append( getSplit( element ) );
+        }
+    }
+    else
+    {
+        // if elements includes _f, this piecewise linear constraint
+        // can immediately be transformed into a conjunction of linear
+        // constraints
+        splits.append( getSplit( _f ) );
+    }
+
     return splits;
 }
 
 bool MaxConstraint::phaseFixed() const
 {
-    return _elements.size() == 1;
+    return _elements.size() == 1 || _elements.exists( _f );
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
-    return getSplit( *( _elements.begin() ) );
+    if ( !_elements.exists( _f ) )
+        return getSplit( *( _elements.begin() ) );
+    else
+    {
+        // if elements includes _f, this piecewise linear constraint
+        // can immediately be transformed into a conjunction of linear
+        // constraints
+        return getSplit( _f );
+    }
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
@@ -393,36 +421,39 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
 
-    // maxArg - f = 0
-    Equation maxEquation( Equation::EQ );
-    maxEquation.addAddend( 1, argMax );
-    maxEquation.addAddend( -1, _f );
-    maxEquation.setScalar( 0 );
-    maxPhase.addEquation( maxEquation );
+    if ( argMax != _f )
+    {
+        // maxArg - f = 0
+        Equation maxEquation( Equation::EQ );
+        maxEquation.addAddend( 1, argMax );
+        maxEquation.addAddend( -1, _f );
+        maxEquation.setScalar( 0 );
+        maxPhase.addEquation( maxEquation );
+    }
 
     // store bound tightenings as well
     // go over all other elements;
     // their upper bound cannot exceed upper bound of argmax
     for ( unsigned other : _elements )
-	{
-	    if ( argMax == other )
+    {
+        if ( argMax == other )
             continue;
 
-	    Equation gtEquation( Equation::GE );
+        Equation gtEquation( Equation::GE );
 
-	    // argMax >= other
-	    gtEquation.addAddend( -1, other );
-	    gtEquation.addAddend( 1, argMax );
-	    gtEquation.setScalar( 0 );
-	    maxPhase.addEquation( gtEquation );
+        // argMax >= other
+        gtEquation.addAddend( -1, other );
+        gtEquation.addAddend( 1, argMax );
+        gtEquation.setScalar( 0 );
+        maxPhase.addEquation( gtEquation );
 
         if ( _upperBounds.exists( argMax ) )
         {
             if ( !_upperBounds.exists( other ) ||
-                 FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
+                FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
                 maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
         }
-	}
+    }
 
     return maxPhase;
 }
@@ -431,9 +462,11 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     _lowerBounds[newIndex] = _lowerBounds[oldIndex];
     _upperBounds[newIndex] = _upperBounds[oldIndex];
+
     if ( oldIndex == _f )
         _f = newIndex;
-    else
+
+    if ( _elements.exists( oldIndex ) )
 	{
 	    _elements.erase( oldIndex );
 	    _elements.insert( newIndex );
@@ -456,6 +489,11 @@ void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
     for ( auto element : _elements )
     {
+        // If element is equal to _f, skip this step.
+        // The reason is to avoid adding equations like `1.00x00 -1.00x00 -1.00x01 = 0.00`.
+        if ( element == _f )
+            continue;
+
         // Create an aux variable
         unsigned auxVariable = inputQuery.getNumberOfVariables();
         inputQuery.setNumberOfVariables( auxVariable + 1 );
