@@ -109,7 +109,7 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
 
-void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
+bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   try{
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );
     acasParser->generateQuery( inputQuery );
@@ -131,8 +131,9 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
   }
   catch(const InputParserError &e){
         printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return;
+        return false;
   }
+  return true;
 }
 
 struct MarabouOptions {
