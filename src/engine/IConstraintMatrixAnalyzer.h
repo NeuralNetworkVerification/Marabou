@@ -19,7 +19,7 @@
 #include "List.h"
 #include "Set.h"
 
-class SparseMatrix;
+class SparseUnsortedList;
 
 class IConstraintMatrixAnalyzer
 {
@@ -27,8 +27,7 @@ public:
     virtual ~IConstraintMatrixAnalyzer() {};
 
     virtual void analyze( const double *matrix, unsigned m, unsigned n ) = 0;
-    virtual void analyze( const SparseMatrix *matrix, unsigned m, unsigned n ) = 0;
-    virtual unsigned getRank() const = 0;
+    virtual void analyze( const SparseUnsortedList **matrix, unsigned m, unsigned n ) = 0;
     virtual List<unsigned> getIndependentColumns() const = 0;
     virtual Set<unsigned> getRedundantRows() const = 0;
 };

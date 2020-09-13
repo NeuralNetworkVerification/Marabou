@@ -48,13 +48,13 @@ void Options::initializeDefaultValues()
     /*
       Int options
     */
-    _intOptions[NUM_WORKERS] = 4;
+    _intOptions[NUM_WORKERS] = 1;
     _intOptions[NUM_INITIAL_DIVIDES] = 0;
     _intOptions[NUM_ONLINE_DIVIDES] = 2;
     _intOptions[INITIAL_TIMEOUT] = 5;
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
-    _intOptions[SPLIT_THRESHOLD] = 20;
+    _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
 
     /*
       Float options
@@ -68,7 +68,7 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
-    _stringOptions[SPLITTING_STRATEGY] = "";
+    _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
 }
 
@@ -97,9 +97,29 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
-SnCDivideStrategy Options::getSnCDivideStrategy( unsigned option ) const
+void Options::setBool( unsigned option, bool value )
 {
-    String strategyString = String( _stringOptions.get( option ) );
+    _boolOptions[option] = value;
+}
+
+void Options::setInt( unsigned option, int value )
+{
+    _intOptions[option] = value;
+}
+
+void Options::setFloat( unsigned option, float value )
+{
+    _floatOptions[option] = value;
+}
+
+void Options::setString( unsigned option, std::string value )
+{
+    _stringOptions[option] = value;
+}
+
+SnCDivideStrategy Options::getSnCDivideStrategy() const
+{
+    String strategyString = String( _stringOptions.get( Options::SNC_SPLITTING_STRATEGY ) );
     if ( strategyString == "polarity" )
         return SnCDivideStrategy::Polarity;
     else if ( strategyString == "largest-interval" )

@@ -218,6 +218,26 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
+const double *Layer::getWeightMatrix( unsigned sourceLayer ) const
+{
+    ASSERT( _layerToWeights.exists( sourceLayer ) );
+    return _layerToWeights[sourceLayer];
+}
+
+void Layer::removeSourceLayer( unsigned sourceLayer )
+{
+    ASSERT( _sourceLayers.exists( sourceLayer ) );
+
+    delete[] _layerToWeights[sourceLayer];
+    delete[] _layerToPositiveWeights[sourceLayer];
+    delete[] _layerToNegativeWeights[sourceLayer];
+
+    _sourceLayers.erase( sourceLayer );
+    _layerToWeights.erase( sourceLayer );
+    _layerToPositiveWeights.erase( sourceLayer );
+    _layerToNegativeWeights.erase( sourceLayer );
+}
+
 void Layer::setWeight( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron, double weight )
 {
     unsigned index = sourceNeuron * _size + targetNeuron;
@@ -1479,6 +1499,116 @@ double Layer::getEliminatedNeuronValue( unsigned neuron ) const
 {
     ASSERT( _eliminatedNeurons.exists( neuron ) );
     return _eliminatedNeurons[neuron];
+}
+
+void Layer::reduceIndexFromAllMaps( unsigned startIndex )
+{
+    // Adjust the source layers
+    Map<unsigned, unsigned> copyOfSources = _sourceLayers;
+    _sourceLayers.clear();
+    for ( const auto &pair : copyOfSources )
+        _sourceLayers[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
+
+    // Adjust all weight maps
+    adjustWeightMapIndexing( _layerToWeights, startIndex );
+    adjustWeightMapIndexing( _layerToPositiveWeights, startIndex );
+    adjustWeightMapIndexing( _layerToNegativeWeights, startIndex );
+
+    // Adjust the neuron activations
+    for ( auto &neuronToSources : _neuronToActivationSources )
+    {
+        for ( auto &source : neuronToSources.second )
+        {
+            if ( source._layer >= startIndex )
+                --source._layer;
+        }
+    }
+}
+
+void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned startIndex )
+{
+    Map<unsigned, double *> copyOfWeights = map;
+    map.clear();
+    for ( const auto &pair : copyOfWeights )
+        map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
+}
+
+void Layer::reduceIndexAfterMerge ( unsigned startIndex )
+{
+    if ( _layerIndex >= startIndex )
+        --_layerIndex;
+}
+
+bool Layer::operator==( const Layer &layer ) const
+{
+    if ( _layerIndex != layer._layerIndex )
+        return false;
+
+    if ( _type != layer._type )
+        return false;
+
+    if ( _size != layer._size )
+        return false;
+
+    if ( _inputLayerSize != layer._inputLayerSize )
+        return false;
+
+    if ( ( _bias && !layer._bias ) || ( !_bias && layer._bias ) )
+        return false;
+
+    if ( _bias && layer._bias )
+    {
+        if ( std::memcmp( _bias, layer._bias, _size * sizeof(double) ) != 0 )
+            return false;
+    }
+
+    if ( _sourceLayers != layer._sourceLayers )
+        return false;
+
+    if ( !compareWeights( _layerToWeights, layer._layerToWeights ) )
+        return false;
+
+    if ( !compareWeights( _layerToPositiveWeights, layer._layerToPositiveWeights ) )
+        return false;
+
+    if ( !compareWeights( _layerToNegativeWeights, layer._layerToNegativeWeights ) )
+        return false;
+
+    return true;
+}
+
+bool Layer::compareWeights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const
+{
+    if ( map.size() != mapOfOtherLayer.size() )
+        return false;
+
+    for ( const auto &pair : map )
+    {
+        unsigned key = pair.first;
+        double *value = pair.second;
+
+        if ( !mapOfOtherLayer.exists( key ) )
+            return false;
+
+        if ( std::memcmp( value,
+                          mapOfOtherLayer[key],
+                          _size * _sourceLayers[key] * sizeof(double) ) != 0 )
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+unsigned Layer::getMaxVariable() const
+{
+    unsigned result = 0;
+    for ( const auto &pair : _neuronToVariable )
+        if ( pair.second > result )
+            result = pair.second;
+
+    return result;
 }
 
 } // namespace NLR

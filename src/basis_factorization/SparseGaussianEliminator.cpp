@@ -315,7 +315,7 @@ void SparseGaussianEliminator::choosePivot()
 
         for ( unsigned i = 0; i < nnz; ++i )
         {
-            // Ignore entrying that are not in the active submatrix
+            // Ignore entries that are not in the active submatrix
             unsigned vRow = entry[i]._index;
             unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
             if ( uRow < _eliminationStep )
@@ -337,7 +337,7 @@ void SparseGaussianEliminator::choosePivot()
             unsigned vRow = entry[i]._index;
             unsigned uRow = _sparseLUFactors->_P._rowOrdering[vRow];
 
-            // Ignore entrying that are not in the active submatrix
+            // Ignore entries that are not in the active submatrix
             if ( uRow < _eliminationStep )
                 continue;
 

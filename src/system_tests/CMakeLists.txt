@@ -14,6 +14,7 @@ add_system_test(relu)
 add_system_test(sign)
 add_system_test(Disjunction)
 add_system_test(AbsoluteValue)
+add_system_test(wsElimination)
 
 file(COPY "${RESOURCES_DIR}/mps/lp_feasible_1.mps" DESTINATION ${CMAKE_BINARY_DIR})
 file(COPY "${RESOURCES_DIR}/mps/lp_infeasible_1.mps" DESTINATION ${CMAKE_BINARY_DIR})

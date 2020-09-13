@@ -135,6 +135,11 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const;
 
     /*
+      Dump the current state of the constraint.
+    */
+    void dump( String &output ) const;
+
+    /*
       Returns string with shape: sign, _f, _b
     */
     String serializeToString() const;

@@ -422,3 +422,20 @@ unsigned SignConstraint::getF() const
 {
     return _f;
 }
+
+void SignConstraint::dump( String &output ) const
+{
+    output = Stringf( "SignConstraint: x%u = Sign( x%u ). Active? %s. PhaseStatus = %u (%s). ",
+                      _f, _b,
+                      _constraintActive ? "Yes" : "No",
+                      _phaseStatus, phaseToString( _phaseStatus ).ascii()
+                      );
+
+    output += Stringf( "b in [%s, %s], ",
+                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
+                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+
+    output += Stringf( "f in [%s, %s]\n",
+                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
+                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+}

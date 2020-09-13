@@ -227,6 +227,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         inputQuery.addPiecewiseLinearConstraint( constraint );
     }
 
+    inputQuery.constructNetworkLevelReasoner();
     return inputQuery;
 }
 

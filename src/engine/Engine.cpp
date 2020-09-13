@@ -29,7 +29,7 @@
 #include "TableauRow.h"
 #include "TimeUtils.h"
 
-Engine::Engine( unsigned verbosity )
+Engine::Engine()
     : _rowBoundTightener( *_tableau )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
@@ -44,7 +44,7 @@ Engine::Engine( unsigned verbosity )
     , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
-    , _verbosity( verbosity )
+    , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
 {
@@ -773,7 +773,7 @@ void Engine::removeRedundantEquations( const double *constraintMatrix )
     analyzer->analyze( constraintMatrix, m, n );
 
     ENGINE_LOG( Stringf( "Number of redundant rows: %u out of %u",
-                  analyzer->getRedundantRows().size(), m ).ascii() );
+                         analyzer->getRedundantRows().size(), m ).ascii() );
 
     // Step 2: remove any equations corresponding to redundant rows
     Set<unsigned> redundantRows = analyzer->getRedundantRows();
@@ -1096,7 +1096,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         delete[] constraintMatrix;
 
-        performMILPSolverBoundedTightening();
+        if ( preprocess )
+            performMILPSolverBoundedTightening();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1649,6 +1650,9 @@ void Engine::explicitBasisBoundTightening()
     case GlobalConfiguration::USE_IMPLICIT_INVERTED_BASIS_MATRIX:
         _rowBoundTightener->examineImplicitInvertedBasisMatrix( saturation );
         break;
+
+    case GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING:
+        break;
     }
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -1872,8 +1876,7 @@ void Engine::clearViolatedPLConstraints()
 
 void Engine::resetSmtCore()
 {
-    _smtCore.freeMemory();
-    _smtCore = SmtCore( this );
+    _smtCore.reset();
 }
 
 void Engine::resetExitCode()
@@ -2121,16 +2124,3 @@ void Engine::storeSmtState( SmtState & smtState )
 {
     _smtCore.storeSmtState( smtState );
 }
-
-void Engine::setConstraintViolationThreshold( unsigned threshold )
-{
-    _smtCore.setConstraintViolationThreshold( threshold );
-}
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
