@@ -915,6 +915,9 @@ void Layer::computeSymbolicBoundsForSign()
                     _symbolicUb[j * _size + i] = 0;
 
                 _symbolicUpperBias[i] = 1;
+
+                _symbolicUbOfUb[i] = 1;
+                _symbolicLbOfUb[i] = 1;
             }
             else
             {
@@ -929,6 +932,9 @@ void Layer::computeSymbolicBoundsForSign()
                 // Do the same for the bias, and then adjust
                 _symbolicUpperBias[i] *= factor;
                 _symbolicUpperBias[i] += 1;
+
+                _symbolicUbOfUb[i] = 1;
+                _symbolicLbOfUb[i] = -1;
             }
 
             // Lower bound
@@ -941,6 +947,9 @@ void Layer::computeSymbolicBoundsForSign()
                     _symbolicLb[j * _size + i] = 0;
 
                 _symbolicLowerBias[i] = -1;
+
+                _symbolicUbOfLb[i] = -1;
+                _symbolicLbOfLb[i] = -1;
             }
             else
             {
@@ -954,6 +963,9 @@ void Layer::computeSymbolicBoundsForSign()
                 // Do the same for the bias, and then adjust
                 _symbolicLowerBias[i] *= factor;
                 _symbolicLowerBias[i] -= 1;
+
+                _symbolicUbOfLb[i] = 1;
+                _symbolicLbOfLb[i] = -1;
             }
         }
         else
