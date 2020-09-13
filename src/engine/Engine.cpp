@@ -1813,14 +1813,14 @@ void Engine::performSymbolicBoundTightening()
     {
 
         if ( tightening._type == Tightening::LB &&
-             FloatUtils::gt ( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+             FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
         {
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
         }
 
         if ( tightening._type == Tightening::UB &&
-             FloatUtils::lt ( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+             FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
         {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
