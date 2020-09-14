@@ -24,6 +24,7 @@
 #include "MockProjectedSteepestEdgeFactory.h"
 #include "MockRowBoundTightenerFactory.h"
 #include "MockTableauFactory.h"
+#include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 
@@ -336,8 +337,8 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
+        Options::get()->setString( Options::SPLITTING_STRATEGY, "polarity" );
         Engine engine;
-        engine.setSplittingStrategy( DivideStrategy::Polarity );
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
@@ -438,8 +439,8 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
+        Options::get()->setString( Options::SPLITTING_STRATEGY, "earliest-relu" );
         Engine engine;
-        engine.setSplittingStrategy( DivideStrategy::EarliestReLU );
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
@@ -538,8 +539,9 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
+        Options::get()->setString( Options::SPLITTING_STRATEGY,
+                                   "largest-interval" );
         Engine engine;
-        engine.setSplittingStrategy( DivideStrategy::LargestInterval );
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;

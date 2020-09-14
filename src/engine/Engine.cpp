@@ -76,11 +76,6 @@ void Engine::setVerbosity( unsigned verbosity )
     _verbosity = verbosity;
 }
 
-void Engine::setSplittingStrategy( DivideStrategy strategy )
-{
-    _splittingStrategy = strategy;
-}
-
 void Engine::adjustWorkMemorySize()
 {
     if ( _work )

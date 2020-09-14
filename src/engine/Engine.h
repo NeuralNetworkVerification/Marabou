@@ -135,11 +135,6 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Set the internal splitting strategy
-    */
-    void setSplittingStrategy( DivideStrategy strategy );
-
-    /*
       Apply the stack to the newly created SmtCore, returns false if UNSAT is
       found in this process.
     */
