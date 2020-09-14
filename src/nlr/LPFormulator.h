@@ -18,6 +18,7 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
+#include "ParallelSolver.h"
 #include <climits>
 
 #include <atomic>
@@ -29,7 +30,7 @@ namespace NLR {
 
 #define LPFormulator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x)
 
-class LPFormulator
+class LPFormulator : public ParallelSolver
 {
 public:
     enum MinOrMax {
