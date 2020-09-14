@@ -2,7 +2,7 @@
 /*! \file ParallelSolver.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -16,13 +16,19 @@
 #ifndef __ParallelSolver_h__
 #define __ParallelSolver_h__
 
-#include <atomic>;
+#include "Debug.h"
+#include "GurobiWrapper.h"
+
+#include <atomic>
+#include <boost/lockfree/queue.hpp>
+#include <boost/chrono.hpp>
+#include <mutex>
 
 namespace NLR {
 
-class GurobiWrapper;
 class Layer;
 class LayerOwner;
+class MinOrMax;
 
 class ParallelSolver
 {
@@ -96,15 +102,6 @@ public:
             ASSERT( false );
         }
     }
-
-    /*
-      Optimize for the min/max value of variableName with respect to the constraints
-      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
-    */
-    virtual double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
-                                       String variableName, double cutoffValue,
-                                       std::atomic_bool *infeasible = NULL ) = 0;
-
 };
 
 } // namespace NLR

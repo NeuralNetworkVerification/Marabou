@@ -707,20 +707,4 @@ void LPFormulator::setCutoff( double cutoff )
     _cutoffValue = cutoff;
 }
 
-void LPFormulator::clearSolverQueue( SolverQueue &freeSolvers )
-{
-    // Remove the solvers
-    GurobiWrapper *freeSolver;
-    while ( freeSolvers.pop( freeSolver ) )
-        delete freeSolver;
-}
-
-void LPFormulator::enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver )
-{
-    if ( !solvers.push( solver ) )
-    {
-        ASSERT( false );
-    }
-}
-
 } // namespace NLR
