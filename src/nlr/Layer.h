@@ -171,6 +171,7 @@ private:
     */
     void comptueSymbolicBoundsForInput();
     void computeSymbolicBoundsForRelu();
+    void computeSymbolicBoundsForSign();
     void computeSymbolicBoundsForAbsoluteValue();
     void computeSymbolicBoundsForWeightedSum();
     void computeSymbolicBoundsDefault();
