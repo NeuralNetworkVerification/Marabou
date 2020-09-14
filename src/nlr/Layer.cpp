@@ -852,7 +852,7 @@ void Layer::computeSymbolicBoundsForSign()
           There are two ways we can determine that a Sign has become fixed:
 
           1. If the Sign's variable has been externally fixed
-          2. lbLb >= 0 (Positive) or ubUb <= 0 (Negative)
+          2. lbLb >= 0 (Positive) or ubUb < 0 (Negative)
         */
         SignConstraint::PhaseStatus signPhase = SignConstraint::PHASE_NOT_FIXED;
 
