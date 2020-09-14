@@ -48,7 +48,7 @@ Engine::Engine()
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _splittingStrategy( GlobalConfiguration::SPLITTING_HEURISTICS )
+    , _splittingStrategy( Options::get()->getDivideStrategy() )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -2078,9 +2078,11 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
         List<PiecewiseLinearCaseSplit> splits;
         splits.append( s1 );
         splits.append( s2 );
-        DisjunctionConstraint *bisection = new DisjunctionConstraint( splits );
-        bisection->setTemporary( true );
-        return bisection;
+        auto bisection = std::unique_ptr<DisjunctionConstraint>
+            ( new DisjunctionConstraint( splits ) );
+        PiecewiseLinearConstraint *bisectionPtr = bisection.get();
+        _smtCore.setDisjunctionForSplitting( std::move( bisection ) );
+        return bisectionPtr;
     }
 }
 
@@ -2098,7 +2100,6 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
               GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
-
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
                            "Picked..." :
                            "Unable to pick using the current strategy..." ) ).ascii() );

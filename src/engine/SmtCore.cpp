@@ -153,8 +153,6 @@ void SmtCore::performSplit()
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
 
-    if ( _constraintForSplitting->temporary() )
-        delete _constraintForSplitting;
     _constraintForSplitting = NULL;
 }
 
@@ -452,6 +450,13 @@ bool SmtCore::pickSplitPLConstraint()
     if ( _needToSplit )
         _constraintForSplitting = _engine->pickSplitPLConstraint();
     return _constraintForSplitting != NULL;
+}
+
+void SmtCore::setDisjunctionForSplitting( std::unique_ptr
+                                          <PiecewiseLinearConstraint>
+                                          constraint )
+{
+    _disjunctionForSplitting = std::move( constraint );
 }
 
 //

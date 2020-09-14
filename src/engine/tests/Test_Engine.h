@@ -556,8 +556,6 @@ public:
         TS_ASSERT_EQUALS( caseSplits.size(), 2u );
         TS_ASSERT_EQUALS( *caseSplits.begin(), interval1 );
         TS_ASSERT_EQUALS( *( ++caseSplits.begin() ), interval2 );
-        TS_ASSERT( constraintToSplit->temporary() );
-        TS_ASSERT_THROWS_NOTHING( delete constraintToSplit );
     }
 
     void test_todo()

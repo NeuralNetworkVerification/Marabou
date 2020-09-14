@@ -252,18 +252,7 @@ public:
         return _upperBounds[i];
     }
 
-    bool temporary() const
-    {
-        return _temporary;
-    }
-
-    void setTemporary( bool isTemporary )
-    {
-        _temporary = isTemporary;
-    }
-
 protected:
-    bool _temporary;
     bool _constraintActive;
 	Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
