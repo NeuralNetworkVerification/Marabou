@@ -94,14 +94,6 @@ private:
                                             const Layer *layer );
 
     /*
-      Optimize for the min/max value of variableName with respect to the constraints
-      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
-    */
-    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
-                                      String variableName, double cutoffValue,
-                                      std::atomic_bool *infeasible = NULL );
-
-    /*
       Tighten the upper- and lower- bound of a varaible with LPRelaxation
     */
     static void tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument );

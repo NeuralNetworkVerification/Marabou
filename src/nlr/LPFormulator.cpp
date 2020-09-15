@@ -47,49 +47,6 @@ double LPFormulator::solveLPRelaxation( GurobiWrapper &gurobi,
     return optimizeWithGurobi( gurobi, minOrMax, variableName, _cutoffValue );
 }
 
-double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
-                                         MinOrMax minOrMax, String variableName,
-                                         double cutoffValue, std::atomic_bool *infeasible )
-{
-    List<GurobiWrapper::Term> terms;
-    terms.append( GurobiWrapper::Term( 1, variableName ) );
-
-    if ( minOrMax == MAX )
-        gurobi.setObjective( terms );
-    else
-        gurobi.setCost( terms );
-
-    gurobi.solve();
-
-    if ( gurobi.infeasbile() )
-    {
-        if ( infeasible )
-        {
-            *infeasible = true;
-            return FloatUtils::infinity();
-        }
-        else
-            throw InfeasibleQueryException();
-    }
-
-    if ( gurobi.cutoffOccurred() )
-        return cutoffValue;
-
-    if ( gurobi.optimal() )
-    {
-        Map<String, double> dontCare;
-        double result = 0;
-        gurobi.extractSolution( dontCare, result );
-        return result;
-    }
-    else if ( gurobi.timeout() )
-    {
-        return gurobi.getObjectiveBound();
-    }
-
-    throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
-}
-
 void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers )
 {
     GurobiWrapper gurobi;
@@ -263,7 +220,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         enqueueSolver( freeSolvers, gurobi );
     }
 
-    boost::thread *threads = new boost::thread[numberOfWorkers];
+    std::vector<boost::thread> threads( numberOfWorkers );
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
@@ -328,8 +285,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                      std::ref( signChanges ),
                                      std::ref( cutoffs ) );
 
-            threads[solverToIndex[freeSolver]] = boost::thread
-                ( tightenSingleVariableBoundsWithLPRelaxation, argument );
+            threads[solverToIndex[freeSolver]] = std::move
+                ( boost::thread( tightenSingleVariableBoundsWithLPRelaxation,
+                                 argument ) );
         }
     }
 

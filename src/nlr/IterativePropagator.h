@@ -2,7 +2,7 @@
 /*! \file IterativePropagator.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,10 +18,14 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
+#include "MILPFormulator.h"
+#include "ParallelSolver.h"
 
 namespace NLR {
 
-class IterativePropagator
+#define IterativePropagator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "Iterativepropagator: %s\n", x)
+
+class IterativePropagator : public ParallelSolver
 {
 public:
     enum MinOrMax {
@@ -33,7 +37,6 @@ public:
     ~IterativePropagator();
 
     void optimizeBoundsWithIterativePropagation( const Map<unsigned, Layer *> &layers );
-    void optimizeBoundsWithIncrementalMILPEncoding( const Map<unsigned, Layer *> &layers );
 
     /*
       When optimizing, we compute lower and upper bounds for each
@@ -44,57 +47,14 @@ public:
 
 private:
     LayerOwner *_layerOwner;
-    LPFormulator _lpFormulator;
-    unsigned _signChanges;
-    unsigned _tighterBoundCounter;
-    unsigned _cutoffs;
+    MILPFormulator _milpFormulator;
     bool _cutoffInUse;
     double _cutoffValue;
 
-    bool tightenLowerBound( GurobiWrapper &gurobi,
-                            Layer *layer,
-                            unsigned neuron,
-                            unsigned variable,
-                            double &currentLb );
-
-    bool tightenUpperBound( GurobiWrapper &gurobi,
-                            Layer *layer,
-                            unsigned neuron,
-                            unsigned variable,
-                            double &currentUb );
-
-    void createMILPEncoding( const Map<unsigned, Layer *> &layers,
-                             GurobiWrapper &gurobi,
-                             unsigned lastLayer = UINT_MAX );
-
-    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
-
-    void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                        const Layer *layer );
-
-    void addNeuronToModel( GurobiWrapper &gurobi,
-                           const Layer *layer,
-                           unsigned neuron );
-
-    double solveMILPEncoding( GurobiWrapper &gurobi,
-                              const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax,
-                              String variableName,
-                              unsigned lastLayer = UINT_MAX );
-
-    void storeUbIfNeeded( Layer *layer,
-                          unsigned neuron,
-                          unsigned variable,
-                          double newUb );
-
-    void storeLbIfNeeded( Layer *layer,
-                          unsigned neuron,
-                          unsigned variable,
-                          double newLb );
-
-    bool layerRequiresMILPEncoding( const Layer *layer );
-
-    static void log( const String &message );
+    /*
+      Tighten the upper- and lower- bound of a varaible with LPRelaxation
+    */
+    static void tightenSingleVariableBounds( ThreadArgument &argument );
 };
 
 } // namespace NLR

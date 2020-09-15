@@ -87,22 +87,17 @@ public:
     /*
       Free all the solvers in the SolverQueue
     */
-    static void clearSolverQueue( SolverQueue &freeSolvers )
-    {
-        // Remove the solvers
-        GurobiWrapper *freeSolver;
-        while ( freeSolvers.pop( freeSolver ) )
-            delete freeSolver;
-    }
+    static void clearSolverQueue( SolverQueue &freeSolvers );
 
-    static void enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver )
-    {
-        if ( !solvers.push( solver ) )
-        {
-            ASSERT( false );
-        }
-    }
-};
+    static void enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver );
+
+    /*
+      Optimize for the min/max value of variableName with respect to the constraints
+      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
+    */
+    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
+                                      String variableName, double cutoffValue,
+                                      std::atomic_bool *infeasible = NULL );
 
 } // namespace NLR
 

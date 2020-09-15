@@ -18,6 +18,7 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
+#include "LPFormulator.h"
 
 namespace NLR {
 
