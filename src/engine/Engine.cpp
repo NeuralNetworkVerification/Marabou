@@ -1097,7 +1097,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         if ( preprocess )
+        {
             performMILPSolverBoundedTightening();
+            performIterativePropagation();
+        }
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1147,6 +1150,28 @@ void Engine::performMILPSolverBoundedTightening()
         case GlobalConfiguration::NONE:
             return;
         }
+
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
+}
+
+void Engine::performIterativePropagation()
+{
+    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() &&
+         Options::get()->getBool( Options::ITERATIVE_PROPAGATION ) )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+        _networkLevelReasoner->iterativePropagation();
 
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
