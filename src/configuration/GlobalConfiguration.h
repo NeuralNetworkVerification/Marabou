@@ -114,9 +114,6 @@ public:
     // How many potential pivots should the engine inspect (at most) in every simplex iteration?
     static const unsigned MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
 
-    // The number of violations of a constraints after which the SMT core will initiate a case split
-    static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
-
     static const DivideStrategy SPLITTING_HEURISTICS;
 
     // When automatically deciding which splitting strategy to use, we use relu-splitting if
