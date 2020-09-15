@@ -48,6 +48,9 @@ void OptionParser::initialize()
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
+        ( "iter-prop",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::ITERATIVE_PROPAGATION]) ),
+          "Use iterative propagation" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
@@ -88,6 +91,9 @@ void OptionParser::initialize()
         ( "split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
+        ( "iter-prop-timeout",
+          boost::program_options::value<int>( &((*_intOptions)[Options::ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT]) ),
+          "Per-ReLU timeout for iterative propagation" )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
@@ -124,6 +130,12 @@ int OptionParser::extractIntValue( const String &option )
     ASSERT( valueExists( option ) );
     return _variableMap[option.ascii()].as<int>();
 }
+
+void OptionParser::printHelpMessage() const
+{
+    std::cerr << _optionDescription << std::endl;
+};
+
 
 //
 // Local Variables:

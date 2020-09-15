@@ -39,6 +39,9 @@ public:
         // Restore tree states of the parent when handling children in DnC.
         RESTORE_TREE_STATES,
 
+        // Use iterative propagation.
+        ITERATIVE_PROPAGATION,
+
         // Help flag
         HELP,
 
@@ -60,6 +63,8 @@ public:
         TIMEOUT,
 
         CONSTRAINT_VIOLATION_THRESHOLD,
+
+        ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT,
     };
 
     enum FloatOptions{
@@ -85,6 +90,11 @@ public:
       Parse the command line arguments and extract the option values.
     */
     void parseOptions( int argc, char **argv );
+
+    /*
+      Print all command arguments
+    */
+    void printHelpMessage() const;
 
     /*
       Retrieve the value of the various options, by type

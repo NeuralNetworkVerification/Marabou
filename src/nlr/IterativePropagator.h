@@ -50,11 +50,6 @@ private:
     MILPFormulator _milpFormulator;
     bool _cutoffInUse;
     double _cutoffValue;
-
-    /*
-      Tighten the upper- and lower- bound of a varaible with LPRelaxation
-    */
-    static void tightenSingleVariableBounds( ThreadArgument &argument );
 };
 
 } // namespace NLR
