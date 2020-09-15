@@ -26,13 +26,18 @@
 
 namespace NLR {
 
+#define ParallelSolver_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "Parallel Solver: %s\n", x)
+
 class Layer;
 class LayerOwner;
-class MinOrMax;
 
 class ParallelSolver
 {
 public:
+    enum MinOrMax {
+        MIN = 0,
+        MAX = 1,
+    };
 
     typedef boost::lockfree::queue
     <GurobiWrapper *, boost::lockfree::fixed_sized<true>> SolverQueue;
@@ -98,6 +103,12 @@ public:
     static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
                                       String variableName, double cutoffValue,
                                       std::atomic_bool *infeasible = NULL );
+
+    /*
+      Tighten the upper- and lower- bound of a varaible
+    */
+    static void tightenSingleVariableBounds( ThreadArgument &argument );
+};
 
 } // namespace NLR
 

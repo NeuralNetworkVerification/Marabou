@@ -33,10 +33,6 @@ namespace NLR {
 class LPFormulator : public ParallelSolver
 {
 public:
-    enum MinOrMax {
-        MIN = 0,
-        MAX = 1,
-    };
 
     LPFormulator( LayerOwner *layerOwner );
     ~LPFormulator();
@@ -92,11 +88,6 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
-
-    /*
-      Tighten the upper- and lower- bound of a varaible with LPRelaxation
-    */
-    static void tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &argument );
 };
 
 } // namespace NLR
