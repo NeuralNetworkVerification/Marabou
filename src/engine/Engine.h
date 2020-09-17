@@ -148,7 +148,7 @@ public:
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
+    PiecewiseLinearConstraint *pickSplitPLConstraint();
 
     /*
       Call-back from QueryDividers
@@ -327,6 +327,16 @@ private:
     unsigned long long _lastIterationWithProgress;
 
     /*
+      Strategy used for internal splitting
+    */
+    DivideStrategy _splittingStrategy;
+
+    /*
+      Disjunction that is used for splitting but doesn't exist in the beginning
+    */
+    std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -491,6 +501,12 @@ private:
       Pick the first unfixed ReLU in the topological order
     */
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnTopology();
+
+    /*
+      Pick the input variable with the largest interval
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
+
 };
 
 #endif // __Engine_h__

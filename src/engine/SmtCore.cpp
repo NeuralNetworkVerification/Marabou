@@ -72,8 +72,7 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
          _constraintViolationThreshold )
     {
         _needToSplit = true;
-        if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
-             DivideStrategy::ReLUViolation || !pickSplitPLConstraint() )
+        if ( !pickSplitPLConstraint() )
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
@@ -153,6 +152,8 @@ void SmtCore::performSplit()
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
+
+    _constraintForSplitting = NULL;
 }
 
 unsigned SmtCore::getStackDepth() const
@@ -447,8 +448,7 @@ void SmtCore::storeSmtState( SmtState &smtState )
 bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
-        _constraintForSplitting = _engine->pickSplitPLConstraint
-            ( GlobalConfiguration::SPLITTING_HEURISTICS );
+        _constraintForSplitting = _engine->pickSplitPLConstraint();
     return _constraintForSplitting != NULL;
 }
 
