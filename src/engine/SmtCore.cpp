@@ -452,13 +452,6 @@ bool SmtCore::pickSplitPLConstraint()
     return _constraintForSplitting != NULL;
 }
 
-void SmtCore::setDisjunctionForSplitting( std::unique_ptr
-                                          <PiecewiseLinearConstraint>
-                                          constraint )
-{
-    _disjunctionForSplitting = std::move( constraint );
-}
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

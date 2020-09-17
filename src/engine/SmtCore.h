@@ -125,9 +125,6 @@ public:
     */
     bool pickSplitPLConstraint();
 
-    void setDisjunctionForSplitting( std::unique_ptr<PiecewiseLinearConstraint>
-                                     constraint );
-
     /*
       For debugging purposes only - store a correct possible solution
     */
@@ -161,11 +158,6 @@ private:
     */
     bool _needToSplit;
     PiecewiseLinearConstraint *_constraintForSplitting;
-
-    /*
-      Disjunction that is used for splitting but doesn't exist in the beginning
-    */
-    std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
 
     /*
       Count how many times each constraint has been violated.

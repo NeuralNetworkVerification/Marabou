@@ -332,6 +332,11 @@ private:
     DivideStrategy _splittingStrategy;
 
     /*
+      Disjunction that is used for splitting but doesn't exist in the beginning
+    */
+    std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */

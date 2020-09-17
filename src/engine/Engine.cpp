@@ -2045,7 +2045,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
 
     unsigned inputVariableWithLargestInterval = 0;
     double largestIntervalSoFar = 0;
-    for ( const auto&variable : _preprocessedQuery.getInputVariables() )
+    for ( const auto &variable : _preprocessedQuery.getInputVariables() )
     {
         double interval = _tableau->getUpperBound( variable ) -
             _tableau->getLowerBound( variable );
@@ -2073,11 +2073,9 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
         List<PiecewiseLinearCaseSplit> splits;
         splits.append( s1 );
         splits.append( s2 );
-        auto bisection = std::unique_ptr<DisjunctionConstraint>
+        _disjunctionForSplitting = std::unique_ptr<DisjunctionConstraint>
             ( new DisjunctionConstraint( splits ) );
-        PiecewiseLinearConstraint *bisectionPtr = bisection.get();
-        _smtCore.setDisjunctionForSplitting( std::move( bisection ) );
-        return bisectionPtr;
+        return _disjunctionForSplitting.get();
     }
 }
 
