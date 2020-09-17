@@ -16,17 +16,13 @@
 #ifndef __ParallelSolver_h__
 #define __ParallelSolver_h__
 
-#include "Debug.h"
 #include "GurobiWrapper.h"
 
 #include <atomic>
 #include <boost/lockfree/queue.hpp>
-#include <boost/chrono.hpp>
 #include <mutex>
 
 namespace NLR {
-
-#define ParallelSolver_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "Parallel Solver: %s\n", x)
 
 class Layer;
 class LayerOwner;
@@ -95,19 +91,6 @@ public:
     static void clearSolverQueue( SolverQueue &freeSolvers );
 
     static void enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver );
-
-    /*
-      Optimize for the min/max value of variableName with respect to the constraints
-      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
-    */
-    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
-                                      String variableName, double cutoffValue,
-                                      std::atomic_bool *infeasible = NULL );
-
-    /*
-      Tighten the upper- and lower- bound of a varaible
-    */
-    static void tightenSingleVariableBounds( ThreadArgument &argument );
 };
 
 } // namespace NLR

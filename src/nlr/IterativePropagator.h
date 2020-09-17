@@ -21,6 +21,9 @@
 #include "MILPFormulator.h"
 #include "ParallelSolver.h"
 
+#include <atomic>
+#include <mutex>
+
 namespace NLR {
 
 #define IterativePropagator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "Iterativepropagator: %s\n", x)
@@ -50,6 +53,19 @@ private:
     MILPFormulator _milpFormulator;
     bool _cutoffInUse;
     double _cutoffValue;
+
+    /*
+      Optimize for the min/max value of variableName with respect to the constraints
+      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
+    */
+    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
+                                      String variableName, double cutoffValue,
+                                      std::atomic_bool *infeasible = NULL );
+
+    /*
+      Tighten the upper- and lower- bound of a varaible
+    */
+    static void tightenSingleVariableBounds( ThreadArgument &argument );
 };
 
 } // namespace NLR
