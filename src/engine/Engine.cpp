@@ -16,6 +16,7 @@
 
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "EngineState.h"
 #include "InfeasibleQueryException.h"
@@ -47,6 +48,7 @@ Engine::Engine()
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
+    , _splittingStrategy( Options::get()->getDivideStrategy() )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1099,6 +1101,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( preprocess )
             performMILPSolverBoundedTightening();
 
+        if ( _splittingStrategy == DivideStrategy::Auto )
+        {
+            _splittingStrategy =
+                ( _preprocessedQuery.getInputVariables().size() <
+                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
+                DivideStrategy::LargestInterval : DivideStrategy::ReLUViolation;
+        }
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
@@ -2031,20 +2041,65 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
     return NULL;
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
+{
+    // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
+    ENGINE_LOG( Stringf( "Using LargestInterval heuristics..." ).ascii() );
+
+    unsigned inputVariableWithLargestInterval = 0;
+    double largestIntervalSoFar = 0;
+    for ( const auto &variable : _preprocessedQuery.getInputVariables() )
+    {
+        double interval = _tableau->getUpperBound( variable ) -
+            _tableau->getLowerBound( variable );
+        if ( interval > largestIntervalSoFar )
+        {
+            inputVariableWithLargestInterval = variable;
+            largestIntervalSoFar = interval;
+        }
+    }
+
+    if ( largestIntervalSoFar == 0 )
+        return NULL;
+    else
+    {
+        double mid = ( _tableau->getLowerBound( inputVariableWithLargestInterval )
+                       + _tableau->getUpperBound( inputVariableWithLargestInterval )
+                       ) / 2;
+        PiecewiseLinearCaseSplit s1;
+        s1.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                             mid, Tightening::UB ) );
+        PiecewiseLinearCaseSplit s2;
+        s2.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                             mid, Tightening::LB ) );
+
+        List<PiecewiseLinearCaseSplit> splits;
+        splits.append( s1 );
+        splits.append( s2 );
+        _disjunctionForSplitting = std::unique_ptr<DisjunctionConstraint>
+            ( new DisjunctionConstraint( splits ) );
+        return _disjunctionForSplitting.get();
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( strategy == DivideStrategy::Polarity )
+    if ( _splittingStrategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
-    else if ( strategy == DivideStrategy::EarliestReLU )
+    else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-
-    ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
+    else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
+              _smtCore.getStackDepth() %
+              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+        // Conduct interval splitting periodically.
+        candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Unable to pick using the current strategy..." :
-                           "Picked..." ) ).ascii() );
+                           "Picked..." :
+                           "Unable to pick using the current strategy..." ) ).ascii() );
+
     return candidatePLConstraint;
 }
 

@@ -68,6 +68,7 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
+    _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
 }
@@ -115,6 +116,22 @@ void Options::setFloat( unsigned option, float value )
 void Options::setString( unsigned option, std::string value )
 {
     _stringOptions[option] = value;
+}
+
+DivideStrategy Options::getDivideStrategy() const
+{
+    String strategyString = String( _stringOptions.get
+                                    ( Options::SPLITTING_STRATEGY ) );
+    if ( strategyString == "polarity" )
+        return DivideStrategy::Polarity;
+    if ( strategyString == "earliest-relu" )
+        return DivideStrategy::EarliestReLU;
+    if ( strategyString == "relu-violation" )
+        return DivideStrategy::ReLUViolation;
+    else if ( strategyString == "largest-interval" )
+        return DivideStrategy::LargestInterval;
+    else
+        return DivideStrategy::Auto;
 }
 
 SnCDivideStrategy Options::getSnCDivideStrategy() const
