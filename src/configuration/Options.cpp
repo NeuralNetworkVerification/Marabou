@@ -56,12 +56,12 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
-    _intOptions[ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT] = 1;
 
     /*
       Float options
     */
     _floatOptions[TIMEOUT_FACTOR] = 1.5;
+    _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
 
     /*
       String options

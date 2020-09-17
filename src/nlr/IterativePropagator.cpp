@@ -46,8 +46,8 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     // Time to wait if no idle worker is availble
     boost::chrono::milliseconds waitTime ( numberOfWorkers - 1 );
 
-    unsigned perReLUTimeout = Options::get()->getInt
-        ( Options::ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT );
+    double perReLUTimeout = Options::get()->getFloat
+        ( Options::MILP_SOLVER_TIMEOUT );
 
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers

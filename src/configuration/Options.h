@@ -63,13 +63,14 @@ public:
         TIMEOUT,
 
         CONSTRAINT_VIOLATION_THRESHOLD,
-
-        ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT,
     };
 
     enum FloatOptions{
         // DNC options
         TIMEOUT_FACTOR,
+
+        // Gurobi options
+        MILP_SOLVER_TIMEOUT,
     };
 
     enum StringOptions {

@@ -91,12 +91,12 @@ void OptionParser::initialize()
         ( "split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
-        ( "iter-prop-timeout",
-          boost::program_options::value<int>( &((*_intOptions)[Options::ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT]) ),
-          "Per-ReLU timeout for iterative propagation" )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
+        ( "milp-timeout",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
+          "Per-ReLU timeout for iterative propagation" )
         ( "help",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
           "Prints the help message")
