@@ -46,6 +46,8 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     // Time to wait if no idle worker is availble
     boost::chrono::milliseconds waitTime ( numberOfWorkers - 1 );
 
+    unsigned perReLUTimeout = Options::get()->getInt
+        ( Options::ITERATIVE_PROPAGATION_PER_RELU_TIMEOUT );
 
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
@@ -55,8 +57,7 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
         GurobiWrapper *gurobi = new GurobiWrapper();
-        _milpFormulator.createMILPEncoding( layers, *gurobi, _layerOwner->getNumberOfLayers() );
-        gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+        gurobi->setTimeLimit( perReLUTimeout );
         solverToIndex[gurobi] = i;
         enqueueSolver( freeSolvers, gurobi );
     }
@@ -82,7 +83,8 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     for ( const auto &currentLayer : layers )
     {
         Layer *layer = currentLayer.second;
-
+        if ( layer->getLayerType() == Layer::INPUT )
+            continue;
         for ( unsigned i = 0; i < layer->getSize(); ++i )
         {
             if ( layer->neuronEliminated( i ) )
@@ -112,6 +114,11 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
                 boost::this_thread::sleep_for( waitTime );
 
             freeSolver->resetModel();
+            freeSolver->setTimeLimit( perReLUTimeout );
+            mtx.lock();
+            _milpFormulator.createMILPEncoding
+                ( layers, *freeSolver, _layerOwner->getNumberOfLayers() );
+            mtx.unlock();
 
             // spawn a thread to tighten the bounds for the current variable
             ThreadArgument argument( freeSolver, layer,

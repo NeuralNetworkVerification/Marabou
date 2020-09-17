@@ -474,7 +474,6 @@ private:
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
     void performMILPSolverBoundedTightening();
-    void performIterativePropagation();
 
     /*
       Update the preferred direction to perform fixes and the preferred order
