@@ -66,6 +66,10 @@ private:
       Tighten the upper- and lower- bound of a varaible
     */
     static void tightenSingleVariableBounds( ThreadArgument &argument );
+
+    static bool tightenSingleVariableLowerBounds( ThreadArgument &argument );
+
+    static bool tightenSingleVariableUpperBounds( ThreadArgument &argument );
 };
 
 } // namespace NLR

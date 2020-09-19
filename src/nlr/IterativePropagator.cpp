@@ -69,6 +69,8 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     std::atomic_uint signChanges( 0 );
     std::atomic_uint cutoffs( 0 );
 
+    NeuronIndex lastFixed( 0, 0 );
+
     struct timespec gurobiStart;
     (void) gurobiStart;
     struct timespec gurobiEnd;
@@ -86,15 +88,17 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
             if ( layer->neuronEliminated( i ) )
                 continue;
 
-            if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
-                printf( "Handling layer %d neuron %d\n",
-                        layer->getLayerIndex(), i );
-
             currentLb = layer->getLb( i );
             currentUb = layer->getUb( i );
 
+            if ( NeuronIndex( layer->getLayerIndex(), i ) < lastFixed )
+
             if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
                 continue;
+
+            if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
+                printf( "Handling layer %d neuron %d\n",
+                        layer->getLayerIndex(), i );
 
             if ( infeasible )
             {
@@ -206,89 +210,122 @@ void IterativePropagator::tightenSingleVariableBounds( ThreadArgument &argument 
 {
     try
     {
-        GurobiWrapper *gurobi = argument._gurobi;
-        Layer *layer = argument._layer;
-        unsigned index = argument._index;
-        double currentLb = argument._currentLb;
-        double currentUb = argument._currentUb;
-        bool cutoffInUse = argument._cutoffInUse;
-        double cutoffValue = argument._cutoffValue;
-        LayerOwner *layerOwner = argument._layerOwner;
+        if ( -argument._currentLb < argument._currentUb )
+        {
+            if ( tightenSingleVariableLowerBounds( argument ) )
+                tightenSingleVariableUpperBounds( argument );
+        }
+        else
+        {
+            if ( tightenSingleVariableUpperBounds( argument ) )
+                tightenSingleVariableLowerBounds( argument );
+        }
         SolverQueue &freeSolvers = argument._freeSolvers;
-        std::mutex &mtx = argument._mtx;
-        std::atomic_bool &infeasible = argument._infeasible;
-        std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
-        std::atomic_uint &signChanges = argument._signChanges;
-        std::atomic_uint &cutoffs = argument._cutoffs;
-
-        IterativePropagator_LOG( Stringf( "Tightening bounds for layer %u index %u",
-                                   layer->getLayerIndex(), index ).ascii() );
-
-        unsigned variable = layer->neuronToVariable( index );
-        Stringf variableName( "x%u", variable );
-
-        IterativePropagator_LOG( Stringf( "Computing upperbound..." ).ascii() );
-        double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
-                                        cutoffValue, &infeasible );
-        IterativePropagator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
-
-        // Store the new bound if it is tighter
-        if ( ub < currentUb )
-        {
-            if ( FloatUtils::isPositive( currentUb ) &&
-                 !FloatUtils::isPositive( ub ) )
-                ++signChanges;
-
-            mtx.lock();
-            layer->setUb( index, ub );
-            layerOwner->receiveTighterBound( Tightening( variable,
-                                                         ub,
-                                                         Tightening::UB ) );
-            mtx.unlock();
-
-            ++tighterBoundCounter;
-
-            if ( cutoffInUse && ub < cutoffValue )
-            {
-                ++cutoffs;
-                enqueueSolver( freeSolvers, gurobi );
-                return;
-            }
-        }
-
-        IterativePropagator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
-        gurobi->reset();
-        double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
-                                        cutoffValue, &infeasible );
-        IterativePropagator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
-
-        // Store the new bound if it is tighter
-        if ( lb > currentLb )
-        {
-            if ( FloatUtils::isNegative( currentLb ) &&
-                 !FloatUtils::isNegative( lb ) )
-                ++signChanges;
-
-            mtx.lock();
-            layer->setLb( index, lb );
-            layerOwner->receiveTighterBound( Tightening( variable,
-                                                         lb,
-                                                         Tightening::LB ) );
-            mtx.unlock();
-            ++tighterBoundCounter;
-
-            if ( cutoffInUse && lb > cutoffValue )
-            {
-                ++cutoffs;
-            }
-        }
-
+        GurobiWrapper *gurobi = argument._gurobi;
         enqueueSolver( freeSolvers, gurobi );
     }
     catch ( boost::thread_interrupted& )
     {
         enqueueSolver( argument._freeSolvers, argument._gurobi );
     }
+}
+
+bool IterativePropagator::tightenSingleVariableLowerBounds( ThreadArgument &argument )
+{
+    GurobiWrapper *gurobi = argument._gurobi;
+    Layer *layer = argument._layer;
+    unsigned index = argument._index;
+    double currentLb = argument._currentLb;
+    bool cutoffInUse = argument._cutoffInUse;
+    double cutoffValue = argument._cutoffValue;
+    LayerOwner *layerOwner = argument._layerOwner;
+    std::mutex &mtx = argument._mtx;
+    std::atomic_bool &infeasible = argument._infeasible;
+    std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
+    std::atomic_uint &signChanges = argument._signChanges;
+    std::atomic_uint &cutoffs = argument._cutoffs;
+
+
+    unsigned variable = layer->neuronToVariable( index );
+    Stringf variableName( "x%u", variable );
+    IterativePropagator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
+    gurobi->reset();
+    double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                    cutoffValue, &infeasible );
+    IterativePropagator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
+
+    // Store the new bound if it is tighter
+    if ( lb > currentLb )
+    {
+        if ( FloatUtils::isNegative( currentLb ) &&
+             !FloatUtils::isNegative( lb ) )
+            ++signChanges;
+
+        mtx.lock();
+        layer->setLb( index, lb );
+        layerOwner->receiveTighterBound( Tightening( variable,
+                                                     lb,
+                                                     Tightening::LB ) );
+        mtx.unlock();
+        ++tighterBoundCounter;
+
+        if ( cutoffInUse && lb > cutoffValue )
+        {
+            ++cutoffs;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool IterativePropagator::tightenSingleVariableUpperBounds( ThreadArgument &argument )
+{
+    GurobiWrapper *gurobi = argument._gurobi;
+    Layer *layer = argument._layer;
+    unsigned index = argument._index;
+    double currentUb = argument._currentUb;
+    bool cutoffInUse = argument._cutoffInUse;
+    double cutoffValue = argument._cutoffValue;
+    LayerOwner *layerOwner = argument._layerOwner;
+    std::mutex &mtx = argument._mtx;
+    std::atomic_bool &infeasible = argument._infeasible;
+    std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
+    std::atomic_uint &signChanges = argument._signChanges;
+    std::atomic_uint &cutoffs = argument._cutoffs;
+
+    unsigned variable = layer->neuronToVariable( index );
+    Stringf variableName( "x%u", variable );
+    IterativePropagator_LOG( Stringf( "Computing upperbound..." ).ascii() );
+    gurobi->reset();
+    double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
+                                    cutoffValue, &infeasible );
+    IterativePropagator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
+
+    // Store the new bound if it is tighter
+    if ( ub < currentUb )
+    {
+        if ( FloatUtils::isPositive( currentUb ) &&
+             !FloatUtils::isPositive( ub ) )
+            ++signChanges;
+
+        mtx.lock();
+        layer->setUb( index, ub );
+        layerOwner->receiveTighterBound( Tightening( variable,
+                                                     ub,
+                                                     Tightening::UB ) );
+        mtx.unlock();
+
+        ++tighterBoundCounter;
+
+        if ( cutoffInUse && ub < cutoffValue )
+        {
+            ++cutoffs;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace NLR
