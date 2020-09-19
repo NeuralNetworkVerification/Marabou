@@ -42,9 +42,9 @@ void OptionParser::initialize()
         ( "pl-aux-eq",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
           "PL constraints generate auxiliary equations" )
-        ( "dnc",
+        ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the divide-and-conquer solving mode" )
+          "Use the split-and-conquer solving mode" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
