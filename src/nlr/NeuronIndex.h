@@ -42,6 +42,11 @@ struct NeuronIndex
         return _neuron < other._neuron;
     }
 
+    bool operator!=( const NeuronIndex &other ) const
+    {
+        return _layer != other._layer || _neuron != other._neuron;
+    }
+
     unsigned _layer;
     unsigned _neuron;
 };
@@ -51,7 +56,7 @@ struct NeuronIndex
 #endif // __NeuronIndex_h__
 
 //
-// Local Variables:
+// Local Variables:,
 // compile-command: "make -C ../.. "
 // tags-file-name: "../../TAGS"
 // c-basic-offset: 4

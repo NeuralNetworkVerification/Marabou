@@ -69,7 +69,10 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     std::atomic_uint signChanges( 0 );
     std::atomic_uint cutoffs( 0 );
 
-    NeuronIndex lastFixed( 0, 0 );
+    Layer *lastLayer = layers[layers.size() - 1];
+    NeuronIndex lastFixedNeuronFromPreviousIteration
+        ( lastLayer->getLayerIndex(), lastLayer->getSize() );
+    NeuronIndex lastFixedNeuron = lastFixedNeuronFromPreviousIteration;
 
     struct timespec gurobiStart;
     (void) gurobiStart;
@@ -78,70 +81,88 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
 
     gurobiStart = TimeUtils::sampleMicro();
 
-    for ( const auto &currentLayer : layers )
+    do
     {
-        Layer *layer = currentLayer.second;
-        if ( layer->getLayerType() == Layer::INPUT )
-            continue;
-        for ( unsigned i = 0; i < layer->getSize(); ++i )
+        lastFixedNeuronFromPreviousIteration = lastFixedNeuron;
+        for ( const auto &currentLayer : layers )
         {
-            if ( layer->neuronEliminated( i ) )
+            Layer *layer = currentLayer.second;
+            if ( layer->getLayerType() == Layer::INPUT )
                 continue;
-
-            currentLb = layer->getLb( i );
-            currentUb = layer->getUb( i );
-
-            if ( NeuronIndex( layer->getLayerIndex(), i ) < lastFixed )
-
-            if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
-                continue;
-
-            if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
-                printf( "Handling layer %d neuron %d\n",
-                        layer->getLayerIndex(), i );
-
-            if ( infeasible )
+            for ( unsigned i = 0; i < layer->getSize(); ++i )
             {
-                // infeasibility is derived, interupt all active threads
-                for ( unsigned i = 0; i < numberOfWorkers; ++i )
+                if ( layer->neuronEliminated( i ) )
+                    continue;
+
+                currentLb = layer->getLb( i );
+                currentUb = layer->getUb( i );
+
+                if ( lastFixedNeuron != lastFixedNeuronFromPreviousIteration &&
+                     lastFixedNeuronFromPreviousIteration <
+                     NeuronIndex( layer->getLayerIndex(), i ) )
                 {
-                    threads[i].interrupt();
-                    threads[i].join();
+                    // This happens we reached the last fixed neuron from the
+                    // previous iteration but this iteration hasn't fixed any neurons
+                    for ( unsigned i = 0; i < numberOfWorkers; ++i )
+                    {
+                        threads[i].interrupt();
+                        threads[i].join();
+                    }
+                    break;
                 }
-                clearSolverQueue( freeSolvers );
-                throw InfeasibleQueryException();
+
+                if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
+                    continue;
+
+                if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
+                    printf( "Handling layer %d neuron %d\n",
+                            layer->getLayerIndex(), i );
+
+                if ( infeasible )
+                {
+                    // infeasibility is derived, interupt all active threads
+                    for ( unsigned i = 0; i < numberOfWorkers; ++i )
+                    {
+                        threads[i].interrupt();
+                        threads[i].join();
+                    }
+                    clearSolverQueue( freeSolvers );
+                    throw InfeasibleQueryException();
+                }
+
+                // Wait until there is an idle solver
+                GurobiWrapper *freeSolver;
+                while ( !freeSolvers.pop( freeSolver ) )
+                    boost::this_thread::sleep_for( waitTime );
+
+                freeSolver->resetModel();
+                mtx.lock();
+                _milpFormulator.createMILPEncoding
+                    ( layers, *freeSolver, _layerOwner->getNumberOfLayers() );
+                mtx.unlock();
+
+                // spawn a thread to tighten the bounds for the current variable
+                ThreadArgument argument( freeSolver, layer,
+                                         i, currentLb, currentUb,
+                                         _cutoffInUse, _cutoffValue,
+                                         _layerOwner, std::ref( freeSolvers ),
+                                         std::ref( mtx ), std::ref( infeasible ),
+                                         std::ref( tighterBoundCounter ),
+                                         std::ref( signChanges ),
+                                         std::ref( cutoffs ),
+                                         &lastFixedNeuron );
+
+                threads[solverToIndex[freeSolver]] = boost::thread
+                    ( tightenSingleVariableBounds, argument );
             }
+        }
 
-            // Wait until there is an idle solver
-            GurobiWrapper *freeSolver;
-            while ( !freeSolvers.pop( freeSolver ) )
-                boost::this_thread::sleep_for( waitTime );
-
-            freeSolver->resetModel();
-            mtx.lock();
-            _milpFormulator.createMILPEncoding
-                ( layers, *freeSolver, _layerOwner->getNumberOfLayers() );
-            mtx.unlock();
-
-            // spawn a thread to tighten the bounds for the current variable
-            ThreadArgument argument( freeSolver, layer,
-                                     i, currentLb, currentUb,
-                                     _cutoffInUse, _cutoffValue,
-                                     _layerOwner, std::ref( freeSolvers ),
-                                     std::ref( mtx ), std::ref( infeasible ),
-                                     std::ref( tighterBoundCounter ),
-                                     std::ref( signChanges ),
-                                     std::ref( cutoffs ) );
-
-            threads[solverToIndex[freeSolver]] = boost::thread
-                ( tightenSingleVariableBounds, argument );
+        for ( unsigned i = 0; i < numberOfWorkers; ++i )
+        {
+            threads[i].join();
         }
     }
-
-    for ( unsigned i = 0; i < numberOfWorkers; ++i )
-    {
-        threads[i].join();
-    }
+    while ( lastFixedNeuron != lastFixedNeuronFromPreviousIteration );
 
     gurobiEnd = TimeUtils::sampleMicro();
 
@@ -245,7 +266,7 @@ bool IterativePropagator::tightenSingleVariableLowerBounds( ThreadArgument &argu
     std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
     std::atomic_uint &signChanges = argument._signChanges;
     std::atomic_uint &cutoffs = argument._cutoffs;
-
+    NeuronIndex *lastFixedNeuron = argument._lastFixedNeuron;
 
     unsigned variable = layer->neuronToVariable( index );
     Stringf variableName( "x%u", variable );
@@ -260,7 +281,16 @@ bool IterativePropagator::tightenSingleVariableLowerBounds( ThreadArgument &argu
     {
         if ( FloatUtils::isNegative( currentLb ) &&
              !FloatUtils::isNegative( lb ) )
+        {
+            IterativePropagator_LOG( Stringf( "Neuron(%d, %d) new lower bound non-nagative!",
+                                              layer->getLayerIndex(), index
+                                              ).ascii() );
             ++signChanges;
+            mtx.lock();
+            *lastFixedNeuron = NeuronIndex( layer->getLayerIndex(),
+                                           index );
+            mtx.unlock();
+        }
 
         mtx.lock();
         layer->setLb( index, lb );
@@ -294,6 +324,7 @@ bool IterativePropagator::tightenSingleVariableUpperBounds( ThreadArgument &argu
     std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
     std::atomic_uint &signChanges = argument._signChanges;
     std::atomic_uint &cutoffs = argument._cutoffs;
+    NeuronIndex *lastFixedNeuron = argument._lastFixedNeuron;
 
     unsigned variable = layer->neuronToVariable( index );
     Stringf variableName( "x%u", variable );
@@ -308,7 +339,16 @@ bool IterativePropagator::tightenSingleVariableUpperBounds( ThreadArgument &argu
     {
         if ( FloatUtils::isPositive( currentUb ) &&
              !FloatUtils::isPositive( ub ) )
+        {
+            IterativePropagator_LOG( Stringf( "Neuron(%d, %d) new  upper bound non-positive!",
+                                              layer->getLayerIndex(), index
+                                              ).ascii() );
             ++signChanges;
+            mtx.lock();
+            *lastFixedNeuron = NeuronIndex( layer->getLayerIndex(),
+                                            index );
+            mtx.unlock();
+        }
 
         mtx.lock();
         layer->setUb( index, ub );

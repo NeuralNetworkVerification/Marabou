@@ -26,6 +26,7 @@ namespace NLR {
 
 class Layer;
 class LayerOwner;
+class NeuronIndex;
 
 class ParallelSolver
 {
@@ -62,6 +63,33 @@ public:
         , _tighterBoundCounter( tighterBoundCounter )
         , _signChanges( signChanges )
         , _cutoffs( cutoffs )
+        , _lastFixedNeuron( NULL )
+        {
+        }
+
+        ThreadArgument( GurobiWrapper *gurobi, Layer *layer,
+                        unsigned index, double currentLb, double currentUb,
+                        bool cutoffInUse, double cutoffValue,
+                        LayerOwner *layerOwner, SolverQueue &freeSolvers,
+                        std::mutex &mtx, std::atomic_bool &infeasible,
+                        std::atomic_uint &tighterBoundCounter,
+                        std::atomic_uint &signChanges,
+                        std::atomic_uint &cutoffs, NeuronIndex *lastFixedNeuron )
+        : _gurobi( gurobi )
+        , _layer( layer )
+        , _index( index )
+        , _currentLb(currentLb )
+        , _currentUb(currentUb )
+        , _cutoffInUse( cutoffInUse )
+        , _cutoffValue( cutoffValue )
+        , _layerOwner( layerOwner )
+        , _freeSolvers( freeSolvers )
+        , _mtx( mtx )
+        , _infeasible( infeasible )
+        , _tighterBoundCounter( tighterBoundCounter )
+        , _signChanges( signChanges )
+        , _cutoffs( cutoffs )
+        , _lastFixedNeuron( lastFixedNeuron )
         {
         }
 
@@ -79,6 +107,7 @@ public:
         std::atomic_uint &_tighterBoundCounter;
         std::atomic_uint &_signChanges;
         std::atomic_uint &_cutoffs;
+        NeuronIndex *_lastFixedNeuron;
     };
 
     /*
