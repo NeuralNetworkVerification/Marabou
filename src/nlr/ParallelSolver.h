@@ -30,10 +30,6 @@ class LayerOwner;
 class ParallelSolver
 {
 public:
-    enum MinOrMax {
-        MIN = 0,
-        MAX = 1,
-    };
 
     typedef boost::lockfree::queue
     <GurobiWrapper *, boost::lockfree::fixed_sized<true>> SolverQueue;
