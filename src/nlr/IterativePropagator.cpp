@@ -210,6 +210,7 @@ void IterativePropagator::tightenSingleVariableBounds( ThreadArgument &argument 
 {
     try
     {
+        // try the phase corresponding to the larger interval first
         if ( -argument._currentLb < argument._currentUb )
         {
             if ( tightenSingleVariableLowerBounds( argument ) )
