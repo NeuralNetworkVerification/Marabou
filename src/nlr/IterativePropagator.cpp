@@ -88,13 +88,14 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
             printf( "Number of tighter bounds found by Gurobi before this iteration: %u. Sign changes: %u. Cutoffs: %u\n",
                     tighterBoundCounter.load(), signChanges.load(), cutoffs.load() );
 
+        lastFixedNeuronFromPreviousIteration = lastFixedNeuron;
+
         DEBUG({
                 std::cout << "Last fixed Neuron From Previous Iteration: " <<
                     lastFixedNeuronFromPreviousIteration._layer << " " <<
                     lastFixedNeuronFromPreviousIteration._neuron << std::endl;
             });
 
-        lastFixedNeuronFromPreviousIteration = lastFixedNeuron;
         for ( const auto &currentLayer : layers )
         {
             Layer *layer = currentLayer.second;
