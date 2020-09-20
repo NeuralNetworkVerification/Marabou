@@ -126,7 +126,7 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
                 if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
                     continue;
 
-                if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
+                if ( Options::get()->getInt( Options::VERBOSITY ) > 1 )
                     printf( "Handling layer %d neuron %d\n",
                             layer->getLayerIndex(), i );
 
@@ -286,11 +286,9 @@ bool IterativePropagator::tightenSingleVariableLowerBounds( ThreadArgument &argu
 
     unsigned variable = layer->neuronToVariable( index );
     Stringf variableName( "x%u", variable );
-    IterativePropagator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
     gurobi->reset();
     double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
                                     cutoffValue, &infeasible );
-    IterativePropagator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
 
     // Store the new bound if it is tighter
     if ( lb > currentLb )
@@ -344,11 +342,9 @@ bool IterativePropagator::tightenSingleVariableUpperBounds( ThreadArgument &argu
 
     unsigned variable = layer->neuronToVariable( index );
     Stringf variableName( "x%u", variable );
-    IterativePropagator_LOG( Stringf( "Computing upperbound..." ).ascii() );
     gurobi->reset();
     double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
                                     cutoffValue, &infeasible );
-    IterativePropagator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
 
     // Store the new bound if it is tighter
     if ( ub < currentUb )
