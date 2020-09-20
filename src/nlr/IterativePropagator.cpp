@@ -75,6 +75,8 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
         ( lastLayer->getLayerIndex() + 1, lastLayer->getSize() );
     NeuronIndex lastFixedNeuron = lastFixedNeuronFromPreviousIteration;
 
+    bool shouldQuit = false;
+
     struct timespec gurobiStart;
     (void) gurobiStart;
     struct timespec gurobiEnd;
@@ -98,6 +100,9 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
 
         for ( const auto &currentLayer : layers )
         {
+            if ( shouldQuit )
+                break;
+
             Layer *layer = currentLayer.second;
             if ( layer->getLayerType() == Layer::INPUT )
                 continue;
@@ -109,20 +114,26 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
                 currentLb = layer->getLb( i );
                 currentUb = layer->getUb( i );
 
-                if ( lastFixedNeuron != lastFixedNeuronFromPreviousIteration &&
+                mtx.lock();
+                bool progressMade = lastFixedNeuron !=
+                    lastFixedNeuronFromPreviousIteration;
+                mtx.unlock();
+
+                if ( !progressMade &&
                      lastFixedNeuronFromPreviousIteration <
                      NeuronIndex( layer->getLayerIndex(), i ) )
                 {
                     // This happens we reached the last fixed neuron from the
                     // previous iteration but this iteration hasn't fixed any neurons
                     if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
-                        printf( "No progress made this iteration, quitting..." );
+                        printf( "No progress made this iteration, quitting...\n" );
 
                     for ( unsigned i = 0; i < numberOfWorkers; ++i )
                     {
                         threads[i].interrupt();
                         threads[i].join();
                     }
+                    shouldQuit = true;
                     break;
                 }
 
@@ -181,7 +192,7 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
             printf( "Number of tighter bounds found by Gurobi after this iteration: %u. Sign changes: %u. Cutoffs: %u\n",
                     tighterBoundCounter.load(), signChanges.load(), cutoffs.load() );
     }
-    while ( lastFixedNeuron != lastFixedNeuronFromPreviousIteration );
+    while ( !shouldQuit );
 
     gurobiEnd = TimeUtils::sampleMicro();
 
