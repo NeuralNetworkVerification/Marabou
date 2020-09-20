@@ -70,11 +70,15 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     std::atomic_uint signChanges( 0 );
     std::atomic_uint cutoffs( 0 );
 
+    // Variables used for early quitting
     Layer *lastLayer = layers[layers.size() - 1];
-    NeuronIndex lastFixedNeuronFromPreviousIteration
-        ( lastLayer->getLayerIndex() + 1, lastLayer->getSize() );
-    NeuronIndex lastFixedNeuron = lastFixedNeuronFromPreviousIteration;
 
+    // A NeuronIndex after all real neurons
+    NeuronIndex lastIndex( lastLayer->getLayerIndex() + 1, 0 );
+    // The neuron fixed from last iteration.
+    NeuronIndex lastFixedNeuronFromPreviousIteration = lastIndex;
+    // The latest neuron fixed in the current iteration
+    NeuronIndex lastFixedNeuronThisIteration = lastIndex;
     bool shouldQuit = false;
 
     struct timespec gurobiStart;
@@ -90,7 +94,10 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
             printf( "Number of tighter bounds found by Gurobi before this iteration: %u. Sign changes: %u. Cutoffs: %u\n",
                     tighterBoundCounter.load(), signChanges.load(), cutoffs.load() );
 
-        lastFixedNeuronFromPreviousIteration = lastFixedNeuron;
+        mtx.lock();
+        lastFixedNeuronFromPreviousIteration = lastFixedNeuronThisIteration;
+        lastFixedNeuronThisIteration = lastIndex;
+        mtx.unlock();
 
         DEBUG({
                 std::cout << "Last fixed Neuron From Previous Iteration: " <<
@@ -102,7 +109,6 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
         {
             if ( shouldQuit )
                 break;
-
             Layer *layer = currentLayer.second;
             if ( layer->getLayerType() == Layer::INPUT )
                 continue;
@@ -115,15 +121,14 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
                 currentUb = layer->getUb( i );
 
                 mtx.lock();
-                bool progressMade = lastFixedNeuron !=
-                    lastFixedNeuronFromPreviousIteration;
+                bool progressMade = lastFixedNeuronThisIteration != lastIndex;
                 mtx.unlock();
 
                 if ( !progressMade &&
                      lastFixedNeuronFromPreviousIteration <
                      NeuronIndex( layer->getLayerIndex(), i ) )
                 {
-                    // This happens we reached the last fixed neuron from the
+                    // If we reached the last fixed neuron from the
                     // previous iteration but this iteration hasn't fixed any neurons
                     if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
                         printf( "No progress made this iteration, quitting...\n" );
@@ -176,7 +181,7 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
                                          std::ref( tighterBoundCounter ),
                                          std::ref( signChanges ),
                                          std::ref( cutoffs ),
-                                         &lastFixedNeuron );
+                                         &lastFixedNeuronThisIteration );
 
                 threads[solverToIndex[freeSolver]] = boost::thread
                     ( tightenSingleVariableBounds, argument );
