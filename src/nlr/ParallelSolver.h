@@ -26,7 +26,7 @@ namespace NLR {
 
 class Layer;
 class LayerOwner;
-class NeuronIndex;
+struct NeuronIndex;
 
 class ParallelSolver
 {
