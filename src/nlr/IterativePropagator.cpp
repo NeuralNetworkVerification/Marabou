@@ -13,6 +13,7 @@
 
  **/
 
+#include "Debug.h"
 #include "InfeasibleQueryException.h"
 #include "IterativePropagator.h"
 #include "Layer.h"
@@ -71,7 +72,7 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
 
     Layer *lastLayer = layers[layers.size() - 1];
     NeuronIndex lastFixedNeuronFromPreviousIteration
-        ( lastLayer->getLayerIndex(), lastLayer->getSize() );
+        ( lastLayer->getLayerIndex() + 1, lastLayer->getSize() );
     NeuronIndex lastFixedNeuron = lastFixedNeuronFromPreviousIteration;
 
     struct timespec gurobiStart;
@@ -83,6 +84,16 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
 
     do
     {
+        if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
+            printf( "Number of tighter bounds found by Gurobi before this iteration: %u. Sign changes: %u. Cutoffs: %u\n",
+                    tighterBoundCounter.load(), signChanges.load(), cutoffs.load() );
+
+        DEBUG({
+                std::cout << "Last fixed Neuron From Previous Iteration: " <<
+                    lastFixedNeuronFromPreviousIteration._layer << " " <<
+                    lastFixedNeuronFromPreviousIteration._neuron << std::endl;
+            });
+
         lastFixedNeuronFromPreviousIteration = lastFixedNeuron;
         for ( const auto &currentLayer : layers )
         {
@@ -161,6 +172,10 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
         {
             threads[i].join();
         }
+
+        if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
+            printf( "Number of tighter bounds found by Gurobi after this iteration: %u. Sign changes: %u. Cutoffs: %u\n",
+                    tighterBoundCounter.load(), signChanges.load(), cutoffs.load() );
     }
     while ( lastFixedNeuron != lastFixedNeuronFromPreviousIteration );
 
