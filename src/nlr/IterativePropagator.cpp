@@ -115,6 +115,9 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
                 {
                     // This happens we reached the last fixed neuron from the
                     // previous iteration but this iteration hasn't fixed any neurons
+                    if ( Options::get()->getInt( Options::VERBOSITY ) > 0 )
+                        printf( "No progress made this iteration, quitting..." );
+
                     for ( unsigned i = 0; i < numberOfWorkers; ++i )
                     {
                         threads[i].interrupt();
