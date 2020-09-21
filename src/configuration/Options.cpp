@@ -44,6 +44,7 @@ void Options::initializeDefaultValues()
     _boolOptions[DNC_MODE] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
+    _boolOptions[ITERATIVE_PROPAGATION] = false;
 
     /*
       Int options
@@ -60,6 +61,7 @@ void Options::initializeDefaultValues()
       Float options
     */
     _floatOptions[TIMEOUT_FACTOR] = 1.5;
+    _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
 
     /*
       String options
@@ -76,6 +78,11 @@ void Options::initializeDefaultValues()
 void Options::parseOptions( int argc, char **argv )
 {
     _optionParser.parse( argc, argv );
+}
+
+void Options::printHelpMessage() const
+{
+    _optionParser.printHelpMessage();
 }
 
 bool Options::getBool( unsigned option ) const

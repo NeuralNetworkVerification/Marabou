@@ -40,6 +40,9 @@ public:
         // Restore tree states of the parent when handling children in DnC.
         RESTORE_TREE_STATES,
 
+        // Use iterative propagation.
+        ITERATIVE_PROPAGATION,
+
         // Help flag
         HELP,
 
@@ -66,6 +69,9 @@ public:
     enum FloatOptions{
         // DNC options
         TIMEOUT_FACTOR,
+
+        // Gurobi options
+        MILP_SOLVER_TIMEOUT,
     };
 
     enum StringOptions {
@@ -87,6 +93,11 @@ public:
       Parse the command line arguments and extract the option values.
     */
     void parseOptions( int argc, char **argv );
+
+    /*
+      Print all command arguments
+    */
+    void printHelpMessage() const;
 
     /*
       Retrieve the value of the various options, by type

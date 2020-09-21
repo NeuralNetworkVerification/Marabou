@@ -81,8 +81,6 @@ const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = fal
 const GlobalConfiguration::MILPSolverBoundTighteningType GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE =
     GlobalConfiguration::LP_RELAXATION;
 
-const unsigned GlobalConfiguration::MILPSolverTimeoutValueInSeconds = 1;
-
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
