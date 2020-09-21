@@ -56,7 +56,7 @@ struct NeuronIndex
 #endif // __NeuronIndex_h__
 
 //
-// Local Variables:,
+// Local Variables:
 // compile-command: "make -C ../.. "
 // tags-file-name: "../../TAGS"
 // c-basic-offset: 4

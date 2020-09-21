@@ -42,9 +42,6 @@ void OptionParser::initialize()
         ( "pl-aux-eq",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
           "PL constraints generate auxiliary equations" )
-        ( "dnc",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the split-and-conquer solving mode" )
         ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
           "Use the split-and-conquer solving mode" )
@@ -138,7 +135,6 @@ void OptionParser::printHelpMessage() const
 {
     std::cerr << _optionDescription << std::endl;
 };
-
 
 //
 // Local Variables:
