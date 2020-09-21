@@ -129,7 +129,7 @@ def main():
     parser.add_argument('network_file')
     parser.add_argument('property_file', nargs='?', default='')
     parser.add_argument('expected_result', choices=EXPECTED_RESULT_OPTIONS)
-    parser.add_argument('--dnc', action='store_true')
+    parser.add_argument('--snc', action='store_true')
     parser.add_argument('--timeout', nargs='?', const=DEFAULT_TIMEOUT, type=int)
 
     args = parser.parse_args()
@@ -142,8 +142,8 @@ def main():
         property_file = os.path.abspath(args.property_file)
 
     marabou_args = []
-    if args.dnc:
-        marabou_args += ['--dnc']
+    if args.snc:
+        marabou_args += ['--snc']
     if args.network_file.endswith('nnet'):
         return run_marabou(binary, network_file, property_file, expected_result, args.timeout, marabou_args)
     elif args.network_file.endswith('mps'):
