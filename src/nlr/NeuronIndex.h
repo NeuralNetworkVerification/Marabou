@@ -42,6 +42,11 @@ struct NeuronIndex
         return _neuron < other._neuron;
     }
 
+    bool operator!=( const NeuronIndex &other ) const
+    {
+        return _layer != other._layer || _neuron != other._neuron;
+    }
+
     unsigned _layer;
     unsigned _neuron;
 };

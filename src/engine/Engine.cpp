@@ -1143,21 +1143,25 @@ void Engine::performMILPSolverBoundedTightening()
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
-        switch ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE )
+        if ( Options::get()->getBool( Options::ITERATIVE_PROPAGATION ) )
+            _networkLevelReasoner->iterativePropagation();
+        else
         {
-        case GlobalConfiguration::LP_RELAXATION:
-        case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
-            _networkLevelReasoner->lpRelaxationPropagation();
-            break;
+            switch ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE )
+            {
+            case GlobalConfiguration::LP_RELAXATION:
+            case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
+                _networkLevelReasoner->lpRelaxationPropagation();
+                break;
 
-        case GlobalConfiguration::MILP_ENCODING:
-        case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
-            _networkLevelReasoner->MILPPropagation();
-            break;
-        case GlobalConfiguration::NONE:
-            return;
+            case GlobalConfiguration::MILP_ENCODING:
+            case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
+                _networkLevelReasoner->MILPPropagation();
+                break;
+            case GlobalConfiguration::NONE:
+                return;
+            }
         }
-
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
 
