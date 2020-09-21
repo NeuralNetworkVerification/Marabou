@@ -45,13 +45,13 @@ void IterativePropagator::optimizeBoundsWithIterativePropagation( const Map<unsi
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
     // Time to wait if no idle worker is availble
-    boost::chrono::milliseconds waitTime ( numberOfWorkers - 1 );
+    boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
 
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
     // is added back to the queue.
-    SolverQueue freeSolvers ( numberOfWorkers );
+    SolverQueue freeSolvers( numberOfWorkers );
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
         GurobiWrapper *gurobi = new GurobiWrapper();
