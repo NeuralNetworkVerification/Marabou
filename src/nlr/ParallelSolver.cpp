@@ -14,11 +14,11 @@
  **/
 
 #include "InfeasibleQueryException.h"
-#include "ParallelSolver.h"
 #include "Layer.h"
 #include "MStringf.h"
 #include "NLRError.h"
 #include "Options.h"
+#include "ParallelSolver.h"
 #include "TimeUtils.h"
 
 #include <boost/thread.hpp>
