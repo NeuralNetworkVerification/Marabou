@@ -200,7 +200,7 @@ void SparseUnsortedLists::countElements( unsigned *numRowElements, unsigned *num
         numRowElements[i] = _rows[i]->getNnz();
 
         // Columns
-        for ( const auto element : (*_rows[i]) )
+        for ( const auto &element : (*_rows[i]) )
             ++numColumnElements[element._index];
     }
 }
