@@ -144,11 +144,32 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
             printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
-        printf( "\n" );
-        printf( "Output:\n" );
-        for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-            printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
-        printf( "\n" );
+        if ( _inputQuery._networkLevelReasoner )
+        {
+            double input[_inputQuery.getNumInputVariables()];
+            for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
+                input[i] = _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) );
+
+            NLR::NetworkLevelReasoner *nlr = _inputQuery._networkLevelReasoner;
+            NLR::Layer *lastLayer = nlr->getLayer( nlr->getNumberOfLayers() - 1 );
+            double output[lastLayer->getSize()];
+
+            nlr->evaluate( input, output );
+
+            printf( "\n" );
+            printf( "Output:\n" );
+            for ( unsigned i = 0; i < lastLayer->getSize(); ++i )
+                printf( "\ty%u = %lf\n", i, output[i] );
+            printf( "\n" );
+        }
+        else
+        {
+            printf( "\n" );
+            printf( "Output:\n" );
+            for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
+                printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+            printf( "\n" );
+        }
     }
     else if ( result == Engine::TIMEOUT )
     {
