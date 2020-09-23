@@ -512,7 +512,7 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
     // Adjust the indices of all layers starting from secondLayerIndex
     // and higher
     for ( unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i )
-        reduceLayerIndex( i, firstLayerIndex );
+        reduceLayerIndex( i, secondLayerIndex );
 }
 
 double *NetworkLevelReasoner::multiplyWeights( const double *firstMatrix,
