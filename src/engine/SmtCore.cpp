@@ -336,7 +336,7 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     if ( _debuggingSolution.empty() )
         return true;
 
-    for ( const auto bound : split.getBoundTightenings() )
+    for ( const auto &bound : split.getBoundTightenings() )
     {
         unsigned variable = bound._variable;
 
