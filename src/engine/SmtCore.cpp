@@ -336,7 +336,7 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     if ( _debuggingSolution.empty() )
         return true;
 
-    for ( const auto bound : split.getBoundTightenings() )
+    for ( const auto &bound : split.getBoundTightenings() )
     {
         unsigned variable = bound._variable;
 
@@ -451,11 +451,3 @@ bool SmtCore::pickSplitPLConstraint()
         _constraintForSplitting = _engine->pickSplitPLConstraint();
     return _constraintForSplitting != NULL;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
