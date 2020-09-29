@@ -34,7 +34,7 @@
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
     , _elements( elements )
-    , _initialElements ( elements )
+    , _initialElements( elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
