@@ -458,8 +458,8 @@ double SignConstraint::computePolarity() const
 {
   double currentLb = _lowerBounds[_b];
   double currentUb = _upperBounds[_b];
-  if ( currentLb >= 0 ) return 1;
-  if ( currentUb <= 0 ) return -1;
+  if ( !FloatUtils::isNegative( currentLb ) ) return 1;
+  if ( FloatUtils::isNegative( currentUb ) ) return -1;
   double width = currentUb - currentLb;
   double sum = currentUb + currentLb;
   return sum / width;
@@ -467,7 +467,8 @@ double SignConstraint::computePolarity() const
 
 void SignConstraint::updateDirection()
 {
-  _direction = ( computePolarity() > 0 ) ? PHASE_POSITIVE : PHASE_NEGATIVE;
+    _direction = ( FloatUtils::isNegative( computePolarity() ) ) ?
+        PHASE_NEGATIVE : PHASE_POSITIVE;
 }
 
 SignConstraint::PhaseStatus SignConstraint::getDirection() const

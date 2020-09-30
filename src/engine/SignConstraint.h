@@ -157,7 +157,7 @@ public:
     the bound of the input to this ReLU is with respect to 0.
     Let LB be the lowerbound, and UB be the upperbound.
     If LB >= 0, polarity is 1.
-    If UB <= 0, polarity is -1.
+    If UB < 0, polarity is -1.
     If LB < 0, and UB > 0, polarity is ( LB + UB ) / (UB - LB).
 
     We divide the sum by the width of the interval so that the polarity is

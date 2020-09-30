@@ -967,7 +967,7 @@ public:
             TS_ASSERT( sign.computePolarity() == 0 );
 
             sign.updateDirection();
-            TS_ASSERT( sign.getDirection() == SignConstraint::PHASE_NEGATIVE );
+            TS_ASSERT( sign.getDirection() == SignConstraint::PHASE_POSITIVE );
 
             auto splits = sign.getCaseSplits();
             auto it = splits.begin();
