@@ -971,7 +971,7 @@ public:
 
             auto splits = sign.getCaseSplits();
             auto it = splits.begin();
-            TS_ASSERT( isNegativeSplit( b, f, it ) );
+            TS_ASSERT( isPositiveSplit( b, f, it ) );
         }
         // b in [-2, 3], polarity should be 0.2, the direction should be PHASE_POSITIVE,
         // the active case should be the first element of the returned list by
