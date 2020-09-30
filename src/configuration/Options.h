@@ -16,6 +16,7 @@
 #ifndef __Options_h__
 #define __Options_h__
 
+#include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
 #include "OptionParser.h"
@@ -38,6 +39,9 @@ public:
 
         // Restore tree states of the parent when handling children in DnC.
         RESTORE_TREE_STATES,
+
+        // Use iterative propagation.
+        ITERATIVE_PROPAGATION,
 
         // Help flag
         HELP,
@@ -65,6 +69,9 @@ public:
     enum FloatOptions{
         // DNC options
         TIMEOUT_FACTOR,
+
+        // Gurobi options
+        MILP_SOLVER_TIMEOUT,
     };
 
     enum StringOptions {
@@ -72,6 +79,7 @@ public:
         PROPERTY_FILE_PATH,
         INPUT_QUERY_FILE_PATH,
         SUMMARY_FILE,
+        SPLITTING_STRATEGY,
         SNC_SPLITTING_STRATEGY,
         QUERY_DUMP_FILE,
     };
@@ -87,12 +95,18 @@ public:
     void parseOptions( int argc, char **argv );
 
     /*
+      Print all command arguments
+    */
+    void printHelpMessage() const;
+
+    /*
       Retrieve the value of the various options, by type
     */
     bool getBool( unsigned option ) const;
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
+    DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
 
     /*

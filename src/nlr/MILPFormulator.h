@@ -18,6 +18,9 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
+#include "LPFormulator.h"
+
+#include <climits>
 
 namespace NLR {
 
@@ -42,6 +45,10 @@ public:
     */
     void setCutoff( double cutoff );
 
+    void createMILPEncoding( const Map<unsigned, Layer *> &layers,
+                             GurobiWrapper &gurobi,
+                             unsigned lastLayer = UINT_MAX );
+
 private:
     LayerOwner *_layerOwner;
     LPFormulator _lpFormulator;
@@ -62,10 +69,6 @@ private:
                             unsigned neuron,
                             unsigned variable,
                             double &currentUb );
-
-    void createMILPEncoding( const Map<unsigned, Layer *> &layers,
-                             GurobiWrapper &gurobi,
-                             unsigned lastLayer = UINT_MAX );
 
     void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
 

@@ -584,6 +584,10 @@ void Layer::computeSymbolicBounds()
         computeSymbolicBoundsForRelu();
         break;
 
+    case SIGN:
+        computeSymbolicBoundsForSign();
+        break;
+
     case ABSOLUTE_VALUE:
         computeSymbolicBoundsForAbsoluteValue();
         break;
@@ -806,6 +810,192 @@ void Layer::computeSymbolicBoundsForRelu()
 
         /*
           We now have the tightest bounds we can for the relu
+          variable. If they are tigheter than what was previously
+          known, store them.
+        */
+        if ( _lb[i] < _symbolicLbOfLb[i] )
+        {
+            _lb[i] = _symbolicLbOfLb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _lb[i], Tightening::LB ) );
+        }
+
+        if ( _ub[i] > _symbolicUbOfUb[i] )
+        {
+            _ub[i] = _symbolicUbOfUb[i];
+            _layerOwner->receiveTighterBound( Tightening( _neuronToVariable[i], _ub[i], Tightening::UB ) );
+        }
+    }
+}
+
+void Layer::computeSymbolicBoundsForSign()
+{
+    std::fill_n( _symbolicLb, _size * _inputLayerSize, 0 );
+    std::fill_n( _symbolicUb, _size * _inputLayerSize, 0 );
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        // Eliminate neurons are skipped
+        if ( _eliminatedNeurons.exists( i ) )
+        {
+            _symbolicLowerBias[i] = _eliminatedNeurons[i];
+            _symbolicUpperBias[i] = _eliminatedNeurons[i];
+
+            _symbolicLbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfLb[i] = _eliminatedNeurons[i];
+            _symbolicLbOfUb[i] = _eliminatedNeurons[i];
+            _symbolicUbOfUb[i] = _eliminatedNeurons[i];
+
+            continue;
+        }
+
+        /*
+          There are two ways we can determine that a Sign has become fixed:
+
+          1. If the Sign's variable has been externally fixed
+          2. lbLb >= 0 (Positive) or ubUb < 0 (Negative)
+        */
+        SignConstraint::PhaseStatus signPhase = SignConstraint::PHASE_NOT_FIXED;
+
+        // Has the f variable been eliminated or fixed?
+        if ( !FloatUtils::isNegative( _lb[i] ) )
+            signPhase = SignConstraint::PHASE_POSITIVE;
+        else if ( FloatUtils::isNegative( _ub[i] ) )
+            signPhase = SignConstraint::PHASE_NEGATIVE;
+
+        ASSERT( _neuronToActivationSources.exists( i ) );
+        NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+        const Layer *sourceLayer = _layerOwner->getLayer( sourceIndex._layer );
+
+        /*
+          A Sign initially "inherits" the symbolic bounds computed
+          for its input variable
+        */
+        unsigned sourceLayerSize = sourceLayer->getSize();
+        const double *sourceSymbolicLb = sourceLayer->getSymbolicLb();
+        const double *sourceSymbolicUb = sourceLayer->getSymbolicUb();
+
+        for ( unsigned j = 0; j < _inputLayerSize; ++j )
+        {
+            _symbolicLb[j * _size + i] = sourceSymbolicLb[j * sourceLayerSize + sourceIndex._neuron];
+            _symbolicUb[j * _size + i] = sourceSymbolicUb[j * sourceLayerSize + sourceIndex._neuron];
+        }
+        _symbolicLowerBias[i] = sourceLayer->getSymbolicLowerBias()[sourceIndex._neuron];
+        _symbolicUpperBias[i] = sourceLayer->getSymbolicUpperBias()[sourceIndex._neuron];
+
+        double sourceLb = sourceLayer->getLb( sourceIndex._neuron );
+        double sourceUb = sourceLayer->getUb( sourceIndex._neuron );
+
+        _symbolicLbOfLb[i] = sourceLayer->getSymbolicLbOfLb( sourceIndex._neuron );
+        _symbolicUbOfLb[i] = sourceLayer->getSymbolicUbOfLb( sourceIndex._neuron );
+        _symbolicLbOfUb[i] = sourceLayer->getSymbolicLbOfUb( sourceIndex._neuron );
+        _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
+
+        // Has the b variable been fixed?
+        if ( !FloatUtils::isNegative( sourceLb ) )
+        {
+            signPhase = SignConstraint::PHASE_POSITIVE;
+        }
+        else if ( FloatUtils::isNegative( sourceUb ) )
+        {
+            signPhase = SignConstraint::PHASE_NEGATIVE;
+        }
+
+        if ( signPhase == SignConstraint::PHASE_NOT_FIXED )
+        {
+            // If we got here, we know that lbLb < 0 and ubUb
+            // > 0
+
+            // Upper bound
+            if ( !FloatUtils::isNegative( _symbolicLbOfUb[i] ) )
+            {
+                // The upper bound is strictly positive - turns into
+                // the constant 1
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicUb[j * _size + i] = 0;
+
+                _symbolicUpperBias[i] = 1;
+
+                _symbolicUbOfUb[i] = 1;
+                _symbolicLbOfUb[i] = 1;
+            }
+            else
+            {
+                // The upper bound's phase is not fixed, use the
+                // parallelogram approximation
+                double factor = -2.0 / _symbolicLbOfLb[i];
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicUb[j * _size + i] *= factor;
+
+
+                // Do the same for the bias, and then adjust
+                _symbolicUpperBias[i] *= factor;
+                _symbolicUpperBias[i] += 1;
+
+                _symbolicUbOfUb[i] = 1;
+                _symbolicLbOfUb[i] = -1;
+            }
+
+            // Lower bound
+            if ( FloatUtils::isNegative( _symbolicUbOfLb[i] ) )
+            {
+                // The lower bound is strictly negative - turns into
+                // the constant -1
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicLb[j * _size + i] = 0;
+
+                _symbolicLowerBias[i] = -1;
+
+                _symbolicUbOfLb[i] = -1;
+                _symbolicLbOfLb[i] = -1;
+            }
+            else
+            {
+                // The lower bound's phase is not fixed, use the
+                // parallelogram approximation
+                double factor = 2.0 / _symbolicUbOfUb[i];
+
+                for ( unsigned j = 0; j < _inputLayerSize; ++j )
+                    _symbolicLb[j * _size + i] *= factor;
+
+                // Do the same for the bias, and then adjust
+                _symbolicLowerBias[i] *= factor;
+                _symbolicLowerBias[i] -= 1;
+
+                _symbolicUbOfLb[i] = 1;
+                _symbolicLbOfLb[i] = -1;
+            }
+        }
+        else
+        {
+            // The phase of this Sign is fixed!
+            double constant =
+                ( signPhase == SignConstraint::PHASE_POSITIVE ) ? 1 : -1;
+
+            _symbolicLbOfLb[i] = constant;
+            _symbolicUbOfLb[i] = constant;
+            _symbolicLbOfUb[i] = constant;
+            _symbolicUbOfUb[i] = constant;
+
+            for ( unsigned j = 0; j < _inputLayerSize; ++j )
+            {
+                _symbolicUb[j * _size + i] = 0;
+                _symbolicLb[j * _size + i] = 0;
+            }
+
+            _symbolicLowerBias[i] = constant;
+            _symbolicUpperBias[i] = constant;
+        }
+
+        if ( _symbolicLbOfLb[i] < -1 )
+            _symbolicLbOfLb[i] = -1;
+        if ( _symbolicUbOfUb[i] > 1 )
+            _symbolicUbOfUb[i] = 1;
+
+        /*
+          We now have the tightest bounds we can for the sign
           variable. If they are tigheter than what was previously
           known, store them.
         */

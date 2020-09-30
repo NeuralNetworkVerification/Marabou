@@ -42,12 +42,15 @@ void OptionParser::initialize()
         ( "pl-aux-eq",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
           "PL constraints generate auxiliary equations" )
-        ( "dnc",
+        ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the divide-and-conquer solving mode" )
+          "Use the split-and-conquer solving mode" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
+        ( "iter-prop",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::ITERATIVE_PROPAGATION]) ),
+          "Use iterative propagation" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
@@ -91,6 +94,9 @@ void OptionParser::initialize()
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
+        ( "milp-timeout",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
+          "Per-ReLU timeout for iterative propagation" )
         ( "help",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
           "Prints the help message")
@@ -124,6 +130,11 @@ int OptionParser::extractIntValue( const String &option )
     ASSERT( valueExists( option ) );
     return _variableMap[option.ascii()].as<int>();
 }
+
+void OptionParser::printHelpMessage() const
+{
+    std::cerr << _optionDescription << std::endl;
+};
 
 //
 // Local Variables:
