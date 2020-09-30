@@ -118,8 +118,9 @@ def solve_query(ipq, filename="", verbose=True, options=None):
     return [vals, stats]
 
 def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
-                  timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, dnc=False,
-                  splittingStrategy="auto", sncSplittingStrategy="auto" ):
+                  timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
+                  splittingStrategy="auto", sncSplittingStrategy="auto",
+                  restoreTreeState=False ):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -132,9 +133,11 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
         timeoutInSeconds (int, optional): Timeout duration for Marabouin seconds, defaults to 0
         timeoutFactor (float, optional): Timeout factor for DNC mode, defaults to 1.5
         verbosity (int, optional): Verbosity level for Marabou, defaults to 2
-        dnc (bool, optional): If DNC mode should be used, defaults to False
-        splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu).
+        snc (bool, optional): If SnC mode should be used, defaults to False
+        splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu)
         sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the DNC mode (auto/largest-interval/polarity).
+        restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode,defaults to False
+
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -146,7 +149,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._timeoutInSeconds = timeoutInSeconds
     options._timeoutFactor = timeoutFactor
     options._verbosity = verbosity
-    options._dnc = dnc
+    options._snc = snc
     options._splittingStrategy = splittingStrategy
     options._sncSplittingStrategy = sncSplittingStrategy
+    options._restoreTreeStates = restoreTreeStates
     return options

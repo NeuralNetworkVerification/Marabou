@@ -124,6 +124,7 @@ void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
 struct MarabouOptions {
     MarabouOptions()
         : _dnc( Options::get()->getBool( Options::DNC_MODE ) )
+        , _restoreTreeStates( options::get()->getBool( Options::RESTORE_TREE_STATES ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
@@ -139,6 +140,7 @@ struct MarabouOptions {
   {
     // Bool options
     Options::get()->setBool( Options::DNC_MODE, _dnc );
+    Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -157,6 +159,7 @@ struct MarabouOptions {
   }
 
     bool _dnc;
+    bool _restoreTreeStates;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -338,7 +341,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_dnc", &MarabouOptions::_dnc)
+        .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_restoretreestates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
