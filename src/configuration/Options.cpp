@@ -44,6 +44,7 @@ void Options::initializeDefaultValues()
     _boolOptions[DNC_MODE] = false;
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
+    _boolOptions[ITERATIVE_PROPAGATION] = false;
 
     /*
       Int options
@@ -60,6 +61,7 @@ void Options::initializeDefaultValues()
       Float options
     */
     _floatOptions[TIMEOUT_FACTOR] = 1.5;
+    _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
 
     /*
       String options
@@ -68,6 +70,7 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
+    _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
 }
@@ -75,6 +78,11 @@ void Options::initializeDefaultValues()
 void Options::parseOptions( int argc, char **argv )
 {
     _optionParser.parse( argc, argv );
+}
+
+void Options::printHelpMessage() const
+{
+    _optionParser.printHelpMessage();
 }
 
 bool Options::getBool( unsigned option ) const
@@ -115,6 +123,22 @@ void Options::setFloat( unsigned option, float value )
 void Options::setString( unsigned option, std::string value )
 {
     _stringOptions[option] = value;
+}
+
+DivideStrategy Options::getDivideStrategy() const
+{
+    String strategyString = String( _stringOptions.get
+                                    ( Options::SPLITTING_STRATEGY ) );
+    if ( strategyString == "polarity" )
+        return DivideStrategy::Polarity;
+    if ( strategyString == "earliest-relu" )
+        return DivideStrategy::EarliestReLU;
+    if ( strategyString == "relu-violation" )
+        return DivideStrategy::ReLUViolation;
+    else if ( strategyString == "largest-interval" )
+        return DivideStrategy::LargestInterval;
+    else
+        return DivideStrategy::Auto;
 }
 
 SnCDivideStrategy Options::getSnCDivideStrategy() const
