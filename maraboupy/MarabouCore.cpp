@@ -30,6 +30,7 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
+#include "InputParserError.h"
 #include "MString.h"
 #include "MaxConstraint.h"
 #include "Options.h"
@@ -108,22 +109,37 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
 
-void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
-  AcasParser* acasParser = new AcasParser( String(networkFilePath) );
-  acasParser->generateQuery( inputQuery );
-  String propertyFilePathM = String(propertyFilePath);
-  if ( propertyFilePath != "" )
-    {
-      printf( "Property: %s\n", propertyFilePathM.ascii() );
-      PropertyParser().parse( propertyFilePathM, inputQuery );
-    }
-  else
-    printf( "Property: None\n" );
+bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
+  try{
+    AcasParser* acasParser = new AcasParser( String(networkFilePath) );
+    acasParser->generateQuery( inputQuery );
+
+    bool success = inputQuery.constructNetworkLevelReasoner();
+    if ( success )
+      printf("Successfully created a network level reasoner.\n");
+    else
+      printf("Warning: network level reasoner construction failed.\n");
+
+    String propertyFilePathM = String(propertyFilePath);
+    if ( propertyFilePath != "" )
+      {
+        printf( "Property: %s\n", propertyFilePathM.ascii() );
+        PropertyParser().parse( propertyFilePathM, inputQuery );
+      }
+    else
+      printf( "Property: None\n" );
+  }
+  catch(const InputParserError &e){
+        printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        return false;
+  }
+  return true;
 }
 
 struct MarabouOptions {
     MarabouOptions()
-        : _dnc( Options::get()->getBool( Options::DNC_MODE ) )
+        : _snc( Options::get()->getBool( Options::DNC_MODE ) )
+        , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
@@ -131,13 +147,15 @@ struct MarabouOptions {
         , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
+        , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
 
   void setOptions()
   {
     // Bool options
-    Options::get()->setBool( Options::DNC_MODE, _dnc );
+    Options::get()->setBool( Options::DNC_MODE, _snc );
+    Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -151,10 +169,12 @@ struct MarabouOptions {
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
 
     // string options
+    Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
   }
 
-    bool _dnc;
+    bool _snc;
+    bool _restoreTreeStates;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -162,6 +182,7 @@ struct MarabouOptions {
     unsigned _verbosity;
     unsigned _timeoutInSeconds;
     float _timeoutFactor;
+    std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
 };
 
@@ -335,7 +356,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_dnc", &MarabouOptions::_dnc)
+        .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
+        .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)

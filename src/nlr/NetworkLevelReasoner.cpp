@@ -17,6 +17,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "IterativePropagator.h"
 #include "LPFormulator.h"
 #include "MILPFormulator.h"
 #include "MStringf.h"
@@ -156,6 +157,13 @@ void NetworkLevelReasoner::MILPPropagation()
     else if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
               GlobalConfiguration::MILP_ENCODING_INCREMENTAL )
         milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
+}
+
+void NetworkLevelReasoner::iterativePropagation()
+{
+    IterativePropagator iterativePropagator( this );
+    iterativePropagator.setCutoff( 0 );
+    iterativePropagator.optimizeBoundsWithIterativePropagation( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()

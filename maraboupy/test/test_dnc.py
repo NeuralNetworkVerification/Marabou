@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 # Global settings
-OPT = Marabou.createOptions(verbosity=0, dnc=True, numWorkers=2) # Turn off printing, turn on DNC with two workers
+OPT = Marabou.createOptions(verbosity=0, snc=True, numWorkers=2) # Turn off printing, turn on DNC with two workers
 TOL = 1e-6                                                       # Set tolerance for checking Marabou evaluations
 NETWORK_FOLDER = "../../resources/nnet/acasxu"                   # Folder for test network
 

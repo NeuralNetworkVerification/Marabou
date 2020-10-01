@@ -19,6 +19,7 @@
 #include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "MStringf.h"
+#include "Options.h"
 #include "gurobi_c.h"
 
 #include <iostream>
@@ -28,13 +29,10 @@ using namespace std;
 GurobiWrapper::GurobiWrapper()
     : _environment( NULL )
     , _model( NULL )
+    , _timeoutInSeconds( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
 {
     _environment = new GRBEnv;
-    _model = new GRBModel( *_environment );
-    // Suppress printing
-    _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
-    _model->getEnv().set( GRB_IntParam_Threads,
-                          GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
+    resetModel();
 }
 
 GurobiWrapper::~GurobiWrapper()
@@ -73,8 +71,16 @@ void GurobiWrapper::resetModel()
 {
     freeModelIfNeeded();
     _model = new GRBModel( *_environment );
+
+    // Suppress printing
     _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
-    _model->getEnv().set( GRB_IntParam_Threads, 1 );
+
+    // Thread number
+    _model->getEnv().set( GRB_IntParam_Threads,
+                          GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
+
+    // Timeout
+    setTimeLimit( _timeoutInSeconds );
 }
 
 void GurobiWrapper::reset()

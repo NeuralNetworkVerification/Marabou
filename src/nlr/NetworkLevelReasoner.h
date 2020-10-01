@@ -108,6 +108,7 @@ public:
     void symbolicBoundPropagation();
     void lpRelaxationPropagation();
     void MILPPropagation();
+    void iterativePropagation();
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );

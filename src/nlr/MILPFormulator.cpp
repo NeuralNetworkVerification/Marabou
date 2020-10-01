@@ -47,8 +47,6 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
     GurobiWrapper gurobi;
 
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
-
     double currentLb;
     double currentUb;
     List<GurobiWrapper::Term> terms;
@@ -145,7 +143,6 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers )
 {
     GurobiWrapper gurobi;
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
     _tighterBoundCounter = 0;
     _signChanges = 0;

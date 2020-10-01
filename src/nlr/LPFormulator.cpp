@@ -247,18 +247,16 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
     // Time to wait if no idle worker is availble
-    boost::chrono::milliseconds waitTime ( numberOfWorkers - 1 );
-
+    boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
 
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
     // is added back to the queue.
-    SolverQueue freeSolvers ( numberOfWorkers );
+    SolverQueue freeSolvers( numberOfWorkers );
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
         GurobiWrapper *gurobi = new GurobiWrapper();
-        gurobi->setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
         solverToIndex[gurobi] = i;
         enqueueSolver( freeSolvers, gurobi );
     }
@@ -314,6 +312,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                 boost::this_thread::sleep_for( waitTime );
 
             freeSolver->resetModel();
+
             mtx.lock();
             createLPRelaxation( layers, *freeSolver, layer->getLayerIndex() );
             mtx.unlock();
@@ -705,22 +704,6 @@ void LPFormulator::setCutoff( double cutoff )
 {
     _cutoffInUse = true;
     _cutoffValue = cutoff;
-}
-
-void LPFormulator::clearSolverQueue( SolverQueue &freeSolvers )
-{
-    // Remove the solvers
-    GurobiWrapper *freeSolver;
-    while ( freeSolvers.pop( freeSolver ) )
-        delete freeSolver;
-}
-
-void LPFormulator::enqueueSolver( SolverQueue &solvers, GurobiWrapper *solver )
-{
-    if ( !solvers.push( solver ) )
-    {
-        ASSERT( false );
-    }
 }
 
 } // namespace NLR
