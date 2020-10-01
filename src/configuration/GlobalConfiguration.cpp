@@ -51,14 +51,14 @@ const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
-const bool GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING = true;
+const bool GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING = true; // todo make true
 const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000005;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
-const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = false;
+const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = true; // todo make true
 
 const bool GlobalConfiguration::WARM_START = false;
 

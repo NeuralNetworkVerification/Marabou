@@ -913,7 +913,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.addEquations(op)
         elif op.node_def.op in ['Mul', 'RealDiv']:
             self.mulEquations(op)
-        elif op.node_def.op == 'Conv2D':
+        elif op.node_def.op in ['Conv2D','QuantConv2D']:
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
             self.reluEquations(op)
