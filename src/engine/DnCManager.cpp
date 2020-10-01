@@ -405,11 +405,3 @@ void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
     _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
         timeoutInMicroSeconds;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
