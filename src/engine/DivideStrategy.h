@@ -22,6 +22,8 @@ enum class DivideStrategy
     Polarity = 0,      // Pick the ReLU with the polarity closest to 0 among the first K nodes
     EarliestReLU,  // Pick a ReLU that appears in the earliest layer
     ReLUViolation, // Pick the ReLU that has been violated for the most times
+    LargestInterval, // Pick the largest interval every K split steps, use ReLUViolation in other steps
+    Auto,
 };
 
 #endif // __DivideStrategy_h__

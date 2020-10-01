@@ -16,6 +16,7 @@ endmacro()
 
 network_level_reasoner_add_unit_test(NetworkLevelReasoner)
 network_level_reasoner_add_unit_test(WsLayerElimination)
+network_level_reasoner_add_unit_test(ParallelSolver)
 
 if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

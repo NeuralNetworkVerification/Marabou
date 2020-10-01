@@ -49,6 +49,11 @@ public:
     */
     void initialize();
 
+    /*
+      Print out all command line arguments
+    */
+    void printHelpMessage() const;
+
 private:
     boost::program_options::variables_map _variableMap;
     boost::program_options::options_description _optionDescription;

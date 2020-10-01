@@ -29,6 +29,7 @@
 SignConstraint::SignConstraint( unsigned b, unsigned f )
     : _b( b )
     , _f( f )
+    , _direction( PhaseStatus::PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
@@ -116,6 +117,19 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List <PiecewiseLinearCaseSplit> splits;
+
+    if ( _direction == PHASE_NEGATIVE )
+    {
+      splits.append( getNegativeSplit() );
+      splits.append( getPositiveSplit() );
+      return splits;
+    }
+    if ( _direction == PHASE_POSITIVE )
+    {
+      splits.append( getPositiveSplit() );
+      splits.append( getNegativeSplit() );
+      return splits;
+    }
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
@@ -438,4 +452,36 @@ void SignConstraint::dump( String &output ) const
     output += Stringf( "f in [%s, %s]\n",
                        _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
                        _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+}
+
+double SignConstraint::computePolarity() const
+{
+  double currentLb = _lowerBounds[_b];
+  double currentUb = _upperBounds[_b];
+  if ( !FloatUtils::isNegative( currentLb ) ) return 1;
+  if ( FloatUtils::isNegative( currentUb ) ) return -1;
+  double width = currentUb - currentLb;
+  double sum = currentUb + currentLb;
+  return sum / width;
+}
+
+void SignConstraint::updateDirection()
+{
+    _direction = ( FloatUtils::isNegative( computePolarity() ) ) ?
+        PHASE_NEGATIVE : PHASE_POSITIVE;
+}
+
+SignConstraint::PhaseStatus SignConstraint::getDirection() const
+{
+  return _direction;
+}
+
+void SignConstraint::updateScoreBasedOnPolarity()
+{
+  _score = std::abs( computePolarity() );
+}
+
+bool SignConstraint::supportPolarity() const
+{
+  return true;
 }
