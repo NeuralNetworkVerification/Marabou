@@ -138,7 +138,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
 
             auto subToken = subTokens.begin();
             ++subToken;
-            unsigned layerIndex = 2 * atoi( subToken->ascii() ) - 1;
+            unsigned layerIndex = atoi( subToken->ascii() );
             ++subToken;
             unsigned nodeIndex = atoi( subToken->ascii() );
 
