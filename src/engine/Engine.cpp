@@ -2117,8 +2117,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
 
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Unable to pick using the current strategy..." :
-                           "Picked..." ) ).ascii() );
+                           "Picked..." :
+                           "Unable to pick using the current strategy..." ) ).ascii() );
     return candidatePLConstraint;
 }
 
