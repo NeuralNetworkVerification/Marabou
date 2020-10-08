@@ -1082,7 +1082,7 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
         return false;
     }
 
-    nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
+    nlr->addLayer( newLayerIndex, NLR::Layer::MAX, newNeurons.size() );
 
     NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )
