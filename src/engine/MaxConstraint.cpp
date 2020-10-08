@@ -271,11 +271,12 @@ List<unsigned> MaxConstraint::getElements() const
     List<unsigned> result;
     for ( auto element : _elements )
         result.append( element );
+    return result;
 }
 
 unsigned MaxConstraint::getF() const
 {
-    retunr _f;
+    return _f;
 }
 
 bool MaxConstraint::satisfied() const

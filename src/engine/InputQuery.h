@@ -165,7 +165,7 @@ private:
                              unsigned newLayerIndex );
     bool constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
                             Map<unsigned, unsigned> &handledVariableToLayer,
-                            unsigned newLayerIndex )
+                            unsigned newLayerIndex );
 
 
 public:

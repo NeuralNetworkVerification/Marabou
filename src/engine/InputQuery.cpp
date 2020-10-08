@@ -19,6 +19,7 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "MaxConstraint.h"
 
 #define INPUT_QUERY_LOG( x, ... ) LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
 
@@ -1031,7 +1032,7 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
     {
     public:
 
-        NeuronInformation( unsigned variable, unsigned neuron, const List<unsigned> &sourceVariable )
+        NeuronInformation( unsigned variable, unsigned neuron, const List<unsigned> &sourceVariables )
             : _variable( variable )
             , _neuron( neuron )
             , _sourceVariables( sourceVariables )
@@ -1063,7 +1064,7 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
                 continue;
 
         // If the f variable has also been handled, ignore this constraint
-        unsigned f = sign->getF();
+        unsigned f = max->getF();
         if ( handledVariableToLayer.exists( f ) )
             continue;
 
