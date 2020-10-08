@@ -1059,9 +1059,18 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
         const MaxConstraint *max = (const MaxConstraint *)plc;
 
         // Have all elements been handled?
+        bool missingElement = false;
         for ( const auto &element : max->getElements() )
+        {
             if ( !handledVariableToLayer.exists( element ) )
-                continue;
+            {
+                missingElement = true;
+                break;
+            }
+        }
+
+        if ( missingElement )
+            continue;
 
         // If the f variable has also been handled, ignore this constraint
         unsigned f = max->getF();
