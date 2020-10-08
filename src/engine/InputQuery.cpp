@@ -610,7 +610,9 @@ bool InputQuery::constructNetworkLevelReasoner()
     while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) )
+            constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructMaxLaer( nlr, handledVariableToLayer, newLayerIndex )
+            )
     {
         ++newLayerIndex;
     }
@@ -1014,6 +1016,100 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                                   sourceNeuron,
                                   newLayerIndex,
                                   newNeuron._neuron );
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructMax( NLR::NetworkLevelReasoner *nlr,
+                               Map<unsigned, unsigned> &handledVariableToLayer,
+                               unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct MaxLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, const List<unsigned> &sourceVariable )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariables( sourceVariables )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        List<unsigned> _sourceVariables;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for Maxes where all the element variables have already been handled
+    const List<PiecewiseLinearConstraint *> &plConstraints =
+        getPiecewiseLinearConstraints();
+
+    for ( const auto &plc : plConstraints )
+    {
+        // Only consider Signs
+        if ( plc->getType() != MAX )
+            continue;
+
+        const MaxConstraint *max = (const MaxConstraint *)plc;
+
+        // Have all elements been handled?
+        for ( const auto &element : max->getElements() )
+            if ( !handledVariableToLayer.exists( element ) )
+                continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = sign->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // Elements have been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f,
+                                              newNeurons.size(),
+                                              max->getElements() ) );
+        nlr->addConstraintInTopologicalOrder( plc );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        for ( const auto &sourceVariable : newNeuron._sourceVariables )
+        {
+            unsigned sourceLayer = handledVariableToLayer[sourceVariable];
+            unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( sourceVariable );
+
+            // Mark the layer dependency
+            nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+            // Mark the activation connection
+            nlr->addActivationSource( sourceLayer,
+                                      sourceNeuron,
+                                      newLayerIndex,
+                                      newNeuron._neuron );
+        }
     }
 
     INPUT_QUERY_LOG( "\tSuccessful!" );
