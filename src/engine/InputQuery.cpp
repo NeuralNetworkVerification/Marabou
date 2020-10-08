@@ -611,7 +611,7 @@ bool InputQuery::constructNetworkLevelReasoner()
             constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructMaxLaer( nlr, handledVariableToLayer, newLayerIndex )
+            constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex )
             )
     {
         ++newLayerIndex;
@@ -1022,9 +1022,9 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
     return true;
 }
 
-bool InputQuery::constructMax( NLR::NetworkLevelReasoner *nlr,
-                               Map<unsigned, unsigned> &handledVariableToLayer,
-                               unsigned newLayerIndex )
+bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
+                                    Map<unsigned, unsigned> &handledVariableToLayer,
+                                    unsigned newLayerIndex )
 {
     INPUT_QUERY_LOG( "Attempting to construct MaxLayer..." );
     struct NeuronInformation
