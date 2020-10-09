@@ -398,7 +398,7 @@ void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery
 
         MaxConstraint *max = new MaxConstraint( layer.neuronToVariable( i ),
                                                 elements );
-        inputQuery.addPiecewiseLinearConstraint( absoluteValue );
+        inputQuery.addPiecewiseLinearConstraint( max );
     }
 }
 
