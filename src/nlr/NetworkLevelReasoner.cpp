@@ -23,6 +23,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MatrixMultiplication.h"
+#include "MaxConstraint.h"
 #include "NLRError.h"
 #include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
@@ -340,6 +341,10 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
         generateInputQueryForAbsoluteValueLayer( inputQuery, layer );
         break;
 
+    case Layer::MAX:
+        generateInputQueryForMaxLayer( inputQuery, layer );
+        break;
+
     default:
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported", layer.getLayerType() ).ascii() );
@@ -376,6 +381,23 @@ void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &
         NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
         AbsoluteValueConstraint *absoluteValue = new AbsoluteValueConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addPiecewiseLinearConstraint( absoluteValue );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        Set<unsigned> elements;
+        for ( const auto &source : layer.getActivationSources( i ) )
+        {
+            const Layer *sourceLayer = _layerIndexToLayer[source._layer];
+            elements.insert( sourceLayer->neuronToVariable( source._neuron ) );
+        }
+
+        MaxConstraint *max = new MaxConstraint( layer.neuronToVariable( i ),
+                                                elements );
         inputQuery.addPiecewiseLinearConstraint( absoluteValue );
     }
 }
