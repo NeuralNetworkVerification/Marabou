@@ -48,7 +48,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     getCPUId( cpuId );
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
-    engine->processInputQuery( *inputQuery, false );
+    engine->processInputQuery( *inputQuery );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
@@ -167,7 +167,8 @@ void DnCManager::solve()
     {
         // Get the processed input query from the base engine
         auto inputQuery = std::unique_ptr<InputQuery>
-            ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+            ( new InputQuery() );
+        *inputQuery = *_baseInputQuery;
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
                                         std::move( inputQuery ),
                                         std::ref( _numUnsolvedSubQueries ),
