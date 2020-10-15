@@ -19,7 +19,6 @@
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "EngineState.h"
-#include "GurobiWrapper.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
@@ -52,6 +51,7 @@ Engine::Engine()
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( Options::get()->getDivideStrategy() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
+    , _gurobi( nullptr )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1184,6 +1184,12 @@ void Engine::performMILPSolverBoundedTightening()
 
 void Engine::extractSolution( InputQuery &inputQuery )
 {
+    if ( _solveWithMILP )
+    {
+        extractSolutionFromGurobi( inputQuery );
+        return;
+    }
+
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )
@@ -2216,35 +2222,68 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         if ( ub < _preprocessedQuery.getUpperBound( var ) )
             _preprocessedQuery.setUpperBound( var, ub );
     }
-    GurobiWrapper gurobi;
-    gurobi.encodeInputQuery( _preprocessedQuery );
+    _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
+    _gurobi->encodeInputQuery( _preprocessedQuery );
     ENGINE_LOG( "Query encoded in Gurobi...\n" );
 
-    ENGINE_LOG( "Gurobi timeout set to %u\n", timeoutInSeconds );
     double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
                                 : timeoutInSeconds );
-    gurobi.setTimeLimit( timeoutForGurobi );
+    ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
+    _gurobi->setTimeLimit( timeoutForGurobi );
 
-    gurobi.solve();
+    _gurobi->solve();
 
-    if ( gurobi.haveFeasibleSolution() )
+    if ( _gurobi->haveFeasibleSolution() )
     {
-        Map<String, double> dontCare;
-        double dontCare2;
-        gurobi.extractSolution( dontCare, dontCare2 );
-        for ( unsigned i = 0; i < 5; i++ )
-        {
-            Stringf var ("x%u", i);
-            std::cout << var.ascii() << " " << dontCare[var] << std::endl;
-        }
         _exitCode = IEngine::SAT;
         return true;
     }
-    else if ( gurobi.infeasbile() )
+    else if ( _gurobi->infeasbile() )
         _exitCode = IEngine::UNSAT;
-    else if ( gurobi.timeout() )
+    else if ( _gurobi->timeout() )
         _exitCode = IEngine::TIMEOUT;
     else
         throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
     return false;
+}
+
+void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
+{
+    ASSERT( _gurobi != nullptr );
+    Map<String, double> assignment;
+    double costOrObjective;
+    _gurobi->extractSolution( assignment, costOrObjective );
+
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+    {
+        if ( _preprocessingEnabled )
+        {
+            // Has the variable been merged into another?
+            unsigned variable = i;
+            while ( _preprocessor.variableIsMerged( variable ) )
+                variable = _preprocessor.getMergedIndex( variable );
+
+            // Fixed variables are easy: return the value they've been fixed to.
+            if ( _preprocessor.variableIsFixed( variable ) )
+            {
+                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                continue;
+            }
+
+            // We know which variable to look for, but it may have been assigned
+            // a new index, due to variable elimination
+            variable = _preprocessor.getNewIndex( variable );
+
+            // Finally, set the assigned value
+            String variableName = _gurobi->getVariableNameFromVariable( variable );
+            inputQuery.setSolutionValue( i, assignment[variableName] );
+        }
+        else
+        {
+            String variableName = _gurobi->getVariableNameFromVariable( i );
+            inputQuery.setSolutionValue( i, assignment[variableName] );
+        }
+    }
 }

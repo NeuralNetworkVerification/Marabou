@@ -90,6 +90,7 @@ void GurobiWrapper::resetModel()
 void GurobiWrapper::reset()
 {
     _model->reset();
+    _variableToVariableName.clear();
 }
 
 void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
@@ -309,6 +310,13 @@ void GurobiWrapper::dumpModel( String name )
     _model->write( name.ascii() );
 }
 
+String GurobiWrapper::getVariableNameFromVariable( unsigned variable )
+{
+    if ( !_variableToVariableName.exists( variable ) )
+        throw CommonError( CommonError::KEY_DOESNT_EXIST_IN_MAP );
+    return _variableToVariableName[variable];
+}
+
 void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
 {
     reset();
@@ -316,7 +324,9 @@ void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
     {
         double lb = inputQuery.getLowerBound( var );
         double ub = inputQuery.getUpperBound( var );
-        addVariable( Stringf( "x%u", var ), lb, ub );
+        String varName = Stringf( "x%u", var );
+        addVariable( varName, lb, ub );
+        _variableToVariableName[var] = varName;
     }
     for ( const auto &eq : inputQuery.getEquations() )
     {

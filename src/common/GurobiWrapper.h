@@ -18,6 +18,7 @@
 
 #ifdef ENABLE_GUROBI
 
+#include "CommonError.h"
 #include "InputQuery.h"
 #include "MString.h"
 #include "Map.h"
@@ -122,11 +123,17 @@ public:
     */
     void encodeInputQuery( const InputQuery &inputQuery );
 
+    /*
+      get variable name from a variable in the encoded inputquery
+    */
+    String getVariableNameFromVariable( unsigned variable );
+
 private:
     GRBEnv *_environment;
     GRBModel *_model;
     Map<String, GRBVar *> _nameToVariable;
     double _timeoutInSeconds;
+    Map<unsigned, String> _variableToVariableName;
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
 

@@ -95,7 +95,7 @@ const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
 
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
-const bool GlobalConfiguration::ENGINE_LOGGING = false;
+const bool GlobalConfiguration::ENGINE_LOGGING = true;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
