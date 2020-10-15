@@ -153,6 +153,30 @@ SnCDivideStrategy Options::getSnCDivideStrategy() const
         return SnCDivideStrategy::Auto;
 }
 
+MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
+{
+    if ( gurobiEnabled() )
+    {
+        String strategyString = String( _stringOptions.get( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ) );
+        if ( strategyString == "lp" )
+            return LP_RELAXATION;
+        else if ( strategyString == "lp-inc" )
+            return LP_RELAXATION_INCREMENTAL;
+        else if ( strategyString == "milp" )
+            return MILP_ENCODING;
+        else if ( strategyString == "milp-inc" )
+            return MILP_ENCODING_INCREMENTAL;
+        else if ( strategyString == "none" )
+            return NONE;
+        else
+            return LP_RELAXATION;
+    }
+    else
+    {
+        return NONE;
+    }
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
