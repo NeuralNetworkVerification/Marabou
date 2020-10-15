@@ -166,6 +166,8 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
             return MILP_ENCODING;
         else if ( strategyString == "milp-inc" )
             return MILP_ENCODING_INCREMENTAL;
+        else if ( strategyString == "iter-prop" )
+            return ITERATIVE_PROPAGATION;
         else if ( strategyString == "none" )
             return NONE;
         else

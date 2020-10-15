@@ -170,11 +170,6 @@ public:
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
-    static const MILPSolverBoundTighteningType MILP_SOLVER_BOUND_TIGHTENING_TYPE;
-
-    // The timeout value for an individual query of the MILP solver
-    static const unsigned MILPSolverTimeoutValueInSeconds;
-
     /*
       Symbolic bound tightening options
     */

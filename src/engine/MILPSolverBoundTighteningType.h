@@ -30,8 +30,10 @@ enum MILPSolverBoundTighteningType
      // more expensive to solve
      MILP_ENCODING = 2,
      MILP_ENCODING_INCREMENTAL = 3,
+     // Encode full queries and tries to fix relus until fix point
+     ITERATIVE_PROPAGATION = 4,
      // Option to have no MILP bound tightening performed
-     NONE = 4,
+     NONE = 5,
 };
 
 #endif // __MILPSolverBoundTighteningType_h__
