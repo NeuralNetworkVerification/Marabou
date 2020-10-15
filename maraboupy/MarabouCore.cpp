@@ -180,6 +180,7 @@ void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equatio
                 split.addEquation( eq );
             }
         }
+        disjunctList.append( split );
     }
     ipq.addPiecewiseLinearConstraint(new DisjunctionConstraint(disjunctList));
 }
