@@ -49,6 +49,7 @@ class MarabouNetwork:
         self.maxList = []
         self.absList = []
         self.signList = []
+        self.disjunctionList = []
         self.varsParticipatingInConstraints = set()
         self.lowerBounds = dict()
         self.upperBounds = dict()
@@ -136,6 +137,18 @@ class MarabouNetwork:
         self.signList += [(b, f)]
         self.varsParticipatingInConstraints.add(b)
         self.varsParticipatingInConstraints.add(f)
+
+    def addDisjunctionConstraint(self, disjuncts):
+        """Function to add a new Disjunction constraint
+
+        Args:
+            disjuncts (list of list of Equations): Each inner list represents a disjunct
+        """
+        self.disjunctionList.append(disjuncts)
+        for disjunct in disjuncts:
+            for eq in disjunct:
+                for v in MarabouCore.getParticipatingVariables(eq):
+                    self.varsParticipatingInConstraints.add(v)
 
     def lowerBoundExists(self, x):
         """Function to check whether lower bound for a variable is known
@@ -241,6 +254,9 @@ class MarabouNetwork:
 
         for b, f in self.signList:
             MarabouCore.addSignConstraint(ipq, b, f)
+
+        for disjunction in self.disjunctionList:
+            MarabouCore.addDisjunctionConstraint(ipq, disjunction)
 
         for l in self.lowerBounds:
             assert l < self.numVars
