@@ -37,11 +37,3 @@ enum MILPSolverBoundTighteningType
 };
 
 #endif // __MILPSolverBoundTighteningType_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
