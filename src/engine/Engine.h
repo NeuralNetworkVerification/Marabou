@@ -332,6 +332,11 @@ private:
     DivideStrategy _splittingStrategy;
 
     /*
+      Solve the query with MILP encoding
+    */
+    bool _solveWithMILP;
+
+    /*
       Disjunction that is used for splitting but doesn't exist in the beginning
     */
     std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
@@ -507,6 +512,10 @@ private:
     */
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
 
+    /*
+      Solve the input query with a MILP solver (Gurobi)
+    */
+    bool solveWithMILPEncoding( unsigned timeoutInSeconds );
 };
 
 #endif // __Engine_h__

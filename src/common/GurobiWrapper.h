@@ -18,6 +18,7 @@
 
 #ifdef ENABLE_GUROBI
 
+#include "InputQuery.h"
 #include "MString.h"
 #include "Map.h"
 
@@ -116,6 +117,11 @@ public:
     // default
     void dumpModel( String name );
 
+    /*
+      Encode the input query as a Gurobi query
+    */
+    void encodeInputQuery( const InputQuery &inputQuery );
+
 private:
     GRBEnv *_environment;
     GRBModel *_model;
@@ -175,6 +181,7 @@ public:
     void setTimeLimit( double ) {};
     double getObjectiveBound() { return 0; };
     void dump() {}
+    void encodeInputQuery( const InputQuery &/**/ ) {}
 };
 
 #endif // ENABLE_GUROBI

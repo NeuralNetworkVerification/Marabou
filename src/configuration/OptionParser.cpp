@@ -45,6 +45,9 @@ void OptionParser::initialize()
         ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
           "Use the split-and-conquer solving mode" )
+        ( "use-mip",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
+          "Use a MILP solver to solve the input query" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )

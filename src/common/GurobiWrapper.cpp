@@ -16,10 +16,14 @@
 #ifdef ENABLE_GUROBI
 
 #include "Debug.h"
+#include "Equation.h"
 #include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "MStringf.h"
 #include "Options.h"
+#include "PiecewiseLinearConstraint.h"
+#include "ReluConstraint.h"
+
 #include "gurobi_c.h"
 
 #include <iostream>
@@ -303,6 +307,72 @@ double GurobiWrapper::getObjectiveBound()
 void GurobiWrapper::dumpModel( String name )
 {
     _model->write( name.ascii() );
+}
+
+void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
+{
+    reset();
+    for ( unsigned var = 0; var < inputQuery.getNumberOfVariables(); var++ )
+    {
+        double lb = inputQuery.getLowerBound( var );
+        double ub = inputQuery.getUpperBound( var );
+        addVariable( Stringf( "x%u", var ), lb, ub );
+    }
+    for ( const auto &eq : inputQuery.getEquations() )
+    {
+        List<Term> terms;
+        double scalar = eq._scalar;
+        for ( const auto term : eq._addends )
+            terms.append( Term( term._coefficient, Stringf( "x%u", term._variable ) ) );
+        switch ( eq._type )
+        {
+        case Equation::EQ:
+            addEqConstraint( terms, scalar );
+            break;
+        case Equation::LE:
+            addLeqConstraint( terms, scalar );
+            break;
+        case Equation::GE:
+            addGeqConstraint( terms, scalar );
+            break;
+        default:
+            break;
+        }
+    }
+
+    unsigned ind = 0;
+    for ( const auto&plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+    {
+        if ( !plConstraint->isActive() || plConstraint->phaseFixed() )
+            continue;
+        if ( plConstraint->getType() != PiecewiseLinearFunctionType::RELU )
+            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT,
+                                "GurobiWrapper::encodeInputQuery: "
+                                "Only ReLU is supported\n" );
+
+        auto relu = ( ReluConstraint *) plConstraint;
+        addVariable( Stringf( "a%u", ind ),
+                     0,
+                     1,
+                     GurobiWrapper::BINARY );
+
+        unsigned sourceVariable = relu->getB();
+        unsigned targetVariable = relu->getF();
+        double sourceLb = inputQuery.getLowerBound( sourceVariable );
+        double sourceUb = inputQuery.getUpperBound( sourceVariable );
+
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+        terms.append( GurobiWrapper::Term( -sourceLb, Stringf( "a%u", ind ) ) );
+        addLeqConstraint( terms, -sourceLb );
+
+        terms.clear();
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", ind ) ) );
+        addLeqConstraint( terms, 0 );
+        ind++;
+    }
 }
 
 #endif // ENABLE_GUROBI

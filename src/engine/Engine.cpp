@@ -19,11 +19,13 @@
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "EngineState.h"
+#include "GurobiWrapper.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "NLRError.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
@@ -49,6 +51,7 @@ Engine::Engine()
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( Options::get()->getDivideStrategy() )
+    , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -93,6 +96,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
+
+    if ( _solveWithMILP )
+        return solveWithMILPEncoding( timeoutInSeconds );
 
     updateDirections();
     storeInitialEngineState();
@@ -2182,4 +2188,63 @@ bool Engine::restoreSmtState( SmtState & smtState )
 void Engine::storeSmtState( SmtState & smtState )
 {
     _smtCore.storeSmtState( smtState );
+}
+
+bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
+{
+    // Apply bound tightening before handing to Gurobi
+    if ( _tableau->basisMatrixAvailable() )
+        {
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+
+    do
+    {
+        performSymbolicBoundTightening();
+    }
+    while ( applyAllValidConstraintCaseSplits() );
+
+    ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
+    for ( unsigned var = 0; var < _preprocessedQuery.getNumberOfVariables(); var++ )
+    {
+        double lb = _tableau->getLowerBound( var );
+        if ( lb > _preprocessedQuery.getLowerBound( var ) )
+            _preprocessedQuery.setLowerBound( var, lb );
+        double ub = _tableau->getUpperBound( var );
+        if ( ub < _preprocessedQuery.getUpperBound( var ) )
+            _preprocessedQuery.setUpperBound( var, ub );
+    }
+    GurobiWrapper gurobi;
+    gurobi.encodeInputQuery( _preprocessedQuery );
+    ENGINE_LOG( "Query encoded in Gurobi...\n" );
+
+    ENGINE_LOG( "Gurobi timeout set to %u\n", timeoutInSeconds );
+    double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
+                                : timeoutInSeconds );
+    gurobi.setTimeLimit( timeoutForGurobi );
+
+    gurobi.solve();
+
+    if ( gurobi.haveFeasibleSolution() )
+    {
+        Map<String, double> dontCare;
+        double dontCare2;
+        gurobi.extractSolution( dontCare, dontCare2 );
+        for ( unsigned i = 0; i < 5; i++ )
+        {
+            Stringf var ("x%u", i);
+            std::cout << var.ascii() << " " << dontCare[var] << std::endl;
+        }
+        _exitCode = IEngine::SAT;
+        return true;
+    }
+    else if ( gurobi.infeasbile() )
+        _exitCode = IEngine::UNSAT;
+    else if ( gurobi.timeout() )
+        _exitCode = IEngine::TIMEOUT;
+    else
+        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    return false;
 }

@@ -48,6 +48,9 @@ public:
 
         // Version flag
         VERSION,
+
+        // Solve the input query with a MILP solver
+        SOLVE_WITH_MILP
     };
 
     enum IntOptions {
