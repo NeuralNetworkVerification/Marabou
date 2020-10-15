@@ -143,6 +143,7 @@ private:
 
 #else
 
+#include "InputQuery.h"
 #include "MString.h"
 #include "Map.h"
 
@@ -188,7 +189,9 @@ public:
     void setTimeLimit( double ) {};
     double getObjectiveBound() { return 0; };
     void dump() {}
-    void encodeInputQuery( const InputQuery &/**/ ) {}
+    void encodeInputQuery( const InputQuery & ) {}
+    String getVariableNameFromVariable( unsigned ) { return ""; };
+
 };
 
 #endif // ENABLE_GUROBI
