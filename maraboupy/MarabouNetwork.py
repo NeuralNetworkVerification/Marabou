@@ -147,7 +147,6 @@ class MarabouNetwork:
         self.disjunctionList.append(disjuncts)
         for disjunct in disjuncts:
             for eq in disjunct:
-                print(MarabouCore.getParticipatingVariables(eq))
                 for v in MarabouCore.getParticipatingVariables(eq):
                     self.varsParticipatingInConstraints.add(v)
 

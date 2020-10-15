@@ -48,48 +48,35 @@ def test_disjunction_constraint():
     Tests the disjunction constraint.
     Based on the acas_1_1 test, with disjunction constraint added to the inputs.
     """
-    filename =  "acasxu/ACASXU_experimental_v2a_1_1.nnet"
-    testInputs = [
-        [-0.31182839647533234, 0.0, -0.2387324146378273, -0.5, -0.4166666666666667],
-        [-0.16247807039378703, -0.4774648292756546, -0.2387324146378273, -0.3181818181818182, -0.25],
-        [-0.2454504737724233, -0.4774648292756546, 0.0, -0.3181818181818182, 0.0]
-    ]
-    testOutputs = [
-        [-1, 0.44454904, 0.49616356, 0.38924966, 0.50136678],
-        [-1, -0.01885345, -0.01892334, -0.01892597, -0.01893113],
-        [-1, 0.05273383, 0.10029709, 0.01883183, 0.10521622]
-    ]
+    filename =  "mnist/mnist10x10.nnet"
 
     network = loadNetwork(filename)
 
     test_out = network.getNewVariable()
 
-    eq1 = MarabouCore.Equation(MarabouCore.Equation.GE);
-    eq1.addAddend(1, network.inputVars[0][0]);
-    eq1.setScalar(0);
-    eq2 = MarabouCore.Equation();
-    eq2.addAddend(1, test_out);
-    eq2.setScalar(1);
+    for var in network.inputVars[0]:
+        # eq1: 1 * var = 0
+        eq1 = MarabouCore.Equation(MarabouCore.Equation.EQ);
+        eq1.addAddend(1, var);
+        eq1.setScalar(0);
 
-    eq3 = MarabouCore.Equation(MarabouCore.Equation.GE);
-    eq3.addAddend(-1, network.inputVars[0][0]);
-    eq3.setScalar(0);
-    eq4 = MarabouCore.Equation();
-    eq4.addAddend(1, test_out);
-    eq4.setScalar(-1);
+        # eq2: 1 * var = 1
+        eq2 = MarabouCore.Equation(MarabouCore.Equation.EQ);
+        eq2.addAddend(1, var);
+        eq2.setScalar(1);
 
-    dist1 = [eq1, eq2]
-    dist2 = [eq3, eq4]
+        # ( var = 0) \/ (var = 1)
+        disjunction = [[eq1], [eq2]]
+        network.addDisjunctionConstraint(disjunction)
 
-    network.addDisjunctionConstraint([dist1, dist2])
+        # add additional bounds for the variable
+        network.setLowerBound(var, 0)
+        network.setUpperBound(var, 1)
 
-    network.setLowerBound(test_out, -1)
-    network.setUpperBound(test_out, 1)
+    vals1, stats1 = network.solve()
 
-    # Replace the first output variables with test_out
-    network.outputVars[0][0] = test_out
-
-    evaluateNetwork(network, testInputs, testOutputs)
+    for var in network.inputVars[0]:
+        assert(abs(vals1[var] - 1) < 0.0000001 or abs(vals1[var]) < 0.0000001)
 
 def loadNetwork(filename):
     # Load network relative to this file's location
