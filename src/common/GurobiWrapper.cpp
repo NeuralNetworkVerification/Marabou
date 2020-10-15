@@ -320,6 +320,7 @@ String GurobiWrapper::getVariableNameFromVariable( unsigned variable )
 void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
 {
     reset();
+    // Add variables
     for ( unsigned var = 0; var < inputQuery.getNumberOfVariables(); var++ )
     {
         double lb = inputQuery.getLowerBound( var );
@@ -328,6 +329,8 @@ void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
         addVariable( varName, lb, ub );
         _variableToVariableName[var] = varName;
     }
+
+    // Add equations
     for ( const auto &eq : inputQuery.getEquations() )
     {
         List<Term> terms;
@@ -350,6 +353,7 @@ void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
         }
     }
 
+    // Add Piecewise-linear Constraints
     unsigned ind = 0;
     for ( const auto&plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {

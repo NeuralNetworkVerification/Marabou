@@ -2215,6 +2215,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     for ( unsigned var = 0; var < _preprocessedQuery.getNumberOfVariables(); var++ )
     {
+        // Update input query of the latest bounds.
         double lb = _tableau->getLowerBound( var );
         if ( lb > _preprocessedQuery.getLowerBound( var ) )
             _preprocessedQuery.setLowerBound( var, lb );
