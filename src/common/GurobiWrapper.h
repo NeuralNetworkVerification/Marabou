@@ -18,8 +18,6 @@
 
 #ifdef ENABLE_GUROBI
 
-#include "CommonError.h"
-#include "InputQuery.h"
 #include "MString.h"
 #include "Map.h"
 
@@ -118,22 +116,11 @@ public:
     // default
     void dumpModel( String name );
 
-    /*
-      Encode the input query as a Gurobi query
-    */
-    void encodeInputQuery( const InputQuery &inputQuery );
-
-    /*
-      get variable name from a variable in the encoded inputquery
-    */
-    String getVariableNameFromVariable( unsigned variable );
-
 private:
     GRBEnv *_environment;
     GRBModel *_model;
     Map<String, GRBVar *> _nameToVariable;
     double _timeoutInSeconds;
-    Map<unsigned, String> _variableToVariableName;
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
 
@@ -143,7 +130,6 @@ private:
 
 #else
 
-#include "InputQuery.h"
 #include "MString.h"
 #include "Map.h"
 
@@ -189,9 +175,6 @@ public:
     void setTimeLimit( double ) {};
     double getObjectiveBound() { return 0; };
     void dump() {}
-    void encodeInputQuery( const InputQuery & ) {}
-    String getVariableNameFromVariable( unsigned ) { return ""; };
-
 };
 
 #endif // ENABLE_GUROBI

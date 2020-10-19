@@ -520,6 +520,16 @@ private:
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
 
     /*
+      Encode the input query as a Gurobi query
+    */
+    void encodeInputQuery( const InputQuery &inputQuery );
+
+    /*
+      get variable name from a variable in the encoded inputquery
+    */
+    String getVariableNameFromVariable( unsigned variable );
+
+    /*
       Solve the input query with a MILP solver (Gurobi)
     */
     bool solveWithMILPEncoding( unsigned timeoutInSeconds );
