@@ -893,13 +893,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             newUpperBounds[self.reassignVariable(var, numInVars, outVars, newOutVars)] = self.upperBounds[var]
         self.lowerBounds = newLowerBounds
         self.upperBounds = newUpperBounds
-        
-        # Adjust constraint variables list
-        newVarsParticipatingInConstraints = set()
-        for var in self.varsParticipatingInConstraints:
-            newVarsParticipatingInConstraints.add(self.reassignVariable(var, numInVars, outVars, newOutVars))
-        self.varsParticipatingInConstraints = newVarsParticipatingInConstraints
-            
+
         # Assign output variables to the new array
         self.varMap[self.outputName] = newOutVars.reshape(self.shapeMap[self.outputName])
         self.outputVars = self.varMap[self.outputName] 
