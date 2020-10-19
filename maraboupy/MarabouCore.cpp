@@ -138,14 +138,6 @@ bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
   return true;
 }
 
-std::list<unsigned> getParticipatingVariables( const Equation &equation )
-{
-    std::list<unsigned> participatingVariables;
-    for ( const auto& var : equation.getParticipatingVariables() )
-        participatingVariables.push_back( var );
-    return participatingVariables;
-}
-
 void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equation>>
                               &disjuncts ){
     List<PiecewiseLinearCaseSplit> disjunctList;
@@ -387,13 +379,6 @@ PYBIND11_MODULE(MarabouCore, m) {
             disjuncts (list of pairs): A list of disjuncts. Each disjunct is represented by a pair: a list of bounds, and a list of (in)equalities.
         )pbdoc",
           py::arg("inputQuery"), py::arg("disjuncts"));
-    m.def("getParticipatingVariables", &getParticipatingVariables, R"pbdoc(
-        Get a list of participating variables from a linear constraint
-
-        Args:
-            equation (Equation): a linear constraint
-        )pbdoc",
-          py::arg("equation"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
