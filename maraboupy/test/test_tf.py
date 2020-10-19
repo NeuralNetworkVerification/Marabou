@@ -146,7 +146,6 @@ def test_sub_concat():
     assert len(network.inputVars) == 1
     # All output variables come from a ReLU activation, so they should be a part of a PL constraint,
     # and they should have a lower bound
-    assert np.all([network.participatesInPLConstraint(var) for var in network.outputVars.flatten()])
     assert np.all([network.lowerBoundExists(var) for var in network.outputVars.flatten()])
     evaluateNetwork(network)
     # Evaluation does not add permanent upper/lower bound values to the network

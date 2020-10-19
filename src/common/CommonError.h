@@ -37,6 +37,7 @@ public:
         LIST_IS_EMPTY = 12,
         KEY_DOESNT_EXIST_IN_HASHMAP = 13,
         GUROBI_EXCEPTION = 14,
+        DIVISION_BY_ZERO = 15,
     };
 
     CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )
