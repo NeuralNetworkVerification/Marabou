@@ -878,12 +878,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.lowerBounds = newLowerBounds
         self.upperBounds = newUpperBounds
         
-        # Adjust constraint variables list
-        newVarsParticipatingInConstraints = set()
-        for var in self.varsParticipatingInConstraints:
-            newVarsParticipatingInConstraints.add(reassignMap[var])
-        self.varsParticipatingInConstraints = newVarsParticipatingInConstraints
-            
         # Assign output variables to the new array
         self.outputVars = newOutVars.reshape(self.outputShape)
         self.varMap[self.outputOp] = self.outputVars 
