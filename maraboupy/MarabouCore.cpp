@@ -198,7 +198,7 @@ struct MarabouOptions {
     // Bool options
     Options::get()->setBool( Options::DNC_MODE, _snc );
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
-    Options::get()->setBool( Options::SOLVE_WITH_MILP, true );
+    Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
