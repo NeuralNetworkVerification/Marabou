@@ -52,9 +52,17 @@ private:
     Map<unsigned, String> _variableToVariableName;
 
     /*
-      Encode a ReLU constraint into Gurobi
+      Encode a ReLU constraint f = ReLU(b) into Gurobi using the same encoding in
+      https://arxiv.org/pdf/1711.07356.pdf
+
       Encode the following constraint:
 
+      a \in {0, 1}
+      f <= b − lb_b(1 − a)
+      f <= ub_b · a
+
+      The other two constraints f >= b and f >= 0 are encoded already when
+      preprocessing
     */
     void encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu,
                                unsigned index );
