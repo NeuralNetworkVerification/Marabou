@@ -1,6 +1,7 @@
 # Tests MarabouNetwork features not tested by it's subclasses
 import pytest
 from .. import Marabou
+from .. import MarabouCore
 import os
 import numpy as np
 
@@ -28,7 +29,9 @@ def test_abs_constraint():
 
     network = loadNetwork(filename)
 
-    # Replace two output variables with their's absolute value
+    disj1 = MarabouCore.Equation();
+
+    # Replace output variables with their's absolute value
     for out in [0, 2]:
         abs_out = network.getNewVariable()
         network.addAbsConstraint(network.outputVars[0][out], abs_out)
@@ -39,6 +42,41 @@ def test_abs_constraint():
     network.addAbsConstraint(network.inputVars[0][0], abs_inp)
 
     evaluateNetwork(network, testInputs, testOutputs)
+
+def test_disjunction_constraint():
+    """
+    Tests the disjunction constraint.
+    Based on the acas_1_1 test, with disjunction constraint added to the inputs.
+    """
+    filename =  "mnist/mnist10x10.nnet"
+
+    network = loadNetwork(filename)
+
+    test_out = network.getNewVariable()
+
+    for var in network.inputVars[0]:
+        # eq1: 1 * var = 0
+        eq1 = MarabouCore.Equation(MarabouCore.Equation.EQ);
+        eq1.addAddend(1, var);
+        eq1.setScalar(0);
+
+        # eq2: 1 * var = 1
+        eq2 = MarabouCore.Equation(MarabouCore.Equation.EQ);
+        eq2.addAddend(1, var);
+        eq2.setScalar(1);
+
+        # ( var = 0) \/ (var = 1)
+        disjunction = [[eq1], [eq2]]
+        network.addDisjunctionConstraint(disjunction)
+
+        # add additional bounds for the variable
+        network.setLowerBound(var, 0)
+        network.setUpperBound(var, 1)
+
+    vals1, stats1 = network.solve()
+
+    for var in network.inputVars[0]:
+        assert(abs(vals1[var] - 1) < 0.0000001 or abs(vals1[var]) < 0.0000001)
 
 def loadNetwork(filename):
     # Load network relative to this file's location
