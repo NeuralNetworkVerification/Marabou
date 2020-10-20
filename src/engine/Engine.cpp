@@ -52,6 +52,7 @@ Engine::Engine()
     , _splittingStrategy( Options::get()->getDivideStrategy() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
+    , _milpEncoder( nullptr )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -2194,85 +2195,6 @@ void Engine::storeSmtState( SmtState & smtState )
     _smtCore.storeSmtState( smtState );
 }
 
-String GurobiWrapper::getVariableNameFromVariable( unsigned variable )
-{
-    if ( !_variableToVariableName.exists( variable ) )
-        throw CommonError( CommonError::KEY_DOESNT_EXIST_IN_MAP );
-    return _variableToVariableName[variable];
-}
-
-void GurobiWrapper::encodeInputQuery( const InputQuery &inputQuery )
-{
-    reset();
-    // Add variables
-    for ( unsigned var = 0; var < inputQuery.getNumberOfVariables(); var++ )
-    {
-        double lb = inputQuery.getLowerBound( var );
-        double ub = inputQuery.getUpperBound( var );
-        String varName = Stringf( "x%u", var );
-        addVariable( varName, lb, ub );
-        _variableToVariableName[var] = varName;
-    }
-
-    // Add equations
-    for ( const auto &eq : inputQuery.getEquations() )
-    {
-        List<Term> terms;
-        double scalar = eq._scalar;
-        for ( const auto term : eq._addends )
-            terms.append( Term( term._coefficient, Stringf( "x%u", term._variable ) ) );
-        switch ( eq._type )
-        {
-        case Equation::EQ:
-            addEqConstraint( terms, scalar );
-            break;
-        case Equation::LE:
-            addLeqConstraint( terms, scalar );
-            break;
-        case Equation::GE:
-            addGeqConstraint( terms, scalar );
-            break;
-        default:
-            break;
-        }
-    }
-
-    // Add Piecewise-linear Constraints
-    unsigned ind = 0;
-    for ( const auto&plConstraint : inputQuery.getPiecewiseLinearConstraints() )
-    {
-        if ( !plConstraint->isActive() || plConstraint->phaseFixed() )
-            continue;
-        if ( plConstraint->getType() != PiecewiseLinearFunctionType::RELU )
-            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT,
-                                "GurobiWrapper::encodeInputQuery: "
-                                "Only ReLU is supported\n" );
-
-        auto relu = ( ReluConstraint *) plConstraint;
-        addVariable( Stringf( "a%u", ind ),
-                     0,
-                     1,
-                     GurobiWrapper::BINARY );
-
-        unsigned sourceVariable = relu->getB();
-        unsigned targetVariable = relu->getF();
-        double sourceLb = inputQuery.getLowerBound( sourceVariable );
-        double sourceUb = inputQuery.getUpperBound( sourceVariable );
-
-        List<GurobiWrapper::Term> terms;
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
-        terms.append( GurobiWrapper::Term( -sourceLb, Stringf( "a%u", ind ) ) );
-        addLeqConstraint( terms, -sourceLb );
-
-        terms.clear();
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", ind ) ) );
-        addLeqConstraint( terms, 0 );
-        ind++;
-    }
-}
-
 bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     // Apply bound tightening before handing to Gurobi
@@ -2290,18 +2212,9 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     while ( applyAllValidConstraintCaseSplits() );
 
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
-    for ( unsigned var = 0; var < _preprocessedQuery.getNumberOfVariables(); var++ )
-    {
-        // Update input query of the latest bounds.
-        double lb = _tableau->getLowerBound( var );
-        if ( lb > _preprocessedQuery.getLowerBound( var ) )
-            _preprocessedQuery.setLowerBound( var, lb );
-        double ub = _tableau->getUpperBound( var );
-        if ( ub < _preprocessedQuery.getUpperBound( var ) )
-            _preprocessedQuery.setUpperBound( var, ub );
-    }
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
-    _gurobi->encodeInputQuery( _preprocessedQuery );
+    _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
+    _milpEncoder->encodeInputQuery( *_gurobi, _preprocessedQuery );
     ENGINE_LOG( "Query encoded in Gurobi...\n" );
 
     double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
@@ -2355,12 +2268,12 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
             variable = _preprocessor.getNewIndex( variable );
 
             // Finally, set the assigned value
-            String variableName = _gurobi->getVariableNameFromVariable( variable );
+            String variableName = _milpEncoder->getVariableNameFromVariable( variable );
             inputQuery.setSolutionValue( i, assignment[variableName] );
         }
         else
         {
-            String variableName = _gurobi->getVariableNameFromVariable( i );
+            String variableName = _milpEncoder->getVariableNameFromVariable( i );
             inputQuery.setSolutionValue( i, assignment[variableName] );
         }
     }

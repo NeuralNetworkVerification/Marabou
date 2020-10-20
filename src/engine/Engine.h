@@ -31,6 +31,7 @@
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
+#include "MILPEncoder.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
@@ -333,20 +334,24 @@ private:
     DivideStrategy _splittingStrategy;
 
     /*
-      Solve the query with MILP encoding
-    */
-    bool _solveWithMILP;
-
-    /*
       Disjunction that is used for splitting but doesn't exist in the beginning
     */
     std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
+
+    /*
+      Solve the query with MILP encoding
+    */
+    bool _solveWithMILP;
 
     /*
       GurobiWrapper object
     */
     std::unique_ptr<GurobiWrapper> _gurobi;
 
+    /*
+      MILPEncoder
+    */
+    std::unique_ptr<MILPEncoder> _milpEncoder;
 
     /*
       Perform a simplex step: compute the cost function, pick the
@@ -518,16 +523,6 @@ private:
       Pick the input variable with the largest interval
     */
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();
-
-    /*
-      Encode the input query as a Gurobi query
-    */
-    void encodeInputQuery( const InputQuery &inputQuery );
-
-    /*
-      get variable name from a variable in the encoded inputquery
-    */
-    String getVariableNameFromVariable( unsigned variable );
 
     /*
       Solve the input query with a MILP solver (Gurobi)
