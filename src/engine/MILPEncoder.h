@@ -52,6 +52,17 @@ private:
     Map<unsigned, String> _variableToVariableName;
 
     /*
+      Encode an (in)equality into Gurobi.
+    */
+    void encodeEquation( GurobiWrapper &gurobi, const Equation &Equation );
+
+    /*
+      Encode a variable bound into Gurobi.
+    */
+    void encodeBound( GurobiWrapper &gurobi, const Tightening &bound );
+
+
+    /*
       Encode a ReLU constraint f = ReLU(b) into Gurobi using the same encoding in
       https://arxiv.org/pdf/1711.07356.pdf
 

@@ -35,36 +35,26 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
     }
 
     // Add equations
-    for ( const auto &eq : inputQuery.getEquations() )
+    for ( const auto &equation : inputQuery.getEquations() )
     {
-        List<GurobiWrapper::Term> terms;
-        double scalar = eq._scalar;
-        for ( const auto term : eq._addends )
-            terms.append( GurobiWrapper::Term
-                          ( term._coefficient,
-                            Stringf( "x%u", term._variable ) ) );
-        switch ( eq._type )
-        {
-        case Equation::EQ:
-            gurobi.addEqConstraint( terms, scalar );
-            break;
-        case Equation::LE:
-            gurobi.addLeqConstraint( terms, scalar );
-            break;
-        case Equation::GE:
-            gurobi.addGeqConstraint( terms, scalar );
-            break;
-        default:
-            break;
-        }
+        encodeEquation( gurobi, equation );
     }
 
     // Add Piecewise-linear Constraints
     unsigned ind = 0;
     for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
-        if ( !plConstraint->isActive() || plConstraint->phaseFixed() )
+        if ( plConstraint->phaseFixed() )
+        {
+            // if the constraint is fixed, encode the valid case split
+            PiecewiseLinearCaseSplit split = plConstraint->getValidCaseSplit();
+            for ( const auto &equation : split.getEquations() )
+                encodeEquation( gurobi, equation );
+            for ( const auto &bound : split.getBoundTightenings() )
+                encodeBound( gurobi, bound );
             continue;
+        }
+
         switch ( plConstraint->getType() )
         {
         case PiecewiseLinearFunctionType::RELU:
@@ -72,7 +62,7 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
                                   ind++ );
             break;
         default:
-            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_CONSTRAINT,
+            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT,
                                 "GurobiWrapper::encodeInputQuery: "
                                 "Only ReLU is supported\n" );
         }
@@ -84,6 +74,41 @@ String MILPEncoder::getVariableNameFromVariable( unsigned variable )
     if ( !_variableToVariableName.exists( variable ) )
         throw CommonError( CommonError::KEY_DOESNT_EXIST_IN_MAP );
     return _variableToVariableName[variable];
+}
+
+void MILPEncoder::encodeEquation( GurobiWrapper &gurobi, const Equation &equation )
+{
+    List<GurobiWrapper::Term> terms;
+    double scalar = equation._scalar;
+    for ( const auto term : equation._addends )
+        terms.append( GurobiWrapper::Term
+                      ( term._coefficient,
+                        Stringf( "x%u", term._variable ) ) );
+    switch ( equation._type )
+    {
+    case Equation::EQ:
+        gurobi.addEqConstraint( terms, scalar );
+        break;
+    case Equation::LE:
+        gurobi.addLeqConstraint( terms, scalar );
+        break;
+    case Equation::GE:
+        gurobi.addGeqConstraint( terms, scalar );
+        break;
+    default:
+        break;
+    }
+}
+
+void MILPEncoder::encodeBound( GurobiWrapper &gurobi, const Tightening &bound )
+{
+    if ( bound._type == Tightening::LB )
+        gurobi.setLowerBound( getVariableNameFromVariable
+                              ( bound._variable ), bound._value );
+    if ( bound._type == Tightening::UB )
+        gurobi.setUpperBound( getVariableNameFromVariable
+                              ( bound._variable ), bound._value );
+
 }
 
 void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint
