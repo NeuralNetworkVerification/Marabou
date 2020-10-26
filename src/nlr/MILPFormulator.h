@@ -20,11 +20,15 @@
 #include "LayerOwner.h"
 #include "LPFormulator.h"
 
+#include <atomic>
+#include <boost/lockfree/queue.hpp>
+#include <boost/chrono.hpp>
 #include <climits>
+#include <mutex>
 
 namespace NLR {
 
-class MILPFormulator
+class MILPFormulator  : public ParallelSolver
 {
 public:
     enum MinOrMax {
@@ -52,9 +56,9 @@ public:
 private:
     LayerOwner *_layerOwner;
     LPFormulator _lpFormulator;
-    unsigned _signChanges;
-    unsigned _tighterBoundCounter;
-    unsigned _cutoffs;
+    std::atomic_uint _signChanges;
+    std::atomic_uint _tighterBoundCounter;
+    std::atomic_uint _cutoffs;
     bool _cutoffInUse;
     double _cutoffValue;
 
@@ -85,6 +89,14 @@ private:
                               String variableName,
                               unsigned lastLayer = UINT_MAX );
 
+    /*
+      Optimize for the min/max value of variableName with respect to the constraints
+      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
+    */
+    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
+                                      String variableName, double cutoffValue,
+                                      std::atomic_bool *infeasible = NULL );
+
     void storeUbIfNeeded( Layer *layer,
                           unsigned neuron,
                           unsigned variable,
@@ -98,6 +110,11 @@ private:
     bool layerRequiresMILPEncoding( const Layer *layer );
 
     static void log( const String &message );
+
+    /*
+      Tighten the upper- and lower- bound of a varaible with MILP encoding
+    */
+    static void tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument &argument );
 };
 
 } // namespace NLR
