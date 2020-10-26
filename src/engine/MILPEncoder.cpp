@@ -94,13 +94,13 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint
                                         *relu, unsigned index )
 {
 
-    if ( !relu->isActive() or relu->phaseFixed() )
+    if ( !relu->isActive() || relu->phaseFixed() )
     {
         ASSERT( relu->auxVariableInUse() );
-        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( relu->getB() ),  0 ) and
+        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( relu->getB() ),  0 ) &&
                   FloatUtils::lte( _tableau.getLowerBound( relu->getAux() ), 0 ) )
-                or
-                ( FloatUtils::lte( _tableau.getUpperBound( relu->getB() ), 0 ) and
+                ||
+                ( FloatUtils::lte( _tableau.getUpperBound( relu->getB() ), 0 ) &&
                   FloatUtils::lte( _tableau.getUpperBound( relu->getF() ), 0 ) ) );
         return;
     }
