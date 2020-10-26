@@ -120,7 +120,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
                   splittingStrategy="auto", sncSplittingStrategy="auto",
-                  restoreTreeStates=False ):
+                  restoreTreeStates=False, solveWithMILP=False ):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -136,8 +136,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
         snc (bool, optional): If SnC mode should be used, defaults to False
         splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu)
         sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the DNC mode (auto/largest-interval/polarity).
-        restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode,defaults to False
-
+        restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode, defaults to False
+        solveWithMILP ( bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -153,4 +153,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._splittingStrategy = splittingStrategy
     options._sncSplittingStrategy = sncSplittingStrategy
     options._restoreTreeStates = restoreTreeStates
+    options._solveWithMILP = solveWithMILP
     return options
