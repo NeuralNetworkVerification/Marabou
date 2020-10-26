@@ -92,7 +92,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
             {
                 if ( layerRequiresMILP )
-                    addNeuronToModel( gurobi, layer, j );
+                    addNeuronToModel( gurobi, layer, j, _layerOwner );
                 continue;
             }
 
@@ -106,7 +106,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
             {
                 if ( layerRequiresMILP )
-                    addNeuronToModel( gurobi, layer, j );
+                    addNeuronToModel( gurobi, layer, j, _layerOwner );
                 continue;
             }
 
@@ -114,7 +114,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
             {
                 if ( layerRequiresMILP )
-                    addNeuronToModel( gurobi, layer, j );
+                    addNeuronToModel( gurobi, layer, j, _layerOwner );
                 continue;
             }
 
@@ -124,7 +124,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( !layerRequiresMILP )
                 continue;
 
-            addNeuronToModel( gurobi, layer, j );
+            addNeuronToModel( gurobi, layer, j, _layerOwner );
 
             // Maximize, using just the exact MILP encoding
             if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
@@ -210,11 +210,11 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             freeSolver->resetModel();
 
             mtx.lock();
-            createMILPEncoding( layers, *freeSolver, layer->getLayerIndex() );
+            _lpFormulator.createLPRelaxation( layers, *freeSolver, layer->getLayerIndex() );
             mtx.unlock();
 
             // spawn a thread to tighten the bounds for the current variable
-            ThreadArgument argument( freeSolver, layer,
+            ThreadArgument argument( freeSolver, layer, &layers,
                                      i, currentLb, currentUb,
                                      _cutoffInUse, _cutoffValue,
                                      _layerOwner, std::ref( freeSolvers ),
@@ -266,6 +266,7 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
 
         GurobiWrapper *gurobi = argument._gurobi;
         Layer *layer = argument._layer;
+        const Map<unsigned, Layer *> &layers = *( argument._layers );
         unsigned index = argument._index;
         double currentLb = argument._currentLb;
         double currentUb = argument._currentUb;
@@ -279,9 +280,6 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
         std::atomic_uint &signChanges = argument._signChanges;
         std::atomic_uint &cutoffs = argument._cutoffs;
 
-        GRBModel *model = new GRBModel( *gurobi->getModel() );
-        GRBModel *linearRelaxation = gurobi->getLinearRelaxation();
-
         // LP Relaxation
         log( Stringf( "Tightening bounds for layer %u index %u",
                                    layer->getLayerIndex(), index ).ascii() );
@@ -290,8 +288,6 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
         Stringf variableName( "x%u", variable );
 
         log( Stringf( "Computing lowerbound..." ).ascii() );
-        gurobi->setModel( *linearRelaxation );
-        delete linearRelaxation;
         double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
                                         cutoffValue, &infeasible );
         log( Stringf( "Lowerbound computed: %f", lb ).ascii() );
@@ -349,14 +345,19 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
             }
         }
 
-
+        gurobi->reset();
         // Exact encoding
-        gurobi->resetModel();
-        gurobi->setModel( *model );
-        delete model;
+        // Now, add the MILP constraints
+        unsigned lastLayer = layer->getLayerIndex();
+        for ( const auto &layer : layers )
+        {
+            if ( layer.second->getLayerIndex() > lastLayer )
+                continue;
+
+            addLayerToModel( *gurobi, layer.second, layerOwner );
+        }
 
         log( Stringf( "Computing lowerbound..." ).ascii() );
-        gurobi->reset();
         lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
                                  cutoffValue, &infeasible );
         log( Stringf( "Lowerbound computed: %f", lb ).ascii() );
@@ -436,11 +437,12 @@ void MILPFormulator::createMILPEncoding( const Map<unsigned, Layer *> &layers,
         if ( layer.second->getLayerIndex() > lastLayer )
             continue;
 
-        addLayerToModel( gurobi, layer.second );
+        addLayerToModel( gurobi, layer.second, _layerOwner );
     }
 }
 
-void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
+void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                      LayerOwner *layerOwner )
 {
     switch ( layer->getLayerType() )
     {
@@ -449,7 +451,7 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer 
             break;
 
         case Layer::RELU:
-            addReluLayerToMILPFormulation( gurobi, layer );
+            addReluLayerToMILPFormulation( gurobi, layer, layerOwner );
             break;
 
         default:
@@ -458,7 +460,8 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer 
     }
 }
 
-void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer, unsigned neuron )
+void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                       unsigned neuron, LayerOwner *layerOwner )
 {
     if ( layer->getLayerType() != Layer::RELU )
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
@@ -469,7 +472,7 @@ void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer
     unsigned targetVariable = layer->neuronToVariable( neuron );
 
     List<NeuronIndex> sources = layer->getActivationSources( neuron );
-    const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+    const Layer *sourceLayer = layerOwner->getLayer( sources.begin()->_layer );
     unsigned sourceNeuron = sources.begin()->_neuron;
     unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
 
@@ -514,23 +517,13 @@ void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer
 }
 
 void MILPFormulator::addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                                    const Layer *layer )
+                                                    const Layer *layer,
+                                                    LayerOwner *layerOwner )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
-        addNeuronToModel( gurobi, layer, i );
+        addNeuronToModel( gurobi, layer, i, layerOwner );
     }
-}
-
-double MILPFormulator::solveMILPEncoding( GurobiWrapper &gurobi,
-                                          const Map<unsigned, Layer *> &layers,
-                                          MinOrMax minOrMax,
-                                          String variableName,
-                                          unsigned lastLayer )
-{
-    gurobi.resetModel();
-    createMILPEncoding( layers, gurobi, lastLayer );
-    return optimizeWithGurobi( gurobi, minOrMax, variableName, _cutoffValue );
 }
 
 double MILPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,

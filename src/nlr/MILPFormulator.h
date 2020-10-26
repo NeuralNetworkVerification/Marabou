@@ -74,20 +74,17 @@ private:
                             unsigned variable,
                             double &currentUb );
 
-    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
+    static void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                 LayerOwner *layerOwner );
 
-    void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                        const Layer *layer );
+    static void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
+                                               const Layer *layer,
+                                               LayerOwner *layerOwner );
 
-    void addNeuronToModel( GurobiWrapper &gurobi,
-                           const Layer *layer,
-                           unsigned neuron );
-
-    double solveMILPEncoding( GurobiWrapper &gurobi,
-                              const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax,
-                              String variableName,
-                              unsigned lastLayer = UINT_MAX );
+    static void addNeuronToModel( GurobiWrapper &gurobi,
+                                  const Layer *layer,
+                                  unsigned neuron,
+                                  LayerOwner *layerOwner );
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints
