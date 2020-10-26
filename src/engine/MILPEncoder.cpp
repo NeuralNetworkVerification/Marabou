@@ -14,6 +14,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "FloatUtils.h"
 #include "MILPEncoder.h"
 
 MILPEncoder::MILPEncoder( const ITableau &tableau )
@@ -44,17 +45,6 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
     unsigned ind = 0;
     for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
-        if ( plConstraint->phaseFixed() )
-        {
-            // if the constraint is fixed, encode the valid case split
-            PiecewiseLinearCaseSplit split = plConstraint->getValidCaseSplit();
-            for ( const auto &equation : split.getEquations() )
-                encodeEquation( gurobi, equation );
-            for ( const auto &bound : split.getBoundTightenings() )
-                encodeBound( gurobi, bound );
-            continue;
-        }
-
         switch ( plConstraint->getType() )
         {
         case PiecewiseLinearFunctionType::RELU:
@@ -100,20 +90,18 @@ void MILPEncoder::encodeEquation( GurobiWrapper &gurobi, const Equation &equatio
     }
 }
 
-void MILPEncoder::encodeBound( GurobiWrapper &gurobi, const Tightening &bound )
-{
-    if ( bound._type == Tightening::LB )
-        gurobi.setLowerBound( getVariableNameFromVariable
-                              ( bound._variable ), bound._value );
-    if ( bound._type == Tightening::UB )
-        gurobi.setUpperBound( getVariableNameFromVariable
-                              ( bound._variable ), bound._value );
-
-}
-
 void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint
                                         *relu, unsigned index )
 {
+
+    if ( !relu->isActive() or relu->phaseFixed() )
+    {
+        ASSERT( relu->auxVariableInUse() );
+        ASSERT( FloatUtils::gte( _tableau.getLowerBound( relu->getB() ),  0 ) or
+                FloatUtils::lte( _tableau.getUpperBound( relu->getB() ), 0 ) );
+        return;
+    }
+
     gurobi.addVariable( Stringf( "a%u", index ),
                         0,
                         1,
