@@ -122,7 +122,6 @@ private:
     Map<String, GRBVar *> _nameToVariable;
     double _timeoutInSeconds;
 
-
     void addConstraint( const List<Term> &terms, double scalar, char sense );
 
     void freeModelIfNeeded();
