@@ -79,7 +79,7 @@ const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration:
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
 const GlobalConfiguration::MILPSolverBoundTighteningType GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE =
-    GlobalConfiguration::LP_RELAXATION;
+    GlobalConfiguration::MILP_ENCODING;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
@@ -91,6 +91,7 @@ const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
+const bool GlobalConfiguration::GUROBI_LOGGING = false;
 #endif // ENABLE_GUROBI
 
 // Logging - note that it is enabled only in Debug mode

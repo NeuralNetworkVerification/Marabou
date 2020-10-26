@@ -244,6 +244,7 @@ public:
       The number of threads Gurobi spawns
     */
     static const unsigned GUROBI_NUMBER_OF_THREADS;
+    static const bool GUROBI_LOGGING;
 #endif // ENABLE_GUROBI
 
     /*
