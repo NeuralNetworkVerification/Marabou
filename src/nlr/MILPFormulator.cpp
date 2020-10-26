@@ -279,7 +279,7 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
         std::atomic_uint &signChanges = argument._signChanges;
         std::atomic_uint &cutoffs = argument._cutoffs;
 
-        GRBModel model = *( gurobi->getModel() );
+        GRBModel *model = new GRBModel( *gurobi->getModel() );
         GRBModel *linearRelaxation = gurobi->getLinearRelaxation();
 
         // LP Relaxation
@@ -352,7 +352,8 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
 
         // Exact encoding
         gurobi->resetModel();
-        gurobi->setModel( model );
+        gurobi->setModel( *model );
+        delete model;
 
         log( Stringf( "Computing lowerbound..." ).ascii() );
         gurobi->reset();
