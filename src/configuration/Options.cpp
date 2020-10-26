@@ -45,6 +45,7 @@ void Options::initializeDefaultValues()
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[ITERATIVE_PROPAGATION] = false;
+    _boolOptions[SOLVE_WITH_MILP] = false;
 
     /*
       Int options
@@ -150,6 +151,32 @@ SnCDivideStrategy Options::getSnCDivideStrategy() const
         return SnCDivideStrategy::LargestInterval;
     else
         return SnCDivideStrategy::Auto;
+}
+
+MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
+{
+    if ( gurobiEnabled() )
+    {
+        String strategyString = String( _stringOptions.get( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ) );
+        if ( strategyString == "lp" )
+            return LP_RELAXATION;
+        else if ( strategyString == "lp-inc" )
+            return LP_RELAXATION_INCREMENTAL;
+        else if ( strategyString == "milp" )
+            return MILP_ENCODING;
+        else if ( strategyString == "milp-inc" )
+            return MILP_ENCODING_INCREMENTAL;
+        else if ( strategyString == "iter-prop" )
+            return ITERATIVE_PROPAGATION;
+        else if ( strategyString == "none" )
+            return NONE;
+        else
+            return LP_RELAXATION;
+    }
+    else
+    {
+        return NONE;
+    }
 }
 
 //

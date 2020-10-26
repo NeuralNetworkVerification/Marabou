@@ -19,6 +19,7 @@
 #include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
+#include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
 
@@ -40,14 +41,14 @@ public:
         // Restore tree states of the parent when handling children in DnC.
         RESTORE_TREE_STATES,
 
-        // Use iterative propagation.
-        ITERATIVE_PROPAGATION,
-
         // Help flag
         HELP,
 
         // Version flag
         VERSION,
+
+        // Solve the input query with a MILP solver
+        SOLVE_WITH_MILP
     };
 
     enum IntOptions {
@@ -81,6 +82,7 @@ public:
         SUMMARY_FILE,
         SPLITTING_STRATEGY,
         SNC_SPLITTING_STRATEGY,
+        MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
     };
 
@@ -108,6 +110,7 @@ public:
     String getString( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
+    MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
 
     /*
       Retrieve the value of the various options, by type
