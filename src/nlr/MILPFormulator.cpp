@@ -139,7 +139,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
     struct timespec gurobiEnd = TimeUtils::sampleMicro();
 
     log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                  _tighterBoundCounter.load(), _signChanges.load(), _cutoffs.load() ) );
+                  _tighterBoundCounter, _signChanges, _cutoffs ) );
     log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
 }
 
@@ -168,6 +168,10 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
 
     double currentLb;
     double currentUb;
+
+    std::atomic_uint tighterBoundCounter( 0 );
+    std::atomic_uint signChanges( 0 );
+    std::atomic_uint cutoffs( 0 );
 
     struct timespec gurobiStart = TimeUtils::sampleMicro();
 
@@ -229,9 +233,9 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
                                      _cutoffInUse, _cutoffValue,
                                      _layerOwner, std::ref( freeSolvers ),
                                      std::ref( mtx ), std::ref( infeasible ),
-                                     std::ref( _tighterBoundCounter ),
-                                     std::ref( _signChanges ),
-                                     std::ref( _cutoffs ) );
+                                     std::ref( tighterBoundCounter ),
+                                     std::ref( signChanges ),
+                                     std::ref( cutoffs ) );
 
             threads[solverToIndex[freeSolver]] = boost::thread
                 ( tightenSingleVariableBoundsWithMILPEncoding, argument );
@@ -246,7 +250,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
     struct timespec gurobiEnd = TimeUtils::sampleMicro();
 
     log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                  _tighterBoundCounter.load(), _signChanges.load(), _cutoffs.load() ) );
+                  tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ) );
     log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
 
     clearSolverQueue( freeSolvers );

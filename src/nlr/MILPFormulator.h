@@ -28,7 +28,7 @@
 
 namespace NLR {
 
-class MILPFormulator  : public ParallelSolver
+class MILPFormulator : public ParallelSolver
 {
 public:
     enum MinOrMax {
@@ -56,9 +56,9 @@ public:
 private:
     LayerOwner *_layerOwner;
     LPFormulator _lpFormulator;
-    std::atomic_uint _signChanges;
-    std::atomic_uint _tighterBoundCounter;
-    std::atomic_uint _cutoffs;
+    unsigned _signChanges;
+    unsigned _tighterBoundCounter;
+    unsigned _cutoffs;
     bool _cutoffInUse;
     double _cutoffValue;
 
