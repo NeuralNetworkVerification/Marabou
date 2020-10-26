@@ -198,13 +198,6 @@ void GurobiWrapper::setCost( const List<Term> &terms )
         }
 
         _model->setObjective( cost, GRB_MINIMIZE );
-
-        // From https://www.gurobi.com/documentation/9.0/refman/py_model_setattr.html
-        // due to our lazy update approach, the change won't actually take effect until you
-        // update the model (using Model.update), optimize the model (using Model.optimize),
-        // or write the model to disk (using Model.write).
-        _model->update();
-        ASSERT( _model->get( GRB_IntAttr_ModelSense ) == 1 );
     }
     catch ( GRBException e )
     {
@@ -228,9 +221,6 @@ void GurobiWrapper::setObjective( const List<Term> &terms )
         }
 
         _model->setObjective( cost, GRB_MAXIMIZE );
-
-        _model->update();
-        ASSERT( _model->get( GRB_IntAttr_ModelSense ) == -1 );
     }
     catch ( GRBException e )
     {
@@ -317,6 +307,12 @@ double GurobiWrapper::getObjectiveBound()
         log( "Failed to get objective bound from Gurobi." );
         if ( e.getErrorCode() == GRB_ERROR_DATA_NOT_AVAILABLE )
         {
+            // From https://www.gurobi.com/documentation/9.0/refman/py_model_setattr.html
+            // due to our lazy update approach, the change won't actually take effect until you
+            // update the model (using Model.update), optimize the model (using Model.optimize),
+            // or write the model to disk (using Model.write).
+            _model->update();
+
             if ( _model->get( GRB_IntAttr_ModelSense ) == 1 )
                 // case Minimize
                 return FloatUtils::negativeInfinity();
