@@ -2,7 +2,7 @@
 /*! \file GurobiWrapper.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Haoze Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -16,6 +16,7 @@
 #ifdef ENABLE_GUROBI
 
 #include "Debug.h"
+#include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "MStringf.h"
@@ -297,12 +298,44 @@ void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOr
 
 double GurobiWrapper::getObjectiveBound()
 {
-    return _model->get( GRB_DoubleAttr_ObjBound );
+    try
+    {
+        return _model->get( GRB_DoubleAttr_ObjBound );
+    }
+    catch ( GRBException e )
+    {
+        log( "Failed to get objective bound from Gurobi." );
+        if ( e.getErrorCode() == GRB_ERROR_DATA_NOT_AVAILABLE )
+        {
+            // From https://www.gurobi.com/documentation/9.0/refman/py_model_setattr.html
+            // due to our lazy update approach, the change won't actually take effect until you
+            // update the model (using Model.update), optimize the model (using Model.optimize),
+            // or write the model to disk (using Model.write).
+            _model->update();
+
+            if ( _model->get( GRB_IntAttr_ModelSense ) == 1 )
+                // case minimize
+                return FloatUtils::negativeInfinity();
+            else
+                // case maximize
+                return FloatUtils::infinity();
+        }
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
 }
 
 void GurobiWrapper::dumpModel( String name )
 {
     _model->write( name.ascii() );
+}
+
+void GurobiWrapper::log( const String &message )
+{
+    if ( GlobalConfiguration::GUROBI_LOGGING )
+        printf( "GurobiWrapper: %s\n", message.ascii() );
 }
 
 #endif // ENABLE_GUROBI
