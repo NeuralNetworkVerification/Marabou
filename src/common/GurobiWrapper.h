@@ -116,6 +116,12 @@ public:
     // default
     void dumpModel( String name );
 
+    GRBModel *getModel();
+    void setModel( GRBModel &model );
+
+    // Get the linear relaxation of the model
+    GRBModel *getLinearRelaxation();
+
 private:
     GRBEnv *_environment;
     GRBModel *_model;
@@ -132,6 +138,8 @@ private:
 
 #include "MString.h"
 #include "Map.h"
+
+class GRBModel;
 
 class GurobiWrapper
 {
@@ -167,6 +175,9 @@ public:
     void extractSolution( Map<String, double> &, double & ) {}
     void reset() {}
     void resetModel() {}
+    GRBModel *getModel(){ return NULL; };
+    void setModel( GRBModel & ) {}
+    GRBModel *getLinearRelaxation() { return NULL; };
     bool optimal() { return true; }
     bool cutoffOccurred() { return false; };
     bool infeasbile() { return false; };

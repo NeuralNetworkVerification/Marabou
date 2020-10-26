@@ -179,20 +179,6 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
     {
         Layer *layer = currentLayer.second;
 
-        /*
-          The optimiziation is performed layer by layer, and for each
-          individual neuron. It has 4 steps:
-
-          1. Use an LP relaxation to minimize the variable
-          2. Use an LP relaxation to maximize the variable
-          3. Use a MILP encoding to minimize the variable
-          4. Use a MILP encoding to maximize the variable
-
-          We perform the steps in this order, and stop if at some
-          point we discover either an upper bound that is non-positive
-          or a lower obund that is non-negative (this is aimed at
-          ReLUs, as their phase would become fixed in these cases)
-        */
         for ( unsigned i = 0; i < layer->getSize(); ++i )
         {
             if ( layer->neuronEliminated( i ) )
@@ -263,6 +249,21 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
 {
     try
     {
+        /*
+          The optimiziation is performed layer by layer, and for each
+          individual neuron. It has 4 steps:
+
+          1. Use an LP relaxation to minimize the variable
+          2. Use an LP relaxation to maximize the variable
+          3. Use a MILP encoding to minimize the variable
+          4. Use a MILP encoding to maximize the variable
+
+          We perform the steps in this order, and stop if at some
+          point we discover either an upper bound that is non-positive
+          or a lower obund that is non-negative (this is aimed at
+          ReLUs, as their phase would become fixed in these cases)
+        */
+
         GurobiWrapper *gurobi = argument._gurobi;
         Layer *layer = argument._layer;
         unsigned index = argument._index;
@@ -278,13 +279,48 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
         std::atomic_uint &signChanges = argument._signChanges;
         std::atomic_uint &cutoffs = argument._cutoffs;
 
+        GRBModel model = *( gurobi->getModel() );
+        GRBModel *linearRelaxation = gurobi->getLinearRelaxation();
+
+        // LP Relaxation
         log( Stringf( "Tightening bounds for layer %u index %u",
                                    layer->getLayerIndex(), index ).ascii() );
 
         unsigned variable = layer->neuronToVariable( index );
         Stringf variableName( "x%u", variable );
 
+        log( Stringf( "Computing lowerbound..." ).ascii() );
+        gurobi->setModel( *linearRelaxation );
+        delete linearRelaxation;
+        double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                        cutoffValue, &infeasible );
+        log( Stringf( "Lowerbound computed: %f", lb ).ascii() );
+
+        // Store the new bound if it is tighter
+        if ( lb > currentLb )
+        {
+            if ( FloatUtils::isNegative( currentLb ) &&
+                 !FloatUtils::isNegative( lb ) )
+                ++signChanges;
+
+            mtx.lock();
+            layer->setLb( index, lb );
+            layerOwner->receiveTighterBound( Tightening( variable,
+                                                         lb,
+                                                         Tightening::LB ) );
+            mtx.unlock();
+            ++tighterBoundCounter;
+
+            if ( cutoffInUse && lb > cutoffValue )
+            {
+                ++cutoffs;
+                enqueueSolver( freeSolvers, gurobi );
+                return;
+            }
+        }
+
         log( Stringf( "Computing upperbound..." ).ascii() );
+        gurobi->reset();
         double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
                                         cutoffValue, &infeasible );
         log( Stringf( "Upperbound computed %f", ub ).ascii() );
@@ -313,10 +349,15 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
             }
         }
 
+
+        // Exact encoding
+        gurobi->resetModel();
+        gurobi->setModel( model );
+
         log( Stringf( "Computing lowerbound..." ).ascii() );
         gurobi->reset();
-        double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
-                                        cutoffValue, &infeasible );
+        lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                 cutoffValue, &infeasible );
         log( Stringf( "Lowerbound computed: %f", lb ).ascii() );
 
         // Store the new bound if it is tighter
@@ -337,8 +378,42 @@ void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument
             if ( cutoffInUse && lb > cutoffValue )
             {
                 ++cutoffs;
+                enqueueSolver( freeSolvers, gurobi );
+                return;
             }
         }
+
+        log( Stringf( "Tightening bounds for layer %u index %u",
+                                   layer->getLayerIndex(), index ).ascii() );
+
+        log( Stringf( "Computing upperbound..." ).ascii() );
+        gurobi->reset();
+        ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
+                                 cutoffValue, &infeasible );
+        log( Stringf( "Upperbound computed %f", ub ).ascii() );
+
+        // Store the new bound if it is tighter
+        if ( ub < currentUb )
+        {
+            if ( FloatUtils::isPositive( currentUb ) &&
+                 !FloatUtils::isPositive( ub ) )
+                ++signChanges;
+
+            mtx.lock();
+            layer->setUb( index, ub );
+            layerOwner->receiveTighterBound( Tightening( variable,
+                                                         ub,
+                                                         Tightening::UB ) );
+            mtx.unlock();
+
+            ++tighterBoundCounter;
+
+            if ( cutoffInUse && ub < cutoffValue )
+            {
+                ++cutoffs;
+            }
+        }
+
         enqueueSolver( freeSolvers, gurobi );
     }
     catch ( boost::thread_interrupted& )
