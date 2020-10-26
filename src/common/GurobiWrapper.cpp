@@ -88,32 +88,6 @@ void GurobiWrapper::reset()
     _model->reset();
 }
 
-GRBModel *GurobiWrapper::getModel()
-{
-    return _model;
-}
-
-void GurobiWrapper::setModel( GRBModel &model )
-{
-    freeModelIfNeeded();
-    _model = new GRBModel( model );
-
-    // Suppress printing
-    _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
-
-    // Thread number
-    _model->getEnv().set( GRB_IntParam_Threads,
-                          GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
-
-    // Timeout
-    setTimeLimit( _timeoutInSeconds );
-}
-
-GRBModel *GurobiWrapper::getLinearRelaxation()
-{
-    return new GRBModel( _model->relax() );
-}
-
 void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType type )
 {
     ASSERT( !_nameToVariable.exists( name ) );
