@@ -314,7 +314,7 @@ double GurobiWrapper::getObjectiveBound()
             _model->update();
 
             if ( _model->get( GRB_IntAttr_ModelSense ) == 1 )
-                // case Minimize
+                // case minimize
                 return FloatUtils::negativeInfinity();
             else
                 // case maximize
