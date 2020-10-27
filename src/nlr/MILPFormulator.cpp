@@ -223,8 +223,11 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
                                      std::ref( signChanges ),
                                      std::ref( cutoffs ) );
 
-            threads[solverToIndex[freeSolver]] = boost::thread
-                ( tightenSingleVariableBoundsWithMILPEncoding, argument );
+            if ( numberOfWorkers == 1 )
+                tightenSingleVariableBoundsWithMILPEncoding( argument );
+            else
+                threads[solverToIndex[freeSolver]] = boost::thread
+                    ( tightenSingleVariableBoundsWithMILPEncoding, argument );
         }
     }
 

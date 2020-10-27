@@ -327,8 +327,11 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                      std::ref( signChanges ),
                                      std::ref( cutoffs ) );
 
-            threads[solverToIndex[freeSolver]] = boost::thread
-                ( tightenSingleVariableBoundsWithLPRelaxation, argument );
+            if ( numberOfWorkers == 1 )
+                tightenSingleVariableBoundsWithLPRelaxation( argument );
+            else
+                threads[solverToIndex[freeSolver]] = boost::thread
+                    ( tightenSingleVariableBoundsWithLPRelaxation, argument );
         }
     }
 
