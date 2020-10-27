@@ -70,7 +70,7 @@ void MILPEncoder::encodeEquation( GurobiWrapper &gurobi, const Equation &equatio
 {
     List<GurobiWrapper::Term> terms;
     double scalar = equation._scalar;
-    for ( const auto& term : equation._addends )
+    for ( const auto &term : equation._addends )
         terms.append( GurobiWrapper::Term
                       ( term._coefficient,
                         Stringf( "x%u", term._variable ) ) );
