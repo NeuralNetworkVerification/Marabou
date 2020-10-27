@@ -1101,6 +1101,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( preprocess )
             performMILPSolverBoundedTightening();
 
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        {
+            _networkLevelReasoner->dumpBounds();
+        }
+
         if ( _splittingStrategy == DivideStrategy::Auto )
         {
             _splittingStrategy =

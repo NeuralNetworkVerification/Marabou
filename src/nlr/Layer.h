@@ -122,6 +122,11 @@ public:
     void reduceIndexAfterMerge( unsigned startIndex );
 
     /*
+      Print out the variable bounds of this layer
+    */
+    void dumpBounds() const;
+
+    /*
       For debugging purposes
     */
     void dump() const;

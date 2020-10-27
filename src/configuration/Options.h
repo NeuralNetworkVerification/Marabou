@@ -43,6 +43,9 @@ public:
         // Use iterative propagation.
         ITERATIVE_PROPAGATION,
 
+        // Dump the bounds of each variable after preprocessing
+        DUMP_BOUNDS,
+
         // Help flag
         HELP,
 

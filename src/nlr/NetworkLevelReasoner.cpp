@@ -551,4 +551,12 @@ void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex
     _layerIndexToLayer.erase( layer );
 }
 
+void NetworkLevelReasoner::dumpBounds()
+{
+    obtainCurrentBounds();
+
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->dumpBounds();
+}
+
 } // namespace NLR

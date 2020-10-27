@@ -153,6 +153,11 @@ public:
     */
     void mergeConsecutiveWSLayers();
 
+    /*
+      Print the bounds of variables layer by layer
+    */
+    void dumpBounds();
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;

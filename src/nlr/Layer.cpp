@@ -1801,4 +1801,14 @@ unsigned Layer::getMaxVariable() const
     return result;
 }
 
+void Layer::dumpBounds() const
+{
+    printf( "Layer %u:\n", _layerIndex );
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        printf( "\tNeuron%u\tLB: %.4f, UB: %.4f \n", i + 1, _lb[i], _ub[i] );
+    }
+    printf("\n");
+}
+
 } // namespace NLR

@@ -45,6 +45,7 @@ void Options::initializeDefaultValues()
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[ITERATIVE_PROPAGATION] = false;
+    _boolOptions[DUMP_BOUNDS] = false;
 
     /*
       Int options

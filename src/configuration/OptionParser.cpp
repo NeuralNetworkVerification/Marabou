@@ -51,6 +51,9 @@ void OptionParser::initialize()
         ( "iter-prop",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::ITERATIVE_PROPAGATION]) ),
           "Use iterative propagation" )
+        ( "dump-bounds",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
+          "Dump the bounds after preprocessing" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
