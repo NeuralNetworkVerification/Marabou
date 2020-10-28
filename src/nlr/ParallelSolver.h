@@ -42,6 +42,7 @@ public:
     struct ThreadArgument{
 
         ThreadArgument( GurobiWrapper *gurobi, Layer *layer,
+                        const Map<unsigned, Layer *> *layers,
                         unsigned index, double currentLb, double currentUb,
                         bool cutoffInUse, double cutoffValue,
                         LayerOwner *layerOwner, SolverQueue &freeSolvers,
@@ -51,6 +52,34 @@ public:
                         std::atomic_uint &cutoffs )
         : _gurobi( gurobi )
         , _layer( layer )
+        , _layers( layers )
+        , _index( index )
+        , _currentLb(currentLb )
+        , _currentUb(currentUb )
+        , _cutoffInUse( cutoffInUse )
+        , _cutoffValue( cutoffValue )
+        , _layerOwner( layerOwner )
+        , _freeSolvers( freeSolvers )
+        , _mtx( mtx )
+        , _infeasible( infeasible )
+        , _tighterBoundCounter( tighterBoundCounter )
+        , _signChanges( signChanges )
+        , _cutoffs( cutoffs )
+        , _lastFixedNeuron( NULL )
+        {
+        }
+
+        ThreadArgument( GurobiWrapper *gurobi, Layer *layer,
+                        unsigned index, double currentLb, double currentUb,
+                        bool cutoffInUse, double cutoffValue,
+                        LayerOwner *layerOwner, SolverQueue &freeSolvers,
+                        std::mutex &mtx, std::atomic_bool &infeasible,
+                        std::atomic_uint &tighterBoundCounter,
+                        std::atomic_uint &signChanges,
+                        std::atomic_uint &cutoffs )
+        : _gurobi( gurobi )
+        , _layer( layer )
+        , _layers( NULL )
         , _index( index )
         , _currentLb(currentLb )
         , _currentUb(currentUb )
@@ -77,6 +106,7 @@ public:
                         std::atomic_uint &cutoffs, NeuronIndex *lastFixedNeuron )
         : _gurobi( gurobi )
         , _layer( layer )
+        , _layers( NULL )
         , _index( index )
         , _currentLb(currentLb )
         , _currentUb(currentUb )
@@ -95,6 +125,7 @@ public:
 
         GurobiWrapper *_gurobi;
         Layer *_layer;
+        const Map<unsigned, Layer *> *_layers;
         unsigned _index;
         double _currentLb;
         double _currentUb;
