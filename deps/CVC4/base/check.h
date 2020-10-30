@@ -39,6 +39,10 @@
 
 #include "base/exception.h"
 
+#ifdef _WIN32
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
 // Define CVC4_NO_RETURN macro replacement for [[noreturn]].
 #if defined(SWIG)
 #define CVC4_NO_RETURN
