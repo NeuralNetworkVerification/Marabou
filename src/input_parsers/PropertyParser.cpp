@@ -26,8 +26,8 @@ static double extractScalar( const String &token )
     double value = std::stod( token.ascii(), &end );
     if ( end != token.length() )
     {
-	throw InputParserError( InputParserError::UNEXPECTED_INPUT, Stringf( "Token %s not a scalar",
-									    token.ascii() ).ascii() );
+	throw InputParserError( InputParserError::UNEXPECTED_INPUT, Stringf( "%s not a scalar",
+									     token.ascii() ).ascii() );
     }
     return value;
 }
