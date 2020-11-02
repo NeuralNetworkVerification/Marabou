@@ -18,7 +18,6 @@
 #include "InputParserError.h"
 #include "MStringf.h"
 #include "PropertyParser.h"
-#include <regex>
 
 static double extractScalar( const String &token )
 {
