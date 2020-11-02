@@ -20,23 +20,21 @@
 #include "PropertyParser.h"
 #include <regex>
 
-static bool isScalar( const String &token )
-{
-    const std::regex floatRegex( "[-+]?[0-9]*\\.?[0-9]+" );
-    return std::regex_match( token.ascii(), floatRegex );
-}
-
 static double extractScalar( const String &token )
 {
-    return atof( token.ascii() );
+    std::string::size_type end;
+    double value = std::stod( token.ascii(), &end );
+    if ( end != token.length() )
+    {
+	throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Failed to extract scalar" );
+    }
+    return value;
 }
 
 void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQuery )
 {
     if ( !File::exists( propertyFilePath ) )
     {
-        printf( "Error: the specified property file (%s) doesn't exist!\n", propertyFilePath.ascii() );
-        throw InputParserError( InputParserError::FILE_DOESNT_EXIST, propertyFilePath.ascii() );
     }
 
     File propertyFile( propertyFilePath );
@@ -66,12 +64,6 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
         throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.rbegin();
-    if ( !isScalar( *it ) )
-    {
-        Stringf message( "Right handside must be scalar in the line: %s", line.ascii() );
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, message.ascii() );
-    }
-
     double scalar = extractScalar( *it );
     ++it;
     Equation::EquationType type = extractRelationSymbol( *it );
