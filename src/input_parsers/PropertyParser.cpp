@@ -35,8 +35,8 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
 {
     if ( !File::exists( propertyFilePath ) )
     {
-	printf( "Error: the specified property file (%s) doesn't exist!\n", propertyFilePath.ascii() );
-	throw InputParserError( InputParserError::FILE_DOESNT_EXIST, propertyFilePath.ascii() );
+        printf( "Error: the specified property file (%s) doesn't exist!\n", propertyFilePath.ascii() );
+        throw InputParserError( InputParserError::FILE_DOESNT_EXIST, propertyFilePath.ascii() );
     }
 
     File propertyFile( propertyFilePath );
