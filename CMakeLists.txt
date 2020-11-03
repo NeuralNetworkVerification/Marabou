@@ -28,7 +28,6 @@ set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
 set(MARABOU_PY MarabouCore)
 
-
 set(DEPS_DIR "${PROJECT_SOURCE_DIR}/deps")
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
@@ -72,8 +71,6 @@ set(ACAS_PARSER acas)
 set(BERKELEY_PARSER berkeley)
 set(INPUT_PARSERS_DIR input_parsers)
 
-
-
 #-----------------------------------------------------------------------------#
 # Determine number of threads available, used to configure (default) parallel
 # execution of custom test targets (can be overriden with ARGS=-jN).
@@ -83,7 +80,7 @@ ProcessorCount(CTEST_NTHREADS)
 if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
 endif()
-
+ 
 # --------------- set build type ----------------------------
 set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
 
@@ -96,7 +93,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
 
-
 #-------------------------set code coverage----------------------------------#
 # Allow coverage only in debug mode only in gcc
 if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
@@ -105,7 +101,6 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MA
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
-
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
@@ -158,8 +153,6 @@ endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
-
-
 
 # Boost
 if (MSVC)
@@ -259,11 +252,9 @@ endif()
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 
-
 # Build marabou executable
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
-
 
 # Build Python marabou
 if (${FORCE_PYTHON_BUILD})
@@ -303,8 +294,6 @@ if (${BUILD_PYTHON})
     endif()
 endif()
 
-
-
 add_library(${MARABOU_TEST_LIB})
 set (TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
 file(MAKE_DIRECTORY ${TEST_DIR})
@@ -321,14 +310,11 @@ target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
 target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES} )
 target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 
-
-
 add_custom_target(build-tests ALL)
 
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
       DEPENDS build-tests build_input_parsers ${MARABOU_EXE})
-
 
 # Decide which tests to run and execute
 set(TESTS_TO_RUN "")
