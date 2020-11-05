@@ -72,6 +72,11 @@ class MaxConstraint : public PiecewiseLinearConstraint
     List<unsigned> getParticipatingVariables() const;
 
     /*
+      Get the f in this constraint.
+    */
+    unsigned getF() const;
+
+    /*
       Returns true iff the assignment satisfies the constraint
     */
     bool satisfied() const;

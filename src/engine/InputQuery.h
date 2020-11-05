@@ -50,7 +50,7 @@ public:
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
-	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
+    List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
     /*
       Methods for handling input and output variables

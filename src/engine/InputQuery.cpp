@@ -254,18 +254,27 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
                                   other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
 
         unsigned numberOfDisjunctions = 0;
+        unsigned numberOfMaxs = 0;
         for ( const auto &constraint : other._plConstraints )
         {
             if ( constraint->getType() == DISJUNCTION )
-             {
-                 auto *newPlc = constraint->duplicateConstraint();
-                 _plConstraints.append( newPlc );
-                 ++numberOfDisjunctions;
-             }
+            {
+                auto *newPlc = constraint->duplicateConstraint();
+                _plConstraints.append( newPlc );
+                ++numberOfDisjunctions;
+            }
+            else if ( constraint->getType() == MAX )
+            {
+                auto *newPlc = constraint->duplicateConstraint();
+                _plConstraints.append( newPlc );
+                ++numberOfMaxs;
+            }
+            
         }
 
         ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() +
-                numberOfDisjunctions
+                numberOfDisjunctions +
+                numberOfMaxs
                 == other._plConstraints.size() );
 
         for ( const auto &constraint : other._networkLevelReasoner->

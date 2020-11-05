@@ -254,7 +254,7 @@ public:
 
 protected:
     bool _constraintActive;
-	Map<unsigned, double> _assignment;
+    Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 

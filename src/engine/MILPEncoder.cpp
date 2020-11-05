@@ -51,10 +51,13 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
             encodeReLUConstraint( gurobi, (ReluConstraint *)plConstraint,
                                   ind++ );
             break;
+        case PiecewiseLinearFunctionType::MAX:
+            encodeMaxConstraint( gurobi, (MaxConstraint *)plConstraint );
+            break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT,
                                 "GurobiWrapper::encodeInputQuery: "
-                                "Only ReLU is supported\n" );
+                                "Only ReLU and Max are supported\n" );
         }
     }
 }
@@ -125,4 +128,86 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
     terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", index ) ) );
     gurobi.addLeqConstraint( terms, 0 );
+}
+
+void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max )
+{
+
+    if ( !max->isActive() )
+        return;
+
+    // y = max(x_1, x_2, ... , x_m)
+    unsigned y = max->getF();
+
+    // xs = [x_1, x_2, ... , x_m]
+    List<unsigned> xs = max->getParticipatingVariables();
+    unsigned m = xs.size();
+
+    // upper bounds of each x_i
+    double ubs[m];
+
+    // terms for Gurobi
+    List<GurobiWrapper::Term> terms;
+
+    unsigned i = 0;
+    for ( const auto &x : xs ) {
+        // add binary variable
+        gurobi.addVariable( Stringf( "a%u", x ),
+                            0,
+                            1,
+                            GurobiWrapper::BINARY );
+
+        terms.append( GurobiWrapper::Term( 1, Stringf( "a%u", x ) ) );
+        ubs[i] = _tableau.getUpperBound( x );
+        i++;
+    }
+
+    // add constraint: a_1 + a_2 + ... + a_m = 1
+    gurobi.addEqConstraint( terms, 1 );
+
+    terms.clear();
+
+    i = 0;
+    for ( const auto &x : xs ) {
+        // add constraint: y <= x_i + (1 - a_i) * (umax - l)
+        double umax = getUmax(ubs, i, m);
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", y ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", x ) ) );
+        terms.append( GurobiWrapper::Term( umax - _tableau.getLowerBound( x ), Stringf( "a%u", x ) ) );
+        gurobi.addLeqConstraint( terms, umax - _tableau.getLowerBound( x ) );
+
+        terms.clear();
+
+        // add constraint: y >= x_i
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", y ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", x ) ) );
+        gurobi.addGeqConstraint( terms, 0);
+
+        terms.clear();
+        
+        i++;
+    }
+}
+
+double MILPEncoder::getUmax( const double *ubs, int j,
+                              int m)
+{
+    int umaxIndex = -1;
+    
+    for (int i = 0; i < m; i++) {
+        if (i == j) {
+            continue;
+        }
+
+        if (umaxIndex == -1) {
+            umaxIndex = i;
+            continue;
+        }
+
+        if (ubs[umaxIndex] < ubs[i]) {
+            umaxIndex = i;
+        }
+    }
+
+    return ubs[umaxIndex];  
 }
