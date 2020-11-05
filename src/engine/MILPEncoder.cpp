@@ -144,7 +144,7 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     unsigned m = xs.size();
 
     // upper bounds of each x_i
-    double ubs[m];
+    double* ubs = new double[m];
 
     // terms for Gurobi
     List<GurobiWrapper::Term> terms;
