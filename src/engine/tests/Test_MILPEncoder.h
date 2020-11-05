@@ -93,7 +93,7 @@ public:
         tableau1->setUpperBound( 3, 4 );
 
         f = 1;
-		MaxConstraint max1( f, elements );
+        MaxConstraint max1( f, elements );
         inputQuery1->addPiecewiseLinearConstraint( &max1 );
         MILPEncoder milp1( *tableau1 );
         milp1.encodeInputQuery( gurobi1, *inputQuery1);
@@ -142,7 +142,7 @@ public:
         tableau2->setUpperBound( 3, 4 );
 
         f = 2;
-		MaxConstraint max2( f, elements );
+        MaxConstraint max2( f, elements );
         inputQuery2->addPiecewiseLinearConstraint( &max2 );
         MILPEncoder milp2( *tableau2 );
         milp2.encodeInputQuery( gurobi2, *inputQuery2);
@@ -191,7 +191,7 @@ public:
         tableau3->setUpperBound( 3, 4 );
 
         f = 3;
-		MaxConstraint max3( f, elements );
+        MaxConstraint max3( f, elements );
         inputQuery3->addPiecewiseLinearConstraint( &max3 );
         MILPEncoder milp3( *tableau3 );
         milp3.encodeInputQuery( gurobi3, *inputQuery3);
@@ -255,7 +255,7 @@ public:
         tableau4->setUpperBound( 3, 4 );
 
         f = 0;
-		MaxConstraint max4( f, elements );
+        MaxConstraint max4( f, elements );
         inputQuery4->addPiecewiseLinearConstraint( &max4 );
         MILPEncoder milp4( *tableau4 );
         milp4.encodeInputQuery( gurobi4, *inputQuery4);
@@ -319,7 +319,7 @@ public:
         tableau5->setUpperBound( 3, 4 );
 
         f = 0;
-		MaxConstraint max5( f, elements );
+        MaxConstraint max5( f, elements );
         inputQuery5->addPiecewiseLinearConstraint( &max5 );
         MILPEncoder milp5( *tableau5 );
         milp5.encodeInputQuery( gurobi5, *inputQuery5);
