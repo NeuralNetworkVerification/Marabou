@@ -96,7 +96,7 @@ public:
         MaxConstraint max1( f, elements );
         inputQuery1->addPiecewiseLinearConstraint( &max1 );
         MILPEncoder milp1( *tableau1 );
-        milp1.encodeInputQuery( gurobi1, *inputQuery1);
+        milp1.encodeInputQuery( gurobi1, *inputQuery1 );
         gurobi1.solve();
 
         TS_ASSERT( !gurobi1.haveFeasibleSolution() );
@@ -145,7 +145,7 @@ public:
         MaxConstraint max2( f, elements );
         inputQuery2->addPiecewiseLinearConstraint( &max2 );
         MILPEncoder milp2( *tableau2 );
-        milp2.encodeInputQuery( gurobi2, *inputQuery2);
+        milp2.encodeInputQuery( gurobi2, *inputQuery2 );
         gurobi2.solve();
 
         TS_ASSERT( !gurobi2.haveFeasibleSolution() );
@@ -194,7 +194,7 @@ public:
         MaxConstraint max3( f, elements );
         inputQuery3->addPiecewiseLinearConstraint( &max3 );
         MILPEncoder milp3( *tableau3 );
-        milp3.encodeInputQuery( gurobi3, *inputQuery3);
+        milp3.encodeInputQuery( gurobi3, *inputQuery3 );
         gurobi3.solve();
 
         TS_ASSERT( gurobi3.haveFeasibleSolution() );
@@ -202,7 +202,7 @@ public:
         Map<String, double> values3;
         double costOrObjective3;
         
-        gurobi3.extractSolution(values3, costOrObjective3);
+        gurobi3.extractSolution(values3, costOrObjective3 );
         
         double x0_sol3 = values3["x0"];
         double x1_sol3 = values3["x1"];
@@ -258,7 +258,7 @@ public:
         MaxConstraint max4( f, elements );
         inputQuery4->addPiecewiseLinearConstraint( &max4 );
         MILPEncoder milp4( *tableau4 );
-        milp4.encodeInputQuery( gurobi4, *inputQuery4);
+        milp4.encodeInputQuery( gurobi4, *inputQuery4 );
         gurobi4.solve();
 
         TS_ASSERT( gurobi4.haveFeasibleSolution() );
@@ -266,7 +266,7 @@ public:
         Map<String, double> values4;
         double costOrObjective4;
         
-        gurobi4.extractSolution(values4, costOrObjective4);
+        gurobi4.extractSolution(values4, costOrObjective4 );
         
         double x0_sol4 = values4["x0"];
         double x1_sol4 = values4["x1"];
@@ -322,7 +322,7 @@ public:
         MaxConstraint max5( f, elements );
         inputQuery5->addPiecewiseLinearConstraint( &max5 );
         MILPEncoder milp5( *tableau5 );
-        milp5.encodeInputQuery( gurobi5, *inputQuery5);
+        milp5.encodeInputQuery( gurobi5, *inputQuery5 );
         gurobi5.solve();
 
         TS_ASSERT( !gurobi5.haveFeasibleSolution() );

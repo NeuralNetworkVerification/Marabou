@@ -88,7 +88,7 @@ private:
       Get umax max(u_j) where j != i
     */
     double getUmax( const double *u, int j,
-                     int m);
+                     int m );
 };
 
 #endif // __MILPEncoder_h__

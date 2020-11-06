@@ -170,7 +170,7 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     i = 0;
     for ( const auto &x : xs ) {
         // add constraint: y <= x_i + (1 - a_i) * (umax - l)
-        double umax = getUmax(ubs, i, m);
+        double umax = getUmax( ubs, i, m );
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", y ) ) );
         terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", x ) ) );
         terms.append( GurobiWrapper::Term( umax - _tableau.getLowerBound( x ), Stringf( "a%u", x ) ) );
@@ -181,7 +181,7 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
         // add constraint: y >= x_i
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", y ) ) );
         terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", x ) ) );
-        gurobi.addGeqConstraint( terms, 0);
+        gurobi.addGeqConstraint( terms, 0 );
 
         terms.clear();
         
@@ -190,21 +190,21 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
 }
 
 double MILPEncoder::getUmax( const double *ubs, int j,
-                              int m)
+                              int m )
 {
     int umaxIndex = -1;
     
-    for (int i = 0; i < m; i++) {
-        if (i == j) {
+    for ( int i = 0; i < m; i++ ) {
+        if ( i == j ) {
             continue;
         }
 
-        if (umaxIndex == -1) {
+        if ( umaxIndex == -1 ) {
             umaxIndex = i;
             continue;
         }
 
-        if (ubs[umaxIndex] < ubs[i]) {
+        if ( ubs[umaxIndex] < ubs[i] ) {
             umaxIndex = i;
         }
     }
