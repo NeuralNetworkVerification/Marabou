@@ -533,6 +533,10 @@ private:
       Extract the satisfying assignment from the MILP solver
     */
     void extractSolutionFromGurobi( InputQuery &inputQuery );
+
+    /*Prints coefficents of Simplex equations that witness UNSAT
+    */
+    void Engine::printSimplexUNSATCertificate();
 };
 
 #endif // __Engine_h__

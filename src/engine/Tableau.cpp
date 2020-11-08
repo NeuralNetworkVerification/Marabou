@@ -2570,6 +2570,26 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
     return true;
 }
 
+
+//Omri's Addition
+void Tableau::getInfeasibleRow(TableauRow* row) 
+{
+    double result = 0;
+    for (unsigned i = 0; i < _m; ++i)
+    {
+        if (basicTooLow(i))
+        {
+            Tableau::getTableauRow(i, row);
+        }
+        else if (basicTooHigh(i))
+        {
+            printf("%d\n", i);
+            Tableau::getTableauRow(i, row);
+        }
+    }
+}
+
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

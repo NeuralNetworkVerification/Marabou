@@ -633,6 +633,12 @@ private:
     void verifyInvariants();
 
     static String basicStatusToString( unsigned status );
+    
+    /*
+    * Finds a row with its basic variable either too high or too low.
+    * Puts it in  the input parameter.
+    */
+    void Tableau::getInfeasibleRow(TableauRow* row);
 };
 
 #endif // __Tableau_h__

@@ -10,7 +10,6 @@
  ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
-
  **/
 
 #ifndef __GlobalConfiguration_h__
@@ -66,7 +65,7 @@ public:
     static const bool USE_HARRIS_RATIO_TEST;
 
     // Toggle query-preprocessing on/off.
-	static const bool PREPROCESS_INPUT_QUERY;
+    static const bool PREPROCESS_INPUT_QUERY;
 
     // Assuming the preprocessor is on, toggle whether or not it will attempt to perform variable
     // elimination.
@@ -197,7 +196,7 @@ public:
     */
 
     // The number of accumualted eta matrices, after which the basis will be refactorized
-	static const unsigned REFACTORIZATION_THRESHOLD;
+    static const unsigned REFACTORIZATION_THRESHOLD;
 
     // The kind of basis factorization algorithm in use
     enum BasisFactorizationType {
@@ -216,6 +215,14 @@ public:
     /* The max number of DnC splits
     */
     static const unsigned DNC_DEPTH_THRESHOLD;
+
+    /*Toggle bound tightening on or off
+    */
+    static const bool GlobalConfiguration::BOUND_TIGHTENING;
+
+    /*Provide proof certificate
+    */
+    static const bool GlobalConfiguration::PROOF_CERTIFICATE;
 
 #ifdef ENABLE_GUROBI
     /*

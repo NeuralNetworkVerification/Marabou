@@ -179,6 +179,10 @@ public:
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
     virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
+    
+    
+    virtual void getInfeasibleRow(TableauRow* row) = 0 ;
+
 };
 
 #endif // __ITableau_h__
