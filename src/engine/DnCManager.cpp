@@ -48,7 +48,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     getCPUId( cpuId );
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
-    engine->processInputQuery( *inputQuery );
+    engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
@@ -120,7 +120,6 @@ void DnCManager::solve()
 
     struct timespec startTime = TimeUtils::sampleMicro();
 
-
     unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
     // Preprocess the input query and create an engine for each of the threads
@@ -167,8 +166,7 @@ void DnCManager::solve()
     {
         // Get the processed input query from the base engine
         auto inputQuery = std::unique_ptr<InputQuery>
-            ( new InputQuery() );
-        *inputQuery = *_baseInputQuery;
+            ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
                                         std::move( inputQuery ),
                                         std::ref( _numUnsolvedSubQueries ),
@@ -407,11 +405,3 @@ void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
     _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
         timeoutInMicroSeconds;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

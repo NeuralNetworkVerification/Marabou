@@ -136,6 +136,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
  private:
     unsigned _f;
     Set<unsigned> _elements;
+    Set<unsigned> _initialElements;
 
     unsigned _maxIndex;
     bool _maxIndexSet;

@@ -34,6 +34,7 @@
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     : _f( f )
     , _elements( elements )
+    , _initialElements( elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
@@ -94,10 +95,10 @@ void MaxConstraint::registerAsWatcher( ITableau *tableau )
 
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
-    for ( unsigned element : _elements )
+    for ( unsigned element : _initialElements )
         tableau->unregisterToWatchVariable( this, element );
 
-    if ( !_elements.exists( _f ) )
+    if ( !_initialElements.exists( _f ) )
         tableau->unregisterToWatchVariable( this, _f );
 }
 

@@ -28,6 +28,7 @@ set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
 set(MARABOU_PY MarabouCore)
 
+set(DEPS_DIR "${PROJECT_SOURCE_DIR}/deps")
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
@@ -43,6 +44,13 @@ if (NOT OPENBLAS_DIR)
 endif()
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
+set(CVC4_DIR "${DEPS_DIR}/CVC4")
+
+set(CONTEXT_DIR "${CVC4_DIR}/context")
+set(CVC4_BASE_DIR "${CVC4_DIR}/base")
+file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
+file(GLOB DEPS_CVC4_BASE "${CVC4_BASE_DIR}/*.cpp")
+include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
 set(OPENBLAS_LIB openblas)
 
@@ -72,7 +80,7 @@ ProcessorCount(CTEST_NTHREADS)
 if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
 endif()
-
+ 
 # --------------- set build type ----------------------------
 set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
 
@@ -85,7 +93,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message(STATUS "Building ${CMAKE_BUILD_TYPE} build")
 
-
 #-------------------------set code coverage----------------------------------#
 # Allow coverage only in debug mode only in gcc
 if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MATCHES Debug)
@@ -95,10 +102,10 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_BUILD_TYPE MA
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
-
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
-add_library(${MARABOU_LIB} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
+add_library(${MARABOU_LIB} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
+
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
 set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
 add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
@@ -146,8 +153,6 @@ endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
-
-
 
 # Boost
 if (MSVC)
@@ -247,11 +252,9 @@ endif()
 target_include_directories(${MARABOU_LIB} PRIVATE ${LIBS_INCLUDES})
 target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 
-
 # Build marabou executable
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
-
 
 # Build Python marabou
 if (${FORCE_PYTHON_BUILD})
@@ -291,8 +294,6 @@ if (${BUILD_PYTHON})
     endif()
 endif()
 
-
-
 add_library(${MARABOU_TEST_LIB})
 set (TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
 file(MAKE_DIRECTORY ${TEST_DIR})
@@ -306,17 +307,14 @@ if(CXXTEST_FOUND)
 endif()
 
 target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
-target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES})
+target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES} )
 target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
-
-
 
 add_custom_target(build-tests ALL)
 
 add_custom_target(check
       COMMAND ctest --output-on-failure -j${CTEST_NTHREADS} $$ARGS
       DEPENDS build-tests build_input_parsers ${MARABOU_EXE})
-
 
 # Decide which tests to run and execute
 set(TESTS_TO_RUN "")
@@ -372,6 +370,7 @@ add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
 add_subdirectory(${REGRESS_DIR})
+
 
 execute_process(
   COMMAND git rev-parse --abbrev-ref HEAD

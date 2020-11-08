@@ -210,52 +210,49 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
             if ( -bound > _lowerBounds[_b] )
                 _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
 
-            if ( _auxVarsInUse && _lowerBounds.exists( _b ) )
+            if ( _auxVarsInUse )
             {
-                // And also the upper bounds of both aux variables
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _posAux, bound - _lowerBounds[_b] );
+                if ( _lowerBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _posAux, bound - _lowerBounds[_b] );
+                }
 
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _negAux, bound + _lowerBounds[_b] );
+                if ( _upperBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _negAux, bound + _upperBounds[_b] );
+                }
             }
         }
         else if ( _auxVarsInUse )
         {
             if ( variable == _posAux )
             {
-                // posAux.ub = f.ub - b.lb, and so this tightening can cause:
-                //    1. f.ub = b.lb + posAux.ub
-                //    2. b.lb = f.ub - posAux.ub
-
-                if ( _lowerBounds.exists( _b ) )
+                if ( _upperBounds.exists( _b ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterUpperBound( _f, _lowerBounds[_b] + bound );
+                        registerTighterUpperBound( _f, _upperBounds[_b] + bound );
                 }
 
-                if ( _upperBounds.exists( _f ) )
+                if ( _lowerBounds.exists( _f ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterLowerBound( _b, _upperBounds[_f] - bound );
+                        registerTighterLowerBound( _b, _lowerBounds[_f] - bound );
                 }
             }
             else if ( variable == _negAux )
             {
-                // negAux.ub = f.ub + b.ub, and so this tightening can cause:
-                //    1. f.ub = negAux.ub - b.ub
-                //    2. b.ub = negAux.ub - f.ub
-
-                if ( _upperBounds.exists( _b ) )
+                if ( _lowerBounds.exists( _b ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterUpperBound( _f, bound - _upperBounds[_b] );
+                        registerTighterUpperBound( _f, bound - _lowerBounds[_b] );
                 }
 
-                if ( _upperBounds.exists( _f ) )
+                if ( _lowerBounds.exists( _f ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterUpperBound( _b, bound - _upperBounds[_f] );
+                        registerTighterUpperBound( _b, bound - _lowerBounds[_f] );
                 }
             }
         }
