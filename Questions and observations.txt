@@ -1,0 +1,15 @@
+Questions:
+1. What is explicitBasisBoundTightening()?
+2. 
+
+
+Observations:
+1. In the example from Chvatals book - Engine catches infeasible exception when calling the 
+explicitBasisBoundTightening() function.
+In second example (from Guy's lecture) - Marabou concludes that the formula is UNSAT from query preprocessing.
+
+
+Future Step:
+1. Handle general bound tightening.
+2. Handle infeasibility from preprocessing bound tightening.
+3. Handle infeasibility from BasisBoundTightening

@@ -638,7 +638,7 @@ private:
     * Finds a row with its basic variable either too high or too low.
     * Puts it in  the input parameter.
     */
-    void Tableau::getInfeasibleRow(TableauRow* row);
+    int Tableau::getInfeasibleRow(TableauRow* row);
 };
 
 #endif // __Tableau_h__

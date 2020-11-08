@@ -307,8 +307,6 @@ bool Engine::solve(unsigned timeoutInSeconds)
                     printf("\nEngine::solve: unsat query\n");
                     _statistics.print();
                 }
-                //Should consider the case of bound-tightening UNSAT
-                printSimplexUNSATCertificate();
                 _exitCode = Engine::UNSAT;
                 return false;
             }
@@ -509,6 +507,8 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps(TimeUtils::timePassed(start, end));
+            //Should consider the case of bound-tightening UNSAT
+            printSimplexUNSATCertificate();
             throw InfeasibleQueryException();
         }
     }
@@ -1126,8 +1126,6 @@ bool Engine::processInputQuery(InputQuery& inputQuery, bool preprocess)
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime(TimeUtils::timePassed(start, end));
-
-
         _exitCode = Engine::UNSAT;
         return false;
     }
@@ -2296,16 +2294,18 @@ void Engine::printSimplexUNSATCertificate()
         coeff[i] = 0;
 
     TableauRow row = TableauRow(n);
-    _tableau->getInfeasibleRow(&row);
-    row.dump();
+    int success = _tableau->getInfeasibleRow(&row);
 
-    for (int i = 0; i < row._size; ++i)
-        if (row._row[i]._var >= n - m) // If var was part of original basis, store the relevant coefficient
-            coeff[row._row[i]._var - n + m] = row._row[i]._coefficient;
+    if (success) {
+        for (int i = 0; i < row._size; ++i)
+            if (row._row[i]._var >= n - m) // If var was part of original basis, store the relevant coefficient
+                coeff[row._row[i]._var - n + m] = row._row[i]._coefficient;
 
-    if (row._lhs >= n - m) //If the lhs was part of original basis, its coefficient is -1
-        coeff[row._lhs - n + m] = -1;
-
-    for (int i = 0; i < m; ++i)
-        printf("%.2lf ,", coeff[i]);
+        if (row._lhs >= n - m) //If the lhs was part of original basis, its coefficient is -1
+            coeff[row._lhs - n + m] = -1;
+        printf("The coefficents witness infeasibility are:\n");
+        for (int i = 0; i < m; ++i)
+            printf("%.2lf ,", coeff[i]);
+    }
+   
 }

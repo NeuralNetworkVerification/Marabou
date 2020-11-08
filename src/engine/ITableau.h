@@ -181,7 +181,7 @@ public:
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     
     
-    virtual void getInfeasibleRow(TableauRow* row) = 0 ;
+    virtual int getInfeasibleRow(TableauRow* row) = 0 ;
 
 };
 

@@ -56,7 +56,7 @@ const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 const bool GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING = true;
 const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000005;
 
-const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
+const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = false; //TODO change back to true
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
@@ -76,7 +76,7 @@ const double GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
 const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
-GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
+GlobalConfiguration::DISABLE_EXPLICIT_BASIS_TIGHTENING; //TODO change back to COMPUTE_INVERTED_BASIS_MATRIX
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
@@ -87,7 +87,7 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
-const bool GlobalConfiguration::BOUND_TIGHTENING = false;
+const bool GlobalConfiguration::BOUND_TIGHTENING = false;  //TODO change to true
 const bool GlobalConfiguration::PROOF_CERTIFICATE = false;
 
 #ifdef ENABLE_GUROBI
