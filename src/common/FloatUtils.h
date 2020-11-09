@@ -21,6 +21,7 @@
 #include "MString.h"
 
 #include <cfloat>
+#include <cmath>
 #include <math.h>
 
 #ifdef _WIN32

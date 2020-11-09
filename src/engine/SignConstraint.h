@@ -16,7 +16,6 @@
 #ifndef __SignConstraint_h__
 #define __SignConstraint_h__
 
-#include <cmath>
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
