@@ -12,9 +12,6 @@
  ** [[ Add lengthier description here ]]
  **/
 
-
-#include <cstdlib>
-
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
