@@ -253,7 +253,19 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in topological order %u",
                                   other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
 
-        ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size()
+        unsigned numberOfDisjunctions = 0;
+        for ( const auto &constraint : other._plConstraints )
+        {
+            if ( constraint->getType() == DISJUNCTION )
+             {
+                 auto *newPlc = constraint->duplicateConstraint();
+                 _plConstraints.append( newPlc );
+                 ++numberOfDisjunctions;
+             }
+        }
+
+        ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() +
+                numberOfDisjunctions
                 == other._plConstraints.size() );
 
         for ( const auto &constraint : other._networkLevelReasoner->

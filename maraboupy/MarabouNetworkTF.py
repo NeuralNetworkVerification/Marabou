@@ -877,13 +877,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             newUpperBounds[reassignMap[var]] = self.upperBounds[var]
         self.lowerBounds = newLowerBounds
         self.upperBounds = newUpperBounds
-        
-        # Adjust constraint variables list
-        newVarsParticipatingInConstraints = set()
-        for var in self.varsParticipatingInConstraints:
-            newVarsParticipatingInConstraints.add(reassignMap[var])
-        self.varsParticipatingInConstraints = newVarsParticipatingInConstraints
-            
+
         # Assign output variables to the new array
         self.outputVars = newOutVars.reshape(self.outputShape)
         self.varMap[self.outputOp] = self.outputVars 
@@ -905,7 +899,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.concat(op)
         elif op.node_def.op == "Transpose":
             self.transpose(op)
-        
+
         # These operations do require new equations
         elif op.node_def.op == 'MatMul':
             self.matMulEquations(op)
@@ -921,7 +915,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.signEquations(op)
         elif op.node_def.op == 'MaxPool':
             self.maxpoolEquations(op)
-            
+
         # If we've recursed to find a Placeholder operation, this operation needs to be added the inputName list
         elif op.node_def.op == 'Placeholder':
             raise RuntimeError("The output %s depends on placeholder %s.\nPlease add '%s' to the inputName list." % (self.outputOp.node_def.name, op.node_def.name, op.node_def.name))

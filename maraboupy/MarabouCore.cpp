@@ -25,7 +25,9 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "AcasParser.h"
+#include "CommonError.h"
 #include "DnCManager.h"
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
@@ -136,10 +138,50 @@ bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
   return true;
 }
 
+void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equation>>
+                              &disjuncts ){
+    List<PiecewiseLinearCaseSplit> disjunctList;
+    for ( const auto &disjunct : disjuncts )
+    {
+        PiecewiseLinearCaseSplit split;
+        for ( const auto &eq : disjunct )
+        {
+            if ( eq._addends.size() == 1 )
+            {
+                // Add bounds as tightenings
+                unsigned var = eq._addends.front()._variable;
+                unsigned coeff = eq._addends.front()._coefficient;
+                if ( coeff == 0 )
+                    throw CommonError( CommonError::DIVISION_BY_ZERO,
+                                       "AddDisjunctionConstraint: zero coefficient encountered" );
+                double scalar = eq._scalar / coeff;
+                Equation::EquationType type = eq._type;
+
+                if ( type == Equation::EQ )
+                {
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
+                }
+                else if ( type == Equation::GE || coeff < 0 )
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
+                else if ( type == Equation::LE || coeff < 0 )
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
+            }
+            else
+            {
+                split.addEquation( eq );
+            }
+        }
+        disjunctList.append( split );
+    }
+    ipq.addPiecewiseLinearConstraint(new DisjunctionConstraint(disjunctList));
+}
+
 struct MarabouOptions {
     MarabouOptions()
         : _snc( Options::get()->getBool( Options::DNC_MODE ) )
         , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
+        , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
@@ -156,6 +198,7 @@ struct MarabouOptions {
     // Bool options
     Options::get()->setBool( Options::DNC_MODE, _snc );
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
+    Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -175,6 +218,7 @@ struct MarabouOptions {
 
     bool _snc;
     bool _restoreTreeStates;
+    bool _solveWithMILP;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -330,6 +374,14 @@ PYBIND11_MODULE(MarabouCore, m) {
             f (int): Output variable
         )pbdoc",
         py::arg("inputQuery"), py::arg("b"), py::arg("f"));
+    m.def("addDisjunctionConstraint", &addDisjunctionConstraint, R"pbdoc(
+        Add a disjunction constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            disjuncts (list of pairs): A list of disjuncts. Each disjunct is represented by a pair: a list of bounds, and a list of (in)equalities.
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("disjuncts"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
@@ -357,6 +409,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);

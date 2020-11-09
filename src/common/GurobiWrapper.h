@@ -126,6 +126,8 @@ private:
 
     void freeModelIfNeeded();
     void freeMemoryIfNeeded();
+
+    static void log( const String &message );
 };
 
 #else
@@ -175,6 +177,7 @@ public:
     void setTimeLimit( double ) {};
     double getObjectiveBound() { return 0; };
     void dump() {}
+    static void log( const String & );
 };
 
 #endif // ENABLE_GUROBI

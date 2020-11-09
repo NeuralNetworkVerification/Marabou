@@ -171,28 +171,6 @@ public:
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     /*
-      MILP solver bound tighening options
-    */
-    enum MILPSolverBoundTighteningType {
-        // Only encode pure linear constraints in the underlying
-        // solver, in a way that over-approximates the query
-        LP_RELAXATION = 0,
-        LP_RELAXATION_INCREMENTAL = 1,
-        // Encode linear and integer constraints in the underlying
-        // solver, in a way that completely captures the query but is
-        // more expensive to solve
-        MILP_ENCODING = 2,
-        MILP_ENCODING_INCREMENTAL = 3,
-        // Option to have no MILP bound tightening performed
-        NONE = 4,
-    };
-
-    static const MILPSolverBoundTighteningType MILP_SOLVER_BOUND_TIGHTENING_TYPE;
-
-    // The timeout value for an individual query of the MILP solver
-    static const unsigned MILPSolverTimeoutValueInSeconds;
-
-    /*
       Symbolic bound tightening options
     */
 
@@ -244,6 +222,7 @@ public:
       The number of threads Gurobi spawns
     */
     static const unsigned GUROBI_NUMBER_OF_THREADS;
+    static const bool GUROBI_LOGGING;
 #endif // ENABLE_GUROBI
 
     /*
