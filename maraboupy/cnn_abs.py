@@ -59,11 +59,11 @@ model = tf.keras.Sequential(
 model.summary()
 
 batch_size = 128
-epochs = 10
+epochs = 3
 
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
-#model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
+model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
 score = model.evaluate(x_test, y_test, verbose=0)
 print("Test loss:", score[0])
@@ -100,18 +100,17 @@ orig_b = model.get_layer(name="c2").get_weights()[1]
 replace_w = np.zeros(replace_dense.get_weights()[0].shape)
 mask = np.ones(c2out[1:-1]) #Mask is not considering different channels
 
-print("Start process"))
+print("Start process")
 strides = c2.strides
 filter_dim = orig_w.shape[0:-2]
-soff = [np.prod(orig_w.shape[i:]) for i in range(len(orig_w.shape))]
-toff = [np.prod(orig_w.shape[i:]) for i in range(len(c2out[1:]))]
+soff = [np.prod(orig_w.shape[i+1:-1]) for i in range(len(orig_w.shape[:-2]))] + [1]
+toff = [np.prod(c2out[i+2:]) for i in range(len(c2out)-2)] + [1]
 print(orig_w.shape)
 print(filter_dim)
 print(soff)
+print(c2out)
 print(toff)
-for target_coor in product(*[range(d) for d in c2out[1:-1]]):
-    print(target_coor)
-    print(mask.shape)
+for target_coor in product(*[range(d) for d in c2out[1:-1]]):       
     if mask[target_coor]:
         for source_coor, wMat in zip(product(*[[i*s+t for i in range(d)] for d,s,t in zip(filter_dim, strides, target_coor)]), [orig_w[c] for c in product(*[range(d) for d in filter_dim])]):
             for in_ch in range(orig_w.shape[-2]):
@@ -123,24 +122,23 @@ for target_coor in product(*[range(d) for d in c2out[1:-1]]):
 
 replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))
 replace_dense.set_weights([replace_w, replace_b])
-print("After Change")
-print([np.all(w1==w2) for w1,w2 in zip(replace_dense.get_weights(), modelAbs.get_layer(name="dReplace").get_weights())])
-print("Weights")
-print(modelAbs.get_layer(name="dReplace").get_weights())
+#print("After Change")
+#print([np.all(w1==w2) for w1,w2 in zip(replace_dense.get_weights(), modelAbs.get_layer(name="dReplace").get_weights())])
+#print("Weights")
+#print(modelAbs.get_layer(name="dReplace").get_weights())
 
 score = modelAbs.evaluate(x_test, y_test, verbose=0)
 print("Test loss:", score[0])
 print("Test accuracy:", score[1])
 
-#if any([model.predict(x) != modelAbs.predict(x) for x in x_test]):
-
-
-if np.all(modelAbs.predict(x_test) == model.predict(x_test)):
-    print("Prediction aligned")
+evals = modelAbs.predict(x_test) == model.predict(x_test)
+if np.all(evals):
+    print("Prediction aligned")    
 else:
     print("Prediction not aligned")
+    print(evals)
 
 
-[print(w.shape) for w in  model.get_layer(name="c2").get_weights()]
-print("Dense")
-[print(w.shape) for w in  modelAbs.get_layer(name="dReplace").get_weights()]
+#[print(w.shape) for w in  model.get_layer(name="c2").get_weights()]
+#print("Dense")
+#[print(w.shape) for w in  modelAbs.get_layer(name="dReplace").get_weights()]
