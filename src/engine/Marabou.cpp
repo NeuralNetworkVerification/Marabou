@@ -146,7 +146,7 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         if ( _inputQuery._networkLevelReasoner )
         {
-            double input[_inputQuery.getNumInputVariables()];
+            double *input = new double[_inputQuery.getNumInputVariables()];
             for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
                 input[i] = _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) );
 
@@ -161,6 +161,7 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
             for ( unsigned i = 0; i < lastLayer->getSize(); ++i )
                 printf( "\ty%u = %lf\n", i, output[i] );
             printf( "\n" );
+            delete[] input;
         }
         else
         {
