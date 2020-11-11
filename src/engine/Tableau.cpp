@@ -2571,18 +2571,13 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 }
 
 
-//Omri's Addition
+
 int Tableau::getInfeasibleRow(TableauRow* row) 
 {
     double result = 0;
     for (unsigned i = 0; i < _m; ++i)
     {
-        if (basicTooLow(i))
-        {
-            Tableau::getTableauRow(i, row);
-            return 1;
-        }
-        else if (basicTooHigh(i))
+        if (basicOutOfBounds(i))
         {
             Tableau::getTableauRow(i, row);
             return 1;

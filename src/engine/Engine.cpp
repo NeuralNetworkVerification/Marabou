@@ -1126,6 +1126,7 @@ bool Engine::processInputQuery(InputQuery& inputQuery, bool preprocess)
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime(TimeUtils::timePassed(start, end));
+
         _exitCode = Engine::UNSAT;
         return false;
     }

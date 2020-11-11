@@ -1,6 +1,8 @@
 Questions:
 1. What is explicitBasisBoundTightening()?
-2. 
+2. What is performMILPSolverBoundedTightening()?
+3. When should the preprocessor declare UNSAT. What would be a sufficient certificate (Maybe vector of 1?)?
+4. What is solveWithMILPEncoding()?
 
 
 Observations:
@@ -9,7 +11,9 @@ explicitBasisBoundTightening() function.
 In second example (from Guy's lecture) - Marabou concludes that the formula is UNSAT from query preprocessing.
 
 
-Future Step:
+Future Steps:
 1. Handle general bound tightening.
-2. Handle infeasibility from preprocessing bound tightening.
+2. Handle infeasibility from query preprocessing bound tightening.
 3. Handle infeasibility from BasisBoundTightening
+4. Consult Guy - should it be better to return certificate upon throwing an infeasibility Exception or upon catching it?
+5. Add a constructor argument to infeasibleQueryException, that has the line which lead to infeasibility.
