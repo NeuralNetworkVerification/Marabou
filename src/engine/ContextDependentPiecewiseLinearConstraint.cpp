@@ -12,28 +12,45 @@
  ** A context dependent implementation of ContextDependentPiecewiseLinearConstraint class
  **/
 
-include "ContextDependentPiecewiseLinearConstraint.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
+
 #include "Statistics.h"
 
-    ContextDependentPiecewiseLinearConstraint::ContextDependentPiecewiseLinearConstraint()
-   : _context( nullptr )
+ContextDependentPiecewiseLinearConstraint::ContextDependentPiecewiseLinearConstraint()
+   : _numCases( 0 )
+   , _boundManager( nullptr )
+   , _context( nullptr )
    , _cdConstraintActive( nullptr )
    , _cdPhaseStatus( nullptr )
    , _cdInfeasibleCases( nullptr )
-   , _numCases( 0 )
-   , _boundManager( nullptr )
 {
 }
 
 ContextDependentPiecewiseLinearConstraint::ContextDependentPiecewiseLinearConstraint(
     unsigned numCases )
-   : _context( nullptr )
+   : _numCases( numCases )
+   , _boundManager( nullptr )
+   , _context( nullptr )
    , _cdConstraintActive( nullptr )
    , _cdPhaseStatus( nullptr )
    , _cdInfeasibleCases( nullptr )
-   , _numCases( numCases )
-   , _boundManager( nullptr )
 {
+}
+
+void ContextDependentPiecewiseLinearConstraint::setActiveConstraint( bool active )
+{
+    if ( nullptr != _cdConstraintActive )
+        *_cdConstraintActive = active;
+    else
+        _constraintActive = active;
+}
+
+bool ContextDependentPiecewiseLinearConstraint::isActive() const
+{
+    if ( nullptr != _cdConstraintActive )
+        return *_cdConstraintActive;
+    else
+        return _constraintActive;
 }
 
 void ContextDependentPiecewiseLinearConstraint::registerBoundManager(
@@ -101,8 +118,7 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::getPhaseStatus() const
     if ( nullptr != _cdPhaseStatus )
         return *_cdPhaseStatus;
     else
-        return static_cast<PhaseStatus>(
-            _phaseStatus ); // TODO: Remove cast at integration.
+        return _phaseStatus;
 }
 
 void ContextDependentPiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phaseStatus )
@@ -110,8 +126,7 @@ void ContextDependentPiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phas
     if ( nullptr != _cdPhaseStatus )
         *_cdPhaseStatus = phaseStatus;
     else
-        _phaseStatus =
-            static_cast<unsigned>( phaseStatus ); // TODO: Remove cast at integration.
+        _phaseStatus = phaseStatus;
 }
 
 void ContextDependentPiecewiseLinearConstraint::initializeDuplicatesCDOs(
