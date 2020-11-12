@@ -265,7 +265,8 @@ public:
 
 protected:
     bool _constraintActive;
-	Map<unsigned, double> _assignment;
+    PhaseStatus _phaseStatus;
+    Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
@@ -282,6 +283,20 @@ protected:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Set the phase status of the constraint. Uses the global PhaseStatus
+      enumeration and is initialized to PHASE_NOT_FIXED for all constraints.
+     */
+    void setPhaseStatus( PhaseStatus phase )
+    {
+        _phaseStatus = phase;
+    };
+
+    PhaseStatus getPhaseStatus() const
+    {
+        return _phaseStatus;
+    };
 };
 
 #endif // __PiecewiseLinearConstraint_h__
