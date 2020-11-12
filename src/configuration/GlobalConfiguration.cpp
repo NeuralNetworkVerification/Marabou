@@ -10,6 +10,7 @@
  ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
+
  **/
 
 #include "DivideStrategy.h"
@@ -17,8 +18,8 @@
 #include "MString.h"
 #include <cstdio>
 
- // Use the polarity metrics to decide which branch to take first in a case split
- // and how to repair a ReLU constraint.
+// Use the polarity metrics to decide which branch to take first in a case split
+// and how to repair a ReLU constraint.
 const bool GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS = true;
 
 const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
@@ -48,8 +49,6 @@ const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 10;
 const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
-
-
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
@@ -81,7 +80,7 @@ const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = fal
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
-GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
+    GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
 
 const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 
@@ -109,47 +108,47 @@ const bool GlobalConfiguration::GAUSSIAN_ELIMINATION_LOGGING = false;
 const bool GlobalConfiguration::QUERY_LOADER_LOGGING = false;
 const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = false;
 const bool GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING = false;
-const bool GlobalConfiguration::MPS_PARSER_LOGGING = false;
+const bool GlobalConfiguration::MPS_PARSER_LOGGING= false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;
 
 void GlobalConfiguration::print()
 {
-    printf("****************************\n");
-    printf("*** Global Configuraiton ***\n");
-    printf("****************************\n");
-    printf("  DEFAULT_EPSILON_FOR_COMPARISONS: %.15lf\n", DEFAULT_EPSILON_FOR_COMPARISONS);
-    printf("  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION);
-    printf("  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY);
-    printf("  BOUND_COMPARISON_ADDITIVE_TOLERANCE: %.15lf\n", BOUND_COMPARISON_ADDITIVE_TOLERANCE);
-    printf("  BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE: %.15lf\n", BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE);
-    printf("  PIVOT_CHANGE_COLUMN_TOLERANCE: %.15lf\n", PIVOT_CHANGE_COLUMN_TOLERANCE);
-    printf("  RATIO_CONSTRAINT_ADDITIVE_TOLERANCE: %.15lf\n", RATIO_CONSTRAINT_ADDITIVE_TOLERANCE);
-    printf("  RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE: %.15lf\n", RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE);
-    printf("  BASIC_COSTS_ADDITIVE_TOLERANCE: %.15lf\n", BASIC_COSTS_ADDITIVE_TOLERANCE);
-    printf("  BASIC_COSTS_MULTIPLICATIVE_TOLERANCE: %.15lf\n", BASIC_COSTS_MULTIPLICATIVE_TOLERANCE);
-    printf("  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY);
-    printf("  DEGRADATION_THRESHOLD: %.15lf\n", DEGRADATION_THRESHOLD);
-    printf("  ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD: %.15lf\n", ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD);
-    printf("  USE_COLUMN_MERGING_EQUATIONS: %s\n", USE_COLUMN_MERGING_EQUATIONS ? "Yes" : "No");
-    printf("  GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD: %.15lf\n", GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD);
-    printf("  MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS: %u\n", MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS);
-    printf("  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
-        BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY);
-    printf("  COST_FUNCTION_ERROR_THRESHOLD: %.15lf\n", COST_FUNCTION_ERROR_THRESHOLD);
-    printf("  USE_HARRIS_RATIO_TEST: %s\n", USE_HARRIS_RATIO_TEST ? "Yes" : "No");
+    printf( "****************************\n" );
+    printf( "*** Global Configuraiton ***\n" );
+    printf( "****************************\n" );
+    printf( "  DEFAULT_EPSILON_FOR_COMPARISONS: %.15lf\n", DEFAULT_EPSILON_FOR_COMPARISONS );
+    printf( "  DEFAULT_DOUBLE_TO_STRING_PRECISION: %u\n", DEFAULT_DOUBLE_TO_STRING_PRECISION );
+    printf( "  STATISTICS_PRINTING_FREQUENCY: %u\n", STATISTICS_PRINTING_FREQUENCY );
+    printf( "  BOUND_COMPARISON_ADDITIVE_TOLERANCE: %.15lf\n", BOUND_COMPARISON_ADDITIVE_TOLERANCE );
+    printf( "  BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE: %.15lf\n", BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE );
+    printf( "  PIVOT_CHANGE_COLUMN_TOLERANCE: %.15lf\n", PIVOT_CHANGE_COLUMN_TOLERANCE );
+    printf( "  RATIO_CONSTRAINT_ADDITIVE_TOLERANCE: %.15lf\n", RATIO_CONSTRAINT_ADDITIVE_TOLERANCE );
+    printf( "  RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE: %.15lf\n", RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE );
+    printf( "  BASIC_COSTS_ADDITIVE_TOLERANCE: %.15lf\n", BASIC_COSTS_ADDITIVE_TOLERANCE );
+    printf( "  BASIC_COSTS_MULTIPLICATIVE_TOLERANCE: %.15lf\n", BASIC_COSTS_MULTIPLICATIVE_TOLERANCE );
+    printf( "  DEGRADATION_CHECKING_FREQUENCY: %u\n", DEGRADATION_CHECKING_FREQUENCY );
+    printf( "  DEGRADATION_THRESHOLD: %.15lf\n", DEGRADATION_THRESHOLD );
+    printf( "  ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD: %.15lf\n", ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD );
+    printf( "  USE_COLUMN_MERGING_EQUATIONS: %s\n", USE_COLUMN_MERGING_EQUATIONS ? "Yes" : "No" );
+    printf( "  GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD: %.15lf\n", GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD );
+    printf( "  MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS: %u\n", MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS );
+    printf( "  BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY: %u\n",
+            BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY );
+    printf( "  COST_FUNCTION_ERROR_THRESHOLD: %.15lf\n", COST_FUNCTION_ERROR_THRESHOLD );
+    printf( "  USE_HARRIS_RATIO_TEST: %s\n", USE_HARRIS_RATIO_TEST ? "Yes" : "No" );
 
-    printf("  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No");
-    printf("  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No");
-    printf("  PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS: %s\n",
-        PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS ? "Yes" : "No");
-    printf("  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET);
-    printf("  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD);
-    printf("  RELU_CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", RELU_CONSTRAINT_COMPARISON_TOLERANCE);
+    printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
+    printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
+    printf( "  PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS: %s\n",
+            PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS ? "Yes" : "No" );
+    printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
+    printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
+    printf( "  RELU_CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", RELU_CONSTRAINT_COMPARISON_TOLERANCE );
 
     String basisBoundTighteningType;
-    switch (EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE)
+    switch ( EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
     case COMPUTE_INVERTED_BASIS_MATRIX:
         basisBoundTighteningType = "Compute inverted basis matrix";
@@ -164,25 +163,25 @@ void GlobalConfiguration::print()
         break;
     }
 
-    printf("  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n", basisBoundTighteningType.ascii());
-    printf("  EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION: %s\n",
-        EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION ? "Yes" : "No");
-    printf("  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD);
+    printf( "  EXPLICIT_BASIS_BOUND_TIGHTENING_INVERT_BASIS: %s\n", basisBoundTighteningType.ascii() );
+    printf( "  EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION: %s\n",
+            EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION ? "Yes" : "No" );
+    printf( "  REFACTORIZATION_THRESHOLD: %u\n", REFACTORIZATION_THRESHOLD );
 
     String basisFactorizationType;
-    if (GlobalConfiguration::BASIS_FACTORIZATION_TYPE == GlobalConfiguration::LU_FACTORIZATION)
+    if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE == GlobalConfiguration::LU_FACTORIZATION )
         basisFactorizationType = "LU_FACTORIZATION";
-    else if (GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
-        GlobalConfiguration::SPARSE_LU_FACTORIZATION)
+    else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+              GlobalConfiguration::SPARSE_LU_FACTORIZATION )
         basisFactorizationType = "SPARSE_LU_FACTORIZATION";
-    else if (GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
-        GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION)
+    else if ( GlobalConfiguration::BASIS_FACTORIZATION_TYPE ==
+              GlobalConfiguration::FORREST_TOMLIN_FACTORIZATION )
         basisFactorizationType = "FORREST_TOMLIN_FACTORIZATION";
     else
         basisFactorizationType = "Unknown";
 
-    printf("  BASIS_FACTORIZATION_TYPE: %s\n", basisFactorizationType.ascii());
-    printf("****************************\n");
+    printf( "  BASIS_FACTORIZATION_TYPE: %s\n", basisFactorizationType.ascii() );
+    printf( "****************************\n" );
 }
 
 //
