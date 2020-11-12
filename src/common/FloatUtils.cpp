@@ -54,12 +54,12 @@ String FloatUtils::doubleToString( double x, unsigned precision )
 
 bool FloatUtils::isNan( double x )
 {
-    return isnan( x );
+    return std::isnan( x );
 }
 
 bool FloatUtils::isInf( double x )
 {
-    return isinf( x );
+    return std::isinf( x );
 }
 
 //
