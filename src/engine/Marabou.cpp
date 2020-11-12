@@ -152,7 +152,7 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
             NLR::NetworkLevelReasoner *nlr = _inputQuery._networkLevelReasoner;
             NLR::Layer *lastLayer = nlr->getLayer( nlr->getNumberOfLayers() - 1 );
-            double output[lastLayer->getSize()];
+            double *output = new double[lastLayer->getSize()];
 
             nlr->evaluate( input, output );
 
@@ -162,6 +162,7 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
                 printf( "\ty%u = %lf\n", i, output[i] );
             printf( "\n" );
             delete[] input;
+            delete[] output;
         }
         else
         {
