@@ -693,13 +693,13 @@ void Layer::computeSymbolicBoundsForRelu()
           1. If the ReLU's variable has been externally fixed
           2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
         */
-        ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
+        PhaseStatus reluPhase = PHASE_NOT_FIXED;
 
         // Has the f variable been eliminated or fixed?
         if ( FloatUtils::isPositive( _lb[i] ) )
-            reluPhase = ReluConstraint::PHASE_ACTIVE;
+            reluPhase = RELU_PHASE_ACTIVE;
         else if ( FloatUtils::isZero( _ub[i] ) )
-            reluPhase = ReluConstraint::PHASE_INACTIVE;
+            reluPhase = RELU_PHASE_INACTIVE;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -732,14 +732,14 @@ void Layer::computeSymbolicBoundsForRelu()
         // Has the b variable been fixed?
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
-            reluPhase = ReluConstraint::PHASE_ACTIVE;
+            reluPhase = RELU_PHASE_ACTIVE;
         }
         else if ( !FloatUtils::isPositive( sourceUb ) )
         {
-            reluPhase = ReluConstraint::PHASE_INACTIVE;
+            reluPhase = RELU_PHASE_INACTIVE;
         }
 
-        if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
+        if ( reluPhase == PHASE_NOT_FIXED )
         {
             // If we got here, we know that lbLb < 0 and ubUb
             // > 0 There are four possible cases, depending on
@@ -782,7 +782,7 @@ void Layer::computeSymbolicBoundsForRelu()
         else
         {
             // The phase of this ReLU is fixed!
-            if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
+            if ( reluPhase == RELU_PHASE_ACTIVE )
             {
                 // Active ReLU, bounds are propagated as is
             }
@@ -854,13 +854,13 @@ void Layer::computeSymbolicBoundsForSign()
           1. If the Sign's variable has been externally fixed
           2. lbLb >= 0 (Positive) or ubUb < 0 (Negative)
         */
-        SignConstraint::PhaseStatus signPhase = SignConstraint::PHASE_NOT_FIXED;
+        PhaseStatus signPhase = PHASE_NOT_FIXED;
 
         // Has the f variable been eliminated or fixed?
         if ( !FloatUtils::isNegative( _lb[i] ) )
-            signPhase = SignConstraint::PHASE_POSITIVE;
+            signPhase = SIGN_PHASE_POSITIVE;
         else if ( FloatUtils::isNegative( _ub[i] ) )
-            signPhase = SignConstraint::PHASE_NEGATIVE;
+            signPhase = SIGN_PHASE_NEGATIVE;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -893,14 +893,14 @@ void Layer::computeSymbolicBoundsForSign()
         // Has the b variable been fixed?
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
-            signPhase = SignConstraint::PHASE_POSITIVE;
+            signPhase = SIGN_PHASE_POSITIVE;
         }
         else if ( FloatUtils::isNegative( sourceUb ) )
         {
-            signPhase = SignConstraint::PHASE_NEGATIVE;
+            signPhase = SIGN_PHASE_NEGATIVE;
         }
 
-        if ( signPhase == SignConstraint::PHASE_NOT_FIXED )
+        if ( signPhase == PHASE_NOT_FIXED )
         {
             // If we got here, we know that lbLb < 0 and ubUb
             // > 0
@@ -972,7 +972,7 @@ void Layer::computeSymbolicBoundsForSign()
         {
             // The phase of this Sign is fixed!
             double constant =
-                ( signPhase == SignConstraint::PHASE_POSITIVE ) ? 1 : -1;
+                ( signPhase == SIGN_PHASE_POSITIVE ) ? 1 : -1;
 
             _symbolicLbOfLb[i] = constant;
             _symbolicUbOfLb[i] = constant;
@@ -1033,7 +1033,7 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
             continue;
         }
 
-        AbsoluteValueConstraint::PhaseStatus absPhase = AbsoluteValueConstraint::PHASE_NOT_FIXED;
+        PhaseStatus absPhase = PHASE_NOT_FIXED;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -1061,11 +1061,11 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
         _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
 
         if ( sourceLb >= 0 )
-            absPhase = AbsoluteValueConstraint::PHASE_POSITIVE;
+            absPhase = ABS_PHASE_POSITIVE;
         else if ( sourceUb <= 0 )
-            absPhase = AbsoluteValueConstraint::PHASE_NEGATIVE;
+            absPhase = ABS_PHASE_NEGATIVE;
 
-        if ( absPhase == AbsoluteValueConstraint::PHASE_NOT_FIXED )
+        if ( absPhase == PHASE_NOT_FIXED )
         {
             // If we got here, we know that lbOfLb < 0 < ubOfUb. In this case,
             // we do naive concretization: lb is 0, ub is the max between
@@ -1087,7 +1087,7 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
         else
         {
             // The phase of this AbsoluteValueConstraint is fixed!
-            if ( absPhase == AbsoluteValueConstraint::PHASE_POSITIVE )
+            if ( absPhase == ABS_PHASE_POSITIVE )
             {
                 // Positive AbsoluteValue, bounds are propagated as is
             }
