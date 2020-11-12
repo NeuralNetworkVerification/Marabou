@@ -118,11 +118,11 @@ for target_coor in product(*[range(d) for d in c2out[1:-1]]):
                     print(wMat.shape)
                     if flat_s == 0:
                         print("Flat_s is 0, soff={}, toff={}".format(soff, toff))'''
-                replace_w[flat_s, flat_t] = 1 # wMat[in_ch, out_ch]
+                replace_w[flat_s, flat_t] =  wMat[in_ch, out_ch]
     
 
-#replace_b = np.tile(orig_b, np.prod(c2out[1:-1])) TODO return this is real code
-replace_b = np.tile(np.ones(orig_b.shape), np.prod(c2out[1:-1]))
+replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))
+#replace_b = np.tile(np.ones(orig_b.shape), np.prod(c2out[1:-1]))
 replace_dense.set_weights([replace_w, replace_b])
 #print("After Change")
 #print([np.all(w1==w2) for w1,w2 in zip(replace_dense.get_weights(), modelAbs.get_layer(name="dReplace").get_weights())])
@@ -133,17 +133,20 @@ replace_dense.set_weights([replace_w, replace_b])
 #print("Test loss:", score[0])
 #print("Test accuracy:", score[1])
 
-#evals = modelAbs.predict(x_test) == model.predict(x_test)
+#evals = np.isclose(modelAbs.predict(x_test), model.predict(x_test))
 #if np.all(evals):
 #    print("Prediction aligned")    
 #else:
 #    print("Prediction not aligned")
 #    print(evals)
 
+
+##Debugging code
+
 print("Evaluating")
 c2replaced = model.get_layer(name="c2")
 #c2replaced.set_weights([np.ones(c2replaced.get_weights()[0].shape), c2replaced.get_weights()[1]]) #0.7
-c2replaced.set_weights([np.ones(c2replaced.get_weights()[0].shape), np.ones(c2replaced.get_weights()[1].shape)])
+#c2replaced.set_weights([np.ones(c2replaced.get_weights()[0].shape), np.ones(c2replaced.get_weights()[1].shape)])
 slice_input_shape = c2replaced.input_shape[1:]
 origModelSlice = tf.keras.Sequential(
     [
