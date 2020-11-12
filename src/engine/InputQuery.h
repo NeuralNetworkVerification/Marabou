@@ -167,7 +167,6 @@ private:
                             Map<unsigned, unsigned> &handledVariableToLayer,
                             unsigned newLayerIndex );
 
-
 public:
     /*
       Mapping of input/output variables to their indices.
