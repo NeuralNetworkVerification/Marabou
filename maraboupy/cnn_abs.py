@@ -13,6 +13,28 @@ import numpy as np
 
 import copy
 
+from tensorflow.keras.models import load_model
+cfg_freshModelOrig = True
+cfg_freshModelAbs = True
+savedModelOrig = "cnn_abs_orig.h5"
+savedModelAbs = "cnn_abs_abs.h5"
+
+cfg_dis_w = True
+cfg_dis_b = False
+
+#Log:
+# Passing - True, True
+
+#################################################
+#### _____              _____  _   _  _   _  ####
+####|  __ \            /  __ \| \ | || \ | | ####
+####| |  \/ ___ _ __   | /  \/|  \| ||  \| | ####
+####| | __ / _ \ '_ \  | |    | . ` || . ` | ####
+####| |_\ \  __/ | | | | \__/\| |\  || |\  | ####
+#### \____/\___|_| |_|  \____/\_| \_/\_| \_/ ####
+####                                         ####                                   
+#################################################
+
 print("Starting model building")
 #https://keras.io/examples/vision/mnist_convnet/
 
@@ -34,176 +56,172 @@ x_test = np.expand_dims(x_test, -1)
 print("x_train shape:", x_train.shape)
 print(x_train.shape[0], "train samples")
 print(x_test.shape[0], "test samples")
-    
+
 # convert class vectors to binary class matrices
 y_train = tf.keras.utils.to_categorical(y_train, num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
-model = tf.keras.Sequential(
-    [
-        tf.keras.Input(shape=input_shape),
-        layers.Conv1D(32, kernel_size=(3,), activation="relu", name="c1"),
-        layers.MaxPooling1D(pool_size=(2,), name="mp1"),
-        layers.Conv1D(64, kernel_size=(3,), activation="relu", name="c2"),
-        layers.MaxPooling1D(pool_size=(2,), name="mp2"),
-        layers.Flatten(name="f1"),
-        layers.Dropout(0.5, name="do1"),
-        layers.Dense(num_classes, activation="softmax", name="sm1"),
-    ]
-)
+if cfg_freshModelOrig:
+    modelOrig = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=input_shape),
+            layers.Conv1D(32, kernel_size=(3,), activation="relu", name="c1"),
+            layers.MaxPooling1D(pool_size=(2,), name="mp1"),
+            layers.Conv1D(64, kernel_size=(3,), activation="relu", name="c2"),
+            layers.MaxPooling1D(pool_size=(2,), name="mp2"),
+            layers.Flatten(name="f1"),
+            layers.Dropout(0.5, name="do1"),
+            layers.Dense(num_classes, activation="softmax", name="sm1"),
+        ]
+    )
 
-model.summary()
+    modelOrig.summary()
 
-#batch_size = 128
-batch_size = 60
-epochs = 1
+    #batch_size = 128
+    #epochs = 15
+    batch_size = 60
+    epochs = 1 
 
-model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    modelOrig.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    modelOrig.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
-model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
-
-score = model.evaluate(x_test, y_test, verbose=0)
-print("Test loss:", score[0])
-print("Test accuracy:", score[1])
-
-c2 = model.get_layer(name="c2")
-c2out = c2.output_shape
-replace_dense = layers.Dense(units=np.prod(c2out[1:]),name="dReplace")
-
-print("Clone model")
-modelAbs = tf.keras.Sequential(
-    [
-        tf.keras.Input(shape=input_shape),
-        model.get_layer(name="c1"),
-        model.get_layer(name="mp1"),
-        layers.Flatten(name="FlattenReplace"),
-        replace_dense,
-        layers.Reshape(model.get_layer(name="c2").output_shape[1:], name="reshapeReplace"),
-        #model.get_layer(name="c2"),
-        model.get_layer(name="mp2"),
-        model.get_layer(name="f1"),
-        model.get_layer(name="do1"),
-        model.get_layer(name="sm1")
-    ]
-)
-
-modelAbs.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-modelAbs.summary()
-
-orig_w = model.get_layer(name="c2").get_weights()[0]
-orig_b = model.get_layer(name="c2").get_weights()[1]
-
-replace_w = np.zeros(replace_dense.get_weights()[0].shape)
-mask = np.ones(c2out[1:-1]) #Mask is not considering different channels
-
-print("Start process")
-strides = c2.strides
-filter_dim = orig_w.shape[0:-2]
-soff = [np.prod(orig_w.shape[i+1:-1]) for i in range(len(orig_w.shape[:-2]))] + [1]
-toff = [np.prod(c2out[i+2:]) for i in range(len(c2out)-2)] + [1]
-'''print(orig_w.shape)
-print(filter_dim)
-print(soff)
-print(c2out)
-print(toff)'''
-for target_coor in product(*[range(d) for d in c2out[1:-1]]):       
-    if mask[target_coor]:
-        for source_coor, wMat in zip(product(*[[i*s+t for i in range(d)] for d,s,t in zip(filter_dim, strides, target_coor)]), [orig_w[c] for c in product(*[range(d) for d in filter_dim])]):
-            for in_ch, out_ch in product(range(orig_w.shape[-2]), range(orig_w.shape[-1])):
-                flat_s = sum([c * off for c,off in zip((*source_coor, in_ch) , soff)])
-                flat_t = sum([c * off for c,off in zip((*target_coor, out_ch), toff)])
-                if in_ch == 0 and out_ch == 0:
-                    '''print("coordinates: source_coor={}, in_ch={}, flat_s={}, target_coor={}, out_ch={}, flat_t={}".format(source_coor,in_ch, flat_s,target_coor, out_ch, flat_t))
-                    print(replace_w.shape)
-                    print(wMat.shape)
-                    if flat_s == 0:
-                        print("Flat_s is 0, soff={}, toff={}".format(soff, toff))'''
-                replace_w[flat_s, flat_t] =  wMat[in_ch, out_ch]
-    
-
-replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))
-#replace_b = np.tile(np.ones(orig_b.shape), np.prod(c2out[1:-1]))
-replace_dense.set_weights([replace_w, replace_b])
-#print("After Change")
-#print([np.all(w1==w2) for w1,w2 in zip(replace_dense.get_weights(), modelAbs.get_layer(name="dReplace").get_weights())])
-#print("Weights")
-#print(modelAbs.get_layer(name="dReplace").get_weights())
-
-#score = modelAbs.evaluate(x_test, y_test, verbose=0)
-#print("Test loss:", score[0])
-#print("Test accuracy:", score[1])
-
-#evals = np.isclose(modelAbs.predict(x_test), model.predict(x_test))
-#if np.all(evals):
-#    print("Prediction aligned")    
-#else:
-#    print("Prediction not aligned")
-#    print(evals)
-
-
-##Debugging code
-
-print("Evaluating")
-c2replaced = model.get_layer(name="c2")
-#c2replaced.set_weights([np.ones(c2replaced.get_weights()[0].shape), c2replaced.get_weights()[1]]) #0.7
-#c2replaced.set_weights([np.ones(c2replaced.get_weights()[0].shape), np.ones(c2replaced.get_weights()[1].shape)])
-slice_input_shape = c2replaced.input_shape[1:]
-origModelSlice = tf.keras.Sequential(
-    [
-        tf.keras.Input(shape=slice_input_shape),
-        #model.get_layer(name="c1"),
-        #model.get_layer(name="mp1"),
-        c2replaced
-    ]
-)
-origModelSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-origModelIn = tf.keras.Sequential(
-    [
-        tf.keras.Input(shape=input_shape),
-        model.get_layer(name="c1"),
-        model.get_layer(name="mp1"),
-        #c2replaced
-    ]
-)
-origModelIn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-print("Created orig slice")
-modelAbsSlice = tf.keras.Sequential(
-    [
-        tf.keras.Input(shape=slice_input_shape),
-        #modelAbs.get_layer(name="c1"),
-        #modelAbs.get_layer(name="mp1"),
-        modelAbs.get_layer(name="FlattenReplace"),
-        modelAbs.get_layer(name="dReplace"),
-        modelAbs.get_layer(name="reshapeReplace")
-    ]
-)
-modelAbsSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-print("Created abs slice")
-
-'''slice_test = np.array([
-    np.ones(slice_input_shape),
-    np.zeros(slice_input_shape)
-    ])'''
-slice_test = origModelIn.predict(x_test[:10])
-evalsSlice = np.isclose(modelAbsSlice.predict(slice_test),origModelSlice.predict(slice_test))
-if np.all(evalsSlice):
-    print("Slice Prediction aligned")
-    print(modelAbsSlice.predict(slice_test))
-    print([np.unique(modelAbsSlice.predict(slice_test))])
+    #score = modelOrig.evaluate(x_test, y_test, verbose=0)
+    #print("Test loss:", score[0])
+    #print("Test accuracy:", score[1])
+    modelOrig.save(savedModelOrig)  # creates a HDF5 file 'my_model.h5'
 else:
-    print("Slice Prediction not aligned")
-    print(evalsSlice)
-    print(np.mean([1 if b else 0 for b in np.nditer(evalsSlice)]))
+    modelOrig = load_model(savedModelOrig)
 
-    for origM, absM, e in zip(np.nditer(origModelSlice.predict(slice_test)), np.nditer(modelAbsSlice.predict(slice_test)), np.nditer(evalsSlice)):
-        if not e:
-            if not np.isclose(origM, absM):
-                print("False:")
-                print("orig: {} = {}".format(origM, np.round(origM, 4)))
-                print("abs:  {} = {}".format(absM,  np.round(absM, 4)))
+#################################################################################
+#### _____ _                              ______           _                 ####
+####/  __ \ |                     ___     | ___ \         | |                ####
+####| /  \/ | ___  _ __   ___    ( _ )    | |_/ /___ _ __ | | __ _  ___ ___  ####
+####| |   | |/ _ \| '_ \ / _ \   / _ \/\  |    // _ \ '_ \| |/ _` |/ __/ _ \ ####
+####| \__/\ | (_) | | | |  __/  | (_>  <  | |\ \  __/ |_) | | (_| | (_|  __/ ####
+#### \____/_|\___/|_| |_|\___|   \___/\/  \_| \_\___| .__/|_|\__,_|\___\___| ####
+####                                                | |                      ####
+####                                                |_|                      ####
+#################################################################################
 
+if cfg_freshModelAbs:
+    
+    c2out = modelOrig.get_layer(name="c2").output_shape
+    replace_dense = layers.Dense(units=np.prod(c2out[1:]),name="dReplace")
+    strides = modelOrig.get_layer(name="c2").strides
 
+    print("Clone modelOrig")
+    modelAbs = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=input_shape),
+            modelOrig.get_layer(name="c1"),
+            modelOrig.get_layer(name="mp1"),
+            layers.Flatten(name="FlattenReplace"),
+            replace_dense,
+            layers.Reshape(modelOrig.get_layer(name="c2").output_shape[1:], name="reshapeReplace"),
+            modelOrig.get_layer(name="mp2"),
+            modelOrig.get_layer(name="f1"),
+            modelOrig.get_layer(name="do1"),
+            modelOrig.get_layer(name="sm1")
+        ]
+    )
 
-#[print(w.shape) for w in  model.get_layer(name="c2").get_weights()]
-#print("Dense")
-#[print(w.shape) for w in  modelAbs.get_layer(name="dReplace").get_weights()]
+    modelAbs.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    modelAbs.summary()
+
+    orig_w = modelOrig.get_layer(name="c2").get_weights()[0]
+    orig_b = modelOrig.get_layer(name="c2").get_weights()[1]
+    replace_w = np.zeros(replace_dense.get_weights()[0].shape)
+    mask = np.ones(c2out[1:-1]) #Mask is not considering different channels
+    filter_dim = orig_w.shape[0:-2]
+    soff = [np.prod(orig_w.shape[i+1:-1]) for i in range(len(orig_w.shape[:-2]))] + [1]
+    toff = [np.prod(c2out[i+2:]) for i in range(len(c2out)-2)] + [1]
+
+    for target_coor in product(*[range(d) for d in c2out[1:-1]]):
+        if mask[target_coor]:
+            for source_coor, wMat in zip(product(*[[i*s+t for i in range(d)] for d,s,t in zip(filter_dim, strides, target_coor)]), [orig_w[c] for c in product(*[range(d) for d in filter_dim])]):
+                for in_ch, out_ch in product(range(orig_w.shape[-2]), range(orig_w.shape[-1])):
+                    flat_s = sum([c * off for c,off in zip((*source_coor, in_ch) , soff)])
+                    flat_t = sum([c * off for c,off in zip((*target_coor, out_ch), toff)])                
+                    replace_w[flat_s, flat_t] =   np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
+
+    replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))
+    replace_dense.set_weights([replace_w, replace_b])
+
+    #score = modelAbs.evaluate(x_test, y_test, verbose=0)
+    #print("Test loss:", score[0])
+    #print("Test accuracy:", score[1])
+
+    if np.all(np.isclose(modelAbs.predict(x_test), modelOrig.predict(x_test))):
+        print("Prediction aligned")    
+    else:
+        print("Prediction not aligned")
+        
+    modelAbs.save(savedModelAbs)  # creates a HDF5 file 'my_model.h5'
+else:
+    modelAbs = load_model(savedModelAbs)
+
+##################################################################
+####______     _                    _____ _                   ####
+####|  _  \   | |                  /  __ \ |                  ####
+####| | | |___| |__  _   _  __ _   | /  \/ | ___  _ __   ___  ####
+####| | | / _ \ '_ \| | | |/ _` |  | |   | |/ _ \| '_ \ / _ \ ####
+####| |/ /  __/ |_) | |_| | (_| |  | \__/\ | (_) | | | |  __/ ####
+####|___/ \___|_.__/ \__,_|\__, |   \____/_|\___/|_| |_|\___| ####
+####                        __/ |                             ####
+####                       |___/                              ####
+##################################################################
+
+print("\n\n\n Evaluating \n\n\n")
+c2 = modelOrig.get_layer(name="c2")
+dReplace = modelAbs.get_layer(name="dReplace")
+slice_input_shape = modelOrig.get_layer(name="c2").input_shape[1:]
+
+if cfg_dis_w:
+    OrigW = np.ones(c2.get_weights()[0].shape)
+else:
+    OrigW = c2.get_weights()[0]
+AbsW = dReplace.get_weights()[0]
+if cfg_dis_b:
+    OrigB = np.ones(c2.get_weights()[1].shape)
+    AbsB  = np.ones(dReplace.get_weights()[1].shape)
+else:
+    OrigB = c2.get_weights()[1]
+    AbsB  = dReplace.get_weights()[1]
+
+c2.set_weights([OrigW, OrigB])
+dReplace.set_weights([AbsW, AbsB])
+
+origModelIn = tf.keras.Sequential([ tf.keras.Input(shape=input_shape), modelOrig.get_layer(name="c1"), modelOrig.get_layer(name="mp1") ])
+origModelIn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+origModelSlice = tf.keras.Sequential([ tf.keras.Input(shape=slice_input_shape), c2 ])
+origModelSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+modelAbsSlice = tf.keras.Sequential( [tf.keras.Input(shape=slice_input_shape),
+                                      modelAbs.get_layer(name="FlattenReplace"),
+                                      dReplace,
+                                      modelAbs.get_layer(name="reshapeReplace")])
+modelAbsSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+slice_test = [
+    np.array([np.zeros(slice_input_shape)]),
+    np.array([np.ones(slice_input_shape)]),    
+    origModelIn.predict(x_test[:10])
+]
+
+for i,test in enumerate(slice_test):
+    evalSlice = np.isclose(modelAbsSlice.predict(test),origModelSlice.predict(test))
+    if np.all(evalSlice):
+        print("Slice {} Prediction aligned".format(i))
+    else:
+        print("Slice {} Prediction not aligned".format(i))
+        print(np.mean([1 if b else 0 for b in np.nditer(evalSlice)]))
+
+        for origM,absM,e in zip(np.nditer(origModelSlice.predict(test)), np.nditer(modelAbsSlice.predict(test)), np.nditer(evalSlice)):
+            if not e:
+                if not np.isclose(origM, absM):
+                    print("False: \n\torig: {} = {} \n\tabs:  {} = {}".format(origM, np.round(origM, 4),absM,  np.round(absM, 4)))
+
+        print(OrigB)                    
+        print(AbsB)
+
