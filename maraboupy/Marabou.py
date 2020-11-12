@@ -120,7 +120,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
                   splittingStrategy="auto", sncSplittingStrategy="auto",
-                  restoreTreeStates=False, solveWithMILP=False ):
+                  restoreTreeStates=False, splitThreshold=20, solveWithMILP=False ):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -153,5 +153,6 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._splittingStrategy = splittingStrategy
     options._sncSplittingStrategy = sncSplittingStrategy
     options._restoreTreeStates = restoreTreeStates
+    options._splitThreshold = splitThreshold
     options._solveWithMILP = solveWithMILP
     return options

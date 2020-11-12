@@ -170,6 +170,7 @@ private:
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );
 
     bool suitableForMerging( unsigned secondLayerIndex );
     void mergeWSLayers( unsigned secondLayerIndex );

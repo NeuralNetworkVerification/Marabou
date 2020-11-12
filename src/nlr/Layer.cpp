@@ -1723,7 +1723,7 @@ void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned star
         map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
 }
 
-void Layer::reduceIndexAfterMerge ( unsigned startIndex )
+void Layer::reduceIndexAfterMerge( unsigned startIndex )
 {
     if ( _layerIndex >= startIndex )
         --_layerIndex;
