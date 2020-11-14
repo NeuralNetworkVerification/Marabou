@@ -25,6 +25,55 @@ cfg_dis_b = False
 #Log:
 # Passing - True, True
 
+def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides):
+    if convOutShape[0] == None:
+        convOutShape = convOutShape[1:]
+    if convInShape[0] == None:
+        convInShape = convInShape[1:]        
+    replaceW = np.zeros((np.prod(convInShape), np.prod(convOutShape)))
+    fDim = origW.shape[:-2] # W/O in/out channels.
+
+    sOff = [int(np.prod(convInShape[i+1:]))  for i in range(len(convInShape))]
+    tOff = [int(np.prod(convOutShape[i+1:])) for i in range(len(convOutShape))]
+
+    tCoors = product(*[range(d) for d in convOutShape[:-1]])
+    inChNum = origW.shape[-2]
+    outChNum = origW.shape[-1]
+    for tCoor in tCoors:                
+        if mask[tCoor]:
+            sCoors = product(*[[coor for coor in [j*s+t for j in range(f)] if coor < i] for f,s,t,i in zip(fDim, strides, tCoor, convInShape)])
+            sCoors = list(sCoors)
+            wMats  = [origW[coor] for coor in product(*[range(d) for d in fDim])]
+            for sCoor, wMat in zip(sCoors, wMats):
+                for in_ch, out_ch in product(range(inChNum), range(outChNum)):
+                    sCoorFlat = sum([coor * off for coor, off in zip((*sCoor, in_ch) , sOff)])
+                    tCoorFlat = sum([coor * off for coor, off in zip((*tCoor, out_ch), tOff)])
+                    replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
+    replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
+    return replaceW, replaceB
+
+    '''
+    replace_w = np.zeros(replace_dense.get_weights()[0].shape) 
+    filter_dim = orig_w.shape[0:-2]
+    soff = [np.prod(orig_w.shape[i+1:-1]) for i in range(len(orig_w.shape[:-2]))] + [1]
+    toff = [np.prod(c2out[i+2:]) for i in range(len(c2out)-2)] + [1]
+
+    for target_coor in product(*[range(d) for d in c2out[1:-1]]):
+        if mask[target_coor]:
+            for source_coor, wMat in zip(product(*[[i*s+t for i in range(d)] for d,s,t in zip(filter_dim, strides, target_coor)]), [orig_w[c] for c in product(*[range(d) for d in filter_dim])]):
+                for in_ch, out_ch in product(range(orig_w.shape[-2]), range(orig_w.shape[-1])):
+                    flat_s = sum([c * off for c,off in zip((*source_coor, in_ch) , soff)])
+                    flat_t = sum([c * off for c,off in zip((*target_coor, out_ch), toff)])                
+                    replace_w[flat_s, flat_t] =   np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
+
+    replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))'''
+
+#replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
+#print(replaceW)
+#print(replaceB)
+#print("Vis = {}".format(replaceW[:,0]))
+#exit()
+
 #################################################
 #### _____              _____  _   _  _   _  ####
 ####|  __ \            /  __ \| \ | || \ | | ####
@@ -106,6 +155,7 @@ else:
 if cfg_freshModelAbs:
     
     c2out = modelOrig.get_layer(name="c2").output_shape
+    c2in = modelOrig.get_layer(name="c2").input_shape    
     replace_dense = layers.Dense(units=np.prod(c2out[1:]),name="dReplace")
     strides = modelOrig.get_layer(name="c2").strides
 
@@ -127,24 +177,12 @@ if cfg_freshModelAbs:
 
     modelAbs.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
     modelAbs.summary()
-
+        
     orig_w = modelOrig.get_layer(name="c2").get_weights()[0]
     orig_b = modelOrig.get_layer(name="c2").get_weights()[1]
-    replace_w = np.zeros(replace_dense.get_weights()[0].shape)
     mask = np.ones(c2out[1:-1]) #Mask is not considering different channels
-    filter_dim = orig_w.shape[0:-2]
-    soff = [np.prod(orig_w.shape[i+1:-1]) for i in range(len(orig_w.shape[:-2]))] + [1]
-    toff = [np.prod(c2out[i+2:]) for i in range(len(c2out)-2)] + [1]
 
-    for target_coor in product(*[range(d) for d in c2out[1:-1]]):
-        if mask[target_coor]:
-            for source_coor, wMat in zip(product(*[[i*s+t for i in range(d)] for d,s,t in zip(filter_dim, strides, target_coor)]), [orig_w[c] for c in product(*[range(d) for d in filter_dim])]):
-                for in_ch, out_ch in product(range(orig_w.shape[-2]), range(orig_w.shape[-1])):
-                    flat_s = sum([c * off for c,off in zip((*source_coor, in_ch) , soff)])
-                    flat_t = sum([c * off for c,off in zip((*target_coor, out_ch), toff)])                
-                    replace_w[flat_s, flat_t] =   np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
-
-    replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))
+    replace_w, replace_b = maskAndDensifyNDimConv(orig_w, orig_b, mask, c2in, c2out, strides)
     replace_dense.set_weights([replace_w, replace_b])
 
     #score = modelAbs.evaluate(x_test, y_test, verbose=0)
