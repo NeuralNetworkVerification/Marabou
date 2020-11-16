@@ -22,12 +22,6 @@ class AbsoluteValueConstraint : public PiecewiseLinearConstraint
 {
 
 public:
-    enum PhaseStatus {
-        PHASE_NOT_FIXED = 0,
-        PHASE_POSITIVE = 1,
-        PHASE_NEGATIVE = 2,
-    };
-
     /*
       The f variable is the absolute value of the b variable:
       f = | b |
@@ -163,13 +157,6 @@ private:
       True iff _b or _f have been eliminated.
     */
     bool _haveEliminatedVariables;
-
-    /*
-      The phase status of this constraint: positive, negative, or not
-      yet fixed.
-    */
-    PhaseStatus _phaseStatus;
-    void setPhaseStatus( PhaseStatus phaseStatus );
 
     static String phaseToString( PhaseStatus phase );
 

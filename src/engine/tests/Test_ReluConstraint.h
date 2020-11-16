@@ -1141,7 +1141,7 @@ public:
         inactivePhase.storeBoundTightening( Tightening( b, 0.0, Tightening::UB ) );
         inactivePhase.storeBoundTightening( Tightening( f, 0.0, Tightening::UB ) );
 
-        // b in [1, 2], polarity should be 1, and direction should be PHASE_ACTIVE
+        // b in [1, 2], polarity should be 1, and direction should be RELU_PHASE_ACTIVE
         {
             ReluConstraint relu( b, f );
             relu.notifyLowerBound( b, 1 );
@@ -1149,9 +1149,9 @@ public:
             TS_ASSERT( relu.computePolarity() == 1 );
 
             relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_ACTIVE );
+            TS_ASSERT( relu.getDirection() == RELU_PHASE_ACTIVE );
         }
-        // b in [-2, 0], polarity should be -1, and direction should be PHASE_INACTIVE
+        // b in [-2, 0], polarity should be -1, and direction should be RELU_PHASE_INACTIVE
         {
             ReluConstraint relu( b, f );
             relu.notifyLowerBound( b, -2 );
@@ -1159,9 +1159,9 @@ public:
             TS_ASSERT( relu.computePolarity() == -1 );
 
             relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_INACTIVE );
+            TS_ASSERT( relu.getDirection() == RELU_PHASE_INACTIVE );
         }
-        // b in [-2, 2], polarity should be 0, the direction should be PHASE_INACTIVE,
+        // b in [-2, 2], polarity should be 0, the direction should be RELU_PHASE_INACTIVE,
         // the inactive case should be the first element of the returned list by
         // the getCaseSplits(), and getPossibleFix should return the inactive fix first
         {
@@ -1171,7 +1171,7 @@ public:
             TS_ASSERT( relu.computePolarity() == 0 );
 
             relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_INACTIVE );
+            TS_ASSERT( relu.getDirection() == RELU_PHASE_INACTIVE );
 
             auto splits = relu.getCaseSplits();
             auto it = splits.begin();
@@ -1192,7 +1192,7 @@ public:
             TS_ASSERT_EQUALS( itFix->_value, 1 );
 
         }
-        // b in [-2, 3], polarity should be 0.2, the direction should be PHASE_ACTIVE,
+        // b in [-2, 3], polarity should be 0.2, the direction should be RELU_PHASE_ACTIVE,
         // the active case should be the first element of the returned list by
         // the getCaseSplits(), and getPossibleFix should return the active fix first
         {
@@ -1202,7 +1202,7 @@ public:
             TS_ASSERT( relu.computePolarity() == 0.2 );
 
             relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == ReluConstraint::PHASE_ACTIVE );
+            TS_ASSERT( relu.getDirection() == RELU_PHASE_ACTIVE );
 
             auto splits = relu.getCaseSplits();
             auto it = splits.begin();
