@@ -7,16 +7,20 @@ sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
 
 from itertools import product, chain
 #pip install keras2onnx
+#pip install onnx
+#pip install onnxruntime
+import keras2onnx
+import onnx
+import onnxruntime
 import tensorflow as tf
-#from maraboupy import MarabouNetworkONNX as monnx
+from maraboupy import MarabouCore, Marabou
+from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import numpy as np
-from cnn_abs import maskAndDensifyNDimConv, cloneAndMaskConvModel
+from cnn_abs import *
 
 from tensorflow.keras.models import load_model
-cfg_freshModelOrig = True
 cfg_freshModelAbs = True
-savedModelOrig = "cnn_abs_orig.h5"
 savedModelAbs = "cnn_abs_abs.h5"
 
 cfg_dis_w = False
@@ -44,16 +48,14 @@ cfg_dis_b = True
 ####                                         ####                                   
 #################################################
 
+
 print("Starting model building")
 #https://keras.io/examples/vision/mnist_convnet/
-
 # Model / data parameters
 num_classes = 10
 input_shape = (28 * 28,1)
-
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-
 # Scale images to the [0, 1] range
 x_train = x_train.astype("float32") / 255
 x_test = x_test.astype("float32") / 255
@@ -65,53 +67,11 @@ x_test = np.expand_dims(x_test, -1)
 print("x_train shape:", x_train.shape)
 print(x_train.shape[0], "train samples")
 print(x_test.shape[0], "test samples")
-
 # convert class vectors to binary class matrices
 y_train = tf.keras.utils.to_categorical(y_train, num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes)
-
-if cfg_freshModelOrig:
-    modelOrigBackup = tf.keras.Sequential(
-        [
-            tf.keras.Input(shape=input_shape),
-            layers.Conv1D(32, kernel_size=(3,), activation="relu", name="c1"),
-            layers.MaxPooling1D(pool_size=(2,), name="mp1"),
-            layers.Conv1D(64, kernel_size=(3,), activation="relu", name="c2"),
-            layers.MaxPooling1D(pool_size=(2,), name="mp2"),
-            layers.Flatten(name="f1"),
-            layers.Dropout(0.5, name="do1"),
-            layers.Dense(num_classes, activation="softmax", name="sm1"),
-        ]
-    )
-    modelOrig = tf.keras.Sequential(
-        [
-            tf.keras.Input(shape=input_shape),
-            layers.Conv1D(2, kernel_size=(3,), activation="relu", name="c1"),
-            layers.MaxPooling1D(pool_size=(2,), name="mp1"),
-            layers.Conv1D(2, kernel_size=(3,), activation="relu", name="c2"),
-            layers.MaxPooling1D(pool_size=(2,), name="mp2"),
-            layers.Flatten(name="f1"),
-            layers.Dropout(0.5, name="do1"),
-            layers.Dense(num_classes, activation="softmax", name="sm1"),
-        ]
-    )    
-
-    modelOrig.summary()
-
-    #batch_size = 128
-    #epochs = 15
-    batch_size = 60
-    epochs = 1 
-
-    modelOrig.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    modelOrig.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
-
-    score = modelOrig.evaluate(x_test, y_test, verbose=0)
-    print("Test loss:", score[0])
-    print("Test accuracy:", score[1])
-    modelOrig.save(savedModelOrig)  # creates a HDF5 file 'my_model.h5'
-else:
-    modelOrig = load_model(savedModelOrig)
+    
+modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=True, savedModelOrig="cnn_abs_orig.h5")
 
 #################################################################################
 #### _____ _                              ______           _                 ####
@@ -125,39 +85,8 @@ else:
 #################################################################################
 
 if cfg_freshModelAbs:
-    
-    '''c2out = modelOrig.get_layer(name="c2").output_shape
-    c2in = modelOrig.get_layer(name="c2").input_shape    
-    replace_dense = layers.Dense(units=np.prod(c2out[1:]),name="dReplace")
-    strides = modelOrig.get_layer(name="c2").strides
 
-    print("Clone modelOrig")
-    modelAbs = tf.keras.Sequential(
-        [
-            tf.keras.Input(shape=input_shape),
-            modelOrig.get_layer(name="c1"),
-            modelOrig.get_layer(name="mp1"),
-            layers.Flatten(name="FlattenReplace"),
-            replace_dense,
-            layers.Reshape(modelOrig.get_layer(name="c2").output_shape[1:], name="reshapeReplace"),
-            modelOrig.get_layer(name="mp2"),
-            modelOrig.get_layer(name="f1"),
-            modelOrig.get_layer(name="do1"),
-            modelOrig.get_layer(name="sm1")
-        ]
-    )
-
-    modelAbs.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-    modelAbs.summary()
-        
-    orig_w = modelOrig.get_layer(name="c2").get_weights()[0]
-    orig_b = modelOrig.get_layer(name="c2").get_weights()[1]
-    mask = np.ones(c2out[1:-1]) #Mask is not considering different channels
-
-    replace_w, replace_b = maskAndDensifyNDimConv(orig_w, orig_b, mask, c2in, c2out, strides)
-    replace_dense.set_weights([replace_w, replace_b])'''
-
-    modelAbs = cloneAndMaskConvModel(modelOrig, "c2", np.ones(modelOrig.get_layer(name="c2").output_shape[1:-1]))
+    modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(modelOrig.get_layer(name=replaceLayerName).output_shape[1:-1]))
 
     score = modelAbs.evaluate(x_test, y_test, verbose=0)
     print("Test loss:", score[0])
@@ -172,6 +101,27 @@ if cfg_freshModelAbs:
 else:
     modelAbs = load_model(savedModelAbs)
 
+#####################################
+####  _____ _   _  _   _ __   __ ####
+#### |  _  | \ | || \ | |\ \ # # ####
+#### | | | |  \| ||  \| | \ V #  ####
+#### | | | | . ` || . ` | #   \  ####
+#### \ \_# # |\  || |\  |# #^\ \ ####
+####  \___#\_| \_#\_| \_#\#   \# ####
+####                             ####
+#####################################
+
+print("\n\ncreate origMOnnx:\n")
+origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name)
+print("\n\ncreate absMOnnx:\n")
+absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name)
+
+print("\n\ncreate origMOnnxMbou:\n")
+origMOnnxMbou = monnx(origMOnnx)
+print("\n\ncreate absMOnnxMbou:\n")
+absMOnnxMbou  = monnx(absMOnnx)
+    
+exit()
 ##################################################################
 ####______     _                    _____ _                   ####
 ####|  _  \   | |                  /  __ \ |                  ####
@@ -240,4 +190,3 @@ for i,test in enumerate(slice_test):
         print("AbsB, shape={} :: {}".format(AbsB.shape, AbsB))        
         #print("Manual orig:{}".format(manual_result(OrigW, OrigB, test[0])))
         #print("Manual abs:{}".format(manual_result(AbsW, AbsB, test[0])))
-
