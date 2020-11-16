@@ -1,17 +1,17 @@
+
 import sys
 import os
 
 sys.path.append("/cs/labs/guykatz/matanos/Marabou")
 sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
 
-from itertools import product
+from itertools import product, chain
 #pip install keras2onnx
 import tensorflow as tf
 #from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import numpy as np
-
-import copy
+from cnn_abs import maskAndDensifyNDimConv, cloneAndMaskConvModel
 
 from tensorflow.keras.models import load_model
 cfg_freshModelOrig = True
@@ -25,33 +25,6 @@ cfg_dis_b = True
 #Log:
 # Passing - True, True
 # Failing - True, False
-
-def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides):
-    if convOutShape[0] == None:
-        convOutShape = convOutShape[1:]
-    if convInShape[0] == None:
-        convInShape = convInShape[1:]        
-    replaceW = np.zeros((np.prod(convInShape), np.prod(convOutShape)))
-    fDim = origW.shape[:-2] # W/O in/out channels.
-
-    sOff = [int(np.prod(convInShape[i+1:]))  for i in range(len(convInShape))]
-    tOff = [int(np.prod(convOutShape[i+1:])) for i in range(len(convOutShape))]
-
-    tCoors = product(*[range(d) for d in convOutShape[:-1]])
-    inChNum = origW.shape[-2]
-    outChNum = origW.shape[-1]
-    for tCoor in tCoors:                
-        if mask[tCoor]:
-            sCoors = product(*[[coor for coor in [j*s+t for j in range(f)] if coor < i] for f,s,t,i in zip(fDim, strides, tCoor, convInShape)])
-            sCoors = list(sCoors)
-            wMats  = [origW[coor] for coor in product(*[range(d) for d in fDim])]
-            for sCoor, wMat in zip(sCoors, wMats):
-                for in_ch, out_ch in product(range(inChNum), range(outChNum)):
-                    sCoorFlat = sum([coor * off for coor, off in zip((*sCoor, in_ch) , sOff)])
-                    tCoorFlat = sum([coor * off for coor, off in zip((*tCoor, out_ch), tOff)])
-                    replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
-    replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
-    return replaceW, replaceB
 
 #manual_result = lambda w,b,x : w * x + b
 
@@ -153,7 +126,7 @@ else:
 
 if cfg_freshModelAbs:
     
-    c2out = modelOrig.get_layer(name="c2").output_shape
+    '''c2out = modelOrig.get_layer(name="c2").output_shape
     c2in = modelOrig.get_layer(name="c2").input_shape    
     replace_dense = layers.Dense(units=np.prod(c2out[1:]),name="dReplace")
     strides = modelOrig.get_layer(name="c2").strides
@@ -182,7 +155,9 @@ if cfg_freshModelAbs:
     mask = np.ones(c2out[1:-1]) #Mask is not considering different channels
 
     replace_w, replace_b = maskAndDensifyNDimConv(orig_w, orig_b, mask, c2in, c2out, strides)
-    replace_dense.set_weights([replace_w, replace_b])
+    replace_dense.set_weights([replace_w, replace_b])'''
+
+    modelAbs = cloneAndMaskConvModel(modelOrig, "c2", np.ones(modelOrig.get_layer(name="c2").output_shape[1:-1]))
 
     score = modelAbs.evaluate(x_test, y_test, verbose=0)
     print("Test loss:", score[0])
@@ -210,7 +185,7 @@ else:
 
 print("\n\n\n Evaluating \n\n\n")
 c2 = modelOrig.get_layer(name="c2")
-dReplace = modelAbs.get_layer(name="dReplace")
+dReplace = modelAbs.get_layer(name="clnDense")
 slice_input_shape = modelOrig.get_layer(name="c2").input_shape[1:]
 
 if cfg_dis_w:
@@ -235,9 +210,9 @@ origModelSlice = tf.keras.Sequential([ tf.keras.Input(shape=slice_input_shape), 
 origModelSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
 modelAbsSlice = tf.keras.Sequential( [tf.keras.Input(shape=slice_input_shape),
-                                      modelAbs.get_layer(name="FlattenReplace"),
+                                      modelAbs.get_layer(name="rplcFlat"),
                                       dReplace,
-                                      modelAbs.get_layer(name="reshapeReplace")])
+                                      modelAbs.get_layer(name="rplcReshape")])
 modelAbsSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
 slice_test = [
