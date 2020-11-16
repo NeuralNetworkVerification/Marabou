@@ -53,26 +53,30 @@ print("Starting model building")
 #https://keras.io/examples/vision/mnist_convnet/
 # Model / data parameters
 num_classes = 10
-input_shape = (28 * 28,1)
+## input_shape = (28 * 28,1) FIXME
+input_shape = (28,28,1)
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 # Scale images to the [0, 1] range
 x_train = x_train.astype("float32") / 255
 x_test = x_test.astype("float32") / 255
 # Make sure images have shape (28, 28, 1)
-x_train = x_train.reshape(x_train.shape[0], 28 * 28)
-x_test = x_test.reshape(x_test.shape[0], 28 * 28)
+#x_train = x_train.reshape(x_train.shape[0], 28 * 28) FIXME 
+#x_test = x_test.reshape(x_test.shape[0], 28 * 28) FIXME 
 x_train = np.expand_dims(x_train, -1)
 x_test = np.expand_dims(x_test, -1)
 print("x_train shape:", x_train.shape)
 print(x_train.shape[0], "train samples")
 print(x_test.shape[0], "test samples")
 # convert class vectors to binary class matrices
-y_train = tf.keras.utils.to_categorical(y_train, num_classes)
-y_test = tf.keras.utils.to_categorical(y_test, num_classes)
+#y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+#y_test = tf.keras.utils.to_categorical(y_test, num_classes)
+loss='sparse_categorical_crossentropy'
+optimizer='adam'
+metrics=['accuracy']
     
-modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=True, savedModelOrig="cnn_abs_orig.h5")
-
+modelOrig, replaceLayerName = genCnnForAbsTest()
+#modelOrig.fit(x_train, y_train, epochs=1)
 #################################################################################
 #### _____ _                              ______           _                 ####
 ####/  __ \ |                     ___     | ___ \         | |                ####
@@ -111,10 +115,17 @@ else:
 ####                             ####
 #####################################
 
+output_model_path = lambda m : "./{}.onnx".format(m.name)
+
 print("\n\ncreate origMOnnx:\n")
-origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name)
+for l in modelOrig.layers:
+    print("{} shapes: in={},out={}".format(l.name, l.input_shape, l.output_shape))
+origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
+keras2onnx.save_model(origMOnnx, output_model_path(modelOrig))
+
 print("\n\ncreate absMOnnx:\n")
-absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name)
+absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name+"_onnx", debug_mode=1)
+keras2onnx.save_model(absMOnnx, output_model_path(modelAbs))
 
 print("\n\ncreate origMOnnxMbou:\n")
 origMOnnxMbou = monnx(origMOnnx)
@@ -154,16 +165,16 @@ c2.set_weights([OrigW, OrigB])
 dReplace.set_weights([AbsW, AbsB])
 
 origModelIn = tf.keras.Sequential([ tf.keras.Input(shape=input_shape), modelOrig.get_layer(name="c1"), modelOrig.get_layer(name="mp1") ])
-origModelIn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+origModelIn.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
 origModelSlice = tf.keras.Sequential([ tf.keras.Input(shape=slice_input_shape), c2 ])
-origModelSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+origModelSlice.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
 modelAbsSlice = tf.keras.Sequential( [tf.keras.Input(shape=slice_input_shape),
                                       modelAbs.get_layer(name="rplcFlat"),
                                       dReplace,
                                       modelAbs.get_layer(name="rplcReshape")])
-modelAbsSlice.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+modelAbsSlice.compile(loss=loss, optimizer=optimizer, metrics=metrics)
 
 slice_test = [
     np.array([np.zeros(slice_input_shape)]),
