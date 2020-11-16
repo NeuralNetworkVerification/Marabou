@@ -1,0 +1,247 @@
+.. only:: html
+
+    .. note::
+        :class: sphx-glr-download-link-note
+
+        Click :ref:`here <sphx_glr_download_Examples_2_ONNXExample.py>`     to download the full example code
+    .. rst-class:: sphx-glr-example-title
+
+    .. _sphx_glr_Examples_2_ONNXExample.py:
+
+
+ONNX Example
+====================
+
+Top contributors (to current version):
+  - Kyle Julian
+  
+This file is part of the Marabou project.
+Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+in the top-level source directory) and their institutional affiliations.
+All rights reserved. See the file COPYING in the top-level source
+directory for licensing information.
+
+
+.. code-block:: default
+
+
+    from maraboupy import Marabou
+    import numpy as np
+
+
+Set the Marabou option to restrict printing
+
+
+.. code-block:: default
+
+    options = Marabou.createOptions(verbosity = 0)
+
+
+Fully-connected network example
+-------------------------------
+
+This network has inputs x0, x1, and was trained to create outputs that approximate
+y0 = abs(x0) + abs(x1), y1 = x0^2 + x1^2
+
+
+.. code-block:: default
+
+    print("Fully Connected Network Example")
+    filename = "../../resources/onnx/fc1.onnx"
+    network = Marabou.read_onnx(filename)
+
+
+Or, you can specify the operation names of the input and output operations.
+The default chooses the placeholder operations as inputs and the last operation as output
+
+
+.. code-block:: default
+
+    inputName = 'Placeholder:0'
+    outputName = 'y_out:0'
+    network = Marabou.read_onnx(filename=filename, inputNames=[inputName], outputName = outputName)
+
+
+Get the input and output variable numbers; [0] since first dimension is batch size
+
+
+.. code-block:: default
+
+    inputVars = network.inputVars[0][0]
+    outputVars = network.outputVars[0]
+
+
+Set input bounds
+
+
+.. code-block:: default
+
+    network.setLowerBound(inputVars[0],-10.0)
+    network.setUpperBound(inputVars[0], 10.0)
+    network.setLowerBound(inputVars[1],-10.0)
+    network.setUpperBound(inputVars[1], 10.0)
+
+
+Set output bounds
+
+
+.. code-block:: default
+
+    network.setLowerBound(outputVars[1], 194.0)
+    network.setUpperBound(outputVars[1], 210.0)
+
+
+Call to Marabou solver
+
+
+.. code-block:: default
+
+    vals, stats = network.solve(options = options)
+
+
+
+Convolutional neural network example
+------------------------------------
+
+Network maps 8x16 grayscale images two values
+
+
+.. code-block:: default
+
+    print("\nConvolutional Network Example")
+    filename = '../../resources/onnx/KJ_TinyTaxiNet.onnx'
+    network = Marabou.read_onnx(filename)
+
+
+Get the input and output variable numbers; [0] since first dimension is batch size
+
+
+.. code-block:: default
+
+    inputVars = network.inputVars[0][0]
+    outputVars = network.outputVars[0]
+
+
+Setup a local robustness query
+
+
+.. code-block:: default
+
+    delta = 0.03
+    for h in range(inputVars.shape[0]):
+        for w in range(inputVars.shape[1]):
+            network.setLowerBound(inputVars[h][w][0], 0.5-delta)
+            network.setUpperBound(inputVars[h][w][0], 0.5+delta)
+
+
+Set output bounds
+
+
+.. code-block:: default
+
+    network.setLowerBound(outputVars[0], 6.0)
+
+
+Call to Marabou solver (should be SAT)
+
+
+.. code-block:: default
+
+    print("Check query with less restrictive output constraint (Should be SAT)")
+    vals, stats = network.solve(options = options)
+    assert len(vals) > 0
+
+
+Set more restrictive output bounds
+
+
+.. code-block:: default
+
+    network.setLowerBound(outputVars[0], 7.0)
+
+
+Call to Marabou solver (should be UNSAT)
+
+
+.. code-block:: default
+
+    print("Check query with more restrictive output constraint (Should be UNSAT)")
+    vals, stats = network.solve(options = options)
+    assert len(vals) == 0
+
+
+
+Convolutional network with max-pool example
+-------------------------------------------
+
+
+.. code-block:: default
+
+    print("\nConvolutional Network with Max Pool Example")
+    filename = '../../resources/onnx/conv_mp1.onnx'
+    network = Marabou.read_onnx(filename)
+
+
+Get the input and output variable numbers; [0] since first dimension is batch size
+
+
+.. code-block:: default
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+
+
+Test Marabou equations against onnxruntime at an example input point
+
+
+.. code-block:: default
+
+    inputPoint = np.ones(inputVars.shape)
+    marabouEval = network.evaluateWithMarabou([inputPoint], options = options)
+    onnxEval = network.evaluateWithoutMarabou([inputPoint])
+
+
+The two evaluations should produce the same result
+
+
+.. code-block:: default
+
+    print("Marabou Evaluation:")
+    print(marabouEval)
+    print("\nONNX Evaluation:")
+    print(onnxEval)
+    print("\nDifference:")
+    print(onnxEval - marabouEval)
+    assert max(abs(onnxEval - marabouEval)) < 1e-6
+
+.. rst-class:: sphx-glr-timing
+
+   **Total running time of the script:** ( 0 minutes  0.000 seconds)
+
+
+.. _sphx_glr_download_Examples_2_ONNXExample.py:
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+    :class: sphx-glr-footer-example
+
+
+
+  .. container:: sphx-glr-download sphx-glr-download-python
+
+     :download:`Download Python source code: 2_ONNXExample.py <2_ONNXExample.py>`
+
+
+
+  .. container:: sphx-glr-download sphx-glr-download-jupyter
+
+     :download:`Download Jupyter notebook: 2_ONNXExample.ipynb <2_ONNXExample.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_

@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>MarabouCore Example &mdash; Maraboupy  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DNC Example" href="4_DncExample.html" />
+    <link rel="prev" title="ONNX Example" href="2_ONNXExample.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Maraboupy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/0_Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/1_Testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/2_Troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="0_NNetExample.html">NNet Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_TensorflowExample.html">Tensorflow Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_ONNXExample.html">ONNX Example</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MarabouCore Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_DncExample.html">DNC Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_DisjunctionConstraintExample.html">Disjunction Constraint Example</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API/0_Marabou.html">Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/1_MarabouNetwork.html">MarabouNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/2_MarabouNetworkNNet.html">MarabouNetworkNNet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/3_MarabouNetworkTF.html">MarabouNetworkTF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/4_MarabouNetworkONNX.html">MarabouNetworkONNX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/5_MarabouUtils.html">MarabouUtils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/6_MarabouCore.html">MarabouCore</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer's Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/0_Guide.html">Contributing to Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/1_PullRequests.html">Pull Requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/2_CodingStyle.html">Coding Style Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/3_Tests.html">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/4_Examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/5_Documentation.html">Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Maraboupy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>MarabouCore Example</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Examples/3_MarabouCoreExample.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a class="reference internal" href="#sphx-glr-download-examples-3-maraboucoreexample-py"><span class="std std-ref">here</span></a>     to download the full example code</p>
+</div>
+<div class="sphx-glr-example-title section" id="maraboucore-example">
+<span id="sphx-glr-examples-3-maraboucoreexample-py"></span><h1>MarabouCore Example<a class="headerlink" href="#maraboucore-example" title="Permalink to this headline">¶</a></h1>
+<dl class="simple">
+<dt>Top contributors (to current version):</dt><dd><ul class="simple">
+<li><p>Christopher Lazarus</p></li>
+<li><p>Kyle Julian</p></li>
+<li><p>Andrew Wu</p></li>
+</ul>
+</dd>
+</dl>
+<p>This file is part of the Marabou project.
+Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+in the top-level source directory) and their institutional affiliations.
+All rights reserved. See the file COPYING in the top-level source
+directory for licensing information.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">maraboupy</span> <span class="k">import</span> <span class="n">MarabouCore</span>
+<span class="kn">from</span> <span class="nn">maraboupy.Marabou</span> <span class="k">import</span> <span class="n">createOptions</span>
+</pre></div>
+</div>
+<p>The example from the CAV’17 paper:</p>
+<p>0 &lt;= x0 &lt;= 1</p>
+<p>0 &lt;= x1f</p>
+<p>0 &lt;= x2f</p>
+<p>1/2 &lt;= x3 &lt;= 1</p>
+<p>x0 - x1b = 0</p>
+<p>x0 + x2b = 0</p>
+<p>x1f + x2f - x3 = 0</p>
+<p>x1f = Relu(x1b)</p>
+<p>x2f = Relu(x2b)</p>
+<p>x0: x0</p>
+<p>x1: x1b</p>
+<p>x2: x1f</p>
+<p>x3: x2b</p>
+<p>x4: x2f</p>
+<p>x5: x3</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">large</span> <span class="o">=</span> <span class="mf">10.0</span>
+</pre></div>
+</div>
+<p>Setup Marabou’s InputQuery</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputQuery</span> <span class="o">=</span> <span class="n">MarabouCore</span><span class="o">.</span><span class="n">InputQuery</span><span class="p">()</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setNumberOfVariables</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set the lower and upper bounds on variables</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputQuery</span><span class="o">.</span><span class="n">setLowerBound</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setUpperBound</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setLowerBound</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="n">large</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setUpperBound</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">large</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setLowerBound</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setUpperBound</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">large</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setLowerBound</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="n">large</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setUpperBound</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">large</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setLowerBound</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setUpperBound</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">large</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setLowerBound</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">setUpperBound</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add equation constraints</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">equation1</span> <span class="o">=</span> <span class="n">MarabouCore</span><span class="o">.</span><span class="n">Equation</span><span class="p">()</span>
+<span class="n">equation1</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">equation1</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">equation1</span><span class="o">.</span><span class="n">setScalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">addEquation</span><span class="p">(</span><span class="n">equation1</span><span class="p">)</span>
+
+<span class="n">equation2</span> <span class="o">=</span> <span class="n">MarabouCore</span><span class="o">.</span><span class="n">Equation</span><span class="p">()</span>
+<span class="n">equation2</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">equation2</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">equation2</span><span class="o">.</span><span class="n">setScalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">addEquation</span><span class="p">(</span><span class="n">equation2</span><span class="p">)</span>
+
+<span class="n">equation3</span> <span class="o">=</span> <span class="n">MarabouCore</span><span class="o">.</span><span class="n">Equation</span><span class="p">()</span>
+<span class="n">equation3</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">equation3</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">equation3</span><span class="o">.</span><span class="n">addAddend</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">equation3</span><span class="o">.</span><span class="n">setScalar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">inputQuery</span><span class="o">.</span><span class="n">addEquation</span><span class="p">(</span><span class="n">equation3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add Relu constraints</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">MarabouCore</span><span class="o">.</span><span class="n">addReluConstraint</span><span class="p">(</span><span class="n">inputQuery</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">MarabouCore</span><span class="o">.</span><span class="n">addReluConstraint</span><span class="p">(</span><span class="n">inputQuery</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Run Marabou to solve the query
+This should return “sat”</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">options</span> <span class="o">=</span> <span class="n">createOptions</span><span class="p">()</span>
+<span class="nb">vars</span><span class="p">,</span> <span class="n">stats</span> <span class="o">=</span> <span class="n">MarabouCore</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">inputQuery</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SAT&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;UNSAT&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  0.000 seconds)</p>
+<div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-examples-3-maraboucoreexample-py">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/ce909f1c260e4eff05fff493485958df/3_MarabouCoreExample.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">3_MarabouCoreExample.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../_downloads/11a7ffd06012000ad006620c20f54c53/3_MarabouCoreExample.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">3_MarabouCoreExample.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="4_DncExample.html" class="btn btn-neutral float-right" title="DNC Example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="2_ONNXExample.html" class="btn btn-neutral float-left" title="ONNX Example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, The Marabou Team
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

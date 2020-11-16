@@ -1,0 +1,600 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>MarabouNetworkTF &mdash; Maraboupy  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MarabouNetworkONNX" href="4_MarabouNetworkONNX.html" />
+    <link rel="prev" title="MarabouNetworkNNet" href="2_MarabouNetworkNNet.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Maraboupy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/0_Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/1_Testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/2_Troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/0_NNetExample.html">NNet Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/1_TensorflowExample.html">Tensorflow Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/2_ONNXExample.html">ONNX Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/3_MarabouCoreExample.html">MarabouCore Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/4_DncExample.html">DNC Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/5_DisjunctionConstraintExample.html">Disjunction Constraint Example</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="0_Marabou.html">Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_MarabouNetwork.html">MarabouNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_MarabouNetworkNNet.html">MarabouNetworkNNet</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">MarabouNetworkTF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_MarabouNetworkONNX.html">MarabouNetworkONNX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_MarabouUtils.html">MarabouUtils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="6_MarabouCore.html">MarabouCore</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer's Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/0_Guide.html">Contributing to Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/1_PullRequests.html">Pull Requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/2_CodingStyle.html">Coding Style Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/3_Tests.html">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/4_Examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/5_Documentation.html">Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Maraboupy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>MarabouNetworkTF</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/API/3_MarabouNetworkTF.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-maraboupy.MarabouNetworkTF">
+<span id="marabounetworktf"></span><h1>MarabouNetworkTF<a class="headerlink" href="#module-maraboupy.MarabouNetworkTF" title="Permalink to this headline">¶</a></h1>
+<dl class="simple">
+<dt>Top contributors (to current version):</dt><dd><ul class="simple">
+<li><p>Kyle Julian</p></li>
+<li><p>Christopher Lazarus</p></li>
+<li><p>Shantanu Thakoor</p></li>
+<li><p>Chelsea Sidrane</p></li>
+</ul>
+</dd>
+</dl>
+<p>This file is part of the Marabou project.
+Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+in the top-level source directory) and their institutional affiliations.
+All rights reserved. See the file COPYING in the top-level source
+directory for licensing information.</p>
+<p>MarabouNetworkTF represents neural networks with piecewise linear constraints derived from tensorflow formats</p>
+<dl class="py class">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF">
+<em class="property">class </em><code class="sig-prename descclassname">maraboupy.MarabouNetworkTF.</code><code class="sig-name descname">MarabouNetworkTF</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">inputNames</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">outputName</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">modelType</span><span class="o">=</span><span class="default_value">'frozen'</span></em>, <em class="sig-param"><span class="n">savedModelTags</span><span class="o">=</span><span class="default_value">[]</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="1_MarabouNetwork.html#maraboupy.MarabouNetwork.MarabouNetwork" title="maraboupy.MarabouNetwork.MarabouNetwork"><code class="xref py py-class docutils literal notranslate"><span class="pre">maraboupy.MarabouNetwork.MarabouNetwork</span></code></a></p>
+<p>Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf or SavedModel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Path to tensorflow network</p></li>
+<li><p><strong>inputNames</strong> (<em>list of str</em><em>, </em><em>optional</em>) – List of operation names corresponding to inputs</p></li>
+<li><p><strong>outputName</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of operation corresponding to output</p></li>
+<li><p><strong>modelType</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of model to read. The default is “frozen” for a frozen graph.
+Can also use “savedModel_v1” or “savedModel_v2” for the SavedModel format
+created from either tensorflow versions 1.X or 2.X respectively.</p></li>
+<li><p><strong>savedModelTags</strong> (<em>list of str</em><em>, </em><em>optional</em>) – If loading a SavedModel, the user must specify tags used, default is []</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addAbsConstraint">
+<code class="sig-name descname">addAbsConstraint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">b</span></em>, <em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addAbsConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a new Abs constraint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>b</strong> (<em>int</em>) – Variable representing input of the Abs constraint</p></li>
+<li><p><strong>f</strong> (<em>int</em>) – Variable representing output of the Abs constraint</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addDisjunctionConstraint">
+<code class="sig-name descname">addDisjunctionConstraint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">disjuncts</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addDisjunctionConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a new Disjunction constraint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>disjuncts</strong> (<em>list of list of Equations</em>) – Each inner list represents a disjunct</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addEquality">
+<code class="sig-name descname">addEquality</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vars</span></em>, <em class="sig-param"><span class="n">coeffs</span></em>, <em class="sig-param"><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addEquality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add equality constraint to network</p>
+<div class="math notranslate nohighlight">
+\[\sum_i vars_i * coeffs_i = scalar\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vars</strong> (<em>list of int</em>) – Variable numbers</p></li>
+<li><p><strong>coeffs</strong> (<em>list of float</em>) – Coefficients</p></li>
+<li><p><strong>scalar</strong> (<em>float</em>) – Right hand side constant of equation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addEquation">
+<code class="sig-name descname">addEquation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addEquation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add new equation to the network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference internal" href="5_MarabouUtils.html#maraboupy.MarabouUtils.Equation" title="maraboupy.MarabouUtils.Equation"><code class="xref py py-class docutils literal notranslate"><span class="pre">Equation</span></code></a>) – New equation to add</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addInequality">
+<code class="sig-name descname">addInequality</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vars</span></em>, <em class="sig-param"><span class="n">coeffs</span></em>, <em class="sig-param"><span class="n">scalar</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addInequality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add inequality constraint to network</p>
+<div class="math notranslate nohighlight">
+\[\sum_i vars_i * coeffs_i \le scalar\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vars</strong> (<em>list of int</em>) – Variable numbers</p></li>
+<li><p><strong>coeffs</strong> (<em>list of float</em>) – Coefficients</p></li>
+<li><p><strong>scalar</strong> (<em>float</em>) – Right hand side constant of inequality</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addMaxConstraint">
+<code class="sig-name descname">addMaxConstraint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">elements</span></em>, <em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addMaxConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a new Max constraint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elements</strong> (<em>set of int</em>) – Variable representing input to max constraint</p></li>
+<li><p><strong>v</strong> (<em>int</em>) – Variable representing output of max constraint</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addRelu">
+<code class="sig-name descname">addRelu</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v1</span></em>, <em class="sig-param"><span class="n">v2</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addRelu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a new Relu constraint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>v1</strong> (<em>int</em>) – Variable representing input of Relu</p></li>
+<li><p><strong>v2</strong> (<em>int</em>) – Variable representing output of Relu</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.addSignConstraint">
+<code class="sig-name descname">addSignConstraint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">b</span></em>, <em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.addSignConstraint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to add a new Sign constraint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>b</strong> (<em>int</em>) – Variable representing input of Sign</p></li>
+<li><p><strong>f</strong> (<em>int</em>) – Variable representing output of Sign</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset values to represent empty network</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.evaluate">
+<code class="sig-name descname">evaluate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inputValues</span></em>, <em class="sig-param"><span class="n">useMarabou</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'evaluateWithMarabou.log'</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to evaluate network at a given point</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputValues</strong> (<em>list of np arrays</em>) – Inputs to evaluate</p></li>
+<li><p><strong>useMarabou</strong> (<em>bool</em>) – Whether to use Marabou solver or TF/ONNX, defaults to True</p></li>
+<li><p><strong>options</strong> (<a class="reference internal" href="6_MarabouCore.html#maraboupy.MarabouCore.Options" title="maraboupy.MarabouCore.Options"><code class="xref py py-class docutils literal notranslate"><span class="pre">Options</span></code></a>) – Object for specifying Marabou options, defaults to None</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – Path to redirect output if using Marabou solver, defaults to “evaluateWithMarabou.log”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Values representing the output of the network or None if output cannot be computed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(np array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.evaluateWithMarabou">
+<code class="sig-name descname">evaluateWithMarabou</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inputValues</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'evaluateWithMarabou.log'</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.evaluateWithMarabou" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to evaluate network at a given point using Marabou as solver</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputValues</strong> (<em>list of np arrays</em>) – Inputs to evaluate</p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – Path to redirect output if using Marabou solver, defaults to “evaluateWithMarabou.log”</p></li>
+<li><p><strong>options</strong> (<a class="reference internal" href="6_MarabouCore.html#maraboupy.MarabouCore.Options" title="maraboupy.MarabouCore.Options"><code class="xref py py-class docutils literal notranslate"><span class="pre">Options</span></code></a>) – Object for specifying Marabou options, defaults to None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Values representing the output of the network or None if system is UNSAT</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(np array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.evaluateWithoutMarabou">
+<code class="sig-name descname">evaluateWithoutMarabou</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inputValues</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.evaluateWithoutMarabou" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to evaluate network at a given point using Tensorflow</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inputValues</strong> – (list of np arrays) representing inputs to network</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(np array) representing output of network</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>outputValues</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.findError">
+<code class="sig-name descname">findError</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">inputValues</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">'evaluateWithMarabou.log'</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.findError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to find error between Marabou solver and TF/Nnet at a given point</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inputValues</strong> (<em>list of np arrays</em>) – Input values to evaluate</p></li>
+<li><p><strong>options</strong> (<a class="reference internal" href="6_MarabouCore.html#maraboupy.MarabouCore.Options" title="maraboupy.MarabouCore.Options"><code class="xref py py-class docutils literal notranslate"><span class="pre">Options</span></code></a>) – </p></li>
+<li><p><strong>filename</strong> (<em>str</em>) – Path to redirect output if using Marabou solver, defaults to “evaluateWithMarabou.log”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Values representing the error in each output variable</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(np array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.getMarabouQuery">
+<code class="sig-name descname">getMarabouQuery</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.getMarabouQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to convert network into Marabou InputQuery</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><a class="reference internal" href="6_MarabouCore.html#maraboupy.MarabouCore.InputQuery" title="maraboupy.MarabouCore.InputQuery"><code class="xref py py-class docutils literal notranslate"><span class="pre">InputQuery</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.lowerBoundExists">
+<code class="sig-name descname">lowerBoundExists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.lowerBoundExists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to check whether lower bound for a variable is known</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>int</em>) – Variable to check</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.readTF">
+<code class="sig-name descname">readTF</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em>, <em class="sig-param"><span class="n">inputNames</span></em>, <em class="sig-param"><span class="n">outputName</span></em>, <em class="sig-param"><span class="n">modelType</span></em>, <em class="sig-param"><span class="n">savedModelTags</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.readTF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a tensorflow file to create a MarabouNetworkTF object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>str</em>) – Path to tensorflow network</p></li>
+<li><p><strong>inputNames</strong> (<em>list of str</em><em>, </em><em>optional</em>) – List of operation names corresponding to inputs</p></li>
+<li><p><strong>outputName</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of operation corresponding to output</p></li>
+<li><p><strong>modelType</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of model to read. The default is “frozen” for a frozen graph.
+Can also use “savedModel_v1” or “savedModel_v2” for the SavedModel format
+created from either tensorflow versions 1.X or 2.X respectively.</p></li>
+<li><p><strong>savedModelTags</strong> (<em>list of str</em><em>, </em><em>optional</em>) – If loading a SavedModel, the user must specify tags used, default is []</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.saveQuery">
+<code class="sig-name descname">saveQuery</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.saveQuery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serializes the inputQuery in the given filename</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> – (string) file to write serialized inputQuery</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.setLowerBound">
+<code class="sig-name descname">setLowerBound</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.setLowerBound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to set lower bound for variable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em>) – Variable number to set</p></li>
+<li><p><strong>v</strong> (<em>float</em>) – Value representing lower bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.setUpperBound">
+<code class="sig-name descname">setUpperBound</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.setUpperBound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to set upper bound for variable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em>) – Variable number to set</p></li>
+<li><p><strong>v</strong> (<em>float</em>) – Value representing upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.solve">
+<code class="sig-name descname">solve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">options</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to solve query represented by this network</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<em>string</em>) – Path for redirecting output</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – If true, print out solution after solve finishes</p></li>
+<li><p><strong>options</strong> (<a class="reference internal" href="6_MarabouCore.html#maraboupy.MarabouCore.Options" title="maraboupy.MarabouCore.Options"><code class="xref py py-class docutils literal notranslate"><span class="pre">Options</span></code></a>) – Object for specifying Marabou options, defaults to None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>tuple containing:</dt><dd><ul class="simple">
+<li><p>vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables</p></li>
+<li><p>stats (<a class="reference internal" href="6_MarabouCore.html#maraboupy.MarabouCore.Statistics" title="maraboupy.MarabouCore.Statistics"><code class="xref py py-class docutils literal notranslate"><span class="pre">Statistics</span></code></a>): A Statistics object to how Marabou performed</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(tuple)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="maraboupy.MarabouNetworkTF.MarabouNetworkTF.upperBoundExists">
+<code class="sig-name descname">upperBoundExists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/NeuralNetworkVerification/Marabou/blob/master/maraboupy/MarabouNetworkTF.py"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#maraboupy.MarabouNetworkTF.MarabouNetworkTF.upperBoundExists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to check whether upper bound for a variable is known</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>int</em>) – Variable to check</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="4_MarabouNetworkONNX.html" class="btn btn-neutral float-right" title="MarabouNetworkONNX" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="2_MarabouNetworkNNet.html" class="btn btn-neutral float-left" title="MarabouNetworkNNet" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, The Marabou Team
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

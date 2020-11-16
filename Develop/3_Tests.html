@@ -1,0 +1,287 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tests &mdash; Maraboupy  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Examples" href="4_Examples.html" />
+    <link rel="prev" title="Coding Style Guidelines" href="2_CodingStyle.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Maraboupy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/0_Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/1_Testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/2_Troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/0_NNetExample.html">NNet Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/1_TensorflowExample.html">Tensorflow Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/2_ONNXExample.html">ONNX Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/3_MarabouCoreExample.html">MarabouCore Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/4_DncExample.html">DNC Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/5_DisjunctionConstraintExample.html">Disjunction Constraint Example</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API/0_Marabou.html">Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/1_MarabouNetwork.html">MarabouNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/2_MarabouNetworkNNet.html">MarabouNetworkNNet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/3_MarabouNetworkTF.html">MarabouNetworkTF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/4_MarabouNetworkONNX.html">MarabouNetworkONNX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/5_MarabouUtils.html">MarabouUtils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/6_MarabouCore.html">MarabouCore</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer's Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="0_Guide.html">Contributing to Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_PullRequests.html">Pull Requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_CodingStyle.html">Coding Style Guidelines</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tests</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#writing-a-test">Writing a test</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-a-temporary-file">Writing a temporary file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="4_Examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_Documentation.html">Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Maraboupy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Tests</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Develop/3_Tests.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tests">
+<h1>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h1>
+<p>The maraboupy code is tested to ensure that methods run correctly and without errors, or that user
+errors are caught and handled appropriately. Ideally, a test should be added with each pull request
+that adds new code to make sure that the changes function correctly.</p>
+<p>The Maraboupy tests live in the maraboupy/test folder and are
+defined in files with the “test_” prefix. Each test file contains a set of methods, where methods
+beginning with “test_” are the tests, and other methods are helper methods. Note that no main method is
+needed in these test files because tests are run using pytest.</p>
+<p>New tests can be created by creating a new test file, or by adding new test methods to an existing test
+file. Neural network files used in these tests live in the resources folder, located in the root Marabou
+directory. When adding new tests or test files, try to follow the syntax of other test files or test methods.</p>
+<p>This page covers some basic information about how to write these tests. More information can be found in the
+<a class="reference external" href="https://docs.pytest.org/en/stable/">pytest</a> documentation.</p>
+<div class="section" id="writing-a-test">
+<h2>Writing a test<a class="headerlink" href="#writing-a-test" title="Permalink to this headline">¶</a></h2>
+<p>When writing a test, make sure that pytest has been imported. Also, relative imports are used to import Marabou
+so that the tests can be run from any directory regardless of if PYTHONPATH points to the Marabou directory.
+For this reason, paths to test networks are also written relative to the location of the test folder. Combining</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>with relative paths allows the test to find the test networks correctly.</p>
+<p>The test methods should have a docstring as well to explain the purpose of the test. The Google docstring
+format is not required though, because these methods are not used to generate API documentation.</p>
+<p>Each test method should test some portion of the Maraboupy code, and assert statements should be used to
+ensure that Maraboupy behaved correctly.</p>
+</div>
+<div class="section" id="writing-a-temporary-file">
+<h2>Writing a temporary file<a class="headerlink" href="#writing-a-temporary-file" title="Permalink to this headline">¶</a></h2>
+<p>Pytest has a way of generating temporary files that can be used to test functions that write files. To use a
+temporary file, add the “tmpdir” argument to your test method. You can use that variable to create a temporary
+file using</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tempFile</span> <span class="o">=</span> <span class="n">tmpdir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="s2">&quot;tmpFolder&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strpath</span>
+</pre></div>
+</div>
+<p>Then you can use tempFile as your filename.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="4_Examples.html" class="btn btn-neutral float-right" title="Examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="2_CodingStyle.html" class="btn btn-neutral float-left" title="Coding Style Guidelines" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, The Marabou Team
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

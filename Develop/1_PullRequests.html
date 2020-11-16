@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Pull Requests &mdash; Maraboupy  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Coding Style Guidelines" href="2_CodingStyle.html" />
+    <link rel="prev" title="Contributing to Marabou" href="0_Guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Maraboupy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/0_Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/1_Testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Setup/2_Troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/0_NNetExample.html">NNet Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/1_TensorflowExample.html">Tensorflow Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/2_ONNXExample.html">ONNX Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/3_MarabouCoreExample.html">MarabouCore Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/4_DncExample.html">DNC Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/5_DisjunctionConstraintExample.html">Disjunction Constraint Example</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API/0_Marabou.html">Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/1_MarabouNetwork.html">MarabouNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/2_MarabouNetworkNNet.html">MarabouNetworkNNet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/3_MarabouNetworkTF.html">MarabouNetworkTF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/4_MarabouNetworkONNX.html">MarabouNetworkONNX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/5_MarabouUtils.html">MarabouUtils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/6_MarabouCore.html">MarabouCore</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer's Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="0_Guide.html">Contributing to Marabou</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Pull Requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="2_CodingStyle.html">Coding Style Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3_Tests.html">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="4_Examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="5_Documentation.html">Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Maraboupy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Pull Requests</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Develop/1_PullRequests.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pull-requests">
+<h1>Pull Requests<a class="headerlink" href="#pull-requests" title="Permalink to this headline">¶</a></h1>
+<ol class="simple">
+<li><p>All changes to be merged should reside on a branch of <em>your</em> fork.</p>
+<ul class="simple">
+<li><p>Travis workers on the main Marabou repository are shared by everyone and
+should primarily be used for testing pull requests and <code class="docutils literal notranslate"><span class="pre">master</span></code>. You get
+separate Travis workers for testing branches on your fork, so it is highly
+encouraged that you use this for your own and the team’s benefit.</p></li>
+<li><p>If you made major changes, break down your changes into small chunks and
+submit a pull request for each chunk in order to make reviewing less
+painful.</p></li>
+<li><p>It is recommended to not commit work in progress. You should always create
+pull requests for self-contained finished chunks. New features that are
+too big for one pull request should be split into smaller (self-contained)
+pull requests.</p></li>
+</ul>
+</li>
+<li><p>Create a pull request via GitHub and select at least one reviewer.</p>
+<ul class="simple">
+<li><p>one reviewer for minor changes</p></li>
+<li><p>two or more reviewers for everything that is not a minor change</p></li>
+</ul>
+</li>
+<li><p>You need approval for your pull request from one (minor changes) or two (more
+than minor changes) reviewers before you can merge your pull request.</p></li>
+<li><p>Commits pushed to the pull request should only contain fixes and changes
+related to reviewer comments.</p>
+<ul class="simple">
+<li><p>We require that pull requests are up-to-date with <code class="docutils literal notranslate"><span class="pre">master</span></code> before they can
+be merged. You can either update your branch on the GitHub page of your
+pull request or you can (while you are on the branch of your pull request)
+merge the current <code class="docutils literal notranslate"><span class="pre">master</span></code> using <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">pull</span> <span class="pre">origin</span> <span class="pre">master</span></code> (this creates a
+merge commit that can be squashed when merging the pull request) and then
+<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span></code> to update the pull request.</p></li>
+</ul>
+</li>
+<li><p>Merging pull requests to master. This step can be done on the GitHub page of
+your pull request.</p>
+<ul class="simple">
+<li><p>Merging is only possible after Travis has succeeded.</p></li>
+<li><p>Authors of a pull request are expected to perform the merge if they have
+write access to the repository (reviewers should not merge pull requests
+of developers that have privileges to do that themselves).</p></li>
+<li><p>Creating merge commits for pull requests is discouraged (we prefer a
+linear history) and therefore disabled via the GitHub interface.</p></li>
+<li><p>Squash commits are preferred over rebase commits.</p>
+<ul>
+<li><p>if the intermediate commits are not of general interest, do a squash commit</p></li>
+</ul>
+</li>
+<li><p>In most cases, Github should automatically add the pull request number
+(<code class="docutils literal notranslate"><span class="pre">#&lt;number&gt;</span></code>) to the title of the commit. Do not remove the number and add
+it if it is missing (useful for debugging/documentation purposes).</p></li>
+</ul>
+</li>
+</ol>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="2_CodingStyle.html" class="btn btn-neutral float-right" title="Coding Style Guidelines" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="0_Guide.html" class="btn btn-neutral float-left" title="Contributing to Marabou" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, The Marabou Team
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

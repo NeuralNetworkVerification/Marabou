@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Troubleshooting &mdash; Maraboupy  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/gallery-dataframe.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="NNet Example" href="../Examples/0_NNetExample.html" />
+    <link rel="prev" title="Testing" href="1_Testing.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> Maraboupy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="0_Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="1_Testing.html">Testing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ensure-correct-python-executable-is-used">Ensure correct python executable is used</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bit-python">32bit python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comparison-to-travis-output">Comparison to Travis output</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/0_NNetExample.html">NNet Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/1_TensorflowExample.html">Tensorflow Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/2_ONNXExample.html">ONNX Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/3_MarabouCoreExample.html">MarabouCore Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/4_DncExample.html">DNC Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Examples/5_DisjunctionConstraintExample.html">Disjunction Constraint Example</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../API/0_Marabou.html">Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/1_MarabouNetwork.html">MarabouNetwork</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/2_MarabouNetworkNNet.html">MarabouNetworkNNet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/3_MarabouNetworkTF.html">MarabouNetworkTF</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/4_MarabouNetworkONNX.html">MarabouNetworkONNX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/5_MarabouUtils.html">MarabouUtils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../API/6_MarabouCore.html">MarabouCore</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Developer's Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/0_Guide.html">Contributing to Marabou</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/1_PullRequests.html">Pull Requests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/2_CodingStyle.html">Coding Style Guidelines</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/3_Tests.html">Tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/4_Examples.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../Develop/5_Documentation.html">Documentation</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Maraboupy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Troubleshooting</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/Setup/2_Troubleshooting.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<p>If problems are encountered while building or testing Marabou or Maraboupy, here are some possible common causes to investigate.</p>
+<div class="section" id="ensure-correct-python-executable-is-used">
+<h2>Ensure correct python executable is used<a class="headerlink" href="#ensure-correct-python-executable-is-used" title="Permalink to this headline">¶</a></h2>
+<p>When you run cmake with a command like</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmake</span> <span class="o">..</span> <span class="o">-</span><span class="n">DBUILD_PYTHON</span><span class="o">=</span><span class="n">ON</span>
+</pre></div>
+</div>
+<p>there should be a line such as “Found PythonInterp: /path/to/python”. Make sure that this python executable file is the one you
+want to use, and that the python version is at least 3.5 for python3 or at least 2.7 for python2. If Marabou is built with a different
+python executable than the version you want to use, then you may run into some errors using Marabou.</p>
+<p>To force CMake to use a particular python executable file instead of the one it found on its own, use</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cmake</span> <span class="o">..</span> <span class="o">-</span><span class="n">DBUILD_PYTHON</span><span class="o">=</span><span class="n">ON</span> <span class="o">-</span><span class="n">DPYTHON_EXECUTABLE</span><span class="o">=/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">python</span>
+</pre></div>
+</div>
+<p>where /path/to/python is the path to the python executable you want to use. This may be important for Windows users to make sure
+that windows python is used rather than cygwin python.</p>
+</div>
+<div class="section" id="bit-python">
+<h2>32bit python<a class="headerlink" href="#bit-python" title="Permalink to this headline">¶</a></h2>
+<p>By default we install a 64bit Marabou and consequently a 64bit python interface.
+The maraboupy/build_python_x86.sh file builds a 32bit version.</p>
+</div>
+<div class="section" id="comparison-to-travis-output">
+<h2>Comparison to Travis output<a class="headerlink" href="#comparison-to-travis-output" title="Permalink to this headline">¶</a></h2>
+<p>If you are still having issues, you can look at how Travis is set up as well as the outputs of Travis to notice any differences
+in your setup or build output. Travis is configured in the .travis.yml file in the Marabou root directory. Travis creates
+three different builds: Linux OS with gcc compiler, Linux OS with clang compiler, and Windows OS. Travis shows how Marabou is
+built and tested. The output from Travis can be found at <a class="reference external" href="https://travis-ci.com/github/NeuralNetworkVerification/Marabou">here</a>.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Examples/0_NNetExample.html" class="btn btn-neutral float-right" title="NNet Example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="1_Testing.html" class="btn btn-neutral float-left" title="Testing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, The Marabou Team
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
