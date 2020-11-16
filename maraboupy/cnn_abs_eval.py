@@ -19,11 +19,12 @@ cfg_freshModelAbs = True
 savedModelOrig = "cnn_abs_orig.h5"
 savedModelAbs = "cnn_abs_abs.h5"
 
-cfg_dis_w = True
-cfg_dis_b = False
+cfg_dis_w = False
+cfg_dis_b = True
 
 #Log:
 # Passing - True, True
+# Failing - True, False
 
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides):
     if convOutShape[0] == None:
@@ -52,21 +53,7 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
     return replaceW, replaceB
 
-    '''
-    replace_w = np.zeros(replace_dense.get_weights()[0].shape) 
-    filter_dim = orig_w.shape[0:-2]
-    soff = [np.prod(orig_w.shape[i+1:-1]) for i in range(len(orig_w.shape[:-2]))] + [1]
-    toff = [np.prod(c2out[i+2:]) for i in range(len(c2out)-2)] + [1]
-
-    for target_coor in product(*[range(d) for d in c2out[1:-1]]):
-        if mask[target_coor]:
-            for source_coor, wMat in zip(product(*[[i*s+t for i in range(d)] for d,s,t in zip(filter_dim, strides, target_coor)]), [orig_w[c] for c in product(*[range(d) for d in filter_dim])]):
-                for in_ch, out_ch in product(range(orig_w.shape[-2]), range(orig_w.shape[-1])):
-                    flat_s = sum([c * off for c,off in zip((*source_coor, in_ch) , soff)])
-                    flat_t = sum([c * off for c,off in zip((*target_coor, out_ch), toff)])                
-                    replace_w[flat_s, flat_t] =   np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
-
-    replace_b = np.tile(orig_b, np.prod(c2out[1:-1]))'''
+#manual_result = lambda w,b,x : w * x + b
 
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 #print(replaceW)
@@ -111,7 +98,7 @@ y_train = tf.keras.utils.to_categorical(y_train, num_classes)
 y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
 if cfg_freshModelOrig:
-    modelOrig = tf.keras.Sequential(
+    modelOrigBackup = tf.keras.Sequential(
         [
             tf.keras.Input(shape=input_shape),
             layers.Conv1D(32, kernel_size=(3,), activation="relu", name="c1"),
@@ -123,6 +110,18 @@ if cfg_freshModelOrig:
             layers.Dense(num_classes, activation="softmax", name="sm1"),
         ]
     )
+    modelOrig = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=input_shape),
+            layers.Conv1D(2, kernel_size=(3,), activation="relu", name="c1"),
+            layers.MaxPooling1D(pool_size=(2,), name="mp1"),
+            layers.Conv1D(2, kernel_size=(3,), activation="relu", name="c2"),
+            layers.MaxPooling1D(pool_size=(2,), name="mp2"),
+            layers.Flatten(name="f1"),
+            layers.Dropout(0.5, name="do1"),
+            layers.Dense(num_classes, activation="softmax", name="sm1"),
+        ]
+    )    
 
     modelOrig.summary()
 
@@ -134,9 +133,9 @@ if cfg_freshModelOrig:
     modelOrig.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
     modelOrig.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, validation_split=0.1)
 
-    #score = modelOrig.evaluate(x_test, y_test, verbose=0)
-    #print("Test loss:", score[0])
-    #print("Test accuracy:", score[1])
+    score = modelOrig.evaluate(x_test, y_test, verbose=0)
+    print("Test loss:", score[0])
+    print("Test accuracy:", score[1])
     modelOrig.save(savedModelOrig)  # creates a HDF5 file 'my_model.h5'
 else:
     modelOrig = load_model(savedModelOrig)
@@ -185,9 +184,9 @@ if cfg_freshModelAbs:
     replace_w, replace_b = maskAndDensifyNDimConv(orig_w, orig_b, mask, c2in, c2out, strides)
     replace_dense.set_weights([replace_w, replace_b])
 
-    #score = modelAbs.evaluate(x_test, y_test, verbose=0)
-    #print("Test loss:", score[0])
-    #print("Test accuracy:", score[1])
+    score = modelAbs.evaluate(x_test, y_test, verbose=0)
+    print("Test loss:", score[0])
+    print("Test accuracy:", score[1])
 
     if np.all(np.isclose(modelAbs.predict(x_test), modelOrig.predict(x_test))):
         print("Prediction aligned")    
@@ -255,11 +254,15 @@ for i,test in enumerate(slice_test):
         print("Slice {} Prediction not aligned".format(i))
         print(np.mean([1 if b else 0 for b in np.nditer(evalSlice)]))
 
-        for origM,absM,e in zip(np.nditer(origModelSlice.predict(test)), np.nditer(modelAbsSlice.predict(test)), np.nditer(evalSlice)):
+        '''for origM,absM,e in zip(np.nditer(origModelSlice.predict(test)), np.nditer(modelAbsSlice.predict(test)), np.nditer(evalSlice)):
             if not e:
                 if not np.isclose(origM, absM):
-                    print("False: \n\torig: {} = {} \n\tabs:  {} = {}".format(origM, np.round(origM, 4),absM,  np.round(absM, 4)))
+                    print("False: \n\torig: {} = {} \n\tabs:  {} = {}".format(origM, np.round(origM, 4),absM,  np.round(absM, 4)))'''
 
-        print(OrigB)                    
-        print(AbsB)
+        print("OrigW, shape={} :: {}".format(OrigW.shape, OrigW))
+        print("AbsW, shape={} :: {}".format(AbsW.shape, AbsW))
+        print("OrigB, shape={} :: {}".format(OrigB.shape, OrigB))
+        print("AbsB, shape={} :: {}".format(AbsB.shape, AbsB))        
+        #print("Manual orig:{}".format(manual_result(OrigW, OrigB, test[0])))
+        #print("Manual abs:{}".format(manual_result(AbsW, AbsB, test[0])))
 
