@@ -15,6 +15,7 @@ from itertools import product, chain
 #from maraboupy import MarabouCore, Marabou
 from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
 
 #################################################
 #### _____              _____  _   _  _   _  ####
@@ -52,42 +53,69 @@ absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name+"_onnx", debug_mode=
 absMOnnxName = mnistProp.output_model_path(modelAbs)
 keras2onnx.save_model(absMOnnx, absMOnnxName)
 
-#####################################
-####  _____ _   _  _   _ __   __ ####
-#### |  _  | \ | || \ | |\ \ # # ####
-#### | | | |  \| ||  \| | \ V #  ####
-#### | | | | . ` || . ` | #   \  ####
-#### \ \_# # |\  || |\  |# #^\ \ ####
-####  \___#\_| \_#\_| \_#\#   \# ####
-####                             ####
-#####################################
+###################################
+####  _____       _            ####
+#### /  ___|     | |           ####
+#### \ `--.  ___ | |_   _____  ####
+####  `--. \/ _ \| \ \ / / _ \ ####
+#### /\__/ / (_) | |\ V /  __/ ####
+#### \____/ \___/|_| \_/ \___| ####
+####                           ####
+###################################
 
-print("\n\ncreate origMOnnxMbou:\n")
-#origMOnnxMbou = monnx.MarabouNetworkONNX(origMOnnx)
-origMOnnxMbou = monnx.MarabouNetworkONNX(origMOnnxName)
-print("\n\ncreate absMOnnxMbou:\n")
-#absMOnnxMbou  = monnx.MarabouNetworkONNX(absMOnnx)
-absMOnnxMbou  = monnx.MarabouNetworkONNX(absMOnnxName)
 
+xAdvInd = int(np.random.randint(0, mnistProp.x_test.shape[0], size=1)[0])
+xAdv = mnistProp.x_test[xAdvInd]
+yAdv = mnistProp.y_test[xAdvInd]
+yPredict = modelOrig.predict(np.array([xAdv]))
+yMax = yPredict.argmax()
+yPredictNoMax = np.copy(yPredict)
+yPredictNoMax[0][yMax] = 0
+ySecond = yPredictNoMax.argmax()
+inDist = 0.01
+if ySecond == yMax:
+    ySecond = 0 if yMax > 0 else 1
+    
+plt.title('Example %d. Label: %d' % (xAdvInd, yAdv))
+plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
+plt.savefig("xAdv.png")
+
+#sess = onnxruntime.InferenceSession(origMOnnxName, onnxruntime.SessionOptions())
+#data = [xAdv.astype(np.float32)]
+#feed = dict([(input.name, data[n]) for n, input in enumerate(sess.get_inputs())])
+#yAdvOnnx = sess.run(None, feed)[0].argmax()
+#print("yAdvOnnx={}".format(yAdvOnnx))
+
+##Original
 print("\n\n\n\n***************************************************************\n\n\n\n")
-
-print(origMOnnxMbou)
-print(absMOnnxMbou)
-
+print("\n\ncreate origMOnnxMbou:\n")
+origMOnnxMbou  = monnx.MarabouNetworkONNX(origMOnnxName)
+#print(origMOnnxMbou)
+setAdversarial(origMOnnxMbou, xAdv, inDist, yMax, ySecond)
 print("\n\n\n\nSolve Orig***************************************************************\n\n\n\n")
+vals, stats = origMOnnxMbou.solve()
+sat = len(vals) > 0
+print("\n\n\n\nFinish solve Orig***************************************************************\n\n\n\n")
+if sat:
+    cex, cexPrediction = cexToImage(origMOnnxMbou, vals, xAdv)
+    plt.title('CEX, MarabouY={}, modelY={}'.format(cexPrediction.argmax(), modelOrig.predict(np.array([cex])).argmax() ))
+    plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
+    plt.savefig("Cex.png")
+    print(cexPrediction)
 
-origMOnnxMbou.solve()
-print("origMOnnxMbou.inputVars={}".format(origMOnnxMbou.inputVars))
-print("origMOnnxMbou.inputVars.shape={}".format(np.array(origMOnnxMbou.inputVars).shape))
-print("origMOnnxMbou.outputVars={}".format(origMOnnxMbou.outputVars))
-print("origMOnnxMbou.numVars={}".format(origMOnnxMbou.numVars))
+exit()
 
-print("\n\n\n\nSolve Abs***************************************************************\n\n\n\n")
-absMOnnxMbou.solve()
-print("absMOnnxMbou.inputVars={}".format(absMOnnxMbou.inputVars))
-print("absMOnnxMbou.inputVars.shape={}".format(np.array(absMOnnxMbou.inputVars).shape))
-print("absMOnnxMbou.outputVars={}".format(absMOnnxMbou.outputVars))
-print("absMOnnxMbou.numVars={}".format(absMOnnxMbou.numVars))
+##Abstracted
+#print("\n\n\n\n***************************************************************\n\n\n\n")
+#print("\n\ncreate absMOnnxMbou:\n")
+#absMOnnxMbou  = monnx.MarabouNetworkONNX(absMOnnxName)
+#print(absMOnnxMbou)
+#print("\n\n\n\nSolve Abs***************************************************************\n\n\n\n")
+#absMOnnxMbou.solve()
+#print("absMOnnxMbou.inputVars={}".format(absMOnnxMbou.inputVars))
+#print("absMOnnxMbou.inputVars.shape={}".format(np.array(absMOnnxMbou.inputVars).shape))
+#print("absMOnnxMbou.outputVars={}".format(absMOnnxMbou.outputVars))
+#print("absMOnnxMbou.numVars={}".format(absMOnnxMbou.numVars))
 
 exit()
 

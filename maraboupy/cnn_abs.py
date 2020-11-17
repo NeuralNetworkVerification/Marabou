@@ -168,3 +168,30 @@ def cexToImage(net, valDict,xAdv):
     cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction
     
+def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
+    logger.info("Started converting model ({}) to ONNX".format(model.name))
+    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
+    modelOnnxName = mnistProp.output_model_path(modelOnnx)
+    keras2onnx.save_model(modelOnnx, absMOnnxName)
+    logger.info("Finished converting model ({}) to ONNX. Output file is {}".format(model.name, modelOnnxName))
+    logger.info("Started converting model ({}) from ONNX to MarabouNetwork".format(model.name))
+    modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
+    setAdversarial(origMOnnxMbou, xAdv, inDist, yMax, ySecond)
+    logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
+    logger.info("Started solving query ({})".format(model.name))
+    vals, stats = origMOnnxMbou.solve()
+    sat = len(vals) > 0
+    logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
+    if not sat:
+        return False, np.array([]), np.array([])
+    cex, cexPrediction = cexToImage(origMOnnxMbou, vals, xAdv)
+    fName = "Cex.png"
+    mbouPrediction = cexPrediction.argmax()
+    kerasPrediction = model.predict(np.array([cex])).argmax()
+    logger.info("Printing counter example: {}. MarabouY={}, modelY={}".format(fName,mbouPrediction, kerasPrediction))        
+    plt.title('CEX, MarabouY={}, modelY={}'.format(mbouPrediction, kerasPrediction))
+    plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
+    plt.savefig(fName)
+    return True, cex, cexPrediction
+
+    
