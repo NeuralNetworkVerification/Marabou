@@ -80,8 +80,8 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
     for l in clnM.layers:
         l._name = l.name + "_clnM"
 
-    clnM.build(input_shape=featureShape)
-    clnM.compile(loss=loss, optimizer=optimizer, metrics=metrics)
+    clnM.build(input_shape=mnistProp.featureShape)
+    clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
     clnM.summary()
 
     clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
