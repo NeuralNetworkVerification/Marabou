@@ -17,6 +17,24 @@ from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 
+
+import logging
+logger = logging.getLogger('cnn_abs_testbench.log')
+logger.setLevel(logging.DEBUG)
+
+logger = logging.getLogger('cnnAbsTB')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('cnnAbsTB.log')
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
+
+
 #################################################
 #### _____              _____  _   _  _   _  ####
 ####|  __ \            /  __ \| \ | || \ | | ####
@@ -32,9 +50,6 @@ print("Starting model building")
 #https://keras.io/examples/vision/mnist_convnet/
     
 modelOrig, replaceLayerName = genCnnForAbsTest()
-origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
-origMOnnxName = mnistProp.output_model_path(modelOrig)
-keras2onnx.save_model(origMOnnx, origMOnnxName)
 
 #################################################################################
 #### _____ _                              ______           _                 ####
@@ -80,28 +95,18 @@ plt.title('Example %d. Label: %d' % (xAdvInd, yAdv))
 plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig("xAdv.png")
 
+
 #sess = onnxruntime.InferenceSession(origMOnnxName, onnxruntime.SessionOptions())
 #data = [xAdv.astype(np.float32)]
 #feed = dict([(input.name, data[n]) for n, input in enumerate(sess.get_inputs())])
 #yAdvOnnx = sess.run(None, feed)[0].argmax()
 #print("yAdvOnnx={}".format(yAdvOnnx))
 
-##Original
-print("\n\n\n\n***************************************************************\n\n\n\n")
-print("\n\ncreate origMOnnxMbou:\n")
-origMOnnxMbou  = monnx.MarabouNetworkONNX(origMOnnxName)
-#print(origMOnnxMbou)
-setAdversarial(origMOnnxMbou, xAdv, inDist, yMax, ySecond)
-print("\n\n\n\nSolve Orig***************************************************************\n\n\n\n")
-vals, stats = origMOnnxMbou.solve()
-sat = len(vals) > 0
-print("\n\n\n\nFinish solve Orig***************************************************************\n\n\n\n")
-if sat:
-    cex, cexPrediction = cexToImage(origMOnnxMbou, vals, xAdv)
-    plt.title('CEX, MarabouY={}, modelY={}'.format(cexPrediction.argmax(), modelOrig.predict(np.array([cex])).argmax() ))
-    plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
-    plt.savefig("Cex.png")
-    print(cexPrediction)
+sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, logger, xAdv, inDist, yMax, ySecond)
+
+print(sat)
+print(cex)
+print(cexPrediction)
 
 exit()
 
