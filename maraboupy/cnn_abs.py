@@ -32,7 +32,8 @@ class mnistProp:
     output_model_path = lambda m : "./{}.onnx".format(m.name)
     savedModelAbs = "cnn_abs_abs.h5"
     cfg_dis_w = False
-    cfg_dis_b = False    
+    cfg_dis_b = False
+    cfg_fresh = False
     
 
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
@@ -62,7 +63,7 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
     return replaceW, replaceB
 
-def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
+def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=mnistProp.cfg_fresh):
     if cfg_freshModelAbs:
         rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
         rplcOut = origM.get_layer(name=rplcLayerName).output_shape
@@ -79,12 +80,12 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         for l in clnM.layers:
             l._name = l.name + "_clnM"
 
-            clnM.build(input_shape=mnistProp.featureShape)
-            clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
-            clnM.summary()
+        clnM.build(input_shape=mnistProp.featureShape)
+        clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
+        clnM.summary()
 
-            clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-            clnDense.set_weights([clnW, clnB])
+        clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
+        clnDense.set_weights([clnW, clnB])
 
         score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("Test loss:", score[0])
@@ -102,7 +103,7 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
     return clnM
 
 
-def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=True, savedModelOrig="cnn_abs_orig.h5"):
+def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5"):
 
     print("Starting model building")
     #https://keras.io/examples/vision/mnist_convnet/
@@ -124,39 +125,46 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=True, savedModelOrig="
             name="origModel"
         )
 
-        batch_size = 60 #FIXME
-        epochs = 1 #FIXME
+        batch_size = 128
+        epochs = 15
 
         origM.build(input_shape=mnistProp.featureShape)
         origM.summary()        
         origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
-        origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=1, batch_size=batch_size, validation_split=0.1)
+        origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("Test loss:", score[0])
         print("Test accuracy:", score[1])
         origM.save(savedModelOrig)
         
     else:
-        pring("Error")
-        exit(1)
         origM = load_model(savedModelOrig)
 
     rplcLayerName = "c2"
     return origM, rplcLayerName
 
 def setAdversarial(net, x, inDist,yCorrect,yBad):
-    inAsNP = np.array(net.inputVars))
+    inAsNP = np.array(net.inputVars)
     x = x.reshape(inAsNP.shape)
     xUp = x + inDist
-    xDown = x + inDist
-    for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
-        net.setLowerBound(i,d)
-        net.setUpperBound(i,u)
-    for j,o in np.nditer(np.array(net.outputVars)):
+    xDown = np.maximum(x - inDist,np.zeros(x.shape))
+    for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):    
+        net.setLowerBound(i.item(),d.item())
+        net.setUpperBound(i.item(),u.item())
+    for j,o in enumerate(np.nditer(np.array(net.outputVars))):
         if j == yCorrect:
-            yCorrectVar = o
+            yCorrectVar = o.item()
         if j == yBad:
-            yBadVar = o
-    net.addInequality([yCorrectVar, yBadVar], [-1,1], 0) # - correct + bad <= 0
+            yBadVar = o.item()
+    #print("yBadVar={}".format(yBadVar))
+    #print("yCorrectVar={}".format(yCorrectVar))
+    #exit()
+    net.addInequality([yCorrectVar, yBadVar], [1,-1], 0) # correct - bad <= 0
     return net
+    
+def cexToImage(net, valDict,xAdv):
+    cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)
+    print(np.array(net.outputVars))
+    cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
+    return cex, cexPrediction
     
