@@ -350,6 +350,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         
         # Assume first input is array to be reshaped, second input is the new shape array
         reshapeVals = self.constantMap[inputName2]
+        if reshapeVals[0] in [0, None]:
+            #reshapeVals=reshapeVals[1:]
+            reshapeVals[0]=1
         self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(reshapeVals).shape)
         if inputName1 in self.varMap:
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
