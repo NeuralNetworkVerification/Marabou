@@ -6,9 +6,6 @@ sys.path.append("/cs/labs/guykatz/matanos/Marabou")
 sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
 
 from itertools import product, chain
-#pip install keras2onnx
-#pip install onnx
-#pip install onnxruntime
 import keras2onnx
 import onnx
 import onnxruntime
@@ -20,23 +17,10 @@ import numpy as np
 from cnn_abs import *
 
 from tensorflow.keras.models import load_model
-cfg_freshModelAbs = True
 savedModelAbs = "cnn_abs_abs.h5"
 
 cfg_dis_w = False
-cfg_dis_b = True
-
-#Log:
-# Passing - True, True
-# Failing - True, False
-
-#manual_result = lambda w,b,x : w * x + b
-
-#replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
-#print(replaceW)
-#print(replaceB)
-#print("Vis = {}".format(replaceW[:,0]))
-#exit()
+cfg_dis_b = False
 
 #################################################
 #### _____              _____  _   _  _   _  ####
@@ -51,32 +35,14 @@ cfg_dis_b = True
 
 print("Starting model building")
 #https://keras.io/examples/vision/mnist_convnet/
-# Model / data parameters
-num_classes = 10
-## input_shape = (28 * 28,1) FIXME
-input_shape = (28,28,1)
-# the data, split between train and test sets
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-# Scale images to the [0, 1] range
-x_train = x_train.astype("float32") / 255
-x_test = x_test.astype("float32") / 255
-# Make sure images have shape (28, 28, 1)
-#x_train = x_train.reshape(x_train.shape[0], 28 * 28) FIXME 
-#x_test = x_test.reshape(x_test.shape[0], 28 * 28) FIXME 
-x_train = np.expand_dims(x_train, -1)
-x_test = np.expand_dims(x_test, -1)
-print("x_train shape:", x_train.shape)
-print(x_train.shape[0], "train samples")
-print(x_test.shape[0], "test samples")
-# convert class vectors to binary class matrices
-#y_train = tf.keras.utils.to_categorical(y_train, num_classes)
-#y_test = tf.keras.utils.to_categorical(y_test, num_classes)
-loss='sparse_categorical_crossentropy'
-optimizer='adam'
-metrics=['accuracy']
     
 modelOrig, replaceLayerName = genCnnForAbsTest()
-#modelOrig.fit(x_train, y_train, epochs=1)
+
+origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
+keras2onnx.save_model(origMOnnx, mnistProp.output_model_path(modelOrig))
+
+exit()
+
 #################################################################################
 #### _____ _                              ______           _                 ####
 ####/  __ \ |                     ___     | ___ \         | |                ####
@@ -92,11 +58,11 @@ if cfg_freshModelAbs:
 
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(modelOrig.get_layer(name=replaceLayerName).output_shape[1:-1]))
 
-    score = modelAbs.evaluate(x_test, y_test, verbose=0)
+    score = modelAbs.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
     print("Test loss:", score[0])
     print("Test accuracy:", score[1])
 
-    if np.all(np.isclose(modelAbs.predict(x_test), modelOrig.predict(x_test))):
+    if np.all(np.isclose(modelAbs.predict(mnistProp.x_test), modelOrig.predict(mnistProp.x_test))):
         print("Prediction aligned")    
     else:
         print("Prediction not aligned")
@@ -114,14 +80,6 @@ else:
 ####  \___#\_| \_#\_| \_#\#   \# ####
 ####                             ####
 #####################################
-
-output_model_path = lambda m : "./{}.onnx".format(m.name)
-
-print("\n\ncreate origMOnnx:\n")
-for l in modelOrig.layers:
-    print("{} shapes: in={},out={}".format(l.name, l.input_shape, l.output_shape))
-origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
-keras2onnx.save_model(origMOnnx, output_model_path(modelOrig))
 
 print("\n\ncreate absMOnnx:\n")
 absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name+"_onnx", debug_mode=1)
