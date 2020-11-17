@@ -1,26 +1,20 @@
 
 import sys
 import os
-
-sys.path.append("/cs/labs/guykatz/matanos/Marabou")
-sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
-
-from itertools import product, chain
+import tensorflow as tf
+import numpy as np
 import keras2onnx
 import onnx
 import onnxruntime
-import tensorflow as tf
-from maraboupy import MarabouCore, Marabou
-from maraboupy import MarabouNetworkONNX as monnx
-from tensorflow.keras import datasets, layers, models
-import numpy as np
 from cnn_abs import *
 
-from tensorflow.keras.models import load_model
-savedModelAbs = "cnn_abs_abs.h5"
+#sys.path.append("/cs/labs/guykatz/matanos/Marabou")
+#sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
 
-cfg_dis_w = False
-cfg_dis_b = False
+from itertools import product, chain
+#from maraboupy import MarabouCore, Marabou
+from maraboupy import MarabouNetworkONNX as monnx
+from tensorflow.keras import datasets, layers, models
 
 #################################################
 #### _____              _____  _   _  _   _  ####
@@ -37,7 +31,6 @@ print("Starting model building")
 #https://keras.io/examples/vision/mnist_convnet/
     
 modelOrig, replaceLayerName = genCnnForAbsTest()
-
 origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
 keras2onnx.save_model(origMOnnx, mnistProp.output_model_path(modelOrig))
 
@@ -67,9 +60,9 @@ if cfg_freshModelAbs:
     else:
         print("Prediction not aligned")
         
-    modelAbs.save(savedModelAbs)  # creates a HDF5 file 'my_model.h5'
+    modelAbs.save(mnistProp.savedModelAbs)  # creates a HDF5 file 'my_model.h5'
 else:
-    modelAbs = load_model(savedModelAbs)
+    modelAbs = models.load_model(mnistProp.savedModelAbs)
 
 #####################################
 ####  _____ _   _  _   _ __   __ ####
@@ -107,12 +100,12 @@ c2 = modelOrig.get_layer(name="c2")
 dReplace = modelAbs.get_layer(name="clnDense")
 slice_input_shape = modelOrig.get_layer(name="c2").input_shape[1:]
 
-if cfg_dis_w:
+if mnistProp.cfg_dis_w:
     OrigW = np.ones(c2.get_weights()[0].shape)
 else:
     OrigW = c2.get_weights()[0]
 AbsW = dReplace.get_weights()[0]
-if cfg_dis_b:
+if mnistProp.cfg_dis_b:
     OrigB = np.ones(c2.get_weights()[1].shape)
     AbsB  = np.ones(dReplace.get_weights()[1].shape)
 else:

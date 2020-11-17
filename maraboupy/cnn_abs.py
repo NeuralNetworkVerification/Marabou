@@ -30,9 +30,12 @@ class mnistProp:
     optimizer='adam'
     metrics=['accuracy']
     output_model_path = lambda m : "./{}.onnx".format(m.name)
+    savedModelAbs = "cnn_abs_abs.h5"
+    cfg_dis_w = False
+    cfg_dis_b = False    
     
 
-def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=False):
+def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
     if convOutShape[0] == None:
         convOutShape = convOutShape[1:]
     if convInShape[0] == None:
