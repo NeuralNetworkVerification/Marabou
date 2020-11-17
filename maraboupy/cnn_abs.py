@@ -189,7 +189,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
     logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     logger.info("Started solving query ({})".format(model.name))
-    vals, stats = modelOnnxMarabou.solve()
+    vals, stats = modelOnnxMarabou.solve(verbose=(logger.level==logging.DEBUG))
     sat = len(vals) > 0
     logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
     if not sat:
@@ -215,3 +215,10 @@ def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
     if model.predict(np.array([cex])).argmax() != yBad:
         logger.info("CEX prediction value is not the bad value described in the adversarial property.")
     return False
+
+def genMask(shape, lBound, uBound):
+    onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
+    mask = np.zeros(shape)
+    for ind in onesInd:
+        mask[ind] = 1
+    return mask
