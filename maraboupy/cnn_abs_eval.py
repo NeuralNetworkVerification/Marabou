@@ -32,9 +32,8 @@ print("Starting model building")
     
 modelOrig, replaceLayerName = genCnnForAbsTest()
 origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
-keras2onnx.save_model(origMOnnx, mnistProp.output_model_path(modelOrig))
-
-exit()
+origMOnnxName = mnistProp.output_model_path(modelOrig)
+keras2onnx.save_model(origMOnnx, origMOnnxName)
 
 #################################################################################
 #### _____ _                              ______           _                 ####
@@ -64,6 +63,10 @@ if cfg_freshModelAbs:
 else:
     modelAbs = models.load_model(mnistProp.savedModelAbs)
 
+absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name+"_onnx", debug_mode=1)
+absMOnnxName = mnistProp.output_model_path(modelAbs)
+keras2onnx.save_model(absMOnnx, absMOnnxName)
+
 #####################################
 ####  _____ _   _  _   _ __   __ ####
 #### |  _  | \ | || \ | |\ \ # # ####
@@ -74,14 +77,12 @@ else:
 ####                             ####
 #####################################
 
-print("\n\ncreate absMOnnx:\n")
-absMOnnx = keras2onnx.convert_keras(modelAbs, modelAbs.name+"_onnx", debug_mode=1)
-keras2onnx.save_model(absMOnnx, output_model_path(modelAbs))
-
 print("\n\ncreate origMOnnxMbou:\n")
-origMOnnxMbou = monnx(origMOnnx)
+#origMOnnxMbou = monnx.MarabouNetworkONNX(origMOnnx)
+origMOnnxMbou = monnx.MarabouNetworkONNX(origMOnnxName)
 print("\n\ncreate absMOnnxMbou:\n")
-absMOnnxMbou  = monnx(absMOnnx)
+#absMOnnxMbou  = monnx.MarabouNetworkONNX(absMOnnx)
+absMOnnxMbou  = monnx.MarabouNetworkONNX(absMOnnxName)
     
 exit()
 ##################################################################
