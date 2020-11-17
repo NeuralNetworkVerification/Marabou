@@ -62,30 +62,42 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
     return replaceW, replaceB
 
-def cloneAndMaskConvModel(origM, rplcLayerName, mask):
-    rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
-    rplcOut = origM.get_layer(name=rplcLayerName).output_shape
-    origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
-    origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
-    clnDense = layers.Dense(units=np.prod(rplcOut[1:]),name="clnDense")
-    strides = origM.get_layer(name=rplcLayerName).strides
+def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
+    if cfg_freshModelAbs:
+        rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
+        rplcOut = origM.get_layer(name=rplcLayerName).output_shape
+        origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
+        origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
+        clnDense = layers.Dense(units=np.prod(rplcOut[1:]),name="clnDense")
+        strides = origM.get_layer(name=rplcLayerName).strides
+        tf.keras.backend.clear_session()
+        origMCloneTemp = models.clone_model(origM)
+        clnM = tf.keras.Sequential(
+            list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
+            name="AbsModel"        
+        )
+        for l in clnM.layers:
+            l._name = l.name + "_clnM"
 
-    tf.keras.backend.clear_session()
-    origMCloneTemp = models.clone_model(origM)
-    clnM = tf.keras.Sequential(
-        #[tf.keras.Input(shape=origM.get_layer(index=0).input_shape[1:])] + 
-        list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
-        name="AbsModel"        
-    )
-    for l in clnM.layers:
-        l._name = l.name + "_clnM"
+            clnM.build(input_shape=mnistProp.featureShape)
+            clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
+            clnM.summary()
 
-    clnM.build(input_shape=mnistProp.featureShape)
-    clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
-    clnM.summary()
+            clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
+            clnDense.set_weights([clnW, clnB])
 
-    clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-    clnDense.set_weights([clnW, clnB])
+        score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        print("Test loss:", score[0])
+        print("Test accuracy:", score[1])
+         
+        if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+            print("Prediction aligned")    
+        else:
+            print("Prediction not aligned")
+
+        clnM.save(mnistProp.savedModelAbs)
+    else:
+        clnM = models.load_model(mnistProp.savedModelAbs)
 
     return clnM
 
@@ -106,7 +118,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=True, savedModelOrig="
                 layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
                 layers.Flatten(name="f1"),
                 layers.Dropout(0.5, name="do1"),
-                layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1")
+                #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1") FIXME TODO
+                layers.Dense(mnistProp.num_classes, activation="relu", name="sm1")
             ],
             name="origModel"
         )
@@ -131,3 +144,19 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=True, savedModelOrig="
     rplcLayerName = "c2"
     return origM, rplcLayerName
 
+def setAdversarial(net, x, inDist,yCorrect,yBad):
+    inAsNP = np.array(net.inputVars))
+    x = x.reshape(inAsNP.shape)
+    xUp = x + inDist
+    xDown = x + inDist
+    for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
+        net.setLowerBound(i,d)
+        net.setUpperBound(i,u)
+    for j,o in np.nditer(np.array(net.outputVars)):
+        if j == yCorrect:
+            yCorrectVar = o
+        if j == yBad:
+            yBadVar = o
+    net.addInequality([yCorrectVar, yBadVar], [-1,1], 0) # - correct + bad <= 0
+    return net
+    
