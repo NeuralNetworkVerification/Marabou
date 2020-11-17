@@ -17,12 +17,16 @@ from itertools import product, chain
 from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
-    
-logger = logging.getLogger('cnn_abs_testbench.log')
-logger.setLevel(logging.DEBUG)
 
+logging.basicConfig(
+    level = logging.DEBUG,
+    format = "%(asctime)s %(levelname)s %(message)s",
+    filename = "cnnAbsTB.log",
+    filemode = "w"
+)
 logger = logging.getLogger('cnnAbsTB')
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 fh = logging.FileHandler('cnnAbsTB.log')
 fh.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
@@ -54,16 +58,33 @@ logger.info("Printing original input: {}".format(fName))
 plt.title('Example %d. Label: %d' % (xAdvInd, yAdv))
 plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
-
+    
 logger.info("Starting Abstractions")
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[1:-1]
-maskList = [np.ones(maskShape)]
+maskList = [np.zeros(maskShape)] + [genMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)]) for thresh in reversed(range(int(min(maskShape)/2)))] + [np.ones(maskShape)] #FIXME creating too many masks with ones
+print("ORIG MASK, len={}".format(len(maskList)))
+maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))]
+print("UNIQUE MASK, len={}".format(len(maskList)))
 
 isSporious = False
-for mask in maskList:
+reachedFull = False
+successful = None
+#FIXME make sure abstracted CEX result is the same in orig and abs models.
+for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     sat, cex, cexPrediction = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond)
-    if (sat and not isCEXSporious(modelOrig, xAdv, inDist, yMax, ySecond, cex, logger)) or not sat: 
+    isSporious = None
+    if sat:
+        print("Found CEX in mask number {}, checking if sporious.".format(i))
+        logger.info("Found CEX in mask number {}, checking if sporious.".format(i))
+        isSporious = isCEXSporious(modelOrig, xAdv, inDist, yMax, ySecond, cex, logger)
+        print("Found CEX in mask number {}, checking if sporious.".format(i))
+        logger.info("CEX in mask number {} is {}sporious.".format(i, "" if isSporious else "not "))
+    if (sat and (isSporious == False)) or not sat:
+        print("Found real CEX in mask number {}".format(i))
+        logger.info("Found real CEX in mask number {}".format(i))
+        print("successful={}".format(i))
+        successful = i
         break;
 else:
     sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, logger, xAdv, inDist, yMax, ySecond)
@@ -73,8 +94,13 @@ if sat:
     if isCEXSporious(modelOrig, xAdv, inDist, yMax, ySecond, cex, logger):
         logger.info("Sporious CEX after end")
         raise Exception("Sporious CEX after end")
-    if model.predict(np.array([cex])).argmax() != ySecond:
-        logger.info("Unxepcted prediction result, cex result is {}".format(model.predict(np.array([cex])).argmax()))
+    if modelOrig.predict(np.array([cex])).argmax() != ySecond:
+        logger.info("Unxepcted prediction result, cex result is {}".format(modelOrig.predict(np.array([cex])).argmax()))
+    print("Found CEX in origin")
+    logger.info("Found CEX in origin")
+    print("successful=original")
+    print("SAT")
 else:
     logger.info("UNSAT")
+    print("UNSAT")    
 
