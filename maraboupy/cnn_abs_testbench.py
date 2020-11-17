@@ -56,15 +56,25 @@ plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
 logger.info("Starting Abstractions")
-maskList = []
+maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[1:-1]
+maskList = [np.ones(maskShape)]
 
+isSporious = False
 for mask in maskList:
-    
-    
+    modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+    sat, cex, cexPrediction = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond)
+    if (sat and not isCEXSporious(modelOrig, xAdv, inDist, yMax, ySecond, cex, logger)) or not sat: 
+        break;
 else:
-    logger.info("Started transalting original model to ONNX")
-    origMOnnx = keras2onnx.convert_keras(modelOrig, modelOrig.name+"_onnx", debug_mode=1)
-    origMOnnxName = mnistProp.output_model_path(modelOrig)
-    keras2onnx.save_model(origMOnnx, origMOnnxName)
-    logger.info("Finished transalting original model to ONNX")
-    
+    sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, logger, xAdv, inDist, yMax, ySecond)
+
+if sat:
+    logger.info("SAT")    
+    if isCEXSporious(modelOrig, xAdv, inDist, yMax, ySecond, cex, logger):
+        logger.info("Sporious CEX after end")
+        raise Exception("Sporious CEX after end")
+    if model.predict(np.array([cex])).argmax() != ySecond:
+        logger.info("Unxepcted prediction result, cex result is {}".format(model.predict(np.array([cex])).argmax()))
+else:
+    logger.info("UNSAT")
+

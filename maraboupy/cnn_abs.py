@@ -9,9 +9,11 @@ from itertools import product, chain
 #pip install keras2onnx
 import keras2onnx
 import tensorflow as tf
-#from maraboupy import MarabouNetworkONNX as monnx
+from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import numpy as np
+import logging
+import matplotlib.pyplot as plt
 
 from tensorflow.keras.models import load_model
 cfg_freshModelAbs = True
@@ -63,7 +65,7 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
     return replaceW, replaceB
 
-def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=mnistProp.cfg_fresh):
+def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
     if cfg_freshModelAbs:
         rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
         rplcOut = origM.get_layer(name=rplcLayerName).output_shape
@@ -143,11 +145,19 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
     rplcLayerName = "c2"
     return origM, rplcLayerName
 
+def getBoundsInftyBall(x, r, pos=True):
+    if pos:
+        return np.maximum(x - r,np.zeros(x.shape)), x + r
+    return x - r, x + r
+
+def inBoundsInftyBall(x, r, p, pos=True):
+    l,u = getBoundsInftyBall(x,r,pos=pos)
+    return np.all(np.less_equal(l,p)) and np.all(np.greater_equal(u,p))
+    
 def setAdversarial(net, x, inDist,yCorrect,yBad):
     inAsNP = np.array(net.inputVars)
     x = x.reshape(inAsNP.shape)
-    xUp = x + inDist
-    xDown = np.maximum(x - inDist,np.zeros(x.shape))
+    xDown, xUp = getBoundsInftyBall(x, inDist)
     for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):    
         net.setLowerBound(i.item(),d.item())
         net.setUpperBound(i.item(),u.item())
@@ -171,20 +181,20 @@ def cexToImage(net, valDict,xAdv):
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     logger.info("Started converting model ({}) to ONNX".format(model.name))
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
-    modelOnnxName = mnistProp.output_model_path(modelOnnx)
-    keras2onnx.save_model(modelOnnx, absMOnnxName)
+    modelOnnxName = mnistProp.output_model_path(model)
+    keras2onnx.save_model(modelOnnx, modelOnnxName)
     logger.info("Finished converting model ({}) to ONNX. Output file is {}".format(model.name, modelOnnxName))
     logger.info("Started converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-    setAdversarial(origMOnnxMbou, xAdv, inDist, yMax, ySecond)
+    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
     logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     logger.info("Started solving query ({})".format(model.name))
-    vals, stats = origMOnnxMbou.solve()
+    vals, stats = modelOnnxMarabou.solve()
     sat = len(vals) > 0
     logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
     if not sat:
         return False, np.array([]), np.array([])
-    cex, cexPrediction = cexToImage(origMOnnxMbou, vals, xAdv)
+    cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv)
     fName = "Cex.png"
     mbouPrediction = cexPrediction.argmax()
     kerasPrediction = model.predict(np.array([cex])).argmax()
@@ -194,4 +204,14 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     plt.savefig(fName)
     return True, cex, cexPrediction
 
-    
+def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
+    if not inBoundsInftyBall(x, inDist, cex):
+        logger.info("CEX out of bounds")
+        raise Exception("CEX out of bounds")
+    if model.predict(np.array([cex])).argmax() == yCorrect:
+        logger.info("Found sporious CEX")
+        return True
+    logger.info("Found real, not sporious, CEX")
+    if model.predict(np.array([cex])).argmax() != yBad:
+        logger.info("CEX prediction value is not the bad value described in the adversarial property.")
+    return False
