@@ -44,7 +44,12 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     #print("origW.shape ", origW.shape)    
     #print("origW ", origW)
     #print("origB.shape ", origB.shape)
-    #print("origB ", origB)    
+    #print("origB ", origB)
+
+    #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer
+    #origW = origW[:,:,::-1,::-1]
+    origW = origW[::-1,::-1,:,:]
+    #origB = origB[::-1]
     if convOutShape[0] == None:
         convOutShape = convOutShape[1:]
     if convInShape[0] == None:
@@ -86,24 +91,40 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
         clnDense = layers.Dense(units=np.prod(rplcOut[1:]),name="clnDense")
         strides = origM.get_layer(name=rplcLayerName).strides
-        tf.keras.backend.clear_session()
+        #tf.keras.backend.clear_session()
         origMCloneTemp = models.clone_model(origM)
+        origMCloneTemp.set_weights(origM.get_weights())
+        origMCloneTemp.build(input_shape=mnistProp.featureShape)
+        origMCloneTemp.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
+        origMCloneTemp.summary()        
+        score = origMCloneTemp.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        print("(Original1.5) Test loss:", score[0])
+        print("(Original1.5) Test accuracy:", score[1])        
         clnM = tf.keras.Sequential(
             list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
             name=("AbsModel_{}".format(mnistProp.numClones))
         )
-        mnistProp.numClones += 1
+        for lTemp,lCln in [(t,c) for t in origMCloneTemp.layers for c in clnM.layers]:
+            if lCln.name == lTemp.name:
+                lCln.set_weights(lTemp.get_weights())
         for l in clnM.layers:
-            l._name = l.name + "_clnM"
+            l._name = l.name + "_clnM" + str(mnistProp.numClones)
+
+        mnistProp.numClones += 1            
 
         clnM.build(input_shape=mnistProp.featureShape)
         clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
         clnM.summary()
 
         clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
+        #print("clnW = {}".format(clnW))
+        #print("clnB = {}".format(clnB))        
         clnDense.set_weights([clnW, clnB])
 
         score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        score1 = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        score2 = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        print(score,score1,score2)
         print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
         print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
          
@@ -126,7 +147,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
 
     if cfg_freshModelOrig:
         num_ch = 2 if cfg_limitCh else 32
-        tf.keras.backend.clear_session()
+        #tf.keras.backend.clear_session()
         origM = tf.keras.Sequential(
             [                    
                 layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1", input_shape=mnistProp.input_shape),
