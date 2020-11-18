@@ -34,6 +34,20 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+#mask=np.array([[[1.],[1.],[1.]],
+#               [[1.],[1.],[1.]],
+#               [[1.],[1.],[1.]]])
+fShape = (2,2,2,2)
+inShape = (4,4,2)
+outShape = (3,3,2)
+mask = np.ones(outShape[:-1])
+origW = np.array(range(1,1+np.ones(fShape).size)).reshape(fShape)
+replaceW, replaceB = maskAndDensifyNDimConv(origW, np.array([0.5]), mask, inShape, outShape, (1,1))
+print(replaceW)
+print(replaceB)
+print(origW[(0,0)])
+print(origW[(0,0)][(0,1)])
+exit()
 
 #################################################
 #### _____              _____  _   _  _   _  ####

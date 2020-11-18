@@ -19,7 +19,6 @@ from tensorflow.keras.models import load_model
 cfg_freshModelAbs = True
 savedModelAbs = "cnn_abs_abs.h5"
 
-
 class mnistProp:
     num_classes = 10
     input_shape = (28,28,1)
@@ -36,9 +35,16 @@ class mnistProp:
     cfg_dis_w = False
     cfg_dis_b = False
     cfg_fresh = False
+    numClones = 0
     
-
+#replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
+    #print("convInShape ",convInShape)
+    #print("convOutShape ",convOutShape)
+    #print("origW.shape ", origW.shape)    
+    #print("origW ", origW)
+    #print("origB.shape ", origB.shape)
+    #print("origB ", origB)    
     if convOutShape[0] == None:
         convOutShape = convOutShape[1:]
     if convInShape[0] == None:
@@ -57,12 +63,19 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
             sCoors = product(*[[coor for coor in [j*s+t for j in range(f)] if coor < i] for f,s,t,i in zip(fDim, strides, tCoor, convInShape)])
             sCoors = list(sCoors)
             wMats  = [origW[coor] for coor in product(*[range(d) for d in fDim])]
+            #print("wMats={}".format(wMats))
             for sCoor, wMat in zip(sCoors, wMats):
                 for in_ch, out_ch in product(range(inChNum), range(outChNum)):
                     sCoorFlat = sum([coor * off for coor, off in zip((*sCoor, in_ch) , sOff)])
                     tCoorFlat = sum([coor * off for coor, off in zip((*tCoor, out_ch), tOff)])
+                    if wMat[in_ch, out_ch].shape != ():
+                        raise Exception("wMat[x,y] values should be scalars. shape={}".format( wMat[in_ch, out_ch].shape))
                     replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
+    #print("replaceW.shape ", replaceW.shape)
+    #print("replaceW \n", replaceW)    
+    #print("replaceB.shape ", replaceB.shape)
+    #print("replaceB \n", replaceB)  
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
@@ -77,8 +90,9 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         origMCloneTemp = models.clone_model(origM)
         clnM = tf.keras.Sequential(
             list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
-            name="AbsModel"        
+            name=("AbsModel_{}".format(mnistProp.numClones))
         )
+        mnistProp.numClones += 1
         for l in clnM.layers:
             l._name = l.name + "_clnM"
 
@@ -90,15 +104,15 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         clnDense.set_weights([clnW, clnB])
 
         score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print("Test loss:", score[0])
-        print("Test accuracy:", score[1])
+        print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
+        print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
          
         if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
             print("Prediction aligned")    
         else:
             print("Prediction not aligned")
 
-        clnM.save(mnistProp.savedModelAbs)
+        #clnM.save(mnistProp.savedModelAbs) FIXME
     else:
         clnM = models.load_model(mnistProp.savedModelAbs)
 
@@ -135,12 +149,15 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print("Test loss:", score[0])
-        print("Test accuracy:", score[1])
+        print("(Original) Test loss:", score[0])
+        print("(Original) Test accuracy:", score[1])
         origM.save(savedModelOrig)
         
     else:
         origM = load_model(savedModelOrig)
+        score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        print("(Original) Test loss:", score[0])
+        print("(Original) Test accuracy:", score[1])
 
     rplcLayerName = "c2"
     return origM, rplcLayerName
@@ -189,7 +206,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
     logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     logger.info("Started solving query ({})".format(model.name))
-    vals, stats = modelOnnxMarabou.solve(verbose=(logger.level==logging.DEBUG))
+    vals, stats = modelOnnxMarabou.solve(verbose=False)
     sat = len(vals) > 0
     logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
     if not sat:
