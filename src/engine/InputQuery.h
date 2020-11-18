@@ -163,6 +163,9 @@ private:
     bool constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
+    bool constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
+                            Map<unsigned, unsigned> &handledVariableToLayer,
+                            unsigned newLayerIndex );
 
 public:
     /*

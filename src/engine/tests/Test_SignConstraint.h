@@ -937,7 +937,7 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        // b in [1, 2], polarity should be 1, and direction should be PHASE_POSITIVE
+        // b in [1, 2], polarity should be 1, and direction should be SIGN_PHASE_POSITIVE
         {
             SignConstraint sign( b, f );
             sign.notifyLowerBound( b, 1 );
@@ -945,9 +945,9 @@ public:
             TS_ASSERT( sign.computePolarity() == 1 );
 
             sign.updateDirection();
-            TS_ASSERT( sign.getDirection() == SignConstraint::PHASE_POSITIVE );
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
         }
-        // b in [-2, 0], polarity should be -1, and direction should be PHASE_NEGATIVE
+        // b in [-2, 0], polarity should be -1, and direction should be SIGN_PHASE_NEGATIVE
         {
             SignConstraint sign( b, f );
             sign.notifyLowerBound( b, -2 );
@@ -955,9 +955,9 @@ public:
             TS_ASSERT( sign.computePolarity() == -1 );
 
             sign.updateDirection();
-            TS_ASSERT( sign.getDirection() == SignConstraint::PHASE_NEGATIVE );
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_NEGATIVE );
         }
-        // b in [-2, 2], polarity should be 0, the direction should be PHASE_NEGATIVE,
+        // b in [-2, 2], polarity should be 0, the direction should be SIGN_PHASE_NEGATIVE,
         // the inactive case should be the first element of the returned list by
         // the getCaseSplits()
         {
@@ -967,13 +967,13 @@ public:
             TS_ASSERT( sign.computePolarity() == 0 );
 
             sign.updateDirection();
-            TS_ASSERT( sign.getDirection() == SignConstraint::PHASE_POSITIVE );
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
 
             auto splits = sign.getCaseSplits();
             auto it = splits.begin();
             TS_ASSERT( isPositiveSplit( b, f, it ) );
         }
-        // b in [-2, 3], polarity should be 0.2, the direction should be PHASE_POSITIVE,
+        // b in [-2, 3], polarity should be 0.2, the direction should be SIGN_PHASE_POSITIVE,
         // the active case should be the first element of the returned list by
         // the getCaseSplits()
         {
@@ -983,7 +983,7 @@ public:
             TS_ASSERT( sign.computePolarity() == 0.2 );
 
             sign.updateDirection();
-            TS_ASSERT( sign.getDirection() == SignConstraint::PHASE_POSITIVE );
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
 
             auto splits = sign.getCaseSplits();
             auto it = splits.begin();

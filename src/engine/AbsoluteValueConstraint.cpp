@@ -29,7 +29,6 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
     , _auxVarsInUse( false )
     , _haveEliminatedVariables( false )
 {
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
@@ -65,8 +64,6 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
 
         _auxVarsInUse = true;
     }
-
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
@@ -383,9 +380,9 @@ bool AbsoluteValueConstraint::phaseFixed() const
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
 {
-    ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
+    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == PhaseStatus::PHASE_POSITIVE )
+    if ( _phaseStatus == ABS_PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
@@ -647,14 +644,14 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     // Option 1: b's range is strictly positive
     if ( _lowerBounds.exists( _b ) && _lowerBounds[_b] >= 0 )
     {
-        setPhaseStatus( PHASE_POSITIVE );
+        setPhaseStatus( ABS_PHASE_POSITIVE );
         return;
     }
 
     // Option 2: b's range is strictly negative:
     if ( _upperBounds.exists( _b ) && _upperBounds[_b] <= 0 )
     {
-        setPhaseStatus( PHASE_NEGATIVE );
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
         return;
     }
 
@@ -665,7 +662,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     // range
     if ( _upperBounds.exists( _b ) && _lowerBounds[_f] > _upperBounds[_b] )
     {
-        setPhaseStatus( PHASE_NEGATIVE );
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
         return;
     }
 
@@ -673,41 +670,37 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     // range, in absolute value
     if ( _lowerBounds.exists( _b ) && _lowerBounds[_f] > -_lowerBounds[_b] )
     {
-        setPhaseStatus( PHASE_POSITIVE );
+        setPhaseStatus( ABS_PHASE_POSITIVE );
         return;
     }
 
     if ( _auxVarsInUse )
     {
         // Option 5: posAux has become zero, phase is positive
-        if ( _upperBounds.exists( _posAux )
-             && FloatUtils::isZero( _upperBounds[_posAux] ) )
+        if ( _upperBounds.exists( _posAux ) && FloatUtils::isZero( _upperBounds[_posAux] ) )
         {
-            setPhaseStatus( PHASE_POSITIVE );
+            setPhaseStatus( ABS_PHASE_POSITIVE );
             return;
         }
 
         // Option 6: posAux can never be zero, phase is negative
-        if ( _lowerBounds.exists( _posAux )
-             && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
+        if ( _lowerBounds.exists( _posAux ) && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
         {
-            setPhaseStatus( PHASE_NEGATIVE );
+            setPhaseStatus( ABS_PHASE_NEGATIVE );
             return;
         }
 
         // Option 7: negAux has become zero, phase is negative
-        if ( _upperBounds.exists( _negAux )
-             && FloatUtils::isZero( _upperBounds[_negAux] ) )
+        if ( _upperBounds.exists( _negAux ) && FloatUtils::isZero( _upperBounds[_negAux] ) )
         {
-            setPhaseStatus( PHASE_NEGATIVE );
+            setPhaseStatus( ABS_PHASE_NEGATIVE );
             return;
         }
 
         // Option 8: negAux can never be zero, phase is positive
-        if ( _lowerBounds.exists( _negAux )
-             && FloatUtils::isPositive( _lowerBounds[_negAux] ) )
+        if ( _lowerBounds.exists( _negAux ) && FloatUtils::isPositive( _lowerBounds[_negAux] ) )
         {
-            setPhaseStatus( PHASE_POSITIVE );
+            setPhaseStatus( ABS_PHASE_POSITIVE );
             return;
         }
     }
@@ -720,21 +713,16 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
     case PHASE_NOT_FIXED:
         return "PHASE_NOT_FIXED";
 
-    case PHASE_POSITIVE:
-        return "PHASE_POSITIVE";
+    case ABS_PHASE_POSITIVE:
+        return "ABS_PHASE_POSITIVE";
 
-    case PHASE_NEGATIVE:
-        return "PHASE_NEGATIVE";
+    case ABS_PHASE_NEGATIVE:
+        return "ABS_PHASE_NEGATIVE";
 
     default:
         return "UNKNOWN";
     }
 };
-
-void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )
-{
-    _phaseStatus = phaseStatus;
-}
 
 //
 // Local Variables:

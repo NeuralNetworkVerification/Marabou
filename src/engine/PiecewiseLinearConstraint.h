@@ -31,6 +31,16 @@ class ITableau;
 class InputQuery;
 class String;
 
+enum PhaseStatus : unsigned {
+    PHASE_NOT_FIXED = 0,
+    RELU_PHASE_ACTIVE = 1,
+    RELU_PHASE_INACTIVE = 2,
+    ABS_PHASE_POSITIVE = 3,
+    ABS_PHASE_NEGATIVE = 4,
+    SIGN_PHASE_POSITIVE = 5,
+    SIGN_PHASE_NEGATIVE = 6
+};
+
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
 public:
@@ -254,6 +264,7 @@ public:
 
 protected:
     bool _constraintActive;
+    PhaseStatus _phaseStatus;
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
@@ -271,6 +282,20 @@ protected:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Set the phase status of the constraint. Uses the global PhaseStatus
+      enumeration and is initialized to PHASE_NOT_FIXED for all constraints.
+     */
+    void setPhaseStatus( PhaseStatus phase )
+    {
+        _phaseStatus = phase;
+    };
+
+    PhaseStatus getPhaseStatus() const
+    {
+        return _phaseStatus;
+    };
 };
 
 #endif // __PiecewiseLinearConstraint_h__

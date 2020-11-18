@@ -90,6 +90,9 @@ private:
     void addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
                                      const Layer *layer );
 
+    void addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                     const Layer *layer );
+
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
 

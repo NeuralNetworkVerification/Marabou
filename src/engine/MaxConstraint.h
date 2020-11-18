@@ -70,10 +70,7 @@ class MaxConstraint : public PiecewiseLinearConstraint
       Get the list of variables participating in this constraint.
     */
     List<unsigned> getParticipatingVariables() const;
-
-    /*
-      Get the f in this constraint.
-    */
+    List<unsigned> getElements() const;
     unsigned getF() const;
 
     /*
