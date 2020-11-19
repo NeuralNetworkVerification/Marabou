@@ -48,6 +48,7 @@ modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(mask
 logger.info("Finished model building")
 
 logger.info("Choosing adversarial example")
+inDist = 0.1
 xAdvInd = int(np.random.randint(0, mnistProp.x_test.shape[0], size=1)[0])
 xAdv = mnistProp.x_test[xAdvInd]
 yAdv = mnistProp.y_test[xAdvInd]
@@ -56,9 +57,17 @@ yMax = yPredict.argmax()
 yPredictNoMax = np.copy(yPredict)
 yPredictNoMax[0][yMax] = 0
 ySecond = yPredictNoMax.argmax()
-inDist = 0.01
 if ySecond == yMax:
     ySecond = 0 if yMax > 0 else 1
+    
+yPredictUnproc = modelOrig.predict(np.array([xAdv]))
+yMaxUnproc = yPredictUnproc.argmax()
+yPredictNoMaxUnproc = np.copy(yPredictUnproc)
+yPredictNoMaxUnproc[0][yMaxUnproc] = 0
+ySecondUnproc = yPredictNoMaxUnproc.argmax()
+if ySecondUnproc == yMaxUnproc:
+    ySecondUnproc = 0 if yMaxUnproc > 0 else 1
+    
 fName = "xAdv.png"
 logger.info("Printing original input: {}".format(fName))
 plt.title('Example %d. Label: %d' % (xAdvInd, yAdv))
@@ -112,5 +121,15 @@ if sat:
     print("SAT")
 else:
     logger.info("UNSAT")
-    print("UNSAT")    
+    print("UNSAT")
+    logger.info("verifying UNSAT on unprocessed network")
+    print("verifying UNSAT on unprocessed network")
+    #FIXME this is not exactly the same query as the proccessed one.
+    sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, logger, xAdv, inDist, yMaxUnproc, ySecondUnproc)
+    if not sat:
+        logger.info("Proved UNSAT on unprocessed network")
+        print("Proved UNSAT on unprocessed network")
+    else:
+        logger.info("Found CEX on unprocessed network")
+        print("Found CEX on unprocessed network")
 
