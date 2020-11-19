@@ -36,6 +36,7 @@ class mnistProp:
     cfg_dis_b = False
     cfg_fresh = False
     numClones = 0
+    numCex = 0
     
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
@@ -208,7 +209,8 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     if not sat:
         return False, np.array([]), np.array([])
     cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv)
-    fName = "Cex.png"
+    fName = "Cex_{}.png".format(mnistProp.numCex)
+    mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
     kerasPrediction = model.predict(np.array([cex])).argmax()
     logger.info("Printing counter example: {}. MarabouY={}, modelY={}".format(fName,mbouPrediction, kerasPrediction))        
