@@ -39,17 +39,7 @@ class mnistProp:
     
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
-    #print("convInShape ",convInShape)
-    #print("convOutShape ",convOutShape)
-    #print("origW.shape ", origW.shape)    
-    #print("origW ", origW)
-    #print("origB.shape ", origB.shape)
-    #print("origB ", origB)
-
-    #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer
-    #origW = origW[:,:,::-1,::-1]
-    origW = origW[::-1,::-1,:,:]
-    #origB = origB[::-1]
+    #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer  
     if convOutShape[0] == None:
         convOutShape = convOutShape[1:]
     if convInShape[0] == None:
@@ -77,10 +67,6 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
                         raise Exception("wMat[x,y] values should be scalars. shape={}".format( wMat[in_ch, out_ch].shape))
                     replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
-    #print("replaceW.shape ", replaceW.shape)
-    #print("replaceW \n", replaceW)    
-    #print("replaceB.shape ", replaceB.shape)
-    #print("replaceB \n", replaceB)  
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
@@ -91,19 +77,13 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
         clnDense = layers.Dense(units=np.prod(rplcOut[1:]),name="clnDense")
         strides = origM.get_layer(name=rplcLayerName).strides
-        #tf.keras.backend.clear_session()
         origMCloneTemp = models.clone_model(origM)
-        origMCloneTemp.set_weights(origM.get_weights())
-        origMCloneTemp.build(input_shape=mnistProp.featureShape)
-        origMCloneTemp.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
-        origMCloneTemp.summary()        
-        score = origMCloneTemp.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print("(Original1.5) Test loss:", score[0])
-        print("(Original1.5) Test accuracy:", score[1])        
+        origMCloneTemp.set_weights(origM.get_weights())     
         clnM = tf.keras.Sequential(
             list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
             name=("AbsModel_{}".format(mnistProp.numClones))
         )
+        
         for lTemp,lCln in [(t,c) for t in origMCloneTemp.layers for c in clnM.layers]:
             if lCln.name == lTemp.name:
                 lCln.set_weights(lTemp.get_weights())
@@ -117,8 +97,6 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         clnM.summary()
 
         clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-        #print("clnW = {}".format(clnW))
-        #print("clnB = {}".format(clnB))        
         clnDense.set_weights([clnW, clnB])
 
         score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
@@ -204,9 +182,6 @@ def setAdversarial(net, x, inDist,yCorrect,yBad):
             yCorrectVar = o.item()
         if j == yBad:
             yBadVar = o.item()
-    #print("yBadVar={}".format(yBadVar))
-    #print("yCorrectVar={}".format(yCorrectVar))
-    #exit()
     net.addInequality([yCorrectVar, yBadVar], [1,-1], 0) # correct - bad <= 0
     return net
     
