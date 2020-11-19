@@ -34,6 +34,20 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+inp = np.array(range(1,1+np.ones((3,3,2)).size)).reshape((3,3,2)).astype(float)
+testM = tf.keras.Sequential([layers.Conv2D(2, kernel_size=(2,2), activation="relu", name="c1", input_shape=(3,3,2))])
+testM.get_layer(name="c1").set_weights([np.array([[[[0., 0.],[0., 0.]],[[1., 0.],[0., 0.]]],[[[0., 0.],[0., 1.]],[[0., 0.],[0., 0.]]]]),np.random.rand(*testM.get_layer(name="c1").get_weights()[1].shape)])
+print("W={}".format(testM.get_layer(name="c1").get_weights()[0]))
+print("B={}".format(testM.get_layer(name="c1").get_weights()[1])) 
+testM.build(input_shape=(3,3,2))
+testM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
+testM.summary()
+print("\n\n\n\n")
+print(inp)
+print("\n\n\n\n")
+print(testM.predict(np.array([inp])))
+
+exit()
 #mask=np.array([[[1.],[1.],[1.]],
 #               [[1.],[1.],[1.]],
 #               [[1.],[1.],[1.]]])
