@@ -264,7 +264,8 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
                 _plConstraints.append( newPlc );
                 ++numberOfDisjunctions;
             }
-            else if ( constraint->getType() == MAX )
+            else if ( constraint->getType() == MAX &&
+                        !other._networkLevelReasoner->getConstraintsInTopologicalOrder().exists(constraint) )
             {
                 auto *newPlc = constraint->duplicateConstraint();
                 _plConstraints.append( newPlc );
