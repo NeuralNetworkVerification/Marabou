@@ -159,11 +159,10 @@ void ContextDependentPiecewiseLinearConstraint::markInfeasible(
 
 PhaseStatus ContextDependentPiecewiseLinearConstraint::nextFeasibleCase()
 {
+    ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
+
     if ( !isFeasible() )
         return PHASE_NOT_FIXED;
-
-    if ( phaseFixed() )
-        return getPhaseStatus();
 
     List<PhaseStatus> allCases = getAllCases();
     for ( PhaseStatus thisCase : allCases )
