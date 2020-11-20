@@ -65,7 +65,11 @@ class ContextDependentPiecewiseLinearConstraint
 public:
     ContextDependentPiecewiseLinearConstraint();
     ContextDependentPiecewiseLinearConstraint( unsigned numCases );
-    virtual ~ContextDependentPiecewiseLinearConstraint() { cdoCleanup(); }
+
+    virtual ~ContextDependentPiecewiseLinearConstraint()
+    {
+        cdoCleanup();
+    }
 
     /*
       Turn the constraint on/off.
@@ -131,17 +135,29 @@ public:
      */
     void cdoCleanup();
 
-    CVC4::context::Context *getContext() const { return _context; }
+    /*
+      Get the context object - debugging purposes only
+    */
+    CVC4::context::Context *getContext() const
+    {
+        return _context;
+    }
 
     /*
       Get the active status object - debugging purposes only
     */
-    CVC4::context::CDO<bool> *getActiveStatusCDO() const { return _cdConstraintActive; };
+    CVC4::context::CDO<bool> *getActiveStatusCDO() const
+    {
+        return _cdConstraintActive;
+    };
 
     /*
       Get the current phase status object - debugging purposes only
     */
-    CVC4::context::CDO<PhaseStatus> *getPhaseStatusCDO() const { return _cdPhaseStatus; }
+    CVC4::context::CDO<PhaseStatus> *getPhaseStatusCDO() const
+    {
+        return _cdPhaseStatus;
+    }
 
     /*
       Get the infeasable cases object - debugging purposes only
