@@ -152,25 +152,48 @@ public:
     }
 
     /*
-       Mark that exploredCase is infeasible.
+       Mark that an exploredCase is infeasible, reducing the remaining search space.
      */
     void markInfeasible( PhaseStatus exploredCase );
 
     /*
-      Retrieve next feasible case; Worst case O(n^2)
-      Returns PhaseStatus representing next feasible case.
+      Returns haseStatus representing next feasible case.
       Returns PHASE_NOT_FIXED if no feasible case exists.
+      Assumes the contraint phase is PHASE_NOT_FIXED.
+      Worst case complexity O(n^2)
+      This method should be overloaded for MAX and DISJUNCTION constraints.
      */
     PhaseStatus nextFeasibleCase();
 
-    bool isFeasible();
-    bool isImplication();
-    unsigned numFeasibleCases();
+    /*
+       Returns number of cases not yet marked as infeasible.
+     */
+    unsigned numFeasibleCases()
+    {
+        return _numCases - _cdInfeasibleCases->size();
+    }
+
+    /*
+        Returns true if there are feasible cases remaining.
+     */
+    bool isFeasible()
+    {
+        return numFeasibleCases() > 0u;
+    }
+
+    /*
+       Returns true if there is only one feasible case remaining.
+     */
+    bool isImplication()
+    {
+        return 1u == numFeasibleCases();
+    }
 
 protected:
-    unsigned _numCases;
-    PhaseStatus _phaseStatus; //TODO: Move to PiecewiseLinearConstraint, before integration.
-    BoundManager *_boundManager;
+    unsigned _numCases; // Number of possible cases/phases for this constraint
+                        // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
+
+    BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
 

@@ -181,21 +181,6 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::nextFeasibleCase()
     return PHASE_NOT_FIXED;
 }
 
-unsigned ContextDependentPiecewiseLinearConstraint::numFeasibleCases()
-{
-    return _numCases - _cdInfeasibleCases->size();
-}
-
-bool ContextDependentPiecewiseLinearConstraint::isFeasible()
-{
-    return numFeasibleCases() > 0u;
-}
-
-bool ContextDependentPiecewiseLinearConstraint::isImplication()
-{
-    return 1u == numFeasibleCases();
-}
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
