@@ -71,26 +71,6 @@ void ContextDependentPiecewiseLinearConstraint::initializeCDOs(
     initializeCDInfeasibleCases();
 }
 
-void ContextDependentPiecewiseLinearConstraint::cdoCleanup()
-{
-    if ( nullptr != _cdConstraintActive )
-        _cdConstraintActive->deleteSelf();
-
-    _cdConstraintActive = nullptr;
-
-    if ( nullptr != _cdPhaseStatus )
-        _cdPhaseStatus->deleteSelf();
-
-    _cdPhaseStatus = nullptr;
-
-    if ( nullptr != _cdInfeasibleCases )
-        _cdInfeasibleCases->deleteSelf();
-
-    _cdInfeasibleCases = nullptr;
-
-    _context = nullptr;
-}
-
 void ContextDependentPiecewiseLinearConstraint::initializeCDInfeasibleCases()
 {
     ASSERT( nullptr != _context );
@@ -111,6 +91,26 @@ void ContextDependentPiecewiseLinearConstraint::initializeCDPhaseStatus()
     ASSERT( nullptr == _cdPhaseStatus );
     _cdPhaseStatus =
         new ( true ) CVC4::context::CDO<PhaseStatus>( _context, PHASE_NOT_FIXED );
+}
+
+void ContextDependentPiecewiseLinearConstraint::cdoCleanup()
+{
+    if ( nullptr != _cdConstraintActive )
+        _cdConstraintActive->deleteSelf();
+
+    _cdConstraintActive = nullptr;
+
+    if ( nullptr != _cdPhaseStatus )
+        _cdPhaseStatus->deleteSelf();
+
+    _cdPhaseStatus = nullptr;
+
+    if ( nullptr != _cdInfeasibleCases )
+        _cdInfeasibleCases->deleteSelf();
+
+    _cdInfeasibleCases = nullptr;
+
+    _context = nullptr;
 }
 
 PhaseStatus ContextDependentPiecewiseLinearConstraint::getPhaseStatus() const
