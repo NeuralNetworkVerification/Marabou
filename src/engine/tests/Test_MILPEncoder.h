@@ -243,7 +243,7 @@ public:
         //
         // x0 = max(x1, x2, x3)
         // Bounds:
-        //   100 <= x0 <= 100
+        //   4 <= x0 <= 4
         //   0 <= x1 <= 2
         //   1 <= x2 <= 2
         //   3 <= x3 <= 4
@@ -257,10 +257,10 @@ public:
         tableau4->setDimensions( 2, 6 );
 
         // 100 <= x0 <= 100
-        inputQuery4->setLowerBound( 0, 100 );
-        inputQuery4->setUpperBound( 0, 100 );
-        tableau4->setLowerBound( 0, 100 );
-        tableau4->setUpperBound( 0, 100 );
+        inputQuery4->setLowerBound( 0, 4 );
+        inputQuery4->setUpperBound( 0, 4 );
+        tableau4->setLowerBound( 0, 4 );
+        tableau4->setUpperBound( 0, 4 );
 
         // 0 <= x1 <= 2
         inputQuery4->setLowerBound( 1, 0 );
@@ -311,7 +311,7 @@ public:
         TS_ASSERT_LESS_THAN_EQUALS( x1_sol4, x0_sol4 );
         TS_ASSERT_LESS_THAN_EQUALS( x2_sol4, x0_sol4 );
         TS_ASSERT_LESS_THAN_EQUALS( x3_sol4, x0_sol4 );
-        TS_ASSERT_EQUALS( x0_sol4, 100.0 );
+        TS_ASSERT_EQUALS( x0_sol4, 4.0 );
 
         //
         // x0 = max(x1, x2, x3)

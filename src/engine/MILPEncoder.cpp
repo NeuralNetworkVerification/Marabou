@@ -136,7 +136,7 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     unsigned y = max->getF();
 
     // xs = [x_1, x_2, ... , x_m]
-    List<unsigned> xs = max->getParticipatingVariables();
+    List<unsigned> xs = max->getElements();
 
     // upper bounds of each x_i
     using qtype = std::pair<double, unsigned>;
@@ -146,7 +146,8 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     // terms for Gurobi
     List<GurobiWrapper::Term> terms;
 
-    for ( const auto &x : xs ) {
+    for ( const auto &x : xs ) 
+    {
         // add binary variable
         gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, x ),
                             0,
@@ -168,7 +169,8 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     terms.clear();
 
     double umax = 0;
-    for ( const auto &x : xs ) {
+    for ( const auto &x : xs ) 
+    {
         // add constraint: y <= x_i + (1 - a_i) * (umax - l)
         if ( ubMax1.second != x )
             umax = ubMax1.first;
