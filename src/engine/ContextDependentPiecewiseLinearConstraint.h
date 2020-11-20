@@ -98,25 +98,6 @@ public:
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
 
     /*
-      Dump the current state of the constraint.
-    */
-    void dump() const;
-
-    /*
-      Dump the current state of the constraint.
-    */
-    virtual void dump( String & ) const {}
-
-    /*
-      Produce string representation of the piecewise linear constraint.
-      This representation contains only the information necessary to reproduce it
-      but does not account for state or change in state during execution. Additionally
-      the first string before a comma has the contraint type identifier
-      (ie. "relu", "max", etc)
-    */
-    virtual String serializeToString() const = 0;
-
-    /*
       Register a bound manager. If a bound manager is registered,
       this piecewise linear constraint will inform the tightener whenever
       it discovers a tighter (entailed) bound.
