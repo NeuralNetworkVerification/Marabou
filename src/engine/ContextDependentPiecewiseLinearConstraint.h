@@ -78,14 +78,20 @@ public:
     bool isActive() const;
 
     /*
-     * Returns a list of all cases of this constraint
+       Returns a list of all cases of this constraint and is used by the
+       nextFeasibleCase during search. The order of returned cases affects the
+       search, and this method is where related heuristics should be
+       implemented.
      */
     virtual List<PhaseStatus> getAllCases() const = 0;
 
     /*
      * Returns case split corresponding to the given phase/id
+       TODO: Update the signature in PiecewiseLinearConstraint, once the new
+       search is integrated.
      */
-    virtual PiecewiseLinearCaseSplit getCaseSplit( unsigned caseId ) const = 0;
+    virtual PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus caseId ) const = 0;
+
 
     /*
       Check if the constraint's phase has been fixed.
@@ -211,8 +217,11 @@ protected:
     void initializeCDActiveStatus();
     void initializeCDPhaseStatus();
     void initializeCDInfeasibleCases();
-    void
-    initializeDuplicatesCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
+
+    /*
+       Method provided to allow safe copying of the context-dependent members, which will be freshly initialized in a copy and with the same values.
+     */
+    void initializeDuplicatesCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
 
     void setPhaseStatus( PhaseStatus phaseStatus );
     PhaseStatus getPhaseStatus() const;
