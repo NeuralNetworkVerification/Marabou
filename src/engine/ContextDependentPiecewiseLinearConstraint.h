@@ -9,7 +9,31 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** A context dependent implementation of PiecewiseLinearConstraint class
+ ** This class is an implementation of PiecewiseLinearConstraint using
+ ** context-dependent data structures from CVC4, which lazily and automatically
+ ** back-track in sync with the central context object. These data structures
+ ** are delicate and require that data stored is safe to memcopy around, but
+ ** provide built-in backtracking which is cheap in terms of computational overhead.
+ **
+ ** The basic members of PiecewiseLinearConstraint class use context-dependent
+ ** objects (CDOs), which need to be initialized for the backtracking search in
+ ** Marabou and are not needed for pre-processing purposes. The initialization
+ ** is performed using the initializeCDOs( Context context ) method. Descendant
+ ** classes need to call initializeDuplicatesCDOs() method in
+ ** duplicateConstraint method to avoid sharing context-dependent members. The
+ ** duplication functionality might be unnecessary (and perhaps even prohibited)
+ ** after CDOs are initialized.
+ **
+ ** The methods used by the Marabou search:
+ **  * markInfeasible( PhaseStatus caseId ) - which denotes explored search space
+ **  * nextFeasibleCase() - which obtains next unexplored case if one exists
+ **
+ ** These methods rely on:
+ **  * _numCases field, which denotes the number of piecewise linear
+ **     segments the constraint has, passed through the constructor.
+ **  * getAllCases() virtual method returns all possible cases represented using
+ **    PhaseStatus enumeration. The order of returned cases will determine the
+ **    search order, so it should implement any search heuristics.
  **/
 
 #ifndef __ContextDependentPiecewiseLinearConstraint_h__
