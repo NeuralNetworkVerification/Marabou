@@ -256,7 +256,7 @@ public:
         MockTableau *tableau4 = new MockTableau;
         tableau4->setDimensions( 2, 6 );
 
-        // 100 <= x0 <= 100
+        // 4 <= x0 <= 4
         inputQuery4->setLowerBound( 0, 4 );
         inputQuery4->setUpperBound( 0, 4 );
         tableau4->setLowerBound( 0, 4 );
