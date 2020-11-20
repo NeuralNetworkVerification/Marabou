@@ -59,14 +59,6 @@ class ITableau;
 class InputQuery;
 class String;
 
-enum PhaseStatus : unsigned {
-    PHASE_NOT_FIXED = 0,
-    RELU_PHASE_ACTIVE = 1,
-    RELU_PHASE_INACTIVE = 2,
-    ABS_PHASE_POSITIVE = 3,
-    ABS_PHASE_NEGATIVE = 4,
-};
-
 class ContextDependentPiecewiseLinearConstraint
    : public virtual PiecewiseLinearConstraint
 {
