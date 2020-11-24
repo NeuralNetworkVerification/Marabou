@@ -36,7 +36,7 @@ class mnistProp:
     cfg_dis_b = False
     cfg_fresh = False
     numClones = 0
-    numCex = 0
+    numCex = 0    
     
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
@@ -82,10 +82,10 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         lSuffix = "_clnM_{}".format(mnistProp.numClones)
         for l in origM.layers:
             if l.name == rplcLayerName:
-                clnLayers.append(layers.Flatten(name=("f_rplc" + lSuffix)))
-                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]),name=(rplcLayerName + lSuffix + "_rplcConv")))
-                toSetWeights[rplcLayerName + lSuffix + "_rplcConv"] = [clnW, clnB]
-                clnLayers.append(layers.Reshape(rplcOut[1:], name=("rshp") + lSuffix + "_rplcOut"))
+                clnLayers.append(layers.Flatten(name=(rplcLayerName + "_f_rplc" + lSuffix)))
+                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]),name=(rplcLayerName + "_rplcConv" + lSuffix)))
+                toSetWeights[(rplcLayerName + "_rplcConv" + lSuffix)] = [clnW, clnB]
+                clnLayers.append(layers.Reshape(rplcOut[1:], name=(rplcLayerName + "_rshp_rplcOut" + lSuffix)))
             else:
                 if isinstance(l, tf.keras.layers.Dense):
                     newL = tf.keras.layers.Dense(l.units, activation=l.activation, name=(l.name + lSuffix))
@@ -161,6 +161,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM.summary()        
         origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
+        
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
@@ -173,6 +174,13 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test accuracy:", score[1])
 
     rplcLayerName = "c2"
+    
+    #FIXME
+    #w0Shape=origM.get_layer(name=rplcLayerName).get_weights()[0].shape
+    #w1Shape=origM.get_layer(name=rplcLayerName).get_weights()[1].shape    
+    #origM.get_layer(name=rplcLayerName).set_weights([np.ones(w0Shape), np.ones(w1Shape)])
+    #FIXME
+    
     return origM, rplcLayerName
 
 def getBoundsInftyBall(x, r, pos=True):
@@ -251,8 +259,41 @@ def genMask(shape, lBound, uBound):
         mask[ind] = 1
     return mask
 
+def intermidModel(model, layerName):
+    if layerName not in [l.name for l in model.layers]:
+        layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
+    return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)
+
+def meanActivation(model, features):
+    act = np.mean(features, axis=0) #Assume I recieve 4 dim feature array, then act is 3 dim.
+    #if act.shape[2] > 1:
+    #    act = np.max(act, axis=2).reshape(act.shape[:-1] + (1,))
+    act = np.max(act, axis=2)
+    return act
+    #return act.reshape(act.shape[:-1]) if act.shape[-1]==1 else act
+    #return np.mean(intermidModel(model, layerName).predict(features), axis=0)
+
+def printImg(im, title):
+    plt.title(title)
+    plt.imshow(im, cmap='Greys')
+    plt.savefig(title + ".png")
+    
+def outputLayerName(model):
+    return model.layers[-1].name
+
+def printAvgResult(model, from_label=False): #from_label or from_prediction
+    if from_label:
+        x_test_by_class = {label : np.asarray([x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label]) for label in range(mnistProp.num_classes)}
+    else:
+        predictions =  model.predict(mnistProp.x_test)
+        x_test_by_class = {label : np.asarray([x for x,y in zip(mnistProp.x_test, predictions) if y.argmax() == label]) for label in range(mnistProp.num_classes)}
+    meanAct = [meanActivation(model, outputLayerName(model), x_test_by_class[y]) for y in range(mnistProp.num_classes)]
+    for y in range(mnistProp.num_classes):
+        printImg(meanAct[y], "{}_meanAct_label_{}.png".format(model.name, y))
+    
 #https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
 def compareModels(origM, absM):
+    print("Compare")
     print(origM.input)
     print(absM.input)
     print("Starting evaluation of differances between models.")
@@ -261,19 +302,20 @@ def compareModels(origM, absM):
     log = []
     print("orig")
     [print(l,l.input) for l in origM.layers]
-    print(origM.input)        
+    print(origM.input)
     print("abs")
     [print(l,l.input) for l in absM.layers]        
-    print(absM.input)            
+    print(absM.input)
+    equal_full   = np.all(np.equal  (origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
+    isclose_full = np.all(np.isclose(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
+    print("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
     for lo, la in zip(layersOrig, layersAbs):            
-        mid_origM = tf.keras.Model(inputs=origM.input,
-                                       outputs=origM.get_layer(name=lo).output)
-        mid_absM = tf.keras.Model(inputs=absM.input,
-                                       outputs=absM.get_layer(name=la).output)
+        mid_origM = intermidModel(origM, lo)
+        mid_absM  = intermidModel(absM , la)
         print("compare {} to {}".format(lo, la))
-        w_equal = all([np.all(np.equal(wo,wa)) for wo,wa in zip(origM.get_layer(name=lo).get_weights(), absM.get_layer(name=la).get_weights())])
-        equal_full = np.all(np.equal(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
-        equal = np.all(np.equal(mid_origM.predict(mnistProp.x_test), mid_absM.predict(mnistProp.x_test)))
+        w_equal = (len(origM.get_layer(name=lo).get_weights()) == len(absM.get_layer(name=la).get_weights())) and all([np.all(np.equal(wo,wa)) for wo,wa in zip(origM.get_layer(name=lo).get_weights(), absM.get_layer(name=la).get_weights())])
+        equal   = np.all(np.equal  (mid_origM.predict(mnistProp.x_test), mid_absM.predict(mnistProp.x_test)))
+        isclose = np.all(np.isclose(mid_origM.predict(mnistProp.x_test), mid_absM.predict(mnistProp.x_test)))
         log.append(equal)
-        print("layers: orig={} ; abs={}, equal={}, w_equal={}, equal_full={}".format(lo, la, equal, w_equal, equal_full))
+        print("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
     return log
