@@ -79,8 +79,8 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         clnDense = layers.Dense(units=np.prod(rplcOut[1:]),name="clnDense")
         strides = origM.get_layer(name=rplcLayerName).strides
         origMCloneTemp = models.clone_model(origM)
-        origMCloneTemp.set_weights(origM.get_weights())     
-        clnM = tf.keras.Sequential(
+        origMCloneTemp.set_weights(origM.get_weights())
+        clnM = tf.keras.Sequential([tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM"+str(mnistProp.numClones))] + #FIXME No input
             list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
             name=("AbsModel_{}".format(mnistProp.numClones))
         )
@@ -111,8 +111,6 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
             print("Prediction aligned")    
         else:
             print("Prediction not aligned")
-
-        #clnM.save(mnistProp.savedModelAbs) FIXME
     else:
         clnM = models.load_model(mnistProp.savedModelAbs)
 
@@ -126,17 +124,17 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
 
     if cfg_freshModelOrig:
         num_ch = 2 if cfg_limitCh else 32
-        #tf.keras.backend.clear_session()
         origM = tf.keras.Sequential(
-            [                    
-                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1", input_shape=mnistProp.input_shape),
+            [
+                tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"), #FIXME No input
+                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1", ),#input_shape=mnistProp.input_shape),
                 layers.MaxPooling2D(pool_size=(2,2), name="mp1"),
                 layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c2"),
                 layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
                 layers.Flatten(name="f1"),
                 layers.Dropout(0.5, name="do1"),
                 #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1") FIXME TODO
-                layers.Dense(mnistProp.num_classes, activation="relu", name="sm1")
+                layers.Dense(mnistProp.num_classes, activation=None, name="sm1")
             ],
             name="origModel"
         )
@@ -237,3 +235,30 @@ def genMask(shape, lBound, uBound):
     for ind in onesInd:
         mask[ind] = 1
     return mask
+
+#https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
+def compareModels(origM, absM):
+    print(origM.input)
+    print(absM.input)
+    print("Starting evaluation of differances between models.")
+    layersOrig = ["c1", "mp1", "c2",          "mp2", "f1", "do1", "sm1"]
+    layersAbs  = ["c1_clnM0", "mp1_clnM0", "rplcReshape_clnM0", "mp2_clnM0", "f1_clnM0", "do1_clnM0", "sm1_clnM0"]
+    log = []
+    for lo, la in zip(layersOrig, layersAbs):
+        print("lo=" + lo)
+        print("la=" + la)                
+        print("orig")
+        [print(l,l.input) for l in origM.layers]
+        print(origM.input)        
+        intermediate_layer_origM = tf.keras.Model(inputs=origM.input,
+                                       outputs=origM.get_layer(name=lo).output)
+        print("abs")
+        [print(l,l.input) for l in absM.layers]        
+        print(absM.input)                
+        intermediate_layer_absM = tf.keras.Model(inputs=absM.input,
+                                       outputs=absM.get_layer(name=la).output)
+        print("compare")
+        equal = np.all(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test))
+        log.append(equal)
+        print("layers: orig={} ; abs={}, equal={}".format(origM, absM, equal))
+    return log
