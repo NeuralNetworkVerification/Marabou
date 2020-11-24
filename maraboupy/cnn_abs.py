@@ -59,7 +59,6 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
             sCoors = product(*[[coor for coor in [j*s+t for j in range(f)] if coor < i] for f,s,t,i in zip(fDim, strides, tCoor, convInShape)])
             sCoors = list(sCoors)
             wMats  = [origW[coor] for coor in product(*[range(d) for d in fDim])]
-            #print("wMats={}".format(wMats))
             for sCoor, wMat in zip(sCoors, wMats):
                 for in_ch, out_ch in product(range(inChNum), range(outChNum)):
                     sCoorFlat = sum([coor * off for coor, off in zip((*sCoor, in_ch) , sOff)])
@@ -76,29 +75,44 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         rplcOut = origM.get_layer(name=rplcLayerName).output_shape
         origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
         origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
-        clnDense = layers.Dense(units=np.prod(rplcOut[1:]),name="clnDense")
         strides = origM.get_layer(name=rplcLayerName).strides
-        origMCloneTemp = models.clone_model(origM)
-        origMCloneTemp.set_weights(origM.get_weights())
-        clnM = tf.keras.Sequential([tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM"+str(mnistProp.numClones))] + #FIXME No input
-            list(chain.from_iterable([[l] if l.name != rplcLayerName else [layers.Flatten(name="rplcFlat"),clnDense,layers.Reshape(rplcOut[1:], name="rplcReshape")] for l in origMCloneTemp.layers])),
+        clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
+        clnLayers = [tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM")]
+        toSetWeights = {}
+        lSuffix = "_clnM_{}".format(mnistProp.numClones)
+        for l in origM.layers:
+            if l.name == rplcLayerName:
+                clnLayers.append(layers.Flatten(name=("f_rplc" + lSuffix)))
+                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]),name=(rplcLayerName + lSuffix + "_rplcConv")))
+                toSetWeights[rplcLayerName + lSuffix + "_rplcConv"] = [clnW, clnB]
+                clnLayers.append(layers.Reshape(rplcOut[1:], name=("rshp") + lSuffix + "_rplcOut"))
+            else:
+                if isinstance(l, tf.keras.layers.Dense):
+                    newL = tf.keras.layers.Dense(l.units, activation=l.activation, name=(l.name + lSuffix))
+                elif isinstance(l, tf.keras.layers.Conv2D):
+                    newL = tf.keras.layers.Conv2D(l.get_weights()[0].shape[3], kernel_size=l.get_weights()[0].shape[0:2], activation=l.activation, name=(l.name + lSuffix))
+                elif isinstance(l, tf.keras.layers.MaxPooling2D):
+                    newL = tf.keras.layers.MaxPooling2D(pool_size=l.pool_size, name=(l.name + lSuffix))
+                elif isinstance(l, tf.keras.layers.Flatten):
+                    newL = tf.keras.layers.Flatten(name=(l.name + lSuffix))
+                elif isinstance(l, tf.keras.layers.Dropout):
+                    newL = tf.keras.layers.Dropout(l.rate, name=(l.name + lSuffix))
+                else:
+                    raise Exception("Not implemented")
+                toSetWeights[newL.name] = l.get_weights()
+                clnLayers.append(newL)                          
+        clnM = tf.keras.Sequential(
+            clnLayers,
             name=("AbsModel_{}".format(mnistProp.numClones))
         )
-        
-        for lTemp,lCln in [(t,c) for t in origMCloneTemp.layers for c in clnM.layers]:
-            if lCln.name == lTemp.name:
-                lCln.set_weights(lTemp.get_weights())
-        for l in clnM.layers:
-            l._name = l.name + "_clnM" + str(mnistProp.numClones)
-
         mnistProp.numClones += 1            
 
         clnM.build(input_shape=mnistProp.featureShape)
         clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
         clnM.summary()
 
-        clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-        clnDense.set_weights([clnW, clnB])
+        for l,w in toSetWeights.items():
+            clnM.get_layer(name=l).set_weights(w)    
 
         score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         score1 = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
@@ -106,8 +120,9 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         print(score,score1,score2)
         print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
         print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
-         
+
         if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+        #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
             print("Prediction aligned")    
         else:
             print("Prediction not aligned")
@@ -126,14 +141,14 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         num_ch = 2 if cfg_limitCh else 32
         origM = tf.keras.Sequential(
             [
-                tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"), #FIXME No input
-                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1", ),#input_shape=mnistProp.input_shape),
+                tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"),
+                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1", ),
                 layers.MaxPooling2D(pool_size=(2,2), name="mp1"),
                 layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c2"),
                 layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
                 layers.Flatten(name="f1"),
                 layers.Dropout(0.5, name="do1"),
-                #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1") FIXME TODO
+                #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1")
                 layers.Dense(mnistProp.num_classes, activation=None, name="sm1")
             ],
             name="origModel"
@@ -241,24 +256,24 @@ def compareModels(origM, absM):
     print(origM.input)
     print(absM.input)
     print("Starting evaluation of differances between models.")
-    layersOrig = ["c1", "mp1", "c2",          "mp2", "f1", "do1", "sm1"]
-    layersAbs  = ["c1_clnM0", "mp1_clnM0", "rplcReshape_clnM0", "mp2_clnM0", "f1_clnM0", "do1_clnM0", "sm1_clnM0"]
+    layersOrig = [l.name for l in origM.layers]
+    layersAbs  = [l.name for l in absM.layers if ("rplc" not in l.name or "rplcOut" in l.name)]
     log = []
-    for lo, la in zip(layersOrig, layersAbs):
-        print("lo=" + lo)
-        print("la=" + la)                
-        print("orig")
-        [print(l,l.input) for l in origM.layers]
-        print(origM.input)        
-        intermediate_layer_origM = tf.keras.Model(inputs=origM.input,
+    print("orig")
+    [print(l,l.input) for l in origM.layers]
+    print(origM.input)        
+    print("abs")
+    [print(l,l.input) for l in absM.layers]        
+    print(absM.input)            
+    for lo, la in zip(layersOrig, layersAbs):            
+        mid_origM = tf.keras.Model(inputs=origM.input,
                                        outputs=origM.get_layer(name=lo).output)
-        print("abs")
-        [print(l,l.input) for l in absM.layers]        
-        print(absM.input)                
-        intermediate_layer_absM = tf.keras.Model(inputs=absM.input,
+        mid_absM = tf.keras.Model(inputs=absM.input,
                                        outputs=absM.get_layer(name=la).output)
-        print("compare")
-        equal = np.all(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test))
+        print("compare {} to {}".format(lo, la))
+        w_equal = all([np.all(np.equal(wo,wa)) for wo,wa in zip(origM.get_layer(name=lo).get_weights(), absM.get_layer(name=la).get_weights())])
+        equal_full = np.all(np.equal(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
+        equal = np.all(np.equal(mid_origM.predict(mnistProp.x_test), mid_absM.predict(mnistProp.x_test)))
         log.append(equal)
-        print("layers: orig={} ; abs={}, equal={}".format(origM, absM, equal))
+        print("layers: orig={} ; abs={}, equal={}, w_equal={}, equal_full={}".format(lo, la, equal, w_equal, equal_full))
     return log
