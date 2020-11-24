@@ -1,4 +1,5 @@
 
+
 import sys
 import os
 import tensorflow as tf
@@ -44,7 +45,15 @@ if maskShape[0] == None:
     maskShape = maskShape[1:]
 #FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
-
+print("orig")
+[print(l) for l in modelOrig.layers]
+print(modelOrig.input)
+print("copy")
+[print(l) for l in modelOrigDense.layers]
+print(modelOrigDense.input)
+print("Compare")
+compareModels(modelOrig, modelOrigDense)
+exit()
 logger.info("Finished model building")
 
 logger.info("Choosing adversarial example")
@@ -122,14 +131,14 @@ if sat:
 else:
     logger.info("UNSAT")
     print("UNSAT")
-    logger.info("verifying UNSAT on unprocessed network")
-    print("verifying UNSAT on unprocessed network")
+    #logger.info("verifying UNSAT on unprocessed network")
+    #print("verifying UNSAT on unprocessed network")
     #FIXME this is not exactly the same query as the proccessed one.
-    sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, logger, xAdv, inDist, yMaxUnproc, ySecondUnproc)
-    if not sat:
-        logger.info("Proved UNSAT on unprocessed network")
-        print("Proved UNSAT on unprocessed network")
-    else:
-        logger.info("Found CEX on unprocessed network")
-        print("Found CEX on unprocessed network")
+    #sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, logger, xAdv, inDist, yMaxUnproc, ySecondUnproc)
+    #if not sat:
+    #    logger.info("Proved UNSAT on unprocessed network")
+    #    print("Proved UNSAT on unprocessed network")
+    #else:
+    #    logger.info("Found CEX on unprocessed network")
+    #    print("Found CEX on unprocessed network")
 
