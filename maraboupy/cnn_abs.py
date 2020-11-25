@@ -26,6 +26,10 @@ class mnistProp:
     x_train, x_test = x_train / 255.0, x_test / 255.0
     x_train = np.expand_dims(x_train, -1)
     x_test = np.expand_dims(x_test, -1)
+    zero_test = np.zeros((1,) + x_test.shape[1:])
+    half_test = 0.5 * np.ones((1,) + x_test.shape[1:])
+    ones_test = np.ones((1,) + x_test.shape[1:])
+    single_test = np.array([x_test[0]])
     featureShape=(1,28,28)
     loss='sparse_categorical_crossentropy'
     optimizer='adam'
@@ -65,8 +69,12 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
                     tCoorFlat = sum([coor * off for coor, off in zip((*tCoor, out_ch), tOff)])
                     if wMat[in_ch, out_ch].shape != ():
                         raise Exception("wMat[x,y] values should be scalars. shape={}".format( wMat[in_ch, out_ch].shape))
-                    replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch]
+                    replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch].item()
+
+    print("origB.shape={}".format(origB.shape))
+    print("convOutShape={}".format(convOutShape))
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
+    print("replaceB.shape={}".format(replaceB.shape))
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
@@ -83,7 +91,7 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
         for l in origM.layers:
             if l.name == rplcLayerName:
                 clnLayers.append(layers.Flatten(name=(rplcLayerName + "_f_rplc" + lSuffix)))
-                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]),name=(rplcLayerName + "_rplcConv" + lSuffix)))
+                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]), activation=l.activation, name=(rplcLayerName + "_rplcConv" + lSuffix)))
                 toSetWeights[(rplcLayerName + "_rplcConv" + lSuffix)] = [clnW, clnB]
                 clnLayers.append(layers.Reshape(rplcOut[1:], name=(rplcLayerName + "_rshp_rplcOut" + lSuffix)))
             else:
@@ -115,9 +123,6 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
             clnM.get_layer(name=l).set_weights(w)    
 
         score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        score1 = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        score2 = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print(score,score1,score2)
         print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
         print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
 
@@ -176,9 +181,11 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
     rplcLayerName = "c2"
     
     #FIXME
-    #w0Shape=origM.get_layer(name=rplcLayerName).get_weights()[0].shape
-    #w1Shape=origM.get_layer(name=rplcLayerName).get_weights()[1].shape    
-    #origM.get_layer(name=rplcLayerName).set_weights([np.ones(w0Shape), np.ones(w1Shape)])
+    #w0 = 0.01 * np.ones(origM.get_layer(name=rplcLayerName).get_weights()[0].shape)
+    w0 = origM.get_layer(name=rplcLayerName).get_weights()[0]
+    #w1 = np.zeros(origM.get_layer(name=rplcLayerName).get_weights()[1].shape)
+    w1 = origM.get_layer(name=rplcLayerName).get_weights()[1]
+    origM.get_layer(name=rplcLayerName).set_weights([w0, w1])
     #FIXME
     
     return origM, rplcLayerName
@@ -264,24 +271,42 @@ def intermidModel(model, layerName):
         layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
     return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)
 
-def meanActivation(model, features):
+def meanActivation(model, features, seperateCh=True):
+    if len(features.shape) == 2:
+        features = features.reshape(features.shape + (1,1))
+    elif len(features.shape) == 3:
+        features = features.reshape(features.shape + (1,))
     act = np.mean(features, axis=0) #Assume I recieve 4 dim feature array, then act is 3 dim.
     #if act.shape[2] > 1:
     #    act = np.max(act, axis=2).reshape(act.shape[:-1] + (1,))
-    act = np.max(act, axis=2)
+    if seperateCh:
+        act = [act[:,:,i] for i in range(act.shape[2])]
+    else:
+        act = np.max(act, axis=2)
     return act
     #return act.reshape(act.shape[:-1]) if act.shape[-1]==1 else act
     #return np.mean(intermidModel(model, layerName).predict(features), axis=0)
 
-def printImg(im, title):
-    plt.title(title)
-    plt.imshow(im, cmap='Greys')
-    plt.savefig(title + ".png")
+def printImg(image, title):
+    if not isinstance(image,list):
+        imlist = [image]
+    else:
+        imlist = image
+    for i, im in enumerate(imlist):
+        if len(im.shape) == 1:
+            im = im.reshape(im.shape + (1,))
+        if len(imlist) > 1:
+            suff = "_" + str(i)
+        else:
+            suff = ""
+        plt.title(title + suff)
+        plt.imshow(im, cmap='Greys')
+        plt.savefig(title + suff + ".png")
     
 def outputLayerName(model):
     return model.layers[-1].name
 
-def printAvgResult(model, from_label=False): #from_label or from_prediction
+def printAvgDomain(model, from_label=False): #from_label or from_prediction
     if from_label:
         x_test_by_class = {label : np.asarray([x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label]) for label in range(mnistProp.num_classes)}
     else:

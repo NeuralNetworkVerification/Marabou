@@ -14,7 +14,6 @@ import logging
 #sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
 
 from itertools import product, chain
-#from maraboupy import MarabouCore, Marabou
 from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
@@ -47,11 +46,11 @@ if maskShape[0] == None:
 modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
 #compareModels(modelOrig, modelOrigDense)
 
-#printAvgByResult(modelOrig)
-#printAvgByResult(modelOrigDense)
+printImg(meanActivation(modelOrig, intermidModel(modelOrig, "c2").predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrig.name))
+printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "c2").predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrigDense.name))
+printImg(meanActivation(modelOrig, intermidModel(modelOrig, "sm1").predict(mnistProp.single_test)), "activation_sm1_{}".format(modelOrig.name))
+printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "sm1").predict(mnistProp.single_test)), "activation_sm1_{}".format(modelOrigDense.name))
 
-printImg(meanActivation(modelOrig, intermidModel(modelOrig, "c2").predict(mnistProp.x_test)), "c2_activation_{}".format(modelOrig.name))
-printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "c2").predict(mnistProp.x_test)), "c2_activation_{}".format(modelOrigDense.name))
 exit()
 logger.info("Finished model building")
 
