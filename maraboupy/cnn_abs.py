@@ -52,6 +52,7 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     if convInShape[0] == None:
         convInShape = convInShape[1:]        
     replaceW = np.zeros((np.prod(convInShape), np.prod(convOutShape)))
+    replaceB = np.zeros(np.prod(convOutShape))    
     fDim = origW.shape[:-2] # W/O in/out channels.
 
     sOff = [int(np.prod(convInShape[i+1:]))  for i in range(len(convInShape))]
@@ -72,8 +73,9 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
                     if wMat[in_ch, out_ch].shape != ():
                         raise Exception("wMat[x,y] values should be scalars. shape={}".format( wMat[in_ch, out_ch].shape))
                     replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch].item()
+                    replaceB[tCoorFlat] = origB[out_ch]
 
-    replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
+    # = np.tile(origB, np.prod(convOutShape[:-1]))
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
@@ -173,6 +175,14 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         
     else:
         origM = load_model(savedModelOrig)
+
+        #FIXME
+        #w0 = np.ones(origM.get_layer(name="c2").get_weights()[0].shape)
+        ####w1 = np.ones(origM.get_layer(name="c2").get_weights()[1].shape)
+        #w1 = origM.get_layer(name="c2").get_weights()[1]
+        #origM.get_layer(name="c2").set_weights([w0,w1])
+        #FIXME
+        
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])

@@ -44,7 +44,9 @@ if maskShape[0] == None:
     maskShape = maskShape[1:]
 #FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
-#compareModels(modelOrig, modelOrigDense)
+compareModels(modelOrig, modelOrigDense)
+exit()
+
 mnistProp.origMConv = modelOrig
 mnistProp.origMDense = modelOrigDense
 logger.info("Finished model building")
