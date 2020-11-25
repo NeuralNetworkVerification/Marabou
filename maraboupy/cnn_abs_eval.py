@@ -34,6 +34,8 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+#maskList = [np.zeros(maskShape)] + [genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)]) for thresh in reversed(range(int(min(maskShape)/2)))] #FIXME creating too many masks with ones
+
 '''
 inp = np.array(range(1,1+np.ones((3,3,2)).size)).reshape((3,3,2)).astype(float)
 testM = tf.keras.Sequential([layers.Conv2D(2, kernel_size=(2,2), activation="relu", name="c1", input_shape=(3,3,2))])
@@ -48,6 +50,29 @@ print(inp)
 print("\n\n\n\n")
 print(testM.predict(np.array([inp])))
 '''
+
+modelOrig, replaceLayerName = genCnnForAbsTest()
+maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
+if maskShape[0] == None:
+    maskShape = maskShape[1:]
+#FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
+modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
+#compareModels(modelOrig, modelOrigDense)
+
+intermid = intermidModel(modelOrig, "c2")
+printImg(meanActivation(intermid.predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrigDense.name))
+for mask in genActivationMask(intermid):
+    print(mask)
+
+#printImg(meanActivation(modelOrig, intermidModel(modelOrig, "c2").predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrig.name))
+#printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "c2").predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrigDense.name))
+#printImg(meanActivation(modelOrig, intermidModel(modelOrig, "sm1").predict(mnistProp.single_test)), "activation_sm1_{}".format(modelOrig.name))
+#printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "sm1").predict(mnistProp.single_test)), "activation_sm1_{}".format(modelOrigDense.name))
+
+exit()
+
+
+
 
 #mask=np.array([[[1.],[1.],[1.]],
 #               [[1.],[1.],[1.]],
