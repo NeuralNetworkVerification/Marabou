@@ -45,13 +45,8 @@ if maskShape[0] == None:
 #FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
 #compareModels(modelOrig, modelOrigDense)
-
-printImg(meanActivation(modelOrig, intermidModel(modelOrig, "c2").predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrig.name))
-printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "c2").predict(mnistProp.single_test)), "activation_c2_{}".format(modelOrigDense.name))
-printImg(meanActivation(modelOrig, intermidModel(modelOrig, "sm1").predict(mnistProp.single_test)), "activation_sm1_{}".format(modelOrig.name))
-printImg(meanActivation(modelOrigDense, intermidModel(modelOrigDense, "sm1").predict(mnistProp.single_test)), "activation_sm1_{}".format(modelOrigDense.name))
-
-exit()
+mnistProp.origMConv = modelOrig
+mnistProp.origMDense = modelOrigDense
 logger.info("Finished model building")
 
 logger.info("Choosing adversarial example")
@@ -82,7 +77,8 @@ plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
     
 logger.info("Starting Abstractions")
-maskList = [np.zeros(maskShape)] + [genMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)]) for thresh in reversed(range(int(min(maskShape)/2)))] #FIXME creating too many masks with ones
+
+maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2")))
 print("ORIG MASK, len={}".format(len(maskList)))
 maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))]
 logger.info("Created {} masks".format(len(maskList)))
@@ -91,6 +87,7 @@ print("UNIQUE MASK, len={}".format(len(maskList)))
 isSporious = False
 reachedFull = False
 successful = None
+reachedFinal = False
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     sat, cex, cexPrediction = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond)
@@ -113,10 +110,12 @@ for i, mask in enumerate(maskList):
         successful = i
         break;
 else:
+    reachedFinal = True
     sat, cex, cexPrediction = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond)
 
 if sat:
-    logger.info("SAT")    
+    logger.info("SAT, reachedFinal={}".format(reachedFinal))
+    print("SAT, reachedFinal={}".format(reachedFinal))
     if isCEXSporious(modelOrigDense, xAdv, inDist, yMax, ySecond, cex, logger):
         logger.info("Sporious CEX after end")
         raise Exception("Sporious CEX after end")

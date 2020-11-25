@@ -40,7 +40,9 @@ class mnistProp:
     cfg_dis_b = False
     cfg_fresh = False
     numClones = 0
-    numCex = 0    
+    numCex = 0
+    origMConv = None
+    origMDense = None    
     
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
@@ -71,10 +73,7 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
                         raise Exception("wMat[x,y] values should be scalars. shape={}".format( wMat[in_ch, out_ch].shape))
                     replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch].item()
 
-    print("origB.shape={}".format(origB.shape))
-    print("convOutShape={}".format(convOutShape))
     replaceB = np.tile(origB, np.prod(convOutShape[:-1]))
-    print("replaceB.shape={}".format(replaceB.shape))
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
@@ -117,7 +116,7 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
 
         clnM.build(input_shape=mnistProp.featureShape)
         clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
-        clnM.summary()
+        #clnM.summary()
 
         for l,w in toSetWeights.items():
             clnM.get_layer(name=l).set_weights(w)    
@@ -180,14 +179,6 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
 
     rplcLayerName = "c2"
     
-    #FIXME
-    #w0 = 0.01 * np.ones(origM.get_layer(name=rplcLayerName).get_weights()[0].shape)
-    w0 = origM.get_layer(name=rplcLayerName).get_weights()[0]
-    #w1 = np.zeros(origM.get_layer(name=rplcLayerName).get_weights()[1].shape)
-    w1 = origM.get_layer(name=rplcLayerName).get_weights()[1]
-    origM.get_layer(name=rplcLayerName).set_weights([w0, w1])
-    #FIXME
-    
     return origM, rplcLayerName
 
 def getBoundsInftyBall(x, r, pos=True):
@@ -241,6 +232,14 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
     kerasPrediction = model.predict(np.array([cex])).argmax()
+    if mbouPrediction != kerasPrediction:
+        origMConvPrediction = mnistProp.origMConv.predict(np.array([cex])).argmax()
+        origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
+        raise Exception("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
+    print("cexPrediction={}".format(cexPrediction))
+    print("model.predict(np.array([cex]))={}".format(model.predict(np.array([cex]))))
+    print("mbouPrediction={}".format(mbouPrediction))
+    print("kerasPrediction={}".format(kerasPrediction))
     logger.info("Printing counter example: {}. MarabouY={}, modelY={}".format(fName,mbouPrediction, kerasPrediction))        
     plt.title('CEX, MarabouY={}, modelY={}'.format(mbouPrediction, kerasPrediction))
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
@@ -259,7 +258,26 @@ def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
         logger.info("CEX prediction value is not the bad value described in the adversarial property.")
     return False
 
-def genMask(shape, lBound, uBound):
+def genActivationMask(intermidModel):
+    actMap = meanActivation(intermidModel.predict(mnistProp.x_test))
+    maskShape = actMap.shape
+    flat = actMap.flatten()
+    flatP = flat.argsort()
+    sortedInd = list(np.array(list(product(*[range(d) for d in maskShape])))[flatP])
+    numberOfNeurons = 0
+    stepSize = 10
+    mask = np.zeros(maskShape)
+    while numberOfNeurons < actMap.size and len(sortedInd) > 0:
+        toAdd = min(stepSize, len(sortedInd))
+        for coor in sortedInd[:toAdd]:
+            mask[tuple(coor)] = 1
+        numberOfNeurons += toAdd
+        sortedInd = sortedInd[toAdd:]
+        print(numberOfNeurons, actMap.size)
+        yield mask
+    
+    
+def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
     mask = np.zeros(shape)
     for ind in onesInd:
@@ -271,7 +289,7 @@ def intermidModel(model, layerName):
         layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
     return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)
 
-def meanActivation(model, features, seperateCh=True):
+def meanActivation(features, seperateCh=False, model=None):
     if len(features.shape) == 2:
         features = features.reshape(features.shape + (1,1))
     elif len(features.shape) == 3:
@@ -318,19 +336,16 @@ def printAvgDomain(model, from_label=False): #from_label or from_prediction
     
 #https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
 def compareModels(origM, absM):
-    print("Compare")
-    print(origM.input)
-    print(absM.input)
-    print("Starting evaluation of differances between models.")
+    print("compareModels - Starting evaluation of differances between models.")
     layersOrig = [l.name for l in origM.layers]
     layersAbs  = [l.name for l in absM.layers if ("rplc" not in l.name or "rplcOut" in l.name)]
     log = []
-    print("orig")
-    [print(l,l.input) for l in origM.layers]
-    print(origM.input)
-    print("abs")
-    [print(l,l.input) for l in absM.layers]        
-    print(absM.input)
+    #print("orig")
+    #[print(l,l.input) for l in origM.layers]
+    #print(origM.input)
+    #print("abs")
+    #[print(l,l.input) for l in absM.layers]        
+    #print(absM.input)
     equal_full   = np.all(np.equal  (origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
     isclose_full = np.all(np.isclose(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
     print("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
