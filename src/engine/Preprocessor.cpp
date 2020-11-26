@@ -38,6 +38,21 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
+      Remove all addends with zero as coefficient in equations
+    */
+    for ( Equation &equation : _preprocessed.getEquations() )
+    {
+        List<Equation::Addend>::iterator addend = equation._addends.begin();
+        while ( addend != equation._addends.end() )
+        {
+            if ( addend->_coefficient == 0 )
+                addend = equation._addends.erase( addend );
+            else
+                addend++;
+        }
+    }
+
+    /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
       into one.
     */
