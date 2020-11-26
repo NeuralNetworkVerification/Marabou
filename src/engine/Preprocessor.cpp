@@ -14,6 +14,7 @@
  **/
 
 #include "Debug.h"
+#include "Options.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
@@ -319,6 +320,8 @@ bool Preprocessor::processEquations()
             }
 
             // Now compute the actual bounds and see if they are tighter
+            double epsilon = Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE );
+
             if ( validLb )
             {
                 if ( ciSign[xi] == NEGATIVE )
@@ -336,7 +339,8 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                if ( FloatUtils::gt( lowerBound, _preprocessed.getLowerBound( xi ) ) )
+                double diff = lowerBound - _preprocessed.getLowerBound( xi );
+                if ( FloatUtils::isPositive( diff, epsilon ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
@@ -360,7 +364,8 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                if ( FloatUtils::lt( upperBound, _preprocessed.getUpperBound( xi ) ) )
+                double diff = upperBound - _preprocessed.getUpperBound( xi );
+                if ( FloatUtils::isNegative( diff, epsilon ) )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );
