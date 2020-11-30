@@ -73,6 +73,9 @@ public:
 
         // Gurobi options
         MILP_SOLVER_TIMEOUT,
+
+        // Engine's Preprocessor options
+        PREPROCESSOR_BOUND_TOLERANCE,
     };
 
     enum StringOptions {
