@@ -339,8 +339,11 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                double diff = lowerBound - _preprocessed.getLowerBound( xi );
-                if ( FloatUtils::isPositive( diff, epsilon ) )
+                if (
+                    FloatUtils::gt(
+                        lowerBound, _preprocessed.getLowerBound( xi ), epsilon
+                    )
+                )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
@@ -364,8 +367,11 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                double diff = upperBound - _preprocessed.getUpperBound( xi );
-                if ( FloatUtils::isNegative( diff, epsilon ) )
+                if (
+                    FloatUtils::lt(
+                        upperBound, _preprocessed.getUpperBound( xi ), epsilon
+                    )
+                )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );

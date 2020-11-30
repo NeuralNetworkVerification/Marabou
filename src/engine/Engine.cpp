@@ -266,7 +266,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 continue;
             }
 
-
             // We have out-of-bounds variables.
             performSimplexStep();
             continue;
