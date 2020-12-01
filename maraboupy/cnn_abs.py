@@ -14,6 +14,7 @@ from tensorflow.keras import datasets, layers, models
 import numpy as np
 import logging
 import matplotlib.pyplot as plt
+from enum import Enum
 
 from tensorflow.keras.models import load_model
 cfg_freshModelAbs = True
@@ -34,7 +35,6 @@ class mnistProp:
     loss='sparse_categorical_crossentropy'
     optimizer='adam'
     metrics=['accuracy']
-    output_model_path = lambda m : "./{}.onnx".format(m.name)
     savedModelAbs = "cnn_abs_abs.h5"
     cfg_dis_w = False
     cfg_dis_b = False
@@ -42,7 +42,14 @@ class mnistProp:
     numClones = 0
     numCex = 0
     origMConv = None
-    origMDense = None    
+    origMDense = None
+    numTestSamples = 10
+    Policy = Enum("Policy","Centered AllClassRank SingleClassRank MajorityClassVote")
+
+    def output_model_path(m, suffix=""):
+        if suffix:
+            suffix = "_" + suffix
+        return "./{}{}.onnx".format(m.name, suffix)
     
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
@@ -200,7 +207,7 @@ def inBoundsInftyBall(x, r, p, pos=True):
     l,u = getBoundsInftyBall(x,r,pos=pos)
     return np.all(np.less_equal(l,p)) and np.all(np.greater_equal(u,p))
     
-def setAdversarial(net, x, inDist,yCorrect,yBad):
+def setAdversarial(net, x, inDist, yCorrect, yBad):
     inAsNP = np.array(net.inputVars)
     x = x.reshape(inAsNP.shape)
     xDown, xUp = getBoundsInftyBall(x, inDist)
@@ -245,16 +252,29 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     if mbouPrediction != kerasPrediction:
         origMConvPrediction = mnistProp.origMConv.predict(np.array([cex])).argmax()
         origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
-        raise Exception("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
-    print("cexPrediction={}".format(cexPrediction))
-    print("model.predict(np.array([cex]))={}".format(model.predict(np.array([cex]))))
-    print("mbouPrediction={}".format(mbouPrediction))
-    print("kerasPrediction={}".format(kerasPrediction))
+        print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
+        #raise Exception("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
     logger.info("Printing counter example: {}. MarabouY={}, modelY={}".format(fName,mbouPrediction, kerasPrediction))        
     plt.title('CEX, MarabouY={}, modelY={}'.format(mbouPrediction, kerasPrediction))
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
     plt.savefig(fName)
     return True, cex, cexPrediction
+
+def verifyMarabou(model, xAdv, xPrediction):
+    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
+    modelOnnxName = mnistProp.output_model_path(model)
+    keras2onnx.save_model(modelOnnx, modelOnnxName)
+    modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
+    inAsNP = np.array(modelOnnxMarabou.inputVars)
+    xAdv = xAdv.reshape(inAsNP.shape)
+    for i,x in zip(np.nditer(inAsNP),np.nditer(xAdv)):    
+        modelOnnxMarabou.setLowerBound(i.item(),x.item())
+        modelOnnxMarabou.setUpperBound(i.item(),x.item())
+    vals, stats = modelOnnxMarabou.solve(verbose=False)
+    predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
+    print("predictionMbou={}".format(predictionMbou))
+    print("xPrediction={}".format(xPrediction))    
+    return np.all(xPrediction == predictionMbou), xPrediction.argmax() == predictionMbou.argmax(), predictionMbou
 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
     if not inBoundsInftyBall(x, inDist, cex):
@@ -268,24 +288,64 @@ def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
         logger.info("CEX prediction value is not the bad value described in the adversarial property.")
     return False
 
-def genActivationMask(intermidModel):
-    actMap = meanActivation(intermidModel.predict(mnistProp.x_test))
+
+def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.AllClassRank):
+    if policy == mnistProp.Policy.AllClassRank:
+        return genActivationMaskAllClassRank(intermidModel)
+    elif policy == mnistProp.Policy.SingleClassRank:
+        return genActivationMaskSingleClassRank(intermidModel, example, prediction)
+    elif policy == mnistProp.Policy.MajorityClassVote:
+        return genActivationMaskMajorityClassVote(intermidModel)
+    elif policy == mnistProp.Policy.Centered:
+        return genActivationMaskCentered(intermidModel)
+    raise Exception("genActivationMask - policy not implemented:{}".format(policy))
+
+def sortReverseNeuronsByActivation(intermidModel, samples):
+    actMap = meanActivation(intermidModel.predict(samples))
     maskShape = actMap.shape
     flat = actMap.flatten()
-    flatP = flat.argsort()
-    sortedInd = list(np.array(list(product(*[range(d) for d in maskShape])))[flatP])
+    flatPerm = flat.argsort()
+    sortedInd = list(np.array(list(product(*[range(d) for d in maskShape])))[flatPerm])
+    assert len(sortedInd) == actMap.size()
+    return sortedInd.reverse()
+
+def genMaskByOrderedInd(sortedIndReverse, stepSize=10) #Assuming 
     numberOfNeurons = 0
-    stepSize = 10
     mask = np.zeros(maskShape)
-    while numberOfNeurons < actMap.size and len(sortedInd) > 0:
-        toAdd = min(stepSize, len(sortedInd))
-        for coor in sortedInd[:toAdd]:
+    numNeurons = len(sortedIndReverse)
+    while numberOfNeurons < numNeurons and len(sortedIndReverse) > 0:
+        toAdd = min(stepSize, len(sortedIndReverse))
+        for coor in sortedIndReverse[:toAdd]:
             mask[tuple(coor)] = 1
         numberOfNeurons += toAdd
-        sortedInd = sortedInd[toAdd:]
+        sortedIndReverse = sortedIndReverse[toAdd:]
         print(numberOfNeurons, actMap.size)
         yield mask
     
+def genMaskByActivation(intermidModel, features, stepSize=10):
+    sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
+    return genMaskByOrderedInd(sortedIndReverse, stepSize=stepSize)
+
+#Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.
+def genActivationMaskAllClassRank(intermidModel, stepSize=10):
+    return genMaskByActivation(intermidModel, mnistProp.x_test, stepSize=10)
+
+#Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.
+def genActivationMaskSingleClassRank(intermidModel, example, prediction):
+    features = [x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == prediction]
+    return genMaskByActivation(intermidModel, features, stepSize=10)
+
+def genActivationMaskMajorityClassVote(intermidModel):
+    features = [[x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label] for label in range(mnistProp.num_classes)]
+    sortedIndReversePerClass = [sortReverseNeuronsByActivation(intermidModel, feat) for feat in features]
+    sortedIndReverseMajorityVote = pass
+    return genMaskByOrderedInd(sortedIndReverseMajorityVote, stepSize=10)
+
+#Policy - most important neurons are the center of the image.
+def genActivationMaskCentered(intermidModel):
+    maskShape = intermidModel.output_shape
+    for thresh in reversed(range(int(min(maskShape)/2))):        
+        yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
     
 def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
