@@ -300,17 +300,22 @@ def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Polic
         return genActivationMaskCentered(intermidModel)
     raise Exception("genActivationMask - policy not implemented:{}".format(policy))
 
+def sortActMapReverse(actMap):
+    sorted = list(np.array(list(product(*[range(d) for d in actMap.shape])))[actMap.flatten().argsort()])
+    sorted.reverse()
+    return sorted
+    
 def sortReverseNeuronsByActivation(intermidModel, samples):
     actMap = meanActivation(intermidModel.predict(samples))
-    maskShape = actMap.shape
-    flat = actMap.flatten()
-    flatPerm = flat.argsort()
-    sortedInd = list(np.array(list(product(*[range(d) for d in maskShape])))[flatPerm])
-    assert len(sortedInd) == actMap.size()
-    return sortedInd.reverse()
+    print("actMap={}".format(actMap))
+    sortedIndReverse = sortActMapReverse(actMap)
+    print("sortedIndReverse={}".format(sortedIndReverse))
+    assert len(sortedIndReverse) == actMap.size
+    return sortedIndReverse
 
-def genMaskByOrderedInd(sortedIndReverse, stepSize=10) #Assuming 
+def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
     numberOfNeurons = 0
+    print("maskShape={}".format(maskShape))
     mask = np.zeros(maskShape)
     numNeurons = len(sortedIndReverse)
     while numberOfNeurons < numNeurons and len(sortedIndReverse) > 0:
@@ -319,12 +324,11 @@ def genMaskByOrderedInd(sortedIndReverse, stepSize=10) #Assuming
             mask[tuple(coor)] = 1
         numberOfNeurons += toAdd
         sortedIndReverse = sortedIndReverse[toAdd:]
-        print(numberOfNeurons, actMap.size)
         yield mask
     
 def genMaskByActivation(intermidModel, features, stepSize=10):
     sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
-    return genMaskByOrderedInd(sortedIndReverse, stepSize=stepSize)
+    return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:], stepSize=stepSize)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.
 def genActivationMaskAllClassRank(intermidModel, stepSize=10):
@@ -335,15 +339,18 @@ def genActivationMaskSingleClassRank(intermidModel, example, prediction):
     features = [x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == prediction]
     return genMaskByActivation(intermidModel, features, stepSize=10)
 
+#Policy - calculate per class 
 def genActivationMaskMajorityClassVote(intermidModel):
     features = [[x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label] for label in range(mnistProp.num_classes)]
-    sortedIndReversePerClass = [sortReverseNeuronsByActivation(intermidModel, feat) for feat in features]
-    sortedIndReverseMajorityVote = pass
-    return genMaskByOrderedInd(sortedIndReverseMajorityVote, stepSize=10)
+    actMaps = [meanActivation(intermidModel.predict(feat)) for feat in features]
+    dicriminate = lambda actM : np.square(actM) #FIXME explore discriminating schemes.
+    actMaps = [discriminate(actMap) for actMap in actMaps]
+    sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
+    return genMaskByOrderedInd(sortedIndReverseDiscriminated, stepSize=10)
 
 #Policy - most important neurons are the center of the image.
 def genActivationMaskCentered(intermidModel):
-    maskShape = intermidModel.output_shape
+    maskShape = intermidModel.output_shape[1:]
     for thresh in reversed(range(int(min(maskShape)/2))):        
         yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
     
