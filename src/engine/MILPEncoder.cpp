@@ -149,6 +149,8 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     for ( const auto &x : xs ) 
     {
         // add binary variable
+        // Nameing rule is `a{_binVarIndex}_{x}` to clarify
+        // which x binary variable is for. 
         gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, x ),
                             0,
                             1,

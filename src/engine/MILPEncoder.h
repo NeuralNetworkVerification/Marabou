@@ -51,6 +51,9 @@ private:
     */
     Map<unsigned, String> _variableToVariableName;
 
+    /*
+      Index for Guroby binary variables
+    */
     unsigned _binVarIndex = 0;
 
     /*
