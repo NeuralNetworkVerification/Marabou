@@ -31,6 +31,11 @@ DisjunctionConstraint::DisjunctionConstraint( const String &/* serializedDisjunc
                         "Construct DisjunctionConstraint from String" );
 }
 
+PiecewiseLinearFunctionType DisjunctionConstraint::getType() const
+{
+    return PiecewiseLinearFunctionType::DISJUNCTION;
+}
+
 PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
 {
     DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );
@@ -204,11 +209,6 @@ String DisjunctionConstraint::serializeToString() const
 {
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                         "Serialize DisjunctionConstraint to String" );
-}
-
-bool DisjunctionConstraint::supportsSymbolicBoundTightening() const
-{
-    return false;
 }
 
 void DisjunctionConstraint::extractParticipatingVariables()

@@ -16,13 +16,15 @@
 #ifndef __DnCManager_h__
 #define __DnCManager_h__
 
-#include "DivideStrategy.h"
+#include "SnCDivideStrategy.h"
 #include "Engine.h"
 #include "InputQuery.h"
 #include "SubQuery.h"
 #include "Vector.h"
 
 #include <atomic>
+
+#define DNC_MANAGER_LOG( x, ... ) LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
 
 class DnCManager
 {
@@ -39,10 +41,7 @@ public:
             NOT_DONE = 999,
         };
 
-    DnCManager( unsigned numWorkers, unsigned initialDivides, unsigned
-                initialTimeout, unsigned onlineDivides, float timeoutFactor,
-                DivideStrategy divideStrategy, InputQuery *inputQuery,
-                unsigned verbosity );
+    DnCManager( InputQuery *inputQuery );
 
     ~DnCManager();
 
@@ -51,7 +50,7 @@ public:
     /*
       Perform the Divide-and-conquer solving
     */
-    void solve( unsigned timeoutInSeconds );
+    void solve();
 
     /*
       Return the DnCExitCode of the DnCManager
@@ -71,23 +70,25 @@ public:
     /*
       Store the solution into the map
     */
-    void getSolution( std::map<int, double> &ret );
+    void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
 
 private:
     /*
       Create and run a DnCWorker
     */
     static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+                          std::unique_ptr<InputQuery> inputQuery,
                           std::atomic_uint &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
-                          float timeoutFactor, DivideStrategy divideStrategy );
+                          float timeoutFactor, SnCDivideStrategy divideStrategy,
+                          bool restoreTreeStates, unsigned verbosity );
 
     /*
       Create the base engine from the network and property files,
       and if necessary, create engines for workers
     */
-    bool createEngines();
+    bool createEngines( unsigned numberOfEngines );
 
     /*
       Divide up the input region and store them in subqueries
@@ -106,8 +107,6 @@ private:
     void updateTimeoutReached( timespec startTime,
                                unsigned long long timeoutInMicroSeconds );
 
-    static void log( const String &message );
-
     /*
       The base engine that is used to perform the initial divides
     */
@@ -122,41 +121,6 @@ private:
       The engine with the satisfying assignment
     */
     std::shared_ptr<Engine> _engineWithSATAssignment;
-
-    /*
-      Hyperparameters of the DnC algorithm
-    */
-
-    /*
-      The number of threads to spawn
-    */
-    unsigned _numWorkers;
-
-    /*
-      The number of times to initially bisect the input region
-    */
-    unsigned _initialDivides;
-
-    /*
-      The timeout given to the initial subqueries
-    */
-    unsigned _initialTimeout;
-
-    /*
-      The number of times to bisect the sub-input-region if a subquery times out
-    */
-    unsigned _onlineDivides;
-
-    /*
-      When a subQuery is created from dividing a query, the new timeout is the
-      old timeout times this factor
-    */
-    float _timeoutFactor;
-
-    /*
-      The strategy for dividing a query
-    */
-    DivideStrategy _divideStrategy;
 
     /*
       Alternatively, we could construct the DnCManager by directly providing the
@@ -188,6 +152,11 @@ private:
       The level of verbosity
     */
     unsigned _verbosity;
+
+    /*
+      The strategy for dividing a query
+    */
+    SnCDivideStrategy _sncSplittingStrategy;
 };
 
 #endif // __DnCManager_h__

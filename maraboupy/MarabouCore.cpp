@@ -2,7 +2,7 @@
 /*! \file MarabouCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor
+ **   Christopher Lazarus, Andrew Wu, Shantanu Thakoor, Kyle Julian
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -25,18 +25,24 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include "AcasParser.h"
+#include "CommonError.h"
 #include "DnCManager.h"
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
+#include "InputParserError.h"
 #include "MString.h"
 #include "MaxConstraint.h"
+#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+#include "SnCDivideStrategy.h"
+#include "SignConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -88,6 +94,11 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     ipq.addPiecewiseLinearConstraint(r);
 }
 
+void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    PiecewiseLinearConstraint* r = new SignConstraint(var1, var2);
+    ipq.addPiecewiseLinearConstraint(r);
+}
+
 void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     Set<unsigned> e;
     for(unsigned var: elements)
@@ -96,39 +107,133 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-void createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
-  AcasParser* acasParser = new AcasParser( String(networkFilePath) );
-  acasParser->generateQuery( inputQuery );
-  String propertyFilePathM = String(propertyFilePath);
-  if ( propertyFilePath != "" )
+void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
+    ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
+}
+
+bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
+  try{
+    AcasParser* acasParser = new AcasParser( String(networkFilePath) );
+    acasParser->generateQuery( inputQuery );
+
+    bool success = inputQuery.constructNetworkLevelReasoner();
+    if ( success )
+      printf("Successfully created a network level reasoner.\n");
+    else
+      printf("Warning: network level reasoner construction failed.\n");
+
+    String propertyFilePathM = String(propertyFilePath);
+    if ( propertyFilePath != "" )
+      {
+        printf( "Property: %s\n", propertyFilePathM.ascii() );
+        PropertyParser().parse( propertyFilePathM, inputQuery );
+      }
+    else
+      printf( "Property: None\n" );
+  }
+  catch(const InputParserError &e){
+        printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        return false;
+  }
+  return true;
+}
+
+void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equation>>
+                              &disjuncts ){
+    List<PiecewiseLinearCaseSplit> disjunctList;
+    for ( const auto &disjunct : disjuncts )
     {
-      printf( "Property: %s\n", propertyFilePathM.ascii() );
-      PropertyParser().parse( propertyFilePathM, inputQuery );
+        PiecewiseLinearCaseSplit split;
+        for ( const auto &eq : disjunct )
+        {
+            if ( eq._addends.size() == 1 )
+            {
+                // Add bounds as tightenings
+                unsigned var = eq._addends.front()._variable;
+                unsigned coeff = eq._addends.front()._coefficient;
+                if ( coeff == 0 )
+                    throw CommonError( CommonError::DIVISION_BY_ZERO,
+                                       "AddDisjunctionConstraint: zero coefficient encountered" );
+                double scalar = eq._scalar / coeff;
+                Equation::EquationType type = eq._type;
+
+                if ( type == Equation::EQ )
+                {
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
+                }
+                else if ( type == Equation::GE || coeff < 0 )
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
+                else if ( type == Equation::LE || coeff < 0 )
+                    split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
+            }
+            else
+            {
+                split.addEquation( eq );
+            }
+        }
+        disjunctList.append( split );
     }
-  else
-    printf( "Property: None\n" );
+    ipq.addPiecewiseLinearConstraint(new DisjunctionConstraint(disjunctList));
 }
 
 struct MarabouOptions {
     MarabouOptions()
-        : _numWorkers( 4 )
-        , _initialTimeout( 5 )
-        , _initialDivides( 0 )
-        , _onlineDivides( 2 )
-        , _timeoutInSeconds( 0 )
-        , _timeoutFactor( 1.5 )
-        , _verbosity( 2 )
-        , _dnc( false )
+        : _snc( Options::get()->getBool( Options::DNC_MODE ) )
+        , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
+        , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
+        , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
+        , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
+        , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
+        , _onlineDivides( Options::get()->getInt( Options::NUM_ONLINE_DIVIDES ) )
+        , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
+        , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
+        , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+        , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
+        , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
+        , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
+        , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
 
+  void setOptions()
+  {
+    // Bool options
+    Options::get()->setBool( Options::DNC_MODE, _snc );
+    Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
+    Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
+
+    // int options
+    Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
+    Options::get()->setInt( Options::INITIAL_TIMEOUT, _initialTimeout );
+    Options::get()->setInt( Options::NUM_INITIAL_DIVIDES, _initialDivides );
+    Options::get()->setInt( Options::NUM_ONLINE_DIVIDES, _onlineDivides );
+    Options::get()->setInt( Options::VERBOSITY, _verbosity );
+    Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
+    Options::get()->setInt( Options::CONSTRAINT_VIOLATION_THRESHOLD, _splitThreshold );
+
+    // float options
+    Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
+    Options::get()->setFloat( Options::PREPROCESSOR_BOUND_TOLERANCE, _preprocessorBoundTolerance );
+
+    // string options
+    Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
+    Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
+  }
+
+    bool _snc;
+    bool _restoreTreeStates;
+    bool _solveWithMILP;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
-    unsigned _timeoutInSeconds;
-    float _timeoutFactor;
     unsigned _verbosity;
-    bool _dnc;
+    unsigned _timeoutInSeconds;
+    unsigned _splitThreshold;
+    float _timeoutFactor;
+    float _preprocessorBoundTolerance;
+    std::string _splittingStrategyString;
+    std::string _sncSplittingStrategyString;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -143,47 +248,39 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        bool verbosity = options._verbosity;
-        unsigned timeoutInSeconds = options._timeoutInSeconds;
-        bool dnc = options._dnc;
+
+        options.setOptions();
+
+        bool dnc = Options::get()->getBool( Options::DNC_MODE );
 
         Engine engine;
-        engine.setVerbosity(verbosity);
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
         if ( dnc )
         {
-            unsigned initialDivides = options._initialDivides;
-            unsigned initialTimeout = options._initialTimeout;
-            unsigned numWorkers = options._numWorkers;
-            unsigned onlineDivides = options._onlineDivides;
-            float timeoutFactor = options._timeoutFactor;
+            auto dncManager = std::unique_ptr<DnCManager>( new DnCManager( &inputQuery ) );
 
-            auto dncManager = std::unique_ptr<DnCManager>
-                ( new DnCManager( numWorkers, initialDivides, initialTimeout, onlineDivides,
-                                  timeoutFactor, DivideStrategy::LargestInterval,
-                                  &inputQuery, verbosity ) );
-
-            dncManager->solve( timeoutInSeconds );
+            dncManager->solve();
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
             {
                 retStats = Statistics();
-                dncManager->getSolution( ret );
+                dncManager->getSolution( ret, inputQuery );
                 break;
             }
             case DnCManager::TIMEOUT:
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, Statistics() );
+                return std::make_pair( ret, retStats );
             }
             default:
                 return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
             }
         } else
         {
+            unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
             if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
@@ -213,13 +310,84 @@ InputQuery loadQuery(std::string filename){
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
-    m.doc() = "Marabou API Library";
+    m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
-    m.def("solve", &solve, "Takes in a description of the InputQuery and returns the solution", py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
-    m.def("saveQuery", &saveQuery, "Serializes the inputQuery in the given filename");
-    m.def("loadQuery", &loadQuery, "Loads and returns a serialized inputQuery from the given filename");
-    m.def("addReluConstraint", &addReluConstraint, "Add a Relu constraint to the InputQuery");
-    m.def("addMaxConstraint", &addMaxConstraint, "Add a Max constraint to the InputQuery");
+    m.def("solve", &solve, R"pbdoc(
+        Takes in a description of the InputQuery and returns the solution
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+            redirect (str, optional): Filepath to direct standard output, defaults to ""
+
+        Returns:
+            (tuple): tuple containing:
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+    m.def("saveQuery", &saveQuery, R"pbdoc(
+        Serializes the inputQuery in the given filename
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
+            filename (str): Name of file to save query
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("filename"));
+    m.def("loadQuery", &loadQuery, R"pbdoc(
+        Loads and returns a serialized InputQuery from the given filename
+
+        Args:
+            filename (str): Name of file to load into an InputQuery
+
+        Returns:
+            :class:`~maraboupy.MarabouCore.InputQuery`
+        )pbdoc",
+        py::arg("filename"));
+    m.def("addReluConstraint", &addReluConstraint, R"pbdoc(
+        Add a Relu constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Relu constraint
+            var2 (int): Output variable to Relu constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addSignConstraint", &addSignConstraint, R"pbdoc(
+        Add a Sign constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Sign constraint
+            var2 (int): Output variable to Sign constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addMaxConstraint", &addMaxConstraint, R"pbdoc(
+        Add a Max constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            elements (set of int): Input variables to max constraint
+            v (int): Output variable from max constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
+    m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
+        Add an Abs constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            b (int): Input variable
+            f (int): Output variable
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("b"), py::arg("f"));
+    m.def("addDisjunctionConstraint", &addDisjunctionConstraint, R"pbdoc(
+        Add a disjunction constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            disjuncts (list of pairs): A list of disjuncts. Each disjunct is represented by a pair: a list of bounds, and a list of (in)equalities.
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("disjuncts"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
@@ -236,8 +404,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("inputVariableByIndex", &InputQuery::inputVariableByIndex)
         .def("markInputVariable", &InputQuery::markInputVariable)
         .def("markOutputVariable", &InputQuery::markOutputVariable)
-        .def("outputVariableByIndex", &InputQuery::outputVariableByIndex)
-        .def("setSymbolicBoundTightener", &InputQuery::setSymbolicBoundTightener);
+        .def("outputVariableByIndex", &InputQuery::outputVariableByIndex);
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
@@ -246,19 +413,20 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
+        .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_dnc", &MarabouOptions::_dnc);
-    py::class_<SymbolicBoundTightener, std::unique_ptr<SymbolicBoundTightener,py::nodelete>>(m, "SymbolicBoundTightener")
-        .def(py::init())
-        .def("setNumberOfLayers", &SymbolicBoundTightener::setNumberOfLayers)
-        .def("setLayerSize", &SymbolicBoundTightener::setLayerSize)
-        .def("allocateWeightAndBiasSpace", &SymbolicBoundTightener::allocateWeightAndBiasSpace)
-        .def("setBias", &SymbolicBoundTightener::setBias)
-        .def("setWeight", &SymbolicBoundTightener::setWeight)
-        .def("setInputLowerBound", &SymbolicBoundTightener::setInputLowerBound)
-        .def("setInputUpperBound", &SymbolicBoundTightener::setInputUpperBound)
-        .def("setReluBVariable", &SymbolicBoundTightener::setReluBVariable)
-        .def("setReluFVariable", &SymbolicBoundTightener::setReluFVariable);
+        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
+        .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
+        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
+        .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
+        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);
+    py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
+        .value("ReLU", PiecewiseLinearFunctionType::RELU)
+        .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
+        .value("Max", PiecewiseLinearFunctionType::MAX)
+        .value("Disjunction", PiecewiseLinearFunctionType::DISJUNCTION)
+        .export_values();
     py::class_<Equation> eq(m, "Equation");
     eq.def(py::init());
     eq.def(py::init<Equation::EquationType>());

@@ -27,6 +27,11 @@ public:
     DisjunctionConstraint( const String &serializedDisjunction );
 
     /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
+
+    /*
       Return a clone of the constraint.
     */
     PiecewiseLinearConstraint *duplicateConstraint() const;
@@ -134,12 +139,6 @@ public:
       Returns string with shape: disjunction, _f, _b
     */
     String serializeToString() const;
-
-    /*
-      Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    bool supportsSymbolicBoundTightening() const;
 
 private:
     /*

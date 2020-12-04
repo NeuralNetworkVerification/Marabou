@@ -19,10 +19,12 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "MaxConstraint.h"
+
+#define INPUT_QUERY_LOG( x, ... ) LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
 
 InputQuery::InputQuery()
     : _networkLevelReasoner( NULL )
-    , _sbt( NULL )
 {
 }
 
@@ -33,12 +35,6 @@ InputQuery::~InputQuery()
     {
         delete _networkLevelReasoner;
         _networkLevelReasoner = NULL;
-    }
-
-    if ( _sbt )
-    {
-        delete _sbt;
-        _sbt = NULL;
     }
 }
 
@@ -213,6 +209,8 @@ void InputQuery::removeEquation( Equation e )
 
 InputQuery &InputQuery::operator=( const InputQuery &other )
 {
+    INPUT_QUERY_LOG( "Calling deep copy constructor..." );
+
     _numberOfVariables = other._numberOfVariables;
     _equations = other._equations;
     _lowerBounds = other._lowerBounds;
@@ -226,13 +224,12 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     _outputIndexToVariable = other._outputIndexToVariable;
 
     freeConstraintsIfNeeded();
-    for ( const auto &constraint : other._plConstraints )
-        _plConstraints.append( constraint->duplicateConstraint() );
 
+    // Setting NLR
     if ( other._networkLevelReasoner )
     {
         if ( !_networkLevelReasoner )
-            _networkLevelReasoner = new NetworkLevelReasoner;
+            _networkLevelReasoner = new NLR::NetworkLevelReasoner;
         other._networkLevelReasoner->storeIntoOther( *_networkLevelReasoner );
     }
     else
@@ -244,27 +241,49 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         }
     }
 
-    if ( other._sbt )
+    // Setting plConstraints and topological order
+    if ( !other._networkLevelReasoner )
     {
-        if ( !_sbt )
-            _sbt = new SymbolicBoundTightener;
-        other._sbt->storeIntoOther( *_sbt );
+        for ( const auto &constraint : other._plConstraints )
+            _plConstraints.append( constraint->duplicateConstraint() );
     }
     else
     {
-        if ( _sbt )
+        INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in input query: %u",
+                                  other._plConstraints.size() ).ascii() );
+        INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in topological order %u",
+                                  other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
+
+        unsigned numberOfDisjunctions = 0;
+        for ( const auto &constraint : other._plConstraints )
         {
-            delete _sbt;
-            _sbt = NULL;
+            if ( constraint->getType() == DISJUNCTION )
+             {
+                 auto *newPlc = constraint->duplicateConstraint();
+                 _plConstraints.append( newPlc );
+                 ++numberOfDisjunctions;
+             }
+        }
+
+        ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() +
+                numberOfDisjunctions
+                == other._plConstraints.size() );
+
+        for ( const auto &constraint : other._networkLevelReasoner->
+                  getConstraintsInTopologicalOrder() )
+        {
+            auto *newPlc = constraint->duplicateConstraint();
+            _plConstraints.append( newPlc );
+            _networkLevelReasoner->addConstraintInTopologicalOrder( newPlc );
         }
     }
 
+    INPUT_QUERY_LOG( "Calling deep copy constructor - done\n" );
     return *this;
 }
 
 InputQuery::InputQuery( const InputQuery &other )
     : _networkLevelReasoner( NULL )
-    , _sbt( NULL )
 {
     *this = other;
 }
@@ -342,11 +361,11 @@ void InputQuery::saveQuery( const String &fileName )
 
     // Lower Bounds
     for ( const auto &lb : _lowerBounds )
-        queryFile->write( Stringf( "\n%d,%f", lb.first, lb.second ) );
-    
+        queryFile->write( Stringf( "\n%d,%.10f", lb.first, lb.second ) );
+
     // Upper Bounds
     for ( const auto &ub : _upperBounds )
-        queryFile->write( Stringf( "\n%d,%f", ub.first, ub.second ) );
+        queryFile->write( Stringf( "\n%d,%.10f", ub.first, ub.second ) );
 
     // Equations
     i = 0;
@@ -359,9 +378,9 @@ void InputQuery::saveQuery( const String &fileName )
         queryFile->write( Stringf( "%01d,", e._type ) );
 
         // Equation scalar
-        queryFile->write( Stringf( "%f", e._scalar ) );
+        queryFile->write( Stringf( "%.10f", e._scalar ) );
         for ( const auto &a : e._addends )
-            queryFile->write( Stringf( ",%u,%f", a._variable, a._coefficient ) );
+            queryFile->write( Stringf( ",%u,%.10f", a._variable, a._coefficient ) );
 
         ++i;
     }
@@ -431,6 +450,29 @@ List<unsigned> InputQuery::getOutputVariables() const
     return result;
 }
 
+void InputQuery::printAllBounds() const
+{
+    printf( "InputQuery: Dumping all bounds\n" );
+
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+    {
+        printf( "\tx%u: [", i );
+        if ( _lowerBounds.exists( i ) )
+            printf( "%lf, ", _lowerBounds[i] );
+        else
+            printf( "-INF, " );
+
+        if ( _upperBounds.exists( i ) )
+            printf( "%lf]", _upperBounds[i] );
+        else
+            printf( "+INF]" );
+        printf( "\n" );
+
+    }
+
+    printf( "\n\n" );
+}
+
 void InputQuery::printInputOutputBounds() const
 {
     printf( "Dumping bounds of the input and output variables:\n" );
@@ -456,6 +498,15 @@ void InputQuery::printInputOutputBounds() const
 
 void InputQuery::dump() const
 {
+    printf( "Total number of variables: %u\n", _numberOfVariables );
+    printf( "Input variables:\n" );
+    for ( const auto &input : _inputIndexToVariable )
+        printf( "\tx%u\n", input.second );
+
+    printf( "Output variables:\n" );
+    for ( const auto &output : _outputIndexToVariable )
+        printf( "\tx%u\n", output.second );
+
     printf( "Variable bounds:\n" );
     for ( unsigned i = 0; i < _numberOfVariables; ++i )
     {
@@ -478,11 +529,6 @@ void InputQuery::dump() const
         printf( "\t" );
         e.dump();
     }
-}
-
-void InputQuery::setSymbolicBoundTightener( SymbolicBoundTightener *sbt )
-{
-    _sbt = sbt;
 }
 
 void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldIndexToNewIndex,
@@ -533,20 +579,561 @@ void InputQuery::adjustInputOutputMapping( const Map<unsigned, unsigned> &oldInd
         _variableToOutputIndex[it.second] = it.first;
 }
 
-void InputQuery::setNetworkLevelReasoner( NetworkLevelReasoner *nlr )
+void InputQuery::setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr )
 {
     _networkLevelReasoner = nlr;
 }
 
-NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
+NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
 {
     return _networkLevelReasoner;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+bool InputQuery::constructNetworkLevelReasoner()
+{
+    INPUT_QUERY_LOG( "PP: constructing an NLR... " );
+
+    if ( _networkLevelReasoner )
+        delete _networkLevelReasoner;
+    NLR::NetworkLevelReasoner *nlr = new NLR::NetworkLevelReasoner;
+
+    Map<unsigned, unsigned> handledVariableToLayer;
+
+    // First, put all the input neurons in layer 0
+    List<unsigned> inputs = getInputVariables();
+    nlr->addLayer( 0, NLR::Layer::INPUT, inputs.size() );
+    unsigned index = 0;
+
+    NLR::Layer *inputLayer = nlr->getLayer( 0 );
+    for ( const auto &inputVariable : inputs )
+    {
+        nlr->setNeuronVariable( NLR::NeuronIndex( 0, index ), inputVariable );
+        handledVariableToLayer[inputVariable] = 0;
+
+        inputLayer->setLb( index, _lowerBounds.exists( inputVariable ) ?
+                      _lowerBounds[inputVariable] : FloatUtils::negativeInfinity() );
+        inputLayer->setUb( index, _upperBounds.exists( inputVariable ) ?
+                      _upperBounds[inputVariable] : FloatUtils::infinity() );
+
+        ++index;
+    }
+
+    unsigned newLayerIndex = 1;
+    // Now, repeatedly attempt to construct additional layers
+    while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex )
+            )
+    {
+        ++newLayerIndex;
+    }
+
+    bool success = ( newLayerIndex > 1 );
+
+    if ( success )
+    {
+        unsigned count = 0;
+        for ( unsigned i = 0; i < nlr->getNumberOfLayers(); ++i )
+            count += nlr->getLayer( i )->getSize();
+
+        INPUT_QUERY_LOG( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)\n",
+                      newLayerIndex,
+                      count,
+                      getNumberOfVariables() ).ascii() );
+
+        _networkLevelReasoner = nlr;
+    }
+    else
+    {
+        INPUT_QUERY_LOG( "unsuccessful\n" );
+        delete nlr;
+    }
+
+    return success;
+}
+
+bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
+                                           Map<unsigned, unsigned> &handledVariableToLayer,
+                                           unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct weightedSumLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, const Equation *eq )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _eq( eq )
+        {
+        }
+
+        NeuronInformation()
+            : _eq( NULL )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        const Equation *_eq;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for equations where all variables except one have already been handled
+    const List<Equation> &equations = getEquations();
+    for ( const auto &eq : equations )
+    {
+        // Only consider equalities
+        if ( eq._type != Equation::EQ )
+            continue;
+
+        List<unsigned> eqVariables = eq.getListParticipatingVariables();
+        auto it = eqVariables.begin();
+        while ( it != eqVariables.end() )
+        {
+            if ( handledVariableToLayer.exists( *it ) )
+                it = eqVariables.erase( it );
+            else
+                ++it;
+        }
+
+        if ( eqVariables.size() == 1 )
+        {
+            // Add the surviving variable to the new layer
+            newNeurons.append( NeuronInformation( *eqVariables.begin(), newNeurons.size(), &eq ) );
+        }
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::WEIGHTED_SUM, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        /*
+          We assume equations have the form
+
+          2x1 + 3x2 - y = 5
+
+          Where y is our weighted sum variable. If y's coefficient is
+          not -1, we make it -1 by multiplying everything else
+        */
+
+        ASSERT( !FloatUtils::isZero( newNeuron._eq->getCoefficient( newNeuron._variable ) ) );
+        double factor = -1.0 / newNeuron._eq->getCoefficient( newNeuron._variable );
+
+        // Bias
+        nlr->setBias( newLayerIndex, newNeuron._neuron, factor * -newNeuron._eq->_scalar );
+
+        // Weighted sum
+        for ( const auto &addend : newNeuron._eq->_addends )
+        {
+            if ( addend._variable == newNeuron._variable )
+                continue;
+
+            unsigned sourceLayer = handledVariableToLayer[addend._variable];
+            unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( addend._variable );
+
+            // Mark the layer dependency
+            nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+            nlr->setWeight( sourceLayer,
+                            sourceNeuron,
+                            newLayerIndex,
+                            newNeuron._neuron,
+                            factor * addend._coefficient );
+        }
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                                     Map<unsigned, unsigned> &handledVariableToLayer,
+                                     unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct ReluLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, unsigned sourceVariable )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariable( sourceVariable )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        unsigned _sourceVariable;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for ReLUs where all b variables have already been handled
+    const List<PiecewiseLinearConstraint *> &plConstraints =
+        getPiecewiseLinearConstraints();
+
+    for ( const auto &plc : plConstraints )
+    {
+        // Only consider ReLUs
+        if ( plc->getType() != RELU )
+            continue;
+
+        const ReluConstraint *relu = (const ReluConstraint *)plc;
+
+        // Has the b variable been handled?
+        unsigned b = relu->getB();
+        if ( !handledVariableToLayer.exists( b ) )
+            continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = relu->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // B has been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        nlr->addConstraintInTopologicalOrder( plc );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
+        unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
+
+        // Mark the layer dependency
+        nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        // Mark the activation connection
+        nlr->addActivationSource( sourceLayer,
+                                  sourceNeuron,
+                                  newLayerIndex,
+                                  newNeuron._neuron );
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
+                                              Map<unsigned, unsigned> &handledVariableToLayer,
+                                              unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct AbsoluteValueLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, unsigned sourceVariable )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariable( sourceVariable )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        unsigned _sourceVariable;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for ABSOLUTE_VALUEs where all b variables have already been handled
+    const List<PiecewiseLinearConstraint *> &plConstraints =
+        getPiecewiseLinearConstraints();
+
+    for ( const auto &plc : plConstraints )
+    {
+        // Only consider ABSOLUTE_VALUE
+        if ( plc->getType() != ABSOLUTE_VALUE )
+            continue;
+
+        const AbsoluteValueConstraint *abs = (const AbsoluteValueConstraint *)plc;
+
+        // Has the b variable been handled?
+        unsigned b = abs->getB();
+        if ( !handledVariableToLayer.exists( b ) )
+            continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = abs->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // B has been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        nlr->addConstraintInTopologicalOrder( plc );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::ABSOLUTE_VALUE, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
+        unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
+
+        // Mark the layer dependency
+        nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        // Mark the activation connection
+        nlr->addActivationSource( sourceLayer,
+                                  sourceNeuron,
+                                  newLayerIndex,
+                                  newNeuron._neuron );
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
+                                     Map<unsigned, unsigned> &handledVariableToLayer,
+                                     unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct SignLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, unsigned sourceVariable )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariable( sourceVariable )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        unsigned _sourceVariable;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for Signs where the b variables have already been handled
+    const List<PiecewiseLinearConstraint *> &plConstraints =
+        getPiecewiseLinearConstraints();
+
+    for ( const auto &plc : plConstraints )
+    {
+        // Only consider Signs
+        if ( plc->getType() != SIGN )
+            continue;
+
+        const SignConstraint *sign = (const SignConstraint *)plc;
+
+        // Has the b variable been handled?
+        unsigned b = sign->getB();
+        if ( !handledVariableToLayer.exists( b ) )
+            continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = sign->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // B has been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        nlr->addConstraintInTopologicalOrder( plc );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::SIGN, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
+        unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
+
+        // Mark the layer dependency
+        nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        // Mark the activation connection
+        nlr->addActivationSource( sourceLayer,
+                                  sourceNeuron,
+                                  newLayerIndex,
+                                  newNeuron._neuron );
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
+                                    Map<unsigned, unsigned> &handledVariableToLayer,
+                                    unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct MaxLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, const List<unsigned> &sourceVariables )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariables( sourceVariables )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        List<unsigned> _sourceVariables;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for Maxes where all the element variables have already been handled
+    const List<PiecewiseLinearConstraint *> &plConstraints =
+        getPiecewiseLinearConstraints();
+
+    for ( const auto &plc : plConstraints )
+    {
+        // Only consider Signs
+        if ( plc->getType() != MAX )
+            continue;
+
+        const MaxConstraint *max = (const MaxConstraint *)plc;
+
+        // Have all elements been handled?
+        bool missingElement = false;
+        for ( const auto &element : max->getElements() )
+        {
+            if ( !handledVariableToLayer.exists( element ) )
+            {
+                missingElement = true;
+                break;
+            }
+        }
+
+        if ( missingElement )
+            continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = max->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // Elements have been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f,
+                                              newNeurons.size(),
+                                              max->getElements() ) );
+        nlr->addConstraintInTopologicalOrder( plc );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::MAX, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        for ( const auto &sourceVariable : newNeuron._sourceVariables )
+        {
+            unsigned sourceLayer = handledVariableToLayer[sourceVariable];
+            unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( sourceVariable );
+
+            // Mark the layer dependency
+            nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+            // Mark the activation connection
+            nlr->addActivationSource( sourceLayer,
+                                      sourceNeuron,
+                                      newLayerIndex,
+                                      newNeuron._neuron );
+        }
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}

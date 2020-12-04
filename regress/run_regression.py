@@ -5,7 +5,7 @@ import sys
 import threading
 
 DEFAULT_TIMEOUT = 600
-EXPECTED_RESULT_OPTIONS = ('SAT', 'UNSAT')
+EXPECTED_RESULT_OPTIONS = ('sat', 'unsat')
 
 
 def run_process(args, cwd, timeout, s_input=None):
@@ -50,19 +50,19 @@ def analyze_process_result(out, err, exit_status, expected_result):
         print("err: {}".format(err))
         return False
 
-    # If the output is UNSAT there is no \n after the UNSAT statement
-    if expected_result == 'UNSAT':
+    # If the output is unsat there is no \n after the unsat statement
+    if expected_result == 'unsat':
         out_lines = out.splitlines()
         if out_lines[-1] == expected_result:
             return True
         else:
-            print("Expected UNSAT, but last line is in output is: ", out_lines[-1])
+            print("Expected unsat, but last line is in output is: ", out_lines[-1])
             return False
     else:
-        if '\nSAT' in out:
+        if '\nsat' in out:
             return True
         else:
-            print('expected SAT, but \'\\nSAT\' is not in the output. tail of the output:\n', out[-1500:])
+            print('expected sat, but \'\\nSAT\' is not in the output. tail of the output:\n', out[-1500:])
             return False
 
 
@@ -72,7 +72,7 @@ def run_marabou(marabou_binary, network_path, property_path, expected_result, ti
     :param marabou_binary: path to marabou executable
     :param network_path: path to nnet file to pass too marabou
     :param property_path: path to property file to pass to marabou to verify
-    :param expected_result: SAT / UNSAT
+    :param expected_result: sat / unsat
     :param arguments list of arguments to pass to Marabou (for example DnC mode)
     :return: True / False if test pass or not
     '''
@@ -83,7 +83,7 @@ def run_marabou(marabou_binary, network_path, property_path, expected_result, ti
         sys.exit('"{}" does not exist or is not a file'.format(network_path))
     if not os.path.isfile(property_path):
         sys.exit('"{}" does not exist or is not a file'.format(property_path))
-    if expected_result not in {'SAT', 'UNSAT'}:
+    if expected_result not in {'sat', 'unsat'}:
         sys.exit('"{}" is not a marabou supported result'.format(expected_result))
 
     args = [marabou_binary, network_path, property_path]
@@ -100,7 +100,7 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
     :param marabou_binary: path to marabou executable
     :param network_path: path to nnet file to pass too marabou
     :param property_path: path to property file to pass to marabou to verify
-    :param expected_result: SAT / UNSAT
+    :param expected_result: sat / unsat
     :param arguments list of arguments to pass to Marabou (for example DnC mode)
     :return: True / False if test pass or not
     '''
@@ -109,7 +109,7 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
             '"{}" does not exist or is not executable'.format(mps_binary))
     if not os.path.isfile(network_path):
         sys.exit('"{}" does not exist or is not a file'.format(network_path))
-    if expected_result not in {'SAT', 'UNSAT'}:
+    if expected_result not in {'sat', 'unsat'}:
         sys.exit('"{}" is not a marabou supported result'.format(expected_result))
 
     args = [mps_binary, network_path]
@@ -129,7 +129,7 @@ def main():
     parser.add_argument('network_file')
     parser.add_argument('property_file', nargs='?', default='')
     parser.add_argument('expected_result', choices=EXPECTED_RESULT_OPTIONS)
-    parser.add_argument('--dnc', action='store_true')
+    parser.add_argument('--snc', action='store_true')
     parser.add_argument('--timeout', nargs='?', const=DEFAULT_TIMEOUT, type=int)
 
     args = parser.parse_args()
@@ -142,8 +142,8 @@ def main():
         property_file = os.path.abspath(args.property_file)
 
     marabou_args = []
-    if args.dnc:
-        marabou_args += ['--dnc']
+    if args.snc:
+        marabou_args += ['--snc']
     if args.network_file.endswith('nnet'):
         return run_marabou(binary, network_file, property_file, expected_result, args.timeout, marabou_args)
     elif args.network_file.endswith('mps'):

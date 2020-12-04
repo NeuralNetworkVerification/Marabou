@@ -23,8 +23,8 @@
 #include "ICostFunctionManager.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
-#include "PiecewiseLinearCaseSplit.h"
 #include "MarabouError.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
@@ -713,6 +713,11 @@ bool Tableau::performingFakePivot() const
 
 void Tableau::performPivot()
 {
+
+    bool decrease;
+    unsigned  nonBasic;
+    (void) decrease;
+    (void) nonBasic;
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
@@ -723,15 +728,15 @@ void Tableau::performPivot()
         ASSERT( ( enteringReducedCost <= -GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) ||
                 ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE ) );
 
-        bool decrease = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
-        unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
+        decrease = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
+        nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
-        log( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
+        TABLEAU_LOG( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
                       _nonBasicIndexToVariable[_enteringVariable],
-                      decrease ? "LOWER" : "UPPER" ) );
-        log( Stringf( "Current value: %.3lf. Range: [%.3lf, %.3lf]\n",
+                      decrease ? "LOWER" : "UPPER" ).ascii() );
+        TABLEAU_LOG( Stringf( "Current value: %.3lf. Range: [%.3lf, %.3lf]\n",
                       _nonBasicAssignment[_enteringVariable],
-                      _lowerBounds[nonBasic], _upperBounds[nonBasic] ) );
+                      _lowerBounds[nonBasic], _upperBounds[nonBasic] ).ascii() );
 
         updateAssignmentForPivot();
 
@@ -749,19 +754,19 @@ void Tableau::performPivot()
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
-    log( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
+    TABLEAU_LOG( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
                   _nonBasicIndexToVariable[_enteringVariable],
-                  _basicIndexToVariable[_leavingVariable] ) );
-    log( Stringf( "Leaving variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
+                  _basicIndexToVariable[_leavingVariable] ).ascii() );
+    TABLEAU_LOG( Stringf( "Leaving variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
                   _leavingVariableIncreases ? "increases" : "decreases",
                   _basicAssignment[_leavingVariable],
-                  _lowerBounds[currentBasic], _upperBounds[currentBasic] ) );
-    log( Stringf( "Entering variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
+                  _lowerBounds[currentBasic], _upperBounds[currentBasic] ).ascii() );
+    TABLEAU_LOG( Stringf( "Entering variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
                   FloatUtils::isNegative( _costFunctionManager->getCostFunction()[_enteringVariable] ) ?
                   "increases" : "decreases",
                   _nonBasicAssignment[_enteringVariable],
-                  _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ) );
-    log( Stringf( "Change ratio is: %.15lf\n", _changeRatio ) );
+                  _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ).ascii() );
+    TABLEAU_LOG( Stringf( "Change ratio is: %.15lf\n", _changeRatio ).ascii() );
 
     // As part of the pivot operation we use both the pivot row and
     // pivot column. If they don't agree on the intersection, there's some
@@ -1819,7 +1824,7 @@ unsigned Tableau::addEquation( const Equation &equation )
 
     if ( !FloatUtils::isZero( _b[_m - 1] ) )
         _rhsIsAllZeros = false;
-    
+
     /*
       Attempt to make the auxiliary variable the new basic variable.
       This usually works.
@@ -1862,7 +1867,7 @@ unsigned Tableau::addEquation( const Equation &equation )
     else
     {
         ConstraintMatrixAnalyzer analyzer;
-        analyzer.analyze( _A, _m, _n );
+        analyzer.analyze( (const SparseUnsortedList **)_sparseRowsOfA, _m, _n );
         List<unsigned> independentColumns = analyzer.getIndependentColumns();
 
         try
@@ -1871,7 +1876,7 @@ unsigned Tableau::addEquation( const Equation &equation )
         }
         catch ( MalformedBasisException & )
         {
-            log( "addEquation failed - could not refactorize basis" );
+            TABLEAU_LOG( "addEquation failed - could not refactorize basis" );
             throw MarabouError( MarabouError::FAILURE_TO_ADD_NEW_EQUATION );
         }
 
@@ -2147,12 +2152,6 @@ double Tableau::getSumOfInfeasibilities() const
 void Tableau::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
-}
-
-void Tableau::log( const String &message )
-{
-    if ( GlobalConfiguration::TABLEAU_LOGGING )
-        printf( "Tableau: %s\n", message.ascii() );
 }
 
 void Tableau::verifyInvariants()

@@ -37,8 +37,8 @@ public:
     */
     virtual void createSubQueries( unsigned numNewSubQueries,
                                    const String queryIdPrefix,
-                                   const PiecewiseLinearCaseSplit
-                                   &previousSplit,
+                                   const unsigned previousDepth,
+                                   const PiecewiseLinearCaseSplit &previousSplit,
                                    const unsigned timeoutInSeconds,
                                    SubQueries &subQueries ) = 0;
 

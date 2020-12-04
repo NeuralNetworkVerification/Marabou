@@ -18,18 +18,22 @@
 
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+#include <cmath>
 
 class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
-    enum PhaseStatus {
-        PHASE_NOT_FIXED = 0,
-        PHASE_ACTIVE = 1,
-        PHASE_INACTIVE = 2,
-    };
-
+    /*
+      The f variable is the relu output on the b variable:
+      f = relu( b )
+    */
     ReluConstraint( unsigned b, unsigned f );
     ReluConstraint( const String &serializedRelu );
+
+    /*
+      Get the type of this constraint.
+    */
+    PiecewiseLinearFunctionType getType() const;
 
     /*
       Return a clone of the constraint.
@@ -100,10 +104,11 @@ public:
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
 
     /*
-      Preprocessing related functions, to inform that a variable has been eliminated completely
-      because it was fixed to some value, or that a variable's index has changed (e.g., x4 is now
-      called x2). constraintObsolete() returns true iff and the constraint has become obsolote
-      as a result of variable eliminations.
+      Preprocessing related functions, to inform that a variable has
+      been eliminated completely because it was fixed to some value,
+      or that a variable's index has changed (e.g., x4 is now called
+      x2). constraintObsolete() returns true iff and the constraint
+      has become obsolote as a result of variable eliminations.
     */
     void eliminateVariable( unsigned variable, double fixedValue );
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
@@ -141,14 +146,10 @@ public:
     String serializeToString() const;
 
     /*
-      Get the index of the B variable.
+      Get the index of the B and F variables.
     */
     unsigned getB() const;
-
-    /*
-      Get the current phase status.
-    */
-    PhaseStatus getPhaseStatus() const;
+    unsigned getF() const;
 
     /*
       Check if the aux variable is in use and retrieve it
@@ -156,11 +157,30 @@ public:
     bool auxVariableInUse() const;
     unsigned getAux() const;
 
+    bool supportPolarity() const;
+
     /*
-      Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
+      Return the polarity of this ReLU, which computes how symmetric
+      the bound of the input to this ReLU is with respect to 0.
+      Let LB be the lowerbound, and UB be the upperbound.
+      If LB >= 0, polarity is 1.
+      If UB <= 0, polarity is -1.
+      If LB < 0, and UB > 0, polarity is ( LB + UB ) / (UB - LB).
+
+      We divide the sum by the width of the interval so that the polarity is
+      always between -1 and 1. The closer it is to 0, the more symmetric the
+      bound is.
     */
-    bool supportsSymbolicBoundTightening() const;
+    double computePolarity() const;
+
+    /*
+      Update the preferred direction for fixing and handling case split
+    */
+    void updateDirection();
+
+    PhaseStatus getDirection() const;
+
+    void updateScoreBasedOnPolarity();
 
     bool supportPolarity() const;
 
@@ -187,7 +207,6 @@ public:
 
 private:
     unsigned _b, _f;
-    PhaseStatus _phaseStatus;
     bool _auxVarInUse;
     unsigned _aux;
 
@@ -201,11 +220,6 @@ private:
     PiecewiseLinearCaseSplit getActiveSplit() const;
 
     bool _haveEliminatedVariables;
-
-    /*
-      Set the phase status.
-    */
-    void setPhaseStatus( PhaseStatus phaseStatus );
 
     static String phaseToString( PhaseStatus phase );
 

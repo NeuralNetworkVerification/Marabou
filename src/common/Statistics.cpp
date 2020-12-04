@@ -657,7 +657,8 @@ unsigned long long Statistics::getTotalTime() const
         _totalTimePrecisionRestoration +
         _totalTimeConstraintMatrixBoundTighteningMicro +
         _totalTimeApplyingStoredTighteningsMicro +
-        _totalTimeSmtCoreMicro;
+        _totalTimeSmtCoreMicro +
+        _totalTimePerformingSymbolicBoundTightening;
 
     // Total is in micro seconds, and we need to return milliseconds
     return total / 1000;

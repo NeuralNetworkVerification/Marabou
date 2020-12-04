@@ -19,6 +19,7 @@
 #include "IEngine.h"
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearConstraint.h"
 
 class MockEngine : public IEngine
 {
@@ -30,7 +31,7 @@ public:
 
         lastStoredState = NULL;
     }
-
+    
     ~MockEngine()
     {
     }
@@ -141,6 +142,53 @@ public:
     List<unsigned> getInputVariables() const
     {
         return _inputVariables;
+    }
+
+    void updateScores( DivideStrategy /**/ )
+    {
+    }
+
+    mutable SmtState *lastRestoredSmtState;
+    bool restoreSmtState( SmtState &smtState )
+    {
+        lastRestoredSmtState = &smtState;
+        return true;
+    }
+
+    mutable SmtState *lastStoredSmtState;
+    void storeSmtState( SmtState &smtState )
+    {
+        lastStoredSmtState = &smtState;
+    }
+
+    List<PiecewiseLinearConstraint *> _constraintsToSplit;
+    void setSplitPLConstraint( PiecewiseLinearConstraint *constraint )
+    {
+        _constraintsToSplit.append( constraint );
+    }
+
+    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    {
+        if ( !_constraintsToSplit.empty() )
+        {
+            PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+            _constraintsToSplit.erase( ptr );
+            return ptr;
+        }
+        else
+            return NULL;
+    }
+
+    PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
+    {
+        if ( !_constraintsToSplit.empty() )
+            {
+                PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+                _constraintsToSplit.erase( ptr );
+                return ptr;
+            }
+        else
+            return NULL;
     }
 };
 

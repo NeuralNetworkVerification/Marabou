@@ -14,6 +14,7 @@
 **/
 
 #include "Debug.h"
+#include "FloatUtils.h"
 #include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -26,6 +27,7 @@ LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
 
 void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
                                                const String queryIdPrefix,
+                                               const unsigned previousDepth,
                                                const PiecewiseLinearCaseSplit
                                                &previousSplit,
                                                const unsigned timeoutInSeconds,
@@ -94,6 +96,7 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
         subQuery->_queryId = queryId;
         subQuery->_split = std::move(split);
         subQuery->_timeoutInSeconds = timeoutInSeconds;
+        subQuery->_depth = previousDepth + 1;
         subQueries.append( subQuery );
     }
 }
@@ -105,17 +108,27 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
     unsigned dimensionToSplit = 0;
     double largestInterval = 0;
 
+    DEBUG( bool haveCandidate = false );
+
     for ( const auto &variable : _inputVariables )
     {
         double interval = inputRegion._upperBounds[variable] -
             inputRegion._lowerBounds[variable];
-        ASSERT( interval > 0 );
+
+        if ( FloatUtils::isZero( interval ) )
+            continue;
+
+        DEBUG( haveCandidate = true );
+
         if ( interval > largestInterval )
         {
             dimensionToSplit = variable;
             largestInterval = interval;
         }
     }
+
+    ASSERT( haveCandidate );
+
     return dimensionToSplit;
 }
 

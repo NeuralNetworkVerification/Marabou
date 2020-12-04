@@ -51,7 +51,7 @@ public:
     {
     }
 
-    void analyze( const SparseMatrix */* matrix */, unsigned /* m */, unsigned /* n */ )
+    void analyze( const SparseUnsortedList **/* matrix */, unsigned /* m */, unsigned /* n */ )
     {
     }
 

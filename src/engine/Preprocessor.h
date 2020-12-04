@@ -61,6 +61,12 @@ private:
     */
     void makeAllEquationsEqualities();
 
+    /*
+      Set any missing upper bound to +INF, and any missing lower bound
+      to -INF.
+    */
+    void setMissingBoundsToInfinity();
+
 	/*
       Tighten bounds using the linear equations
 	*/
@@ -77,7 +83,8 @@ private:
     bool processIdenticalVariables();
 
     /*
-      Collect all variables whose lower and upper bounds are equal
+      Collect all variables whose lower and upper bounds are equal, or
+      which do not appear anywhere in the input query.
     */
     void collectFixedValues();
 
@@ -88,7 +95,8 @@ private:
     void separateMergedAndFixed();
 
     /*
-      Eliminate any variables that have become fixed or merged with an identical variable
+      Eliminate any variables that have become fixed or merged with an
+      identical variable
 	*/
 	void eliminateVariables();
 
@@ -96,6 +104,11 @@ private:
       Call on the PL constraints to add any auxiliary equations
     */
     void addPlAuxiliaryEquations();
+
+    /*
+      All input/output variables
+    */
+    Set<unsigned> _inputOutputVariables;
 
     /*
       The preprocessed query

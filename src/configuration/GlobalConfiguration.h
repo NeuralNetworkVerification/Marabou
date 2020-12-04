@@ -16,6 +16,8 @@
 #ifndef __GlobalConfiguration_h__
 #define __GlobalConfiguration_h__
 
+#include "DivideStrategy.h"
+
 class GlobalConfiguration
 {
 public:
@@ -78,6 +80,11 @@ public:
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
 
+    // If the flag is true, the preprocessor will try to merge two
+    // logically-consecutive weighted sum layers into a single
+    // weighted sum layer, to reduce the number of variables
+    static const bool PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS;
+
     // Try to set the initial tableau assignment to an assignment that is legal with
     // respect to the input network.
     static const bool WARM_START;
@@ -107,8 +114,14 @@ public:
     // How many potential pivots should the engine inspect (at most) in every simplex iteration?
     static const unsigned MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS;
 
-    // The number of violations of a constraints after which the SMT core will initiate a case split
-    static const unsigned CONSTRAINT_VIOLATION_THRESHOLD;
+    static const DivideStrategy SPLITTING_HEURISTICS;
+
+    // The frequency to use interval splitting when largest interval splitting strategy is in use.
+    static const unsigned INTERVAL_SPLITTING_FREQUENCY;
+
+    // When automatically deciding which splitting strategy to use, we use relu-splitting if
+    // the number of inputs is larger than this number.
+    static const unsigned INTERVAL_SPLITTING_THRESHOLD;
 
     // How often should we perform full bound tightening, on the entire contraints matrix A.
     static const unsigned BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY;
@@ -129,8 +142,11 @@ public:
     // PSE's Gamma function's update tolerance
     static const double PSE_GAMMA_UPDATE_TOLERANCE;
 
-    // The tolerance for checking whether f = Relu( b ), to determine a ReLU's statisfaction
+    // The tolerance for checking whether f = Relu( b )
     static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
+
+    // The tolerance for checking whether f = Abs( b )
+    static const double ABS_CONSTRAINT_COMPARISON_TOLERANCE;
 
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
@@ -144,6 +160,8 @@ public:
         COMPUTE_INVERTED_BASIS_MATRIX = 0,
         // Use the inverted basis matrix without using it, via transformations
         USE_IMPLICIT_INVERTED_BASIS_MATRIX = 1,
+        // Disable explicit basis bound tightening
+        DISABLE_EXPLICIT_BASIS_TIGHTENING = 2,
     };
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
@@ -158,10 +176,6 @@ public:
 
     // Whether symbolic bound tightening should be used or not
     static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
-
-    // If symbolic bound tightening is used, should linear concretization (as
-    // opposed to constant concretization) be used.
-    static const bool USE_LINEAR_CONCRETIZATION;
 
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
@@ -194,6 +208,23 @@ public:
     };
     static const BasisFactorizationType BASIS_FACTORIZATION_TYPE;
 
+    /* In the polarity-based branching heuristics, only this many earliest nodes
+       are considered to branch on.
+    */
+    static const unsigned POLARITY_CANDIDATES_THRESHOLD;
+
+    /* The max number of DnC splits
+    */
+    static const unsigned DNC_DEPTH_THRESHOLD;
+
+#ifdef ENABLE_GUROBI
+    /*
+      The number of threads Gurobi spawns
+    */
+    static const unsigned GUROBI_NUMBER_OF_THREADS;
+    static const bool GUROBI_LOGGING;
+#endif // ENABLE_GUROBI
+
     /*
       Logging options
     */
@@ -203,10 +234,14 @@ public:
     static const bool SMT_CORE_LOGGING;
     static const bool DANTZIGS_RULE_LOGGING;
     static const bool BASIS_FACTORIZATION_LOGGING;
+    static const bool PREPROCESSOR_LOGGING;
+    static const bool INPUT_QUERY_LOGGING;
     static const bool PROJECTED_STEEPEST_EDGE_LOGGING;
     static const bool GAUSSIAN_ELIMINATION_LOGGING;
     static const bool QUERY_LOADER_LOGGING;
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
+    static const bool NETWORK_LEVEL_REASONER_LOGGING;
+    static const bool MPS_PARSER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

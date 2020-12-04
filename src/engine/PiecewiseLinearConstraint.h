@@ -21,6 +21,7 @@
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
 #include "Tightening.h"
 
@@ -29,6 +30,16 @@ class IConstraintBoundTightener;
 class ITableau;
 class InputQuery;
 class String;
+
+enum PhaseStatus : unsigned {
+    PHASE_NOT_FIXED = 0,
+    RELU_PHASE_ACTIVE = 1,
+    RELU_PHASE_INACTIVE = 2,
+    ABS_PHASE_POSITIVE = 3,
+    ABS_PHASE_NEGATIVE = 4,
+    SIGN_PHASE_POSITIVE = 5,
+    SIGN_PHASE_NEGATIVE = 6
+};
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
 {
@@ -59,6 +70,16 @@ public:
 
     PiecewiseLinearConstraint();
     virtual ~PiecewiseLinearConstraint() {}
+
+    bool operator<( const PiecewiseLinearConstraint &other ) const
+    {
+        return _score < other._score;
+    }
+
+    /*
+      Get the type of this constraint.
+    */
+    virtual PiecewiseLinearFunctionType getType() const = 0;
 
     /*
       Return a clone of the constraint.
@@ -196,15 +217,6 @@ public:
 
     /*
       Return true if and only if this piecewise linear constraint supports
-      symbolic bound tightening.
-    */
-    virtual bool supportsSymbolicBoundTightening() const
-    {
-        return false;
-    }
-
-    /*
-      Return true if and only if this piecewise linear constraint supports
       the polarity metric
     */
     virtual bool supportPolarity() const
@@ -213,17 +225,56 @@ public:
     }
 
     /*
-      Update the preferred direction to take first when branching on this PLConstraint
+      Update the preferred direction to take first when splitting on this PLConstraint
     */
     virtual void updateDirection()
     {
     }
 
+    double getScore() const
+    {
+        return _score;
+    }
+
+
+    virtual void updateScoreBasedOnPolarity()
+    {
+    }
+
+    /*
+      Update _score with score
+    */
+    void setScore( double score )
+    {
+        _score = score;
+    }
+
+    /*
+      Retrieve the current lower and upper bounds
+    */
+    double getLowerBound( unsigned i ) const
+    {
+        return _lowerBounds[i];
+    }
+
+    double getUpperBound( unsigned i ) const
+    {
+        return _upperBounds[i];
+    }
+
 protected:
     bool _constraintActive;
-	Map<unsigned, double> _assignment;
+    PhaseStatus _phaseStatus;
+    Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
+
+    /*
+      The score denotes priority for splitting. When score is negative, the PL constraint
+      is not being considered for splitting.
+      We pick the PL constraint with the highest score to branch.
+     */
+    double _score;
 
     IConstraintBoundTightener *_constraintBoundTightener;
 
@@ -231,6 +282,20 @@ protected:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Set the phase status of the constraint. Uses the global PhaseStatus
+      enumeration and is initialized to PHASE_NOT_FIXED for all constraints.
+     */
+    void setPhaseStatus( PhaseStatus phase )
+    {
+        _phaseStatus = phase;
+    };
+
+    PhaseStatus getPhaseStatus() const
+    {
+        return _phaseStatus;
+    };
 };
 
 #endif // __PiecewiseLinearConstraint_h__
