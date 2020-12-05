@@ -228,7 +228,7 @@ def cexToImage(net, valDict,xAdv):
     cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction
     
-def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
+def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
     logger.info("Started converting model ({}) to ONNX".format(model.name))
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
     modelOnnxName = mnistProp.output_model_path(model)
@@ -240,6 +240,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     logger.info("Started solving query ({})".format(model.name))
     vals, stats = modelOnnxMarabou.solve(verbose=False)
+    modelOnnxMarabou.saveQuery(runName)
     sat = len(vals) > 0
     logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
     if not sat:
@@ -260,7 +261,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond):
     plt.savefig(fName)
     return True, cex, cexPrediction
 
-def verifyMarabou(model, xAdv, xPrediction):
+def verifyMarabou(model, xAdv, xPrediction, runName="verifyMarabou"):
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
@@ -271,6 +272,7 @@ def verifyMarabou(model, xAdv, xPrediction):
         modelOnnxMarabou.setLowerBound(i.item(),x.item())
         modelOnnxMarabou.setUpperBound(i.item(),x.item())
     vals, stats = modelOnnxMarabou.solve(verbose=False)
+    modelOnnxMarabou.saveQuery(runName)
     predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
     print("predictionMbou={}".format(predictionMbou))
     print("xPrediction={}".format(xPrediction))    
