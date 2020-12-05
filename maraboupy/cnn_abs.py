@@ -50,7 +50,12 @@ class mnistProp:
         if suffix:
             suffix = "_" + suffix
         return "./{}{}.onnx".format(m.name, suffix)
-    
+
+    def printDictToFile(dic, fName):
+        with open(fName,"w") as f:
+            for i,x in dic.items():
+                f.write("{},{}\n".format(i,x))
+
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
     #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer  
@@ -239,8 +244,11 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
     logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     logger.info("Started solving query ({})".format(model.name))
+    modelOnnxMarabou.saveQuery(runName+"_beforeSolve")    
     vals, stats = modelOnnxMarabou.solve(verbose=False)
-    modelOnnxMarabou.saveQuery(runName)
+    inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
+    outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
+    modelOnnxMarabou.saveQuery(runName+"_AfterSolve")
     sat = len(vals) > 0
     logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
     if not sat:
@@ -259,24 +267,41 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     plt.title('CEX, MarabouY={}, modelY={}'.format(mbouPrediction, kerasPrediction))
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
     plt.savefig(fName)
-    return True, cex, cexPrediction
+    mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
+    mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")        
+    return True, cex, cexPrediction, inputDict, outputDict
 
-def verifyMarabou(model, xAdv, xPrediction, runName="verifyMarabou"):
+def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="verifyMarabou", fromImage=False):
+    mnistProp.printDictToFile(inputDict, "DICT_verifyMarabou_InputDict_in")
+    mnistProp.printDictToFile(outputDict, "DICT_verifyMarabou_OutputDict_in")    
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-    inAsNP = np.array(modelOnnxMarabou.inputVars)
-    xAdv = xAdv.reshape(inAsNP.shape)
-    for i,x in zip(np.nditer(inAsNP),np.nditer(xAdv)):    
-        modelOnnxMarabou.setLowerBound(i.item(),x.item())
-        modelOnnxMarabou.setUpperBound(i.item(),x.item())
+    if fromImage:
+        inAsNP = np.array(modelOnnxMarabou.inputVars)
+        xAdv = xAdv.reshape(inAsNP.shape)
+        for i,x in zip(np.nditer(inAsNP),np.nditer(xAdv)):    
+            modelOnnxMarabou.setLowerBound(i.item(),x.item())
+            modelOnnxMarabou.setUpperBound(i.item(),x.item())
+    else:
+        for i,x in inputDict.items():    
+            modelOnnxMarabou.setLowerBound(i,x)
+            modelOnnxMarabou.setUpperBound(i,x)
     vals, stats = modelOnnxMarabou.solve(verbose=False)
     modelOnnxMarabou.saveQuery(runName)
-    predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
-    print("predictionMbou={}".format(predictionMbou))
-    print("xPrediction={}".format(xPrediction))    
-    return np.all(xPrediction == predictionMbou), xPrediction.argmax() == predictionMbou.argmax(), predictionMbou
+    if fromImage:
+        predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
+        print("predictionMbou={}".format(predictionMbou))
+        print("xPrediction={}".format(xPrediction))    
+        return np.all(xPrediction == predictionMbou), xPrediction.argmax() == predictionMbou.argmax(), predictionMbou
+    else:
+        inputDictInner = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
+        outputDictInner = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
+        mnistProp.printDictToFile(inputDictInner, "DICT_verifyMarabou_InputDict_out")
+        mnistProp.printDictToFile(outputDictInner, "DICT_verifyMarabou_OutputDict_out")
+        equality = (set(outputDictInner.keys()) == set(outputDict.keys())) and all([outputDict[k] == outputDictInner[k] for k in outputDict.keys()])        
+        return (outputDictInner == outputDict) and equality 
 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
     if not inBoundsInftyBall(x, inDist, cex):
