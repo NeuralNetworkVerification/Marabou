@@ -89,13 +89,15 @@ maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMa
 maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))]
 printLog("Created {} masks".format(len(maskList)))
 
+currentMbouRun = 0
 isSporious = False
 reachedFull = False
 successful = None
 reachedFinal = False
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
-    sat, cex, cexPrediction = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond)
+    sat, cex, cexPrediction = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_{}".format(currentMbouRun))
+    currentMbouRun += 1
     isSporious = None
     if sat:
         printLog("Found CEX in mask number {} out of {}, checking if sporious.".format(i, len(maskList)))
@@ -113,17 +115,20 @@ for i, mask in enumerate(maskList):
         break;
 else:
     reachedFinal = True
-    sat, cex, cexPrediction = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond)
+    sat, cex, cexPrediction = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_{}".format(currentMbouRun))
+    currentMbouRun += 1    
 
 if sat:
     printLog("SAT, reachedFinal={}".format(reachedFinal))
     if isCEXSporious(modelOrigDense, xAdv, inDist, yMax, ySecond, cex, logger):
+        assert reachedFinal
         printLog("Sporious CEX after end")
-        probDistEq, predictionEq, marabouDist = verifyMarabou(modelOrigDense, cex, cexPrediction)
+        probDistEq, predictionEq, marabouDist = verifyMarabou(modelOrigDense, cex, cexPrediction, "IPQ_verifyMarabou_{}".format(currentMbouRun-1))
         print("verifyMarabou={}".format((probDistEq, predictionEq, marabouDist)))
         if predictionEq:
             raise Exception("Sporious CEX after end with verified Marabou result")
         else:
+            
             raise Exception("inconsistant Marabou result.")
     if modelOrigDense.predict(np.array([cex])).argmax() != ySecond:
         printLog("Unxepcted prediction result, cex result is {}".format(modelOrigDense.predict(np.array([cex])).argmax()))
