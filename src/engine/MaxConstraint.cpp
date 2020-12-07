@@ -267,6 +267,19 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
     return result;
 }
 
+List<unsigned> MaxConstraint::getElements() const
+{
+    List<unsigned> result;
+    for ( auto element : _elements )
+        result.append( element );
+    return result;
+}
+
+unsigned MaxConstraint::getF() const
+{
+    return _f;
+}
+
 bool MaxConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _f ) && _assignment.size() > 1 ) )

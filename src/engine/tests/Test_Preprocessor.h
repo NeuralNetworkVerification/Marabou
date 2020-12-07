@@ -236,6 +236,14 @@ public:
         inputQuery.addPiecewiseLinearConstraint( max2 );
         inputQuery.addPiecewiseLinearConstraint( max3 );
 
+        inputQuery.markInputVariable( 0, 0 );
+        inputQuery.markInputVariable( 3, 1 );
+        inputQuery.markInputVariable( 4, 2 );
+        inputQuery.markInputVariable( 6, 3 );
+        inputQuery.markInputVariable( 7, 4 );
+        inputQuery.markInputVariable( 9, 5 );
+        inputQuery.markInputVariable( 10, 6 );
+
         InputQuery processed = Preprocessor().preprocess( inputQuery, false );
 
         // x1 = Relu( x0 ) = max( 0, x0 )
@@ -313,6 +321,10 @@ public:
         MaxConstraint *max = new MaxConstraint( 6, Set<unsigned>( { 4, 0 } ) );
         inputQuery.addPiecewiseLinearConstraint( relu );
         inputQuery.addPiecewiseLinearConstraint( max );
+
+        inputQuery.markInputVariable( 0, 0 );
+        inputQuery.markInputVariable( 1, 1 );
+        inputQuery.markInputVariable( 4, 2 );
 
         relu->notifyLowerBound( 0, FloatUtils::negativeInfinity() );
 
