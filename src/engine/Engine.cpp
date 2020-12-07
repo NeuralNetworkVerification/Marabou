@@ -24,6 +24,7 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "NLRError.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
@@ -49,6 +50,9 @@ Engine::Engine()
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( Options::get()->getDivideStrategy() )
+    , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
+    , _gurobi( nullptr )
+    , _milpEncoder( nullptr )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -93,6 +97,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
+
+    if ( _solveWithMILP )
+        return solveWithMILPEncoding( timeoutInSeconds );
 
     updateDirections();
     storeInitialEngineState();
@@ -1148,24 +1155,22 @@ void Engine::performMILPSolverBoundedTightening()
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
-        if ( Options::get()->getBool( Options::ITERATIVE_PROPAGATION ) )
-            _networkLevelReasoner->iterativePropagation();
-        else
+        switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
-            switch ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE )
-            {
-            case GlobalConfiguration::LP_RELAXATION:
-            case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
-                _networkLevelReasoner->lpRelaxationPropagation();
-                break;
+        case MILPSolverBoundTighteningType::LP_RELAXATION:
+        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
+            _networkLevelReasoner->lpRelaxationPropagation();
+            break;
 
-            case GlobalConfiguration::MILP_ENCODING:
-            case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
-                _networkLevelReasoner->MILPPropagation();
-                break;
-            case GlobalConfiguration::NONE:
-                return;
-            }
+        case MILPSolverBoundTighteningType::MILP_ENCODING:
+        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
+            _networkLevelReasoner->MILPPropagation();
+            break;
+        case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
+            _networkLevelReasoner->iterativePropagation();
+            break;
+        case MILPSolverBoundTighteningType::NONE:
+            return;
         }
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
@@ -1183,6 +1188,12 @@ void Engine::performMILPSolverBoundedTightening()
 
 void Engine::extractSolution( InputQuery &inputQuery )
 {
+    if ( _solveWithMILP )
+    {
+        extractSolutionFromGurobi( inputQuery );
+        return;
+    }
+
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )
@@ -2187,4 +2198,88 @@ bool Engine::restoreSmtState( SmtState & smtState )
 void Engine::storeSmtState( SmtState & smtState )
 {
     _smtCore.storeSmtState( smtState );
+}
+
+bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
+{
+    // Apply bound tightening before handing to Gurobi
+    if ( _tableau->basisMatrixAvailable() )
+        {
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+
+    do
+    {
+        performSymbolicBoundTightening();
+    }
+    while ( applyAllValidConstraintCaseSplits() );
+
+    ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
+    _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
+    _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
+    _milpEncoder->encodeInputQuery( *_gurobi, _preprocessedQuery );
+    ENGINE_LOG( "Query encoded in Gurobi...\n" );
+
+    double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
+                                : timeoutInSeconds );
+    ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
+    _gurobi->setTimeLimit( timeoutForGurobi );
+
+    _gurobi->solve();
+
+    if ( _gurobi->haveFeasibleSolution() )
+    {
+        _exitCode = IEngine::SAT;
+        return true;
+    }
+    else if ( _gurobi->infeasbile() )
+        _exitCode = IEngine::UNSAT;
+    else if ( _gurobi->timeout() )
+        _exitCode = IEngine::TIMEOUT;
+    else
+        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    return false;
+}
+
+void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
+{
+    ASSERT( _gurobi != nullptr );
+    Map<String, double> assignment;
+    double costOrObjective;
+    _gurobi->extractSolution( assignment, costOrObjective );
+
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+    {
+        if ( _preprocessingEnabled )
+        {
+            // Has the variable been merged into another?
+            unsigned variable = i;
+            while ( _preprocessor.variableIsMerged( variable ) )
+                variable = _preprocessor.getMergedIndex( variable );
+
+            // Fixed variables are easy: return the value they've been fixed to.
+            if ( _preprocessor.variableIsFixed( variable ) )
+            {
+                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                continue;
+            }
+
+            // We know which variable to look for, but it may have been assigned
+            // a new index, due to variable elimination
+            variable = _preprocessor.getNewIndex( variable );
+
+            // Finally, set the assigned value
+            String variableName = _milpEncoder->getVariableNameFromVariable( variable );
+            inputQuery.setSolutionValue( i, assignment[variableName] );
+        }
+        else
+        {
+            String variableName = _milpEncoder->getVariableNameFromVariable( i );
+            inputQuery.setSolutionValue( i, assignment[variableName] );
+        }
+    }
 }

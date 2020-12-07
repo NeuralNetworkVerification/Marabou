@@ -327,8 +327,11 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                      std::ref( signChanges ),
                                      std::ref( cutoffs ) );
 
-            threads[solverToIndex[freeSolver]] = boost::thread
-                ( tightenSingleVariableBoundsWithLPRelaxation, argument );
+            if ( numberOfWorkers == 1 )
+                tightenSingleVariableBoundsWithLPRelaxation( argument );
+            else
+                threads[solverToIndex[freeSolver]] = boost::thread
+                    ( tightenSingleVariableBoundsWithLPRelaxation, argument );
         }
     }
 
@@ -468,6 +471,10 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
 
     case Layer::SIGN:
         addSignLayerToLpRelaxation( gurobi, layer );
+        break;
+
+    case Layer::MAX:
+        addMaxLayerToLpRelaxation( gurobi, layer );
         break;
 
     default:
@@ -653,6 +660,80 @@ void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
             terms.append( GurobiWrapper::Term( -2.0 / sourceUb, Stringf( "x%u", sourceVariable ) ) );
             gurobi.addGeqConstraint( terms, -1 );
+        }
+    }
+}
+
+void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                              const Layer *layer )
+{
+    for ( unsigned i = 0; i < layer->getSize(); ++i )
+    {
+        if ( layer->neuronEliminated( i ) )
+            continue;
+
+        unsigned targetVariable = layer->neuronToVariable( i );
+        gurobi.addVariable( Stringf( "x%u", targetVariable ), layer->getLb( i ), layer->getUb( i ) );
+
+        List<NeuronIndex> sources = layer->getActivationSources( i );
+
+        bool haveFixedSourceValue = false;
+        double maxFixedSourceValue = FloatUtils::negativeInfinity();
+
+        double maxConcreteUb = FloatUtils::negativeInfinity();
+
+        List<GurobiWrapper::Term> terms;
+
+        for ( const auto &source : sources )
+        {
+            const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+            unsigned sourceNeuron = source._neuron;
+
+            if ( sourceLayer->neuronEliminated( sourceNeuron ) )
+            {
+                haveFixedSourceValue = true;
+                double value = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
+                if ( value > maxFixedSourceValue )
+                    maxFixedSourceValue = value;
+                continue;
+            }
+
+            unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
+
+            // Target is at least source: target - source >= 0
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+            gurobi.addGeqConstraint( terms, 0 );
+
+            // Find maximal concrete upper bound
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+            if ( sourceUb > maxConcreteUb )
+                maxConcreteUb = sourceUb;
+        }
+
+        if ( haveFixedSourceValue && ( maxConcreteUb < maxFixedSourceValue ) )
+        {
+            // At least one of the sources has a fixed value,
+            // and this fixed value dominates other sources.
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            gurobi.addEqConstraint( terms, maxFixedSourceValue );
+        }
+        else
+        {
+            // If we have a fixed value, it's a lower bound
+            if ( haveFixedSourceValue )
+            {
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                gurobi.addGeqConstraint( terms, maxFixedSourceValue );
+            }
+
+            // Target must be smaller than greatest concrete upper bound
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            gurobi.addLeqConstraint( terms, maxConcreteUb );
         }
     }
 }

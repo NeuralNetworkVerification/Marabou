@@ -27,12 +27,6 @@
 class SignConstraint : public PiecewiseLinearConstraint
 {
 public:
-    enum PhaseStatus {
-        PHASE_NOT_FIXED = 0,
-        PHASE_POSITIVE = 1,
-        PHASE_NEGATIVE = 2,
-    };
-
     /*
       The f variable is the sign output on the b variable:
       f = sign( b )
@@ -177,11 +171,10 @@ public:
 
 private:
     unsigned _b, _f;
-    PhaseStatus _phaseStatus;
 
     /*
       Denotes which case split to handle first.
-      And which phase status to repair a relu into.
+      And which phase status to repair a constraint into.
     */
     PhaseStatus _direction;
 

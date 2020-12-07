@@ -15,6 +15,7 @@
 
 #include "ConfigurationError.h"
 #include "Debug.h"
+#include "GlobalConfiguration.h"
 #include "Options.h"
 
 Options *Options::get()
@@ -46,6 +47,7 @@ void Options::initializeDefaultValues()
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[ITERATIVE_PROPAGATION] = false;
     _boolOptions[DUMP_BOUNDS] = false;
+    _boolOptions[SOLVE_WITH_MILP] = false;
 
     /*
       Int options
@@ -63,6 +65,8 @@ void Options::initializeDefaultValues()
     */
     _floatOptions[TIMEOUT_FACTOR] = 1.5;
     _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
+    _floatOptions[PREPROCESSOR_BOUND_TOLERANCE] = \
+        GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
 
     /*
       String options
@@ -151,6 +155,32 @@ SnCDivideStrategy Options::getSnCDivideStrategy() const
         return SnCDivideStrategy::LargestInterval;
     else
         return SnCDivideStrategy::Auto;
+}
+
+MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
+{
+    if ( gurobiEnabled() )
+    {
+        String strategyString = String( _stringOptions.get( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ) );
+        if ( strategyString == "lp" )
+            return LP_RELAXATION;
+        else if ( strategyString == "lp-inc" )
+            return LP_RELAXATION_INCREMENTAL;
+        else if ( strategyString == "milp" )
+            return MILP_ENCODING;
+        else if ( strategyString == "milp-inc" )
+            return MILP_ENCODING_INCREMENTAL;
+        else if ( strategyString == "iter-prop" )
+            return ITERATIVE_PROPAGATION;
+        else if ( strategyString == "none" )
+            return NONE;
+        else
+            return LP_RELAXATION;
+    }
+    else
+    {
+        return NONE;
+    }
 }
 
 //

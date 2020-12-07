@@ -48,9 +48,6 @@ void OptionParser::initialize()
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
-        ( "iter-prop",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::ITERATIVE_PROPAGATION]) ),
-          "Use iterative propagation" )
         ( "dump-bounds",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
           "Dump the bounds after preprocessing" )
@@ -97,15 +94,26 @@ void OptionParser::initialize()
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(DNC) The timeout factor" )
-        ( "milp-timeout",
-          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
-          "Per-ReLU timeout for iterative propagation" )
         ( "help",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
           "Prints the help message")
         ( "version",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::VERSION]) ),
           "Prints the version number")
+         ( "preprocessor-bound-tolerance",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) ),
+          "epsilon for preprocessor bound tightening comparisons" )
+#ifdef ENABLE_GUROBI
+        ( "milp",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
+          "Use a MILP solver to solve the input query" )
+        ( "milp-tightening",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ),
+          "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none. default: lp" )
+        ( "milp-timeout",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
+          "Per-ReLU timeout for iterative propagation" )
+#endif // ENABLE_GUROBI
 
         ;
 

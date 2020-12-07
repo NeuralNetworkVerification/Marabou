@@ -899,7 +899,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.concat(op)
         elif op.node_def.op == "Transpose":
             self.transpose(op)
-        
+
         # These operations do require new equations
         elif op.node_def.op == 'MatMul':
             self.matMulEquations(op)
@@ -907,7 +907,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.addEquations(op)
         elif op.node_def.op in ['Mul', 'RealDiv']:
             self.mulEquations(op)
-        elif op.node_def.op == 'Conv2D':
+        elif op.node_def.op in ['Conv2D','QuantConv2D']:
             self.conv2DEquations(op)
         elif op.node_def.op == 'Relu':
             self.reluEquations(op)
@@ -915,7 +915,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.signEquations(op)
         elif op.node_def.op == 'MaxPool':
             self.maxpoolEquations(op)
-            
+
         # If we've recursed to find a Placeholder operation, this operation needs to be added the inputName list
         elif op.node_def.op == 'Placeholder':
             raise RuntimeError("The output %s depends on placeholder %s.\nPlease add '%s' to the inputName list." % (self.outputOp.node_def.name, op.node_def.name, op.node_def.name))

@@ -181,13 +181,16 @@ struct MarabouOptions {
     MarabouOptions()
         : _snc( Options::get()->getBool( Options::DNC_MODE ) )
         , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
+        , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
         , _onlineDivides( Options::get()->getInt( Options::NUM_ONLINE_DIVIDES ) )
         , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
+        , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
+        , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
@@ -197,6 +200,7 @@ struct MarabouOptions {
     // Bool options
     Options::get()->setBool( Options::DNC_MODE, _snc );
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
+    Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -205,9 +209,11 @@ struct MarabouOptions {
     Options::get()->setInt( Options::NUM_ONLINE_DIVIDES, _onlineDivides );
     Options::get()->setInt( Options::VERBOSITY, _verbosity );
     Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
+    Options::get()->setInt( Options::CONSTRAINT_VIOLATION_THRESHOLD, _splitThreshold );
 
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
+    Options::get()->setFloat( Options::PREPROCESSOR_BOUND_TOLERANCE, _preprocessorBoundTolerance );
 
     // string options
     Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
@@ -216,13 +222,16 @@ struct MarabouOptions {
 
     bool _snc;
     bool _restoreTreeStates;
+    bool _solveWithMILP;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
     unsigned _verbosity;
     unsigned _timeoutInSeconds;
+    unsigned _splitThreshold;
     float _timeoutFactor;
+    float _preprocessorBoundTolerance;
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
 };
@@ -404,8 +413,11 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
+        .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
+        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
         .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);

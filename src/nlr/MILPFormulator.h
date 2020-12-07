@@ -20,11 +20,15 @@
 #include "LayerOwner.h"
 #include "LPFormulator.h"
 
+#include <atomic>
+#include <boost/lockfree/queue.hpp>
+#include <boost/chrono.hpp>
 #include <climits>
+#include <mutex>
 
 namespace NLR {
 
-class MILPFormulator
+class MILPFormulator : public ParallelSolver
 {
 public:
     enum MinOrMax {
@@ -70,20 +74,25 @@ private:
                             unsigned variable,
                             double &currentUb );
 
-    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
+    static void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                 LayerOwner *layerOwner );
 
-    void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                        const Layer *layer );
+    static void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
+                                               const Layer *layer,
+                                               LayerOwner *layerOwner );
 
-    void addNeuronToModel( GurobiWrapper &gurobi,
-                           const Layer *layer,
-                           unsigned neuron );
+    static void addNeuronToModel( GurobiWrapper &gurobi,
+                                  const Layer *layer,
+                                  unsigned neuron,
+                                  LayerOwner *layerOwner );
 
-    double solveMILPEncoding( GurobiWrapper &gurobi,
-                              const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax,
-                              String variableName,
-                              unsigned lastLayer = UINT_MAX );
+    /*
+      Optimize for the min/max value of variableName with respect to the constraints
+      encoded in gurobi. If the query is infeasible, *infeasible is set to true.
+    */
+    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
+                                      String variableName, double cutoffValue,
+                                      std::atomic_bool *infeasible = NULL );
 
     void storeUbIfNeeded( Layer *layer,
                           unsigned neuron,
@@ -98,6 +107,11 @@ private:
     bool layerRequiresMILPEncoding( const Layer *layer );
 
     static void log( const String &message );
+
+    /*
+      Tighten the upper- and lower- bound of a varaible with MILP encoding
+    */
+    static void tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument &argument );
 };
 
 } // namespace NLR
