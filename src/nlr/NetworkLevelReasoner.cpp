@@ -578,4 +578,17 @@ void NetworkLevelReasoner::dumpBounds()
         layer.second->dumpBounds();
 }
 
+unsigned NetworkLevelReasoner::getMaxLayerSize() const
+{
+    unsigned maxSize = 0;
+    for ( const auto &layer : _layerIndexToLayer )
+    {
+        unsigned currentSize = layer.second->getSize();
+        if ( currentSize > maxSize )
+            maxSize = currentSize;
+    }
+    ASSERT( maxSize > 0 );
+    return maxSize;
+}
+
 } // namespace NLR

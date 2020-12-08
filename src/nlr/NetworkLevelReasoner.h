@@ -158,6 +158,11 @@ public:
     */
     void dumpBounds();
 
+    /*
+      Get the size of the widest layer
+    */
+    unsigned getMaxLayerSize() const;
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;

@@ -107,6 +107,16 @@ public:
     double getLb( unsigned neuron ) const;
     double getUb( unsigned neuron ) const;
 
+    double *getLbs() const
+    {
+        return _lb;
+    }
+
+    double *getUbs() const
+    {
+        return _ub;
+    }
+
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
