@@ -249,6 +249,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
     outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     modelOnnxMarabou.saveQuery(runName+"_AfterSolve")
+    modelOnnxMarabou.saveQuery(runName)
     sat = len(vals) > 0
     logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
     if not sat:
