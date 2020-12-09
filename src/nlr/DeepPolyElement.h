@@ -17,100 +17,35 @@
 #define __DeepPolyElement_h__
 
 #include "Layer.h"
+#include "Map.h"
 #include "MStringf.h"
 #include "NLRError.h"
 #include <climits>
 
 namespace NLR {
 
-struct DeepPolyElement
+class DeepPolyElement
 {
-    DeepPolyElement( Layer *layer )
-        : _layer( layer )
-        , _layerIndex( layer->getLayerIndex() )
-        , _size( _layer->getSize() )
-        , _symbolicLb( NULL )
-        , _symbolicUb( NULL )
-        , _symbolicLowerBias( NULL )
-        , _symbolicUpperBias( NULL )
-        , _lb( NULL )
-        , _ub( NULL )
-    {
-        allocateMemory();
-    }
+public:
+    DeepPolyElement();
+    virtual ~DeepPolyElement(){};
+    virtual void execute( Map<unsigned, DeepPolyElement *> deepPolyElements ) = 0;
 
-    ~DeepPolyElement()
-    {
+    unsigned getPredecessorSize() const;
+    unsigned getSize() const;
+    unsigned getLayerIndex() const;
+    Layer::Type getLayerType() const;
+    double *getSymbolicLb() const;
+    double *getSymbolicUb() const;
+    double *getSymbolicLowerBias() const;
+    double *getSymbolicUpperBias() const;
+    double getLowerBound( unsigned index ) const;
+    double getUpperBound( unsigned index ) const;
 
-    }
-
-    void allocateMemory()
-    {
-        _lb = new double[_size];
-        _ub = new double[_size];
-
-        switch ( _layer->getLayerType() )
-        {
-        case Layer::RELU:
-            _symbolicLb = new double[_size];
-            _symbolicUb = new double[_size];
-
-            std::fill_n( _symbolicLb, _size, 0 );
-            std::fill_n( _symbolicUb, _size, 0 );
-
-            _symbolicLowerBias = new double[_size];
-            _symbolicUpperBias = new double[_size];
-
-            std::fill_n( _symbolicLowerBias, _size, 0 );
-            std::fill_n( _symbolicUpperBias, _size, 0 );
-            break;
-        default:
-            break;
-        }
-    }
-
-
-    void freeMemoryIfNeeded()
-    {
-        if ( _symbolicLb )
-        {
-            delete[] _symbolicLb;
-            _symbolicLb = NULL;
-        }
-
-        if ( _symbolicUb )
-        {
-            delete[] _symbolicUb;
-            _symbolicUb = NULL;
-        }
-
-        if ( _symbolicLowerBias )
-        {
-            delete[] _symbolicLowerBias;
-            _symbolicLowerBias = NULL;
-        }
-
-        if ( _symbolicUpperBias )
-        {
-            delete[] _symbolicUpperBias;
-            _symbolicUpperBias = NULL;
-        }
-
-        if ( _lb )
-        {
-            delete[] _lb;
-            _lb = NULL;
-        }
-
-        if ( _ub )
-        {
-            delete[] _ub;
-            _ub = NULL;
-        }
-    }
-
+protected:
     Layer *_layer;
     unsigned _layerIndex;
+    unsigned _predecessorSize;
     unsigned _size;
 
     // Abstract element described in
@@ -121,7 +56,6 @@ struct DeepPolyElement
     double *_symbolicUpperBias;
     double *_lb;
     double *_ub;
-
 };
 
 } // namespace NLR

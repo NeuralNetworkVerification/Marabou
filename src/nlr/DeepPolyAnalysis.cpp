@@ -15,6 +15,9 @@
 
 #include "Debug.h"
 #include "DeepPolyAnalysis.h"
+#include "DeepPolyInputElement.h"
+#include "DeepPolyWeightedSumElement.h"
+#include "DeepPolyReLUElement.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "Layer.h"
@@ -29,15 +32,10 @@ namespace NLR {
 
 DeepPolyAnalysis::DeepPolyAnalysis( LayerOwner *layerOwner )
     : _layerOwner( layerOwner )
-    , _workSymbolicLb( NULL )
-    , _workSymbolicUb( NULL )
-    , _workSymbolicLowerBias( NULL )
-    , _workSymbolicUpperBias( NULL )
-    , _startLayerIndex( 0 )
+    , _work1( NULL )
+    , _work2( NULL )
 {
     allocateMemory();
-
-    _endLayerIndex = _layerOwner->getNumberOfLayers() - 1;
 }
 
 DeepPolyAnalysis::~DeepPolyAnalysis()
@@ -48,36 +46,22 @@ DeepPolyAnalysis::~DeepPolyAnalysis()
 void DeepPolyAnalysis::allocateMemory()
 {
     unsigned maxLayerSize = _layerOwner->getMaxLayerSize();
-    _workSymbolicLb = new double[maxLayerSize * maxLayerSize];
-    _workSymbolicUb = new double[maxLayerSize * maxLayerSize];
-    _workSymbolicLowerBias = new double[maxLayerSize];
-    _workSymbolicUpperBias = new double[maxLayerSize];
+    _work1 = new double[maxLayerSize * maxLayerSize];
+    _work2 = new double[maxLayerSize * maxLayerSize];
 }
 
 void DeepPolyAnalysis::freeMemoryIfNeeded()
 {
-    if ( _workSymbolicLb )
+    if ( _work1 )
     {
-        delete[] _workSymbolicLb;
-        _workSymbolicLb = NULL;
+        delete[] _work1;
+        _work1 = NULL;
     }
 
-    if ( _workSymbolicUb )
+    if ( _work2 )
     {
-        delete[] _workSymbolicUb;
-        _workSymbolicUb = NULL;
-    }
-
-    if ( _workSymbolicLowerBias )
-    {
-        delete[] _workSymbolicLowerBias;
-        _workSymbolicLowerBias = NULL;
-    }
-
-    if ( _workSymbolicUpperBias )
-    {
-        delete[] _workSymbolicUpperBias;
-        _workSymbolicUpperBias = NULL;
+        delete[] _work2;
+        _work2 = NULL;
     }
 }
 
@@ -90,7 +74,7 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
 
     deepPolyStart = TimeUtils::sampleMicro();
 
-    for ( unsigned i = _startLayerIndex; i <= _endLayerIndex; ++i )
+    for ( unsigned i = 0; i <= _layerOwner->getNumberOfLayers(); ++i )
     {
         /*
           Go over the layers, one by one. Each time construct the abstract element
@@ -99,33 +83,51 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
         ASSERT( layers.exists( i ) );
         Layer *layer = layers[i];
 
-        DeepPolyElement *deepPolyElement = new DeepPolyElement( layer );
-        executeDeepPolyElement( *deepPolyElement );
-        _layerIndexTodeepPolyElement[i] = deepPolyElement;
+        DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
+        _deepPolyElements[i] = deepPolyElement;
+        deepPolyElement->execute( _deepPolyElements );
+
+        // Get the updated bound
+        for ( unsigned j = 0; j <= deepPolyElement->getSize(); ++j )
+        {
+            double lb = deepPolyElement->getLowerBound( j );
+            if ( layer->getLb( j ) < lb )
+            {
+                layer->setLb( j, lb );
+                _layerOwner->receiveTighterBound
+                    ( Tightening( layer->neuronToVariable( j ),
+                                  lb, Tightening::LB ) );
+            }
+            double ub = deepPolyElement->getUpperBound( j );
+            if ( layer->getUb( j ) > ub )
+            {
+                layer->setUb( j, ub );
+                _layerOwner->receiveTighterBound
+                    ( Tightening( layer->neuronToVariable( j ),
+                                  ub, Tightening::UB ) );
+            }
+
+        }
     }
 }
 
-void DeepPolyAnalysis::executeDeepPolyElement( DeepPolyElement &deepPolyElement )
+DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
 {
-    switch ( deepPolyElement._layer->getLayerType() )
-    {
-    case Layer::INPUT:
-        executeDeepPolyElementForInput( deepPolyElement );
-        break;
-    case Layer::WEIGHTED_SUM:
-        executeDeepPolyElementForWeightedSum( deepPolyElement );
-        break;
-    case Layer::RELU:
-        executeDeepPolyElementForReLU( deepPolyElement );
-        break;
-    default:
+    Layer::Type type = layer->getLayerType();
+    DeepPolyElement *deepPolyElement;
+    if ( type == Layer::INPUT )
+        deepPolyElement = new DeepPolyInputElement( layer );
+    else if ( type == Layer::WEIGHTED_SUM )
+        deepPolyElement = new DeepPolyWeightedSumElement( layer );
+    else if ( type ==  Layer::RELU )
+        deepPolyElement = new DeepPolyReLUElement( layer );
+    else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",
-                                 deepPolyElement._layer->getLayerType() ).ascii() );
-        break;
-    }
+                                 layer->getLayerType() ).ascii() );
+    return deepPolyElement;
 }
-
+    /*
 void DeepPolyAnalysis::executeDeepPolyElementForInput( DeepPolyElement
                                                        &deepPolyElement )
 {
@@ -148,24 +150,13 @@ void DeepPolyAnalysis::executeDeepPolyElementForWeightedSum( DeepPolyElement
 void DeepPolyAnalysis::computeBoundsWithBackSubstitution( DeepPolyElement
                                                           &deepPolyElement )
 {
-    auto type = deepPolyElement._type;
-    std::fill( _workSymbolicLb, maxLayerSize * maxLayerSize, 0 );
-    std::fill( _workSymbolicUb, maxLayerSize * maxLayerSize, 0 );
-    std::fill( _workSymbolicLowerBias, maxLayerSize, 0 );
-    std::fill( _workSymbolicUpperBias, maxLayerSize, 0 );
-
-    std::memcpy( _workSymbolicLb, _deepPolyElements
 
     for ( unsigned index = deepPolyElement._layerIndex - 1;
-          index > _startLayerIndex; --index )
+          index >=_startLayerIndex; --index )
     {
-        if ( type == Layer::INPUT )
-        {
-           //
-
-        }
         if ( type == Layer::ReLU )
         {
+
         }
         if ( type == Layer::WEIGHTED_SUM )
         {
@@ -242,6 +233,6 @@ void DeepPolyAnalysis::executeDeepPolyElementForReLU( DeepPolyElement
         }
     }
 }
-
+    */
 
 } // namespace NLR

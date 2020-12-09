@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file DeepPolyAnalysis.h
+/*! \file DeepPolyWeightedSumElement.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Andrew Wu
@@ -13,46 +13,31 @@
 
 **/
 
-#ifndef __DeepPolyAnalysis_h__
-#define __DeepPolyAnalysis_h__
+#ifndef __DeepPolyWeightedSumElement_h__
+#define __DeepPolyWeightedSumElement_h__
 
 #include "DeepPolyElement.h"
 #include "Layer.h"
-#include "LayerOwner.h"
-#include "Map.h"
+#include "MStringf.h"
+#include "NLRError.h"
 #include <climits>
 
 namespace NLR {
 
-class DeepPolyAnalysis
+class DeepPolyWeightedSumElement : public DeepPolyElement
 {
 public:
 
-    DeepPolyAnalysis( LayerOwner *layerOwner );
-    ~DeepPolyAnalysis();
+    DeepPolyWeightedSumElement( Layer *layer );
+    ~DeepPolyWeightedSumElement();
 
-    void run( const Map<unsigned, Layer *> &layers );
+    void execute( Map<unsigned, DeepPolyElement *> deepPolyElements );
 
 private:
-    LayerOwner *_layerOwner;
-    Map<unsigned, DeepPolyElement *> _deepPolyElements;
-    double *_work1;
-    double *_work2;
-
     void allocateMemory();
     void freeMemoryIfNeeded();
-
-    DeepPolyElement *createDeepPolyElement( Layer *layer );
 };
 
 } // namespace NLR
 
-#endif // __DeepPolyAnalysis_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+#endif // __DeepPolyWeightedSumElement_h__
