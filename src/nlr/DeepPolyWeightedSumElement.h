@@ -34,7 +34,16 @@ public:
     void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElements );
 
 private:
-    void allocateMemory();
+    double *_work1;
+    double *_work2;
+
+    void allocateMemory( const Map<unsigned, DeepPolyElement *>
+                         &deepPolyElements );
+    void freeMemoryIfNeeded();
+
+    void computeBoundWithBackSubstitution( const Map<unsigned, DeepPolyElement *>
+                                           &deepPolyElementsBefore );
+
 };
 
 } // namespace NLR

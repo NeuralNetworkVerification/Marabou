@@ -20,6 +20,8 @@
 namespace NLR {
 
     DeepPolyWeightedSumElement::DeepPolyWeightedSumElement( Layer *layer )
+        : _work1( NULL )
+        , _work2( NULL )
     {
         _layer = layer;
     }
@@ -41,14 +43,54 @@ namespace NLR {
         } else
         {
             // Otherwise, compute bounds with back-substitution
-            allocateMemory();
-
+            allocateMemory( deepPolyElementsBefore );
+            computeBoundWithBackSubstitution();
         }
     }
 
-    void DeepPolyWeightedSumElement::allocateMemory()
+    void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
+    ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
+    {
+    }
+
+    void DeepPolyWeightedSumElement::allocateMemory( const Map<unsigned,
+                                                     DeepPolyElement *>
+                                                     &deepPolyElementsBefore )
     {
         allocateMemoryForUpperAndLowerBounds();
+
+        // Get the maximal layer size
+        unsigned maxLayerSize = 0;
+        for ( const auto &pair : deepPolyElementsBefore )
+        {
+            unsigned thisLayerSize = pair.second->getSize();
+            if ( thisLayerSize > maxLayerSize )
+                maxLayerSize = thisLayerSize;
+        }
+
+        _work1 = new double[maxLayerSize * maxLayerSize];
+        _work2 = new double[maxLayerSize * maxLayerSize];
+
+        std::fill_n( _work1, maxLayerSize * maxLayerSize, 0 );
+        std::fill_n( _work2, maxLayerSize * maxLayerSize, 0 );
     }
+
+    void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
+    {
+        DeepPolyElement::freeMemoryIfNeeded();
+
+        if ( _work1 )
+        {
+            delete[] _work1;
+            _work1 = NULL;
+        }
+
+        if ( _work2 )
+        {
+            delete[] _work2;
+            _work2 = NULL;
+        }
+    }
+
 
 } // namespace NLR
