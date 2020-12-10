@@ -32,29 +32,23 @@ namespace NLR {
     void DeepPolyWeightedSumElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
-        allocateMemory();
+        freeMemoryIfNeeded();
         if ( deepPolyElementsBefore.empty() )
         {
             // If this is the first layer, just update the concrete bounds
+            allocateMemoryForUpperAndLowerBounds();
             getConcreteBounds();
         } else
-
-        if ( !deepPolyElementsBefore.empty() )
         {
-            throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
+            // Otherwise, compute bounds with back-substitution
+            allocateMemory();
+
         }
-        // Update the concrete bounds
-        getConcreteBounds();
     }
 
     void DeepPolyWeightedSumElement::allocateMemory()
     {
-        unsigned size = getSize();
-        _lb = new double[size];
-        _ub = new double[size];
-
-        std::fill_n( _lb, size, FloatUtils::negativeInfinity() );
-        std::fill_n( _ub, size, FloatUtils::infinity() );
+        allocateMemoryForUpperAndLowerBounds();
     }
 
 } // namespace NLR
