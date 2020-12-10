@@ -263,6 +263,21 @@ double Layer::getWeight( unsigned sourceLayer,
     return _layerToWeights[sourceLayer][index];
 }
 
+double *Layer::getWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToWeights[sourceLayerIndex];
+}
+
+double *Layer::getPositiveWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToPositiveWeights[sourceLayerIndex];
+}
+
+double *Layer::getNegativeWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToNegativeWeights[sourceLayerIndex];
+}
+
 void Layer::setBias( unsigned neuron, double bias )
 {
     _bias[neuron] = bias;
@@ -271,6 +286,11 @@ void Layer::setBias( unsigned neuron, double bias )
 double Layer::getBias( unsigned neuron ) const
 {
     return _bias[neuron];
+}
+
+double *Layer::getBiases() const
+{
+    return _bias;
 }
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
@@ -344,6 +364,16 @@ double Layer::getUb( unsigned neuron ) const
         return _eliminatedNeurons[neuron];
 
     return _ub[neuron];
+}
+
+double *Layer::getLbs() const
+{
+    return _lb;
+}
+
+double *Layer::getUbs() const
+{
+    return _ub;
 }
 
 void Layer::setLb( unsigned neuron, double bound )

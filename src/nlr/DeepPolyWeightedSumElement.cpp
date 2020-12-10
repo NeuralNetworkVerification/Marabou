@@ -51,15 +51,61 @@ namespace NLR {
     void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
     {
+        unsigned sourceLayerIndex = deepPolyElementsBefore[getLayerIndex() - 1]
+            ->getLayerIndex();
+
+        // We start with the symbolic upper-/lower- bounds of this layer w.r.t.
+        // its immediate predecessor, the goal is to compute the symbolic
+        // upper-/lower- bounds of this layer w.r.t. the first layer.
+
+        double *symbolicLowerBoundPositiveWeights =
+            _layer->getPositiveWeights( sourceLayerIndex );
+        double *symbolicLowerBoundNegativeWeights =
+            _layer->getNegativeWeights( sourceLayerIndex );
+        double *symbolicLowerBias = _layer->getBiases();
+
+        double *symbolicUpperBoundPositiveWeights =
+            _layer->getPositiveWeights( sourceLayerIndex );
+        double *symbolicUpperBoundNegativeWeights =
+            _layer->getNegativeWeights( sourceLayerIndex );
+        double *symbolicUpperBias = _layer->getBiases();
+
         for ( unsigned i = getLayerIndex() - 1; i >= 1; ++i )
         {
             // have sLb_k_i, sLBias_k_i, sUb_k_i, sUBias_k_i
+            // sLb_i_i-1, sLBias_i_i-1, sUb_i_i-1, sUBias_i_i-1
             // Try to get sLb_k_i-1, sLBias_k_i-1, sUb_k_i-1, sUBias_k_i-1
-            // Need sLb_i_i-1, sLBias_i_i-1, sUb_i_i-1, sUBias_i_i-1
             // sLb_k_i-1 = sLb_k_i_pos * sLB_i_i-1 + sLb_k_i_neg * sUB_i_i-1
             // sUb_k_i-1 = sUb_k_i_pos * sUB_i_i-1 + sUb_k_i_neg * sLB_i_i-1
             // sLBias_k_i-1 = sLBias_k_i-1 + sLb_k_i_pos * sLBias_i_i-1 + sLb_k_i_neg * sUBias_i_i-1
             // sUBias_k_i-1 = sUBias_k_i-1 + sUb_k_i_pos * sUBias_i_i-1 + sUb_k_i_neg * sLBias_i_i-1
+            DeepPolyElement *lastLayer = deepPolyElementsBefore[i];
+            lastLayer->symbolicBoundInTermsOfPredecessor
+                ( symbolicLowerBoundPositiveWeights, symbolicLowerBoundNegativeWeights,
+                  symbolicLowerBias, symbolicUpperBoundPositiveWeights,
+                  symbolicUpperBoundNegativeWeights, symbolicUpperBias );
+
+            Layer::Type type = lastLayer->getLayerType();
+            switch( type )
+            {
+            case Layer::WEIGHTED_SUM:
+            {
+                computeSymbolicBoundsInTermsOfWeightedSumLayer();
+            }
+            case Layer::RELU:
+            {
+                computeSymbolicBoundsInTermsOfWeightedSumLayer();
+            }
+            default:
+                printf( "Error! Activation type %u unsupported\n", type );
+                throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+                break;
+            }
+
+
+            std::cout << symbolicLowerBias << symbolicLowerBoundNegativeWeights <<
+                symbolicLowerBoundPositiveWeights << symbolicUpperBias <<
+                symbolicUpperBoundNegativeWeights << symbolicUpperBoundPositiveWeights << std::endl;
         }
     }
 
