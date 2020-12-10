@@ -171,67 +171,6 @@ void DeepPolyAnalysis::computeBoundsWithBackSubstitution( DeepPolyElement
 void DeepPolyAnalysis::executeDeepPolyElementForReLU( DeepPolyElement
                                                       &deepPolyElement )
 {
-    ASSERT( deepPolyElement._layer->getLayerType() == Layer::RELU );
-    DeepPolyElement &previousElement = *_deepPolyElements.end();
-    ASSERT( previousElement._size == deepPolyElement._size );
-    for ( unsigned i = 0; i < deepPolyElement._size; ++i )
-    {
-        double sourceLb = previousElement._lb[i];
-        double sourceUb = previousElement._ub[i];
-
-        if ( !FloatUtils::isNegative( sourceLb ) )
-        {
-            // Phase active
-            deepPolyElement._symbolicUb[i] = 1;
-            deepPolyElement._symbolicUpperBias[i] = 0;
-            deepPolyElement._ub[i] = sourceUb;
-
-            deepPolyElement._symbolicLb[i] = 1;
-            deepPolyElement._symbolicLowerBias[i] = 0;
-            deepPolyElement._lb[i] = sourceUb;
-        }
-        else if ( !FloatUtils::isPositive( sourceUb ) )
-        {
-            // Phase active
-            deepPolyElement._symbolicUb[i] = 0;
-            deepPolyElement._symbolicUpperBias[i] = 0;
-            deepPolyElement._ub[i] = 0;
-
-            deepPolyElement._symbolicLb[i] = 0;
-            deepPolyElement._symbolicLowerBias[i] = 0;
-            deepPolyElement._lb[i] = 0;
-        }
-        else
-        {
-            // ReLU not fixed
-
-            // Set symbolic upper bound
-            // x_f <= (x_b - l) * u / ( u - l)
-            double coeff = sourceUb / ( sourceUb - sourceLb );
-            deepPolyElement._symbolicUb[i] = coeff;
-            deepPolyElement._symbolicUpperBias[i] = -sourceLb * coeff;
-            deepPolyElement._ub[i] = sourceUb;
-
-            // Set symbolic lower bound
-            if ( sourceUb > -sourceLb )
-            {
-                // x_f >= x_b
-                // l = sourceLb
-                deepPolyElement._symbolicLb[i] = 1;
-                deepPolyElement._symbolicLowerBias[i] = 0;
-                deepPolyElement._lb[i] = sourceLb;
-            }
-            else
-            {
-                // x_f >= 0
-                // l = 0
-                deepPolyElement._symbolicLb[i] = 0;
-                deepPolyElement._symbolicLowerBias[i] = 0;
-                deepPolyElement._lb[i] = 0;
-
-            }
-        }
-    }
 }
     */
 

@@ -19,9 +19,6 @@ namespace NLR {
 
     DeepPolyElement::DeepPolyElement()
         : _layer( NULL )
-        , _layerIndex( 0 )
-        , _predecessorSize( 0 )
-        , _size( 0 )
         , _symbolicLb( NULL )
         , _symbolicUb( NULL )
         , _symbolicLowerBias( NULL )
@@ -30,14 +27,9 @@ namespace NLR {
         , _ub( NULL )
     {};
 
-    unsigned DeepPolyElement::getPredecessorSize() const
-    {
-        return _predecessorSize;
-    }
-
     unsigned DeepPolyElement::getSize() const
     {
-        return _size;
+        return _layer->getSize();
     }
 
     unsigned DeepPolyElement::getLayerIndex() const
@@ -72,14 +64,70 @@ namespace NLR {
 
     double DeepPolyElement::getLowerBound( unsigned index ) const
     {
-        ASSERT( index < _size );
+        ASSERT( index < getSize() );
         return _lb[index];
     }
 
     double DeepPolyElement::getUpperBound( unsigned index ) const
     {
-        ASSERT( index < _size );
+        ASSERT( index < getSize() );
         return _ub[index];
+    }
+
+    void DeepPolyElement::getConcreteBounds()
+    {
+        unsigned size = getSize();
+        std::memcpy( _lb, _layer->getLbs(), size );
+        std::memcpy( _ub, _layer->getUbs(), size );
+    }
+
+    void DeepPolyElement::allocateMemoryForUpperAndLowerBounds()
+    {
+        unsigned size = getSize();
+        _lb = new double[size];
+        _ub = new double[size];
+
+        std::fill_n( _lb, size, FloatUtils::negativeInfinity() );
+        std::fill_n( _ub, size, FloatUtils::infinity() );
+    }
+
+    void DeepPolyElement::freeMemoryIfNeeded()
+    {
+        if ( _symbolicLb )
+        {
+            delete[] _symbolicLb;
+            _symbolicLb = NULL;
+        }
+
+        if ( _symbolicUb )
+        {
+            delete[] _symbolicUb;
+            _symbolicUb = NULL;
+        }
+
+        if ( _symbolicLowerBias )
+        {
+            delete[] _symbolicLowerBias;
+            _symbolicLowerBias = NULL;
+        }
+
+        if ( _symbolicUpperBias )
+        {
+            delete[] _symbolicUpperBias;
+            _symbolicUpperBias = NULL;
+        }
+
+        if ( _lb )
+        {
+            delete[] _lb;
+            _lb = NULL;
+        }
+
+        if ( _ub )
+        {
+            delete[] _ub;
+            _ub = NULL;
+        }
     }
 
 } // namespace NLR

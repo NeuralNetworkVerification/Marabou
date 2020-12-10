@@ -29,7 +29,11 @@ class DeepPolyElement
 public:
     DeepPolyElement();
     virtual ~DeepPolyElement(){};
-    virtual void execute( Map<unsigned, DeepPolyElement *> deepPolyElements ) = 0;
+
+    // execute the abstract layer based on the abstract layers topologically
+    // before it.
+    virtual void execute( const Map<unsigned, DeepPolyElement *>
+                          &deepPolyElementsBefore ) = 0;
 
     unsigned getPredecessorSize() const;
     unsigned getSize() const;
@@ -44,9 +48,6 @@ public:
 
 protected:
     Layer *_layer;
-    unsigned _layerIndex;
-    unsigned _predecessorSize;
-    unsigned _size;
 
     // Abstract element described in
     // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
@@ -56,6 +57,10 @@ protected:
     double *_symbolicUpperBias;
     double *_lb;
     double *_ub;
+
+    void allocateMemoryForUpperAndLowerBounds();
+    void freeMemoryIfNeeded();
+    void getConcreteBounds();
 };
 
 } // namespace NLR

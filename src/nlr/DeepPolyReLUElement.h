@@ -30,12 +30,12 @@ public:
     DeepPolyReLUElement( Layer *layer );
     ~DeepPolyReLUElement();
 
-    void execute( Map<unsigned, DeepPolyElement *> deepPolyElements );
+    void execute( const Map<unsigned, DeepPolyElement *>
+                  &deepPolyElementsBefore );
 
 private:
 
     void allocateMemory();
-    void freeMemoryIfNeeded();
 };
 
 } // namespace NLR

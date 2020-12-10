@@ -14,6 +14,7 @@
 **/
 
 #include "DeepPolyReLUElement.h"
+#include "FloatUtils.h"
 
 namespace NLR {
 
@@ -27,69 +28,100 @@ namespace NLR {
         freeMemoryIfNeeded();
     }
 
-    void DeepPolyReLUElement::execute( Map<unsigned, DeepPolyElement *>
-                                   deepPolyElements )
+    void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
+                                   &deepPolyElementsBefore )
     {
         freeMemoryIfNeeded();
-        allocateMemory();
-        std::cout << &deepPolyElements << std::endl;
+
+        if ( deepPolyElementsBefore.empty() )
+        {
+            // If this is the first layer, just update the concrete bounds
+            allocateMemoryForUpperAndLowerBounds();
+            getConcreteBounds();
+        } else
+        {
+            allocateMemory();
+            ASSERT( deepPolyElementsBefore.exists( getLayerIndex() - 1 ) );
+            DeepPolyElement *previousElement =
+                deepPolyElementsBefore[ getLayerIndex() - 1];
+            ASSERT( previousElement->getSize() == getSize() );
+            for ( unsigned i = 0; i < getSize(); ++i )
+            {
+                double sourceLb = previousElement->getLowerBound( i );
+                double sourceUb = previousElement->getUpperBound( i );
+
+                if ( !FloatUtils::isNegative( sourceLb ) )
+                {
+                    // Phase active
+                    _symbolicUb[i] = 1;
+                    _symbolicUpperBias[i] = 0;
+                    _ub[i] = sourceUb;
+
+                    _symbolicLb[i] = 1;
+                    _symbolicLowerBias[i] = 0;
+                    _lb[i] = sourceUb;
+                }
+                else if ( !FloatUtils::isPositive( sourceUb ) )
+                {
+                    // Phase active
+                    _symbolicUb[i] = 0;
+                    _symbolicUpperBias[i] = 0;
+                    _ub[i] = 0;
+
+                    _symbolicLb[i] = 0;
+                    _symbolicLowerBias[i] = 0;
+                    _lb[i] = 0;
+                }
+                else
+                {
+                    // ReLU not fixed
+
+                    // Set symbolic upper bound
+                    // x_f <= (x_b - l) * u / ( u - l)
+                    double coeff = sourceUb / ( sourceUb - sourceLb );
+                    _symbolicUb[i] = coeff;
+                    _symbolicUpperBias[i] = -sourceLb * coeff;
+                    _ub[i] = sourceUb;
+
+                    // Set symbolic lower bound
+                    if ( sourceUb > -sourceLb )
+                    {
+                        // x_f >= x_b
+                        // l = sourceLb
+                        _symbolicLb[i] = 1;
+                        _symbolicLowerBias[i] = 0;
+                        _lb[i] = sourceLb;
+                    }
+                    else
+                    {
+                        // x_f >= 0
+                        // l = 0
+                        _symbolicLb[i] = 0;
+                        _symbolicLowerBias[i] = 0;
+                        _lb[i] = 0;
+
+                    }
+                }
+            }
+        }
     }
 
     void DeepPolyReLUElement::allocateMemory()
     {
-        _lb = new double[_size];
-        _ub = new double[_size];
+        allocateMemoryForUpperAndLowerBounds();
 
-        _symbolicLb = new double[_size];
-        _symbolicUb = new double[_size];
+        unsigned size = getSize();
+        _symbolicLb = new double[size];
+        _symbolicUb = new double[size];
 
-        std::fill_n( _symbolicLb, _size, 0 );
-        std::fill_n( _symbolicUb, _size, 0 );
+        std::fill_n( _symbolicLb, size, 0 );
+        std::fill_n( _symbolicUb, size, 0 );
 
-        _symbolicLowerBias = new double[_size];
-        _symbolicUpperBias = new double[_size];
+        _symbolicLowerBias = new double[size];
+        _symbolicUpperBias = new double[size];
 
-        std::fill_n( _symbolicLowerBias, _size, 0 );
-        std::fill_n( _symbolicUpperBias, _size, 0 );
-    }
-
-    void DeepPolyReLUElement::freeMemoryIfNeeded()
-    {
-        if ( _symbolicLb )
-        {
-            delete[] _symbolicLb;
-            _symbolicLb = NULL;
-        }
-
-        if ( _symbolicUb )
-        {
-            delete[] _symbolicUb;
-            _symbolicUb = NULL;
-        }
-
-        if ( _symbolicLowerBias )
-        {
-            delete[] _symbolicLowerBias;
-            _symbolicLowerBias = NULL;
-        }
-
-        if ( _symbolicUpperBias )
-        {
-            delete[] _symbolicUpperBias;
-            _symbolicUpperBias = NULL;
-        }
-
-        if ( _lb )
-        {
-            delete[] _lb;
-            _lb = NULL;
-        }
-
-        if ( _ub )
-        {
-            delete[] _ub;
-            _ub = NULL;
-        }
+        std::fill_n( _symbolicLowerBias, size, 0 );
+        std::fill_n( _symbolicUpperBias, size, 0 );
     }
 
 } // namespace NLR

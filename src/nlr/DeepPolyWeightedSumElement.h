@@ -31,11 +31,10 @@ public:
     DeepPolyWeightedSumElement( Layer *layer );
     ~DeepPolyWeightedSumElement();
 
-    void execute( Map<unsigned, DeepPolyElement *> deepPolyElements );
+    void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElements );
 
 private:
     void allocateMemory();
-    void freeMemoryIfNeeded();
 };
 
 } // namespace NLR

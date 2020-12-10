@@ -30,11 +30,9 @@ public:
     DeepPolyInputElement( Layer *layer );
     ~DeepPolyInputElement();
 
-    void execute( Map<unsigned, DeepPolyElement *> deepPolyElements );
+    void execute( const Map<unsigned, DeepPolyElement *>
+                  &deepPolyElementsBefore );
 
-private:
-    void allocateMemory();
-    void freeMemoryIfNeeded();
 };
 
 } // namespace NLR
