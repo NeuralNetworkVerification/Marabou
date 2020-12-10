@@ -44,13 +44,23 @@ namespace NLR {
         {
             // Otherwise, compute bounds with back-substitution
             allocateMemory( deepPolyElementsBefore );
-            computeBoundWithBackSubstitution();
+            computeBoundWithBackSubstitution( deepPolyElementsBefore );
         }
     }
 
     void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
     {
+        for ( unsigned i = getLayerIndex() - 1; i >= 1; ++i )
+        {
+            // have sLb_k_i, sLBias_k_i, sUb_k_i, sUBias_k_i
+            // Try to get sLb_k_i-1, sLBias_k_i-1, sUb_k_i-1, sUBias_k_i-1
+            // Need sLb_i_i-1, sLBias_i_i-1, sUb_i_i-1, sUBias_i_i-1
+            // sLb_k_i-1 = sLb_k_i_pos * sLB_i_i-1 + sLb_k_i_neg * sUB_i_i-1
+            // sUb_k_i-1 = sUb_k_i_pos * sUB_i_i-1 + sUb_k_i_neg * sLB_i_i-1
+            // sLBias_k_i-1 = sLBias_k_i-1 + sLb_k_i_pos * sLBias_i_i-1 + sLb_k_i_neg * sUBias_i_i-1
+            // sUBias_k_i-1 = sUBias_k_i-1 + sUb_k_i_pos * sUBias_i_i-1 + sUb_k_i_neg * sLBias_i_i-1
+        }
     }
 
     void DeepPolyWeightedSumElement::allocateMemory( const Map<unsigned,
