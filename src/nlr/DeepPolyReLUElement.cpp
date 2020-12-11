@@ -106,6 +106,58 @@ namespace NLR {
         }
     }
 
+    void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
+    ( const double *symbolicLb, const double*symbolicUb, double
+      *symbolicLowerBias, double *symbolicUpperBias, double
+      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
+      unsigned targetLayerSize, unsigned previousLayerSize,
+      unsigned previousLayerIndex )
+    {
+        std::cout << previousLayerSize << previousLayerIndex << std::endl;
+        std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
+                     previousLayerSize, 0 );
+        std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
+                     previousLayerSize, 0 );
+
+        unsigned size = getSize();
+
+        for ( unsigned i = 0; i < size; ++i )
+        {
+            double weightLbPred = _symbolicLb[i];
+            double weightUbPred = _symbolicUb[i];
+            double lowerBiasPred = _symbolicLowerBias[i];
+            double upperBiasPred = _symbolicUpperBias[i];
+
+            // Update weights
+            for ( unsigned j = 0; j < targetLayerSize; ++j )
+            {
+                unsigned index = i * targetLayerSize + j;
+                double weightLb = symbolicLb[index];
+                double weightUb = symbolicUb[index];
+
+                if ( weightLb >= 0 )
+                {
+                    symbolicLbInTermsOfPredecessor[index] = weightLb * weightLbPred;
+                    symbolicLowerBias[j] += weightLb * lowerBiasPred;
+                } else
+                {
+                    symbolicLbInTermsOfPredecessor[index] = weightLb * weightUbPred;
+                    symbolicLowerBias[j] += weightLb * upperBiasPred;
+                }
+
+                if ( weightUb >= 0 )
+                {
+                    symbolicUbInTermsOfPredecessor[index] = weightUb * weightUbPred;
+                    symbolicUpperBias[j] += weightUb * upperBiasPred;
+                } else
+                {
+                    symbolicUbInTermsOfPredecessor[index] = weightUb * weightLbPred;
+                    symbolicUpperBias[j] += weightUb * lowerBiasPred;
+                }
+            }
+        }
+    }
+
     void DeepPolyReLUElement::allocateMemory()
     {
         allocateMemoryForUpperAndLowerBounds();

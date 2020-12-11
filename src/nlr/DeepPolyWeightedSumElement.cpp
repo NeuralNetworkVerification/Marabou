@@ -71,13 +71,6 @@ namespace NLR {
 
         for ( unsigned i = getLayerIndex() - 1; i >= 1; ++i )
         {
-            // have sLb_k_i, sLBias_k_i, sUb_k_i, sUBias_k_i
-            // sLb_i_i-1, sLBias_i_i-1, sUb_i_i-1, sUBias_i_i-1
-            // Try to get sLb_k_i-1, sLBias_k_i-1, sUb_k_i-1, sUBias_k_i-1
-            // sLb_k_i-1 = sLb_k_i_pos * sLB_i_i-1 + sLb_k_i_neg * sUB_i_i-1
-            // sUb_k_i-1 = sUb_k_i_pos * sUB_i_i-1 + sUb_k_i_neg * sLB_i_i-1
-            // sLBias_k_i-1 = sLBias_k_i-1 + sLb_k_i_pos * sLBias_i_i-1 + sLb_k_i_neg * sUBias_i_i-1
-            // sUBias_k_i-1 = sUBias_k_i-1 + sUb_k_i_pos * sUBias_i_i-1 + sUb_k_i_neg * sLBias_i_i-1
             DeepPolyElement *layer = deepPolyElementsBefore[i];
             DeepPolyElement *previousLayer = deepPolyElementsBefore[i - 1];
             layer->symbolicBoundInTermsOfPredecessor
@@ -91,6 +84,38 @@ namespace NLR {
             temp = _work1SymbolicUb;
             _work1SymbolicUb = _work2SymbolicUb;
             _work2SymbolicUb = temp;
+        }
+
+        DeepPolyElement *firstElement = deepPolyElementsBefore[0];
+        // Get concrete bounds from the first element
+        for ( unsigned i = 0; i < size; ++i )
+        {
+            for ( unsigned j = 0; j < firstElement->getSize(); ++j )
+            {
+                double firstLb = firstElement->getLowerBound( j );
+                double firstUb = firstElement->getUpperBound( j );
+
+                // Compute lower bound
+                double weight = _work1SymbolicLb[j * size + i];
+                if ( weight >= 0 )
+                {
+                    _lb[i] += ( weight * firstLb );
+                } else
+                {
+                    _lb[i] += ( weight * firstUb );
+                }
+
+                // Compute upper bound
+                weight = _work1SymbolicUb[j * size + i];
+                if ( weight >= 0 )
+                {
+                    _ub[i] += ( weight * firstUb );
+                } else
+                {
+                    _ub[i] += ( weight * firstLb );
+                }
+
+            }
         }
     }
 
