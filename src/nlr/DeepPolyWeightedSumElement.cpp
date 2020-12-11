@@ -38,6 +38,7 @@ namespace NLR {
     void DeepPolyWeightedSumElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
+        std::cout << "Executing Weighted Sum Element" << std::endl;
         freeMemoryIfNeeded();
         if ( deepPolyElementsBefore.empty() )
         {
@@ -69,14 +70,15 @@ namespace NLR {
         std::memcpy( _workSymbolicLowerBias, biases, size );
         std::memcpy( _workSymbolicUpperBias, biases, size );
 
-        for ( unsigned i = getLayerIndex() - 1; i >= 1; ++i )
+        for ( unsigned i = getLayerIndex() - 1; i >= 1; --i )
         {
+            std::cout << "i :" << i << std::endl;
             DeepPolyElement *layer = deepPolyElementsBefore[i];
             DeepPolyElement *previousLayer = deepPolyElementsBefore[i - 1];
             layer->symbolicBoundInTermsOfPredecessor
                 ( symbolicLb, symbolicUb, _workSymbolicLowerBias,
                   _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
-                  getSize(), previousLayer->getSize(), sourceLayerIndex );
+                  getSize(), previousLayer->getSize(), i - 1 );
             double* temp = _work1SymbolicLb;
             _work1SymbolicLb = _work2SymbolicLb;
             _work2SymbolicLb = temp;
@@ -214,5 +216,10 @@ namespace NLR {
         }
     }
 
+    void DeepPolyWeightedSumElement::log( const String &message )
+    {
+        if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+            printf( "DeepPolyWeightedSumElement: %s\n", message.ascii() );
+    }
 
 } // namespace NLR

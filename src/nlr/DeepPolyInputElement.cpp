@@ -33,6 +33,7 @@ namespace NLR {
     void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
+        std::cout << "Executing Input Element" << std::endl;
         if ( !deepPolyElementsBefore.empty() )
         {
             throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
@@ -51,5 +52,10 @@ namespace NLR {
         ASSERT( false );
     }
 
+    void DeepPolyInputElement::log( const String &message )
+    {
+        if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+            printf( "DeepPolyInputElement: %s\n", message.ascii() );
+    }
 
 } // namespace NLR

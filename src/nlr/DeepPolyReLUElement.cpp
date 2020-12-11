@@ -31,6 +31,7 @@ namespace NLR {
     void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
+        std::cout << "Executing ReLU Element" << std::endl;
         freeMemoryIfNeeded();
 
         if ( deepPolyElementsBefore.empty() )
@@ -174,6 +175,12 @@ namespace NLR {
 
         std::fill_n( _symbolicLowerBias, size, 0 );
         std::fill_n( _symbolicUpperBias, size, 0 );
+    }
+
+    void DeepPolyReLUElement::log( const String &message )
+    {
+        if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+            printf( "DeepPolyInputElement: %s\n", message.ascii() );
     }
 
 } // namespace NLR

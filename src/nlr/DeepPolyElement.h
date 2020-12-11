@@ -59,6 +59,8 @@ public:
     double getLowerBound( unsigned index ) const;
     double getUpperBound( unsigned index ) const;
 
+    virtual void log( const String &message ) = 0;
+
 protected:
     Layer *_layer;
 

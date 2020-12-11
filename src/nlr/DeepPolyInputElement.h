@@ -39,6 +39,9 @@ public:
       *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
       unsigned targetLayerSize, unsigned previousLayerSize,
       unsigned previousLayerIndex );
+
+private:
+    void log( const String &message );
 };
 
 } // namespace NLR

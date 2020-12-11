@@ -53,7 +53,7 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
 
     deepPolyStart = TimeUtils::sampleMicro();
 
-    for ( unsigned i = 0; i <= _layerOwner->getNumberOfLayers(); ++i )
+    for ( unsigned i = 0; i < _layerOwner->getNumberOfLayers(); ++i )
     {
         /*
           Go over the layers, one by one. Each time construct the abstract element
@@ -63,11 +63,11 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
         Layer *layer = layers[i];
 
         DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
-        _deepPolyElements[i] = deepPolyElement;
         deepPolyElement->execute( _deepPolyElements );
+        _deepPolyElements[i] = deepPolyElement;
 
         // Get the updated bound
-        for ( unsigned j = 0; j <= deepPolyElement->getSize(); ++j )
+        for ( unsigned j = 0; j < deepPolyElement->getSize(); ++j )
         {
             double lb = deepPolyElement->getLowerBound( j );
             if ( layer->getLb( j ) < lb )
@@ -106,51 +106,5 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
                                  layer->getLayerType() ).ascii() );
     return deepPolyElement;
 }
-    /*
-void DeepPolyAnalysis::executeDeepPolyElementForInput( DeepPolyElement
-                                                       &deepPolyElement )
-{
-    // Do not need to update symbolic bound, just update the concrete bounds
-    ASSERT( deepPolyElement._layer->getLayerType() == Layer::INPUT );
-    std::memcpy( deepPolyElement._lb, deepPolyElement._layer->getLbs(),
-                 deepPolyElement._layer->getSize() );
-    std::memcpy( deepPolyElement._ub, deepPolyElement._layer->getUbs(),
-                 deepPolyElement._layer->getSize() );
-}
-
-void DeepPolyAnalysis::executeDeepPolyElementForWeightedSum( DeepPolyElement
-                                                             &deepPolyElement )
-{
-    // Do not need to update symbolic bound, just update the concrete bounds
-    ASSERT( deepPolyElement._layer->getLayerType() == Layer::WEIGHTED_SUM );
-    computeBoundsWithBackSubstitution( deepPolyElement );
-}
-
-void DeepPolyAnalysis::computeBoundsWithBackSubstitution( DeepPolyElement
-                                                          &deepPolyElement )
-{
-
-    for ( unsigned index = deepPolyElement._layerIndex - 1;
-          index >=_startLayerIndex; --index )
-    {
-        if ( type == Layer::ReLU )
-        {
-
-        }
-        if ( type == Layer::WEIGHTED_SUM )
-        {
-
-
-        }
-
-
-    }
-}
-
-void DeepPolyAnalysis::executeDeepPolyElementForReLU( DeepPolyElement
-                                                      &deepPolyElement )
-{
-}
-    */
 
 } // namespace NLR

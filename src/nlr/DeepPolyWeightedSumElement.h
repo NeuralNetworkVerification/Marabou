@@ -55,6 +55,7 @@ private:
     void computeBoundWithBackSubstitution( const Map<unsigned, DeepPolyElement *>
                                            &deepPolyElementsBefore );
 
+    void log( const String &message );
 };
 
 } // namespace NLR
