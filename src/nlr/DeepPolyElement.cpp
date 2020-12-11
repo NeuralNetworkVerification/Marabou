@@ -77,8 +77,11 @@ namespace NLR {
     void DeepPolyElement::getConcreteBounds()
     {
         unsigned size = getSize();
-        std::memcpy( _lb, _layer->getLbs(), size );
-        std::memcpy( _ub, _layer->getUbs(), size );
+        for ( unsigned i = 0; i < size; ++i )
+        {
+            _lb[i] = _layer->getLb( i );
+            _ub[i] = _layer->getUb( i );
+        }
     }
 
     void DeepPolyElement::allocateMemoryForUpperAndLowerBounds()

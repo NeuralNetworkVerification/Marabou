@@ -265,7 +265,6 @@ double Layer::getWeight( unsigned sourceLayer,
 
 double *Layer::getWeights( unsigned sourceLayerIndex ) const
 {
-    std::cout << "Source layer: " << sourceLayerIndex << std::endl;
     return _layerToWeights[sourceLayerIndex];
 }
 

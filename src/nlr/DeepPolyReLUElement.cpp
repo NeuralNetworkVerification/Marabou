@@ -60,7 +60,7 @@ namespace NLR {
 
                     _symbolicLb[i] = 1;
                     _symbolicLowerBias[i] = 0;
-                    _lb[i] = sourceUb;
+                    _lb[i] = sourceLb;
                 }
                 else if ( !FloatUtils::isPositive( sourceUb ) )
                 {
@@ -103,6 +103,10 @@ namespace NLR {
 
                     }
                 }
+                log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
+                              i, _symbolicLb[i], _symbolicLowerBias[i],
+                              _symbolicUb[i], _symbolicUpperBias[i] ) );
+                log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
             }
         }
         log( "Executing - done" );
@@ -181,7 +185,7 @@ namespace NLR {
     void DeepPolyReLUElement::log( const String &message )
     {
         if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
-            printf( "DeepPolyInputElement: %s\n", message.ascii() );
+            printf( "DeepPolyReLUElement: %s\n", message.ascii() );
     }
 
 } // namespace NLR

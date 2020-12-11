@@ -57,27 +57,88 @@ namespace NLR {
     void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
     {
-        unsigned sourceLayerIndex = getLayerIndex() - 1;
+        log( "Computing bounds with back substitution..." );
 
         // We start with the symbolic upper-/lower- bounds of this layer w.r.t.
         // its immediate predecessor, the goal is to compute the symbolic
         // upper-/lower- bounds of this layer w.r.t. the first layer.
 
+        log( "Computing symbolic bounds w.r.t. the first element..." );
+
+        unsigned sourceLayerIndex = getLayerIndex() - 1;
+
         const double *symbolicLb = _layer->getWeights( sourceLayerIndex );
         const double *symbolicUb = _layer->getWeights( sourceLayerIndex );
 
         unsigned size = getSize();
-        double *biases = _layer->getBiases();
-        std::memcpy( _workSymbolicLowerBias, biases, size );
-        std::memcpy( _workSymbolicUpperBias, biases, size );
+
+        for ( unsigned i = 0; i < 2; ++i )
+        {
+            for ( unsigned j = 0; j < 2; ++j )
+                {
+                    _work1SymbolicLb[i * 2 + j] = symbolicLb[i * 2 + j];
+                    _work1SymbolicUb[i * 2 + j] = symbolicUb[i * 2 + j];
+                    std::cout << _work1SymbolicLb[i * 2 + j] << " ";
+                }
+            std::cout << std::endl;
+        }
+
+
+        for ( unsigned i = 0; i < size; ++i )
+        {
+            double bias = _layer->getBias( i );
+            _workSymbolicLowerBias[i] = bias;
+            _workSymbolicUpperBias[i] = bias;
+        }
+
+        if ( sourceLayerIndex == 0 )
+        {
+            log( "Concretizing bound..." );
+            std::fill_n( _lb, size, 0 );
+            std::fill_n( _ub, size, 0 );
+            DeepPolyElement *firstElement = deepPolyElementsBefore[0];
+            // Get concrete bounds from the first element
+            for ( unsigned i = 0; i < size; ++i )
+            {
+                for ( unsigned j = 0; j < firstElement->getSize(); ++j )
+                {
+                    double firstLb = firstElement->getLowerBound( j );
+                    double firstUb = firstElement->getUpperBound( j );
+                    // Compute lower bound
+                    double weight = symbolicLb[j * size + i];
+                    if ( weight >= 0 )
+                    {
+                        _lb[i] += ( weight * firstLb );
+                    } else
+                    {
+                        _lb[i] += ( weight * firstUb );
+                    }
+
+                    // Compute upper bound
+                    weight = symbolicUb[j * size + i];
+                    if ( weight >= 0 )
+                    {
+                        _ub[i] += ( weight * firstUb );
+                    } else
+                    {
+                        _ub[i] += ( weight * firstLb );
+                    }
+                }
+                _lb[i] += _workSymbolicLowerBias[i];
+                _ub[i] += _workSymbolicUpperBias[i];
+                log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
+            }
+            log( "Concretizing bound - done" );
+            log( "Computing bounds with back substitution - done" );
+            return;
+        }
 
         for ( unsigned i = getLayerIndex() - 1; i >= 1; --i )
         {
-            std::cout << "i :" << i << std::endl;
             DeepPolyElement *layer = deepPolyElementsBefore[i];
             DeepPolyElement *previousLayer = deepPolyElementsBefore[i - 1];
             layer->symbolicBoundInTermsOfPredecessor
-                ( symbolicLb, symbolicUb, _workSymbolicLowerBias,
+                ( _work1SymbolicLb, _work1SymbolicUb, _workSymbolicLowerBias,
                   _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
                   getSize(), previousLayer->getSize(), i - 1 );
             double* temp = _work1SymbolicLb;
@@ -88,7 +149,45 @@ namespace NLR {
             _work1SymbolicUb = _work2SymbolicUb;
             _work2SymbolicUb = temp;
         }
+        log( "Computing symbolic bounds w.r.t. the first element - done" );
 
+        std::cout << "Symbolic lower bound:" << std::endl;
+        for ( unsigned i = 0; i < 2; ++i )
+        {
+            for ( unsigned j = 0; j < 2; ++j )
+            {
+                std::cout << _work1SymbolicLb[i * 2 + j] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "Symbolic lower bound bias:" << std::endl;
+        for ( unsigned i = 0; i < 2; ++i )
+        {
+            std::cout << _workSymbolicLowerBias[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Symbolic upper bound:" << std::endl;
+        for ( unsigned i = 0; i < 2; ++i )
+        {
+            for ( unsigned j = 0; j < 2; ++j )
+            {
+                std::cout << _work1SymbolicUb[i * 2 + j] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        std::cout << "Symbolic upper bound bias:" << std::endl;
+        for ( unsigned i = 0; i < 2; ++i )
+            {
+                std::cout << _workSymbolicUpperBias[i] << " ";
+            }
+        std::cout << std::endl;
+
+        log( "Concretizing bound..." );
+        std::fill_n( _lb, size, 0 );
+        std::fill_n( _ub, size, 0 );
         DeepPolyElement *firstElement = deepPolyElementsBefore[0];
         // Get concrete bounds from the first element
         for ( unsigned i = 0; i < size; ++i )
@@ -97,7 +196,6 @@ namespace NLR {
             {
                 double firstLb = firstElement->getLowerBound( j );
                 double firstUb = firstElement->getUpperBound( j );
-
                 // Compute lower bound
                 double weight = _work1SymbolicLb[j * size + i];
                 if ( weight >= 0 )
@@ -117,9 +215,13 @@ namespace NLR {
                 {
                     _ub[i] += ( weight * firstLb );
                 }
-
             }
+            _lb[i] += _workSymbolicLowerBias[i];
+            _ub[i] += _workSymbolicUpperBias[i];
+            log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
         }
+        log( "Concretizing bound - done" );
+        log( "Computing bounds with back substitution - done" );
     }
 
     void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
