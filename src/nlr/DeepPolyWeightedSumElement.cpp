@@ -38,7 +38,7 @@ namespace NLR {
     void DeepPolyWeightedSumElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
-        std::cout << "Executing Weighted Sum Element" << std::endl;
+        log( "Executing..." );
         freeMemoryIfNeeded();
         if ( deepPolyElementsBefore.empty() )
         {
@@ -51,6 +51,7 @@ namespace NLR {
             allocateMemory( deepPolyElementsBefore );
             computeBoundWithBackSubstitution( deepPolyElementsBefore );
         }
+        log( "Executing - done" );
     }
 
     void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution

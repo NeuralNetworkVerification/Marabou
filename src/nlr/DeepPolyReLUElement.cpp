@@ -31,7 +31,7 @@ namespace NLR {
     void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
-        std::cout << "Executing ReLU Element" << std::endl;
+        log( "Executing..." );
         freeMemoryIfNeeded();
 
         if ( deepPolyElementsBefore.empty() )
@@ -105,6 +105,7 @@ namespace NLR {
                 }
             }
         }
+        log( "Executing - done" );
     }
 
     void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor

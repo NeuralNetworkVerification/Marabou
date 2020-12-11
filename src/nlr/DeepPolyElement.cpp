@@ -64,8 +64,6 @@ namespace NLR {
 
     double DeepPolyElement::getLowerBound( unsigned index ) const
     {
-        std::cout << "Index: " << index << std::endl;
-        std::cout << "Size: " << getSize() << std::endl;
         ASSERT( index < getSize() );
         return _lb[index];
     }

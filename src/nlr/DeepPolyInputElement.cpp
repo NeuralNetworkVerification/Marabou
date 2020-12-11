@@ -33,7 +33,7 @@ namespace NLR {
     void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *>
                                    &deepPolyElementsBefore )
     {
-        std::cout << "Executing Input Element" << std::endl;
+        log( "Executing..." );
         if ( !deepPolyElementsBefore.empty() )
         {
             throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
@@ -42,6 +42,7 @@ namespace NLR {
         freeMemoryIfNeeded();
         allocateMemoryForUpperAndLowerBounds();
         getConcreteBounds();
+        log( "Executing - done" );
     }
 
     void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor

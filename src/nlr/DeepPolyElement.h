@@ -47,7 +47,6 @@ public:
       unsigned targetLayerSize, unsigned previousLayerSize,
       unsigned previousLayerIndex ) = 0;
 
-
     unsigned getPredecessorSize() const;
     unsigned getSize() const;
     unsigned getLayerIndex() const;
