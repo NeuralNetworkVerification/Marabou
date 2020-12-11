@@ -20,12 +20,10 @@
 namespace NLR {
 
     DeepPolyWeightedSumElement::DeepPolyWeightedSumElement( Layer *layer )
-        : _workSymbolicLbPositiveWeights( NULL )
-        , _workSymbolicLbNegativeWeights( NULL )
-        , _workSymbolicUbPositiveWeights( NULL )
-        , _workSymbolicUbNegativeWeights( NULL )
-        , _workSymbolicLb( NULL )
-        , _workSymbolicUb( NULL )
+        : _work1SymbolicLb( NULL )
+        , _work1SymbolicUb( NULL )
+        , _work2SymbolicLb( NULL )
+        , _work2SymbolicUb( NULL )
         , _workSymbolicLowerBias( NULL )
         , _workSymbolicUpperBias( NULL )
     {
@@ -57,21 +55,14 @@ namespace NLR {
     void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
     {
-        unsigned sourceLayerIndex = deepPolyElementsBefore[getLayerIndex() - 1]
-            ->getLayerIndex();
+        unsigned sourceLayerIndex = getLayerIndex() - 1;
 
         // We start with the symbolic upper-/lower- bounds of this layer w.r.t.
         // its immediate predecessor, the goal is to compute the symbolic
         // upper-/lower- bounds of this layer w.r.t. the first layer.
 
-        double *symbolicLbPositiveWeights =
-            _layer->getPositiveWeights( sourceLayerIndex );
-        double *symbolicLbNegativeWeights =
-            _layer->getNegativeWeights( sourceLayerIndex );
-        double *symbolicUbPositiveWeights =
-            _layer->getPositiveWeights( sourceLayerIndex );
-        double *symbolicUbNegativeWeights =
-            _layer->getNegativeWeights( sourceLayerIndex );
+        double *symbolicLb = _layer->getWeights( sourceLayerIndex );
+        double *symbolicUb = _layer->getWeights( sourceLayerIndex );
         double *symbolicLowerBias = _layer->getBiases();
         double *symbolicUpperBias = _layer->getBiases();
 
@@ -84,14 +75,54 @@ namespace NLR {
             // sUb_k_i-1 = sUb_k_i_pos * sUB_i_i-1 + sUb_k_i_neg * sLB_i_i-1
             // sLBias_k_i-1 = sLBias_k_i-1 + sLb_k_i_pos * sLBias_i_i-1 + sLb_k_i_neg * sUBias_i_i-1
             // sUBias_k_i-1 = sUBias_k_i-1 + sUb_k_i_pos * sUBias_i_i-1 + sUb_k_i_neg * sLBias_i_i-1
-            DeepPolyElement *lastLayer = deepPolyElementsBefore[i];
-            lastLayer->symbolicBoundInTermsOfPredecessor
-                ( symbolicLbPositiveWeights, symbolicLbNegativeWeights,
-                  symbolicUbPositiveWeights, symbolicUbNegativeWeights,
-                  symbolicLowerBias, symbolicUpperBias, _workSymbolicLb,
-                  _workSymbolicUb );
+            DeepPolyElement *layer = deepPolyElementsBefore[i];
+            DeepPolyElement *previousLayer = deepPolyElementsBefore[i - 1];
+            layer->symbolicBoundInTermsOfPredecessor
+                ( symbolicLb, symbolicUb, symbolicLowerBias, symbolicUpperBias,
+                  _work2SymbolicLb, _work2SymbolicUb, getSize(),
+                  previousLayer->getSize(), sourceLayerIndex );
         }
     }
+
+    void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
+    ( const double *symbolicLb, const double*symbolicUb, double
+      *symbolicLowerBias, double *symbolicUpperBias, double
+      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
+      unsigned targetLayerSize, unsigned previousLayerSize,
+      unsigned previousLayerIndex )
+    {
+        // sLb_k_i-1 = sLb_k_i_pos * sLB_i_i-1 + sLb_k_i_neg * sUB_i_i-1
+        // sUb_k_i-1 = sUb_k_i_pos * sUB_i_i-1 + sUb_k_i_neg * sLB_i_i-1
+        // sLBias_k_i-1 = sLBias_k_i-1 + sLb_k_i_pos * sLBias_i_i-1 + sLb_k_i_neg * sUBias_i_i-1
+        // sUBias_k_i-1 = sUBias_k_i-1 + sUb_k_i_pos * sUBias_i_i-1 + sUb_k_i_neg * sLBias_i_i-1
+        std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
+                     previousLayerSize, 0 );
+        std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
+                     previousLayerSize, 0 );
+
+        unsigned size = getSize();
+        double *weights = _layer->getWeights( previousLayerIndex );
+        double *biases = _layer->getBiases();
+
+        // newSymbolicLb = weights * symbolicLb
+        // newSymbolicUb = weights * symbolicUb
+        matrixMultiplication( weights, symbolicLb,
+                              symbolicLbInTermsOfPredecessor, previousLayerSize,
+                              size, targetLayerSize );
+        matrixMultiplication( weights, symbolicUb,
+                              symbolicUbInTermsOfPredecessor, previousLayerSize,
+                              size, targetLayerSize );
+
+        // symbolicLowerBias = biases * symbolicLb
+        // symbolicUpperBias = biases * symbolicUb
+        matrixMultiplication( biases, symbolicLb,
+                              symbolicLowerBias, 1,
+                              size, targetLayerSize );
+        matrixMultiplication( biases, symbolicUb,
+                              symbolicUpperBias, 1,
+                              size, targetLayerSize );
+    }
+
 
     void DeepPolyWeightedSumElement::allocateMemory( const Map<unsigned,
                                                      DeepPolyElement *>
@@ -109,21 +140,19 @@ namespace NLR {
                 maxLayerSize = thisLayerSize;
         }
 
-       _workSymbolicLbPositiveWeights= new double[size * maxLayerSize];
-       _workSymbolicLbNegativeWeights= new double[size * maxLayerSize];
-       _workSymbolicUbPositiveWeights= new double[size * maxLayerSize];
-       _workSymbolicUbNegativeWeights= new double[size * maxLayerSize];
-       _workSymbolicLb= new double[size * maxLayerSize];
-       _workSymbolicUb= new double[size * maxLayerSize];
+       _work1SymbolicLb= new double[size * maxLayerSize];
+       _work1SymbolicUb= new double[size * maxLayerSize];
+       _work2SymbolicLb= new double[size * maxLayerSize];
+       _work2SymbolicUb= new double[size * maxLayerSize];
+
        _workSymbolicLowerBias = new double[size];
        _workSymbolicUpperBias = new double[size];
 
-       std::fill_n( _workSymbolicLbPositiveWeights, size * maxLayerSize, 0 );
-       std::fill_n( _workSymbolicLbNegativeWeights, size * maxLayerSize, 0 );
-       std::fill_n( _workSymbolicUbPositiveWeights, size * maxLayerSize, 0 );
-       std::fill_n( _workSymbolicUbNegativeWeights, size * maxLayerSize, 0 );
-       std::fill_n( _workSymbolicLb, size * maxLayerSize, 0 );
-       std::fill_n( _workSymbolicUb, size * maxLayerSize, 0 );
+
+       std::fill_n( _work1SymbolicLb, size * maxLayerSize, 0 );
+       std::fill_n( _work1SymbolicUb, size * maxLayerSize, 0 );
+       std::fill_n( _work2SymbolicLb, size * maxLayerSize, 0 );
+       std::fill_n( _work2SymbolicUb, size * maxLayerSize, 0 );
 
        std::fill_n( _workSymbolicLowerBias, size, 0 );
        std::fill_n( _workSymbolicUpperBias, size, 0 );
@@ -132,6 +161,26 @@ namespace NLR {
     void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
     {
         DeepPolyElement::freeMemoryIfNeeded();
+        if ( _work1SymbolicLb )
+        {
+            delete[] _work1SymbolicLb;
+            _work1SymbolicLb = NULL;
+        }
+        if ( _work2SymbolicLb )
+        {
+            delete[] _work2SymbolicLb;
+            _work2SymbolicLb = NULL;
+        }
+        if ( _work1SymbolicUb )
+        {
+            delete[] _work1SymbolicUb;
+            _work1SymbolicUb = NULL;
+        }
+        if ( _work2SymbolicUb )
+        {
+            delete[] _work2SymbolicUb;
+            _work2SymbolicUb = NULL;
+        }
     }
 
 

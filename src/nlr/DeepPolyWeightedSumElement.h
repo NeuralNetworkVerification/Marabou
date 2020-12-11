@@ -33,18 +33,17 @@ public:
 
     void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElements );
     void symbolicBoundInTermsOfPredecessor
-    ( const double *symbolicLbPositiveWeights, const double
-      *symbolicLbNegativeWeights, const double *symbolicUbPositiveWeights,
-      const double *symbolicUbNegativeWeights, double *symbolicLowerBias,
-      double *symbolicUpperBias, double *symbolicLb, double *symbolicUb );
+    ( const double *symbolicLb, const double*symbolicUb, double
+      *symbolicLowerBias, double *symbolicUpperBias, double
+      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
+      unsigned targetLayerSize, unsigned previousLayerSize,
+      unsigned previousLayerIndex );
 
 private:
-    double * _workSymbolicLbPositiveWeights;
-    double * _workSymbolicLbNegativeWeights;
-    double * _workSymbolicUbPositiveWeights;
-    double * _workSymbolicUbNegativeWeights;
-    double * _workSymbolicLb;
-    double * _workSymbolicUb;
+    double * _work1SymbolicLb;
+    double * _work1SymbolicUb;
+    double * _work2SymbolicLb;
+    double * _work2SymbolicUb;
 
     double * _workSymbolicLowerBias;
     double * _workSymbolicUpperBias;

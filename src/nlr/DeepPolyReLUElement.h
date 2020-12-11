@@ -34,10 +34,11 @@ public:
                   &deepPolyElementsBefore );
 
     void symbolicBoundInTermsOfPredecessor
-    ( const double *symbolicLbPositiveWeights, const double
-      *symbolicLbNegativeWeights, const double *symbolicUbPositiveWeights,
-      const double *symbolicUbNegativeWeights, double *symbolicLowerBias,
-      double *symbolicUpperBias, double *symbolicLb, double *symbolicUb );
+    ( const double *symbolicLb, const double*symbolicUb, double
+      *symbolicLowerBias, double *symbolicUpperBias, double
+      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
+      unsigned targetLayerSize, unsigned previousLayerSize,
+      unsigned previousLayerIndex );
 
 private:
 

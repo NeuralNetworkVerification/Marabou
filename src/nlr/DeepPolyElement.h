@@ -36,15 +36,16 @@ public:
                           &deepPolyElementsBefore ) = 0;
 
     /*
-      Takes in symbolic bounds of some layer Y in terms of this layer
-      (the first six argument), store (in the last four arugment)
-      the symbolic bounds of layer Y in terms of the predecessor of this layer
+      Given the symbolic bounds of some layer Y (of size layerSize) in terms of
+      this layer, store (in the last four arugment) the symbolic bounds of layer
+      Y in terms of the predecessor of this layer.
     */
     virtual void symbolicBoundInTermsOfPredecessor
-    ( const double *symbolicLbPositiveWeights, const double
-      *symbolicLbNegativeWeights, const double *symbolicUbPositiveWeights,
-      const double *symbolicUbNegativeWeights, double *symbolicLowerBias,
-      double *symbolicUpperBias, double *symbolicLb, double *symbolicUb ) = 0;
+    ( const double *symbolicLb, const double*symbolicUb, double
+      *symbolicLowerBias, double *symbolicUpperBias, double
+      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
+      unsigned targetLayerSize, unsigned previousLayerSize,
+      unsigned previousLayerIndex ) = 0;
 
 
     unsigned getPredecessorSize() const;

@@ -13,6 +13,7 @@
 
 **/
 
+#include "Debug.h"
 #include "DeepPolyInputElement.h"
 #include "FloatUtils.h"
 #include "NLRError.h"
@@ -41,5 +42,14 @@ namespace NLR {
         allocateMemoryForUpperAndLowerBounds();
         getConcreteBounds();
     }
+
+    void symbolicBoundInTermsOfPredecessor
+    ( const double *, const double *, double *, double *, double *, double *,
+      unsigned, unsigned, unsigned )
+    {
+        // Input layer should not have a predecessor
+        ASSERT( false );
+    }
+
 
 } // namespace NLR
