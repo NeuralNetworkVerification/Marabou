@@ -33,6 +33,12 @@ public:
     void execute( const Map<unsigned, DeepPolyElement *>
                   &deepPolyElementsBefore );
 
+    void symbolicBoundInTermsOfPredecessor
+    ( const double *symbolicLbPositiveWeights, const double
+      *symbolicLbNegativeWeights, const double *symbolicUbPositiveWeights,
+      const double *symbolicUbNegativeWeights, double *symbolicLowerBias,
+      double *symbolicUpperBias, double *symbolicLb, double *symbolicUb );
+
 private:
 
     void allocateMemory();

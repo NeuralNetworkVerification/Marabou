@@ -32,10 +32,22 @@ public:
     ~DeepPolyWeightedSumElement();
 
     void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElements );
+    void symbolicBoundInTermsOfPredecessor
+    ( const double *symbolicLbPositiveWeights, const double
+      *symbolicLbNegativeWeights, const double *symbolicUbPositiveWeights,
+      const double *symbolicUbNegativeWeights, double *symbolicLowerBias,
+      double *symbolicUpperBias, double *symbolicLb, double *symbolicUb );
 
 private:
-    double *_work1;
-    double *_work2;
+    double * _workSymbolicLbPositiveWeights;
+    double * _workSymbolicLbNegativeWeights;
+    double * _workSymbolicUbPositiveWeights;
+    double * _workSymbolicUbNegativeWeights;
+    double * _workSymbolicLb;
+    double * _workSymbolicUb;
+
+    double * _workSymbolicLowerBias;
+    double * _workSymbolicUpperBias;
 
     void allocateMemory( const Map<unsigned, DeepPolyElement *>
                          &deepPolyElements );

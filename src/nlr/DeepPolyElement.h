@@ -35,6 +35,18 @@ public:
     virtual void execute( const Map<unsigned, DeepPolyElement *>
                           &deepPolyElementsBefore ) = 0;
 
+    /*
+      Takes in symbolic bounds of some layer Y in terms of this layer
+      (the first six argument), store (in the last four arugment)
+      the symbolic bounds of layer Y in terms of the predecessor of this layer
+    */
+    virtual void symbolicBoundInTermsOfPredecessor
+    ( const double *symbolicLbPositiveWeights, const double
+      *symbolicLbNegativeWeights, const double *symbolicUbPositiveWeights,
+      const double *symbolicUbNegativeWeights, double *symbolicLowerBias,
+      double *symbolicUpperBias, double *symbolicLb, double *symbolicUb ) = 0;
+
+
     unsigned getPredecessorSize() const;
     unsigned getSize() const;
     unsigned getLayerIndex() const;
