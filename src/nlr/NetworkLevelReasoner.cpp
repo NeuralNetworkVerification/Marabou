@@ -15,6 +15,7 @@
 
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
+#include "DeepPolyAnalysis.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "IterativePropagator.h"
@@ -133,6 +134,12 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 {
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
         _layerIndexToLayer[i]->computeSymbolicBounds();
+}
+
+void NetworkLevelReasoner::deepPolyPropagation()
+{
+    DeepPolyAnalysis deepPolyAnalysis( this );
+    deepPolyAnalysis.run( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::lpRelaxationPropagation()

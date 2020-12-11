@@ -32,10 +32,7 @@ namespace NLR {
 
 DeepPolyAnalysis::DeepPolyAnalysis( LayerOwner *layerOwner )
     : _layerOwner( layerOwner )
-    , _work1( NULL )
-    , _work2( NULL )
 {
-    allocateMemory();
 }
 
 DeepPolyAnalysis::~DeepPolyAnalysis()
@@ -43,26 +40,8 @@ DeepPolyAnalysis::~DeepPolyAnalysis()
     freeMemoryIfNeeded();
 }
 
-void DeepPolyAnalysis::allocateMemory()
-{
-    unsigned maxLayerSize = _layerOwner->getMaxLayerSize();
-    _work1 = new double[maxLayerSize * maxLayerSize];
-    _work2 = new double[maxLayerSize * maxLayerSize];
-}
-
 void DeepPolyAnalysis::freeMemoryIfNeeded()
 {
-    if ( _work1 )
-    {
-        delete[] _work1;
-        _work1 = NULL;
-    }
-
-    if ( _work2 )
-    {
-        delete[] _work2;
-        _work2 = NULL;
-    }
 }
 
 void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )

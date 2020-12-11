@@ -106,6 +106,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
+    void deepPolyPropagation();
     void lpRelaxationPropagation();
     void MILPPropagation();
     void iterativePropagation();

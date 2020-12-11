@@ -43,7 +43,7 @@ namespace NLR {
         getConcreteBounds();
     }
 
-    void symbolicBoundInTermsOfPredecessor
+    void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor
     ( const double *, const double *, double *, double *, double *, double *,
       unsigned, unsigned, unsigned )
     {

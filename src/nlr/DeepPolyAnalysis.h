@@ -36,8 +36,6 @@ public:
 private:
     LayerOwner *_layerOwner;
     Map<unsigned, DeepPolyElement *> _deepPolyElements;
-    double *_work1;
-    double *_work2;
 
     void allocateMemory();
     void freeMemoryIfNeeded();
