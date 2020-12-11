@@ -61,10 +61,13 @@ namespace NLR {
         // its immediate predecessor, the goal is to compute the symbolic
         // upper-/lower- bounds of this layer w.r.t. the first layer.
 
-        double *symbolicLb = _layer->getWeights( sourceLayerIndex );
-        double *symbolicUb = _layer->getWeights( sourceLayerIndex );
-        double *symbolicLowerBias = _layer->getBiases();
-        double *symbolicUpperBias = _layer->getBiases();
+        const double *symbolicLb = _layer->getWeights( sourceLayerIndex );
+        const double *symbolicUb = _layer->getWeights( sourceLayerIndex );
+
+        unsigned size = getSize();
+        double *biases = _layer->getBiases();
+        std::memcpy( _workSymbolicLowerBias, biases, size );
+        std::memcpy( _workSymbolicUpperBias, biases, size );
 
         for ( unsigned i = getLayerIndex() - 1; i >= 1; ++i )
         {
@@ -78,9 +81,16 @@ namespace NLR {
             DeepPolyElement *layer = deepPolyElementsBefore[i];
             DeepPolyElement *previousLayer = deepPolyElementsBefore[i - 1];
             layer->symbolicBoundInTermsOfPredecessor
-                ( symbolicLb, symbolicUb, symbolicLowerBias, symbolicUpperBias,
-                  _work2SymbolicLb, _work2SymbolicUb, getSize(),
-                  previousLayer->getSize(), sourceLayerIndex );
+                ( symbolicLb, symbolicUb, _workSymbolicLowerBias,
+                  _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
+                  getSize(), previousLayer->getSize(), sourceLayerIndex );
+            double* temp = _work1SymbolicLb;
+            _work1SymbolicLb = _work2SymbolicLb;
+            _work2SymbolicLb = temp;
+
+            temp = _work1SymbolicUb;
+            _work1SymbolicUb = _work2SymbolicUb;
+            _work2SymbolicUb = temp;
         }
     }
 
@@ -91,10 +101,6 @@ namespace NLR {
       unsigned targetLayerSize, unsigned previousLayerSize,
       unsigned previousLayerIndex )
     {
-        // sLb_k_i-1 = sLb_k_i_pos * sLB_i_i-1 + sLb_k_i_neg * sUB_i_i-1
-        // sUb_k_i-1 = sUb_k_i_pos * sUB_i_i-1 + sUb_k_i_neg * sLB_i_i-1
-        // sLBias_k_i-1 = sLBias_k_i-1 + sLb_k_i_pos * sLBias_i_i-1 + sLb_k_i_neg * sUBias_i_i-1
-        // sUBias_k_i-1 = sUBias_k_i-1 + sUb_k_i_pos * sUBias_i_i-1 + sUb_k_i_neg * sLBias_i_i-1
         std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
                      previousLayerSize, 0 );
         std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
