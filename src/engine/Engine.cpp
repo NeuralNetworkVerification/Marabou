@@ -98,6 +98,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
+    performDeepPolyAnalysis();
+    if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+    {
+        _networkLevelReasoner->dumpBounds();
+    }
+
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
 
@@ -1108,11 +1114,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( preprocess )
             performMILPSolverBoundedTightening();
 
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-        {
-            _networkLevelReasoner->dumpBounds();
-        }
-
         if ( _splittingStrategy == DivideStrategy::Auto )
         {
             _splittingStrategy =
@@ -1817,6 +1818,48 @@ std::atomic_bool *Engine::getQuitRequested()
 List<unsigned> Engine::getInputVariables() const
 {
     return _preprocessedQuery.getInputVariables();
+}
+
+void Engine::performDeepPolyAnalysis()
+{
+    if ( ( !_networkLevelReasoner ) )
+        return;
+
+    struct timespec start = TimeUtils::sampleMicro();
+
+    unsigned numTightenedBounds = 0;
+
+    // Step 1: tell the NLR about the current bounds
+    _networkLevelReasoner->obtainCurrentBounds();
+
+    // Step 2: perform SBT
+    _networkLevelReasoner->deepPolyPropagation();
+
+    // Step 3: Extract the bounds
+    List<Tightening> tightenings;
+    _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+    for ( const auto &tightening : tightenings )
+    {
+
+        if ( tightening._type == Tightening::LB &&
+             FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+        {
+            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+            ++numTightenedBounds;
+        }
+
+        if ( tightening._type == Tightening::UB &&
+             FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+        {
+            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            ++numTightenedBounds;
+        }
+    }
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.addTimeForSymbolicBoundTightening( TimeUtils::timePassed( start, end ) );
+    _statistics.incNumTighteningsFromSymbolicBoundTightening( numTightenedBounds );
 }
 
 void Engine::performSymbolicBoundTightening()

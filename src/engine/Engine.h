@@ -462,6 +462,8 @@ private:
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
 
+    void performDeepPolyAnalysis();
+
     /*
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
