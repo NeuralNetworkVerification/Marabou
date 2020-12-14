@@ -40,18 +40,6 @@ public:
       unsigned previousLayerIndex );
 
 private:
-    double * _work1SymbolicLb;
-    double * _work1SymbolicUb;
-    double * _work2SymbolicLb;
-    double * _work2SymbolicUb;
-
-    double * _workSymbolicLowerBias;
-    double * _workSymbolicUpperBias;
-
-    void allocateMemory( const Map<unsigned, DeepPolyElement *>
-                         &deepPolyElements );
-    void freeMemoryIfNeeded();
-
     void computeBoundWithBackSubstitution( const Map<unsigned, DeepPolyElement *>
                                            &deepPolyElementsBefore );
 

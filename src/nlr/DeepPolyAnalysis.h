@@ -37,7 +37,14 @@ private:
     LayerOwner *_layerOwner;
     Map<unsigned, DeepPolyElement *> _deepPolyElements;
 
-    void allocateMemory();
+    double * _work1SymbolicLb;
+    double * _work1SymbolicUb;
+    double * _work2SymbolicLb;
+    double * _work2SymbolicUb;
+    double * _workSymbolicLowerBias;
+    double * _workSymbolicUpperBias;
+
+    void allocateMemory( const Map<unsigned, Layer *> &layers );
     void freeMemoryIfNeeded();
 
     DeepPolyElement *createDeepPolyElement( Layer *layer );

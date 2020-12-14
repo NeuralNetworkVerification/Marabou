@@ -20,12 +20,6 @@
 namespace NLR {
 
     DeepPolyWeightedSumElement::DeepPolyWeightedSumElement( Layer *layer )
-        : _work1SymbolicLb( NULL )
-        , _work1SymbolicUb( NULL )
-        , _work2SymbolicLb( NULL )
-        , _work2SymbolicUb( NULL )
-        , _workSymbolicLowerBias( NULL )
-        , _workSymbolicUpperBias( NULL )
     {
         _layer = layer;
     }
@@ -39,16 +33,14 @@ namespace NLR {
                                    &deepPolyElementsBefore )
     {
         log( "Executing..." );
-        freeMemoryIfNeeded();
+        allocateMemory();
         if ( deepPolyElementsBefore.empty() )
         {
             // If this is the first layer, just update the concrete bounds
-            allocateMemoryForUpperAndLowerBounds();
             getConcreteBounds();
         } else
         {
             // Otherwise, compute bounds with back-substitution
-            allocateMemory( deepPolyElementsBefore );
             computeBoundWithBackSubstitution( deepPolyElementsBefore );
         }
         log( "Executing - done" );
@@ -257,66 +249,6 @@ namespace NLR {
         matrixMultiplication( biases, symbolicUb,
                               symbolicUpperBias, 1,
                               size, targetLayerSize );
-    }
-
-
-    void DeepPolyWeightedSumElement::allocateMemory( const Map<unsigned,
-                                                     DeepPolyElement *>
-                                                     &deepPolyElementsBefore )
-    {
-        allocateMemoryForUpperAndLowerBounds();
-
-        unsigned size = getSize();
-        // Get the maximal layer size
-        unsigned maxLayerSize = 0;
-        for ( const auto &pair : deepPolyElementsBefore )
-        {
-            unsigned thisLayerSize = pair.second->getSize();
-            if ( thisLayerSize > maxLayerSize )
-                maxLayerSize = thisLayerSize;
-        }
-
-       _work1SymbolicLb= new double[size * maxLayerSize];
-       _work1SymbolicUb= new double[size * maxLayerSize];
-       _work2SymbolicLb= new double[size * maxLayerSize];
-       _work2SymbolicUb= new double[size * maxLayerSize];
-
-       _workSymbolicLowerBias = new double[size];
-       _workSymbolicUpperBias = new double[size];
-
-
-       std::fill_n( _work1SymbolicLb, size * maxLayerSize, 0 );
-       std::fill_n( _work1SymbolicUb, size * maxLayerSize, 0 );
-       std::fill_n( _work2SymbolicLb, size * maxLayerSize, 0 );
-       std::fill_n( _work2SymbolicUb, size * maxLayerSize, 0 );
-
-       std::fill_n( _workSymbolicLowerBias, size, 0 );
-       std::fill_n( _workSymbolicUpperBias, size, 0 );
-    }
-
-    void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
-    {
-        DeepPolyElement::freeMemoryIfNeeded();
-        if ( _work1SymbolicLb )
-        {
-            delete[] _work1SymbolicLb;
-            _work1SymbolicLb = NULL;
-        }
-        if ( _work2SymbolicLb )
-        {
-            delete[] _work2SymbolicLb;
-            _work2SymbolicLb = NULL;
-        }
-        if ( _work1SymbolicUb )
-        {
-            delete[] _work1SymbolicUb;
-            _work1SymbolicUb = NULL;
-        }
-        if ( _work2SymbolicUb )
-        {
-            delete[] _work2SymbolicUb;
-            _work2SymbolicUb = NULL;
-        }
     }
 
     void DeepPolyWeightedSumElement::log( const String &message )

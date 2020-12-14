@@ -58,7 +58,10 @@ public:
     double getLowerBound( unsigned index ) const;
     double getUpperBound( unsigned index ) const;
 
-    virtual void log( const String &message ) = 0;
+    void setWorkingMemory( double *work1SymbolicLb, double *work1SymbolicUb,
+                           double *work2SymbolicLb, double *work2SymbolicUb,
+                           double *workSymbolicLowerBias,
+                           double *workSymbolicUpperBias );
 
 protected:
     Layer *_layer;
@@ -72,7 +75,14 @@ protected:
     double *_lb;
     double *_ub;
 
-    void allocateMemoryForUpperAndLowerBounds();
+    double * _work1SymbolicLb;
+    double * _work1SymbolicUb;
+    double * _work2SymbolicLb;
+    double * _work2SymbolicUb;
+    double * _workSymbolicLowerBias;
+    double * _workSymbolicUpperBias;
+
+    void allocateMemory();
     void freeMemoryIfNeeded();
     void getConcreteBounds();
 };

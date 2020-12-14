@@ -32,6 +32,12 @@ namespace NLR {
 
 DeepPolyAnalysis::DeepPolyAnalysis( LayerOwner *layerOwner )
     : _layerOwner( layerOwner )
+    , _work1SymbolicLb( NULL )
+    , _work1SymbolicUb( NULL )
+    , _work2SymbolicLb( NULL )
+    , _work2SymbolicUb( NULL )
+    , _workSymbolicLowerBias( NULL )
+    , _workSymbolicUpperBias( NULL )
 {
 }
 
@@ -42,6 +48,31 @@ DeepPolyAnalysis::~DeepPolyAnalysis()
 
 void DeepPolyAnalysis::freeMemoryIfNeeded()
 {
+    for ( const auto &pair : _deepPolyElements )
+    {
+        if ( pair.second )
+            delete pair.second;
+    }
+    if ( _work1SymbolicLb )
+    {
+        delete[] _work1SymbolicLb;
+        _work1SymbolicLb = NULL;
+    }
+    if ( _work2SymbolicLb )
+    {
+        delete[] _work2SymbolicLb;
+        _work2SymbolicLb = NULL;
+    }
+    if ( _work1SymbolicUb )
+    {
+        delete[] _work1SymbolicUb;
+        _work1SymbolicUb = NULL;
+    }
+    if ( _work2SymbolicUb )
+    {
+        delete[] _work2SymbolicUb;
+        _work2SymbolicUb = NULL;
+    }
 }
 
 void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
@@ -53,6 +84,7 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
 
     deepPolyStart = TimeUtils::sampleMicro();
 
+    allocateMemory( layers );
     for ( unsigned i = 0; i < _layerOwner->getNumberOfLayers(); ++i )
     {
         /*
@@ -63,10 +95,14 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
         Layer *layer = layers[i];
 
         DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
+        deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
+                                           _work2SymbolicLb, _work2SymbolicUb,
+                                           _workSymbolicLowerBias,
+                                           _workSymbolicUpperBias );
         deepPolyElement->execute( _deepPolyElements );
         _deepPolyElements[i] = deepPolyElement;
 
-        // Get the updated bound
+        // Extract updated bounds
         for ( unsigned j = 0; j < deepPolyElement->getSize(); ++j )
         {
             double lb = deepPolyElement->getLowerBound( j );
@@ -88,6 +124,37 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
 
         }
     }
+}
+
+void DeepPolyAnalysis::allocateMemory( const Map<unsigned, Layer *> &layers )
+{
+    freeMemoryIfNeeded();
+
+    // Get the maximal layer size
+    unsigned maxLayerSize = 0;
+    for ( const auto &pair : layers )
+    {
+        unsigned thisLayerSize = pair.second->getSize();
+        if ( thisLayerSize > maxLayerSize )
+            maxLayerSize = thisLayerSize;
+    }
+
+   _work1SymbolicLb= new double[maxLayerSize * maxLayerSize];
+   _work1SymbolicUb= new double[maxLayerSize * maxLayerSize];
+   _work2SymbolicLb= new double[maxLayerSize * maxLayerSize];
+   _work2SymbolicUb= new double[maxLayerSize * maxLayerSize];
+
+   _workSymbolicLowerBias = new double[maxLayerSize];
+   _workSymbolicUpperBias = new double[maxLayerSize];
+
+
+   std::fill_n( _work1SymbolicLb, maxLayerSize * maxLayerSize, 0 );
+   std::fill_n( _work1SymbolicUb, maxLayerSize * maxLayerSize, 0 );
+   std::fill_n( _work2SymbolicLb, maxLayerSize * maxLayerSize, 0 );
+   std::fill_n( _work2SymbolicUb, maxLayerSize * maxLayerSize, 0 );
+
+   std::fill_n( _workSymbolicLowerBias, maxLayerSize, 0 );
+   std::fill_n( _workSymbolicUpperBias, maxLayerSize, 0 );
 }
 
 DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )

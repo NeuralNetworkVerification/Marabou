@@ -37,7 +37,7 @@ namespace NLR {
         if ( deepPolyElementsBefore.empty() )
         {
             // If this is the first layer, just update the concrete bounds
-            allocateMemoryForUpperAndLowerBounds();
+            DeepPolyElement::allocateMemory();
             getConcreteBounds();
         } else
         {
@@ -166,7 +166,9 @@ namespace NLR {
 
     void DeepPolyReLUElement::allocateMemory()
     {
-        allocateMemoryForUpperAndLowerBounds();
+        freeMemoryIfNeeded();
+
+        DeepPolyElement::allocateMemory();
 
         unsigned size = getSize();
         _symbolicLb = new double[size];
@@ -180,6 +182,31 @@ namespace NLR {
 
         std::fill_n( _symbolicLowerBias, size, 0 );
         std::fill_n( _symbolicUpperBias, size, 0 );
+    }
+
+    void DeepPolyReLUElement::freeMemoryIfNeeded()
+    {
+        DeepPolyElement::freeMemoryIfNeeded();
+        if ( _symbolicLb )
+        {
+            delete[] _symbolicLb;
+            _symbolicLb = NULL;
+        }
+        if ( _symbolicUb )
+        {
+            delete[] _symbolicUb;
+            _symbolicUb = NULL;
+        }
+        if ( _symbolicLowerBias )
+        {
+            delete[] _symbolicLowerBias;
+            _symbolicLowerBias = NULL;
+        }
+        if ( _symbolicUpperBias )
+        {
+            delete[] _symbolicUpperBias;
+            _symbolicUpperBias = NULL;
+        }
     }
 
     void DeepPolyReLUElement::log( const String &message )

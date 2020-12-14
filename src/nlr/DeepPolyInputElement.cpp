@@ -40,7 +40,7 @@ namespace NLR {
         }
         // Update the concrete bounds
         freeMemoryIfNeeded();
-        allocateMemoryForUpperAndLowerBounds();
+        allocateMemory();
         getConcreteBounds();
         log( "Executing - done" );
     }

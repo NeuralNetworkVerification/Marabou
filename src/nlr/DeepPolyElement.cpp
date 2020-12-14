@@ -25,6 +25,12 @@ namespace NLR {
         , _symbolicUpperBias( NULL )
         , _lb( NULL )
         , _ub( NULL )
+        , _work1SymbolicLb( NULL )
+        , _work1SymbolicUb( NULL )
+        , _work2SymbolicLb( NULL )
+        , _work2SymbolicUb( NULL )
+        , _workSymbolicLowerBias( NULL )
+        , _workSymbolicUpperBias( NULL )
     {};
 
     unsigned DeepPolyElement::getSize() const
@@ -84,8 +90,10 @@ namespace NLR {
         }
     }
 
-    void DeepPolyElement::allocateMemoryForUpperAndLowerBounds()
+    void DeepPolyElement::allocateMemory()
     {
+        freeMemoryIfNeeded();
+
         unsigned size = getSize();
         _lb = new double[size];
         _ub = new double[size];
@@ -96,30 +104,6 @@ namespace NLR {
 
     void DeepPolyElement::freeMemoryIfNeeded()
     {
-        if ( _symbolicLb )
-        {
-            delete[] _symbolicLb;
-            _symbolicLb = NULL;
-        }
-
-        if ( _symbolicUb )
-        {
-            delete[] _symbolicUb;
-            _symbolicUb = NULL;
-        }
-
-        if ( _symbolicLowerBias )
-        {
-            delete[] _symbolicLowerBias;
-            _symbolicLowerBias = NULL;
-        }
-
-        if ( _symbolicUpperBias )
-        {
-            delete[] _symbolicUpperBias;
-            _symbolicUpperBias = NULL;
-        }
-
         if ( _lb )
         {
             delete[] _lb;
@@ -131,6 +115,21 @@ namespace NLR {
             delete[] _ub;
             _ub = NULL;
         }
+    }
+
+    void DeepPolyElement::setWorkingMemory( double *work1SymbolicLb,
+                                            double *work1SymbolicUb,
+                                            double *work2SymbolicLb,
+                                            double *work2SymbolicUb,
+                                            double *workSymbolicLowerBias,
+                                            double *workSymbolicUpperBias )
+    {
+        _work1SymbolicLb = work1SymbolicLb;
+        _work1SymbolicUb = work1SymbolicUb;
+        _work2SymbolicLb = work2SymbolicLb;
+        _work2SymbolicUb = work2SymbolicUb;
+        _workSymbolicLowerBias = workSymbolicLowerBias;
+        _workSymbolicUpperBias = workSymbolicUpperBias;
     }
 
 } // namespace NLR
