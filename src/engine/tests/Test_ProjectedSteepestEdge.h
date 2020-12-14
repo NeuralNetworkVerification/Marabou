@@ -41,7 +41,7 @@ public:
     void test_variable_selection()
     {
         MockTableau tableau;
-        tableau.setDimensions( 2, 5 );
+        tableau.setDimensions( 2, 5, 2, 5 );
 
         ProjectedSteepestEdgeRule pse;
 

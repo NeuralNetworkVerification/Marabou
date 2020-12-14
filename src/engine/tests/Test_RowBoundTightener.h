@@ -45,7 +45,7 @@ public:
     {
         RowBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5, 2, 5 );
 
         // Current bounds:
         //  0 <= x0 <= 0
@@ -107,7 +107,7 @@ public:
     {
         RowBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5, 2, 5 );
 
         // Current bounds:
         //    0  <= x0 <= 0
@@ -158,7 +158,7 @@ public:
     {
         RowBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5, 2, 5 );
 
         tableau->setLowerBound( 0, -200 );
         tableau->setUpperBound( 0, 0 );
@@ -203,7 +203,7 @@ public:
     {
         RowBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5, 2, 5 );
 
         tableau->setLowerBound( 0, -112 );
         tableau->setUpperBound( 0, 101 );
@@ -240,7 +240,7 @@ public:
     {
         RowBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 1, 5 );
+        tableau->setDimensions( 1, 5, 1, 5 );
 
         tableau->setLowerBound( 0, 0 );
         tableau->setUpperBound( 0, 3 );
@@ -301,7 +301,7 @@ public:
     {
         RowBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5, 2, 5 );
 
         tableau->setLowerBound( 0, 0 );
         tableau->setUpperBound( 0, 3 );

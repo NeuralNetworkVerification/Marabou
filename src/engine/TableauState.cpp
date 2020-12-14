@@ -135,54 +135,56 @@ TableauState::~TableauState()
     }
 }
 
-void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle )
+void TableauState::setDimensions( unsigned m, unsigned n, unsigned m_alloc, unsigned n_alloc, const IBasisFactorization::BasisColumnOracle &oracle )
 {
     _m = m;
     _n = n;
+    _m_alloc = m_alloc;
+    _n_alloc = n_alloc;
 
     _A = new CSRMatrix();
     if ( !_A )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::A" );
 
-    _sparseColumnsOfA = new SparseUnsortedList *[n];
+    _sparseColumnsOfA = new SparseUnsortedList *[n_alloc];
     if ( !_sparseColumnsOfA )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA" );
 
-    for ( unsigned i = 0; i < n; ++i )
+    for ( unsigned i = 0; i < n_alloc; ++i )
     {
         _sparseColumnsOfA[i] = new SparseUnsortedList;
         if ( !_sparseColumnsOfA[i] )
             throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
     }
 
-    _sparseRowsOfA = new SparseUnsortedList *[m];
+    _sparseRowsOfA = new SparseUnsortedList *[m_alloc];
     if ( !_sparseRowsOfA )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA" );
 
-    for ( unsigned i = 0; i < m; ++i )
+    for ( unsigned i = 0; i < m_alloc; ++i )
     {
         _sparseRowsOfA[i] = new SparseUnsortedList;
         if ( !_sparseRowsOfA[i] )
             throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA[i]" );
     }
 
-    _denseA = new double[m*n];
+    _denseA = new double[m_alloc*n_alloc];
     if ( !_denseA )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::denseA" );
 
-    _b = new double[m];
+    _b = new double[m_alloc];
     if ( !_b )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::b" );
 
-    _lowerBounds = new double[n];
+    _lowerBounds = new double[n_alloc];
     if ( !_lowerBounds )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::lowerBounds" );
 
-    _upperBounds = new double[n];
+    _upperBounds = new double[n_alloc];
     if ( !_upperBounds )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::upperBounds" );
 
-    _basicAssignment = new double[m];
+    _basicAssignment = new double[m_alloc];
     if ( !_basicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::assignment" );
 
@@ -190,7 +192,7 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_nonBasicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicAssignment" );
 
-    _basicIndexToVariable = new unsigned[m];
+    _basicIndexToVariable = new unsigned[m_alloc];
     if ( !_basicIndexToVariable )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basicIndexToVariable" );
 
@@ -198,7 +200,7 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_nonBasicIndexToVariable )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicIndexToVariable" );
 
-    _variableToIndex = new unsigned[n];
+    _variableToIndex = new unsigned[n_alloc];
     if ( !_variableToIndex )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::variableToIndex" );
 

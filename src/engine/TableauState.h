@@ -41,13 +41,15 @@ public:
     TableauState();
     ~TableauState();
 
-    void setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle );
+    void setDimensions( unsigned m, unsigned n, unsigned m_alloc, unsigned n_alloc, const IBasisFactorization::BasisColumnOracle &oracle );
 
     /*
       The dimensions of matrix A
     */
     unsigned _m;
     unsigned _n;
+    unsigned _m_alloc;
+    unsigned _n_alloc;
 
     /*
       The matrix

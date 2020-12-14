@@ -46,6 +46,7 @@ public:
     SparseUnsortedList( unsigned size );
     SparseUnsortedList( const double *V, unsigned size );
     void initialize( const double *V, unsigned size );
+    void initialize( unsigned size );
     void initializeToEmpty();
 
     /*

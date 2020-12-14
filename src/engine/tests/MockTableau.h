@@ -111,13 +111,15 @@ public:
     bool setDimensionsCalled;
     unsigned lastM;
     unsigned lastN;
-    void setDimensions( unsigned m, unsigned n )
+    void setDimensions( unsigned m, unsigned n, unsigned alloc_m, unsigned alloc_n )
     {
         TS_ASSERT( !initializeTableauCalled );
         setDimensionsCalled = true;
         lastRightHandSide = new double[m];
         lastM = m;
         lastN = n;
+        (void)alloc_m;
+        (void)alloc_n;
         lastEntries = new double[m*n];
         std::fill( lastEntries, lastEntries + ( n * m ), 0.0 );
 

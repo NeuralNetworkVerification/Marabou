@@ -35,6 +35,12 @@ public:
                            SmtCore &smtCore,
                            RestoreBasics restoreBasics );
 
+    void restoreTableau( IEngine &engine,
+                           ITableau &tableau,
+                           SmtCore &smtCore,
+                           RestoreBasics restoreBasics );
+
+
 private:
     EngineState _initialEngineState;
 };

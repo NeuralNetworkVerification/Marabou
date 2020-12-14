@@ -212,6 +212,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 _smtCore.performSplit();
                 splitJustPerformed = true;
+
+                _precisionRestorer.restoreTableau( *this, *_tableau, _smtCore, PrecisionRestorer::RESTORE_BASICS );
+                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+                _rowBoundTightener->clear();
+                _constraintBoundTightener->resetBounds();
+
                 continue;
             }
 
@@ -1008,7 +1014,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     unsigned m = equations.size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
-    _tableau->setDimensions( m, n );
+    _tableau->setDimensions( m, n, m, n );
 
     adjustWorkMemorySize();
 

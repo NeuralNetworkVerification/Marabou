@@ -54,7 +54,7 @@ public:
 
         TS_ASSERT( !dantzigsRule.select( *tableau, candidates, excluded ) );
 
-        tableau->setDimensions( 10, 100 );
+        tableau->setDimensions( 10, 100, 10, 100 );
 
         candidates.append( 2 );
         candidates.append( 3 );
