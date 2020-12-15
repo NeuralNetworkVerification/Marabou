@@ -40,6 +40,7 @@ class mnistProp:
     cfg_dis_b = False
     cfg_fresh = False
     numClones = 0
+    numInputQueries = 0
     numCex = 0
     origMConv = None
     origMDense = None
@@ -234,6 +235,8 @@ def cexToImage(net, valDict,xAdv):
     return cex, cexPrediction
     
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
+    #runName = runName + "_" + str(mnistProps.numInputQueries)
+    #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
     logger.info("Started converting model ({}) to ONNX".format(model.name))
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
     modelOnnxName = mnistProp.output_model_path(model)
