@@ -1,5 +1,6 @@
 
 
+
 import sys
 import os
 import tensorflow as tf
@@ -86,6 +87,8 @@ plt.savefig(fName)
 printLog("Starting Abstractions")
 
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax))
+#print(len(maskList))
+#print(maskList)
 maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))]
 printLog("Created {} masks".format(len(maskList)))
 
