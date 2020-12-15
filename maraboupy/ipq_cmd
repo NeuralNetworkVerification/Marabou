@@ -1,0 +1,2 @@
+# ./Marabou --input-query ../maraboupy/IPQ_runMarabouOnKeras_0_beforeSolve
+gdb -ex=r --args ./Marabou --input-query ../maraboupy/IPQ_runMarabouOnKeras_0_beforeSolve
