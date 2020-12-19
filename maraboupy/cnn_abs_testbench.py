@@ -89,7 +89,8 @@ plt.savefig(fName)
 
 printLog("Starting Abstractions")
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax))
-maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))]
+#maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))] FIXME this is temporary
+maskList = [np.ones(maskList[0].shape)]
 printLog("Created {} masks".format(len(maskList)))
 
 currentMbouRun = 0
@@ -99,7 +100,7 @@ successful = None
 reachedFinal = False
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
-    printLog("\n\n\n ----- Solving mask number {} ----- \n\n\n".format(i))
+    printLog("\n\n\n ----- Solving mask number {} ----- \n\n\n {} \n\n\n".format(i, mask))
     startLocal = time.time()
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_{}".format(currentMbouRun))
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i, time.time()-startLocal, time.time()-startTotal))

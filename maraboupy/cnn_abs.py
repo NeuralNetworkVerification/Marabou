@@ -10,6 +10,8 @@ from itertools import product, chain
 import keras2onnx
 import tensorflow as tf
 from maraboupy import MarabouNetworkONNX as monnx
+from maraboupy import MarabouCore
+from maraboupy import MarabouUtils
 from tensorflow.keras import datasets, layers, models
 import numpy as np
 import logging
@@ -130,7 +132,7 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
 
         clnM.build(input_shape=mnistProp.featureShape)
         clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
-        #clnM.summary()
+        clnM.summary()
 
         for l,w in toSetWeights.items():
             clnM.get_layer(name=l).set_weights(w)    
@@ -160,7 +162,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM = tf.keras.Sequential(
             [
                 tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"),
-                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1", ),
+                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1"),
                 layers.MaxPooling2D(pool_size=(3,3), name="mp1"),
                 layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c2"),
                 layers.MaxPooling2D(pool_size=(3,3), name="mp2"),
@@ -188,6 +190,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         exit()
     else:
         origM = load_model(savedModelOrig)
+        origM.summary()
 
         #FIXME
         #w0 = np.ones(origM.get_layer(name="c2").get_weights()[0].shape)
@@ -216,7 +219,9 @@ def setAdversarial(net, x, inDist, yCorrect, yBad):
     inAsNP = np.array(net.inputVars)
     x = x.reshape(inAsNP.shape)
     xDown, xUp = getBoundsInftyBall(x, inDist)
-    for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):    
+    for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
+        net.lowerBounds.pop(i.item(), None)
+        net.upperBounds.pop(i.item(), None)        
         net.setLowerBound(i.item(),d.item())
         net.setUpperBound(i.item(),u.item())
     for j,o in enumerate(np.nditer(np.array(net.outputVars))):
@@ -232,6 +237,86 @@ def cexToImage(net, valDict,xAdv):
     print(np.array(net.outputVars))
     cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction
+
+def setCOIBoundes(net, init):
+
+    for eq in net.equList:
+        print(eq.addendList, eq.scalar, eq.EquationType)
+    for maxArgs, maxOut in net.maxList:
+        print(maxArgs, maxOut)
+    for l in [net.reluList, net.absList, net.signList]:        
+        for vin,vout in l:
+            print(vin,vout)
+    reach = set(init)
+    lastLen = 0
+    while len(reach) > lastLen:
+        lastLen = len(reach)
+        reachPrev = reach.copy()
+        for eq in net.equList:
+            if (eq.addendList[-1][1] in reachPrev) and (eq.EquationType == MarabouCore.Equation.EQ):
+                for w,v in eq.addendList[:-1]:
+                    if w != 0:
+                        reach.add(v)
+        for maxArgs, maxOut in net.maxList:
+            if maxOut in reachPrev:            
+                [reach.add(arg) for arg in maxArgs]
+        for vin,vout in net.reluList:
+            if vout in reachPrev:
+                reach.add(vin)
+        for vin,vout in net.absList:
+            if vout in reachPrev:
+                reach.add(vin)
+        for vin,vout in net.signList:
+            if vout in reachPrev:
+                reach.add(vin)
+        if len(net.disjunctionList) > 0:
+            raise Exception("Not implemented")
+    unreach = set([v for v in range(net.numVars) if v not in reach])
+    newEquList = list()
+    newMaxList = list()
+    newReluList = list()
+    newAbsList = list()
+    newSignList = list()    
+    for v in unreach:        
+        for eq in net.equList:
+            if (eq.EquationType == MarabouCore.Equation.EQ): #FIXME should suport other types?
+                print(eq.addendList)
+                assert (eq.addendList[-1][1] not in unreach) or all([el[1] in unreach for el in eq.addendList[:-1]])
+                newEq = MarabouUtils.Equation()
+                newEq.scalar = eq.scalar
+                newEq.EquationType = MarabouCore.Equation.EQ
+                newEq.addendList = [el for el in eq.addendList if el[1] not in unreach]
+                newEquList.append(newEq)        
+        for maxArgs, maxOut in net.maxList:
+            assert (maxOut not in unreach) or all([arg in unreach for arg in maxArgs])
+            newMaxArgs = [arg for arg in maxArgs if arg not in unreach]
+            newMaxList.append((newMaxArgs, maxOut))
+        for vin,vout in net.reluList:
+            assert (vin in unreach) == (vout in unreach)
+            if vout not in unreach:
+                newReluList.append((vin,vout))
+        for vin,vout in net.absList:
+            assert (vin in unreach) == (vout in unreach)
+            if vout not in unreach:
+                newAbsList.append((vin,vout))        
+        for vin,vout in net.signList:
+            assert (vin in unreach) == (vout in unreach)
+            if vout not in unreach:
+                newSignList.append((vin,vout))              
+    net.equList  = newEquList
+    net.maxList  = newMaxList
+    net.reluList = newReluList
+    net.absList  = newAbsList
+    net.signList = newSignList
+    print("Unreach={}".format(unreach))
+    #for v in unreach:
+        #net.lowerBounds.pop(v, None)
+        #net.upperBounds.pop(v, None)
+        #net.setLowerBound(v,0.0)
+        #net.setUpperBound(v,0.0)
+    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+    exit()
+        
     
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
@@ -240,7 +325,8 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)        
+    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+    setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
     modelOnnxMarabou.saveQuery(runName+"_beforeSolve")    
     vals, stats = modelOnnxMarabou.solve(verbose=False)
     sat = len(vals) > 0        
