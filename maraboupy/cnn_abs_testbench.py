@@ -10,6 +10,7 @@ import onnx
 import onnxruntime
 from cnn_abs import *
 import logging
+import time
 
 #sys.path.append("/cs/labs/guykatz/matanos/Marabou")
 #sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
@@ -43,6 +44,8 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
+startTotal = time.time()
+
 printLog("Started model building")
 modelOrig, replaceLayerName = genCnnForAbsTest()
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
@@ -57,7 +60,7 @@ mnistProp.origMDense = modelOrigDense
 printLog("Finished model building")
 
 printLog("Choosing adversarial example")
-inDist = 0.1
+inDist = 0.1 #0.05
 xAdvInds = range(mnistProp.numTestSamples)
 xAdvInd = xAdvInds[0]
 xAdv = mnistProp.x_test[xAdvInd]
@@ -85,10 +88,7 @@ plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
 printLog("Starting Abstractions")
-
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax))
-#print(len(maskList))
-#print(maskList)
 maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))]
 printLog("Created {} masks".format(len(maskList)))
 
@@ -99,7 +99,10 @@ successful = None
 reachedFinal = False
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+    printLog("\n\n\n ----- Solving mask number {} ----- \n\n\n".format(i))
+    startLocal = time.time()
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_{}".format(currentMbouRun))
+    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i, time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1
     isSporious = None
     if sat:

@@ -88,7 +88,6 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
                     replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch].item()
                     replaceB[tCoorFlat] = origB[out_ch]
 
-    # = np.tile(origB, np.prod(convOutShape[:-1]))
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
@@ -157,7 +156,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
     #https://keras.io/examples/vision/mnist_convnet/
 
     if cfg_freshModelOrig:
-        num_ch = 2 if cfg_limitCh else 32
+        num_ch = 1 if cfg_limitCh else 32
         origM = tf.keras.Sequential(
             [
                 tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"),
@@ -166,7 +165,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
                 layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c2"),
                 layers.MaxPooling2D(pool_size=(3,3), name="mp2"),
                 layers.Flatten(name="f1"),
-                layers.Dropout(0.5, name="do1"),
+                layers.Dense(40, activation="relu", name="fc1"),
+                #layers.Dropout(0.5, name="do1"),
                 #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1")
                 layers.Dense(mnistProp.num_classes, activation=None, name="sm1")
             ],
@@ -185,7 +185,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
         origM.save(savedModelOrig)
-        
+        exit()
     else:
         origM = load_model(savedModelOrig)
 
@@ -199,9 +199,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
-
-    rplcLayerName = "c2"
-    
+        
+    rplcLayerName = "c2"    
     return origM, rplcLayerName
 
 def getBoundsInftyBall(x, r, pos=True):
@@ -237,26 +236,20 @@ def cexToImage(net, valDict,xAdv):
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
     #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
-    logger.info("Started converting model ({}) to ONNX".format(model.name))
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
-    logger.info("Finished converting model ({}) to ONNX. Output file is {}".format(model.name, modelOnnxName))
-    logger.info("Started converting model ({}) from ONNX to MarabouNetwork".format(model.name))
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    logger.info("Finished converting model ({}) from ONNX to MarabouNetwork".format(model.name))
-    logger.info("Started solving query ({})".format(model.name))
+    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)        
     modelOnnxMarabou.saveQuery(runName+"_beforeSolve")    
     vals, stats = modelOnnxMarabou.solve(verbose=False)
+    sat = len(vals) > 0        
+    if not sat:
+        return False, np.array([]), np.array([]), dict(), dict()  
     inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
     outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     modelOnnxMarabou.saveQuery(runName+"_AfterSolve")
     modelOnnxMarabou.saveQuery(runName)
-    sat = len(vals) > 0
-    logger.info("Finished solving query ({}). Result is ".format(model.name, 'SAT' if sat else 'UNSAT'))
-    if not sat:
-        return False, np.array([]), np.array([])
     cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv)
     fName = "Cex_{}.png".format(mnistProp.numCex)
     mnistProp.numCex += 1
@@ -266,8 +259,6 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
         origMConvPrediction = mnistProp.origMConv.predict(np.array([cex])).argmax()
         origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
         print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
-        #raise Exception("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
-    logger.info("Printing counter example: {}. MarabouY={}, modelY={}".format(fName,mbouPrediction, kerasPrediction))        
     plt.title('CEX, MarabouY={}, modelY={}'.format(mbouPrediction, kerasPrediction))
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
     plt.savefig(fName)
@@ -308,15 +299,10 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         return (outputDictInner == outputDict) and equality 
 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
-    if not inBoundsInftyBall(x, inDist, cex):
-        logger.info("CEX out of bounds")
+    if not inBoundsInftyBall(x, inDist, cex):        
         raise Exception("CEX out of bounds")
-    if model.predict(np.array([cex])).argmax() == yCorrect:
-        logger.info("Found sporious CEX")
+    if model.predict(np.array([cex])).argmax() == yCorrect:        
         return True
-    logger.info("Found real, not sporious, CEX")
-    if model.predict(np.array([cex])).argmax() != yBad:
-        logger.info("CEX prediction value is not the bad value described in the adversarial property.")
     return False
 
 
@@ -338,24 +324,23 @@ def sortActMapReverse(actMap):
     
 def sortReverseNeuronsByActivation(intermidModel, samples):
     actMap = meanActivation(intermidModel.predict(samples))
-    print("actMap={}".format(actMap))
     sortedIndReverse = sortActMapReverse(actMap)
-    print("sortedIndReverse={}".format(sortedIndReverse))
     assert len(sortedIndReverse) == actMap.size
     return sortedIndReverse
 
 def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
     numberOfNeurons = 0
-    print("maskShape={}".format(maskShape))
     mask = np.zeros(maskShape)
     numNeurons = len(sortedIndReverse)
+    masks = list()
     while numberOfNeurons < numNeurons and len(sortedIndReverse) > 0:
         toAdd = min(stepSize, len(sortedIndReverse))
         for coor in sortedIndReverse[:toAdd]:
             mask[tuple(coor)] = 1
         numberOfNeurons += toAdd
         sortedIndReverse = sortedIndReverse[toAdd:]
-        yield mask
+        masks.append(mask.copy())
+    return masks
     
 def genMaskByActivation(intermidModel, features, stepSize=10):
     sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
