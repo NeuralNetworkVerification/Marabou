@@ -23,6 +23,8 @@ if(index EQUAL -1)
     message(FATAL_ERROR "python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
 endif()
 
+set(CMAKE_BUILD_TYPE "Debug")
+
 set(MARABOU_LIB MarabouHelper)
 set(MARABOU_TEST_LIB MarabouHelperTest)
 set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
