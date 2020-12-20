@@ -253,7 +253,7 @@ def setCOIBoundes(net, init):
         lastLen = len(reach)
         reachPrev = reach.copy()
         for eq in net.equList:
-            if (eq.addendList[-1][1] in reachPrev) and (eq.EquationType == MarabouCore.Equation.EQ):
+            if (eq.addendList[-1][1] in reachPrev) and (eq.addendList[-1][0] == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
                 for w,v in eq.addendList[:-1]:
                     if w != 0:
                         reach.add(v)
@@ -279,14 +279,18 @@ def setCOIBoundes(net, init):
     newSignList = list()    
     for v in unreach:        
         for eq in net.equList:
-            if (eq.EquationType == MarabouCore.Equation.EQ): #FIXME should suport other types?
+            if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
                 print(eq.addendList)
-                assert (eq.addendList[-1][1] not in unreach) or all([el[1] in unreach for el in eq.addendList[:-1]])
                 newEq = MarabouUtils.Equation()
                 newEq.scalar = eq.scalar
                 newEq.EquationType = MarabouCore.Equation.EQ
                 newEq.addendList = [el for el in eq.addendList if el[1] not in unreach]
-                newEquList.append(newEq)        
+                if (eq.addendList[-1][1] in unreach) or len(newEq.addendList) == 1:
+                    continue
+                if newEq.addendList:
+                    newEquList.append(newEq)
+            else:
+                newEquList.append(eq)
         for maxArgs, maxOut in net.maxList:
             assert (maxOut not in unreach) or all([arg in unreach for arg in maxArgs])
             newMaxArgs = [arg for arg in maxArgs if arg not in unreach]
