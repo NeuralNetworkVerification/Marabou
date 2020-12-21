@@ -239,13 +239,19 @@ def cexToImage(net, valDict,xAdv):
 
 def setCOIBoundes(net, init):
 
-    for eq in net.equList:
-        print(eq.addendList, eq.scalar, eq.EquationType)
-    for maxArgs, maxOut in net.maxList:
-        print(maxArgs, maxOut)
-    for l in [net.reluList, net.absList, net.signList]:        
-        for vin,vout in l:
-            print(vin,vout)
+    if False:
+        for eq in net.equList:
+            print(eq.addendList, eq.scalar, eq.EquationType)
+        for maxArgs, maxOut in net.maxList:
+                print(maxArgs, maxOut)
+        for l in [net.reluList, net.absList, net.signList]:        
+            for vin,vout in l:
+                print(vin,vout)
+    print("len(net.equList)={}".format(len(net.equList)))
+    print("len(net.maxList)={}".format(len(net.maxList)))
+    print("len(net.reluList)={}".format(len(net.reluList)))
+    print("len(net.absList)={}".format(len(net.absList)))
+    print("len(net.signList)={}".format(len(net.signList)))
     reach = set(init)
     lastLen = 0
     while len(reach) > lastLen:
@@ -276,49 +282,51 @@ def setCOIBoundes(net, init):
     newReluList = list()
     newAbsList = list()
     newSignList = list()    
-    for v in unreach:        
-        for eq in net.equList:
-            if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
-                print(eq.addendList)
-                newEq = MarabouUtils.Equation()
-                newEq.scalar = eq.scalar
-                newEq.EquationType = MarabouCore.Equation.EQ
-                newEq.addendList = [el for el in eq.addendList if el[1] not in unreach]
-                if (eq.addendList[-1][1] in unreach) or len(newEq.addendList) == 1:
-                    continue
-                if newEq.addendList:
-                    newEquList.append(newEq)
-            else:
-                newEquList.append(eq)
-        for maxArgs, maxOut in net.maxList:
-            assert (maxOut not in unreach) or all([arg in unreach for arg in maxArgs])
-            newMaxArgs = [arg for arg in maxArgs if arg not in unreach]
-            newMaxList.append((newMaxArgs, maxOut))
-        for vin,vout in net.reluList:
-            assert (vin in unreach) == (vout in unreach)
-            if vout not in unreach:
-                newReluList.append((vin,vout))
-        for vin,vout in net.absList:
-            assert (vin in unreach) == (vout in unreach)
-            if vout not in unreach:
-                newAbsList.append((vin,vout))        
-        for vin,vout in net.signList:
-            assert (vin in unreach) == (vout in unreach)
-            if vout not in unreach:
-                newSignList.append((vin,vout))              
+    for eq in net.equList:
+        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
+            #print(eq.addendList)
+            newEq = MarabouUtils.Equation()
+            newEq.scalar = eq.scalar
+            newEq.EquationType = MarabouCore.Equation.EQ
+            newEq.addendList = [el for el in eq.addendList if el[1] not in unreach]
+            if (eq.addendList[-1][1] in unreach) or len(newEq.addendList) == 1:
+                continue
+            if newEq.addendList:
+                newEquList.append(newEq)
+        else:
+            newEquList.append(eq)
+    for maxArgs, maxOut in net.maxList:
+        assert (maxOut not in unreach) or all([arg in unreach for arg in maxArgs])
+        newMaxArgs = set([arg for arg in maxArgs if arg not in unreach])
+        newMaxList.append((newMaxArgs, maxOut))
+    for vin,vout in net.reluList:
+        assert (vin in unreach) == (vout in unreach)
+        if vout not in unreach:
+            newReluList.append((vin,vout))
+    for vin,vout in net.absList:
+        assert (vin in unreach) == (vout in unreach)
+        if vout not in unreach:
+            newAbsList.append((vin,vout))        
+    for vin,vout in net.signList:
+        assert (vin in unreach) == (vout in unreach)
+        if vout not in unreach:
+            newSignList.append((vin,vout))              
     net.equList  = newEquList
     net.maxList  = newMaxList
     net.reluList = newReluList
     net.absList  = newAbsList
     net.signList = newSignList
-    print("Unreach={}".format(unreach))
+    print("len(net.equList)={}".format(len(net.equList)))
+    print("len(net.maxList)={}".format(len(net.maxList)))
+    print("len(net.reluList)={}".format(len(net.reluList)))
+    print("len(net.absList)={}".format(len(net.absList)))
+    print("len(net.signList)={}".format(len(net.signList)))
     #for v in unreach:
         #net.lowerBounds.pop(v, None)
         #net.upperBounds.pop(v, None)
         #net.setLowerBound(v,0.0)
         #net.setUpperBound(v,0.0)
-    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
-        
+    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))        
     
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
