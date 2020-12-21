@@ -231,27 +231,18 @@ def setAdversarial(net, x, inDist, yCorrect, yBad):
     net.addInequality([yCorrectVar, yBadVar], [1,-1], 0) # correct - bad <= 0
     return net
     
-def cexToImage(net, valDict,xAdv):
-    cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)
-    print(np.array(net.outputVars))
-    cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
+def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
+    if useMapping:
+        lBounds = getBoundsInftyBall(xAdv, inDist)[0]
+        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
+        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)      
+    else:
+        cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)        
+        cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction
 
 def setCOIBoundes(net, init):
-
-    if False:
-        for eq in net.equList:
-            print(eq.addendList, eq.scalar, eq.EquationType)
-        for maxArgs, maxOut in net.maxList:
-                print(maxArgs, maxOut)
-        for l in [net.reluList, net.absList, net.signList]:        
-            for vin,vout in l:
-                print(vin,vout)
-    print("len(net.equList)={}".format(len(net.equList)))
-    print("len(net.maxList)={}".format(len(net.maxList)))
-    print("len(net.reluList)={}".format(len(net.reluList)))
-    print("len(net.absList)={}".format(len(net.absList)))
-    print("len(net.signList)={}".format(len(net.signList)))
+    
     reach = set(init)
     lastLen = 0
     while len(reach) > lastLen:
@@ -277,56 +268,58 @@ def setCOIBoundes(net, init):
         if len(net.disjunctionList) > 0:
             raise Exception("Not implemented")
     unreach = set([v for v in range(net.numVars) if v not in reach])
+
+    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))        
+
+    reachList = list(reach)
+    reachList.sort()
+    reachDict = {v:i for i,v in enumerate(reachList)}
+    assert reach == set(reachDict.keys())
+    tr = lambda v: reachDict[v] if v in reachDict else -1
+    
     newEquList = list()
-    newMaxList = list()
-    newReluList = list()
-    newAbsList = list()
-    newSignList = list()    
+    for vin,vout in net.reluList:
+        assert (vin not in reach) == (vout not in reach)
+    for vin,vout in net.absList:
+        assert (vin not in reach) == (vout not in reach)
+    for vin,vout in net.signList:
+        assert (vin not in reach) == (vout not in reach)
+    
     for eq in net.equList:
-        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
-            #print(eq.addendList)
+        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?            
             newEq = MarabouUtils.Equation()
             newEq.scalar = eq.scalar
             newEq.EquationType = MarabouCore.Equation.EQ
-            newEq.addendList = [el for el in eq.addendList if el[1] not in unreach]
-            if (eq.addendList[-1][1] in unreach) or len(newEq.addendList) == 1:
+            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in reach]
+            if (eq.addendList[-1][1] not in reach) or len(newEq.addendList) == 1:
                 continue
             if newEq.addendList:
                 newEquList.append(newEq)
         else:
             newEquList.append(eq)
-    for maxArgs, maxOut in net.maxList:
-        assert (maxOut not in unreach) or all([arg in unreach for arg in maxArgs])
-        newMaxArgs = set([arg for arg in maxArgs if arg not in unreach])
-        newMaxList.append((newMaxArgs, maxOut))
-    for vin,vout in net.reluList:
-        assert (vin in unreach) == (vout in unreach)
-        if vout not in unreach:
-            newReluList.append((vin,vout))
-    for vin,vout in net.absList:
-        assert (vin in unreach) == (vout in unreach)
-        if vout not in unreach:
-            newAbsList.append((vin,vout))        
-    for vin,vout in net.signList:
-        assert (vin in unreach) == (vout in unreach)
-        if vout not in unreach:
-            newSignList.append((vin,vout))              
     net.equList  = newEquList
-    net.maxList  = newMaxList
-    net.reluList = newReluList
-    net.absList  = newAbsList
-    net.signList = newSignList
+    net.maxList  = [({tr(arg) for arg in maxArgs if arg in reach}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in reach and any([arg in reach for arg in maxArgs]))]
+    net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in reach]
+    net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in reach]
+    net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in reach]
+    net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in reach}
+    net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in reach}
+    inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
+    outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
+    net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in reach])]
+    net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in reach])
+    net.numVars = len(reachList)
     print("len(net.equList)={}".format(len(net.equList)))
     print("len(net.maxList)={}".format(len(net.maxList)))
     print("len(net.reluList)={}".format(len(net.reluList)))
     print("len(net.absList)={}".format(len(net.absList)))
     print("len(net.signList)={}".format(len(net.signList)))
-    #for v in unreach:
-        #net.lowerBounds.pop(v, None)
-        #net.upperBounds.pop(v, None)
-        #net.setLowerBound(v,0.0)
-        #net.setUpperBound(v,0.0)
-    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))        
+    print("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
+    print("len(net.upperBounds)={}".format(len(net.upperBounds)))
+    print("len(net.inputVars)={}".format(len(net.inputVars)))
+    print("len(net.outputVars)={}".format(len(net.outputVars)))    
+    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+    return inputVarsMapping, outputVarsMapping
     
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
@@ -336,7 +329,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
+    inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
     modelOnnxMarabou.saveQuery(runName+"_beforeSolve")    
     vals, stats = modelOnnxMarabou.solve(verbose=False)
     sat = len(vals) > 0        
@@ -346,7 +339,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     modelOnnxMarabou.saveQuery(runName+"_AfterSolve")
     modelOnnxMarabou.saveQuery(runName)
-    cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv)
+    cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping)
     fName = "Cex_{}.png".format(mnistProp.numCex)
     mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
