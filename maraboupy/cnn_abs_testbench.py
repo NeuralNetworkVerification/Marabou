@@ -90,7 +90,7 @@ plt.savefig(fName)
 printLog("Starting Abstractions")
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax))
 #maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))] FIXME this is temporary
-maskList = [np.ones(maskList[0].shape)]
+#maskList = [np.ones(maskList[0].shape)]
 printLog("Created {} masks".format(len(maskList)))
 
 currentMbouRun = 0
