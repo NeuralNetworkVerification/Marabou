@@ -187,7 +187,6 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
         origM.save(savedModelOrig)
-        exit()
     else:
         origM = load_model(savedModelOrig)
         origM.summary()
@@ -319,7 +318,6 @@ def setCOIBoundes(net, init):
         #net.setLowerBound(v,0.0)
         #net.setUpperBound(v,0.0)
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
-    exit()
         
     
 def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
