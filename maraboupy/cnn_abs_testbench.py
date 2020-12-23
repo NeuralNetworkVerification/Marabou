@@ -100,29 +100,33 @@ successful = None
 reachedFinal = False
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
-    printLog("\n\n\n ----- Solving mask number {} ----- \n\n\n {} \n\n\n".format(i, mask))
+    printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_{}".format(currentMbouRun))
-    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i, time.time()-startLocal, time.time()-startTotal))
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_mask_{}".format(i+1), coi=True) #FIXME coi
+    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1
     isSporious = None
+    #continue #FIXME
     if sat:
-        printLog("Found CEX in mask number {} out of {}, checking if sporious.".format(i, len(maskList)))
+        printLog("Found CEX in mask number {} out of {}, checking if sporious.".format(i+1, len(maskList)))
         isSporious = isCEXSporious(modelOrigDense, xAdv, inDist, yMax, ySecond, cex, logger)
-        printLog("CEX in mask number {} out of {} is {}sporious.".format(i, len(maskList), "" if isSporious else "not "))        
+        printLog("CEX in mask number {} out of {} is {}sporious.".format(i+1, len(maskList), "" if isSporious else "not "))        
         if not isSporious:
-            printLog("Found real CEX in mask number {} out of {}".format(i, len(maskList)))
+            printLog("Found real CEX in mask number {} out of {}".format(i+1, len(maskList)))
             printLog("successful={}/{}".format(i, len(maskList)))
             successful = i
             break;
     else:
-        printLog("Found UNSAT in mask number {} out of {}".format(i, len(maskList)))
-        printLog("successful={}/{}".format(i, len(maskList)))
+        printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
+        printLog("successful={}/{}".format(i+1, len(maskList)))
         successful = i
         break;
 else:
     reachedFinal = True
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_{}".format(currentMbouRun))
+    printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_Full{}".format(currentMbouRun), coi=True) #FIXME coi
+    startLocal = time.time()
+    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1    
 
 if sat:

@@ -242,6 +242,16 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
     return cex, cexPrediction
 
 def setCOIBoundes(net, init):
+
+    print("len(net.equList)={}".format(len(net.equList)))
+    print("len(net.maxList)={}".format(len(net.maxList)))
+    print("len(net.reluList)={}".format(len(net.reluList)))
+    print("len(net.absList)={}".format(len(net.absList)))
+    print("len(net.signList)={}".format(len(net.signList)))
+    print("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
+    print("len(net.upperBounds)={}".format(len(net.upperBounds)))
+    print("len(net.inputVars)={}".format(len(net.inputVars)))
+    print("len(net.outputVars)={}".format(len(net.outputVars)))    
     
     reach = set(init)
     lastLen = 0
@@ -296,6 +306,10 @@ def setCOIBoundes(net, init):
             if newEq.addendList:
                 newEquList.append(newEq)
         else:
+            newEq = MarabouUtils.Equation()
+            newEq.scalar = eq.scalar
+            newEq.EquationType = MarabouCore.Equation.EQ
+            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
             newEquList.append(eq)
     net.equList  = newEquList
     net.maxList  = [({tr(arg) for arg in maxArgs if arg in reach}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in reach and any([arg in reach for arg in maxArgs]))]
@@ -319,9 +333,10 @@ def setCOIBoundes(net, init):
     print("len(net.inputVars)={}".format(len(net.inputVars)))
     print("len(net.outputVars)={}".format(len(net.outputVars)))    
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+    #exit()
     return inputVarsMapping, outputVarsMapping
     
-def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras"):
+def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras", coi=True):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
     #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
@@ -329,17 +344,23 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
-    modelOnnxMarabou.saveQuery(runName+"_beforeSolve")    
-    vals, stats = modelOnnxMarabou.solve(verbose=False)
+    if coi:
+        inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
+        print("*** inputVarsMapping ={} ***".format(inputVarsMapping))
+        print("*** outputVarsMapping={} ***".format(outputVarsMapping))
+    else:
+        inputVarsMapping, outputVarsMapping = None, None
+    #modelOnnxMarabou.saveQuery(runName+"_beforeSolve")
+    modelOnnxMarabou.saveQuery(runName)    
+    vals, stats = modelOnnxMarabou.solve(verbose=False) #FIXME
+    #return False, np.array([]), np.array([]), dict(), dict()  #FIXME
     sat = len(vals) > 0        
     if not sat:
         return False, np.array([]), np.array([]), dict(), dict()  
     inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
     outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
-    modelOnnxMarabou.saveQuery(runName+"_AfterSolve")
-    modelOnnxMarabou.saveQuery(runName)
-    cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping)
+    #modelOnnxMarabou.saveQuery(runName+"_AfterSolve")    
+    cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(mnistProp.numCex)
     mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
