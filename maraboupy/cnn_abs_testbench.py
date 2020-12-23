@@ -102,7 +102,7 @@ for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_mask_{}".format(i+1), coi=True) #FIXME coi
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=True) #FIXME coi
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1
     isSporious = None
@@ -124,7 +124,7 @@ for i, mask in enumerate(maskList):
 else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "IPQ_runMarabouOnKeras_Full{}".format(currentMbouRun), coi=True) #FIXME coi
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=True) #FIXME coi
     startLocal = time.time()
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1    
@@ -136,14 +136,14 @@ if sat:
         printLog("Sporious CEX after end")
         fromImage = False        
         if fromImage:
-            probDistEq, predictionEq, marabouDist = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "IPQ_verifyMarabou_{}".format(currentMbouRun-1), fromImage=True)
+            probDistEq, predictionEq, marabouDist = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=True)
             print("verifyMarabou={}".format((probDistEq, predictionEq, marabouDist)))
             if predictionEq:
                 raise Exception("Sporious CEX after end with verified Marabou result")
             else:            
                 raise Exception("inconsistant Marabou result.")
         else:
-            outDictEq = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "IPQ_verifyMarabou_{}".format(currentMbouRun-1), fromImage=False)
+            outDictEq = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=False)
             print("verifyMarabou={}".format(outDictEq))
             if outDictEq:
                 raise Exception("Sporious CEX after end with verified Marabou result")

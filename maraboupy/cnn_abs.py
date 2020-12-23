@@ -163,9 +163,9 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
             [
                 tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"),
                 layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c1"),
-                layers.MaxPooling2D(pool_size=(3,3), name="mp1"),
-                layers.Conv2D(num_ch, kernel_size=(3,3), activation="relu", name="c2"),
-                layers.MaxPooling2D(pool_size=(3,3), name="mp2"),
+                layers.MaxPooling2D(pool_size=(2,2), name="mp1"),
+                layers.Conv2D(num_ch, kernel_size=(2,2), activation="relu", name="c2"),
+                layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
                 layers.Flatten(name="f1"),
                 layers.Dense(40, activation="relu", name="fc1"),
                 #layers.Dropout(0.5, name="do1"),
@@ -187,6 +187,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
         origM.save(savedModelOrig)
+
     else:
         origM = load_model(savedModelOrig)
         origM.summary()
@@ -202,7 +203,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
         
-    rplcLayerName = "c2"    
+    rplcLayerName = "c2"
     return origM, rplcLayerName
 
 def getBoundsInftyBall(x, r, pos=True):
@@ -346,12 +347,15 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
     if coi:
         inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
+        plt.title('COI_{}'.format(runName))
+        plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
+        plt.savefig('COI_{}'.format(runName))    
         print("*** inputVarsMapping ={} ***".format(inputVarsMapping))
         print("*** outputVarsMapping={} ***".format(outputVarsMapping))
     else:
         inputVarsMapping, outputVarsMapping = None, None
     #modelOnnxMarabou.saveQuery(runName+"_beforeSolve")
-    modelOnnxMarabou.saveQuery(runName)    
+    modelOnnxMarabou.saveQuery("IPQ_" + runName)    
     vals, stats = modelOnnxMarabou.solve(verbose=False) #FIXME
     #return False, np.array([]), np.array([]), dict(), dict()  #FIXME
     sat = len(vals) > 0        
@@ -361,7 +365,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     #modelOnnxMarabou.saveQuery(runName+"_AfterSolve")    
     cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
-    fName = "Cex_{}.png".format(mnistProp.numCex)
+    fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
     kerasPrediction = model.predict(np.array([cex])).argmax()
