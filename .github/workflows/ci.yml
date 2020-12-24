@@ -1,0 +1,53 @@
+on: [push, pull_request]
+name: CI
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    os: ubuntu-latest #TODO: macos-latest
+    name: Production
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Install Packages
+        if: 
+        run: |
+           sudo apt-get update
+           sudo apt-get install -y \
+             cxxtest
+           # python3 -m pip install --user --upgrade pip
+           # python3 -m pip install --user --upgrade setuptools
+           python3 -m pip install --user wheel
+           python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache --progress-bar off
+
+      - name: Create Build Environment
+        run: cmake -E make_directory build
+      
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable
+        # access regardless of the host operating system
+        shell: bash
+        working-directory: build
+        # Note the current convention is to use the -S and -B options here to specify source 
+        # and build directories, but this is only available with CMake 3.13 and higher.  
+        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+        run: cmakeunsITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+      - name: Build
+        run: make -j2
+        working-directory: build
+
+      - name: Run CTest
+        run: make -j2 check
+        env:
+          ARGS: --output-on-failure 
+          working-directory: build
+
+      - name: Python Install Check
+        run: |
+          export PYTHONPATH="$PYTHONPATH:$(dirname $(find build/install/ -name "maraboupy" -type d))"
+          python3 -c "import maraboupy"
