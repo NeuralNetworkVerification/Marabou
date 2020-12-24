@@ -43,9 +43,7 @@ jobs:
 
       - name: Run full CTest suite
         run: ctest -j2 
-        env:
-          ARGS: --output-on-failure 
-          working-directory: build
+        working-directory: build
 
       #- name: Python Install Check
       #  run: |
