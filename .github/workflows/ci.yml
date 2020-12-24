@@ -18,6 +18,7 @@ jobs:
         run: |
            sudo apt-get update
            sudo apt-get install -y \
+             ccache \
              cxxtest
            python3 -m pip install --upgrade pip
            python3 -m pip install --upgrade setuptools
@@ -26,7 +27,30 @@ jobs:
 
       - name: Create Build Environment
         run: cmake -E make_directory build
-      
+        
+      # GitHub actions currently does not support modifying an already existing
+      # cache. Hence, we create a new cache for each commit with key
+      # cache-${{ runner.os }}-${{ matrix.cache-key }}-${{ github.sha }}. This
+      # will result in an initial cache miss. However, restore-keys will search
+      # for the most recent cache with prefix
+      # cache-${{ runner.os }}-${{ matrix.cache-key }}-, and if found uses it as
+      # a base for the new cache.
+      - name: Restore ccache
+        id: cache
+        uses: actions/cache@v1
+        with:
+          path: ccache-dir
+          key: cache-${{ runner.os }}-${{ github.sha }} # TODO: Add when switching to matrix ${{ matrix.cache-key }}-
+          restore-keys: cache-${{ runner.os }}- # ${{ matrix.cache-key }}-
+
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=${{ github.workspace }}/ccache-dir
+          ccache --set-config=compression=true
+          ccache --set-config=compression_level=6
+          ccache -M 500M
+          ccache -z
+
       - name: Configure CMake
         # Use a bash shell so we can use the same syntax for environment variable bb
         # access regardless of the host operating system
@@ -40,6 +64,9 @@ jobs:
       - name: Build
         run: make -j2
         working-directory: build
+
+      - name: ccache statistics
+        run: ccache -s
 
       - name: Run full CTest suite
         run: ctest -j2 
