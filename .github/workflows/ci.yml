@@ -6,7 +6,7 @@ env:
 
 jobs:
   build:
-    os: ubuntu-latest #TODO: macos-latest
+    runs-on: ubuntu-latest #TODO: macos-latest
     name: Production
 
     steps:
