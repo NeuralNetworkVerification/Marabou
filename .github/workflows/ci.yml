@@ -41,8 +41,8 @@ jobs:
         run: make -j2
         working-directory: build
 
-      - name: Run CTest
-        run: make -j2 check
+      - name: Run full CTest suite
+        run: ctest -j2 
         env:
           ARGS: --output-on-failure 
           working-directory: build
