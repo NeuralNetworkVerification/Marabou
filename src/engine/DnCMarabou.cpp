@@ -46,6 +46,7 @@ void DnCMarabou::run()
 
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
+        _inputQuery.constructNetworkLevelReasoner();
     }
     else
     {

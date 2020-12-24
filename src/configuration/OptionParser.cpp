@@ -97,6 +97,9 @@ void OptionParser::initialize()
         ( "version",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::VERSION]) ),
           "Prints the version number")
+         ( "preprocessor-bound-tolerance",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) ),
+          "epsilon for preprocessor bound tightening comparisons" )
 #ifdef ENABLE_GUROBI
         ( "milp",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
