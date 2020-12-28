@@ -261,21 +261,16 @@ def setCOIBoundes(net, init):
         reachPrev = reach.copy()
         for eq in net.equList:
             if (eq.addendList[-1][1] in reachPrev) and (eq.addendList[-1][0] == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
-                for w,v in eq.addendList[:-1]:
-                    if w != 0:
-                        reach.add(v)
+                [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
+            elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
+                [reach.add(v) for w,v in eq.addendList]
+                print("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
         for maxArgs, maxOut in net.maxList:
             if maxOut in reachPrev:            
                 [reach.add(arg) for arg in maxArgs]
-        for vin,vout in net.reluList:
-            if vout in reachPrev:
-                reach.add(vin)
-        for vin,vout in net.absList:
-            if vout in reachPrev:
-                reach.add(vin)
-        for vin,vout in net.signList:
-            if vout in reachPrev:
-                reach.add(vin)
+        [reach.add(vin) for vin,vout in net.reluList if vout in reachPrev]
+        [reach.add(vin) for vin,vout in net.absList  if vout in reachPrev]
+        [reach.add(vin) for vin,vout in net.signList if vout in reachPrev]
         if len(net.disjunctionList) > 0:
             raise Exception("Not implemented")
     unreach = set([v for v in range(net.numVars) if v not in reach])
@@ -288,14 +283,14 @@ def setCOIBoundes(net, init):
     assert reach == set(reachDict.keys())
     tr = lambda v: reachDict[v] if v in reachDict else -1
     
-    newEquList = list()
     for vin,vout in net.reluList:
         assert (vin not in reach) == (vout not in reach)
     for vin,vout in net.absList:
         assert (vin not in reach) == (vout not in reach)
     for vin,vout in net.signList:
         assert (vin not in reach) == (vout not in reach)
-    
+
+    newEquList = list()        
     for eq in net.equList:
         if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?            
             newEq = MarabouUtils.Equation()
@@ -311,7 +306,7 @@ def setCOIBoundes(net, init):
             newEq.scalar = eq.scalar
             newEq.EquationType = MarabouCore.Equation.EQ
             newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
-            newEquList.append(eq)
+            newEquList.append(newEq)
     net.equList  = newEquList
     net.maxList  = [({tr(arg) for arg in maxArgs if arg in reach}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in reach and any([arg in reach for arg in maxArgs]))]
     net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in reach]
@@ -324,6 +319,10 @@ def setCOIBoundes(net, init):
     net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in reach])]
     net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in reach])
     net.numVars = len(reachList)
+    for eq in net.equList:
+        for w,v in eq.addendList:
+            if v > net.numVars:
+                print("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
     print("len(net.equList)={}".format(len(net.equList)))
     print("len(net.maxList)={}".format(len(net.maxList)))
     print("len(net.reluList)={}".format(len(net.reluList)))
@@ -350,8 +349,8 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
         plt.title('COI_{}'.format(runName))
         plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
         plt.savefig('COI_{}'.format(runName))    
-        print("*** inputVarsMapping ={} ***".format(inputVarsMapping))
-        print("*** outputVarsMapping={} ***".format(outputVarsMapping))
+        #print("*** inputVarsMapping ={} ***".format(inputVarsMapping))
+        #print("*** outputVarsMapping={} ***".format(outputVarsMapping))
     else:
         inputVarsMapping, outputVarsMapping = None, None
     #modelOnnxMarabou.saveQuery(runName+"_beforeSolve")
@@ -458,7 +457,7 @@ def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
     
 def genMaskByActivation(intermidModel, features, stepSize=10):
     sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
-    return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:], stepSize=stepSize)
+    return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1], stepSize=stepSize)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.
 def genActivationMaskAllClassRank(intermidModel, stepSize=10):

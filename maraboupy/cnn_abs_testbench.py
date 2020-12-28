@@ -60,7 +60,7 @@ mnistProp.origMDense = modelOrigDense
 printLog("Finished model building")
 
 printLog("Choosing adversarial example")
-inDist = 0.1 #0.05
+inDist = 0.05 #0.1
 xAdvInds = range(mnistProp.numTestSamples)
 xAdvInd = xAdvInds[0]
 xAdv = mnistProp.x_test[xAdvInd]
@@ -103,7 +103,7 @@ for i, mask in enumerate(maskList):
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=True) #FIXME coi
-    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startTotal))
+    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startþTotal))
     currentMbouRun += 1
     isSporious = None
     #continue #FIXME
