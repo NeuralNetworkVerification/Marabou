@@ -45,7 +45,7 @@ jobs:
         run: ctest -j2 
         working-directory: build
 
-      #- name: Python Install Check
-      #  run: |
-      #    export PYTHONPATH="$PYTHONPATH:$(dirname $(find build/install/ -name "maraboupy" -type d))"
-      #    python3 -c "import maraboupy"
+      - name: Python Install Check
+        run: |
+          export PYTHONPATH="$PYTHONPATH:$(dirname $(find build/install/ -name "maraboupy" -type d))"
+          python3 -c "import maraboupy"
