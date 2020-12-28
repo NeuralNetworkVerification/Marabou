@@ -24,6 +24,7 @@ jobs:
            python3 -m pip install --upgrade setuptools
            python3 -m pip install wheel
            #python3 -m pip install -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
+           echo "/usr/lib/ccache" >> $GITHUB_PATH
 
       - name: Create Build Environment
         run: cmake -E make_directory build
