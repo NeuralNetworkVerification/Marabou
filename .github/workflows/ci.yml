@@ -78,17 +78,18 @@ jobs:
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
         run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
-      # - name: Build
-      #   run: make -j2
-      #   working-directory: build
+      - name: Build
+        run: make -j2
+        working-directory: build
 
       - name: ccache statistics
         run: ccache -s
-      # - name: Run full CTest suite
-      #   run: ctest -j2 
-      #   working-directory: build
+        
+      - name: Run full CTest suite
+        run: ctest -j2 
+        working-directory: build
 
-      # - name: Python Bindings Install Check
-      #   run: |
-      #     export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
-      #     python3 -c "import maraboupy"
+      - name: Python Bindings Install Check
+        run: |
+          export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
+          python3 -c "import maraboupy"
