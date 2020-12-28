@@ -29,12 +29,17 @@ jobs:
       - name: Create Build Environment
         run: cmake -E make_directory build
 
+      - name: List paths
+        run:  ls *
+              echo "----------------------------------"
+              ls tools
+
       - name: Restore Tools cache
         uses: actions/cache@v2 
         env:
           cache-name: cache-tools
         with: 
-          path: $GITHUB_WORKSPACE/tools
+          path: tools
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}-
 
