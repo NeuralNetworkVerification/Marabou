@@ -30,9 +30,10 @@ jobs:
         run: cmake -E make_directory build
 
       - name: List paths
-        run:  ls *
-              echo "----------------------------------"
-              ls tools
+        run: |
+          ls *
+          echo "----------------------------------"
+          ls tools
 
       - name: Restore Tools cache
         uses: actions/cache@v2 
