@@ -28,6 +28,16 @@ jobs:
 
       - name: Create Build Environment
         run: cmake -E make_directory build
+
+      - name: Restore Tools cache
+        uses: actions/cache@v2 
+        env:
+          cache-name: cache-tools
+        with: 
+          path: $GITHUB_WORKSPACE/tools
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}-
+
         
       # GitHub actions currently does not support modifying an already existing
       # cache. Hence, we create a new cache for each commit with key
