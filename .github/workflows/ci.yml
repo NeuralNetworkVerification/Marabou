@@ -85,9 +85,14 @@ jobs:
       - name: ccache statistics
         run: ccache -s
         
-      - name: Run full CTest suite
-        run: ctest -j2 
+      - name: Run system tests
+        run: ctest -L system -j 2 
         working-directory: build
+ 
+      - name: Run regression tests
+        run: ctest -L regress[0-1] -j 2 
+        working-directory: build
+
 
       - name: Python Bindings Install Check
         run: |
