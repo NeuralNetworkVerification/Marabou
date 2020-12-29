@@ -29,11 +29,11 @@ jobs:
       - name: Create Build Environment
         run: cmake -E make_directory build
 
-      - name: List paths
-        run: |
-          ls *
-          echo "----------------------------------"
-          ls tools
+      # - name: List paths
+      #   run: |
+      #     ls *
+      #     echo "----------------------------------"
+      #     ls tools
 
       - name: Restore Tools cache
         uses: actions/cache@v2 
