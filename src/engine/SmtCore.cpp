@@ -29,6 +29,7 @@ SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
     , _needToSplit( false )
+    , _lastSplit( NULL )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
@@ -56,6 +57,7 @@ void SmtCore::reset()
     freeMemory();
     _impliedValidSplitsAtRoot.clear();
     _needToSplit = false;
+    _lastSplit = NULL;
     _constraintForSplitting = NULL;
     _stateId = 0;
     _constraintToViolationCount.clear();
@@ -92,6 +94,11 @@ bool SmtCore::needToSplit() const
     return _needToSplit;
 }
 
+PiecewiseLinearCaseSplit SmtCore::getLastSplit() const
+{
+    return _lastSplit;
+}
+
 void SmtCore::performSplit()
 {
     ASSERT( _needToSplit );
@@ -118,7 +125,7 @@ void SmtCore::performSplit()
 
     // Before storing the state of the engine, we:
     //   1. Obtain the splits.
-    //   2. Disable the constraint, so that it is marked as disbaled in the EngineState.
+    //   2. Disable the constraint, so that it is marked as disabled in the EngineState.
     List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
     ASSERT( !splits.empty() );
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
@@ -135,6 +142,8 @@ void SmtCore::performSplit()
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
+    _lastSplit = split;
+    stackEntry->_pastSplits.append( *split );
 
     // Store the remaining splits on the stack, for later
     stackEntry->_engineState = stateBeforeSplits;
@@ -220,6 +229,11 @@ bool SmtCore::popSplit()
     SMT_LOG( "\tApplying new split..." );
     _engine->applySplit( *split );
     SMT_LOG( "\tApplying new split - DONE" );
+
+    // update lastSplit, _pastSplits with the new split
+    _lastSplit = split;
+    stackEntry->_pastSplits.erase( split );  // TODO: popBack instead of erase?
+    stackEntry->_pastSplits.append( *split );
 
     stackEntry->_activeSplit = *split;
     stackEntry->_alternativeSplits.erase( split );
@@ -449,5 +463,12 @@ bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
         _constraintForSplitting = _engine->pickSplitPLConstraint();
-    return _constraintForSplitting != NULL;
+    if ( _constraintForSplitting != NULL )
+    {
+        _lastSplit = _constraintForSplitting;
+        return true;
+    }
+    else {  // _lastSplit is not changed
+        return false;
+    }
 }

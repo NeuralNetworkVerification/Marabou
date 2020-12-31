@@ -74,6 +74,7 @@ Statistics::Statistics()
     , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
+    , _gammaUnsatSplitSequences()  // TODO INIITIALIZE
     , _timedOut( false )
 {
 }
@@ -254,6 +255,9 @@ void Statistics::print()
             , _numPops );
     printf( "\tMax stack depth: %u\n"
             , _maxStackDepth );
+
+    printf( "\t--- Context Statistics ---\n" );
+    printf( "\t:List of UNSAT activation-sequences: \n%s\n", _gammaUnsatSplitSequences );
 
     printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
@@ -603,6 +607,11 @@ void Statistics::incNumVisitedTreeStates()
 unsigned Statistics::getNumVisitedTreeStates() const
 {
     return _numVisitedTreeStates;
+}
+
+List<SmtStackEntry> Statistics::getGammaUnsatSplitSequences() const
+{
+    return _gammaUnsatSplitSequences;
 }
 
 unsigned Statistics::getNumSplits() const

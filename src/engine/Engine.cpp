@@ -34,6 +34,7 @@
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
     , _smtCore( this )
+    , _gamma()  // TODO initialize new empty list
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
@@ -59,6 +60,7 @@ Engine::Engine()
     _rowBoundTightener->setStatistics( &_statistics );
     _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
+    _context->setStatistics( &_statistics );
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
@@ -199,6 +201,108 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( splitJustPerformed )
             {
+                // use GammaUnsat + Gamma_A to prune redundant splits
+                // if last split is of n1 and n1 is refined from abstract node n
+                // and n is (pos-inc & active) or (neg-dec & inactive)
+                // and n is active in some sequence in GammaUnsat (assuming that
+                // refinement is in abstraction order)
+                // and post(n) are (pos-inc & active) or (neg-dec & inactive)
+                // then we should split n2, the second node refined from n, to
+                // the second (unequal to n1's) option (inactive/active)
+                unsigned last_index = _smtCore.getLastSplit()->_bounds.front()._variable;
+
+                // find if last_index is part of an abstraction step in Gamma_A
+                for ( auto abstract_step : Gamma_A )  // TODO: send gamma_A in the query
+                {
+                    // abstract_step maps abstract_index to refine indices pair
+                    abstract_index = abstract_step->first;
+                    refined_1_index = abstract_step->second.first;
+                    refined_2_index = abstract_step->second.second;
+
+                    // 1. is abstract node in UNSAT sequence? if so,
+                    // 2. is abstract is inc+active or dec+inactive? if so,
+                    // 3. is abstract node has equal activation to last_index?
+                    bool is_last_active = !FloatUtils::lte( 0, _tableau._lowerBounds[last_index] );
+                    bool is_abstract_active = !FloatUtils::lte( 0, _tableau._lowerBounds[abstract_index] );
+                    bool is_unsat_seq = false;
+                    for ( auto unsat_seq : Gamma ) {
+                        // each element in seq is (var_index, is_active)
+                        for ( auto node_activation : unsat_seq ) {
+                            // the next condition checks 1
+                            if ( node_activation[0] == abstract_index ) {
+                                // the next condition checks 2
+                                if ( node_activation[0] != is_abstract_active ) {
+                                    break;  // can't learn from abstract case
+                                }
+                                // the next condition checks 3
+                                if ( node_activation[1] == is_last_active ) {
+                                    is_unsat_seq = true;
+                                    break;
+                                }  // else, can't learn to refinement case
+                            }  // else, can't learn from random node
+                        }
+                        // stop if found one unsat sequence with abstract node
+                        if ( is_unsat_seq ) {
+                            break;
+                        }
+                    }
+
+                    // if any unsat sequence was not found, can't prune
+                    if ( !is_unsat_seq ) {
+                        continue;
+                    }
+
+                    // check if all post constraints enable pruning
+                    if ( last_index == refined_1_index || last_index == refined_2_index ) {
+                        all_post_constraints_activated_properly = true;
+                        // TODO: send post_var_indices in the query
+                        for ( auto i : post_var_indices ) {
+                            unsigned var_index = post_var_indices[i];
+                            bool is_var_active = FloatUtils::lte( 0, _tableau._lowerBounds[var_index] );
+                            // TODO: send (is_pos, is_inc) in the query
+                            if !( ( is_var_active && is_pos[var_index] && is_inc[var_index] ) ||
+                                 ( !is_var_active && !is_pos[var_index] && !is_inc[var_index] ) ) {
+                                 all_post_constraints_activated_properly = false;
+                                 break;
+                            }
+                        }
+                    }
+                    if ( !all_post_constraints_activated_properly ) {
+                        continue;
+                    }
+
+                    // bcp: activate the second refined node as needed
+                    bool is_refined_1_active = !FloatUtils::lte( 0, _tableau._lowerBounds[refined_1_index] )
+                    bool is_refined_2_active = !FloatUtils::lte( 0, _tableau._lowerBounds[refined_2_index] )
+
+                    // if equal activations, UNSAT from residual reasoning
+                    if ( is_refined_1_active == is_refined_2_active ) {
+                        throw InfeasibleQueryException();
+                    }
+
+                    // otherwise, activate as needed
+                    if ( last_index == refined_1_index ) {
+                        // assert is_refined_2_active != is_refined_1_active
+                        if ( is_refined_1_active ) {
+                            tightenUpperBound( 0, refined_2_index );
+                        }
+                        else {  // !is_refined_1_active
+                            tightenLowerBound( refined_2_index );
+                        }
+                        break;
+                    }
+                    if ( last_index == refined_2_index ) {
+                        // assert is_refined_1_active != is_refined_2_active
+                        if ( is_refined_2_active ) {
+                            tightenUpperBound( refined_1_index );
+                        }
+                        else {
+                            tightenLowerBound( refined_1_index );
+                        }
+                    }
+                    break;
+                }
+
                 do
                 {
                     performSymbolicBoundTightening();
@@ -262,7 +366,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                 while ( applyAllValidConstraintCaseSplits() )
                     performSymbolicBoundTightening();
-
                 continue;
             }
 
@@ -309,10 +412,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     _statistics.print();
                 }
                 _exitCode = Engine::UNSAT;
+                _gamma.append(_smtCore._stack.back()._pastSplits)
                 return false;
             }
             else
             {
+                // add current splits sequence to UNSAT context list
+                _gamma.append(_smtCore._stack.back()._pastSplits)
                 splitJustPerformed = true;
             }
 

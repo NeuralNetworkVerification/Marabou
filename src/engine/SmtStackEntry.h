@@ -30,6 +30,7 @@ public:
     PiecewiseLinearCaseSplit _activeSplit;
     List<PiecewiseLinearCaseSplit> _impliedValidSplits;
     List<PiecewiseLinearCaseSplit> _alternativeSplits;
+    List<PiecewiseLinearCaseSplit> _pastSplits;
     EngineState *_engineState;
 
     /*
@@ -45,6 +46,7 @@ public:
         copy->_activeSplit = _activeSplit;
         copy->_impliedValidSplits = _impliedValidSplits;
         copy->_alternativeSplits = _alternativeSplits;
+        copy->_pastSplits = _pastSplits;
         copy->_engineState = NULL;
 
         return copy;

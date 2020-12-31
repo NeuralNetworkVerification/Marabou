@@ -18,6 +18,7 @@
 
 #include "List.h"
 #include "TimeUtils.h"
+#include "SmtStackEntry.h"
 
 class Statistics
 {
@@ -306,6 +307,9 @@ private:
 
     // Total amount of time spent within the SMT core
     unsigned long long _totalTimeSmtCoreMicro;
+
+    // List of activation-sequences which lead to UNSAT
+    List<SmtStackEntry> _gammaUnsatSplitSequences;
 
     // Whether the engine quitted with a timeout
     bool _timedOut;

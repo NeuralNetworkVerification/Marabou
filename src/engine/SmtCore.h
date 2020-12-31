@@ -69,6 +69,11 @@ public:
     bool needToSplit() const;
 
     /*
+      Returns the last split.
+    */
+    PiecewiseLinearCaseSplit getLastSplit();
+
+    /*
       Perform the split according to the constraint marked for
       splitting. Update bounds, add equations and update the stack.
     */
@@ -158,6 +163,7 @@ private:
     */
     bool _needToSplit;
     PiecewiseLinearConstraint *_constraintForSplitting;
+    PiecewiseLinearConstraint *_lastSplit;
 
     /*
       Count how many times each constraint has been violated.
