@@ -24,10 +24,10 @@ jobs:
            sudo apt-get install -y \
              ccache \
              cxxtest
-           python3 -m pip install --upgrade pip
-           python3 -m pip install --upgrade setuptools
-           python3 -m pip install wheel
-           #python3 -m pip install -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
+           python3 -m pip install --user --upgrade pip
+           python3 -m pip install --user --upgrade setuptools
+           python3 -m pip install --user wheel
+           python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
            echo "/usr/lib/ccache" >> $GITHUB_PATH
 
       - name: Create Build Environment
