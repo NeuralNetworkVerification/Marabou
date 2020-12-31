@@ -6,8 +6,12 @@ env:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+
     runs-on: ubuntu-latest #TODO: macos-latest
-    name: Production
+    name: Debug build 
 
     steps:
 
@@ -29,30 +33,36 @@ jobs:
       - name: Create Build Environment
         run: cmake -E make_directory build
 
-      - name: Restore Tools cache
-        uses: actions/cache@v2 
-        env:
-          cache-name: cache-tools
-        with: 
-          path: tools
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: ${{ runner.os }}-build-${{ env.cache-name }}-
-
-        
+      # ---------------------------- CACHING ----------------------------------
       # GitHub actions currently does not support modifying an already existing
       # cache. Hence, we create a new cache for each commit with key
       # cache-${{ runner.os }}-${{ matrix.cache-key }}-${{ github.sha }}. This
       # will result in an initial cache miss. However, restore-keys will search
       # for the most recent cache with prefix
-      # cache-${{ runner.os }}-${{ matrix.cache-key }}-, and if found uses it as
+      # ${{ env.cache-name }}-${{ matrix.compiler }}-, and if found uses it as
       # a base for the new cache.
-      - name: Restore ccache
+      # Add ${{ matrix.cache-key }}- to the key pattern if matrix grows
+      - name: Restore Tools cache
         id: cache
+        uses: actions/cache@v2 
+        env:
+          cache-name: cache-tools
+        with: 
+          path: tools
+          key: ${{ env.cache-name }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: ${{ env.cache-name }}-${{ matrix.compiler }}-
+
+      
+      - name: Restore ccache
+        id: ccache
         uses: actions/cache@v1
+        env:
+          cache-name: ccache-
         with:
           path: ccache-dir
-          key: cache-${{ runner.os }}-${{ github.sha }} # TODO: Add when switching to matrix ${{ matrix.cache-key }}-
-          restore-keys: cache-${{ runner.os }}- # ${{ matrix.cache-key }}-
+          key: ${{ env.cache-name }}-${{ matrix.compiler }}-${{ github.sha }} 
+          restore-keys: ${{ env.cache-name }}-${{ matrix.compiler }}-         
+      # ---------------------------- END CACHE RESTORE -------------------------
 
       - name: Configure ccache
         run: |
@@ -70,7 +80,7 @@ jobs:
         # Note the current convention is to use the -S and -B options here to specify source 
         # and build directories, but this is only available with CMake 3.13 and higher.  
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
 
       - name: Build
         run: make -j2
