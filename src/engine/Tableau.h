@@ -25,6 +25,7 @@
 #include "SparseMatrix.h"
 #include "SparseUnsortedList.h"
 #include "Statistics.h"
+#include "BoundsExplanator.h"
 
 #define TABLEAU_LOG( x, ... ) LOG( GlobalConfiguration::TABLEAU_LOGGING, "Tableau: %s\n", x )
 
@@ -633,12 +634,23 @@ private:
     void verifyInvariants();
 
     static String basicStatusToString( unsigned status );
-    
+
     /*
     * Finds a row with its basic variable either too high or too low.
     * Puts it in  the input parameter.
+    * TODO erase
     */
     int Tableau::getInfeasibleRow(TableauRow* row);
+
+    /*
+    * Returns the bounds explanation of a variable in the tableau
+    */
+    SingleVarBoundsExplanator& Tableau::ExplainBound(unsigned variable);
+
+    /*
+    * Explanator of all bounds 
+    */
+    BoundsExplanator* _boundsExplanator;
 };
 
 #endif // __Tableau_h__

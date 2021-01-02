@@ -59,6 +59,7 @@ Tableau::Tableau()
     , _statistics( NULL )
     , _costFunctionManager( NULL )
     , _rhsIsAllZeros( true )
+    , _boundsExplanator( NULL )
 {
 }
 
@@ -206,6 +207,12 @@ void Tableau::freeMemoryIfNeeded()
         delete[] _workN;
         _workN = NULL;
     }
+
+    if (_boundsExplanator)
+    {
+        _boundsExplanator->~BoundsExplanator();
+        _boundsExplanator = NULL;
+    }
 }
 
 void Tableau::setDimensions( unsigned m, unsigned n )
@@ -312,6 +319,8 @@ void Tableau::setDimensions( unsigned m, unsigned n )
 
     if ( _statistics )
         _statistics->setCurrentTableauDimension( _m, _n );
+    if(GlobalConfiguration::PROOF_CERTIFICATE)
+        _boundsExplanator = new BoundsExplanator(n, m);  // Reset whenever new dimensions are set.
 }
 
 void Tableau::setConstraintMatrix( const double *A )
@@ -470,6 +479,16 @@ void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
+    
+    //SHOULD BE HERE OR IN tightenLowerBound?
+    // Update only for a basic var
+    if (GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable))
+    {
+        TableauRow row = TableauRow(_n);
+        getTableauRow(_variableToIndex[variable], &row);
+        _boundsExplanator->updateBoundExplanation(row, false);
+    }
+
     notifyLowerBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -478,6 +497,17 @@ void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
+
+
+    //SHOULD BE HERE OR IN tightenUpperBound?
+    // Update only for a basic var
+    if (GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable)) 
+    {
+        TableauRow row = TableauRow(_n);
+        getTableauRow(_variableToIndex[variable], &row);
+        _boundsExplanator->updateBoundExplanation(row, false);
+    }
+
     notifyUpperBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -2570,8 +2600,7 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
     return true;
 }
 
-
-
+// TODO erase
 int Tableau::getInfeasibleRow(TableauRow* row) 
 {
     double result = 0;
@@ -2586,6 +2615,11 @@ int Tableau::getInfeasibleRow(TableauRow* row)
     return 0;
 }
 
+SingleVarBoundsExplanator& Tableau::ExplainBound(unsigned variable)
+{
+    ASSERT(variable < _n);
+    return _boundsExplanator->returnWholeVarExplanation(variable);
+}
 
 //
 // Local Variables:

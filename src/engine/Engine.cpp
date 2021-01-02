@@ -2286,6 +2286,8 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
     }
 }
 
+
+//TODO erase
 void Engine::printSimplexUNSATCertificate()
 {
     printf("The final dictionary:\n");
