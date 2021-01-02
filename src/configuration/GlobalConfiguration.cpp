@@ -87,7 +87,7 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 const bool GlobalConfiguration::BOUND_TIGHTENING = false;  //TODO change to true
-const bool GlobalConfiguration::PROOF_CERTIFICATE = false;
+const bool GlobalConfiguration::PROOF_CERTIFICATE = true;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;

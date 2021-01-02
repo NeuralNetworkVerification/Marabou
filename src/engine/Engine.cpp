@@ -307,6 +307,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 {
                     printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
+                    if (GlobalConfiguration::PROOF_CERTIFICATE)
+                        printInfeasibilityCertificate();
                 }
                 _exitCode = Engine::UNSAT;
                 return false;
@@ -509,6 +511,7 @@ void Engine::performSimplexStep()
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps(TimeUtils::timePassed(start, end));
             //Should consider the case of bound-tightening UNSAT
+            //TODO erase
             printSimplexUNSATCertificate();
             throw InfeasibleQueryException();
         }
@@ -2312,4 +2315,26 @@ void Engine::printSimplexUNSATCertificate()
         for (int i = 0; i < m; ++i)
             printf("%.2lf ,", coeff[i]);
     }
+}
+
+void Engine::printInfeasibilityCertificate()
+{
+    int m = _tableau->getM(), n = _tableau->getN(), var = _tableau->getInfeasibleVar();
+    printf("Found a variable with infeasible bounds: x%d\n",var);
+    if(var < 0)
+        return;
+   
+    SingleVarBoundsExplanator certificate = _tableau->ExplainBound(var);
+    std::vector<double> expl = std::vector<double>(m, 0); 
+    certificate.getVarBoundExplanation(expl, true);
+    printf("Upper bound explanataion:\n[");
+    for (unsigned i = 0; i < m; ++i)
+        printf("%.2lf ,", expl[i]);
+    printf("]\n");
+
+    certificate.getVarBoundExplanation(expl, false);
+    printf("Lower bound explanataion:\n[");
+    for (unsigned i = 0; i < m; ++i)
+        printf("%.2lf ,", expl[i]);
+    printf("]\n");
 }

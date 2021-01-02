@@ -636,19 +636,25 @@ private:
     static String basicStatusToString( unsigned status );
 
     /*
-    * Finds a row with its basic variable either too high or too low.
-    * Puts it in  the input parameter.
-    * TODO erase
+      Finds a row with its basic variable either too high or too low.
+      Puts it in  the input parameter.
+      TODO erase
     */
     int Tableau::getInfeasibleRow(TableauRow* row);
 
     /*
-    * Returns the bounds explanation of a variable in the tableau
+      Returns the bounds explanation of a variable in the tableau
     */
     SingleVarBoundsExplanator& Tableau::ExplainBound(unsigned variable);
 
     /*
-    * Explanator of all bounds 
+      Returns a variable with infeasible bounds, if exists
+      Otherwise returns -1
+    */
+    int getInfeasibleVar();
+
+    /*
+      Explanator of all bounds 
     */
     BoundsExplanator* _boundsExplanator;
 };

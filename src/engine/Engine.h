@@ -534,9 +534,15 @@ private:
     */
     void extractSolutionFromGurobi( InputQuery &inputQuery );
 
-    /*Prints coefficents of Simplex equations that witness UNSAT
+    /*
+      Prints coefficents of Simplex equations that witness UNSAT
     */
     void Engine::printSimplexUNSATCertificate();
+
+    /*
+     Prints coefficents of Simplex equations that witness UNSAT
+    */
+    void Engine::printInfeasibilityCertificate();
 };
 
 #endif // __Engine_h__

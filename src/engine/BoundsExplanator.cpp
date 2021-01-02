@@ -70,7 +70,7 @@ SingleVarBoundsExplanator& BoundsExplanator::returnWholeVarExplanation(const uns
 void BoundsExplanator::updateBoundExplanation(const TableauRow& row, const bool isUpper)
 {
 	bool tempUpper;
-	int curCoefficient, var = row._lhs; //The var to be updated is the lhs of the row
+	int curCoefficient, var = row._lhs;  // The var to be updated is the lhs of the row
 	ASSERT(var < _varsNum); 
 
 	std::vector<double> rowCoefficients = std::vector<double>(_rowsNum, 0);
