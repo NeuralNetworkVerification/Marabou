@@ -97,6 +97,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
+
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
 
@@ -306,7 +307,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 {
                     printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
-                    if (GlobalConfiguration::PROOF_CERTIFICATE)
+                    if ( GlobalConfiguration::PROOF_CERTIFICATE )
                         printInfeasibilityCertificate();
                 }
                 _exitCode = Engine::UNSAT;
@@ -508,16 +509,19 @@ void Engine::performSimplexStep()
         {
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
-            _statistics.addTimeSimplexSteps(TimeUtils::timePassed(start, end));
-
-            // Failure of a simplex step is equivalent to infeasible bounds
-            TableauRow boundUpdateRow = TableauRow( _tableau->getN() );
-            int rowIndex = _tableau->getInfeasibleRow( &boundUpdateRow );
-            // If the infeasible basic is lower than its lower bound, then it cannot be decreased.
-            // Thus the upper bound imposed by the row is too low
-            // TODO should perform bound tightening again?
-            bool isUpper = _tableau->basicTooLow( rowIndex );
-            _tableau->updateExplanation( boundUpdateRow, isUpper );
+            _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+            if( GlobalConfiguration::PROOF_CERTIFICATE )
+            {
+                // Failure of a simplex step is equivalent to infeasible bounds
+                TableauRow boundUpdateRow = TableauRow(_tableau->getN());
+                int rowIndex = _tableau->getInfeasibleRow(&boundUpdateRow);
+                // If the infeasible basic is lower than its lower bound, then it cannot be decreased.
+                // Thus the upper bound imposed by the row is too low
+                // TODO should perform bound tightening again?
+                bool isUpper = _tableau->basicTooLow(rowIndex);
+                _tableau->updateExplanation(boundUpdateRow, isUpper);
+            }
+           
             throw InfeasibleQueryException();
         }
     }
