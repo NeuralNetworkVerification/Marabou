@@ -1587,7 +1587,7 @@ void Engine::applyAllConstraintTightenings()
 void Engine::applyAllBoundTightenings()
 {
 
-    if (!GlobalConfiguration::BOUND_TIGHTENING)
+    if ( !GlobalConfiguration::BOUND_TIGHTENING )
         return;
 
 
