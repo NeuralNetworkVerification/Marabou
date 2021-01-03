@@ -364,6 +364,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     {
         _lowerBounds[y] = lowerBound;
         _tightenedLower[y] = true;
+        _tableau.updateExplanation( row, false );
         ++result;
     }
 
@@ -371,6 +372,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     {
         _upperBounds[y] = upperBound;
         _tightenedUpper[y] = true;
+        _tableau.updateExplanation( row, true );
         ++result;
     }
 
@@ -450,6 +452,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         {
             _lowerBounds[xi] = lowerBound;
             _tightenedLower[xi] = true;
+            _tableau.updateExplanation( row, false );  // Is it the right bound to update?
+            //TODO maybe create a new row with x_i as lhs?
             ++result;
         }
 
@@ -457,6 +461,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         {
             _upperBounds[xi] = upperBound;
             _tightenedUpper[xi] = true;
+            _tableau.updateExplanation( row, true );  // Is it the right bound to update?
+            //TODO maybe create a new row with x_i as lhs?
             ++result;
         }
 
@@ -620,6 +626,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         {
             _lowerBounds[index] = lowerBound;
             _tightenedLower[index] = true;
+            _tableau.updateExplanation( row, false ); 
             ++result;
         }
 
@@ -627,6 +634,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         {
             _upperBounds[index] = upperBound;
             _tightenedUpper[index] = true;
+            _tableau.updateExplanation( row, true );
             ++result;
         }
 

@@ -479,16 +479,6 @@ void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _lowerBounds[variable] = value;
-    
-    //SHOULD BE HERE OR IN tightenLowerBound?
-    // Update only for a basic var
-    if (GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable))
-    {
-        TableauRow row = TableauRow(_n);
-        getTableauRow(_variableToIndex[variable], &row);
-        _boundsExplanator->updateBoundExplanation(row, false);
-    }
-
     notifyLowerBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -497,17 +487,6 @@ void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
     _upperBounds[variable] = value;
-
-
-    //SHOULD BE HERE OR IN tightenUpperBound?
-    // Update only for a basic var
-    if (GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable)) 
-    {
-        TableauRow row = TableauRow(_n);
-        getTableauRow(_variableToIndex[variable], &row);
-        _boundsExplanator->updateBoundExplanation(row, false);
-    }
-
     notifyUpperBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -1762,6 +1741,14 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
+
+    // Update only for a basic var
+    if ( GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable) )
+    {
+        TableauRow row = TableauRow( _n );
+        getTableauRow( _variableToIndex[variable], &row );
+        _boundsExplanator->updateBoundExplanation( row, false );
+    }
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1791,6 +1778,15 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         computeBasicStatus( index );
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
+    }
+
+ 
+    // Update only for a basic var
+    if ( GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable) )
+    {
+        TableauRow row = TableauRow( _n );
+        getTableauRow( _variableToIndex[variable], &row );
+        _boundsExplanator->updateBoundExplanation( row, true );
     }
 }
 
@@ -2601,41 +2597,48 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 }
 
 // TODO erase
-int Tableau::getInfeasibleRow(TableauRow* row) 
+int Tableau::getInfeasibleRow( TableauRow* row ) 
 {
-    double result = 0;
-    for (unsigned i = 0; i < _m; ++i)
+    for ( unsigned i = 0; i < _m; ++i )
     {
-        if (basicOutOfBounds(i))
+        if (basicOutOfBounds( i ))
         {
-            Tableau::getTableauRow(i, row);
-            return 1;
+            Tableau::getTableauRow( i, row );
+            return i;
         }
     }
-    return 0;
-}
-
-SingleVarBoundsExplanator& Tableau::ExplainBound(unsigned variable)
-{
-    ASSERT(variable < _n);
-    return _boundsExplanator->returnWholeVarExplanation(variable);
+    return -1;
 }
 
 int Tableau::getInfeasibleVar()
 {
-    for (unsigned i = 0; i < _n; ++i )
-    {
-    /* Include when debugging:
-       TODO erase when done
-    
-        if(basicOutOfBounds(i))
-            if (_lowerBounds[i] == _upperBounds[i] )
-                return i;
-       */
+    for (unsigned i = 0; i < _n; ++i)
         if (_lowerBounds[i] > _upperBounds[i])
             return i;
+ 
+    // In case of infeasibility dicovered by assignment 
+    // Assumption - this method is called after UNSAT is detected.
+    TableauRow row = TableauRow( _n );
+    for (unsigned i = 0; i < _m; ++i)
+    {
+        if (basicOutOfBounds( i ))
+        {
+            Tableau::getTableauRow( i, &row );
+            return row._lhs;
+        }
     }
     return -1;
+}
+
+SingleVarBoundsExplanator& Tableau::ExplainBound( unsigned variable )
+{
+    ASSERT(variable < _n);
+    return _boundsExplanator->returnWholeVarExplanation( variable );
+}
+
+void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const
+{
+    _boundsExplanator->updateBoundExplanation( row, isUpper );
 }
 
 //
