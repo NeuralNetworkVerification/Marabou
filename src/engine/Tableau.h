@@ -640,7 +640,7 @@ private:
       puts it in  the input parameter, and returns the index of the row
       If none found return -1
     */
-    int Tableau::getInfeasibleRow(TableauRow* row);
+    int Tableau::getInfeasibleRow(TableauRow& row);
 
     /*
      Returns a variable with infeasible bounds, if exists

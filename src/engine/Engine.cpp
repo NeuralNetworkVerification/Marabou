@@ -514,7 +514,7 @@ void Engine::performSimplexStep()
             {
                 // Failure of a simplex step is equivalent to infeasible bounds
                 TableauRow boundUpdateRow = TableauRow(_tableau->getN());
-                int rowIndex = _tableau->getInfeasibleRow(&boundUpdateRow);
+                int rowIndex = _tableau->getInfeasibleRow(boundUpdateRow);
                 // If the infeasible basic is lower than its lower bound, then it cannot be decreased.
                 // Thus the upper bound imposed by the row is too low
                 // TODO should perform bound tightening again?
@@ -2311,7 +2311,7 @@ void Engine::printSimplexUNSATCertificate()
         coeff[i] = 0;
 
     TableauRow row = TableauRow( n );
-    int success = _tableau->getInfeasibleRow( &row );
+    int success = _tableau->getInfeasibleRow(row );
 
     if ( success ) {
         for ( int i = 0; i < row._size; ++i )

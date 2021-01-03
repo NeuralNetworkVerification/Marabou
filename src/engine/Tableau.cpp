@@ -2597,7 +2597,7 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 }
 
 // TODO erase
-int Tableau::getInfeasibleRow( TableauRow* row ) 
+int Tableau::getInfeasibleRow( TableauRow& row ) 
 {
     for ( unsigned i = 0; i < _m; ++i )
     {
