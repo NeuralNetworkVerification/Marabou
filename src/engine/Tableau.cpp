@@ -2603,7 +2603,7 @@ int Tableau::getInfeasibleRow( TableauRow& row )
     {
         if (basicOutOfBounds( i ))
         {
-            Tableau::getTableauRow( i, row );
+            Tableau::getTableauRow( i, &row );
             return i;
         }
     }

@@ -640,7 +640,7 @@ private:
       puts it in  the input parameter, and returns the index of the row
       If none found return -1
     */
-    int Tableau::getInfeasibleRow(TableauRow& row);
+    int Tableau::getInfeasibleRow( TableauRow& row );
 
     /*
      Returns a variable with infeasible bounds, if exists
@@ -651,9 +651,9 @@ private:
     /*
       Returns the bounds explanation of a variable in the tableau
     */
-    SingleVarBoundsExplanator& Tableau::ExplainBound(unsigned variable);
+    SingleVarBoundsExplanator& Tableau::ExplainBound( unsigned variable );
 
-    void Tableau::updateExplanation(const TableauRow& row, const bool isUpper) const;
+    void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const;
 
     /*
       Explanator of all bounds 

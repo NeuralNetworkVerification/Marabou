@@ -182,10 +182,10 @@ public:
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     
     
-    virtual int getInfeasibleRow(TableauRow& row) = 0 ;
+    virtual int getInfeasibleRow( TableauRow& row ) = 0 ;
     virtual int getInfeasibleVar() = 0;
-    virtual SingleVarBoundsExplanator& ExplainBound(unsigned variable) = 0 ;
-    virtual void updateExplanation(const TableauRow& row, const bool isUpper) const = 0;
+    virtual SingleVarBoundsExplanator& ExplainBound( unsigned variable ) = 0 ;
+    virtual void updateExplanation( const TableauRow& row, const bool isUpper ) const = 0;
 
 };
 
