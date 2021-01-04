@@ -12,6 +12,7 @@ import tensorflow as tf
 from maraboupy import MarabouNetworkONNX as monnx
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
+from maraboupy import Marabou
 from tensorflow.keras import datasets, layers, models
 import numpy as np
 import logging
@@ -349,20 +350,17 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
         plt.title('COI_{}'.format(runName))
         plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
         plt.savefig('COI_{}'.format(runName))    
-        #print("*** inputVarsMapping ={} ***".format(inputVarsMapping))
-        #print("*** outputVarsMapping={} ***".format(outputVarsMapping))
     else:
         inputVarsMapping, outputVarsMapping = None, None
-    #modelOnnxMarabou.saveQuery(runName+"_beforeSolve")
-    modelOnnxMarabou.saveQuery("IPQ_" + runName)    
-    vals, stats = modelOnnxMarabou.solve(verbose=False) #FIXME
-    #return False, np.array([]), np.array([]), dict(), dict()  #FIXME
+    modelOnnxMarabou.saveQuery("IPQ_" + runName)
+    optionsLocal = Marabou.createOptions(snc=False, verbosity=2);
+    optionsCluster = Marabou.createOptions(snc=True, verbosity=0);    
+    vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
     sat = len(vals) > 0        
     if not sat:
         return False, np.array([]), np.array([]), dict(), dict()  
     inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
     outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
-    #modelOnnxMarabou.saveQuery(runName+"_AfterSolve")    
     cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
@@ -396,7 +394,9 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         for i,x in inputDict.items():    
             modelOnnxMarabou.setLowerBound(i,x)
             modelOnnxMarabou.setUpperBound(i,x)
-    vals, stats = modelOnnxMarabou.solve(verbose=False)
+    optionsLocal = Marabou.createOptions(snc=False, verbosity=2);
+    optionsCluster = Marabou.createOptions(snc=True, verbosity=0);            
+    vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
     modelOnnxMarabou.saveQuery(runName)
     if fromImage:
         predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
