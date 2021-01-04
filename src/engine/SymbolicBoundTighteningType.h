@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file BoundTighteningType.h
+/*! \file SymbolicBoundTighteningType.h
 ** \verbatim
 ** Top contributors (to current version):
 **   Haoze Andrew Wu
@@ -13,17 +13,17 @@
 
 **/
 
-#ifndef __BoundTighteningType_h__
-#define __BoundTighteningType_h__
+#ifndef __SymbolicBoundTighteningType_h__
+#define __SymbolicBoundTighteningType_h__
 
 /*
   MILP solver bound tighening options
 */
-enum class BoundTighteningType
+enum class SymbolicBoundTighteningType
 {
      SYMBOLIC_BOUND_TIGHTENING = 0,
      DEEP_POLY = 1,
      NONE = 2,
 };
 
-#endif // __BoundTighteningType_h__
+#endif // __SymbolicBoundTighteningType_h__

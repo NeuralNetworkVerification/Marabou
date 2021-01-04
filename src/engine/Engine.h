@@ -37,6 +37,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include "SymbolicBoundTighteningType.h"
 
 #include <atomic>
 
@@ -332,6 +333,11 @@ private:
       Strategy used for internal splitting
     */
     DivideStrategy _splittingStrategy;
+
+    /*
+      Type of symbolic bound tightening
+    */
+    SymbolicBoundTighteningType _symbolicBoundTighteningType;
 
     /*
       Disjunction that is used for splitting but doesn't exist in the beginning

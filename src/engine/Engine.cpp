@@ -15,7 +15,6 @@
  **/
 
 #include "AutoConstraintMatrixAnalyzer.h"
-#include "BoundTighteningType.h"
 #include "Debug.h"
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
@@ -51,6 +50,7 @@ Engine::Engine()
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( Options::get()->getDivideStrategy() )
+    , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
@@ -1823,7 +1823,7 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSymbolicBoundTightening()
 {
-    if ( Options::get()->getBoundTighteningType() == BoundTighteningType::NONE ||
+    if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) )
         return;
 
@@ -1835,7 +1835,12 @@ void Engine::performSymbolicBoundTightening()
     _networkLevelReasoner->obtainCurrentBounds();
 
     // Step 2: perform SBT
-    _networkLevelReasoner->symbolicBoundPropagation();
+    if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+        _networkLevelReasoner->symbolicBoundPropagation();
+    if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+        _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;

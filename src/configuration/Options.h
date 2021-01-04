@@ -16,13 +16,13 @@
 #ifndef __Options_h__
 #define __Options_h__
 
-#include "BoundTighteningType.h"
 #include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
 #include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
+#include "SymbolicBoundTighteningType.h"
 
 #include "boost/program_options.hpp"
 
@@ -118,7 +118,7 @@ public:
     String getString( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
-    BoundTighteningType getBoundTighteningType() const;
+    SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
 
     /*

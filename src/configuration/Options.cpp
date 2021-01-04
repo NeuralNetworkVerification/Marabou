@@ -158,17 +158,17 @@ SnCDivideStrategy Options::getSnCDivideStrategy() const
         return SnCDivideStrategy::Auto;
 }
 
-BoundTighteningType Options::getBoundTighteningType() const
+SymbolicBoundTighteningType Options::getSymbolicBoundTighteningType() const
 {
     String strategyString = String( _stringOptions.get( Options::BOUND_TIGHTENING_TYPE ) );
     if ( strategyString == "sbt" )
-        return BoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
+        return SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
     else if ( strategyString == "deeppoly" )
-        return BoundTighteningType::DEEP_POLY;
+        return SymbolicBoundTighteningType::DEEP_POLY;
     else if ( strategyString == "none" )
-        return BoundTighteningType::NONE;
+        return SymbolicBoundTighteningType::NONE;
     else
-        return BoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
+        return SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
 }
 
 MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
