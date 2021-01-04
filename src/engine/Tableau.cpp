@@ -1780,7 +1780,6 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
             _costFunctionManager->invalidateCostFunction();
     }
 
- 
     // Update only for a basic var
     if ( GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable) )
     {

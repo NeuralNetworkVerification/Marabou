@@ -31,16 +31,20 @@ SingleVarBoundsExplanator::~SingleVarBoundsExplanator()
 void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bound, const bool isUpper ) const
 {
 	ASSERT( bound.size() == _length )
+
+	const std::vector<double>& temp = isUpper? _upper : _lower;
 	for ( unsigned i = 0; i < _length; ++i )
-		bound[i] = isUpper ? _upper[i] : _lower[i];
+		bound[i] = temp[i];
 }
 
 
 void SingleVarBoundsExplanator::updateVarBoundExplanation( std::vector<double>& newBound, const bool isUpper )
 {
 	ASSERT(newBound.size() == _length)
+
+	std::vector<double>& temp = isUpper? _upper : _lower;
 	for ( unsigned i = 0; i < _length; ++i )
-		isUpper ? _upper[i] = newBound[i] : _lower[i] = newBound[i];
+		temp[i] = newBound[i];
 }
 
 

@@ -510,7 +510,7 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            if( GlobalConfiguration::PROOF_CERTIFICATE ) //TODO put in another function
+            if( GlobalConfiguration::PROOF_CERTIFICATE ) 
                 simplexBoundsUpdate();
             throw InfeasibleQueryException();
         }
