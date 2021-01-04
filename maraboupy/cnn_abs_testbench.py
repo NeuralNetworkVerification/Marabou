@@ -89,8 +89,6 @@ plt.savefig(fName)
 
 printLog("Starting Abstractions")
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax))
-#maskList = [mask for mask in maskList if np.any(np.not_equal(mask, np.ones(mask.shape)))] FIXME this is temporary
-#maskList = [np.ones(maskList[0].shape)]
 printLog("Created {} masks".format(len(maskList)))
 
 currentMbouRun = 0
@@ -102,11 +100,10 @@ for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=True) #FIXME coi
-    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startþTotal))
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=True)
+    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1
     isSporious = None
-    #continue #FIXME
     if sat:
         printLog("Found CEX in mask number {} out of {}, checking if sporious.".format(i+1, len(maskList)))
         isSporious = isCEXSporious(modelOrigDense, xAdv, inDist, yMax, ySecond, cex, logger)
@@ -124,7 +121,7 @@ for i, mask in enumerate(maskList):
 else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=True) #FIXME coi
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=True)
     startLocal = time.time()
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1    
