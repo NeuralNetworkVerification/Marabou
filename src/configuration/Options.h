@@ -16,6 +16,7 @@
 #ifndef __Options_h__
 #define __Options_h__
 
+#include "BoundTighteningType.h"
 #include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
@@ -88,6 +89,7 @@ public:
         SUMMARY_FILE,
         SPLITTING_STRATEGY,
         SNC_SPLITTING_STRATEGY,
+        BOUND_TIGHTENING_TYPE,
         MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
     };
@@ -116,6 +118,7 @@ public:
     String getString( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
+    BoundTighteningType getBoundTighteningType() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
 
     /*

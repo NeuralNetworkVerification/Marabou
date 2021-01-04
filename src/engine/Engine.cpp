@@ -98,12 +98,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
-    performDeepPolyAnalysis();
-    if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-    {
-        _networkLevelReasoner->dumpBounds();
-    }
-
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
 
@@ -1112,7 +1106,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         if ( preprocess )
+        {
+            performSymbolicBoundTightening();
             performMILPSolverBoundedTightening();
+        }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
 
         if ( _splittingStrategy == DivideStrategy::Auto )
         {

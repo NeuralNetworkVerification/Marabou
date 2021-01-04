@@ -72,6 +72,9 @@ void OptionParser::initialize()
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
           "The splitting strategy" )
+        ( "tightening-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::BOUND_TIGHTENING_TYPE]) ),
+          "type of bound tightening technique to use" )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) ),
           "(DNC) Number of times to initially bisect the input region" )
