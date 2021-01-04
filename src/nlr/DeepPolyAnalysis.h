@@ -35,8 +35,15 @@ public:
 
 private:
     LayerOwner *_layerOwner;
+
+    /*
+      Maps layer index to the abstract element
+    */
     Map<unsigned, DeepPolyElement *> _deepPolyElements;
 
+    /*
+      Working memory for the abstract elements to execute
+    */
     double * _work1SymbolicLb;
     double * _work1SymbolicUb;
     double * _work2SymbolicLb;

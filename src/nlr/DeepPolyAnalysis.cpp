@@ -88,8 +88,8 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
     for ( unsigned i = 0; i < _layerOwner->getNumberOfLayers(); ++i )
     {
         /*
-          Go over the layers, one by one. Each time construct the abstract element
-          and tighten the bounds
+          Go over the layers, one by one. Each time construct and execute
+          the abstract element.
         */
         ASSERT( layers.exists( i ) );
         Layer *layer = layers[i];
