@@ -2596,8 +2596,7 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
     return true;
 }
 
-// TODO erase
-int Tableau::getInfeasibleRow( TableauRow& row ) 
+int Tableau::getInfeasibleRow( TableauRow& row )
 {
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -2610,27 +2609,15 @@ int Tableau::getInfeasibleRow( TableauRow& row )
     return -1;
 }
 
-int Tableau::getInfeasibleVar()
+int Tableau::getInfeasibleVar() const
 {
     for (unsigned i = 0; i < _n; ++i)
         if (_lowerBounds[i] > _upperBounds[i])
-            return i;
- 
-    // In case of infeasibility dicovered by assignment 
-    // Assumption - this method is called after UNSAT is detected.
-    TableauRow row = TableauRow( _n );
-    for (unsigned i = 0; i < _m; ++i)
-    {
-        if (basicOutOfBounds( i ))
-        {
-            Tableau::getTableauRow( i, &row );
-            return row._lhs;
-        }
-    }
+            return i;  
     return -1;
 }
 
-SingleVarBoundsExplanator& Tableau::ExplainBound( unsigned variable )
+SingleVarBoundsExplanator& Tableau::ExplainBound( const unsigned variable ) const
 {
     ASSERT(variable < _n);
     return _boundsExplanator->returnWholeVarExplanation( variable );
@@ -2639,6 +2626,24 @@ SingleVarBoundsExplanator& Tableau::ExplainBound( unsigned variable )
 void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const
 {
     _boundsExplanator->updateBoundExplanation( row, isUpper );
+}
+
+double Tableau::computeRowBound(const TableauRow& row, const bool isUpper) const
+{
+    double bound = 0, multiplier;
+    unsigned var;
+    for ( unsigned i = 0; i < row._size; ++i )
+    {
+        var = row._row[i]._var;
+        if( !row[i] )
+            continue;
+
+        multiplier = (isUpper && row[i] > 0) || (!isUpper && row[i] < 0)? _upperBounds[var] : _lowerBounds[var];
+        multiplier *= row[i];
+        bound += multiplier;
+    }
+
+    return bound;
 }
 
 //

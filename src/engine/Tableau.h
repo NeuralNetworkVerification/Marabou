@@ -646,13 +646,22 @@ private:
      Returns a variable with infeasible bounds, if exists
      Otherwise returns -1
    */
-    int getInfeasibleVar();
+    int getInfeasibleVar() const;
+
+    /*
+    * Computes the upper bound imposed by row rhs
+    * Consider making a static function
+    */
+    double Tableau::computeRowBound(const TableauRow& row, const bool isUpper) const;
 
     /*
       Returns the bounds explanation of a variable in the tableau
     */
-    SingleVarBoundsExplanator& Tableau::ExplainBound( unsigned variable );
+    SingleVarBoundsExplanator& Tableau::ExplainBound( const unsigned variable ) const;
 
+    /*
+     Update a bound explanation of a row in the Tableau
+    */
     void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const;
 
     /*

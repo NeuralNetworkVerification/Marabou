@@ -510,18 +510,8 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            if( GlobalConfiguration::PROOF_CERTIFICATE )
-            {
-                // Failure of a simplex step is equivalent to infeasible bounds
-                TableauRow boundUpdateRow = TableauRow( _tableau->getN() );
-                int rowIndex = _tableau->getInfeasibleRow( boundUpdateRow );
-                // If the infeasible basic is lower than its lower bound, then it cannot be decreased.
-                // Thus the upper bound imposed by the row is too low
-                // TODO should perform bound tightening again?
-                bool isUpper = _tableau->basicTooLow( rowIndex );
-                _tableau->updateExplanation( boundUpdateRow, isUpper );
-            }
-           
+            if( GlobalConfiguration::PROOF_CERTIFICATE ) //TODO put in another function
+                simplexBoundsUpdate();
             throw InfeasibleQueryException();
         }
     }
@@ -2298,35 +2288,7 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
     }
 }
 
-
-//TODO erase
-void Engine::printSimplexUNSATCertificate()
-{
-    printf( "The final dictionary:\n" );
-    _tableau->dumpEquations();
-    const int m = _tableau->getM(), n = _tableau->getN();
-    double* coeff = new double[m];
-
-    for ( int i = 0; i < m; ++i )
-        coeff[i] = 0;
-
-    TableauRow row = TableauRow( n );
-    int success = _tableau->getInfeasibleRow( row );
-
-    if ( success ) {
-        for ( int i = 0; i < row._size; ++i )
-            if ( row._row[i]._var >= n - m ) // If var was part of original basis, store the relevant coefficient
-                coeff[row._row[i]._var - n + m] = row._row[i]._coefficient;
-
-        if ( row._lhs >= n - m ) //If the lhs was part of original basis, its coefficient is -1
-            coeff[row._lhs - n + m] = -1;
-        printf( "The coefficents witness infeasibility are:\n" );
-        for ( int i = 0; i < m; ++i )
-            printf( "%.2lf ,", coeff[i] );
-    }
-}
-
-void Engine::printInfeasibilityCertificate()
+void Engine::printInfeasibilityCertificate() 
 {
     printf( "The final dictionary:\n" );
     _tableau->dumpEquations();
@@ -2351,4 +2313,45 @@ void Engine::printInfeasibilityCertificate()
     printf( "]\n" );
 
     expl.clear();
+}
+
+void Engine::simplexBoundsUpdate()
+{
+    // Failure of a simplex step implies infeasible bounds imposed by the row
+    TableauRow boundUpdateRow = TableauRow(_tableau->getN());
+    // If an infeasible basic is lower than its lower bound, then it cannot be increased.
+    // Thus the upper bound imposed by the row is too low
+    int rowIndex = _tableau->getInfeasibleRow(boundUpdateRow);
+    ASSERT(rowIndex >= 0);
+    if (_tableau->basicTooLow(rowIndex))
+        _tableau->tightenUpperBound(boundUpdateRow._lhs, _tableau->computeRowBound(boundUpdateRow, true));
+    else
+        _tableau->tightenLowerBound(boundUpdateRow._lhs, _tableau->computeRowBound(boundUpdateRow, false));
+}
+
+//TODO erase
+void Engine::printSimplexUNSATCertificate()
+{
+    printf("The final dictionary:\n");
+    _tableau->dumpEquations();
+    const int m = _tableau->getM(), n = _tableau->getN();
+    double* coeff = new double[m];
+
+    for (int i = 0; i < m; ++i)
+        coeff[i] = 0;
+
+    TableauRow row = TableauRow(n);
+    int success = _tableau->getInfeasibleRow(row);
+
+    if (success) {
+        for (int i = 0; i < row._size; ++i)
+            if (row._row[i]._var >= n - m) // If var was part of original basis, store the relevant coefficient
+                coeff[row._row[i]._var - n + m] = row._row[i]._coefficient;
+
+        if (row._lhs >= n - m) //If the lhs was part of original basis, its coefficient is -1
+            coeff[row._lhs - n + m] = -1;
+        printf("The coefficents witness infeasibility are:\n");
+        for (int i = 0; i < m; ++i)
+            printf("%.2lf ,", coeff[i]);
+    }
 }
