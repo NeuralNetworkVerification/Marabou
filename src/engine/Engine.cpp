@@ -1838,8 +1838,8 @@ void Engine::performSymbolicBoundTightening()
     if ( _symbolicBoundTighteningType ==
          SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
         _networkLevelReasoner->symbolicBoundPropagation();
-    if ( _symbolicBoundTighteningType ==
-         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+    else if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::DEEP_POLY )
         _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds

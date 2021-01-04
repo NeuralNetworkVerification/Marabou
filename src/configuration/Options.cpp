@@ -76,7 +76,7 @@ void Options::initializeDefaultValues()
     _stringOptions[SUMMARY_FILE] = "";
     _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
-    _stringOptions[BOUND_TIGHTENING_TYPE] = "";
+    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
     _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
 }
@@ -160,7 +160,8 @@ SnCDivideStrategy Options::getSnCDivideStrategy() const
 
 SymbolicBoundTighteningType Options::getSymbolicBoundTighteningType() const
 {
-    String strategyString = String( _stringOptions.get( Options::BOUND_TIGHTENING_TYPE ) );
+    String strategyString =
+        String( _stringOptions.get( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ) );
     if ( strategyString == "sbt" )
         return SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
     else if ( strategyString == "deeppoly" )
