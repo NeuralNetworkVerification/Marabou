@@ -142,40 +142,6 @@ namespace NLR {
         }
         log( "Computing symbolic bounds w.r.t. the first element - done" );
 
-        std::cout << "Symbolic lower bound:" << std::endl;
-        for ( unsigned i = 0; i < 2; ++i )
-        {
-            for ( unsigned j = 0; j < 2; ++j )
-            {
-                std::cout << _work1SymbolicLb[i * 2 + j] << " ";
-            }
-            std::cout << std::endl;
-        }
-
-        std::cout << "Symbolic lower bound bias:" << std::endl;
-        for ( unsigned i = 0; i < 2; ++i )
-        {
-            std::cout << _workSymbolicLowerBias[i] << " ";
-        }
-        std::cout << std::endl;
-
-        std::cout << "Symbolic upper bound:" << std::endl;
-        for ( unsigned i = 0; i < 2; ++i )
-        {
-            for ( unsigned j = 0; j < 2; ++j )
-            {
-                std::cout << _work1SymbolicUb[i * 2 + j] << " ";
-            }
-            std::cout << std::endl;
-        }
-
-        std::cout << "Symbolic upper bound bias:" << std::endl;
-        for ( unsigned i = 0; i < 2; ++i )
-            {
-                std::cout << _workSymbolicUpperBias[i] << " ";
-            }
-        std::cout << std::endl;
-
         log( "Concretizing bound..." );
         std::fill_n( _lb, size, 0 );
         std::fill_n( _ub, size, 0 );
