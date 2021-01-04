@@ -105,9 +105,13 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
         // Extract updated bounds
         for ( unsigned j = 0; j < deepPolyElement->getSize(); ++j )
         {
+            if ( layer->neuronEliminated( j ) )
+                continue;
             double lb = deepPolyElement->getLowerBound( j );
             if ( layer->getLb( j ) < lb )
             {
+                log( Stringf( "Neuron %u_%u lower-bound updated from  %f to %f",
+                              i, j, layer->getLb( j ), lb ) );
                 layer->setLb( j, lb );
                 _layerOwner->receiveTighterBound
                     ( Tightening( layer->neuronToVariable( j ),
@@ -116,6 +120,8 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
             double ub = deepPolyElement->getUpperBound( j );
             if ( layer->getUb( j ) > ub )
             {
+                log( Stringf( "Neuron %u_%u upper-bound updated from  %f to %f",
+                              i, j, layer->getUb( j ), ub ) );
                 layer->setUb( j, ub );
                 _layerOwner->receiveTighterBound
                     ( Tightening( layer->neuronToVariable( j ),
@@ -172,6 +178,12 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
                         Stringf( "Layer %u not yet supported",
                                  layer->getLayerType() ).ascii() );
     return deepPolyElement;
+}
+
+void DeepPolyAnalysis::log( const String &message )
+{
+    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+        printf( "DeepPolyAnalysis: %s\n", message.ascii() );
 }
 
 } // namespace NLR

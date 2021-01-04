@@ -64,17 +64,16 @@ namespace NLR {
 
         unsigned size = getSize();
 
-        for ( unsigned i = 0; i < 2; ++i )
-        {
-            for ( unsigned j = 0; j < 2; ++j )
-                {
-                    _work1SymbolicLb[i * 2 + j] = symbolicLb[i * 2 + j];
-                    _work1SymbolicUb[i * 2 + j] = symbolicUb[i * 2 + j];
-                    std::cout << _work1SymbolicLb[i * 2 + j] << " ";
-                }
-            std::cout << std::endl;
-        }
+        unsigned previousSize = deepPolyElementsBefore[sourceLayerIndex]->getSize();
 
+        for ( unsigned i = 0; i < size; ++i )
+        {
+            for ( unsigned j = 0; j < previousSize; ++j )
+            {
+                _work1SymbolicLb[i * previousSize + j] = symbolicLb[i * previousSize + j];
+                _work1SymbolicUb[i * previousSize + j] = symbolicUb[i * previousSize + j];
+            }
+        }
 
         for ( unsigned i = 0; i < size; ++i )
         {

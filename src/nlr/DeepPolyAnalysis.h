@@ -48,6 +48,8 @@ private:
     void freeMemoryIfNeeded();
 
     DeepPolyElement *createDeepPolyElement( Layer *layer );
+
+    void log( const String &message );
 };
 
 } // namespace NLR
