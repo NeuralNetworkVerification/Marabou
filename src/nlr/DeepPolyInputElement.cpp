@@ -49,7 +49,7 @@ namespace NLR {
 
     void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor
     ( const double *, const double *, double *, double *, double *, double *,
-      unsigned, unsigned, unsigned )
+      unsigned, DeepPolyElement * )
     {
         // Input layer should not have a predecessor
         ASSERT( false );

@@ -118,9 +118,9 @@ namespace NLR {
     ( const double *symbolicLb, const double*symbolicUb, double
       *symbolicLowerBias, double *symbolicUpperBias, double
       *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-      unsigned targetLayerSize, unsigned previousLayerSize,
-      unsigned )
+      unsigned targetLayerSize, DeepPolyElement *predecessor )
     {
+        unsigned previousLayerSize = predecessor->getSize();
         std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
                      previousLayerSize, 0 );
         std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *

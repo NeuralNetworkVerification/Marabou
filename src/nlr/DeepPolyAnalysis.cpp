@@ -92,8 +92,9 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
           the abstract element.
         */
         ASSERT( layers.exists( i ) );
-        Layer *layer = layers[i];
+        log( Stringf( "Running deeppoly analysis for layer %u...", i ) );
 
+        Layer *layer = layers[i];
         DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
         deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
                                            _work2SymbolicLb, _work2SymbolicUb,
@@ -127,8 +128,8 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
                     ( Tightening( layer->neuronToVariable( j ),
                                   ub, Tightening::UB ) );
             }
-
         }
+        log( Stringf( "Running deeppoly analysis for layer %u - done", i ) );
     }
 }
 

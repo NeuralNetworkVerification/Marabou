@@ -45,6 +45,18 @@ namespace NLR {
         return _layerIndex;
     }
 
+    bool DeepPolyElement::hasPredecessor()
+    {
+        return !_layer->getSourceLayers().empty();
+    }
+
+    unsigned DeepPolyElement::getSourceLayerElementIndex() const
+    {
+        const Map<unsigned, unsigned> &sourceLayers = _layer->getSourceLayers();
+        ASSERT( sourceLayers.size() == 1 );
+        return sourceLayers.begin()->first;
+    }
+
     double *DeepPolyElement::getSymbolicLb() const
     {
         return _symbolicLb;

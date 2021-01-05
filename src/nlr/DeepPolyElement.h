@@ -38,17 +38,18 @@ public:
     /*
       Given the symbolic bounds of some layer Y (of size layerSize) in terms of
       this layer, store (in the last four arugment) the symbolic bounds of layer
-      Y in terms of the predecessor of this layer.
+      Y in terms of an immediate predecessor of this layer.
     */
     virtual void symbolicBoundInTermsOfPredecessor
     ( const double *symbolicLb, const double*symbolicUb, double
       *symbolicLowerBias, double *symbolicUpperBias, double
       *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-      unsigned targetLayerSize, unsigned previousLayerSize,
-      unsigned previousLayerIndex ) = 0;
+      unsigned targetLayerSize, DeepPolyElement *predecessor ) = 0;
 
     unsigned getSize() const;
     unsigned getLayerIndex() const;
+    bool hasPredecessor();
+    unsigned getSourceLayerElementIndex() const;
     Layer::Type getLayerType() const;
     double *getSymbolicLb() const;
     double *getSymbolicUb() const;
