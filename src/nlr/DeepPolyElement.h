@@ -46,10 +46,18 @@ public:
       *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
       unsigned targetLayerSize, DeepPolyElement *predecessor ) = 0;
 
+    /*
+      Returns whether this abstract element has a predecessor.
+    */
+    bool hasPredecessor();
+
+    /*
+      Returns the layer index corresponding to the predecessor of this element.
+    */
+    unsigned getPredecessorIndex() const;
+
     unsigned getSize() const;
     unsigned getLayerIndex() const;
-    bool hasPredecessor();
-    unsigned getPredecessorIndex() const;
     Layer::Type getLayerType() const;
     double *getSymbolicLb() const;
     double *getSymbolicUb() const;
@@ -68,8 +76,11 @@ protected:
     unsigned _size;
     unsigned _layerIndex;
 
-    // Abstract element described in
-    // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
+    /*
+      Abstract element described in
+      https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
+      The symbolicBounds are in terms of the preceding layer.
+    */
     double *_symbolicLb;
     double *_symbolicUb;
     double *_symbolicLowerBias;
@@ -86,6 +97,8 @@ protected:
 
     void allocateMemory();
     void freeMemoryIfNeeded();
+
+    // Obtain the concrete bounds stored in _layer.
     void getConcreteBounds();
 };
 

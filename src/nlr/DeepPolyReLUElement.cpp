@@ -131,38 +131,60 @@ namespace NLR {
         std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
                      predecessorSize, 0 );
 
+        /*
+          We have the symbolic bound of the target layer in terms of the
+          ReLU outputs, the goal is to compute the symbolic bound of the target
+          layer in terms of the ReLU inputs.
+        */
         for ( unsigned i = 0; i < _size; ++i )
         {
-            double weightLbPred = _symbolicLb[i];
-            double weightUbPred = _symbolicUb[i];
-            double lowerBiasPred = _symbolicLowerBias[i];
-            double upperBiasPred = _symbolicUpperBias[i];
+            /*
+              Take symbolic upper bound as an example.
+              Suppose the symbolic upper bound of the j-th neuron in the
+              target layer is ... + a_i * f_i + ...,
+              and the symbolic bounds of f_i in terms of b_i is
+              m * b_i + n <= f_i <= p * b_i + q.
+              If a_i >= 0, replace f_i with p * b_i + q, otherwise,
+              replace f_i with m * b_i + n
+            */
 
-            // Update weights
+            // Symbolic bounds of the ReLU output in terms of the ReLU input
+            // coeffLb * b_i + lowerBias <= f_i <= coeffUb * b_i + upperBias
+            double coeffLb = _symbolicLb[i];
+            double coeffUb = _symbolicUb[i];
+            double lowerBias = _symbolicLowerBias[i];
+            double upperBias = _symbolicUpperBias[i];
+
+            // Substitute the ReLU input for the ReLU output
             for ( unsigned j = 0; j < targetLayerSize; ++j )
             {
+                // The symbolic lower- and upper- bounds of the j-th neuron in the
+                // target layer are ... + weightLb * f_i + ...
+                // and ... + weightUb * f_i + ..., respectively.
                 unsigned index = i * targetLayerSize + j;
-                double weightLb = symbolicLb[index];
-                double weightUb = symbolicUb[index];
 
+                // Update the symbolic lower bound
+                double weightLb = symbolicLb[index];
                 if ( weightLb >= 0 )
                 {
-                    symbolicLbInTermsOfPredecessor[index] = weightLb * weightLbPred;
-                    symbolicLowerBias[j] += weightLb * lowerBiasPred;
+                    symbolicLbInTermsOfPredecessor[index] = weightLb * coeffLb;
+                    symbolicLowerBias[j] += weightLb * lowerBias;
                 } else
                 {
-                    symbolicLbInTermsOfPredecessor[index] = weightLb * weightUbPred;
-                    symbolicLowerBias[j] += weightLb * upperBiasPred;
+                    symbolicLbInTermsOfPredecessor[index] = weightLb * coeffUb;
+                    symbolicLowerBias[j] += weightLb * upperBias;
                 }
 
+                // Update the symbolic upper bound
+                double weightUb = symbolicUb[index];
                 if ( weightUb >= 0 )
                 {
-                    symbolicUbInTermsOfPredecessor[index] = weightUb * weightUbPred;
-                    symbolicUpperBias[j] += weightUb * upperBiasPred;
+                    symbolicUbInTermsOfPredecessor[index] = weightUb * coeffUb;
+                    symbolicUpperBias[j] += weightUb * upperBias;
                 } else
                 {
-                    symbolicUbInTermsOfPredecessor[index] = weightUb * weightLbPred;
-                    symbolicUpperBias[j] += weightUb * lowerBiasPred;
+                    symbolicUbInTermsOfPredecessor[index] = weightUb * coeffLb;
+                    symbolicUpperBias[j] += weightUb * lowerBias;
                 }
             }
         }
