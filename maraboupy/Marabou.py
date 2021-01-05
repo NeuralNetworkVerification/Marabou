@@ -121,7 +121,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
                   splittingStrategy="auto", sncSplittingStrategy="auto",
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
-                  preprocessorBoundTolerance=0.0000000001):
+                  preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
+                  tighteningStrategy="deeppoly" ):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -140,6 +141,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
         restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode, defaults to False
         solveWithMILP ( bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
         preprocessorBoundTolerance ( float, optional): epsilon value for preprocess bound tightening . Defaults to 10^-10.
+        dumpBounds (bool, optional): Print out the bounds of each neuron after preprocessing. defaults to False
+        tighteningStrategy (string, optional): The abstract-interpretation-based bound tightening techniques used during the search (deeppoly/sbt/none). default to deeppoly.
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -158,4 +161,6 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._splitThreshold = splitThreshold
     options._solveWithMILP = solveWithMILP
     options._preprocessorBoundTolerance = preprocessorBoundTolerance
+    options._dumpBounds = dumpBounds
+    options._tighteningStrategy = tighteningStrategy
     return options
