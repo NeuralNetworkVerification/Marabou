@@ -47,8 +47,8 @@ namespace NLR {
             ASSERT( deepPolyElementsBefore.exists( getLayerIndex() - 1 ) );
             DeepPolyElement *previousElement =
                 deepPolyElementsBefore[ getLayerIndex() - 1];
-            ASSERT( previousElement->getSize() == getSize() );
-            for ( unsigned i = 0; i < getSize(); ++i )
+            ASSERT( previousElement->getSize() == _size );
+            for ( unsigned i = 0; i < _size; ++i )
             {
                 double sourceLb = previousElement->getLowerBound( i );
                 double sourceUb = previousElement->getUpperBound( i );
@@ -120,15 +120,16 @@ namespace NLR {
       *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
       unsigned targetLayerSize, DeepPolyElement *predecessor )
     {
-        unsigned previousLayerSize = predecessor->getSize();
+        log( Stringf( "Computing symbolic bounds with respect to layer %u...",
+                      predecessor->getLayerIndex() ) );
+
+        unsigned predecessorSize = predecessor->getSize();
         std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
-                     previousLayerSize, 0 );
+                     predecessorSize, 0 );
         std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
-                     previousLayerSize, 0 );
+                     predecessorSize, 0 );
 
-        unsigned size = getSize();
-
-        for ( unsigned i = 0; i < size; ++i )
+        for ( unsigned i = 0; i < _size; ++i )
         {
             double weightLbPred = _symbolicLb[i];
             double weightUbPred = _symbolicUb[i];
@@ -171,18 +172,17 @@ namespace NLR {
 
         DeepPolyElement::allocateMemory();
 
-        unsigned size = getSize();
-        _symbolicLb = new double[size];
-        _symbolicUb = new double[size];
+        _symbolicLb = new double[_size];
+        _symbolicUb = new double[_size];
 
-        std::fill_n( _symbolicLb, size, 0 );
-        std::fill_n( _symbolicUb, size, 0 );
+        std::fill_n( _symbolicLb, _size, 0 );
+        std::fill_n( _symbolicUb, _size, 0 );
 
-        _symbolicLowerBias = new double[size];
-        _symbolicUpperBias = new double[size];
+        _symbolicLowerBias = new double[_size];
+        _symbolicUpperBias = new double[_size];
 
-        std::fill_n( _symbolicLowerBias, size, 0 );
-        std::fill_n( _symbolicUpperBias, size, 0 );
+        std::fill_n( _symbolicLowerBias, _size, 0 );
+        std::fill_n( _symbolicUpperBias, _size, 0 );
     }
 
     void DeepPolyReLUElement::freeMemoryIfNeeded()

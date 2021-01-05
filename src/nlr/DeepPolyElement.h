@@ -49,7 +49,7 @@ public:
     unsigned getSize() const;
     unsigned getLayerIndex() const;
     bool hasPredecessor();
-    unsigned getSourceLayerElementIndex() const;
+    unsigned getPredecessorIndex() const;
     Layer::Type getLayerType() const;
     double *getSymbolicLb() const;
     double *getSymbolicUb() const;

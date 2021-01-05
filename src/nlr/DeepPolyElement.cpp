@@ -50,9 +50,10 @@ namespace NLR {
         return !_layer->getSourceLayers().empty();
     }
 
-    unsigned DeepPolyElement::getSourceLayerElementIndex() const
+    unsigned DeepPolyElement::getPredecessorIndex() const
     {
         const Map<unsigned, unsigned> &sourceLayers = _layer->getSourceLayers();
+        // Right now, assume that each layer has one predecessor.
         ASSERT( sourceLayers.size() == 1 );
         return sourceLayers.begin()->first;
     }
