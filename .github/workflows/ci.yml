@@ -102,3 +102,13 @@ jobs:
         run: |
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
+
+      - name: Generate Python Code Coverage
+        if: ${{ matrix.compiler == 'g++' }} 
+        run: python3 -m pytest --cov=maraboupy --cov-report=xml  $(find $GITHUB_WORKSPACE -name "maraboupy" -type d)/test
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.compiler == 'g++' }} 
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./coverage.xml
