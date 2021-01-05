@@ -34,82 +34,84 @@ namespace NLR {
                                    &deepPolyElementsBefore )
     {
         log( "Executing..." );
-        freeMemoryIfNeeded();
+        ASSERT( hasPredecessor() );
+        allocateMemory();
+        DeepPolyElement *predecessor =
+            deepPolyElementsBefore[getPredecessorIndex()];
+        ASSERT( predecessor->getSize() == _size );
 
-        if ( deepPolyElementsBefore.empty() )
+        // Update the symbolic and concrete upper- and lower- bounds
+        // of each neuron
+        for ( unsigned i = 0; i < _size; ++i )
         {
-            // If this is the first layer, just update the concrete bounds
-            DeepPolyElement::allocateMemory();
-            getConcreteBounds();
-        } else
-        {
-            allocateMemory();
-            ASSERT( deepPolyElementsBefore.exists( getLayerIndex() - 1 ) );
-            DeepPolyElement *previousElement =
-                deepPolyElementsBefore[ getLayerIndex() - 1];
-            ASSERT( previousElement->getSize() == _size );
-            for ( unsigned i = 0; i < _size; ++i )
+            double sourceLb = predecessor->getLowerBound( i );
+            double sourceUb = predecessor->getUpperBound( i );
+
+            if ( !FloatUtils::isNegative( sourceLb ) )
             {
-                double sourceLb = previousElement->getLowerBound( i );
-                double sourceUb = previousElement->getUpperBound( i );
+                // Phase active
+                // Symbolic bound: x_b <= x_f <= x_b
+                // Concrete bound: lb_b <= x_f <= ub_b
+                _symbolicUb[i] = 1;
+                _symbolicUpperBias[i] = 0;
+                _ub[i] = sourceUb;
 
-                if ( !FloatUtils::isNegative( sourceLb ) )
+                _symbolicLb[i] = 1;
+                _symbolicLowerBias[i] = 0;
+                _lb[i] = sourceLb;
+            }
+            else if ( !FloatUtils::isPositive( sourceUb ) )
+            {
+                // Phase inactive
+                // Symbolic bound: 0 <= x_f <= 0
+                // Concrete bound: 0 <= x_f <= 0
+                _symbolicUb[i] = 0;
+                _symbolicUpperBias[i] = 0;
+                _ub[i] = 0;
+
+                _symbolicLb[i] = 0;
+                _symbolicLowerBias[i] = 0;
+                _lb[i] = 0;
+            }
+            else
+            {
+                // ReLU not fixed
+                // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
+                // Concrete upper bound: x_f <= ub_b
+                double coeff = sourceUb / ( sourceUb - sourceLb );
+                _symbolicUb[i] = coeff;
+                _symbolicUpperBias[i] = -sourceLb * coeff;
+                _ub[i] = sourceUb;
+
+                // For the lower bound, in general, x_f >= lambda * x_b, where
+                // 0 <= lambda <= 1, would be a sound lower bound. We
+                // use the heuristic described in section 4.1 of
+                // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
+                // to set the value of lambda (either 0 or 1 is considered).
+                if ( sourceUb > -sourceLb )
                 {
-                    // Phase active
-                    _symbolicUb[i] = 1;
-                    _symbolicUpperBias[i] = 0;
-                    _ub[i] = sourceUb;
-
+                    // lambda = 1
+                    // Symbolic lower bound: x_f >= x_b
+                    // Concrete lower bound: x_f >= sourceLb
                     _symbolicLb[i] = 1;
                     _symbolicLowerBias[i] = 0;
                     _lb[i] = sourceLb;
                 }
-                else if ( !FloatUtils::isPositive( sourceUb ) )
+                else
                 {
-                    // Phase active
-                    _symbolicUb[i] = 0;
-                    _symbolicUpperBias[i] = 0;
-                    _ub[i] = 0;
-
+                    // lambda = 1
+                    // Symbolic lower bound: x_f >= 0
+                    // Concrete lower bound: x_f >= 0
                     _symbolicLb[i] = 0;
                     _symbolicLowerBias[i] = 0;
                     _lb[i] = 0;
+
                 }
-                else
-                {
-                    // ReLU not fixed
-
-                    // Set symbolic upper bound
-                    // x_f <= (x_b - l) * u / ( u - l)
-                    double coeff = sourceUb / ( sourceUb - sourceLb );
-                    _symbolicUb[i] = coeff;
-                    _symbolicUpperBias[i] = -sourceLb * coeff;
-                    _ub[i] = sourceUb;
-
-                    // Set symbolic lower bound
-                    if ( sourceUb > -sourceLb )
-                    {
-                        // x_f >= x_b
-                        // l = sourceLb
-                        _symbolicLb[i] = 1;
-                        _symbolicLowerBias[i] = 0;
-                        _lb[i] = sourceLb;
-                    }
-                    else
-                    {
-                        // x_f >= 0
-                        // l = 0
-                        _symbolicLb[i] = 0;
-                        _symbolicLowerBias[i] = 0;
-                        _lb[i] = 0;
-
-                    }
-                }
-                log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
-                              i, _symbolicLb[i], _symbolicLowerBias[i],
-                              _symbolicUb[i], _symbolicUpperBias[i] ) );
-                log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
             }
+            log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
+                          i, _symbolicLb[i], _symbolicLowerBias[i],
+                          _symbolicUb[i], _symbolicUpperBias[i] ) );
+            log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
         }
         log( "Executing - done" );
     }

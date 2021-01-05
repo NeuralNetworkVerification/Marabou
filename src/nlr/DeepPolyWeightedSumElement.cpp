@@ -15,7 +15,6 @@
 
 #include "DeepPolyWeightedSumElement.h"
 #include "FloatUtils.h"
-#include "NLRError.h"
 
 #include <string.h>
 
@@ -33,20 +32,14 @@ namespace NLR {
         freeMemoryIfNeeded();
     }
 
-    void DeepPolyWeightedSumElement::execute( const Map<unsigned, DeepPolyElement *>
-                                   &deepPolyElementsBefore )
+    void DeepPolyWeightedSumElement::execute
+    ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
     {
         log( "Executing..." );
+        ASSERT( hasPredecessor() );
         allocateMemory();
-        if ( deepPolyElementsBefore.empty() )
-        {
-            // If this is the first layer, just update the concrete bounds
-            getConcreteBounds();
-        } else
-        {
-            // Otherwise, compute bounds with back-substitution
-            computeBoundWithBackSubstitution( deepPolyElementsBefore );
-        }
+        // Otherwise, compute bounds with back-substitution
+        computeBoundWithBackSubstitution( deepPolyElementsBefore );
         log( "Executing - done" );
     }
 
@@ -58,13 +51,17 @@ namespace NLR {
         // Start with the symbolic upper-/lower- bounds of this layer with
         // respect to its immediate predecessor.
         unsigned predecessorIndex = getPredecessorIndex();
-        log( Stringf( "Computing symbolic bounds with respect to layer %u...", predecessorIndex ) );
-        DeepPolyElement *precedingElement = deepPolyElementsBefore[predecessorIndex];
+        log( Stringf( "Computing symbolic bounds with respect to layer %u...",
+                      predecessorIndex ) );
+        DeepPolyElement *precedingElement =
+            deepPolyElementsBefore[predecessorIndex];
         unsigned sourceLayerSize = precedingElement->getSize();
 
         const double *weights = _layer->getWeights( predecessorIndex );
-        memcpy(_work1SymbolicLb, weights, _size * sourceLayerSize * sizeof(double) );
-        memcpy(_work1SymbolicUb, weights, _size * sourceLayerSize * sizeof(double) );
+        memcpy(_work1SymbolicLb,
+               weights, _size * sourceLayerSize * sizeof(double) );
+        memcpy(_work1SymbolicUb,
+               weights, _size * sourceLayerSize * sizeof(double) );
 
         double *bias = _layer->getBiases();
         memcpy( _workSymbolicLowerBias, bias, _size * sizeof(double) );
