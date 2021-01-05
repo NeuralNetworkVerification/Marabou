@@ -169,7 +169,7 @@ SymbolicBoundTighteningType Options::getSymbolicBoundTighteningType() const
     else if ( strategyString == "none" )
         return SymbolicBoundTighteningType::NONE;
     else
-        return SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING;
+        return SymbolicBoundTighteningType::DEEP_POLY;
 }
 
 MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const

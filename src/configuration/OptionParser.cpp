@@ -44,7 +44,7 @@ void OptionParser::initialize()
           "PL constraints generate auxiliary equations" )
         ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the split-and-conquer solving mode" )
+          "Use the split-and-conquer solving mode: largest-interval/polarity/auto. default: auto" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
