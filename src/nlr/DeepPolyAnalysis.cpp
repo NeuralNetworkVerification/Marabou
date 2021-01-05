@@ -73,6 +73,16 @@ void DeepPolyAnalysis::freeMemoryIfNeeded()
         delete[] _work2SymbolicUb;
         _work2SymbolicUb = NULL;
     }
+    if ( _workSymbolicLowerBias )
+    {
+        delete[] _workSymbolicLowerBias;
+        _workSymbolicLowerBias = NULL;
+    }
+    if ( _workSymbolicUpperBias )
+    {
+        delete[] _workSymbolicUpperBias;
+        _workSymbolicUpperBias = NULL;
+    }
 }
 
 void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )

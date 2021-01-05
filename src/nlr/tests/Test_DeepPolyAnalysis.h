@@ -33,7 +33,7 @@ public:
     {
     }
 
-    void populateNetwork( NLR::NetworkLevelReasoner &nlr )
+    void populateNetwork( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
     {
         /*
 
@@ -107,6 +107,20 @@ public:
 
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 0 ), 10 );
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 11 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large ); tableau.setUpperBound( 11, large );
     }
 
     void test_deeppoly_relus()
@@ -193,4 +207,4 @@ public:
         for ( const auto &bound : expectedBounds )
             TS_ASSERT( bounds.exists( bound ) );
     }
-}
+};
