@@ -21,6 +21,8 @@ namespace NLR {
     DeepPolyReLUElement::DeepPolyReLUElement( Layer *layer )
     {
         _layer = layer;
+        _size = layer->getSize();
+        _layerIndex = layer->getLayerIndex();
     }
 
     DeepPolyReLUElement::~DeepPolyReLUElement()
@@ -117,9 +119,8 @@ namespace NLR {
       *symbolicLowerBias, double *symbolicUpperBias, double
       *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
       unsigned targetLayerSize, unsigned previousLayerSize,
-      unsigned previousLayerIndex )
+      unsigned )
     {
-        std::cout << previousLayerSize << previousLayerIndex << std::endl;
         std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
                      previousLayerSize, 0 );
         std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *

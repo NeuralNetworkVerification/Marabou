@@ -19,6 +19,8 @@ namespace NLR {
 
     DeepPolyElement::DeepPolyElement()
         : _layer( NULL )
+        , _size( 0 )
+        , _layerIndex( 0 )
         , _symbolicLb( NULL )
         , _symbolicUb( NULL )
         , _symbolicLowerBias( NULL )
@@ -35,17 +37,12 @@ namespace NLR {
 
     unsigned DeepPolyElement::getSize() const
     {
-        return _layer->getSize();
+        return _size;
     }
 
     unsigned DeepPolyElement::getLayerIndex() const
     {
-        return _layer->getLayerIndex();
-    }
-
-    Layer::Type DeepPolyElement::getLayerType() const
-    {
-        return _layer->getLayerType();
+        return _layerIndex;
     }
 
     double *DeepPolyElement::getSymbolicLb() const

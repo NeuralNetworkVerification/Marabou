@@ -17,11 +17,15 @@
 #include "FloatUtils.h"
 #include "NLRError.h"
 
+#include <string.h>
+
 namespace NLR {
 
     DeepPolyWeightedSumElement::DeepPolyWeightedSumElement( Layer *layer )
     {
         _layer = layer;
+        _size = layer->getSize();
+        _layerIndex = layer->getLayerIndex();
     }
 
     DeepPolyWeightedSumElement::~DeepPolyWeightedSumElement()
@@ -57,30 +61,22 @@ namespace NLR {
 
         log( "Computing symbolic bounds w.r.t. the first element..." );
 
-        unsigned sourceLayerIndex = getLayerIndex() - 1;
-
-        const double *symbolicLb = _layer->getWeights( sourceLayerIndex );
-        const double *symbolicUb = _layer->getWeights( sourceLayerIndex );
-
+        Map<unsigned, unsigned> sourceLayerToSize = _layer->getSourceLayers();
+        // Right now, assume that each layer has one source layer
+        ASSERT( sourceLayerToSize.size() == 1 );
+        unsigned sourceLayerIndex = _layer->getSourceLayers().begin()->first;
+        unsigned previousSize = deepPolyElementsBefore[sourceLayerIndex]->getSize();
         unsigned size = getSize();
 
-        unsigned previousSize = deepPolyElementsBefore[sourceLayerIndex]->getSize();
 
-        for ( unsigned i = 0; i < size; ++i )
-        {
-            for ( unsigned j = 0; j < previousSize; ++j )
-            {
-                _work1SymbolicLb[i * previousSize + j] = symbolicLb[i * previousSize + j];
-                _work1SymbolicUb[i * previousSize + j] = symbolicUb[i * previousSize + j];
-            }
-        }
+        const double *symbolicBound = _layer->getWeights( sourceLayerIndex );
+        unsigned matrixSize = size * previousSize;
+        memcpy(_work1SymbolicLb, symbolicBound, matrixSize * sizeof(double) );
+        memcpy(_work1SymbolicUb, symbolicBound, matrixSize * sizeof(double) );
 
-        for ( unsigned i = 0; i < size; ++i )
-        {
-            double bias = _layer->getBias( i );
-            _workSymbolicLowerBias[i] = bias;
-            _workSymbolicUpperBias[i] = bias;
-        }
+        double *bias = _layer->getBiases();
+        memcpy( _workSymbolicLowerBias, bias, size * sizeof(double) );
+        memcpy( _workSymbolicUpperBias, bias, size * sizeof(double) );
 
         if ( sourceLayerIndex == 0 )
         {
@@ -96,7 +92,7 @@ namespace NLR {
                     double firstLb = firstElement->getLowerBound( j );
                     double firstUb = firstElement->getUpperBound( j );
                     // Compute lower bound
-                    double weight = symbolicLb[j * size + i];
+                    double weight = symbolicBound[j * size + i];
                     if ( weight >= 0 )
                     {
                         _lb[i] += ( weight * firstLb );
@@ -106,7 +102,7 @@ namespace NLR {
                     }
 
                     // Compute upper bound
-                    weight = symbolicUb[j * size + i];
+                    weight = symbolicBound[j * size + i];
                     if ( weight >= 0 )
                     {
                         _ub[i] += ( weight * firstUb );

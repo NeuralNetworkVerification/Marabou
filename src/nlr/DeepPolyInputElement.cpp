@@ -23,6 +23,8 @@ namespace NLR {
     DeepPolyInputElement::DeepPolyInputElement( Layer *layer )
     {
         _layer = layer;
+        _size = layer->getSize();
+        _layerIndex = layer->getLayerIndex();
     }
 
     DeepPolyInputElement::~DeepPolyInputElement()

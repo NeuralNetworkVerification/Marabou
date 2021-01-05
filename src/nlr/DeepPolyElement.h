@@ -47,7 +47,6 @@ public:
       unsigned targetLayerSize, unsigned previousLayerSize,
       unsigned previousLayerIndex ) = 0;
 
-    unsigned getPredecessorSize() const;
     unsigned getSize() const;
     unsigned getLayerIndex() const;
     Layer::Type getLayerType() const;
@@ -65,6 +64,8 @@ public:
 
 protected:
     Layer *_layer;
+    unsigned _size;
+    unsigned _layerIndex;
 
     // Abstract element described in
     // https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
