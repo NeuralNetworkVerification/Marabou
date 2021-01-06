@@ -38,14 +38,17 @@ void DeepPolyAbsoluteValueElement::execute( const Map<unsigned, DeepPolyElement 
     allocateMemory();
     DeepPolyElement *predecessor =
         deepPolyElementsBefore[getPredecessorIndex()];
-    ASSERT( predecessor->getSize() == _size );
 
     // Update the symbolic and concrete upper- and lower- bounds
     // of each neuron
     for ( unsigned i = 0; i < _size; ++i )
     {
-        double sourceLb = predecessor->getLowerBound( i );
-        double sourceUb = predecessor->getUpperBound( i );
+        NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
+        ASSERT( sourceIndex._layer = predecessor->getLayerIndex() );
+        double sourceLb = predecessor->getLowerBound
+            ( sourceIndex._neuron );
+        double sourceUb = predecessor->getUpperBound
+            ( sourceIndex._neuron );
 
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
