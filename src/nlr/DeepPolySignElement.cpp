@@ -80,29 +80,13 @@ void DeepPolySignElement::execute( const Map<unsigned, DeepPolyElement *>
             // Concrete upper bound: x_f <= 1
             _symbolicUb[i] = -2 / sourceLb;
             _symbolicUpperBias[i] = 1;
-            _ub[i] = sourceUb;
+            _ub[i] = 1;
 
-            // For the lower bound, in general, x_f >= lambda * x_b - 1, where
-            // 0 <= lambda <= 2 / u, would be a sound lower bound.
-            if ( sourceUb > -sourceLb )
-            {
-                // lambda = 2 / u
-                // Symbolic lower bound: x_f >= (2 / u) * x_b - 1
-                // Concrete lower bound: x_f >= sourceLb
-                _symbolicLb[i] = 2 / sourceUb;
-                _symbolicLowerBias[i] = -1;
-                _lb[i] = sourceLb;
-            }
-            else
-            {
-                // lambda = 0
-                // Symbolic lower bound: x_f >= -1
-                // Concrete lower bound: x_f >= -1
-                _symbolicLb[i] = 0;
-                _symbolicLowerBias[i] = -1;
-                _lb[i] = -1;
-
-            }
+            // Symbolic lower bound: x_f >= (2 / u) * x_b - 1
+            // Concrete lower bound: x_f >= -1
+            _symbolicLb[i] = 2 / sourceUb;
+            _symbolicLowerBias[i] = -1;
+            _lb[i] = -1;
         }
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
                       i, _symbolicLb[i], _symbolicLowerBias[i],
