@@ -18,6 +18,31 @@ from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 
 
+
+from maraboupy import MarabouCore
+from maraboupy import MarabouUtils
+from maraboupy import Marabou
+import random
+
+numVars = 16 + 1
+ipq = MarabouCore.InputQuery()
+ipq.setNumberOfVariables(numVars)
+
+bounds = [{"lb":random.randint(0,5), "ub":random.randint(5,10)} for i in range(numVars-1)]
+bounds.append({"lb":0, "ub":10})
+
+for i, bound in enumerate(bounds):
+    ipq.setLowerBound(i, bound["lb"])
+    ipq.setUpperBound(i, bound["ub"])
+    
+MarabouCore.addMaxConstraint(ipq, {i for i in range(numVars-1)}, numVars-1)
+MarabouCore.saveQuery(ipq, "IPQ_Test_MaxConstrains")
+
+options = MarabouCore.Options()
+outputDict, _ = MarabouCore.solve(ipq, options, "solve_IPQ_Test_MaxConstrains")
+
+exit()
+
 import logging
 logger = logging.getLogger('cnn_abs_testbench.log')
 logger.setLevel(logging.DEBUG)
