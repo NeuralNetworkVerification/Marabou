@@ -154,7 +154,7 @@ public:
     }
 
     /*
-      Get the infeasable cases object - debugging purposes only
+      Get the infeasible cases object - debugging purposes only
     */
     CVC4::context::CDList<PhaseStatus> *getInfeasibleCasesCDList() const
     {
@@ -226,7 +226,8 @@ protected:
     void initializeCDInfeasibleCases();
 
     /*
-       Method provided to allow safe copying of the context-dependent members, which will be freshly initialized in a copy and with the same values.
+       Method provided to allow safe copying of the context-dependent members,
+       which will be freshly initialized in a copy and with the same values.
      */
     void initializeDuplicatesCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
 
