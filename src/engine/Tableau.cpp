@@ -2618,7 +2618,10 @@ int Tableau::getInfeasibleVar() const
 
 SingleVarBoundsExplanator& Tableau::ExplainBound( const unsigned variable ) const
 {
-    ASSERT(variable < _n);
+    if ( !GlobalConfiguration::PROOF_CERTIFICATE )
+        return;
+
+    ASSERT( variable < _n );
     return _boundsExplanator->returnWholeVarExplanation( variable );
 }
 

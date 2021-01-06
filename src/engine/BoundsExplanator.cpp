@@ -40,7 +40,7 @@ void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bou
 
 void SingleVarBoundsExplanator::updateVarBoundExplanation( const std::vector<double>& newBound, const bool isUpper )
 {
-	ASSERT(newBound.size() == _length)
+	ASSERT( newBound.size() == _length )
 
 	std::vector<double>& temp = isUpper? _upper : _lower;
 	for ( unsigned i = 0; i < _length; ++i )
