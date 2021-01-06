@@ -10,30 +10,37 @@
  ** directory for licensing information.\endverbatim
  **
  ** This class is an implementation of PiecewiseLinearConstraint using
- ** context-dependent data structures from CVC4, which lazily and automatically
- ** back-track in sync with the central context object. These data structures
- ** are delicate and require that data stored is safe to memcopy around, but
- ** provide built-in backtracking which is cheap in terms of computational overhead.
+ ** context-dependent (CD) data structures from CVC4, which lazily and automatically
+ ** backtrack in sync with the central context object. These data structures
+ ** are delicate and require that data stored is safe to memcopy around.
  **
- ** The basic members of PiecewiseLinearConstraint class use context-dependent
- ** objects (CDOs), which need to be initialized for the backtracking search in
- ** Marabou and are not needed for pre-processing purposes. Initialization is
- ** performed using the initializeCDOs( Context context ) method. Subclasses
- ** need to call initializeDuplicatesCDOs() method in the duplicateConstraint()
- ** method to avoid sharing context-dependent members. The duplication
- ** functionality might be unnecessary (and perhaps even prohibited) after CDOs
- ** are initialized.
  **
- ** The methods used by the Marabou search:
- **  * markInfeasible( PhaseStatus caseId ) - which denotes explored search space
- **  * nextFeasibleCase() - which obtains next unexplored case if one exists
+ ** Members are initialized using the initializeCDOs( Context context ) method.
+ ** Subclasses need to call initializeDuplicatesCDOs() method in the
+ ** duplicateConstraint() method to avoid sharing context-dependent members.
+ ** CDOs need not be initialized for pre-processing purposes.
  **
- ** These methods rely on:
+ ** The class uses CDOs to record:
+ **  * _cdConstraintActive
+ **  * _cdPhaseStatus
+ **  * _cdInfeasibleCases
+ **
+ ** PhaseStatus enumeration is used to keep track of current phase of the
+ ** object, as well as to record previously explored phases. This replaces
+ ** moving PiecewiseLinearCaseSplits around.
+ **
+ ** ContextDependentPiecewiseLinearConstraint stores locally which phases have
+ ** been explored so far using _cdInfeasibleCases. To communicate with the
+ ** search it implements two methods:
+ **   * markInfeasible( PhaseStatus caseId ) - marks explored phase
+ **   * nextFeasibleCase() - obtains next unexplored case if one exists
+ **
+ ** These methods rely on subclass properly handling:
  **  * _numCases field, which denotes the number of piecewise linear
- **     segments the constraint has, passed through the constructor.
- **  * getAllCases() virtual method returns all possible cases represented using
+ **     segments the constraint has, initialized by the constructor.
+ **  * getAllCases() virtual method returns all possible phases represented using
  **    PhaseStatus enumeration. The order of returned cases will determine the
- **    search order, so it should implement any search heuristics.
+ **    search order, so this method should implement any search heuristics.
  **/
 
 #ifndef __ContextDependentPiecewiseLinearConstraint_h__
@@ -160,7 +167,7 @@ public:
     void markInfeasible( PhaseStatus exploredCase );
 
     /*
-      Returns haseStatus representing next feasible case.
+      Returns phaseStatus representing next feasible case.
       Returns PHASE_NOT_FIXED if no feasible case exists.
       Assumes the contraint phase is PHASE_NOT_FIXED.
       Worst case complexity O(n^2)
