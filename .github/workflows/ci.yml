@@ -1,0 +1,103 @@
+on: [push, pull_request]
+name: CI
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+
+    runs-on: ubuntu-latest #TODO: macos-latest
+    name: Debug build 
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Install Packages
+        if: 
+        run: |
+           sudo apt-get update
+           sudo apt-get install -y \
+             ccache \
+             cxxtest
+           python3 -m pip install --user --upgrade pip
+           python3 -m pip install --user --upgrade setuptools
+           python3 -m pip install --user wheel
+           python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
+           echo "/usr/lib/ccache" >> $GITHUB_PATH
+
+      - name: Create Build Environment
+        run: cmake -E make_directory build
+
+      # ---------------------------- CACHING ----------------------------------
+      # GitHub actions currently does not support modifying an already existing
+      # cache. Hence, we create a new cache for each commit with key
+      # cache-${{ runner.os }}-${{ matrix.cache-key }}-${{ github.sha }}. This
+      # will result in an initial cache miss. However, restore-keys will search
+      # for the most recent cache with prefix
+      # ${{ env.cache-name }}-${{ matrix.compiler }}-, and if found uses it as
+      # a base for the new cache.
+      # Add ${{ matrix.cache-key }}- to the key pattern if matrix grows
+      - name: Restore ccache
+        id: ccache
+        uses: actions/cache@v1
+        env:
+          cache-name: ccache-
+        with:
+          path: ccache-dir
+          key: ${{ env.cache-name }}-${{ matrix.compiler }}-${{ github.sha }} 
+          restore-keys: ${{ env.cache-name }}-${{ matrix.compiler }}-         
+      # ---------------------------- END CACHE RESTORE -------------------------
+
+      - name: Configure ccache
+        run: |
+          ccache --set-config=cache_dir=${{ github.workspace }}/ccache-dir
+          ccache --set-config=compression=true
+          ccache --set-config=compression_level=6
+          ccache -M 500M
+          ccache -z
+
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable bb
+        # access regardless of the host operating system
+        shell: bash
+        working-directory: build
+        # Note the current convention is to use the -S and -B options here to specify source 
+        # and build directories, but this is only available with CMake 3.13 and higher.  
+        # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+
+      - name: Build
+        run: make -j2
+        working-directory: build
+
+      - name: ccache statistics
+        run: ccache -s
+        
+      - name: Run system tests
+        run: ctest -L system -j 2 
+        working-directory: build
+ 
+      - name: Run regression tests
+        run: ctest -L regress[0-1] -j 2 
+        working-directory: build
+
+
+      - name: Python Bindings Install Check
+        run: |
+          export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
+          python3 -c "import maraboupy"
+
+      - name: Generate Python Code Coverage
+        if: ${{ matrix.compiler == 'g++' }} 
+        run: python3 -m pytest --cov=maraboupy --cov-report=xml  $(find $GITHUB_WORKSPACE -name "maraboupy" -type d)/test
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.compiler == 'g++' }} 
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./coverage.xml
