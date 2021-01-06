@@ -184,9 +184,10 @@ public:
     
     virtual int getInfeasibleRow( TableauRow& row ) = 0;
     virtual int getInfeasibleVar() const = 0;
-    virtual double computeRowBound(const TableauRow& row, const bool isUpper) const = 0;
+    virtual double computeRowBound( const TableauRow& row, const bool isUpper ) const = 0;
     virtual SingleVarBoundsExplanator& ExplainBound( const unsigned variable ) const = 0;
     virtual void updateExplanation( const TableauRow& row, const bool isUpper ) const = 0;
+    virtual void updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const = 0;
    
 };
 

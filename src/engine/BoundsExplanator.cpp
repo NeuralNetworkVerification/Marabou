@@ -38,7 +38,7 @@ void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bou
 }
 
 
-void SingleVarBoundsExplanator::updateVarBoundExplanation( std::vector<double>& newBound, const bool isUpper )
+void SingleVarBoundsExplanator::updateVarBoundExplanation( const std::vector<double>& newBound, const bool isUpper )
 {
 	ASSERT(newBound.size() == _length)
 
@@ -76,7 +76,8 @@ SingleVarBoundsExplanator& BoundsExplanator::returnWholeVarExplanation( const un
 void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool isUpper )
 {
 	bool tempUpper;
-	int curCoefficient, var = row._lhs;  // The var to be updated is the lhs of the row
+	int var = row._lhs;  // The var to be updated is the lhs of the row
+	double curCoefficient;
 	ASSERT( var < _varsNum ); 
 
 	std::vector<double> rowCoefficients = std::vector<double>( _rowsNum, 0 );
@@ -103,7 +104,37 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	sum.clear();
 }
 
-void BoundsExplanator::addVecTimesScalar( std::vector<double>& sum, std::vector<double>& input, const double scalar )
+void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned var )
+{
+	ASSERT( var < _varsNum );
+	if ( var == row._lhs )
+	{
+		updateBoundExplanation(row, isUpper);
+		return;
+	}
+
+	double ci = row[var]; 
+	ASSERT ( ci );  // Coefficient of var cannot be zero. TODO consider just returning in this case
+	double coeff = 1 / ci;
+	// Create a new row with var as its lhs
+	TableauRow equiv = TableauRow( row._size );
+	equiv._lhs = var;
+	equiv._scalar = - row._scalar * coeff;
+
+	for ( unsigned i = 0; i < row._size; ++i )
+		if( row[i] ) // Updates of zero coefficients are unnecessary 
+			{
+				equiv._row[i]._coefficient = - row[i] * coeff; 
+				equiv._row[i]._var = row._row[i]._var;
+			}
+	// Since the original var is the new lhs, the new var should be replaced with original lhs 
+	equiv._row[var]._coefficient = coeff;
+	equiv._row[var]._var = row._lhs;
+
+	updateBoundExplanation( equiv, isUpper );
+}
+
+void BoundsExplanator::addVecTimesScalar( std::vector<double>& sum, const std::vector<double>& input, const double scalar ) const
 {
 	ASSERT( sum.size() == _rowsNum && input.size() == _rowsNum )
 
@@ -111,7 +142,7 @@ void BoundsExplanator::addVecTimesScalar( std::vector<double>& sum, std::vector<
 		sum[i] += scalar * input[i];
 }
 
-void BoundsExplanator::extractRowCoefficients( const TableauRow& row, std::vector<double>& coefficients )
+void BoundsExplanator::extractRowCoefficients( const TableauRow& row, std::vector<double>& coefficients ) const
 {
 	ASSERT( coefficients.size() == _rowsNum && row._size == _varsNum )
 

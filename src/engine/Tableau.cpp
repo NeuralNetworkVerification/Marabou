@@ -2624,7 +2624,14 @@ SingleVarBoundsExplanator& Tableau::ExplainBound( const unsigned variable ) cons
 
 void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const
 {
-    _boundsExplanator->updateBoundExplanation( row, isUpper );
+    if ( GlobalConfiguration::PROOF_CERTIFICATE )
+        _boundsExplanator->updateBoundExplanation( row, isUpper );
+}
+
+void Tableau::updateExplanation(const TableauRow& row, const bool isUpper, unsigned var) const
+{
+    if ( GlobalConfiguration::PROOF_CERTIFICATE )
+        _boundsExplanator->updateBoundExplanation( row, isUpper, var );
 }
 
 double Tableau::computeRowBound(const TableauRow& row, const bool isUpper) const

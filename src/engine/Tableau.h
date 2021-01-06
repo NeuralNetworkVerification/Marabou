@@ -660,9 +660,14 @@ private:
     SingleVarBoundsExplanator& Tableau::ExplainBound( const unsigned variable ) const;
 
     /*
-     Update a bound explanation of a row in the Tableau
+     Update a bound explanation according to a row in the Tableau
     */
     void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const;
+
+    /*
+    Update a bound explanation of a specific var in a row 
+   */
+    void Tableau::updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const;
 
     /*
       Explanator of all bounds 

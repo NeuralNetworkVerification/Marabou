@@ -31,7 +31,7 @@ public:
 	/*
 	  Updates the values of the bound explanation according to newBound 
 	*/
-	void updateVarBoundExplanation( std::vector<double>& newBound, const  bool isUpper );
+	void updateVarBoundExplanation( const std::vector<double>& newBound, const  bool isUpper );
 
 private:
 	unsigned _length;
@@ -59,9 +59,14 @@ public:
 	SingleVarBoundsExplanator& returnWholeVarExplanation( const unsigned var );
 
 	/*
-	  Updates the values of the bound explanation according to newBound
+	  Given a row, updates the values of the bound explanations of its lhs according to the row
 	*/
 	void updateBoundExplanation( const TableauRow& row, const bool isUpper );
+
+	/*
+	  	  Given a row, updates the values of the bound explanations of a var according to the row
+	*/
+	void updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned var );
 
 private:
 	unsigned _varsNum;
@@ -69,15 +74,15 @@ private:
 	std::vector<SingleVarBoundsExplanator> _bounds;
 
 	/*
-	  A helper functions which adds a multiplication of an array by scalar to another array
+	  A helper function which adds a multiplication of an array by scalar to another array
 	*/
-	void addVecTimesScalar( std::vector<double>& sum, std::vector<double>& input, const double scalar );
+	void addVecTimesScalar( std::vector<double>& sum, const std::vector<double>& input, const double scalar ) const;
 
 	/*
 	  Upon receiving a row, extract coefficients of the original tableau's equations that creates the row
 	  It is merely the coefficients of the slack variables.
 	  Assumption - the slack variables indices are alwas the last m.
 	*/
-	void extractRowCoefficients( const TableauRow& row, std::vector<double>& coefficients );
+	void extractRowCoefficients( const TableauRow& row, std::vector<double>& coefficients ) const;
 };
 #endif // __BoundsExplanator_h__

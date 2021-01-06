@@ -364,7 +364,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     {
         _lowerBounds[y] = lowerBound;
         _tightenedLower[y] = true;
-        _tableau.updateExplanation( row, false );
+        if ( GlobalConfiguration::PROOF_CERTIFICATE )
+            _tableau.updateExplanation( row, false );
         ++result;
     }
 
@@ -372,7 +373,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     {
         _upperBounds[y] = upperBound;
         _tightenedUpper[y] = true;
-        _tableau.updateExplanation( row, true );
+        if (    GlobalConfiguration::PROOF_CERTIFICATE  )
+            _tableau.updateExplanation( row, true );
         ++result;
     }
 
@@ -452,7 +454,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         {
             _lowerBounds[xi] = lowerBound;
             _tightenedLower[xi] = true;
-            //TODO create a new row with x_i as lhs and update its bound
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+                _tableau.updateExplanation( row, false, xi );
             ++result;
         }
 
@@ -460,7 +463,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         {
             _upperBounds[xi] = upperBound;
             _tightenedUpper[xi] = true;
-            //TODO create a new row with x_i as lhs and update its bound
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+                _tableau.updateExplanation( row, true, xi );
             ++result;
         }
 
@@ -624,7 +628,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         {
             _lowerBounds[index] = lowerBound;
             _tightenedLower[index] = true;
-            _tableau.updateExplanation( row, false ); 
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+                _tableau.updateExplanation( row, false ); 
             ++result;
         }
 
@@ -632,7 +637,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         {
             _upperBounds[index] = upperBound;
             _tightenedUpper[index] = true;
-            _tableau.updateExplanation( row, true );
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+                _tableau.updateExplanation( row, true );
             ++result;
         }
 

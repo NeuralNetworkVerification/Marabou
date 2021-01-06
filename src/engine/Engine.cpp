@@ -2288,11 +2288,18 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
     }
 }
 
-void Engine::printInfeasibilityCertificate() 
+void Engine::printInfeasibilityCertificate()
 {
+    if ( !GlobalConfiguration::PROOF_CERTIFICATE )
+    {
+        printf("In order to provide a proof certificate, set GlobalConfiguration::PROOF_CERTIFICATE to true.\n");
+        return;
+    }
+        
     printf( "The final dictionary:\n" );
     _tableau->dumpEquations();
-    int m = _tableau->getM(), n = _tableau->getN(), var = _tableau->getInfeasibleVar();
+    unsigned m = _tableau->getM(), n = _tableau->getN();
+    int var = _tableau->getInfeasibleVar();
 
     printf( "Found a variable with infeasible bounds: x%d\n", var );
     if( var < 0 )
