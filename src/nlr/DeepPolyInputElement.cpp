@@ -20,45 +20,45 @@
 
 namespace NLR {
 
-    DeepPolyInputElement::DeepPolyInputElement( Layer *layer )
-    {
-        _layer = layer;
-        _size = layer->getSize();
-        _layerIndex = layer->getLayerIndex();
-    }
+DeepPolyInputElement::DeepPolyInputElement( Layer *layer )
+{
+    _layer = layer;
+    _size = layer->getSize();
+    _layerIndex = layer->getLayerIndex();
+}
 
-    DeepPolyInputElement::~DeepPolyInputElement()
-    {
-        freeMemoryIfNeeded();
-    }
+DeepPolyInputElement::~DeepPolyInputElement()
+{
+    freeMemoryIfNeeded();
+}
 
-    void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *>
-                                   &deepPolyElementsBefore )
+void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *>
+                               &deepPolyElementsBefore )
+{
+    log( "Executing..." );
+    if ( !deepPolyElementsBefore.empty() )
     {
-        log( "Executing..." );
-        if ( !deepPolyElementsBefore.empty() )
-        {
-            throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
-        }
-        // Update the concrete bounds
-        freeMemoryIfNeeded();
-        allocateMemory();
-        getConcreteBounds();
-        log( "Executing - done" );
+        throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
     }
+    // Update the concrete bounds
+    freeMemoryIfNeeded();
+    allocateMemory();
+    getConcreteBounds();
+    log( "Executing - done" );
+}
 
-    void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor
-    ( const double *, const double *, double *, double *, double *, double *,
-      unsigned, DeepPolyElement * )
-    {
-        // Input layer should not have a predecessor
-        ASSERT( false );
-    }
+void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor
+( const double *, const double *, double *, double *, double *, double *,
+  unsigned, DeepPolyElement * )
+{
+    // Input layer should not have a predecessor
+    ASSERT( false );
+}
 
-    void DeepPolyInputElement::log( const String &message )
-    {
-        if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
-            printf( "DeepPolyInputElement: %s\n", message.ascii() );
-    }
+void DeepPolyInputElement::log( const String &message )
+{
+    if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
+        printf( "DeepPolyInputElement: %s\n", message.ascii() );
+}
 
 } // namespace NLR

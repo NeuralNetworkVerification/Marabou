@@ -39,8 +39,21 @@ public:
       unsigned targetLayerSize, DeepPolyElement *predecessor );
 
 private:
+    /*
+      Compute the concrete upper- and lower- bounds of this layer by concretizing
+      the symbolic bounds with respect to every preceding element.
+    */
     void computeBoundWithBackSubstitution( const Map<unsigned, DeepPolyElement *>
                                            &deepPolyElementsBefore );
+
+    /*
+      Compute concrete bounds using symbolic bounds with respect to a
+      sourceElement.
+    */
+    void concretizeSymbolicBound( const double *symbolicLb, const double
+                                  *symbolicUb, const double *symbolicLowerBias,
+                                  const double *symbolicUpperBias,
+                                  DeepPolyElement *sourceElement );
 
     void log( const String &message );
 };

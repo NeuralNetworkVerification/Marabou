@@ -44,7 +44,6 @@ private:
     void allocateMemory();
     void freeMemoryIfNeeded();
     void log( const String &message );
-
 };
 
 } // namespace NLR
