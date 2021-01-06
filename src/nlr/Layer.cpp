@@ -14,6 +14,8 @@
  **/
 
 #include "Layer.h"
+#include "Options.h"
+#include "SymbolicBoundTighteningType.h"
 
 namespace NLR {
 
@@ -66,7 +68,8 @@ void Layer::allocateMemory()
     _assignment = new double[_size];
 
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
-    if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
+    if ( Options::get()->getSymbolicBoundTighteningType() ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
     {
         _symbolicLb = new double[_size * _inputLayerSize];
         _symbolicUb = new double[_size * _inputLayerSize];
