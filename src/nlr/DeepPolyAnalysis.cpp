@@ -18,6 +18,7 @@
 #include "DeepPolyInputElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
+#include "DeepPolySignElement.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "Layer.h"
@@ -184,6 +185,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolyWeightedSumElement( layer );
     else if ( type ==  Layer::RELU )
         deepPolyElement = new DeepPolyReLUElement( layer );
+    else if ( type ==  Layer::SIGN )
+        deepPolyElement = new DeepPolySignElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",
