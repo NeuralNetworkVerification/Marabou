@@ -17,12 +17,12 @@
  **
  ** The basic members of PiecewiseLinearConstraint class use context-dependent
  ** objects (CDOs), which need to be initialized for the backtracking search in
- ** Marabou and are not needed for pre-processing purposes. The initialization
- ** is performed using the initializeCDOs( Context context ) method. Descendant
- ** classes need to call initializeDuplicatesCDOs() method in
- ** duplicateConstraint method to avoid sharing context-dependent members. The
- ** duplication functionality might be unnecessary (and perhaps even prohibited)
- ** after CDOs are initialized.
+ ** Marabou and are not needed for pre-processing purposes. Initialization is
+ ** performed using the initializeCDOs( Context context ) method. Subclasses
+ ** need to call initializeDuplicatesCDOs() method in the duplicateConstraint()
+ ** method to avoid sharing context-dependent members. The duplication
+ ** functionality might be unnecessary (and perhaps even prohibited) after CDOs
+ ** are initialized.
  **
  ** The methods used by the Marabou search:
  **  * markInfeasible( PhaseStatus caseId ) - which denotes explored search space
