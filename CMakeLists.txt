@@ -12,7 +12,7 @@ option(RUN_REGRESS_TEST "run regression tests on build" OFF)
 option(RUN_SYSTEM_TEST "run system tests on build" OFF)
 option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
 option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
-option(ENABLE_GUROBI "Enable use the Gurobi optimizer" ON)
+option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
 option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on windows
 option(CODE_COVERAGE "add code coverage" OFF)  # Available only in debug mode
 
@@ -200,7 +200,7 @@ if (${ENABLE_GUROBI})
   set(GUROBI_LIB2 "gurobi90")
 
   add_library(${GUROBI_LIB1} SHARED IMPORTED)
-  set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_g++5.2.a)
+  set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
   list(APPEND LIBS ${GUROBI_LIB1})
   target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
 
@@ -210,7 +210,7 @@ if (${ENABLE_GUROBI})
   if (APPLE)
     set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.dylib)
   else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90_light.so)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
   endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})
