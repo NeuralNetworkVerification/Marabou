@@ -54,7 +54,7 @@ public:
     /*
       Returns the layer index corresponding to the predecessor of this element.
     */
-    unsigned getPredecessorIndex() const;
+    const Map<unsigned, unsigned> &getPredecessorIndices() const;
 
     unsigned getSize() const;
     unsigned getLayerIndex() const;

@@ -36,15 +36,14 @@ void DeepPolySignElement::execute( const Map<unsigned, DeepPolyElement *>
     log( "Executing..." );
     ASSERT( hasPredecessor() );
     allocateMemory();
-    DeepPolyElement *predecessor =
-        deepPolyElementsBefore[getPredecessorIndex()];
 
     // Update the symbolic and concrete upper- and lower- bounds
     // of each neuron
     for ( unsigned i = 0; i < _size; ++i )
     {
         NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
-        ASSERT( sourceIndex._layer = predecessor->getLayerIndex() );
+        DeepPolyElement *predecessor =
+            deepPolyElementsBefore[sourceIndex._layer];
         double sourceLb = predecessor->getLowerBound
             ( sourceIndex._neuron );
         double sourceUb = predecessor->getUpperBound
@@ -121,6 +120,12 @@ void DeepPolySignElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
+        DEBUG({
+                NeuronIndex sourceIndex = *( _layer->
+                                             getActivationSources( i ).begin() );
+                ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
+            });
+
         /*
           Take symbolic upper bound as an example.
           Suppose the symbolic upper bound of the j-th neuron in the

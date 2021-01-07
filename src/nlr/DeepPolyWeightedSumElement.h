@@ -39,6 +39,14 @@ public:
       unsigned targetLayerSize, DeepPolyElement *predecessor );
 
 private:
+
+    /*
+      Memory allocated to store concrete bounds computed at different stages
+      of back substitution.
+    */
+    double *_workLb;
+    double *_workUb;
+
     /*
       Compute the concrete upper- and lower- bounds of this layer by concretizing
       the symbolic bounds with respect to every preceding element.
@@ -55,6 +63,8 @@ private:
                                   const double *symbolicUpperBias,
                                   DeepPolyElement *sourceElement );
 
+    void allocateMemory();
+    void freeMemoryIfNeeded();
     void log( const String &message );
 };
 

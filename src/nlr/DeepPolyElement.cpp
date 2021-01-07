@@ -50,12 +50,10 @@ bool DeepPolyElement::hasPredecessor()
     return !_layer->getSourceLayers().empty();
 }
 
-unsigned DeepPolyElement::getPredecessorIndex() const
+const Map<unsigned, unsigned> &DeepPolyElement::getPredecessorIndices() const
 {
     const Map<unsigned, unsigned> &sourceLayers = _layer->getSourceLayers();
-    // Right now, assume that each layer has one predecessor.
-    ASSERT( sourceLayers.size() == 1 );
-    return sourceLayers.begin()->first;
+    return sourceLayers;
 }
 
 double *DeepPolyElement::getSymbolicLb() const
