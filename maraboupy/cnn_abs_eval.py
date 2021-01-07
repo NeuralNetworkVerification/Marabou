@@ -28,8 +28,26 @@ numVars = 16 + 1
 ipq = MarabouCore.InputQuery()
 ipq.setNumberOfVariables(numVars)
 
-bounds = [{"lb":random.randint(0,5), "ub":random.randint(5,10)} for i in range(numVars-1)]
-bounds.append({"lb":0, "ub":10})
+#bounds = [{"lb":random.randint(0,5), "ub":random.randint(5,10)} for i in range(numVars-1)]
+bounds = list()
+bounds.append({"lb":4, "ub":7})
+bounds.append({"lb":4, "ub":6})
+bounds.append({"lb":5, "ub":6})
+bounds.append({"lb":4, "ub":8})
+bounds.append({"lb":0, "ub":9})
+bounds.append({"lb":3, "ub":10})
+bounds.append({"lb":0, "ub":6})
+bounds.append({"lb":4, "ub":50})
+bounds.append({"lb":4, "ub":9})
+bounds.append({"lb":0, "ub":5})
+bounds.append({"lb":4, "ub":9})
+bounds.append({"lb":4, "ub":6})
+bounds.append({"lb":3, "ub":8})
+bounds.append({"lb":2, "ub":6000})
+bounds.append({"lb":2, "ub":7})
+bounds.append({"lb":1, "ub":6})
+
+bounds.append({"lb":0, "ub":10000})
 
 for i, bound in enumerate(bounds):
     ipq.setLowerBound(i, bound["lb"])
