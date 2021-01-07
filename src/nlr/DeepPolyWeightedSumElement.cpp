@@ -60,64 +60,63 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
             for ( const auto &pair : predecessorIndices )
                 std::cout << pair.first << " ";
             std::cout << std::endl;
-        })
+        });
 
-    for ( const auto &pair : predecessorIndices )
+    // For now, assumes that each weighted sum layer has one source layer.
+    ASSERT( predecessorIndices.size() == 1 );
+    unsigned predecessorIndex = predecessorIndices.begin()->first;
+    log( Stringf( "Computing symbolic bounds with respect to layer %u...",
+                  predecessorIndex ) );
+    DeepPolyElement *precedingElement =
+        deepPolyElementsBefore[predecessorIndex];
+    unsigned sourceLayerSize = precedingElement->getSize();
+
+    const double *weights = _layer->getWeights( predecessorIndex );
+    memcpy(_work1SymbolicLb,
+           weights, _size * sourceLayerSize * sizeof(double) );
+    memcpy(_work1SymbolicUb,
+           weights, _size * sourceLayerSize * sizeof(double) );
+
+    double *bias = _layer->getBiases();
+    memcpy( _workSymbolicLowerBias, bias, _size * sizeof(double) );
+    memcpy( _workSymbolicUpperBias, bias, _size * sizeof(double) );
+
+    DeepPolyElement *currentElement = precedingElement;
+    concretizeSymbolicBound( _work1SymbolicLb, _work1SymbolicUb,
+                             _workSymbolicLowerBias,
+                             _workSymbolicUpperBias,
+                             currentElement );
+
+    while ( currentElement->hasPredecessor() )
     {
-        unsigned predecessorIndex = pair.first;
-        log( Stringf( "Computing symbolic bounds with respect to layer %u...",
-                      predecessorIndex ) );
-        DeepPolyElement *precedingElement =
-            deepPolyElementsBefore[predecessorIndex];
-        unsigned sourceLayerSize = precedingElement->getSize();
+        // We have the symbolic bounds in terms of the current abstract
+        // element--currentElement, stored in _work1SymbolicLb,
+        // _work1SymbolicUb, _workSymbolicLowerBias, _workSymbolicLowerBias,
+        // now compute the symbolic bounds in terms of currentElement's
+        // predecessor.
 
-        const double *weights = _layer->getWeights( predecessorIndex );
-        memcpy(_work1SymbolicLb,
-               weights, _size * sourceLayerSize * sizeof(double) );
-        memcpy(_work1SymbolicUb,
-               weights, _size * sourceLayerSize * sizeof(double) );
+        precedingElement =
+            deepPolyElementsBefore[precedingElement->
+                                   getPredecessorIndices().begin()->first];
 
-        double *bias = _layer->getBiases();
-        memcpy( _workSymbolicLowerBias, bias, _size * sizeof(double) );
-        memcpy( _workSymbolicUpperBias, bias, _size * sizeof(double) );
+        currentElement->symbolicBoundInTermsOfPredecessor
+            ( _work1SymbolicLb, _work1SymbolicUb, _workSymbolicLowerBias,
+              _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
+              _size, precedingElement );
 
-        DeepPolyElement *currentElement = precedingElement;
+        double* temp = _work1SymbolicLb;
+        _work1SymbolicLb = _work2SymbolicLb;
+        _work2SymbolicLb = temp;
+
+        temp = _work1SymbolicUb;
+        _work1SymbolicUb = _work2SymbolicUb;
+        _work2SymbolicUb = temp;
+
+        currentElement = precedingElement;
         concretizeSymbolicBound( _work1SymbolicLb, _work1SymbolicUb,
                                  _workSymbolicLowerBias,
                                  _workSymbolicUpperBias,
                                  currentElement );
-
-        while ( currentElement->hasPredecessor() )
-        {
-            // We have the symbolic bounds in terms of the current abstract
-            // element--currentElement, stored in _work1SymbolicLb,
-            // _work1SymbolicUb, _workSymbolicLowerBias, _workSymbolicLowerBias,
-            // now compute the symbolic bounds in terms of currentElement's
-            // predecessor.
-
-            precedingElement =
-                deepPolyElementsBefore[precedingElement->
-                                       getPredecessorIndices().begin()->first];
-
-            currentElement->symbolicBoundInTermsOfPredecessor
-                ( _work1SymbolicLb, _work1SymbolicUb, _workSymbolicLowerBias,
-                  _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
-                  _size, precedingElement );
-
-            double* temp = _work1SymbolicLb;
-            _work1SymbolicLb = _work2SymbolicLb;
-            _work2SymbolicLb = temp;
-
-            temp = _work1SymbolicUb;
-            _work1SymbolicUb = _work2SymbolicUb;
-            _work2SymbolicUb = temp;
-
-            currentElement = precedingElement;
-            concretizeSymbolicBound( _work1SymbolicLb, _work1SymbolicUb,
-                                     _workSymbolicLowerBias,
-                                     _workSymbolicUpperBias,
-                                     currentElement );
-        }
     }
     log( "Computing bounds with back substitution - done" );
 }
