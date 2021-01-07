@@ -107,7 +107,6 @@ void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
                 _symbolicLb[i] = 0;
                 _symbolicLowerBias[i] = 0;
                 _lb[i] = 0;
-
             }
         }
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",

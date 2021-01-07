@@ -104,7 +104,7 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
               _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
               _size, precedingElement );
 
-        double* temp = _work1SymbolicLb;
+        double *temp = _work1SymbolicLb;
         _work1SymbolicLb = _work2SymbolicLb;
         _work2SymbolicLb = temp;
 
