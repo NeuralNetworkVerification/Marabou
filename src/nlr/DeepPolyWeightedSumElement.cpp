@@ -164,6 +164,7 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBound
             _lb[i] = _workLb[i];
         if ( _ub[i] > _workUb[i] )
             _ub[i] = _workUb[i];
+        log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
     log( "Concretizing bound - done" );
 }

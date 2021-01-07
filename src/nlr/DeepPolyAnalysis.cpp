@@ -17,6 +17,7 @@
 #include "DeepPolyAnalysis.h"
 #include "DeepPolyAbsoluteValueElement.h"
 #include "DeepPolyInputElement.h"
+#include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
 #include "DeepPolySignElement.h"
@@ -190,6 +191,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolySignElement( layer );
     else if ( type ==  Layer::ABSOLUTE_VALUE )
         deepPolyElement = new DeepPolyAbsoluteValueElement( layer );
+    else if ( type ==  Layer::MAX )
+        deepPolyElement = new DeepPolyMaxPoolElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",
