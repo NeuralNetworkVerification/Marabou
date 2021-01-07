@@ -681,6 +681,10 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
         double maxFixedSourceValue = FloatUtils::negativeInfinity();
 
         double maxConcreteUb = FloatUtils::negativeInfinity();
+        double maxConcreteUbLb = FloatUtils::negativeInfinity();        
+        unsigned maxConcreteUbVariable = 0;
+        double secondMaxConcreteUb = FloatUtils::negativeInfinity();        
+        double maxConcreteLb = FloatUtils::negativeInfinity();
 
         List<GurobiWrapper::Term> terms;
 
@@ -709,7 +713,31 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             // Find maximal concrete upper bound
             double sourceUb = sourceLayer->getUb( sourceNeuron );
             if ( sourceUb > maxConcreteUb )
+            {
                 maxConcreteUb = sourceUb;
+                maxConcreteUb = sourceLayer->getLb( sourceNeuron );
+                maxConcreteUbVariable = sourceVariable;
+            }
+            
+        }
+
+        for ( const auto &source : sources )
+        {
+            const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+            unsigned sourceNeuron = source._neuron;
+            
+            // Find maximal concrete lower bound
+            double sourceLb = sourceLayer->getLb( sourceNeuron );
+            if ( sourceLb > maxConcreteLb )
+                maxConcreteLb = sourceLb;
+
+            // Find second maximal upper bound (including fixed values)            
+            if(sourceLayer->neuronToVariable( sourceNeuron ) != maxConcreteUbVariable)
+            {             
+                double sourceUb = sourceLayer->getUb( sourceNeuron );
+                if ( sourceUb > secondMaxConcreteUb )
+                    secondMaxConcreteUb = sourceUb;
+            }
         }
 
         if ( haveFixedSourceValue && ( maxConcreteUb < maxFixedSourceValue ) )
@@ -718,7 +746,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             // and this fixed value dominates other sources.
             terms.clear();
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-            gurobi.addEqConstraint( terms, maxFixedSourceValue );
+            gurobi.addEqConstraint( terms, maxFixedSourceValue );           
         }
         else
         {
@@ -734,7 +762,39 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             terms.clear();
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
             gurobi.addLeqConstraint( terms, maxConcreteUb );
-        }
+
+            // Tighter upper bounds - first ("lower corner")
+            double scalar = maxConcreteLb;
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+            for ( const auto &source : sources )
+            {
+                const Layer *sourceLayer = _layerOwner->getLayer( source._layer );                
+                unsigned sourceNeuron = source._neuron;
+                unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );                
+                double sourceUb = sourceLayer->getUb( sourceNeuron );
+                if (sourceUb > maxConcreteLb)
+                {
+                    double sourceLb = sourceLayer->getLb( sourceNeuron );                    
+                    double coefficent = (sourceUb - maxConcreteLb) / (sourceUb - sourceLb);
+                    scalar -= coefficent;
+                    terms.append( GurobiWrapper::Term( -coefficent, Stringf( "x%u", sourceVariable ) ) );            
+                } 
+            }
+            gurobi.addLeqConstraint( terms, scalar );
+
+            // Tighter upper bounds - first ("upper corner")
+            if (maxConcreteUb > secondMaxConcreteUb)
+            {
+                terms.clear();
+                terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                double scalar = (maxConcreteUb * (secondMaxConcreteUb - maxConcreteUbLb)) / (maxConcreteUb - maxConcreteUbLb);
+                double coefficent = (maxConcreteUb - secondMaxConcreteUb) / (maxConcreteUb - maxConcreteUbLb);
+                terms.append( GurobiWrapper::Term( -coefficent, Stringf( "x%u", maxConcreteUbVariable) ) );
+                gurobi.addLeqConstraint( terms, scalar );                
+            }
+
+        }       
     }
 }
 
