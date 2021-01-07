@@ -62,7 +62,7 @@ void DeepPolySignElement::execute( const Map<unsigned, DeepPolyElement *>
             _symbolicLowerBias[i] = 1;
             _lb[i] = 1;
         }
-        else if ( !FloatUtils::isPositive( sourceUb ) )
+        else if ( FloatUtils::isNegative( sourceUb ) )
         {
             // Phase negative
             // Symbolic bound: -1 <= x_f <= -1
@@ -78,6 +78,7 @@ void DeepPolySignElement::execute( const Map<unsigned, DeepPolyElement *>
         else
         {
             // Sign not fixed
+            // Use the relaxation defined in https://arxiv.org/pdf/2011.02948.pdf
             // Symbolic upper bound: x_f <= -2 / l * x_b + 1
             // Concrete upper bound: x_f <= 1
             _symbolicUb[i] = -2 / sourceLb;
