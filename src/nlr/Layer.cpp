@@ -1844,4 +1844,34 @@ void Layer::dumpBounds() const
     printf("\n");
 }
 
+void Layer::computeSourceLayersDependency()
+{
+    _sourceLayersDependency.clear();
+    Set<unsigned> sourceLayerIndices = getSourceLayers().keys();
+    for ( const auto &index : sourceLayerIndices )
+    {
+        _sourceLayersDependency[index] = Set<unsigned>();
+        // Traverse all predecessors
+        Set<unsigned> predecessors;
+        predecessors.insert( index );
+        while ( !predecessors.empty() )
+        {
+            unsigned currentIndex = *( predecessors.begin() );
+            predecessors.erase( currentIndex );
+            const Layer *layer = _layerOwner->getLayer( currentIndex );
+            for ( const auto &pair : layer->getSourceLayers() )
+            {
+                unsigned sourceIndex = pair.first;
+                if ( sourceLayerIndices.exists( sourceIndex ) )
+                    _sourceLayersDependency[index].insert( sourceIndex );
+            }
+        }
+    }
+}
+
+const Map<unsigned, Set<unsigned>> &Layer::getSourceLayersDependency() const
+{
+    return _sourceLayersDependency;
+}
+
 } // namespace NLR
