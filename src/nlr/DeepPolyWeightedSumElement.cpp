@@ -154,6 +154,7 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         // in the residualWeights, and remove it from the residual source layers.
         if ( _residualLayerIndices.exists( predecessorIndex ) )
         {
+            log( Stringf( "merge residual from layer %u...", predecessorIndex ) );
             // Add weights of this residual layer
             for ( unsigned i = 0; i < _size * precedingElement->getSize(); ++i )
             {
@@ -161,6 +162,11 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
                 _work2SymbolicUb[i] += _residualUb[predecessorIndex][i];
             }
             _residualLayerIndices.erase( predecessorIndex );
+            std::fill_n( _residualLb[predecessorIndex],
+                         _size * precedingElement->getSize(), 0 );
+            std::fill_n( _residualUb[predecessorIndex],
+                         _size * precedingElement->getSize(), 0 );
+            log( Stringf( "merge residual from layer %u - done", predecessorIndex ) );
         }
 
         DEBUG({
@@ -179,6 +185,11 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         temp = _work1SymbolicUb;
         _work1SymbolicUb = _work2SymbolicUb;
         _work2SymbolicUb = temp;
+
+        std::fill_n( _work2SymbolicLb, _size *
+                     precedingElement->getSize(), 0 );
+        std::fill_n( _work2SymbolicUb, _size *
+                     precedingElement->getSize(), 0 );
 
         currentElement = precedingElement;
         concretizeSymbolicBound( _work1SymbolicLb, _work1SymbolicUb,
@@ -203,21 +214,28 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBound
                                            symbolicLowerBias, symbolicUpperBias,
                                            sourceElement );
 
+    std::cout << "x" << _layerIndex << " <=" << symbolicUb[0] << "* x" << sourceElement->getLayerIndex();
+
     for ( const auto &residualLayerIndex : _residualLayerIndices )
     {
+        ASSERT( residualLayerIndex < sourceElement->getLayerIndex() );
         DeepPolyElement *residualElement =
             deepPolyElementsBefore[residualLayerIndex];
         concretizeSymbolicBoundForSourceLayer( _residualLb[residualLayerIndex],
                                                _residualUb[residualLayerIndex],
-                                               NULL, NULL, residualElement );
+                                               NULL,
+                                               NULL,
+                                               residualElement );
+        std::cout <<  " + " << _residualUb[residualLayerIndex][0] << "* x" << residualElement->getLayerIndex();
     }
-
+    std::cout << " + " << symbolicUpperBias[0] << std::endl;
     for ( unsigned i = 0; i <_size; ++i )
     {
         if ( _lb[i] < _workLb[i] )
             _lb[i] = _workLb[i];
         if ( _ub[i] > _workUb[i] )
             _ub[i] = _workUb[i];
+        log( Stringf( "Neuron%u working LB: %f, UB: %f", i, _workLb[i], _workUb[i] ) );
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
 
@@ -274,11 +292,6 @@ void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessorIndex ) );
     unsigned predecessorSize = predecessor->getSize();
-
-    std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
-    std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
 
     double *weights = _layer->getWeights( predecessorIndex );
     double *biases = _layer->getBiases();
