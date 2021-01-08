@@ -47,6 +47,9 @@ private:
     double *_workLb;
     double *_workUb;
 
+    Map<unsigned, double *>  _residualLb;
+    Map<unsigned, double *>  _residualUb;
+
     /*
       Compute the concrete upper- and lower- bounds of this layer by concretizing
       the symbolic bounds with respect to every preceding element.
@@ -63,6 +66,9 @@ private:
                                   const double *symbolicUpperBias,
                                   DeepPolyElement *sourceElement );
 
+    void allocateMemoryForResiduals( unsigned residualLayerIndex,
+                                     unsigned residualLayerSize,
+                                     unsigned targetLayerSize );
     void allocateMemory();
     void freeMemoryIfNeeded();
     void log( const String &message );

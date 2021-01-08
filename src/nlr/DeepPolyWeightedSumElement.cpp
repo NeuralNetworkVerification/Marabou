@@ -63,7 +63,10 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         });
 
     // For now, assumes that each weighted sum layer has one source layer.
-    ASSERT( predecessorIndices.size() == 1 );
+     Map<unsigned, Set<unsigned>> sourceLayersDependency =
+        _layer->getSourceLayersDependency();
+
+
     unsigned predecessorIndex = predecessorIndices.begin()->first;
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessorIndex ) );
@@ -208,6 +211,23 @@ void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
                           _size, targetLayerSize );
 }
 
+void DeepPolyWeightedSumElement::allocateMemoryForResiduals( unsigned
+                                                             residualLayerIndex,
+                                                             unsigned
+                                                             residualLayerSize,
+                                                             unsigned
+                                                             targetLayerSize )
+{
+    if ( _residualLb.exists( residualLayerIndex ) )
+        return;
+
+    double *residualLb = new double[residualLayerSize * targetLayerSize];
+    _residualLb[residualLayerIndex] = residualLb;
+    double *residualUb = new double[residualLayerSize * targetLayerSize];
+    _residualUb[residualLayerIndex] = residualUb;
+}
+
+
 void DeepPolyWeightedSumElement::allocateMemory()
 {
     freeMemoryIfNeeded();
@@ -234,6 +254,16 @@ void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
         delete[] _workUb;
         _workUb = NULL;
     }
+    for ( auto const &pair : _residualLb )
+    {
+        delete[] pair.second;
+    }
+    _residualLb.clear();
+    for ( auto const &pair : _residualUb )
+    {
+        delete[] pair.second;
+    }
+    _residualUb.clear();
 }
 
 void DeepPolyWeightedSumElement::log( const String &message )
