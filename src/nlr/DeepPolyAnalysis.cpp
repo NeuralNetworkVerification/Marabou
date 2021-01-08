@@ -108,7 +108,6 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
         log( Stringf( "Running deeppoly analysis for layer %u...", i ) );
 
         Layer *layer = layers[i];
-        layer->computeSourceLayersDependency();
         DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
         deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
                                            _work2SymbolicLb, _work2SymbolicUb,

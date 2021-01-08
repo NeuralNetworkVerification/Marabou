@@ -128,9 +128,6 @@ public:
     double getEliminatedNeuronValue( unsigned neuron ) const;
     void reduceIndexAfterMerge( unsigned startIndex );
 
-    void computeSourceLayersDependency();
-    const Map<unsigned, Set<unsigned>> &getSourceLayersDependency() const;
-
     /*
       Print out the variable bounds of this layer
     */
@@ -151,7 +148,6 @@ private:
     LayerOwner *_layerOwner;
 
     Map<unsigned, unsigned> _sourceLayers;
-    Map<unsigned, Set<unsigned>> _sourceLayersDependency;
 
     Map<unsigned, double *> _layerToWeights;
     Map<unsigned, double *> _layerToPositiveWeights;

@@ -1844,49 +1844,4 @@ void Layer::dumpBounds() const
     printf("\n");
 }
 
-void Layer::computeSourceLayersDependency()
-{
-    _sourceLayersDependency.clear();
-    Set<unsigned> sourceLayerIndices = getSourceLayers().keys();
-    for ( const auto &index : sourceLayerIndices )
-    {
-        _sourceLayersDependency[index] = Set<unsigned>();
-        // Traverse all predecessors
-        Set<unsigned> predecessors;
-        predecessors.insert( index );
-        while ( !predecessors.empty() )
-        {
-            unsigned currentIndex = *( predecessors.begin() );
-            predecessors.erase( currentIndex );
-            const Layer *layer = _layerOwner->getLayer( currentIndex );
-            for ( const auto &pair : layer->getSourceLayers() )
-            {
-                unsigned sourceIndex = pair.first;
-                if ( sourceLayerIndices.exists( sourceIndex ) )
-                    _sourceLayersDependency[index].insert( sourceIndex );
-            }
-        }
-    }
-    DEBUG({
-            // Each pair of layers must have dependency relation.
-            // If there are two layers X, Y where X does not depend on Y and
-            // Y does not depend on X, we should be able to merge layer X and Y.
-            for ( const auto &index1 : sourceLayerIndices )
-            {
-                for ( const auto &index2 : sourceLayerIndices )
-                {
-                    if ( index1 != index2 )
-                        ASSERT( _sourceLayersDependency[index1].exists( index2 )
-                                || _sourceLayersDependency[index2].exists
-                                ( index1 ) );
-                }
-            }
-        })
-}
-
-const Map<unsigned, Set<unsigned>> &Layer::getSourceLayersDependency() const
-{
-    return _sourceLayersDependency;
-}
-
 } // namespace NLR

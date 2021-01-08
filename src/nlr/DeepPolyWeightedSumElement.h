@@ -64,11 +64,18 @@ private:
     void concretizeSymbolicBound( const double *symbolicLb, const double
                                   *symbolicUb, const double *symbolicLowerBias,
                                   const double *symbolicUpperBias,
-                                  DeepPolyElement *sourceElement );
+                                  DeepPolyElement *sourceElement,
+                                  const Map<unsigned, DeepPolyElement *>
+                                  &deepPolyElementsBefore );
+
+    void concretizeSymbolicBoundForSourceLayer( const double *symbolicLb,
+                                                const double*symbolicUb,
+                                                const double *symbolicLowerBias,
+                                                const double *symbolicUpperBias,
+                                                DeepPolyElement *sourceElement );
 
     void allocateMemoryForResiduals( unsigned residualLayerIndex,
-                                     unsigned residualLayerSize,
-                                     unsigned targetLayerSize );
+                                     unsigned residualLayerSize );
     void allocateMemory();
     void freeMemoryIfNeeded();
     void log( const String &message );
