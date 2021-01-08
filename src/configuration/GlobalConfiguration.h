@@ -66,7 +66,7 @@ public:
     static const bool USE_HARRIS_RATIO_TEST;
 
     // Toggle query-preprocessing on/off.
-	static const bool PREPROCESS_INPUT_QUERY;
+    static const bool PREPROCESS_INPUT_QUERY;
 
     // Assuming the preprocessor is on, toggle whether or not it will attempt to perform variable
     // elimination.
