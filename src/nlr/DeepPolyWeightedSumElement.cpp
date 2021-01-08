@@ -68,21 +68,19 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     unsigned predecessorIndex = 0;
     for ( const auto &pair : predecessorIndices )
     {
+        predecessorIndex = pair.first;
         if ( counter < numPredecessors - 1 )
         {
-            log( Stringf( "Adding residual from layer %u...", pair.first ) );
-            allocateMemoryForResidualsIfNeeded( pair.first, pair.second );
-            const double *weights = _layer->getWeights( pair.first );
-            memcpy( _residualLb[pair.first], weights,
+            log( Stringf( "Adding residual from layer %u...",
+                          predecessorIndex ) );
+            allocateMemoryForResidualsIfNeeded( predecessorIndex, pair.second );
+            const double *weights = _layer->getWeights( predecessorIndex );
+            memcpy( _residualLb[predecessorIndex], weights,
                     _size * pair.second * sizeof(double) );
-            memcpy( _residualUb[pair.first], weights,
+            memcpy( _residualUb[predecessorIndex], weights,
                     _size * pair.second * sizeof(double) );
             ++counter;
             log( Stringf( "Adding residual from layer %u - done", pair.first ) );
-        }
-        else
-        {
-            predecessorIndex = pair.first;
         }
     }
 
@@ -273,7 +271,6 @@ void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
   unsigned targetLayerSize, DeepPolyElement *predecessor )
 {
     unsigned predecessorIndex = predecessor->getLayerIndex();
-    ASSERT( getPredecessorIndices().begin()->first == predecessorIndex );
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessorIndex ) );
     unsigned predecessorSize = predecessor->getSize();
@@ -309,17 +306,20 @@ void DeepPolyWeightedSumElement::allocateMemoryForResidualsIfNeeded
 ( unsigned residualLayerIndex, unsigned residualLayerSize )
 {
     _residualLayerIndices.insert( residualLayerIndex );
-    if ( _residualLayerIndices.exists( residualLayerIndex ) )
-        return;
     unsigned matrixSize = residualLayerSize * _size;
-    double *residualLb = new double[matrixSize];
-    std::fill_n( residualLb, matrixSize, 0 );
-    _residualLb[residualLayerIndex] = residualLb;
-    double *residualUb = new double[residualLayerSize * _size];
-    std::fill_n( residualUb, matrixSize, 0 );
-    _residualUb[residualLayerIndex] = residualUb;
+    if ( !_residualLb.exists( residualLayerIndex ) )
+    {
+        double *residualLb = new double[matrixSize];
+        std::fill_n( residualLb, matrixSize, 0 );
+        _residualLb[residualLayerIndex] = residualLb;
+    }
+    if ( !_residualUb.exists( residualLayerIndex ) )
+    {
+        double *residualUb = new double[residualLayerSize * _size];
+        std::fill_n( residualUb, matrixSize, 0 );
+        _residualUb[residualLayerIndex] = residualUb;
+    }
 }
-
 
 void DeepPolyWeightedSumElement::allocateMemory()
 {
