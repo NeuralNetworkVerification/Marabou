@@ -71,7 +71,7 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         if ( counter < numPredecessors - 1 )
         {
             log( Stringf( "Adding residual from layer %u...", pair.first ) );
-            allocateMemoryForResiduals( pair.first, pair.second );
+            allocateMemoryForResidualsIfNeeded( pair.first, pair.second );
             const double *weights = _layer->getWeights( pair.first );
             memcpy( _residualLb[pair.first], weights,
                     _size * pair.second * sizeof(double) );
@@ -115,15 +115,64 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         // _work1SymbolicUb, _workSymbolicLowerBias, _workSymbolicLowerBias,
         // now compute the symbolic bounds in terms of currentElement's
         // predecessor.
-
-        precedingElement =
-            deepPolyElementsBefore[precedingElement->
-                                   getPredecessorIndices().begin()->first];
-
+        predecessorIndices = currentElement->getPredecessorIndices();
+        counter = 0;
+        numPredecessors = predecessorIndices.size();
+        ASSERT( numPredecessors > 0 );
+        for ( const auto &pair : predecessorIndices )
+        {
+            if ( counter < numPredecessors - 1 )
+            {
+                unsigned residualLayerIndex = pair.first;
+                log( Stringf( "Adding residual from layer %u...", residualLayerIndex ) );
+                allocateMemoryForResidualsIfNeeded( residualLayerIndex,
+                                                    pair.second );
+                DeepPolyElement *residualElement =
+                    deepPolyElementsBefore[residualLayerIndex];
+                // Do we need to add bias here?
+                currentElement->symbolicBoundInTermsOfPredecessor
+                    ( _work1SymbolicLb, _work1SymbolicUb, NULL, NULL,
+                      _residualLb[residualLayerIndex],
+                      _residualUb[residualLayerIndex],
+                      _size, residualElement );
+                ++counter;
+                log( Stringf( "Adding residual from layer %u - done", pair.first ) );
+            }
+            else
+            {
+                predecessorIndex = pair.first;
+            }
+        }
+        precedingElement = deepPolyElementsBefore[predecessorIndex];
         currentElement->symbolicBoundInTermsOfPredecessor
             ( _work1SymbolicLb, _work1SymbolicUb, _workSymbolicLowerBias,
               _workSymbolicUpperBias, _work2SymbolicLb, _work2SymbolicUb,
               _size, precedingElement );
+
+        // The symbolic lower-bound is
+        // _work2SymbolicLb * precedingElement + residualLb1 * residualElement1 +
+        // residualLb2 * residualElement2 + ...
+        // If the precedingElement is a residual source layer, we can merge
+        // in the residualWeights, and remove it from the residual source layers.
+        if ( _residualLayerIndices.exists( predecessorIndex ) )
+        {
+            // Add weights of this residual layer
+            for ( unsigned i = 0; i < _size * precedingElement->getSize(); ++i )
+            {
+                _work2SymbolicLb[i] += _residualLb[predecessorIndex][i];
+                _work2SymbolicUb[i] += _residualUb[predecessorIndex][i];
+            }
+            _residualLayerIndices.erase( predecessorIndex );
+        }
+
+        DEBUG({
+                // Residual layers topologically after precedingElement should
+                // have been merged already.
+                for ( const auto &residualLayerIndex : _residualLayerIndices )
+                {
+                    ASSERT( residualLayerIndex < predecessorIndex );
+                }
+            });
 
         double* temp = _work1SymbolicLb;
         _work1SymbolicLb = _work2SymbolicLb;
@@ -138,6 +187,7 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
                                  _workSymbolicLowerBias, _workSymbolicUpperBias,
                                  currentElement, deepPolyElementsBefore );
     }
+    ASSERT( _residualLayerIndices.empty() );
     log( "Computing bounds with back substitution - done" );
 }
 
@@ -155,9 +205,8 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBound
                                            symbolicLowerBias, symbolicUpperBias,
                                            sourceElement );
 
-    for ( const auto &pair : _residualUb )
+    for ( const auto &residualLayerIndex : _residualLayerIndices )
     {
-        unsigned residualLayerIndex = pair.first;
         DeepPolyElement *residualElement =
             deepPolyElementsBefore[residualLayerIndex];
         concretizeSymbolicBoundForSourceLayer( _residualLb[residualLayerIndex],
@@ -248,22 +297,20 @@ void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
 
     // symbolicLowerBias = biases * symbolicLb
     // symbolicUpperBias = biases * symbolicUb
-    matrixMultiplication( biases, symbolicLb,
-                          symbolicLowerBias, 1,
-                          _size, targetLayerSize );
-    matrixMultiplication( biases, symbolicUb,
-                          symbolicUpperBias, 1,
-                          _size, targetLayerSize );
+    if  ( symbolicLowerBias )
+        matrixMultiplication( biases, symbolicLb, symbolicLowerBias, 1,
+                              _size, targetLayerSize );
+    if  ( symbolicUpperBias )
+        matrixMultiplication( biases, symbolicUb, symbolicUpperBias, 1,
+                              _size, targetLayerSize );
 }
 
-void DeepPolyWeightedSumElement::allocateMemoryForResiduals( unsigned
-                                                             residualLayerIndex,
-                                                             unsigned
-                                                             residualLayerSize )
+void DeepPolyWeightedSumElement::allocateMemoryForResidualsIfNeeded
+( unsigned residualLayerIndex, unsigned residualLayerSize )
 {
-    if ( _residualLb.exists( residualLayerIndex ) )
+    _residualLayerIndices.insert( residualLayerIndex );
+    if ( _residualLayerIndices.exists( residualLayerIndex ) )
         return;
-
     unsigned matrixSize = residualLayerSize * _size;
     double *residualLb = new double[matrixSize];
     std::fill_n( residualLb, matrixSize, 0 );
@@ -310,6 +357,7 @@ void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
         delete[] pair.second;
     }
     _residualUb.clear();
+    _residualLayerIndices.clear();
 }
 
 void DeepPolyWeightedSumElement::log( const String &message )

@@ -47,6 +47,7 @@ private:
     double *_workLb;
     double *_workUb;
 
+    Set<unsigned>  _residualLayerIndices;
     Map<unsigned, double *>  _residualLb;
     Map<unsigned, double *>  _residualUb;
 
@@ -74,8 +75,8 @@ private:
                                                 const double *symbolicUpperBias,
                                                 DeepPolyElement *sourceElement );
 
-    void allocateMemoryForResiduals( unsigned residualLayerIndex,
-                                     unsigned residualLayerSize );
+    void allocateMemoryForResidualsIfNeeded( unsigned residualLayerIndex,
+                                             unsigned residualLayerSize );
     void allocateMemory();
     void freeMemoryIfNeeded();
     void log( const String &message );
