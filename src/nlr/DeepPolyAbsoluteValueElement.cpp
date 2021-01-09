@@ -154,7 +154,8 @@ void DeepPolyAbsoluteValueElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicLbInTermsOfPredecessor[index] = weightLb * coeffLb;
                 symbolicLowerBias[j] += weightLb * lowerBias;
-            } else
+            }
+            else
             {
                 symbolicLbInTermsOfPredecessor[index] = weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;

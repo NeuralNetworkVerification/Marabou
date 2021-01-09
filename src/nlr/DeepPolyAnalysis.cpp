@@ -167,7 +167,6 @@ void DeepPolyAnalysis::allocateMemory( const Map<unsigned, Layer *> &layers )
    _workSymbolicLowerBias = new double[maxLayerSize];
    _workSymbolicUpperBias = new double[maxLayerSize];
 
-
    std::fill_n( _work1SymbolicLb, maxLayerSize * maxLayerSize, 0 );
    std::fill_n( _work1SymbolicUb, maxLayerSize * maxLayerSize, 0 );
    std::fill_n( _work2SymbolicLb, maxLayerSize * maxLayerSize, 0 );
