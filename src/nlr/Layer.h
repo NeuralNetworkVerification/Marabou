@@ -22,6 +22,7 @@
 #include "LayerOwner.h"
 #include "MarabouError.h"
 #include "MatrixMultiplication.h"
+#include "MaxConstraint.h"
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
