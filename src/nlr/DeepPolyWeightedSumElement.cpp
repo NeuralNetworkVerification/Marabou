@@ -182,7 +182,7 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
                 }
             });
 
-        double* temp = _work1SymbolicLb;
+        double *temp = _work1SymbolicLb;
         _work1SymbolicLb = _work2SymbolicLb;
         _work2SymbolicLb = temp;
 
