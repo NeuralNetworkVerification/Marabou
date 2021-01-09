@@ -32,11 +32,10 @@ DeepPolyInputElement::~DeepPolyInputElement()
     freeMemoryIfNeeded();
 }
 
-void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *>
-                               &deepPolyElementsBefore )
+void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *> & )
 {
     log( "Executing..." );
-    if ( !deepPolyElementsBefore.empty() )
+    if ( hasPredecessor() )
     {
         throw NLRError( NLRError::INPUT_LAYER_NOT_THE_FIRST_LAYER );
     }

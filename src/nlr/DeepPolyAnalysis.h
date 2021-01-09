@@ -31,7 +31,7 @@ public:
     DeepPolyAnalysis( LayerOwner *layerOwner );
     ~DeepPolyAnalysis();
 
-    void run( const Map<unsigned, Layer *> &layers );
+    void run();
 
 private:
     LayerOwner *_layerOwner;

@@ -15,7 +15,6 @@
 
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
-#include "DeepPolyAnalysis.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "IterativePropagator.h"
@@ -36,6 +35,7 @@ namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _tableau( NULL )
+    , _deepPolyAnalysis( nullptr )
 {
 }
 
@@ -138,8 +138,10 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 
 void NetworkLevelReasoner::deepPolyPropagation()
 {
-    DeepPolyAnalysis deepPolyAnalysis( this );
-    deepPolyAnalysis.run( _layerIndexToLayer );
+    if ( _deepPolyAnalysis == nullptr )
+        _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>
+            ( new DeepPolyAnalysis( this ) );
+    _deepPolyAnalysis->run();
 }
 
 void NetworkLevelReasoner::lpRelaxationPropagation()
@@ -605,6 +607,11 @@ unsigned NetworkLevelReasoner::getMaxLayerSize() const
     }
     ASSERT( maxSize > 0 );
     return maxSize;
+}
+
+const Map<unsigned, Layer *> &NetworkLevelReasoner::getLayerIndexToLayer() const
+{
+    return _layerIndexToLayer;
 }
 
 } // namespace NLR

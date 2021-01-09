@@ -42,6 +42,21 @@ DeepPolyAnalysis::DeepPolyAnalysis( LayerOwner *layerOwner )
     , _workSymbolicLowerBias( NULL )
     , _workSymbolicUpperBias( NULL )
 {
+    const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
+    allocateMemory( layers );
+    for ( const auto &pair : layers )
+    {
+        /*
+          Go over the layers, one by one. Each time construct and execute
+          the abstract element.
+        */
+        unsigned index = pair.first;
+        Layer *layer = pair.second;
+        log( Stringf( "Creating deeppoly element for layer %u...", index ) );
+        DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
+        _deepPolyElements[index] = deepPolyElement;
+        log( Stringf( "Creating deeppoly element for layer %u - done", index ) );
+    }
 }
 
 DeepPolyAnalysis::~DeepPolyAnalysis()
@@ -88,7 +103,7 @@ void DeepPolyAnalysis::freeMemoryIfNeeded()
     }
 }
 
-void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
+void DeepPolyAnalysis::run()
 {
     struct timespec deepPolyStart;
     (void) deepPolyStart;
@@ -97,24 +112,20 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
 
     deepPolyStart = TimeUtils::sampleMicro();
 
-    allocateMemory( layers );
-    for ( unsigned i = 0; i < _layerOwner->getNumberOfLayers(); ++i )
+    const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
+    for ( const auto &pair : layers )
     {
         /*
           Go over the layers, one by one. Each time construct and execute
           the abstract element.
         */
-        ASSERT( layers.exists( i ) );
-        log( Stringf( "Running deeppoly analysis for layer %u...", i ) );
+        unsigned index = pair.first;
+        Layer *layer = pair.second;
 
-        Layer *layer = layers[i];
-        DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
-        deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
-                                           _work2SymbolicLb, _work2SymbolicUb,
-                                           _workSymbolicLowerBias,
-                                           _workSymbolicUpperBias );
+        ASSERT( _deepPolyElements.exists( index ) );
+        log( Stringf( "Running deeppoly analysis for layer %u...", index ) );
+        DeepPolyElement *deepPolyElement = _deepPolyElements[index];
         deepPolyElement->execute( _deepPolyElements );
-        _deepPolyElements[i] = deepPolyElement;
 
         // Extract updated bounds
         for ( unsigned j = 0; j < deepPolyElement->getSize(); ++j )
@@ -125,7 +136,7 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
             if ( layer->getLb( j ) < lb )
             {
                 log( Stringf( "Neuron %u_%u lower-bound updated from  %f to %f",
-                              i, j, layer->getLb( j ), lb ) );
+                              index, j, layer->getLb( j ), lb ) );
                 layer->setLb( j, lb );
                 _layerOwner->receiveTighterBound
                     ( Tightening( layer->neuronToVariable( j ),
@@ -135,14 +146,14 @@ void DeepPolyAnalysis::run( const Map<unsigned, Layer *> &layers )
             if ( layer->getUb( j ) > ub )
             {
                 log( Stringf( "Neuron %u_%u upper-bound updated from  %f to %f",
-                              i, j, layer->getUb( j ), ub ) );
+                              index, j, layer->getUb( j ), ub ) );
                 layer->setUb( j, ub );
                 _layerOwner->receiveTighterBound
                     ( Tightening( layer->neuronToVariable( j ),
                                   ub, Tightening::UB ) );
             }
         }
-        log( Stringf( "Running deeppoly analysis for layer %u - done", i ) );
+        log( Stringf( "Running deeppoly analysis for layer %u - done", index ) );
     }
 }
 
@@ -183,7 +194,14 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
     if ( type == Layer::INPUT )
         deepPolyElement = new DeepPolyInputElement( layer );
     else if ( type == Layer::WEIGHTED_SUM )
+    {
         deepPolyElement = new DeepPolyWeightedSumElement( layer );
+        // Weighted sum layers need working memory for back substitution
+        deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
+                                           _work2SymbolicLb, _work2SymbolicUb,
+                                           _workSymbolicLowerBias,
+                                           _workSymbolicUpperBias );
+    }
     else if ( type ==  Layer::RELU )
         deepPolyElement = new DeepPolyReLUElement( layer );
     else if ( type ==  Layer::SIGN )
