@@ -79,7 +79,10 @@ void DeepPolyMaxPoolElement::execute( const Map<unsigned, DeepPolyElement *>
         {
             if ( sourceIndex != indexOfMaxLowerBound &&
                  FloatUtils::gt( sourceUbs[sourceIndex], maxLowerBound ) )
+            {
                 phaseFixed = false;
+                break;
+            }
         }
 
         if ( phaseFixed )

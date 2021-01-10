@@ -178,7 +178,6 @@ private:
 
     std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;
 
-
     void freeMemoryIfNeeded();
 
     List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
