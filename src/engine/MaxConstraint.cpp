@@ -399,7 +399,6 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
     { // todo Guy A - here fails
         for ( unsigned element : _elements )
         {
-//            std::cout<<"2222222\n"; // todo del
             splits.append( getSplit( element ) );
         }
     }
@@ -450,11 +449,9 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 {
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
-    std::cout<<"CCC\n"; // todo del
 
     if ( argMax != _f )
     {
-        std::cout<<"DDD\n"; // todo del
         // maxArg - f = 0
         Equation maxEquation( Equation::EQ );
         maxEquation.addAddend( 1, argMax );
@@ -468,10 +465,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     // their upper bound cannot exceed upper bound of argmax
     for ( unsigned other : _elements )
     {
-        std::cout<<"EEE\n"; // todo del
         if ( argMax == other )
         {
-            std::cout<<"FFF\n"; // todo del
             continue;
         }
 
@@ -485,11 +480,9 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 
         if ( _upperBounds.exists( argMax ) )
         {
-            std::cout<<"GGG\n"; // todo del
             if ( !_upperBounds.exists( other ) ||
                 FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
             {
-                std::cout<<"HHH\n"; // todo del
                 maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
 
             }

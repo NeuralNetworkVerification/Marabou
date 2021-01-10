@@ -142,6 +142,8 @@ class MaxConstraint : public PiecewiseLinearConstraint
     bool _maxIndexSet;
     double _maxLowerBound;
     bool _obsolete;
+    bool _eliminatedSomeVariables; // todo added
+    unsigned _maxValueOfEliminated; // todo added
 
     void resetMaxIndex();
 
