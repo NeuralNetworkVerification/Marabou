@@ -60,6 +60,7 @@ BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsN
 BoundsExplanator::~BoundsExplanator()
 {
 	_bounds.clear(); //TODO verify memory management
+	// Guy: this is fine. In fact, you can erase the destructor altogether - this is the default behavior.
 }
 
 void BoundsExplanator::getOneBoundExplanation( std::vector<double>& bound, const unsigned var, const bool isUpper ) const

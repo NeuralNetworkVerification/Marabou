@@ -321,6 +321,11 @@ void Tableau::setDimensions( unsigned m, unsigned n )
         _statistics->setCurrentTableauDimension( _m, _n );
     if(GlobalConfiguration::PROOF_CERTIFICATE)
         _boundsExplanator = new BoundsExplanator(n, m);  // Reset whenever new dimensions are set.
+	// Guy: the tableau dimensions can also change in addRow(). The
+	// most elegant way to be informed when this happens is to
+	// register the bound explanator to be a resizeWatcher, via the
+	// registerResizeWatcher mechanism. Then it will be notified
+	// whenever there's a change.
 }
 
 void Tableau::setConstraintMatrix( const double *A )
