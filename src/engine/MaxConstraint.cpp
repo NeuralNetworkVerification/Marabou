@@ -38,6 +38,8 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
+    , _eliminatedSomeVariables ( false ) // todo added
+    , _maxValueOfEliminated ( FloatUtils::negativeInfinity() ) // todo added
 {
 }
 
@@ -203,8 +205,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     // Lower and upper bounds for the f variable
-    double fLB = _lowerBounds.exists( _f ) ? _lowerBounds.get( _f ) : FloatUtils::negativeInfinity();
-    double fUB = _upperBounds.exists( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity();
+    double fLB = _lowerBounds.exists( _f ) ? _lowerBounds.get( _f ) : FloatUtils::negativeInfinity(); // todo make max(-inf, _maxValueOfEliminated) ?
+    double fUB = _upperBounds.exists( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity(); // todo make max(-inf, _maxValueOfEliminated)?
 
     // Compute the maximal bounds (lower and upper) for the elements
     double maxElementLB = FloatUtils::negativeInfinity();
@@ -332,7 +334,7 @@ void MaxConstraint::resetMaxIndex()
 List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
 {
     ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
+    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 ); // todo Guy A - 2nd assert is still relevant?
 
     double fValue = _assignment.get( _f );
     double maxVal = _assignment.get( _maxIndex );
@@ -394,9 +396,10 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
     List<PiecewiseLinearCaseSplit> splits;
 
     if ( !_elements.exists( _f ) )
-    {
+    { // todo Guy A - here fails
         for ( unsigned element : _elements )
         {
+//            std::cout<<"2222222\n"; // todo del
             splits.append( getSplit( element ) );
         }
     }
@@ -405,15 +408,28 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
         // if elements includes _f, this piecewise linear constraint
         // can immediately be transformed into a conjunction of linear
         // constraints
+//        std::cout<<"333333\n"; // todo del
         splits.append( getSplit( _f ) );
     }
-
     return splits;
 }
 
 bool MaxConstraint::phaseFixed() const
-{
-    return _elements.size() == 1 || _elements.exists( _f );
+{ // todo updated - Guy A
+//    return _elements.exists( _f ) || _elements.size() == 1;
+    if ( _elements.exists( _f ) )
+        return true;
+    if ( _elements.size() == 1 )
+    {
+        unsigned singleVarLeft = *_elements.begin();
+        if ( _lowerBounds.exists( singleVarLeft ) && FloatUtils::gte( _lowerBounds[singleVarLeft], _maxValueOfEliminated ) )
+        {
+            return true;
+        }
+        // unsigned singleVarLeft = *getParticipatingVariables().begin();
+        //if _lowerBounds[]
+    }
+    return false;
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
@@ -434,9 +450,11 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 {
     ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
+    std::cout<<"CCC\n"; // todo del
 
     if ( argMax != _f )
     {
+        std::cout<<"DDD\n"; // todo del
         // maxArg - f = 0
         Equation maxEquation( Equation::EQ );
         maxEquation.addAddend( 1, argMax );
@@ -450,8 +468,12 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     // their upper bound cannot exceed upper bound of argmax
     for ( unsigned other : _elements )
     {
+        std::cout<<"EEE\n"; // todo del
         if ( argMax == other )
+        {
+            std::cout<<"FFF\n"; // todo del
             continue;
+        }
 
         Equation gtEquation( Equation::GE );
 
@@ -463,9 +485,14 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 
         if ( _upperBounds.exists( argMax ) )
         {
+            std::cout<<"GGG\n"; // todo del
             if ( !_upperBounds.exists( other ) ||
                 FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
+            {
+                std::cout<<"HHH\n"; // todo del
                 maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
+
+            }
         }
     }
 
@@ -492,12 +519,32 @@ bool MaxConstraint::constraintObsolete() const
     return _obsolete;
 }
 
-void MaxConstraint::eliminateVariable( unsigned var, double /*value*/ )
-{
+void MaxConstraint::eliminateVariable( unsigned var, double value )
+{ // todo updated - Guy A
+    if ( !_eliminatedSomeVariables )
+    {
+        _eliminatedSomeVariables = true;
+        _maxValueOfEliminated = value;
+    }
+    else
+    {
+        if ( FloatUtils::gte( value, _maxValueOfEliminated ))
+            _maxValueOfEliminated = value;
+    }
     _elements.erase( var );
-    if ( var == _f || getParticipatingVariables().size() == 1 )
+    if ( var == _f )
         _obsolete = true;
+    if ( getParticipatingVariables().size() == 1 )
+    {
+        unsigned singleVarLeft = *getParticipatingVariables().begin();
+        std::cout<<"inside MAX "<< singleVarLeft<< "\n"; // todo delete
+//        String str; // todo delete
+//        dump(str); // todo delete        if (FloatUtils::gte( getLowerBound( singleVarLeft ), _maxValueOfEliminated ))
+        _obsolete = true;
+    }
 }
+// todo - also update notify_lower_bound?
+// todo - is the games with "value" or "notifyLowerBound"?
 
 void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
