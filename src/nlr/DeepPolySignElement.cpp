@@ -108,12 +108,6 @@ void DeepPolySignElement::symbolicBoundInTermsOfPredecessor
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessor->getLayerIndex() ) );
 
-    unsigned predecessorSize = predecessor->getSize();
-    std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
-    std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
-
     /*
       We have the symbolic bound of the target layer in terms of the
       Sign outputs, the goal is to compute the symbolic bound of the target
@@ -156,11 +150,11 @@ void DeepPolySignElement::symbolicBoundInTermsOfPredecessor
             double weightLb = symbolicLb[index];
             if ( weightLb >= 0 )
             {
-                symbolicLbInTermsOfPredecessor[index] = weightLb * coeffLb;
+                symbolicLbInTermsOfPredecessor[index] += weightLb * coeffLb;
                 symbolicLowerBias[j] += weightLb * lowerBias;
             } else
             {
-                symbolicLbInTermsOfPredecessor[index] = weightLb * coeffUb;
+                symbolicLbInTermsOfPredecessor[index] += weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;
             }
 
@@ -168,11 +162,11 @@ void DeepPolySignElement::symbolicBoundInTermsOfPredecessor
             double weightUb = symbolicUb[index];
             if ( weightUb >= 0 )
             {
-                symbolicUbInTermsOfPredecessor[index] = weightUb * coeffUb;
+                symbolicUbInTermsOfPredecessor[index] += weightUb * coeffUb;
                 symbolicUpperBias[j] += weightUb * upperBias;
             } else
             {
-                symbolicUbInTermsOfPredecessor[index] = weightUb * coeffLb;
+                symbolicUbInTermsOfPredecessor[index] += weightUb * coeffLb;
                 symbolicUpperBias[j] += weightUb * lowerBias;
             }
         }

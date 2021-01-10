@@ -65,6 +65,12 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     unsigned counter = 0;
     unsigned numPredecessors = predecessorIndices.size();
     ASSERT( numPredecessors > 0 );
+    // # The invariant we are maintaining:
+    // thisLayer <= ( residualUb * residualLayer for each residualLayer ) +
+    //                _work1SymbolicUb * currentElement + _workSymbolicUpperBias;
+    // thisLayer >= ( residualLb * residualLayer for each residualLayer ) +
+    //                _work1SymbolicLb * currentElement + _workSymbolicLowerBias;
+
     unsigned predecessorIndex = 0;
     for ( const auto &pair : predecessorIndices )
     {
@@ -121,29 +127,27 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         ASSERT( numPredecessors > 0 );
         for ( const auto &pair : predecessorIndices )
         {
+            predecessorIndex = pair.first;
+            precedingElement = deepPolyElementsBefore[predecessorIndex];
+
             if ( counter < numPredecessors - 1 )
             {
-                unsigned residualLayerIndex = pair.first;
-                log( Stringf( "Adding residual from layer %u...", residualLayerIndex ) );
-                allocateMemoryForResidualsIfNeeded( residualLayerIndex,
+                unsigned predecessorIndex = pair.first;
+                log( Stringf( "Adding residual from layer %u...",
+                              predecessorIndex ) );
+                allocateMemoryForResidualsIfNeeded( predecessorIndex,
                                                     pair.second );
-                DeepPolyElement *residualElement =
-                    deepPolyElementsBefore[residualLayerIndex];
                 // Do we need to add bias here?
                 currentElement->symbolicBoundInTermsOfPredecessor
                     ( _work1SymbolicLb, _work1SymbolicUb, NULL, NULL,
-                      _residualLb[residualLayerIndex],
-                      _residualUb[residualLayerIndex],
-                      _size, residualElement );
+                      _residualLb[predecessorIndex],
+                      _residualUb[predecessorIndex],
+                      _size, precedingElement );
                 ++counter;
                 log( Stringf( "Adding residual from layer %u - done", pair.first ) );
             }
-            else
-            {
-                predecessorIndex = pair.first;
-            }
         }
-        precedingElement = deepPolyElementsBefore[predecessorIndex];
+
         std::fill_n( _work2SymbolicLb, _size * precedingElement->getSize(), 0 );
         std::fill_n( _work2SymbolicUb, _size * precedingElement->getSize(), 0 );
         currentElement->symbolicBoundInTermsOfPredecessor

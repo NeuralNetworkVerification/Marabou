@@ -37,7 +37,7 @@ public:
 
     /*
       Given the symbolic bounds of some layer Y (of size layerSize) in terms of
-      this layer, store (in the last four arugment) the symbolic bounds of layer
+      this layer, add (to the last four arugment) the symbolic bounds of layer
       Y in terms of an immediate predecessor of this layer.
     */
     virtual void symbolicBoundInTermsOfPredecessor
