@@ -53,3 +53,4 @@ add_subdirectory(system_tests)
 add_subdirectory(${INPUT_PARSERS_DIR})
 add_subdirectory(query_loader)
 add_subdirectory(nlr)
+

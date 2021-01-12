@@ -38,8 +38,8 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
-    , _eliminatedSomeVariables ( false ) // todo added
-    , _maxValueOfEliminated ( FloatUtils::negativeInfinity() ) // todo added
+    , _eliminatedVariables( false ) // todo added
+    , _maxValueOfEliminated( FloatUtils::negativeInfinity() ) // todo added
 {
 }
 
@@ -205,8 +205,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     // Lower and upper bounds for the f variable
-    double fLB = _lowerBounds.exists( _f ) ? _lowerBounds.get( _f ) : FloatUtils::negativeInfinity(); // todo make max(-inf, _maxValueOfEliminated) ?
-    double fUB = _upperBounds.exists( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity(); // todo make max(-inf, _maxValueOfEliminated)?
+    double fLB = _lowerBounds.exists( _f ) ? _lowerBounds.get( _f ) : _maxValueOfEliminated;
+    double fUB = _upperBounds.exists( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity();
 
     // Compute the maximal bounds (lower and upper) for the elements
     double maxElementLB = FloatUtils::negativeInfinity();
@@ -415,11 +415,14 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 
 bool MaxConstraint::phaseFixed() const
 { // todo updated - Guy A
-//    return _elements.exists( _f ) || _elements.size() == 1;
+    return _elements.exists( _f ) || _elements.size() == 1;
     if ( _elements.exists( _f ) )
         return true;
     if ( _elements.size() == 1 )
     {
+        if (!_eliminatedVariables)
+            return true;
+
         unsigned singleVarLeft = *_elements.begin();
         if ( _lowerBounds.exists( singleVarLeft ) && FloatUtils::gte( _lowerBounds[singleVarLeft], _maxValueOfEliminated ) )
         {
@@ -466,9 +469,7 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
     for ( unsigned other : _elements )
     {
         if ( argMax == other )
-        {
             continue;
-        }
 
         Equation gtEquation( Equation::GE );
 
@@ -478,12 +479,11 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
         gtEquation.setScalar( 0 );
         maxPhase.addEquation( gtEquation );
 
-        if ( _upperBounds.exists( argMax ) )
-        {
+        if ( _upperBounds.exists( argMax ) ){
             if ( !_upperBounds.exists( other ) ||
                 FloatUtils::gt( _upperBounds[other], _upperBounds[argMax] ) )
             {
-                maxPhase.storeBoundTightening( Tightening( other, _upperBounds[argMax], Tightening::UB ) );
+                maxPhase.storeBoundTightening(  Tightening( other, _upperBounds[argMax], Tightening::UB ) );
 
             }
         }
@@ -514,26 +514,27 @@ bool MaxConstraint::constraintObsolete() const
 
 void MaxConstraint::eliminateVariable( unsigned var, double value )
 { // todo updated - Guy A
-    if ( !_eliminatedSomeVariables )
+    if ( !_eliminatedVariables )
     {
-        _eliminatedSomeVariables = true;
-        _maxValueOfEliminated = value;
+        _eliminatedVariables = true;
     }
-    else
-    {
-        if ( FloatUtils::gte( value, _maxValueOfEliminated ))
-            _maxValueOfEliminated = value;
-    }
+    _maxValueOfEliminated = FloatUtils::max( value, _maxValueOfEliminated );
+
     _elements.erase( var );
     if ( var == _f )
         _obsolete = true;
     if ( getParticipatingVariables().size() == 1 )
     {
+        if (!_eliminatedVariables)
+            _obsolete = true;
+
+        // no eliminated variables
         unsigned singleVarLeft = *getParticipatingVariables().begin();
-        std::cout<<"inside MAX "<< singleVarLeft<< "\n"; // todo delete
-//        String str; // todo delete
-//        dump(str); // todo delete        if (FloatUtils::gte( getLowerBound( singleVarLeft ), _maxValueOfEliminated ))
-        _obsolete = true;
+        if ( _lowerBounds.exists( singleVarLeft ) && FloatUtils::gte( _lowerBounds[singleVarLeft], _maxValueOfEliminated ))
+            _obsolete = true;
+
+        if (_upperBounds.exists( singleVarLeft ) && FloatUtils::lte( _upperBounds[singleVarLeft], _maxValueOfEliminated ))
+            _obsolete = true;
     }
 }
 // todo - also update notify_lower_bound?

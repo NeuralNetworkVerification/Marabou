@@ -37,3 +37,4 @@ common_add_unit_test(MatrixMultiplication)
 if (${BUILD_PYTHON})
 target_include_directories(${MARABOU_PY} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
+
