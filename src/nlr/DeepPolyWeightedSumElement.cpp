@@ -40,7 +40,8 @@ void DeepPolyWeightedSumElement::execute
     log( "Executing..." );
     ASSERT( hasPredecessor() );
     allocateMemory();
-    // Otherwise, compute bounds with back-substitution
+    getConcreteBounds();
+    // Compute bounds with back-substitution
     computeBoundWithBackSubstitution( deepPolyElementsBefore );
     log( "Executing - done" );
 }
@@ -53,14 +54,6 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     // Start with the symbolic upper-/lower- bounds of this layer with
     // respect to its immediate predecessor.
     Map<unsigned, unsigned> predecessorIndices = getPredecessorIndices();
-
-    DEBUG({
-            std::cout << "Source layers of layer "
-                      << _layerIndex << ": ";
-            for ( const auto &pair : predecessorIndices )
-                std::cout << pair.first << " ";
-            std::cout << std::endl;
-        });
 
     unsigned counter = 0;
     unsigned numPredecessors = predecessorIndices.size();
@@ -276,7 +269,7 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
         if ( symbolicLowerBias )
             _workLb[i] += symbolicLowerBias[i];
         if ( symbolicUpperBias )
-        _workUb[i] += symbolicUpperBias[i];
+            _workUb[i] += symbolicUpperBias[i];
     }
 }
 
