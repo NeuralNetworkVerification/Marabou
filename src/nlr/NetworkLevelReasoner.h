@@ -16,6 +16,7 @@
 #ifndef __NetworkLevelReasoner_h__
 #define __NetworkLevelReasoner_h__
 
+#include "DeepPolyAnalysis.h"
 #include "ITableau.h"
 #include "Layer.h"
 #include "LayerOwner.h"
@@ -24,6 +25,7 @@
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
+#include <memory>
 
 namespace NLR {
 
@@ -106,6 +108,7 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
+    void deepPolyPropagation();
     void lpRelaxationPropagation();
     void MILPPropagation();
     void iterativePropagation();
@@ -153,12 +156,27 @@ public:
     */
     void mergeConsecutiveWSLayers();
 
+    /*
+      Print the bounds of variables layer by layer
+    */
+    void dumpBounds();
+
+    /*
+      Get the size of the widest layer
+    */
+    unsigned getMaxLayerSize() const;
+
+    const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
     // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
+
+
+    std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;
 
     void freeMemoryIfNeeded();
 

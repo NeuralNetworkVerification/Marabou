@@ -44,10 +44,13 @@ void OptionParser::initialize()
           "PL constraints generate auxiliary equations" )
         ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the split-and-conquer solving mode" )
+          "Use the split-and-conquer solving mode: largest-interval/polarity/auto. default: auto" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in dnc mode" )
+        ( "dump-bounds",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
+          "Dump the bounds after preprocessing" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
@@ -69,6 +72,9 @@ void OptionParser::initialize()
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
           "The splitting strategy" )
+        ( "tightening-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SYMBOLIC_BOUND_TIGHTENING_TYPE]) ),
+          "type of bound tightening technique to use: sbt/deeppoly/none. default: deeppoly" )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) ),
           "(DNC) Number of times to initially bisect the input region" )
