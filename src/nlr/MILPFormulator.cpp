@@ -154,7 +154,6 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
     // is added back to the queue.
-
     SolverQueue freeSolvers( numberOfWorkers );
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
@@ -163,7 +162,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
         enqueueSolver( freeSolvers, gurobi );
     }
 
-    std::vector<boost::thread> threads( numberOfWorkers );
+    boost::thread *threads = new boost::thread[numberOfWorkers];
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
