@@ -61,6 +61,8 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
         elements.insert( atoi( valuesIter->ascii() ) );
 
     *(this) = MaxConstraint( f, elements );
+
+	// GUYK TODO: in serialize, store also the eliminateVariable flag and the maxValueOfEliminated, if it exists
 }
 
 MaxConstraint::~MaxConstraint()
@@ -78,6 +80,8 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
     *clone = *this;
     return clone;
+
+	// GUYK TODO: in duplicate, copy also the new flag and value
 }
 
 void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
@@ -118,7 +122,7 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
-    if ( _statistics )
+	if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
     if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
@@ -224,6 +228,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 	}
 
     // fUB and maxElementUB need to be equal. If not, the lower of the two wins.
+	// GUYK TODO: I think this is no longer correct. Maybe f's UB is the max eliminated value? We need to think about the logic here.
     if ( FloatUtils::areDisequal( fUB, maxElementUB ) )
 	{
 	    if ( FloatUtils::gt( fUB, maxElementUB ) )
@@ -410,6 +415,8 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 //        std::cout<<"333333\n"; // todo del
         splits.append( getSplit( _f ) );
     }
+
+	// GUYK TODO: we need another case split here: f=maxELiminated, and all others variables are <= maxEliminated.
     return splits;
 }
 
@@ -430,6 +437,8 @@ bool MaxConstraint::phaseFixed() const
         }
         // unsigned singleVarLeft = *getParticipatingVariables().begin();
         //if _lowerBounds[]
+
+		// GUYK TODO: what about the other case? you cheked eliminated <= remainingVar, but you can also have eliminated >= remainingVar
     }
     return false;
 }
@@ -437,6 +446,7 @@ bool MaxConstraint::phaseFixed() const
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
+	// GUYK TODO: the valid case split can also be f=maxEliminated 
     if ( !_elements.exists( _f ) )
         return getSplit( *( _elements.begin() ) );
     else
@@ -463,6 +473,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
         maxPhase.addEquation( maxEquation );
     }
 
+	// GUYK TODO: in each case split, also need to include argMax >= maxEliminated.
+	
     // store bound tightenings as well
     // go over all other elements;
     // their upper bound cannot exceed upper bound of argmax
