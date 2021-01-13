@@ -38,8 +38,8 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _maxIndexSet( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
     , _obsolete( false )
-    , _eliminatedVariables( false ) // todo added
-    , _maxValueOfEliminated( FloatUtils::negativeInfinity() ) // todo added
+    , _eliminatedVariables( false )
+    , _maxValueOfEliminated( FloatUtils::negativeInfinity() )
 {
 }
 
@@ -49,7 +49,7 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     ASSERT( constraintType == String( "max" ) );
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedMax.substring( 4, serializedMax.length() - 4 );
+    String serializedValues = serializedMax.substring( 4, serializedMax.length() - 6 ); // todo - Guy A - was  -4
     List<String> values = serializedValues.tokenize( "," );
 
     auto valuesIter = values.begin();
@@ -60,7 +60,17 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     for ( ; valuesIter != values.end(); ++valuesIter )
         elements.insert( atoi( valuesIter->ascii() ) );
 
+    // save flag and values indicating eliminated variables
+    bool eliminatedVariableFromString =  atoi( valuesIter->ascii() );
+    double maxValueOfEliminatedFromString = FloatUtils::negativeInfinity();
+
+    if ( eliminatedVariableFromString )
+        maxValueOfEliminatedFromString = atoi( valuesIter->ascii() );
+
     *(this) = MaxConstraint( f, elements );
+
+    this->_eliminatedVariables = eliminatedVariableFromString;
+    this->_maxValueOfEliminated = maxValueOfEliminatedFromString;
 }
 
 MaxConstraint::~MaxConstraint()
@@ -77,6 +87,8 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
     *clone = *this;
+    clone->_eliminatedVariables = _eliminatedVariables;
+    clone->_maxValueOfEliminated = _maxValueOfEliminated;
     return clone;
 }
 
@@ -118,10 +130,10 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
-    if ( _statistics )
+        if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
+        if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( value, _lowerBounds[variable] ) )
         return;
 
     _lowerBounds[variable] = value;
@@ -223,7 +235,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
             maxElementUB = FloatUtils::max( _upperBounds[element], maxElementUB );
 	}
 
-    // fUB and maxElementUB need to be equal. If not, the lower of the two wins.
+    // fUB and maxElementUB need to be equal. If not, the lower of the two wins. // todo Guy A - consult with Guy K on logic
     if ( FloatUtils::areDisequal( fUB, maxElementUB ) )
 	{
 	    if ( FloatUtils::gt( fUB, maxElementUB ) )
@@ -396,7 +408,7 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
     List<PiecewiseLinearCaseSplit> splits;
 
     if ( !_elements.exists( _f ) )
-    { // todo Guy A - here fails
+    {
         for ( unsigned element : _elements )
         {
             splits.append( getSplit( element ) );
@@ -407,15 +419,38 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
         // if elements includes _f, this piecewise linear constraint
         // can immediately be transformed into a conjunction of linear
         // constraints
-//        std::cout<<"333333\n"; // todo del
         splits.append( getSplit( _f ) );
     }
+
+    if ( _eliminatedVariables ) { // todo check with GuyK (I didn't add tightenings)
+        PiecewiseLinearCaseSplit phaseOfEliminatedIsMax;
+
+        // maxEliminated - f = 0
+        Equation maxEquation(Equation::EQ);
+        maxEquation.setScalar(_maxValueOfEliminated);
+        maxEquation.addAddend(-1, _f);
+        phaseOfEliminatedIsMax.addEquation(maxEquation);
+
+        for (unsigned element : _elements) {
+
+            Equation gtEquation(Equation::GE);
+
+            // maxEliminated >= element
+            gtEquation.setScalar(_maxValueOfEliminated);
+            gtEquation.addAddend(-1, element);
+            phaseOfEliminatedIsMax.addEquation(gtEquation);
+
+
+        }
+    splits.append( phaseOfEliminatedIsMax );
+    }
+
     return splits;
 }
 
 bool MaxConstraint::phaseFixed() const
 { // todo updated - Guy A
-    return _elements.exists( _f ) || _elements.size() == 1;
+//    return _elements.exists( _f ) || _elements.size() == 1;
     if ( _elements.exists( _f ) )
         return true;
     if ( _elements.size() == 1 )
@@ -428,8 +463,12 @@ bool MaxConstraint::phaseFixed() const
         {
             return true;
         }
-        // unsigned singleVarLeft = *getParticipatingVariables().begin();
-        //if _lowerBounds[]
+
+        if ( _upperBounds.exists( singleVarLeft ) && FloatUtils::lte( _upperBounds[singleVarLeft], _maxValueOfEliminated ) )
+        {
+            return true;
+        }
+
     }
     return false;
 }
@@ -446,6 +485,7 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
         // constraints
         return getSplit( _f );
     }
+    // TODO - GuyK did you mean that here I also add f=maxEliminated?
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
@@ -488,6 +528,16 @@ PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
             }
         }
     }
+
+        if ( _eliminatedVariables )
+        {
+            // argMax >= maxValueOfEliminated
+            Equation gtMexEliminatedEquation( Equation::GE );
+            gtMexEliminatedEquation.addAddend( 1, argMax );
+            gtMexEliminatedEquation.setScalar( _maxValueOfEliminated );
+            maxPhase.addEquation( gtMexEliminatedEquation );
+        }
+
 
     return maxPhase;
 }
@@ -574,6 +624,8 @@ String MaxConstraint::serializeToString() const
     Stringf output = Stringf( "max,%u", _f );
     for ( const auto &element : _elements )
         output += Stringf( ",%u", element );
+    output += Stringf(",%c", _eliminatedVariables); // TODO CHECK - Guy A - "%c" format correct
+    output += Stringf(",%u", _maxValueOfEliminated);
     return output;
 }
 
