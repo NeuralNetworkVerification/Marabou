@@ -88,6 +88,18 @@ double DeepPolyElement::getUpperBound( unsigned index ) const
     return _ub[index];
 }
 
+double DeepPolyElement::getLowerBoundFromLayer( unsigned index ) const
+{
+    ASSERT( index < getSize() );
+    return _layer->getLb( index );
+}
+
+double DeepPolyElement::getUpperBoundFromLayer( unsigned index ) const
+{
+    ASSERT( index < getSize() );
+    return _layer->getUb( index );
+}
+
 void DeepPolyElement::getConcreteBounds()
 {
     unsigned size = getSize();

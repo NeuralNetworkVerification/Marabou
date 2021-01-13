@@ -239,33 +239,86 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
   *symbolicLowerBias, const double *symbolicUpperBias, DeepPolyElement
   *sourceElement )
 {
-    // Get concrete bounds from the first element
-    for ( unsigned i = 0; i < _size; ++i )
+    /*
+    DEBUG({
+            log( Stringf( "Source layer: %u", sourceElement->getLayerIndex() ) );
+            String s = Stringf( "Symbolic lowerbounds w.r.t. layer %u: \n ", sourceElement->getLayerIndex() );
+            for ( unsigned i = 0; i <_size; ++i )
+            {
+                for ( unsigned j = 0; j < sourceElement->getSize(); ++j )
+                {
+                    s += Stringf( "%f ", symbolicLb[j * _size + i] );
+                }
+                s += "\n";
+            }
+            s += "\n";
+            if ( symbolicLowerBias )
+            {
+                s += Stringf( "Symbolic lower bias w.r.t. layer %u: \n ", sourceElement->getLayerIndex() );
+                for ( unsigned i = 0; i <_size; ++i )
+                {
+                    s += Stringf( "%f ", symbolicLowerBias[i] );
+                }
+                s += "\n";
+            }
+            s += Stringf( "Symbolic upperbounds w.r.t. layer %u: \n ", sourceElement->getLayerIndex() );
+            for ( unsigned i = 0; i <_size; ++i )
+            {
+                for ( unsigned j = 0; j < sourceElement->getSize(); ++j )
+                {
+                    s += Stringf( "%f ", symbolicUb[j * _size + i] );
+                }
+                s += "\n";
+            }
+            s += "\n";
+            if ( symbolicUpperBias )
+            {
+                s += Stringf( "Symbolic upper bias w.r.t. layer %u: \n ", sourceElement->getLayerIndex() );
+                for ( unsigned i = 0; i <_size; ++i )
+                {
+                    s += Stringf( "%f ", symbolicUpperBias[i] );
+                }
+                s += "\n";
+            }
+            log( s );
+        });
+    */
+
+    // Get concrete bounds
+    for ( unsigned i = 0; i < sourceElement->getSize(); ++i )
     {
-        for ( unsigned j = 0; j < sourceElement->getSize(); ++j )
+        double sourceLb = sourceElement->getLowerBoundFromLayer( i );
+        double sourceUb = sourceElement->getUpperBoundFromLayer( i );
+
+        log( Stringf( "Bounds of neuron%u_%u: [%f, %f]\n", sourceElement->
+                      getLayerIndex(), i, sourceLb, sourceUb ) );
+
+        for ( unsigned j = 0; j < _size; ++j )
         {
-            double firstLb = sourceElement->getLowerBound( j );
-            double firstUb = sourceElement->getUpperBound( j );
             // Compute lower bound
-            double weight = symbolicLb[j * _size + i];
+            double weight = symbolicLb[i * _size + j];
             if ( weight >= 0 )
             {
-                _workLb[i] += ( weight * firstLb );
+                _workLb[j] += ( weight * sourceLb );
             } else
             {
-                _workLb[i] += ( weight * firstUb );
+                _workLb[j] += ( weight * sourceUb );
             }
 
             // Compute upper bound
-            weight = symbolicUb[j * _size + i];
+            weight = symbolicUb[i * _size + j];
             if ( weight >= 0 )
             {
-                _workUb[i] += ( weight * firstUb );
+                _workUb[j] += ( weight * sourceUb );
             } else
             {
-                _workUb[i] += ( weight * firstLb );
+                _workUb[j] += ( weight * sourceLb );
             }
         }
+    }
+
+    for ( unsigned i = 0; i < _size; ++i )
+    {
         if ( symbolicLowerBias )
             _workLb[i] += symbolicLowerBias[i];
         if ( symbolicUpperBias )
