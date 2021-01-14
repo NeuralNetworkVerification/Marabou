@@ -49,7 +49,7 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     ASSERT( constraintType == String( "max" ) );
 
     // remove the constraint type in serialized form
-    String serializedValues = serializedMax.substring( 4, serializedMax.length() - 6 ); // todo - Guy A - was  -4
+    String serializedValues = serializedMax.substring( 4, serializedMax.length() - 4 );
     List<String> values = serializedValues.tokenize( "," );
 
     auto valuesIter = values.begin();
@@ -58,20 +58,36 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
 
     Set<unsigned> elements;
     for ( ; valuesIter != values.end(); ++valuesIter )
+    {
         elements.insert( atoi( valuesIter->ascii() ) );
+        // finished going over all the variables - and got to elimination flag and value
+        if (strcmp(valuesIter->ascii(), "e") == 0)
+        {
+            ++valuesIter;
+            break;
+        }
+    }
 
     // save flag and values indicating eliminated variables
     bool eliminatedVariableFromString =  atoi( valuesIter->ascii() );
+    ++valuesIter;
+
     double maxValueOfEliminatedFromString = FloatUtils::negativeInfinity();
 
     if ( eliminatedVariableFromString )
-        maxValueOfEliminatedFromString = atoi( valuesIter->ascii() );
+        maxValueOfEliminatedFromString = std::stod( valuesIter->ascii() );
 
-    *(this) = MaxConstraint( f, elements );
+    std::cout<<_elements.exists(0)<<"d\n";// todo delete
+    *(this) = MaxConstraint( f, elements ); // problematic line!
+    std::cout<<_elements.exists(0)<<"e\n";// todo delete
 
     this->_eliminatedVariables = eliminatedVariableFromString;
     this->_maxValueOfEliminated = maxValueOfEliminatedFromString;
+
 }
+
+
+
 
 MaxConstraint::~MaxConstraint()
 {
@@ -154,9 +170,15 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
                 toRemove.append( element );
             }
         }
+
+//        if ( toRemove.size() > 0 )
+//            _eliminatedVariables = true;
+
         for ( unsigned removeVar : toRemove )
         {
+//            _maxValueOfEliminated = FloatUtils::max(_maxValueOfEliminated, _upperBounds[removeVar]);
             _elements.erase( removeVar );
+
             if ( _maxIndex == removeVar )
                 maxErased = true;
         }
@@ -579,11 +601,10 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
             _obsolete = true;
 
         // no eliminated variables
-        unsigned singleVarLeft = *getParticipatingVariables().begin();
-        if ( _lowerBounds.exists( singleVarLeft ) && FloatUtils::gte( _lowerBounds[singleVarLeft], _maxValueOfEliminated ))
+        if ( FloatUtils::gte( value, _maxValueOfEliminated ))
             _obsolete = true;
 
-        if (_upperBounds.exists( singleVarLeft ) && FloatUtils::lte( _upperBounds[singleVarLeft], _maxValueOfEliminated ))
+        if ( FloatUtils::lte( value, _maxValueOfEliminated ))
             _obsolete = true;
     }
 }
@@ -622,10 +643,17 @@ String MaxConstraint::serializeToString() const
 {
     // Output format: max,f,element_1,element_2,element_3,...
     Stringf output = Stringf( "max,%u", _f );
-    for ( const auto &element : _elements )
-        output += Stringf( ",%u", element );
-    output += Stringf(",%c", _eliminatedVariables); // TODO CHECK - Guy A - "%c" format correct
-    output += Stringf(",%u", _maxValueOfEliminated);
+    for ( const auto &element : _elements ){
+            output += Stringf( ",%u", element );
+        }
+    // special delimiter ",e" represents elimination flag and variables
+    output += Stringf(",%s", "e");
+    output += Stringf(",%u", _eliminatedVariables);
+    if (_eliminatedVariables)
+        output += Stringf(",%f", _maxValueOfEliminated);
+    else
+        output += Stringf(",%u", 0); // will be ignored in any case,
+
     return output;
 }
 
