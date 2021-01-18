@@ -2211,8 +2211,8 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
-	// Apply bound tightening before handing to Gurobi
-	if ( _tableau->basisMatrixAvailable() )
+        // Apply bound tightening before handing to Gurobi
+        if ( _tableau->basisMatrixAvailable() )
 	{
 	    explicitBasisBoundTightening();
 	    applyAllBoundTightenings();
