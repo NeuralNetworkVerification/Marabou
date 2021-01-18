@@ -2213,7 +2213,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     {
         // Apply bound tightening before handing to Gurobi
         if ( _tableau->basisMatrixAvailable() )
-	{
+        {
 	    explicitBasisBoundTightening();
 	    applyAllBoundTightenings();
 	    applyAllValidConstraintCaseSplits();
