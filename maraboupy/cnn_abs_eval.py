@@ -17,12 +17,54 @@ from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 
-
-
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
 from maraboupy import Marabou
 import random
+
+tf.compat.v1.enable_v2_behavior()
+
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+x_train = np.expand_dims(x_train, -1)
+x_test = np.expand_dims(x_test, -1)
+    
+model = tf.keras.Sequential(
+    [        
+        tf.keras.Input(shape=(28,28,1)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(10, activation=None)
+    ],
+    name="model"
+)
+
+model.build(input_shape=(1,28,28))
+model.summary()        
+model.compile(optimizer="adam", loss='sparse_categorical_crossentropy', metrics=["accuracy"])
+model.fit(x_train, y_train, epochs=3, batch_size=128, validation_split=0.1)
+
+print("model.inputs={}".format(model.inputs))
+print("model.outputs={}".format(model.outputs))
+modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=True)
+keras2onnx.save_model(modelOnnx, "TestCase_onnx")
+
+exit()
+
+score = model.evaluate(x_test, y_test, verbose=0)
+print("(Original) Test loss:", score[0])
+print("(Original) Test accuracy:", score[1])
+
+print("Generate model")
+print("model.inputs={}".format(model.inputs))
+print("model.outputs={}".format(model.outputs))
+modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=True)
+modelOnnxName = "EVAL_onnx"
+keras2onnx.save_model(modelOnnx, modelOnnxName)
+print("Moved to ONNX")
+modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
+print("Moved to Marabou")
+
+exit()
 
 numVars = 16 + 1
 ipq = MarabouCore.InputQuery()

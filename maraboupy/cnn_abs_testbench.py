@@ -20,6 +20,8 @@ from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 
+tf.compat.v1.enable_v2_behavior()
+
 logging.basicConfig(
     level = logging.DEBUG,
     format = "%(asctime)s %(levelname)s %(message)s",
