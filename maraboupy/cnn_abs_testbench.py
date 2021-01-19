@@ -62,7 +62,7 @@ mnistProp.origMDense = modelOrigDense
 printLog("Finished model building")
 
 printLog("Choosing adversarial example")
-inDist = 0.05 #0.1
+inDist = 1 #0.1 #0.05
 xAdvInds = range(mnistProp.numTestSamples)
 xAdvInd = xAdvInds[0]
 xAdv = mnistProp.x_test[xAdvInd]
@@ -98,11 +98,12 @@ isSporious = False
 reachedFull = False
 successful = None
 reachedFinal = False
+COI = False
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=True)
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=COI)
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1
     isSporious = None
@@ -123,7 +124,7 @@ for i, mask in enumerate(maskList):
 else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=True)
+    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, logger, xAdv, inDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=COI)
     startLocal = time.time()
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(time.time()-startLocal, time.time()-startTotal))
     currentMbouRun += 1    
