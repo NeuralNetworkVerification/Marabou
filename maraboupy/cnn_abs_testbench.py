@@ -21,6 +21,7 @@ from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 
 tf.compat.v1.enable_v2_behavior()
+cfg_freshModelOrig = True
 
 logging.basicConfig(
     level = logging.DEBUG,
@@ -49,7 +50,7 @@ logger.addHandler(ch)
 startTotal = time.time()
 
 printLog("Started model building")
-modelOrig, replaceLayerName = genCnnForAbsTest()
+modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig)
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
 if maskShape[0] == None:
     maskShape = maskShape[1:]
@@ -62,7 +63,7 @@ mnistProp.origMDense = modelOrigDense
 printLog("Finished model building")
 
 printLog("Choosing adversarial example")
-inDist = 1 #0.1 #0.05
+inDist = 0.1 #0.05
 xAdvInds = range(mnistProp.numTestSamples)
 xAdvInd = xAdvInds[0]
 xAdv = mnistProp.x_test[xAdvInd]
