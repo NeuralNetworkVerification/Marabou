@@ -208,6 +208,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else if ( coType == "max" )
         {
+            serializeConstraint += String(",e,0,0");
             constraint = new MaxConstraint( serializeConstraint );
         }
         else if ( coType == "absoluteValue" )
