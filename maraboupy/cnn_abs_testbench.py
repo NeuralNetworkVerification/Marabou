@@ -21,7 +21,7 @@ from tensorflow.keras import datasets, layers, models
 import matplotlib.pyplot as plt
 
 tf.compat.v1.enable_v2_behavior()
-cfg_freshModelOrig = True
+cfg_freshModelOrig = False
 
 logging.basicConfig(
     level = logging.DEBUG,
@@ -99,7 +99,7 @@ isSporious = False
 reachedFull = False
 successful = None
 reachedFinal = False
-COI = False
+COI = True
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
@@ -114,7 +114,7 @@ for i, mask in enumerate(maskList):
         printLog("CEX in mask number {} out of {} is {}sporious.".format(i+1, len(maskList), "" if isSporious else "not "))        
         if not isSporious:
             printLog("Found real CEX in mask number {} out of {}".format(i+1, len(maskList)))
-            printLog("successful={}/{}".format(i, len(maskList)))
+            printLog("successful={}/{}".format(i+1, len(maskList)))
             successful = i
             break;
     else:
