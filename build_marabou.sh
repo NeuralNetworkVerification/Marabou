@@ -13,6 +13,9 @@ cd build
 echo "$PWD"
 #cmake ..
 #cmake --build . -j 8 -DBUILD_PYTHON=ON -DENABLE_GUROBI=ON
+
 cmake .. -DBUILD_PYTHON=ON -DENABLE_GUROBI=ON
+#cmake .. -DBUILD_PYTHON=ON -DENABLE_GUROBI=OFF
+
 make
 
