@@ -19,6 +19,7 @@
 #include "context/cdlist.h"
 #include "context/context.h"
 #include "FloatUtils.h"
+#include "InfeasibleQueryException.h"
 
 class BoundManagerTestSuite : public CxxTest::TestSuite
 {
@@ -82,6 +83,29 @@ public:
                                          FloatUtils::negativeInfinity() ) );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 6 ),
                                          FloatUtils::infinity() ) );
+    }
+
+    /*
+     * BoundManager throws infeasible query exception when some variable bounds
+     * become invalid
+     *
+     */
+    void test_bound_valid()
+    {
+        CVC4::context::Context context;
+
+        BoundManager boundManager(context);
+
+        unsigned numberOfVariables = 1u;
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.setLowerBound( 0, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 2 ) );
+        TS_ASSERT( boundManager.boundValid( 0 ) );
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 1 ) );
+        TS_ASSERT_THROWS( boundManager.setUpperBound( 0, 0 ), InfeasibleQueryException );
     }
 
     /*
