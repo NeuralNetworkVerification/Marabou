@@ -16,12 +16,14 @@
 #include "FloatUtils.h"
 #include "BoundManager.h"
 #include "Debug.h"
+#include "Tableau.h"
 
 using namespace CVC4::context;
 
-BoundManager::BoundManager( Context &context)
-    : _context(context)
-    , _size(0)
+BoundManager::BoundManager( Context &context )
+    : _context( context )
+    , _tableau( nullptr )
+    , _size( 0 )
 {
 };
 
@@ -39,7 +41,7 @@ unsigned BoundManager::registerNewVariable()
     ASSERT( _lowerBounds.size() == _size );
     ASSERT( _upperBounds.size() == _size );
 
-    unsigned newVar = _size++; 
+    unsigned newVar = _size++;
 
     _lowerBounds.append( new (true) CDO<double>( &_context ) );
     _upperBounds.append( new (true) CDO<double>( &_context ) );
@@ -63,12 +65,21 @@ void BoundManager::initialize( unsigned numberOfVariables )
     ASSERT( numberOfVariables == _size );
 }
 
+
+void BoundManager::registerTableauReference( Tableau *tableau )
+{
+    if ( NULL == _tableau )
+        _tableau = tableau;
+}
+
 bool BoundManager::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
     if ( value > getLowerBound( variable ) )
     {
         *_lowerBounds[variable] = value;
+        if ( nullptr != _tableau )
+            _tableau->ensureNonBasicVariableGTLB( variable, value );
         return true;
     }
     return false;
@@ -80,6 +91,8 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
     if ( value < getUpperBound( variable ) )
     {
         *_upperBounds[variable] = value ;
+        if ( nullptr != _tableau )
+            _tableau->ensureNonBasicVariableLTUB( variable, value );
         return true;
     }
     return false;
