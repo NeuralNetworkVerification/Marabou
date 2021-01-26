@@ -65,13 +65,6 @@ void BoundManager::initialize( unsigned numberOfVariables )
     ASSERT( numberOfVariables == _size );
 }
 
-
-void BoundManager::registerTableauReference( Tableau *tableau )
-{
-    if ( NULL == _tableau )
-        _tableau = tableau;
-}
-
 bool BoundManager::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
@@ -109,6 +102,12 @@ double BoundManager::getUpperBound( unsigned variable )
 {
   ASSERT( variable < _size );
   return *_upperBounds[variable];
+}
+
+void BoundManager::registerTableauReference( Tableau *ptrTableau )
+{
+    ASSERT( nullptr == _tableau );
+    _tableau = ptrTableau;
 }
 
 unsigned BoundManager::getSize( )
