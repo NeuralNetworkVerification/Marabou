@@ -18,10 +18,11 @@
 
 #include "context/cdo.h"
 #include "context/context.h"
+#include "List.h"
 #include "Vector.h"
 
 class Tableau;
-
+class Tightening;
 class BoundManager
 {
 public:
@@ -46,6 +47,8 @@ public:
     double getLowerBound( unsigned variable );
     double getUpperBound( unsigned variable );
 
+    void getConstraintTightenings( List<Tightening> &tightenings );
+
     unsigned getSize(); //TODO: Rename to getNumberOfVariables
 
     void registerTableauReference( Tableau *tableau );
@@ -58,6 +61,10 @@ private:
     // For now, assume variable number is the vector index
     Vector<CVC4::context::CDO<double> *> _lowerBounds;
     Vector<CVC4::context::CDO<double> *> _upperBounds;
+    Vector<CVC4::context::CDO<bool> *> _tightenedLower;
+    Vector<CVC4::context::CDO<bool> *> _tightenedUpper;
+
+
 
 };
 
