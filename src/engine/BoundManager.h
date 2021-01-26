@@ -27,19 +27,27 @@ public:
     BoundManager( CVC4::context::Context &ctx );
     ~BoundManager();
 
+
+    /*
+     * Registers a new variable, grows the BoundManager size and bound vectors,
+     * initializes bounds to +/-inf, and returns the new index as the new variable.
+     */
+    unsigned registerNewVariable( );
+
     void initialize( unsigned numberOfVariables );
+
     bool updateLowerBound( unsigned variable, double value );
     bool updateUpperBound( unsigned variable, double value );
 
     double getLowerBound( unsigned variable );
     double getUpperBound( unsigned variable );
 
-    unsigned getSize();
+    unsigned getSize(); //TODO: Rename to getNumberOfVariables
 
 private:
 
     CVC4::context::Context &_context;
-    unsigned _size;
+    unsigned _size; // TODO: Make context sensitive, to account for growing 
     // For now, assume variable number is the vector index
     Vector<CVC4::context::CDList<double> *> _lowerBounds;
     Vector<CVC4::context::CDList<double> *> _upperBounds;

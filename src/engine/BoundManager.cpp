@@ -34,22 +34,33 @@ BoundManager::~BoundManager()
     }
 };
 
-void BoundManager::initialize( unsigned numberOfVariables)
+unsigned BoundManager::registerNewVariable()
+{
+    ASSERT( _lowerBounds.size() == _size );
+    ASSERT( _upperBounds.size() == _size );
+
+    unsigned newVar = _size++; 
+
+    _lowerBounds.append( new (true) CDList<double>( &_context ) );
+    _upperBounds.append( new (true) CDList<double>( &_context ) );
+
+    _lowerBounds[newVar]->push_back( FloatUtils::negativeInfinity() );
+    _upperBounds[newVar]->push_back( FloatUtils::infinity() );
+
+    ASSERT( _lowerBounds.size() == _size );
+    ASSERT( _upperBounds.size() == _size );
+
+    return newVar;
+}
+
+void BoundManager::initialize( unsigned numberOfVariables )
 {
     ASSERT( 0 == _size);
 
-    _size = numberOfVariables;
-    for ( unsigned i = 0; i < _size; ++i)
-    {
-        _lowerBounds.append( new (true) CDList<double>( &_context ) );
-        _upperBounds.append( new (true) CDList<double>( &_context ) );
-    }
+    for ( unsigned i = 0; i < numberOfVariables; ++i)
+        registerNewVariable();
 
-    for ( unsigned i = 0; i < _size; ++i)
-    {
-        _lowerBounds[i]->push_back( FloatUtils::negativeInfinity() );
-        _upperBounds[i]->push_back( FloatUtils::infinity() );
-    }
+    ASSERT( numberOfVariables == _size );
 }
 
 bool BoundManager::updateLowerBound( unsigned variable, double value )
