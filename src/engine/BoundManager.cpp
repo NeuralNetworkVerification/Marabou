@@ -65,27 +65,39 @@ void BoundManager::initialize( unsigned numberOfVariables )
     ASSERT( numberOfVariables == _size );
 }
 
+bool BoundManager::tightenLowerBound( unsigned variable, double value )
+{
+    bool tightened = setLowerBound( variable, value );
+    if ( tightened &&  nullptr != _tableau )
+        _tableau->ensureNonBasicVariableGTLB( variable, value );
+    return tightened;
+}
+
 bool BoundManager::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
     if ( value > getLowerBound( variable ) )
     {
         *_lowerBounds[variable] = value;
-        if ( nullptr != _tableau )
-            _tableau->ensureNonBasicVariableGTLB( variable, value );
         return true;
     }
     return false;
 }
 
+bool BoundManager::tightenUpperBound( unsigned variable, double value )
+{
+    bool tightened = setUpperBound( variable, value );
+    if ( tightened && nullptr != _tableau )
+        _tableau->ensureNonBasicVariableLTUB( variable, value );
+    return tightened;
+}
+
 bool BoundManager::setUpperBound( unsigned variable, double value )
 {
-     ASSERT( variable < _size );
+    ASSERT( variable < _size );
     if ( value < getUpperBound( variable ) )
     {
         *_upperBounds[variable] = value ;
-        if ( nullptr != _tableau )
-            _tableau->ensureNonBasicVariableLTUB( variable, value );
         return true;
     }
     return false;
