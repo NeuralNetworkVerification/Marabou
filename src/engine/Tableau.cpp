@@ -1704,6 +1704,47 @@ bool Tableau::allBoundsValid() const
     return _boundsValid;
 }
 
+// Ensure that non-basic variables are within bounds
+void Tableau::ensureNonBasicVariableGTLB( unsigned variable, double value )
+{
+    unsigned index = _variableToIndex[variable];
+    if ( !_basicVariables.exists( variable ) )
+        {
+            if ( FloatUtils::gt( value, _nonBasicAssignment[index] ) )
+                setNonBasicAssignment( variable, value, true );
+        }
+    else
+        {
+            // Recompute the status of an affected basic variable
+            // If the status changes, invalidate the cost function
+            unsigned oldStatus = _basicStatus[index];
+            computeBasicStatus( index );
+            if ( _basicStatus[index] != oldStatus )
+                _costFunctionManager->invalidateCostFunction();
+    }
+}
+
+
+// Ensure that non-basic variables are within bounds
+void Tableau::ensureNonBasicVariableLTUB( unsigned variable, double value )
+{
+    unsigned index = _variableToIndex[variable];
+    if ( !_basicVariables.exists( variable ) )
+        {
+            if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
+                setNonBasicAssignment( variable, value, true );
+        }
+    else
+        {
+            // Recompute the status of an affected basic variable
+            // If the status changes, invalidate the cost function
+            unsigned oldStatus = _basicStatus[index];
+            computeBasicStatus( index );
+            if ( _basicStatus[index] != oldStatus )
+                _costFunctionManager->invalidateCostFunction();
+    }
+}
+
 void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
@@ -1716,22 +1757,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
 
     setLowerBound( variable, value );
 
-    // Ensure that non-basic variables are within bounds
-    unsigned index = _variableToIndex[variable];
-    if ( !_basicVariables.exists( variable ) )
-    {
-        if ( FloatUtils::gt( value, _nonBasicAssignment[index] ) )
-            setNonBasicAssignment( variable, value, true );
-    }
-    else
-    {
-        // Recompute the status of an affected basic variable
-        // If the status changes, invalidate the cost function
-        unsigned oldStatus = _basicStatus[index];
-        computeBasicStatus( index );
-        if ( _basicStatus[index] != oldStatus )
-            _costFunctionManager->invalidateCostFunction();
-    }
+    ensureNonBasicVariableGTLB( variable, value );
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1746,22 +1772,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 
     setUpperBound( variable, value );
 
-    // Ensure that non-basic variables are within bounds
-    unsigned index = _variableToIndex[variable];
-    if ( !_basicVariables.exists( variable ) )
-    {
-        if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
-            setNonBasicAssignment( variable, value, true );
-    }
-    else
-    {
-        // Recompute the status of an affected basic variable
-        // If the status changes, invalidate the cost function
-        unsigned oldStatus = _basicStatus[index];
-        computeBasicStatus( index );
-        if ( _basicStatus[index] != oldStatus )
-            _costFunctionManager->invalidateCostFunction();
-    }
+    ensureNonBasicVariableLTUB( variable, value );
 }
 
 unsigned Tableau::addEquation( const Equation &equation )

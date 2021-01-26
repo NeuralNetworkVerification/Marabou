@@ -390,6 +390,13 @@ public:
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status );
 
     /*
+      Callback from the BoundManager to ensure that non-basic variable
+      assignment is consistent with the new bounds.
+     */
+    void ensureNonBasicVariableGTLB( unsigned variable, double value );
+    void ensureNonBasicVariableLTUB( unsigned variable, double value );
+
+    /*
       True if the basic variable is out of bounds
     */
     bool basicOutOfBounds( unsigned basic ) const;
