@@ -18,16 +18,30 @@
 
 using namespace CVC4::context;
 
-BoundManager::BoundManager( unsigned numberOfVariables, Context &context )
-    : _size( numberOfVariables )
+BoundManager::BoundManager( Context &context)
+    : _context(context)
+    , _size(0)
 {
-    for ( unsigned i = 0; i < numberOfVariables; ++i)
+};
+
+BoundManager::~BoundManager()
+{
+    for ( unsigned i = 0; i < _size; ++i)
     {
-      //CDList<double> lb ( &context, false );
-      //CDList<double> ub ( &context, false );
-      //new (true) CDList<double>( &context )
-      _lowerBounds.append( new (true) CDList<double>( &context ) );
-      _upperBounds.append( new (true) CDList<double>( &context ) );
+        _lowerBounds[i]->deleteSelf();
+        _upperBounds[i]->deleteSelf();
+    }
+};
+
+void BoundManager::initialize( unsigned numberOfVariables)
+{
+    ASSERT( 0 == _size);
+
+    _size = numberOfVariables;
+    for ( unsigned i = 0; i < _size; ++i)
+    {
+        _lowerBounds.append( new (true) CDList<double>( &_context ) );
+        _upperBounds.append( new (true) CDList<double>( &_context ) );
     }
 }
 
@@ -70,7 +84,6 @@ unsigned BoundManager::getSize( )
 {
   return _size;
 }
-
 
 //
 // Local Variables:

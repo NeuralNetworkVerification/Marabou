@@ -24,8 +24,10 @@
 class BoundManager
 {
 public:
-    BoundManager( unsigned numberOfVariables, CVC4::context::Context &ctx );
+    BoundManager( CVC4::context::Context &ctx );
+    ~BoundManager();
 
+    void initialize( unsigned numberOfVariables );
     bool updateLowerBound( unsigned variable, double value );
     bool updateUpperBound( unsigned variable, double value );
 
@@ -36,8 +38,8 @@ public:
 
 private:
 
+    CVC4::context::Context &_context;
     unsigned _size;
-
     // For now, assume variable number is the vector index
     Vector<CVC4::context::CDList<double> *> _lowerBounds;
     Vector<CVC4::context::CDList<double> *> _upperBounds;
