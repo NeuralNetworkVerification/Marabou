@@ -63,7 +63,7 @@ void BoundManager::initialize( unsigned numberOfVariables )
     ASSERT( numberOfVariables == _size );
 }
 
-bool BoundManager::updateLowerBound( unsigned variable, double value )
+bool BoundManager::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
     if ( value > getLowerBound( variable ) )
@@ -74,7 +74,7 @@ bool BoundManager::updateLowerBound( unsigned variable, double value )
     return false;
 }
 
-bool BoundManager::updateUpperBound( unsigned variable, double value )
+bool BoundManager::setUpperBound( unsigned variable, double value )
 {
      ASSERT( variable < _size );
     if ( value < getUpperBound( variable ) )

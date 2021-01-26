@@ -36,8 +36,8 @@ public:
 
     void initialize( unsigned numberOfVariables );
 
-    bool updateLowerBound( unsigned variable, double value );
-    bool updateUpperBound( unsigned variable, double value );
+    bool setLowerBound( unsigned variable, double value );
+    bool setUpperBound( unsigned variable, double value );
 
     double getLowerBound( unsigned variable );
     double getUpperBound( unsigned variable );
