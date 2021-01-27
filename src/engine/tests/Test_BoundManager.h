@@ -102,7 +102,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( boundManager.setLowerBound( 0, 1 ) );
         TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 2 ) );
-        TS_ASSERT( boundManager.boundValid( 0 ) );
+        TS_ASSERT( boundManager.consistentBounds( 0 ) );
 
         TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 1 ) );
         TS_ASSERT_THROWS( boundManager.setUpperBound( 0, 0 ), InfeasibleQueryException );

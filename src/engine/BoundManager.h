@@ -54,7 +54,10 @@ public:
 
     void getTightenings( List<Tightening> &tightenings );
 
-    unsigned getSize(); //TODO: Rename to getNumberOfVariables
+    /*
+          Returns true if the bounds for the variable is valid, used to detectConflict state.
+    */
+    bool consistentBounds( unsigned variable );
 
     void registerTableauReference( Tableau *tableau );
 

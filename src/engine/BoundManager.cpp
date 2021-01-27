@@ -101,7 +101,7 @@ bool BoundManager::setLowerBound( unsigned variable, double value )
     {
         *_lowerBounds[variable] = value;
         *_tightenedLower[variable] = true;
-        if ( !boundValid( variable ) )
+        if ( !consistentBounds( variable ) )
             throw InfeasibleQueryException();
         return true;
     }
@@ -115,7 +115,7 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
     {
         *_upperBounds[variable] = value ;
         *_tightenedUpper[variable] = true;
-        if ( !boundValid( variable ) )
+        if ( !consistentBounds( variable ) )
             throw InfeasibleQueryException();
         return true;
     }
@@ -159,6 +159,11 @@ void BoundManager::getTightenings( List<Tightening> &tightenings )
     }
 }
 
+bool BoundManager::consistentBounds( unsigned variable )
+{
+    ASSERT( variable < _size );
+    return FloatUtils::gte( getUpperBound( variable ), getLowerBound( variable ) );
+}
 
 void BoundManager::registerTableauReference( Tableau *ptrTableau )
 {
