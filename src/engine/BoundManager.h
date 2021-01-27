@@ -9,8 +9,16 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** BoundManager class is a context-dependent implementation of a centralized set
+ ** of bounds. It is intended to be a single centralized object used between multiple
+ ** bound tightener classes, which enables those classes to care only about bounds
+ ** and forget about book-keeping.
+ **
+ ** BoundManager serves as a central variable registry and provides a method to obtain
+ ** a new variable id: registerNewVariable().
+ **
+ ** The bound values and tighten flags are stored using context-dependent objects,
+ ** which backtrack automatically with a centralized _context object.
 **/
 
 #ifndef __BoundManager_h__
@@ -29,6 +37,10 @@ public:
     BoundManager( CVC4::context::Context &ctx );
     ~BoundManager();
 
+    /*
+     * Initialize BoundManager to numberOfVariables
+     */
+    void initialize( unsigned numberOfVariables );
 
     /*
      * Registers a new variable, grows the BoundManager size and bound vectors,
@@ -36,22 +48,33 @@ public:
      */
     unsigned registerNewVariable( );
 
-    void initialize( unsigned numberOfVariables );
+    /*
+     * Returns number of registered variables
+     */
+    unsigned getNumberOfVariables();
 
+    /*
+     * Communicates bounds to the bound Manager and informs _tableau of the changes,
+     * so that any necessary updates can be performed.
+     */
     bool tightenLowerBound( unsigned variable, double value );
     bool tightenUpperBound( unsigned variable, double value );
 
+    /*
+     * Silently sets bounds to the assigned value, if consistent.
+     */
     bool setLowerBound( unsigned variable, double value );
     bool setUpperBound( unsigned variable, double value );
 
     /*
-      Returns true if the bounds for the variable is valid
-    */
-    bool boundValid( unsigned variable );
-
+     * Return current bound value.
+     */
     double getLowerBound( unsigned variable );
     double getUpperBound( unsigned variable );
 
+    /*
+     * Obtain a list of all the bound updates since the last call to getTightenings.
+     */
     void getTightenings( List<Tightening> &tightenings );
 
     /*
@@ -59,21 +82,20 @@ public:
     */
     bool consistentBounds( unsigned variable );
 
+
+    /*
+       Register Tableau reference for callbacks from tighten*Bound methods.
+     */
     void registerTableauReference( Tableau *tableau );
 
 private:
-
     CVC4::context::Context &_context;
     Tableau *_tableau;
-    unsigned _size; // TODO: Make context sensitive, to account for growing 
-    // For now, assume variable number is the vector index
+    unsigned _size;
     Vector<CVC4::context::CDO<double> *> _lowerBounds;
     Vector<CVC4::context::CDO<double> *> _upperBounds;
     Vector<CVC4::context::CDO<bool> *> _tightenedLower;
     Vector<CVC4::context::CDO<bool> *> _tightenedUpper;
-
-
-
 };
 
 

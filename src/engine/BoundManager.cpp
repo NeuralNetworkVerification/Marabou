@@ -40,6 +40,16 @@ BoundManager::~BoundManager()
     }
 };
 
+void BoundManager::initialize( unsigned numberOfVariables )
+{
+    ASSERT( 0 == _size );
+
+    for ( unsigned i = 0; i < numberOfVariables; ++i )
+        registerNewVariable();
+
+    ASSERT( numberOfVariables == _size );
+}
+
 unsigned BoundManager::registerNewVariable()
 {
     ASSERT( _lowerBounds.size() == _size );
@@ -56,26 +66,15 @@ unsigned BoundManager::registerNewVariable()
 
     *_lowerBounds[newVar] = FloatUtils::negativeInfinity();
     *_upperBounds[newVar] = FloatUtils::infinity();
-
     *_tightenedLower[newVar] = false;
     *_tightenedUpper[newVar] = false;
-
-    ASSERT( _lowerBounds.size() == _size );
-    ASSERT( _upperBounds.size() == _size );
-    ASSERT( _tightenedLower.size() == _size );
-    ASSERT( _tightenedUpper.size() == _size );
 
     return newVar;
 }
 
-void BoundManager::initialize( unsigned numberOfVariables )
+unsigned BoundManager::getNumberOfVariables()
 {
-    ASSERT( 0 == _size);
-
-    for ( unsigned i = 0; i < numberOfVariables; ++i)
-        registerNewVariable();
-
-    ASSERT( numberOfVariables == _size );
+    return _size;
 }
 
 bool BoundManager::tightenLowerBound( unsigned variable, double value )
@@ -122,18 +121,11 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
     return false;
 }
 
-bool BoundManager::boundValid( unsigned variable )
-{
-    ASSERT( variable < _size );
-    return FloatUtils::gte( getUpperBound( variable ), getLowerBound( variable ) );
-}
-
 double BoundManager::getLowerBound( unsigned variable )
 {
   ASSERT( variable < _size );
   return *_lowerBounds[variable];
 }
-
 
 double BoundManager::getUpperBound( unsigned variable )
 {
@@ -169,11 +161,6 @@ void BoundManager::registerTableauReference( Tableau *ptrTableau )
 {
     ASSERT( nullptr == _tableau );
     _tableau = ptrTableau;
-}
-
-unsigned BoundManager::getSize( )
-{
-  return _size;
 }
 
 //

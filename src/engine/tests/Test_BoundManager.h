@@ -70,7 +70,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
 
-        TS_ASSERT_EQUALS( boundManager.getSize(), 5u );
+        TS_ASSERT_EQUALS( boundManager.getNumberOfVariables(), 5u );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getLowerBound( 4 ),
                                          FloatUtils::negativeInfinity() ) );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 4 ),
@@ -78,7 +78,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
         TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
-        TS_ASSERT_EQUALS( boundManager.getSize(), 7u );
+        TS_ASSERT_EQUALS( boundManager.getNumberOfVariables(), 7u );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getLowerBound( 6 ),
                                          FloatUtils::negativeInfinity() ) );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 6 ),
