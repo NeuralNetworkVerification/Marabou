@@ -71,9 +71,6 @@ set(ACAS_PARSER acas)
 set(BERKELEY_PARSER berkeley)
 set(INPUT_PARSERS_DIR input_parsers)
 
-
-
-
 #-----------------------------------------------------------------------------#
 # Determine number of threads available, used to configure (default) parallel
 # execution of custom test targets (can be overriden with ARGS=-jN).

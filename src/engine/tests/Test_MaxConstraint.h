@@ -804,6 +804,7 @@ public:
         TS_ASSERT( max2.phaseFixed() )
     }
 
+
     void test_max_case_splits_with_variable_elimination()
     {
         unsigned f = 1;
@@ -823,12 +824,13 @@ public:
 
         TS_ASSERT( !max.wereVariablesEliminated() );
         // eliminate single variable x_5 = 5
-        max.eliminateVariable(5,5);
+        unsigned eliminatedVairableValue = 5;
+        max.eliminateVariable(5,eliminatedVairableValue);
         TS_ASSERT( max.wereVariablesEliminated() );
 
         List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
 
-        // there are 3 possible phases: f1=b2, f1=b3, f1=maxValueOfEliminated
+        // there are 4 possible phases: f1=b2, f1=b3, f1=b4, f1=maxValueOfEliminated
         TS_ASSERT_EQUALS( splits.size(), 4U );
 
         // check first two phases: f1=b2, f1=b3
@@ -837,12 +839,19 @@ public:
         {
             List<Tightening> bounds = split->getBoundTightenings();
 
-            // Since no upper bounds known for any of the variables, no bounds
-            TS_ASSERT_EQUALS( bounds.size(), 0U );
+            // For each split, there is a single LB element >= maxValueEliminated
+            TS_ASSERT_EQUALS( bounds.size(), 1U );
+
+            auto it = bounds.begin();
+
+            TS_ASSERT_EQUALS( it->_variable, i );
+            TS_ASSERT_EQUALS( it->_value, eliminatedVairableValue );
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
 
             auto equations = split->getEquations();
 
-            TS_ASSERT_EQUALS( equations.size(), 4U );
+            TS_ASSERT_EQUALS( equations.size(), 3U );
 
             auto cur = equations.begin();
 
@@ -884,18 +893,6 @@ public:
                 ++cur;
             }
 
-            // check equation b_i >= maxEliminated (which is 5)
-            TS_ASSERT_EQUALS( cur->_addends.size(), 1U );
-            TS_ASSERT_EQUALS( cur->_scalar, 5.0 );
-            TS_ASSERT_EQUALS( cur->_type, Equation::GE );
-
-            auto secondAddend = cur->_addends.begin();
-
-            TS_ASSERT_EQUALS( secondAddend->_coefficient, 1.0 );
-            TS_ASSERT_EQUALS( secondAddend->_variable, i );
-
-            ++cur;
-
         }
 
         //
@@ -913,25 +910,34 @@ public:
 
         TS_ASSERT( !max2.wereVariablesEliminated() );
         // eliminate single variable x_5 = 5
-        max2.eliminateVariable(5,5);
+        double eliminatedVairableValue2 = 5;
+        max2.eliminateVariable(5,eliminatedVairableValue2);
         TS_ASSERT( max2.wereVariablesEliminated() );
 
 
         splits = max2.getCaseSplits();
 
-        // there are 1 possible phases: with and without maxEliminated
-        TS_ASSERT_EQUALS( splits.size(), 2U );
+        // there is one possible phase (because 7 is an element now)
+        TS_ASSERT_EQUALS( splits.size(), 1U );
 
         split = splits.begin();
 
         List<Tightening> bounds = split->getBoundTightenings();
 
-        // Since no upper bounds known for any of the variables, no bounds
-        TS_ASSERT_EQUALS( bounds.size(), 0U );
+        // check single bound f >= maxValueEliminated
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+
+
+        auto it = bounds.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, eliminatedVairableValue2 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
         auto equations = split->getEquations();
 
-        TS_ASSERT_EQUALS( equations.size(), 4U );
+        // f >= x2, f >= x3, f >= x4
+        TS_ASSERT_EQUALS( equations.size(), 3U );
 
         // first phase is the one without max=_maxEliminated
         auto cur = equations.begin();
@@ -955,47 +961,8 @@ public:
 
             ++cur;
         }
-
-        // check equation f >= maxEliminated (which is 5)
-        TS_ASSERT_EQUALS( cur->_addends.size(), 1U );
-        TS_ASSERT_EQUALS( cur->_scalar, 5.0 );
-        TS_ASSERT_EQUALS( cur->_type, Equation::GE );
-
-        auto secondAddend = cur->_addends.begin();
-
-        TS_ASSERT_EQUALS( secondAddend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( secondAddend->_variable, f );
-
-        ++split;
-        auto cur2 = split->getEquations().begin();
-
-        // check 2nd phase
-        // check phase that f = maxEliminated
-
-        TS_ASSERT_EQUALS( cur2->_addends.size(), 1U );
-        TS_ASSERT_EQUALS( cur2->_scalar, 5.0 );
-        TS_ASSERT_EQUALS( cur2->_type, Equation::EQ );
-
-        auto addend = cur2->_addends.begin();
-
-        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( addend->_variable, f );
-
-        ++cur2;
-        for ( unsigned i = 2; i < 5;  ++i ) {
-            // check equation b_i <= maxEliminated (which is 5)
-            TS_ASSERT_EQUALS(cur2->_addends.size(), 1U);
-            TS_ASSERT_EQUALS(cur2->_scalar, 5.0);
-            TS_ASSERT_EQUALS(cur2->_type, Equation::LE);
-
-            auto addend = cur2->_addends.begin();
-
-            TS_ASSERT_EQUALS(addend->_coefficient, 1.0);
-            TS_ASSERT_EQUALS(addend->_variable, i);
-
-            ++cur2;
-        }
     }
+
 
     void test_max_phase_fixed_with_variable_elimination() {
         // for all the following tests the f variable is not in the input (in next test it is)
@@ -1035,10 +1002,22 @@ public:
 
         // in the case f is no in the input elements, and variables were eliminated
         PiecewiseLinearCaseSplit validSplit = max.getValidCaseSplit();
-        // equations are: f=x_2, x_2>=maxEliminated
+
+        List<Tightening> bounds = validSplit.getBoundTightenings();
+
+        // check single bound f >= maxValueEliminated
+        TS_ASSERT_EQUALS( bounds.size(), 1U );
+
+        auto it = bounds.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT_EQUALS( it->_value, 5.5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        // equation is: f=x_2
         auto equations = validSplit.getEquations();
 
-        TS_ASSERT_EQUALS(equations.size(), 2U);
+        TS_ASSERT_EQUALS(equations.size(), 1U);
 
         auto cur = equations.begin();
         TS_ASSERT_EQUALS(cur->_addends.size(), 2U);
@@ -1056,16 +1035,6 @@ public:
         TS_ASSERT_EQUALS(addend->_variable, f);
 
         ++cur;
-
-        // check equation x_2 >= maxEliminated (which is 5.5)
-        TS_ASSERT_EQUALS(cur->_addends.size(), 1U);
-        TS_ASSERT_EQUALS(cur->_scalar, 5.5);
-        TS_ASSERT_EQUALS(cur->_type, Equation::GE);
-
-        auto secondAddend = cur->_addends.begin();
-
-        TS_ASSERT_EQUALS(secondAddend->_coefficient, 1.0);
-        TS_ASSERT_EQUALS(secondAddend->_variable, 2U);
 
         // case 2
         // check the case in which the eliminated variable is the maximum
@@ -1097,23 +1066,40 @@ public:
         }
 
         max2.notifyLowerBound(2, 6);
+        // notifyUpperBound should eliminate x2 because UB_x2 <= _maxLowerBound = 9.5
         max2.notifyUpperBound(2, 8);
 
-        // now, phase should be fixed to x_2; all other variables should be removed
-        TS_ASSERT(max2.phaseFixed());
-        TS_ASSERT_EQUALS(max2.getParticipatingVariables().size(), 2U);
 
-        // in the case f is no in the input elements, and variables were eliminated
+        // now, phase should be fixed - there are no variables but there is an eliminatedValue
+        TS_ASSERT(max2.phaseFixed());
+        // f is the single participating variable
+        TS_ASSERT_EQUALS(max2.getParticipatingVariables().size(), 1U);
+
+        // in the case f is not in the input elements, and variables were eliminated
         PiecewiseLinearCaseSplit validSplit2 = max2.getValidCaseSplit();
-        // equations are: f=maxEliminated
+
+        bounds = validSplit2.getBoundTightenings();
+
+        // f = maxValueEliminated
+        // check 2 bounds bound f >= maxValueEliminated, f <= maxValueEliminated
+        TS_ASSERT_EQUALS( bounds.size(), 2U );
+
+        it = bounds.begin();
+
+        TS_ASSERT_EQUALS( it->_variable, f2 );
+        TS_ASSERT_EQUALS( it->_value, 9.5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+        it++;
+
+        TS_ASSERT_EQUALS( it->_variable, f2 );
+        TS_ASSERT_EQUALS( it->_value, 9.5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        // no additional equations
         auto equations2 = validSplit2.getEquations();
 
-        TS_ASSERT_EQUALS(equations2.size(), 1U);
-
-        auto cur2 = equations2.begin();
-        TS_ASSERT_EQUALS(cur2->_addends.size(), f2);
-        TS_ASSERT_EQUALS(cur2->_scalar, 9.5);
-        TS_ASSERT_EQUALS(cur2->_type, Equation::EQ);
+        TS_ASSERT_EQUALS(equations2.size(), 0U);
 
 
         // case 3
@@ -1152,8 +1138,6 @@ public:
         // now, phase should not be fixed! because maxEliminated = 7.5 in range of X_2 = [6, 9]
         TS_ASSERT(!max3.phaseFixed());
     }
-
-
 
 
     void test_max_phase_fixed_with_variable_elimination_2() {
@@ -1195,9 +1179,36 @@ public:
         TS_ASSERT_EQUALS( max.getParticipatingVariables().size(), 3U );
 
         PiecewiseLinearCaseSplit validSplit = max.getValidCaseSplit();
+
+        List<Tightening> bounds = validSplit.getBoundTightenings();
+
+        // check 3 bounds
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+
+        auto it = bounds.begin();
+
+        // x2 <= UB(f)=5
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        it++;
+
+        // x3 <= UB(f)=5
+        TS_ASSERT_EQUALS( it->_variable, 3U );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        it++;
+
+        // f >= maxValueEliminated = 5.5
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 5.5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
         auto equations = validSplit.getEquations();
 
-        TS_ASSERT_EQUALS( equations.size(), 3U );
+        TS_ASSERT_EQUALS( equations.size(), 2U );
 
         auto cur = equations.begin();
         // f >= x_2
@@ -1231,17 +1242,6 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
 
-        ++cur;
-
-        // f>= maxEliminated (=5.5)
-        TS_ASSERT_EQUALS( cur->_addends.size(), 1U );
-        TS_ASSERT_EQUALS( cur->_scalar, 5.5 );
-        TS_ASSERT_EQUALS( cur->_type, Equation::GE );
-
-        auto secondAddend = cur->_addends.begin();
-
-        TS_ASSERT_EQUALS( secondAddend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( secondAddend->_variable, f );
 
         // case 2
         // the eliminated variable is larger than f
@@ -1283,9 +1283,37 @@ public:
         TS_ASSERT_EQUALS( max2.getParticipatingVariables().size(), 3U );
 
         PiecewiseLinearCaseSplit validSplit2 = max2.getValidCaseSplit();
+
+        bounds = validSplit2.getBoundTightenings();
+
+        // check 3 bounds
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+
+        it = bounds.begin();
+
+        // x2 <= UB(f)=5
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        it++;
+
+        // x3 <= UB(f)=5
+        TS_ASSERT_EQUALS( it->_variable, 3U );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        it++;
+
+        // f >= maxValueEliminated = 9.5
+        TS_ASSERT_EQUALS( it->_variable, f2 );
+        TS_ASSERT_EQUALS( it->_value, 9.5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+
         auto equations2 = validSplit2.getEquations();
 
-        TS_ASSERT_EQUALS( equations2.size(), 3U );
+        TS_ASSERT_EQUALS( equations2.size(), 2U );
 
         cur = equations2.begin();
         // f >= x_2
@@ -1318,19 +1346,6 @@ public:
 
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f2 );
-
-        ++cur;
-
-        // f>= maxEliminated (=9.5) - even thought its UNSAT because f's UB is smaller than maxEliminated
-        TS_ASSERT_EQUALS( cur->_addends.size(), 1U );
-        TS_ASSERT_EQUALS( cur->_scalar, 9.5 );
-        TS_ASSERT_EQUALS( cur->_type, Equation::GE );
-
-        secondAddend = cur->_addends.begin();
-
-        TS_ASSERT_EQUALS( secondAddend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( secondAddend->_variable, f2 );
-
 
         // case 3
         // the eliminated variable is in f's range
@@ -1372,9 +1387,37 @@ public:
         TS_ASSERT_EQUALS( max3.getParticipatingVariables().size(), 3U );
 
         PiecewiseLinearCaseSplit validSplit3 = max3.getValidCaseSplit();
+
+        bounds = validSplit3.getBoundTightenings();
+
+        // check 3 bounds
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+
+        it = bounds.begin();
+
+        // x2 <= UB(f)=5
+        TS_ASSERT_EQUALS( it->_variable, 2U );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        it++;
+
+        // x3 <= UB(f)=5
+        TS_ASSERT_EQUALS( it->_variable, 3U );
+        TS_ASSERT_EQUALS( it->_value, 5 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        it++;
+
+        // f >= maxValueEliminated = 7
+        TS_ASSERT_EQUALS( it->_variable, f3 );
+        TS_ASSERT_EQUALS( it->_value, 7 );
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+
         auto equations3 = validSplit3.getEquations();
 
-        TS_ASSERT_EQUALS( equations3.size(), 3U );
+        TS_ASSERT_EQUALS( equations3.size(), 2U );
 
         cur = equations3.begin();
         // f >= x_2
@@ -1407,21 +1450,7 @@ public:
 
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f3 );
-
-        ++cur;
-
-        // f>= maxEliminated (=7)
-        TS_ASSERT_EQUALS( cur->_addends.size(), 1U );
-        TS_ASSERT_EQUALS( cur->_scalar, 7 );
-        TS_ASSERT_EQUALS( cur->_type, Equation::GE );
-
-        secondAddend = cur->_addends.begin();
-
-        TS_ASSERT_EQUALS( secondAddend->_coefficient, 1.0 );
-        TS_ASSERT_EQUALS( secondAddend->_variable, f3 );
-
     }
-
 
 
     void test_get_entailed_tightenings_with_elimination()
@@ -1464,8 +1493,6 @@ public:
         TS_ASSERT_EQUALS( it->_value, 2.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
-
-
          //From here, the test is going to run tests for the case that f is included in elements.
          // also here - with a value eliminate
 
@@ -1486,7 +1513,6 @@ public:
 
         // No lower bound for 3
         max2.notifyUpperBound( 3, 6 );
-
 
         // eliminate variable x_4 = 9.5
         TS_ASSERT( !max2.wereVariablesEliminated() );
@@ -1513,15 +1539,49 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
     }
 
-    // TODO - run original program of unsat_ipq
+
+
+    void test_constraint_satisfied_after_elimination() {
+
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for (unsigned i = 2; i < 10; ++i)
+            elements.insert(i);
+
+        MaxConstraint max(f, elements);
+
+        List<unsigned> participatingVariables;
+        TS_ASSERT_THROWS_NOTHING(participatingVariables = max.getParticipatingVariables());
+        TS_ASSERT_EQUALS(participatingVariables.size(), 9U);
+
+        auto it = participatingVariables.begin();
+        for (unsigned i = 1; i < 10; ++i, ++it) {
+            TS_ASSERT(max.participatingVariable(i));
+            max.notifyVariableValue(i, i);
+        }
+
+        // constraint not satisfied
+        TS_ASSERT(!max.satisfied());
+
+        // eliminate variable x_4 = 9.5
+        TS_ASSERT( !max.wereVariablesEliminated() );
+        max.eliminateVariable( 4, 9.5 );
+        TS_ASSERT( max.wereVariablesEliminated() );
+
+        // constraint not satisfied
+        max.notifyVariableValue(f, 9);
+        TS_ASSERT(!max.satisfied());
+
+        // constraint satisfied
+        max.notifyVariableValue(f, 9.5);
+        TS_ASSERT(max.satisfied());
+    }
 
 };
 
 
-
-
-
-
+// TODO - run original program of unsat_ipq
 
 
 

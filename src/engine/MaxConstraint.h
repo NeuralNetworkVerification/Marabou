@@ -149,8 +149,8 @@ private:
     bool _maxIndexSet;
     double _maxLowerBound;
     bool _obsolete;
-    bool _eliminatedVariables; // todo added
-    double _maxValueOfEliminated; // todo added
+    bool _eliminatedVariables;
+    double _maxValueOfEliminated;
 
     void resetMaxIndex();
 
