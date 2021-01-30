@@ -21,8 +21,8 @@
  ** which backtrack automatically with the central _context object.
  **
  ** There are two sets of methods to set bounds:
- **   * set*Bounds     - private method used to update bounds
- **   * tighten*Bounds - public method to update bounds, propagates the new bounds
+ **   * set*Bounds     - local method used to update bounds
+ **   * tighten*Bounds - shared method to update bounds, propagates the new bounds
  **                        to the _tableau (if registered) to keep the assignment and
  **                      basic/non-basic variables updated accordingly.
  **
@@ -31,7 +31,7 @@
  ** replaced by a flag, and switch to the conflict analysis mode instead.
  **
  ** It is assumed that variables are not introduced on the fly, and as such
- ** interaction with context-dependent features is not implemented.  
+ ** interaction with context-dependent features is not implemented.
  **/
 
 #ifndef __BoundManager_h__
