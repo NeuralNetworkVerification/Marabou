@@ -715,7 +715,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             if ( sourceUb > maxConcreteUb )
             {
                 maxConcreteUb = sourceUb;
-                maxConcreteUb = sourceLayer->getLb( sourceNeuron );
+                maxConcreteUbLb = sourceLayer->getLb( sourceNeuron );
                 maxConcreteUbVariable = sourceVariable;
             }
             
@@ -777,13 +777,13 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                 {
                     double sourceLb = sourceLayer->getLb( sourceNeuron );                    
                     double coefficent = (sourceUb - maxConcreteLb) / (sourceUb - sourceLb);
-                    scalar -= coefficent;
+                    scalar -= coefficent * sourceLb;
                     terms.append( GurobiWrapper::Term( -coefficent, Stringf( "x%u", sourceVariable ) ) );            
                 } 
             }
             gurobi.addLeqConstraint( terms, scalar );
 
-            // Tighter upper bounds - first ("upper corner")
+            // Tighter upper bounds - second ("upper corner")
             if (maxConcreteUb > secondMaxConcreteUb)
             {
                 terms.clear();

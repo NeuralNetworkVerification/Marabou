@@ -353,8 +353,8 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     else:
         inputVarsMapping, outputVarsMapping = None, None
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
-    optionsLocal = Marabou.createOptions(snc=False, verbosity=2);
-    optionsCluster = Marabou.createOptions(snc=True, verbosity=0);    
+    optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
+    optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=8)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
     sat = len(vals) > 0        
     if not sat:
@@ -394,8 +394,8 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         for i,x in inputDict.items():    
             modelOnnxMarabou.setLowerBound(i,x)
             modelOnnxMarabou.setUpperBound(i,x)
-    optionsLocal = Marabou.createOptions(snc=False, verbosity=2);
-    optionsCluster = Marabou.createOptions(snc=True, verbosity=0);            
+    optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
+    optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=8)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
     modelOnnxMarabou.saveQuery(runName)
     if fromImage:
