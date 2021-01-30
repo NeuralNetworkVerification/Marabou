@@ -49,21 +49,19 @@ public:
         BoundManager boundManager( *context );
 
         unsigned numberOfVariables = 5u;
-        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
 
-        for ( unsigned i = 0; i < numberOfVariables; ++i)
+        for ( unsigned i = 0; i < numberOfVariables; ++i )
         {
             TS_ASSERT( FloatUtils::areEqual( boundManager.getLowerBound( i ),
                                              FloatUtils::negativeInfinity() ) );
             TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( i ),
                                              FloatUtils::infinity() ) );
         }
-
     }
 
     /*
-     * BoundManager correctly updates the number of variables with advancement
-     * and backtracking of context
+     * BoundManager correctly registers new variables after intialization.
      *
      */
     void test_register_variable()
@@ -94,7 +92,7 @@ public:
      * become invalid
      *
      */
-    void test_bound_valid()
+    void test_consistent_bounds()
     {
         BoundManager boundManager( *context );
 
@@ -148,7 +146,7 @@ public:
 
     /*
      * BoundManager correctly updates bounds with advancement and backtracking of context
-     * 
+     *
      */
     void test_bound_manager_context_interaction()
     {
