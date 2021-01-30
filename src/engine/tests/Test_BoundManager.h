@@ -111,6 +111,42 @@ public:
     }
 
     /*
+     * Test tightened bound book-keeping
+     */
+    void test_get_tightenings()
+    {
+        BoundManager boundManager( *context );
+
+        unsigned numberOfVariables = 3u;
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
+
+        List<Tightening> tightenings;
+        TS_ASSERT_THROWS_NOTHING( boundManager.getTightenings( tightenings ));
+        TS_ASSERT( tightenings.empty() );
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.setLowerBound( 0, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 1, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.getTightenings( tightenings ) );
+        TS_ASSERT( tightenings.size() == 2u );
+        Tightening lb = Tightening( 0, 1, Tightening::LB );
+        Tightening ub = Tightening( 1, 2, Tightening::UB );
+        TS_ASSERT( std::find( tightenings.begin(), tightenings.end(), lb ) != tightenings.end() );
+        TS_ASSERT( std::find( tightenings.begin(), tightenings.end(), ub ) != tightenings.end() );
+        tightenings.clear();
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.getTightenings( tightenings ) );
+        TS_ASSERT( tightenings.size() == 1u );
+        Tightening ub2 = Tightening( 0, 1, Tightening::UB );
+        TS_ASSERT( std::find( tightenings.begin(), tightenings.end(), ub2 ) != tightenings.end() );
+        tightenings.clear();
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.getTightenings( tightenings ) );
+        TS_ASSERT( tightenings.size() == 0u );
+    }
+
+    /*
      * BoundManager correctly updates bounds with advancement and backtracking of context
      * 
      */
