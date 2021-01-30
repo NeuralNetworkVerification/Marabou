@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 
 tf.compat.v1.enable_v2_behavior()
 cfg_freshModelOrig = False
+fromImage = False 
 
 logging.basicConfig(
     level = logging.DEBUG,
@@ -132,26 +133,18 @@ else:
 
 if sat:
     printLog("SAT, reachedFinal={}".format(reachedFinal))
+    VERIFY = False
+    if VERIFY:
+        verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=fromImage)
+        print("verifyMarabou={}".format(verificationResult))
+        if not verificationResult[0]:
+            raise Exception("Inconsistant Marabou result, verification failed")
     if isCEXSporious(modelOrigDense, xAdv, inDist, yMax, ySecond, cex, logger):
         assert reachedFinal
-        printLog("Sporious CEX after end")
-        fromImage = False        
-        if fromImage:
-            probDistEq, predictionEq, marabouDist = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=True)
-            print("verifyMarabou={}".format((probDistEq, predictionEq, marabouDist)))
-            if predictionEq:
-                raise Exception("Sporious CEX after end with verified Marabou result")
-            else:            
-                raise Exception("inconsistant Marabou result.")
-        else:
-            outDictEq = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=False)
-            print("verifyMarabou={}".format(outDictEq))
-            if outDictEq:
-                raise Exception("Sporious CEX after end with verified Marabou result")
-            else:            
-                raise Exception("inconsistant Marabou result.")
+        printLog("Sporious CEX after end")        
+        raise Exception("Sporious CEX after end with verified Marabou result")
     if modelOrigDense.predict(np.array([cex])).argmax() != ySecond:
-        printLog("Unxepcted prediction result, cex result is {}".format(modelOrigDense.predict(np.array([cex])).argmax()))
+        printLog("Unexepcted prediction result, cex result is {}".format(modelOrigDense.predict(np.array([cex])).argmax()))
     printLog("Found CEX in origin")
     printLog("successful=original")
     printLog("SAT")

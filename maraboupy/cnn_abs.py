@@ -236,12 +236,18 @@ def setAdversarial(net, x, inDist, yCorrect, yBad):
 def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
     if useMapping:
         lBounds = getBoundsInftyBall(xAdv, inDist)[0]
+
+        inputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig,indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping))), np.nditer(lBounds))}
+        outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0 for indOrig, indCOI in enumerate(np.nditer(np.array(outputVarsMapping)))}
+        
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)      
     else:
+        inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(net.inputVars))}
+        outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(net.outputVars))}
         cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)        
         cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
-    return cex, cexPrediction
+    return cex, cexPrediction, inputDict, outputDict
 
 def setCOIBoundes(net, init):
 
@@ -358,10 +364,10 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
     sat = len(vals) > 0        
     if not sat:
-        return False, np.array([]), np.array([]), dict(), dict()  
-    inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
-    outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
-    cex, cexPrediction = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
+        return False, np.array([]), np.array([]), dict(), dict()
+    #inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
+    #outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
+    cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
@@ -396,20 +402,20 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
             modelOnnxMarabou.setUpperBound(i,x)
     optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
     optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=8)
-    vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
+    vals, stats = modelOnnxMarabou.solve(verbose=True, options=optionsLocal)
     modelOnnxMarabou.saveQuery(runName)
     if fromImage:
         predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
         print("predictionMbou={}".format(predictionMbou))
         print("xPrediction={}".format(xPrediction))    
-        return np.all(xPrediction == predictionMbou), xPrediction.argmax() == predictionMbou.argmax(), predictionMbou
+        return xPrediction.argmax() == predictionMbou.argmax(), np.all(xPrediction == predictionMbou), predictionMbou
     else:
         inputDictInner = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
         outputDictInner = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
         mnistProp.printDictToFile(inputDictInner, "DICT_verifyMarabou_InputDict_out")
         mnistProp.printDictToFile(outputDictInner, "DICT_verifyMarabou_OutputDict_out")
         equality = (set(outputDictInner.keys()) == set(outputDict.keys())) and all([outputDict[k] == outputDictInner[k] for k in outputDict.keys()])        
-        return (outputDictInner == outputDict) and equality 
+        return tuple((outputDictInner == outputDict) and equality)
 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
     if not inBoundsInftyBall(x, inDist, cex):        
