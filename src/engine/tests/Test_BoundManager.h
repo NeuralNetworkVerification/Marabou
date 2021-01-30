@@ -20,17 +20,24 @@
 #include "context/context.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
+#include "Tightening.h"
+
+using CVC4::context::Context;
 
 class BoundManagerTestSuite : public CxxTest::TestSuite
 {
 public:
 
+    Context * context;
+
     void setUp()
     {
+        TS_ASSERT_THROWS_NOTHING( context = new Context );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete context; );
     }
 
     /*
@@ -39,8 +46,7 @@ public:
      */
     void test_bound_manager_initialize()
     {
-        CVC4::context::Context context;
-        BoundManager boundManager(context);
+        BoundManager boundManager( *context );
 
         unsigned numberOfVariables = 5u;
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables) );
@@ -62,9 +68,7 @@ public:
      */
     void test_register_variable()
     {
-        CVC4::context::Context context;
-
-        BoundManager boundManager(context);
+        BoundManager boundManager( *context );
 
         unsigned numberOfVariables = 5u;
 
@@ -92,9 +96,7 @@ public:
      */
     void test_bound_valid()
     {
-        CVC4::context::Context context;
-
-        BoundManager boundManager(context);
+        BoundManager boundManager( *context );
 
         unsigned numberOfVariables = 1u;
 
@@ -114,9 +116,7 @@ public:
      */
     void test_bound_manager_context_interaction()
     {
-      CVC4::context::Context context;
-
-      BoundManager boundManager(context);
+      BoundManager boundManager( *context );
 
       unsigned numberOfVariables = 5u;
 
@@ -130,7 +130,7 @@ public:
       double level2Upper[] = {  3.738962,   8.308432000,   16.79211593, 115.9003,  57.5459822 };
 
 
-      TS_ASSERT_THROWS_NOTHING( context.push() );
+      TS_ASSERT_THROWS_NOTHING( context->push() )
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -141,7 +141,7 @@ public:
         TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level0Upper[v] );
       }
 
-      TS_ASSERT_THROWS_NOTHING( context.push() );
+      TS_ASSERT_THROWS_NOTHING( context->push() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -153,7 +153,7 @@ public:
       }
 
 
-      TS_ASSERT_THROWS_NOTHING( context.push() );
+      TS_ASSERT_THROWS_NOTHING( context->push() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -165,7 +165,7 @@ public:
        }
 
 
-      TS_ASSERT_THROWS_NOTHING( context.pop() );
+      TS_ASSERT_THROWS_NOTHING( context->pop() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -174,7 +174,7 @@ public:
       }
 
 
-      TS_ASSERT_THROWS_NOTHING( context.pop() );
+      TS_ASSERT_THROWS_NOTHING( context->pop() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -200,7 +200,7 @@ public:
           TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level2Upper[v] );
         }
 
-      TS_ASSERT_THROWS_NOTHING( context.pop() );
+      TS_ASSERT_THROWS_NOTHING( context->pop() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
         {
