@@ -13,9 +13,9 @@
 
 **/
 
-#include "FloatUtils.h"
 #include "BoundManager.h"
 #include "Debug.h"
+#include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "Tableau.h"
 #include "Tightening.h"
@@ -59,10 +59,10 @@ unsigned BoundManager::registerNewVariable()
 
     unsigned newVar = _size++;
 
-    _lowerBounds.append( new (true) CDO<double>( &_context ) );
-    _upperBounds.append( new (true) CDO<double>( &_context ) );
-    _tightenedLower.append( new (true) CDO<bool>( &_context ) );
-    _tightenedUpper.append( new (true) CDO<bool>( &_context ) );
+    _lowerBounds.append( new ( true ) CDO<double>( &_context ) );
+    _upperBounds.append( new ( true ) CDO<double>( &_context ) );
+    _tightenedLower.append( new ( true ) CDO<bool>( &_context ) );
+    _tightenedUpper.append( new ( true ) CDO<bool>( &_context ) );
 
     *_lowerBounds[newVar] = FloatUtils::negativeInfinity();
     *_upperBounds[newVar] = FloatUtils::infinity();
@@ -123,14 +123,14 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
 
 double BoundManager::getLowerBound( unsigned variable )
 {
-  ASSERT( variable < _size );
-  return *_lowerBounds[variable];
+    ASSERT( variable < _size );
+    return *_lowerBounds[variable];
 }
 
 double BoundManager::getUpperBound( unsigned variable )
 {
-  ASSERT( variable < _size );
-  return *_upperBounds[variable];
+    ASSERT( variable < _size );
+    return *_upperBounds[variable];
 }
 
 void BoundManager::getTightenings( List<Tightening> &tightenings )
