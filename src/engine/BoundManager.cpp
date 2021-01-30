@@ -24,8 +24,8 @@ using namespace CVC4::context;
 
 BoundManager::BoundManager( Context &context )
     : _context( context )
-    , _tableau( nullptr )
     , _size( 0 )
+    , _tableau( nullptr )
 {
 };
 
