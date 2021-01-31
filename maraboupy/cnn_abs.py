@@ -1,4 +1,3 @@
-
 import sys
 import os
 
@@ -22,7 +21,6 @@ from enum import Enum
 from tensorflow.keras.models import load_model
 cfg_freshModelAbs = True
 savedModelAbs = "cnn_abs_abs.h5"
-
 class mnistProp:
     num_classes = 10
     input_shape = (28,28,1)
@@ -30,10 +28,10 @@ class mnistProp:
     x_train, x_test = x_train / 255.0, x_test / 255.0
     x_train = np.expand_dims(x_train, -1)
     x_test = np.expand_dims(x_test, -1)
-    zero_test = np.zeros((1,) + x_test.shape[1:])
-    half_test = 0.5 * np.ones((1,) + x_test.shape[1:])
-    ones_test = np.ones((1,) + x_test.shape[1:])
-    single_test = np.array([x_test[0]])
+    #zero_test = np.zeros((1,) + x_test.shape[1:])
+    #half_test = 0.5 * np.ones((1,) + x_test.shape[1:])
+    #ones_test = np.ones((1,) + x_test.shape[1:])
+    #single_test = np.array([x_test[0]])
     featureShape=(1,28,28)
     loss='sparse_categorical_crossentropy'
     optimizer='adam'
@@ -50,6 +48,10 @@ class mnistProp:
     numTestSamples = 10
     Policy = Enum("Policy","Centered AllClassRank SingleClassRank MajorityClassVote")
     optionsObj = None
+    runSuffix = ""
+    logger = None
+    basePath = None
+    currPath = None
 
     def output_model_path(m, suffix=""):
         if suffix:
@@ -94,107 +96,101 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
 
     return replaceW, replaceB
 
-def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
-    if cfg_freshModelAbs:
-        rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
-        rplcOut = origM.get_layer(name=rplcLayerName).output_shape
-        origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
-        origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
-        strides = origM.get_layer(name=rplcLayerName).strides
-        clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-        clnLayers = [tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM")]
-        toSetWeights = {}
-        lSuffix = "_clnM_{}".format(mnistProp.numClones)
-        for l in origM.layers:
-            if l.name == rplcLayerName:
-                clnLayers.append(layers.Flatten(name=(rplcLayerName + "_f_rplc" + lSuffix)))
-                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]), activation=l.activation, name=(rplcLayerName + "_rplcConv" + lSuffix)))
-                toSetWeights[(rplcLayerName + "_rplcConv" + lSuffix)] = [clnW, clnB]
-                clnLayers.append(layers.Reshape(rplcOut[1:], name=(rplcLayerName + "_rshp_rplcOut" + lSuffix)))
-            else:
-                if isinstance(l, tf.keras.layers.Dense):
-                    newL = tf.keras.layers.Dense(l.units, activation=l.activation, name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.Conv2D):
-                    newL = tf.keras.layers.Conv2D(l.get_weights()[0].shape[3], kernel_size=l.get_weights()[0].shape[0:2], activation=l.activation, name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.MaxPooling2D):
-                    newL = tf.keras.layers.MaxPooling2D(pool_size=l.pool_size, name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.Flatten):
-                    newL = tf.keras.layers.Flatten(name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.Dropout):
-                    newL = tf.keras.layers.Dropout(l.rate, name=(l.name + lSuffix))
-                else:
-                    raise Exception("Not implemented")
-                toSetWeights[newL.name] = l.get_weights()
-                clnLayers.append(newL)                          
-        clnM = tf.keras.Sequential(
-            clnLayers,
-            name=("AbsModel_{}".format(mnistProp.numClones))
-        )
-        mnistProp.numClones += 1            
-
-        clnM.build(input_shape=mnistProp.featureShape)
-        clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
-        clnM.summary()
-
-        for l,w in toSetWeights.items():
-            clnM.get_layer(name=l).set_weights(w)    
-
-        score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
-        print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
-
-        if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-        #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-            print("Prediction aligned")    
+def cloneAndMaskConvModel(origM, rplcLayerName, mask):
+    rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
+    rplcOut = origM.get_layer(name=rplcLayerName).output_shape
+    origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
+    origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
+    strides = origM.get_layer(name=rplcLayerName).strides
+    clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
+    clnLayers = [tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM")]
+    toSetWeights = {}
+    lSuffix = "_clnM_{}_{}".format(mnistProp.runSuffix, mnistProp.numClones)
+    for l in origM.layers:
+        if l.name == rplcLayerName:
+            clnLayers.append(layers.Flatten(name=(rplcLayerName + "_f_rplc" + lSuffix)))
+            clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]), activation=l.activation, name=(rplcLayerName + "_rplcConv" + lSuffix)))
+            toSetWeights[(rplcLayerName + "_rplcConv" + lSuffix)] = [clnW, clnB]
+            clnLayers.append(layers.Reshape(rplcOut[1:], name=(rplcLayerName + "_rshp_rplcOut" + lSuffix)))
         else:
-            print("Prediction not aligned")
+            if isinstance(l, tf.keras.layers.Dense):
+                newL = tf.keras.layers.Dense(l.units, activation=l.activation, name=(l.name + lSuffix))
+            elif isinstance(l, tf.keras.layers.Conv2D):
+                newL = tf.keras.layers.Conv2D(l.get_weights()[0].shape[3], kernel_size=l.get_weights()[0].shape[0:2], activation=l.activation, name=(l.name + lSuffix))
+            elif isinstance(l, tf.keras.layers.MaxPooling2D):
+                newL = tf.keras.layers.MaxPooling2D(pool_size=l.pool_size, name=(l.name + lSuffix))
+            elif isinstance(l, tf.keras.layers.Flatten):
+                newL = tf.keras.layers.Flatten(name=(l.name + lSuffix))
+            elif isinstance(l, tf.keras.layers.Dropout):
+                newL = tf.keras.layers.Dropout(l.rate, name=(l.name + lSuffix))
+            else:
+                raise Exception("Not implemented")
+            toSetWeights[newL.name] = l.get_weights()
+            clnLayers.append(newL)                          
+    clnM = tf.keras.Sequential(
+        clnLayers,
+        name=("AbsModel_{}".format(mnistProp.numClones))
+    )
+    mnistProp.numClones += 1            
+
+    clnM.build(input_shape=mnistProp.featureShape)
+    clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
+    clnM.summary()
+    
+    for l,w in toSetWeights.items():
+        clnM.get_layer(name=l).set_weights(w)    
+
+    score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+    print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
+    print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
+
+    if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+    #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+        print("Prediction aligned")    
     else:
-        clnM = models.load_model(mnistProp.savedModelAbs)
+        print("Prediction not aligned")
 
     return clnM
 
 def myLoss(labels, logits):
     return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
-def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", BIG_MNIST = False):
+def printLog(s):
+    mnistProp.logger.info(s)
+    print(s)
+
+
+def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small"):
         
     print("Starting model building")
     #https://keras.io/examples/vision/mnist_convnet/
 
-    if BIG_MNIST:
-            savedModelOrig = "BIG_MNIST_" + savedModelOrig
+    #FIXME move to new name convention
+    if cnnSizeChoice != "small":
+        savedModelOrig = savedModelOrig.replace(".h5", cnnSizeChoice + ".h5")
             
     if cfg_freshModelOrig:        
-        if BIG_MNIST:
-            origM = tf.keras.Sequential(
-                [
-                    tf.keras.Input(shape=mnistProp.input_shape),
-                    layers.Conv2D(32, kernel_size=(3, 3), activation="relu", name="c1"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
-                    layers.Conv2D(64, kernel_size=(3, 3), activation="relu", name="c2"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
-                    layers.Flatten(name="f1"),
-                    layers.Dense(40, activation="relu", name="fc1"),                    
-                    layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
-                ]
-            )
+        if cnnSizeChoice == "big":
+            num_ch = 32
+        elif cnnSizeChoice == "medium":
+            num_ch = 16
+        elif cnnSizeChoice == "big":
+            num_ch = 1
         else:
-            num_ch = 1 if cfg_limitCh else 32
-            origM = tf.keras.Sequential(
-                [
-                    #tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"), FIXME
-                    layers.Conv2D(num_ch, input_shape=mnistProp.input_shape, kernel_size=(3,3), activation="relu", name="c1"),
-                    layers.MaxPooling2D(pool_size=(2,2), name="mp1"),
-                    layers.Conv2D(num_ch, kernel_size=(2,2), activation="relu", name="c2"),
-                    layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
-                    layers.Flatten(name="f1"),
-                    layers.Dense(40, activation="relu", name="fc1"),
-                    #layers.Dropout(0.5, name="do1"),
-                    #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1")
-                    layers.Dense(mnistProp.num_classes, activation=None, name="sm1")
-                ],
-                name="origModel"
-            )
+            raise Exception("cnnSizeChoice {} not supported".format(cnnSizeChoice))
+        origM = tf.keras.Sequential(
+            [
+                tf.keras.Input(shape=mnistProp.input_shape),
+                layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c1"),
+                layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
+                layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c2"),
+                layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
+                layers.Flatten(name="f1"),
+                layers.Dense(40, activation="relu", name="fc1"),                    
+                layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
+            ],
+            name="origModel_" + cnnSizeChoice
+        )
    
         batch_size = 128
         epochs = 15
@@ -208,19 +204,12 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
-        origM.save(savedModelOrig)
+        
+        origM.save(mnistProp.basePath + "/" + savedModelOrig)
 
     else:        
-        origM = load_model(savedModelOrig, custom_objects={'myLoss': myLoss}) 
-        origM.summary()
-
-        #FIXME
-        #w0 = np.ones(origM.get_layer(name="c2").get_weights()[0].shape)
-        ####w1 = np.ones(origM.get_layer(name="c2").get_weights()[1].shape)
-        #w1 = origM.get_layer(name="c2").get_weights()[1]
-        #origM.get_layer(name="c2").set_weights([w0,w1])
-        #FIXME
-        
+        origM = load_model(mnistProp.basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss}) 
+        origM.summary()        
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
@@ -364,10 +353,10 @@ def setCOIBoundes(net, init):
     #exit()
     return inputVarsMapping, outputVarsMapping
     
-def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras", coi=True):
+def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras", coi=True):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
     #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
-    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if logger.level==logging.DEBUG else 0))
+    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
@@ -435,7 +424,7 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         return tuple((outputDictInner == outputDict) and equality)
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect. 
-def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
+def isCEXSporious(model, x, inDist, yCorrect, yBad, cex):
     if not inBoundsInftyBall(x, inDist, cex):        
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))
