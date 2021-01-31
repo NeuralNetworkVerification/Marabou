@@ -49,6 +49,7 @@ class mnistProp:
     origMDense = None
     numTestSamples = 10
     Policy = Enum("Policy","Centered AllClassRank SingleClassRank MajorityClassVote")
+    optionsObj = None
 
     def output_model_path(m, suffix=""):
         if suffix:
@@ -152,36 +153,56 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, cfg_freshModelAbs=True):
 
     return clnM
 
+def myLoss(labels, logits):
+    return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
-def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5"):
-
+def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", BIG_MNIST = False):
+        
     print("Starting model building")
     #https://keras.io/examples/vision/mnist_convnet/
 
-    if cfg_freshModelOrig:
-        num_ch = 1 if cfg_limitCh else 32
-        origM = tf.keras.Sequential(
-            [
-                #tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"), FIXME
-                layers.Conv2D(num_ch, input_shape=mnistProp.input_shape, kernel_size=(3,3), activation="relu", name="c1"),
-                layers.MaxPooling2D(pool_size=(2,2), name="mp1"),
-                layers.Conv2D(num_ch, kernel_size=(2,2), activation="relu", name="c2"),
-                layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
-                layers.Flatten(name="f1"),
-                layers.Dense(40, activation="relu", name="fc1"),
-                #layers.Dropout(0.5, name="do1"),
-                #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1")
-                layers.Dense(mnistProp.num_classes, activation=None, name="sm1")
-            ],
-            name="origModel"
-        )
-
+    if BIG_MNIST:
+            savedModelOrig = "BIG_MNIST_" + savedModelOrig
+            
+    if cfg_freshModelOrig:        
+        if BIG_MNIST:
+            origM = tf.keras.Sequential(
+                [
+                    tf.keras.Input(shape=mnistProp.input_shape),
+                    layers.Conv2D(32, kernel_size=(3, 3), activation="relu", name="c1"),
+                    layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
+                    layers.Conv2D(64, kernel_size=(3, 3), activation="relu", name="c2"),
+                    layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
+                    layers.Flatten(name="f1"),
+                    layers.Dense(40, activation="relu", name="fc1"),                    
+                    layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
+                ]
+            )
+        else:
+            num_ch = 1 if cfg_limitCh else 32
+            origM = tf.keras.Sequential(
+                [
+                    #tf.keras.Input(shape=mnistProp.input_shape, name="input_origM"), FIXME
+                    layers.Conv2D(num_ch, input_shape=mnistProp.input_shape, kernel_size=(3,3), activation="relu", name="c1"),
+                    layers.MaxPooling2D(pool_size=(2,2), name="mp1"),
+                    layers.Conv2D(num_ch, kernel_size=(2,2), activation="relu", name="c2"),
+                    layers.MaxPooling2D(pool_size=(2,2), name="mp2"),
+                    layers.Flatten(name="f1"),
+                    layers.Dense(40, activation="relu", name="fc1"),
+                    #layers.Dropout(0.5, name="do1"),
+                    #layers.Dense(mnistProp.num_classes, activation="softmax", name="sm1")
+                    layers.Dense(mnistProp.num_classes, activation=None, name="sm1")
+                ],
+                name="origModel"
+            )
+   
         batch_size = 128
         epochs = 15
 
         origM.build(input_shape=mnistProp.featureShape)
-        origM.summary()        
-        origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
+        origM.summary()
+            
+        origM.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=mnistProp.metrics)
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
         
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
@@ -189,8 +210,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test accuracy:", score[1])
         origM.save(savedModelOrig)
 
-    else:
-        origM = load_model(savedModelOrig)
+    else:        
+        origM = load_model(savedModelOrig, custom_objects={'myLoss': myLoss}) 
         origM.summary()
 
         #FIXME
@@ -359,9 +380,7 @@ def runMarabouOnKeras(model, logger, xAdv, inDist, yMax, ySecond, runName="runMa
     else:
         inputVarsMapping, outputVarsMapping = None, None
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
-    optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
-    optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=8)
-    vals, stats = modelOnnxMarabou.solve(verbose=False, options=optionsLocal)
+    vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
     sat = len(vals) > 0        
     if not sat:
         return False, np.array([]), np.array([]), dict(), dict()
@@ -400,9 +419,7 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         for i,x in inputDict.items():    
             modelOnnxMarabou.setLowerBound(i,x)
             modelOnnxMarabou.setUpperBound(i,x)
-    optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
-    optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=8)
-    vals, stats = modelOnnxMarabou.solve(verbose=True, options=optionsLocal)
+    vals, stats = modelOnnxMarabou.solve(verbose=True, options=mnistProp.optionsObj)
     modelOnnxMarabou.saveQuery(runName)
     if fromImage:
         predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
@@ -417,13 +434,17 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         equality = (set(outputDictInner.keys()) == set(outputDict.keys())) and all([outputDict[k] == outputDictInner[k] for k in outputDict.keys()])        
         return tuple((outputDictInner == outputDict) and equality)
 
+#Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect. 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, logger):
     if not inBoundsInftyBall(x, inDist, cex):        
         raise Exception("CEX out of bounds")
-    if model.predict(np.array([cex])).argmax() == yCorrect:        
-        return True
-    return False
-
+    prediction = model.predict(np.array([cex]))
+    if prediction.argmax() == yCorrect:
+        return True, False
+    elif prediction[0,yBad] > prediction[0,yCorrect]:
+        return False, True
+    else:
+        return False, False                
 
 def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.AllClassRank):
     if policy == mnistProp.Policy.AllClassRank:
