@@ -19,7 +19,7 @@ CPUS = 8
 MEM_PER_CPU = "1G"
 TIME_LIMIT = "12:00:00"
 
-commonFlags = ["--run_on", "cluster", "--batchId", batchId]
+commonFlags = ["--run_on", "cluster", "--batch_id", batchId]
 
 runCmds.append(commonFlags + ["--run_suffix", "A"])
 runSuffices.append("A")
