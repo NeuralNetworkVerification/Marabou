@@ -1,6 +1,3 @@
-
-
-
 import sys
 import os
 import tensorflow as tf
@@ -32,14 +29,17 @@ import matplotlib.pyplot as plt
 tf.compat.v1.enable_v2_behavior()
 
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
-parser.add_argument("--no_coi",        action="store_true",                        default=False,   help="Don't use COI pruning")
-parser.add_argument("--no_verify",     action="store_true",                        default=False,   help="Don't run verification process")
-parser.add_argument("--fresh",         action="store_true",                        default=False,   help="Retrain CNN")
-parser.add_argument("--cnn_size",      type=str, choices=["big","medium","small"], default="small", help="Which CNN size to use")
-parser.add_argument("--run_on",        type=str, choices=["local", "cluster"],     default="local", help="Is the program running on cluster or local run?")
-parser.add_argument("--run_suffix",    type=str,                                   default="",      help="Add unique identifier identifying this current run")
-parser.add_argument("--batch_id",      type=str,                                   default="",      help="Add unique identifier identifying the whole batch")
-parser.add_argument("--prop_distance", type=int,                                   default=0.1,     help="Distance checked for adversarial robustness (L1 metric)")
+parser.add_argument("--no_coi",         action="store_true",                        default=False,                  help="Don't use COI pruning")
+parser.add_argument("--no_verify",      action="store_true",                        default=False,                  help="Don't run verification process")
+parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
+parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small"], default="small",                help="Which CNN size to use")
+parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
+parser.add_argument("--run_suffix",     type=str,                                   default="",                     help="Add unique identifier identifying this current run")
+parser.add_argument("--batch_id",       type=str,                                   default="",                     help="Add unique identifier identifying the whole batch")
+parser.add_argument("--prop_distance",  type=int,                                   default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
+parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
+parser.add_argument("--policy",         type=str, choices=mnistProp.policies,      default="AllClassRank",          help="Which abstraction policy to use")
+parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
 args = parser.parse_args()
 
 cfg_freshModelOrig = args.fresh
@@ -50,13 +50,16 @@ cfg_propDist       = args.prop_distance
 cfg_runOn          = args.run_on
 cfg_runSuffix      = args.run_suffix
 cfg_batchDir       = args.batch_id if "batch_" + args.batch_id else ""
+cfg_numClusterCPUs = args.num_cpu
+cfg_abstractionPolicy = args.policy
+cfg_sporiousStrict = args.sporious_strict
 
 cexFromImage = False
 
 #mnistProp.runSuffix = cfg_runSuffix
 
 optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
-optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=8)
+optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=cfg_numClusterCPUs)
 if cfg_runOn == "local":
     mnistProp.optionsObj = optionsLocal
 else :
@@ -76,6 +79,8 @@ if cfg_runSuffix:
         os.mkdir(currPath)        
 os.chdir(currPath)
 mnistProp.currPath = currPath
+
+cfg_abstractionPolicy
     
 logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = "cnnAbsTB.log", filemode = "w")
 mnistProp.logger = logging.getLogger('cnnAbsTB_{}'.format(cfg_runSuffix))
@@ -150,7 +155,7 @@ plt.title('Example %d. Label: %d' % (xAdvInd, yAdv))
 #plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
-maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax))
+maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
 printLog("Created {} masks".format(len(maskList)))
 
 #############################################################################################
@@ -176,19 +181,24 @@ successful = None
 reachedFinal = False
 startTotal = time.time()
 
+results = list()
+
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
-    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, time.time()-startLocal, time.time()-startTotal))
+    runtime = time.time() - startLocal
+    results.append(("Mask {}/{}".format(i+1, len(maskList)), runtime))
+    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, runtime, time.time()-startTotal))
     currentMbouRun += 1
     isSporious = None
     if sat:
         printLog("Found CEX in mask number {} out of {}, checking if sporious.".format(i+1, len(maskList)))
-        isSporious, isSecondGtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
-        printLog("CEX has ySecond {} yMax".format("gt" if isSecondGtMax else "lte"))
-        printLog("yMax is{} the maximal value in CEX prediction".format("" if isSporious else " not"))        
+        isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
+        printLog("CEX has ySecond {} yMax".format("lt" if isSecondLtMax else "gte"))
+        printLog("yMax is{} the maximal value in CEX prediction".format("" if isYMaxMax else " not"))
+        isSporious = not isSecondLtMax if cfg_sporiousStrict else isYMaxMax
         printLog("CEX in mask number {} out of {} is {}sporious.".format(i+1, len(maskList), "" if isSporious else "not "))
 
         if not isSporious:
@@ -204,20 +214,24 @@ for i, mask in enumerate(maskList):
 else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
+    startLocal = time.time()    
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
-    startLocal = time.time()
-    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(time.time()-startLocal, time.time()-startTotal))
+    runtime = timt.time() - startLocal
+    results.append(("Full", runtime))
+    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(runtime-startLocal, time.time()-startTotal))
     currentMbouRun += 1    
 
 if sat:
     printLog("SAT, reachedFinal={}".format(reachedFinal))
-    DOUBLE_CHECK_MARABOU = False
+    DOUBLE_CHECK_MARABOU = False #FIXME enable
     if DOUBLE_CHECK_MARABOU:
         verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=cexFromImage)
         print("verifyMarabou={}".format(verificationResult))
         if not verificationResult[0]:
-            raise Exception("Inconsistant Marabou result, verification failed")
-    if isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)[0]:
+            raise Exception("Inconsistant Marabou result, marabou double check failed")
+    isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
+    isSporious = not isSecondLtMax if cfg_sporiousStrict else isYMaxMax
+    if isSporious:
         assert reachedFinal
         printLog("Sporious CEX after end")        
         raise Exception("Sporious CEX after end with verified Marabou result")
@@ -237,3 +251,9 @@ else:
     #    printLog("Found CEX on unprocessed network")
 
 
+runtimeTotal = time.time() - startTotal
+
+with open("Results.out", "w") as f:
+    for brief, runtime in results:
+        f.write("DESCRIPTION={} ; RUNTIME={}\n".format(brief, runtime))
+    f.write("TOTAL ; RUNTIME={}\n".format(runtimeTotal))

@@ -17,7 +17,7 @@ runBriefs = list()
     
 CPUS = 8
 MEM_PER_CPU = "1G"
-TIME_LIMIT = "12:00:00"
+TIME_LIMIT = "24:00:00"
 
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId]
 
@@ -49,7 +49,7 @@ for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
     sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, suffix))
-    sbatchCode.append("#SBATCH --partition=long")
+    sbatchCode.append("#SBATCH --partition=short,medium")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
     sbatchCode.append("")
