@@ -440,7 +440,7 @@ def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Polic
     if policy == mnistProp.Policy.AllClassRank or policy == mnistProp.Policy.AllClassRank.name:
         return genActivationMaskAllClassRank(intermidModel)
     elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:
-        return genActivationMaskSingleClassRank(intermidModel, example, prediction)
+        return genActivationMaskSingleClassRank(intermidModel, prediction)
     elif policy == mnistProp.Policy.MajorityClassVote or policy == mnistProp.Policy.MajorityClassVote.name:
         return genActivationMaskMajorityClassVote(intermidModel)
     elif policy == mnistProp.Policy.Centered or policy == mnistProp.Policy.Centered.name:
@@ -481,9 +481,9 @@ def genActivationMaskAllClassRank(intermidModel, stepSize=10):
     return genMaskByActivation(intermidModel, mnistProp.x_test, stepSize=10)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.
-def genActivationMaskSingleClassRank(intermidModel, example, prediction):
+def genActivationMaskSingleClassRank(intermidModel, prediction):
     features = [x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == prediction]
-    return genMaskByActivation(intermidModel, features, stepSize=10)
+    return genMaskByActivation(intermidModel, np.array(features), stepSize=10)
 
 #Policy - calculate per class 
 def genActivationMaskMajorityClassVote(intermidModel):
@@ -495,7 +495,7 @@ def genActivationMaskMajorityClassVote(intermidModel):
     return genMaskByOrderedInd(sortedIndReverseDiscriminated, stepSize=10)
 
 #Policy - most important neurons are the center of the image.
-def genActivationMaskCentered(intermidModel):
+def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons than the others.
     maskShape = intermidModel.output_shape[1:]
     for thresh in reversed(range(int(min(maskShape)/2))):        
         yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
