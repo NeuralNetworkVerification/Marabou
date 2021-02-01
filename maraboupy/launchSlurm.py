@@ -23,27 +23,27 @@ commonFlags = ["--run_on", "cluster", "--batch_id", batchId]
 numRunsPerType = 20
 
 for i in range(numRunsPerType):
-    suffix = "defaultCfg"
+    suffix = "defaultCfg#{}".format(i)
     runCmds.append(commonFlags + ["--run_suffix", suffix])
-    runSuffices.append("{}#{}".format(suffix, i))
+    runSuffices.append(suffix)
     runBriefs.append("Default run parameters")
 
 for i in range(numRunsPerType):
-    suffix = "sporiousStrictCfg"
+    suffix = "sporiousStrictCfg#{}".format(i)
     runCmds.append(commonFlags + ["--run_suffix", suffix, "--sporious_strict"])
-    runSuffices.append("{}#{}".format(suffix, i))
+    runSuffices.append(suffix)
     runBriefs.append("Run with sporious_strict")
 
 for i in range(numRunsPerType):
-    suffix = "propDist05Cfg"
+    suffix = "propDist05Cfg#{}".format(i)
     runCmds.append(commonFlags + ["--run_suffix", suffix, "--prop_distance", "0.05"])
-    runSuffices.append("{}#{}".format(suffix, i))
+    runSuffices.append(suffix)
     runBriefs.append("Run with smaller prop distance")
 
 for i in range(numRunsPerType):
-    suffix = "propDist01Cfg"
+    suffix = "propDist01Cfg#{}".format(i)
     runCmds.append(commonFlags + ["--run_suffix", suffix, "--prop_distance", "0.01"])
-    runSuffices.append("{}#{}".format(suffix, i))
+    runSuffices.append(suffix)
     runBriefs.append("Run with smaller prop distance")    
     
 
