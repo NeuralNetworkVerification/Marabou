@@ -17,23 +17,35 @@ runBriefs = list()
     
 CPUS = 8
 MEM_PER_CPU = "1G"
-TIME_LIMIT = "24:00:00"
+TIME_LIMIT = "12:00:00"
 
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId]
+numRunsPerType = 20
 
-runCmds.append(commonFlags + ["--run_suffix", "A"])
-runSuffices.append("A")
-runBriefs.append("This is a test 1")
+for i in range(numRunsPerType):
+    suffix = "defaultCfg"
+    runCmds.append(commonFlags + ["--run_suffix", suffix])
+    runSuffices.append("{}#{}".format(suffix, i))
+    runBriefs.append("Default run parameters")
 
-runCmds.append(commonFlags + ["--run_suffix", "B"])
-runSuffices.append("B")
-runBriefs.append("This is a test 2")
+for i in range(numRunsPerType):
+    suffix = "sporiousStrictCfg"
+    runCmds.append(commonFlags + ["--run_suffix", suffix, "--sporious_strict"])
+    runSuffices.append("{}#{}".format(suffix, i))
+    runBriefs.append("Run with sporious_strict")
 
-runCmds.append(commonFlags + ["--run_suffix", "C"])
-runSuffices.append("C")
-runBriefs.append("This is a test 3")
+for i in range(numRunsPerType):
+    suffix = "propDist05Cfg"
+    runCmds.append(commonFlags + ["--run_suffix", suffix, "--prop_distance", "0.05"])
+    runSuffices.append("{}#{}".format(suffix, i))
+    runBriefs.append("Run with smaller prop distance")
 
-
+for i in range(numRunsPerType):
+    suffix = "propDist01Cfg"
+    runCmds.append(commonFlags + ["--run_suffix", suffix, "--prop_distance", "0.01"])
+    runSuffices.append("{}#{}".format(suffix, i))
+    runBriefs.append("Run with smaller prop distance")    
+    
 
 sbatchFiles = list()
 for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
@@ -49,7 +61,7 @@ for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
     sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, suffix))
-    sbatchCode.append("#SBATCH --partition=short,medium")
+    sbatchCode.append("#SBATCH --partition=long")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
     sbatchCode.append("")

@@ -38,7 +38,7 @@ parser.add_argument("--run_suffix",     type=str,                               
 parser.add_argument("--batch_id",       type=str,                                   default="",                     help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=int,                                   default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
-parser.add_argument("--policy",         type=str, choices=mnistProp.policies,      default="AllClassRank",          help="Which abstraction policy to use")
+parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
 args = parser.parse_args()
 
@@ -198,7 +198,7 @@ for i, mask in enumerate(maskList):
         isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
         printLog("CEX has ySecond {} yMax".format("lt" if isSecondLtMax else "gte"))
         printLog("yMax is{} the maximal value in CEX prediction".format("" if isYMaxMax else " not"))
-        isSporious = not isSecondLtMax if cfg_sporiousStrict else isYMaxMax
+        isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
         printLog("CEX in mask number {} out of {} is {}sporious.".format(i+1, len(maskList), "" if isSporious else "not "))
 
         if not isSporious:
@@ -230,7 +230,7 @@ if sat:
         if not verificationResult[0]:
             raise Exception("Inconsistant Marabou result, marabou double check failed")
     isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
-    isSporious = not isSecondLtMax if cfg_sporiousStrict else isYMaxMax
+    isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
     if isSporious:
         assert reachedFinal
         printLog("Sporious CEX after end")        
@@ -254,6 +254,8 @@ else:
 runtimeTotal = time.time() - startTotal
 
 with open("Results.out", "w") as f:
+    f.write("BATCHID={}".format(cfg_batchDir))
+    f.write("RUNSUFFIX={}".format(cfg_runSuffix))
     for brief, runtime in results:
         f.write("DESCRIPTION={} ; RUNTIME={}\n".format(brief, runtime))
     f.write("TOTAL ; RUNTIME={}\n".format(runtimeTotal))
