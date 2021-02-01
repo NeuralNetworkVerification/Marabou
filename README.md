@@ -204,14 +204,14 @@ issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-o
 A quick installation reference:
 ```
 export INSTALL_DIR=/opt
-sudo tar xvfz gurobi9.0.2_linux64.tar.gz -C $INSTALL_DIR
-cd $INSTALL_DIR/gurobi902/linux64/src/build
+sudo tar xvfz gurobi9.1.1_linux64.tar.gz -C $INSTALL_DIR
+cd $INSTALL_DIR/gurobi911/linux64/src/build
 sudo make
 sudo cp libgurobi_c++.a ../../lib/
 ```
 Next it is recommended to add the following to the .bashrc (but not necessary) 
 ```
-export GUROBI_HOME="/opt/gurobi902/linux64"
+export GUROBI_HOME="/opt/gurobi911/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 
