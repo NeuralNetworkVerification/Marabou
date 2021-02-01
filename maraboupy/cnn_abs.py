@@ -46,7 +46,8 @@ class mnistProp:
     origMConv = None
     origMDense = None
     numTestSamples = 10
-    Policy = Enum("Policy","Centered AllClassRank SingleClassRank MajorityClassVote")
+    policies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote"]
+    Policy = Enum("Policy"," ".join(policies))
     optionsObj = None
     runSuffix = ""
     logger = None
@@ -429,20 +430,20 @@ def isCEXSporious(model, x, inDist, yCorrect, yBad, cex):
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))
     if prediction.argmax() == yCorrect:
-        return True, False
-    elif prediction[0,yBad] > prediction[0,yCorrect]:
+        return True, True
+    elif prediction[0,yBad] < prediction[0,yCorrect]:
         return False, True
     else:
         return False, False                
 
-def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.AllClassRank):
-    if policy == mnistProp.Policy.AllClassRank:
+def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.SingleClassRank):
+    if policy == mnistProp.Policy.AllClassRank or policy == mnistProp.Policy.AllClassRank.name:
         return genActivationMaskAllClassRank(intermidModel)
-    elif policy == mnistProp.Policy.SingleClassRank:
+    elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:
         return genActivationMaskSingleClassRank(intermidModel, example, prediction)
-    elif policy == mnistProp.Policy.MajorityClassVote:
+    elif policy == mnistProp.Policy.MajorityClassVote or policy == mnistProp.Policy.MajorityClassVote.name:
         return genActivationMaskMajorityClassVote(intermidModel)
-    elif policy == mnistProp.Policy.Centered:
+    elif policy == mnistProp.Policy.Centered or policy == mnistProp.Policy.Centered.name:
         return genActivationMaskCentered(intermidModel)
     raise Exception("genActivationMask - policy not implemented:{}".format(policy))
 
