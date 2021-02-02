@@ -28,10 +28,6 @@ class mnistProp:
     x_train, x_test = x_train / 255.0, x_test / 255.0
     x_train = np.expand_dims(x_train, -1)
     x_test = np.expand_dims(x_test, -1)
-    #zero_test = np.zeros((1,) + x_test.shape[1:])
-    #half_test = 0.5 * np.ones((1,) + x_test.shape[1:])
-    #ones_test = np.ones((1,) + x_test.shape[1:])
-    #single_test = np.array([x_test[0]])
     featureShape=(1,28,28)
     loss='sparse_categorical_crossentropy'
     optimizer='adam'
@@ -168,7 +164,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
 
     #FIXME move to new name convention
     if cnnSizeChoice != "small":
-        savedModelOrig = savedModelOrig.replace(".h5", cnnSizeChoice + ".h5")
+        savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
             
     if cfg_freshModelOrig:        
         if cnnSizeChoice == "big":
@@ -200,6 +196,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM.summary()
             
         origM.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=mnistProp.metrics)
+        #origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
         
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
@@ -209,7 +206,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM.save(mnistProp.basePath + "/" + savedModelOrig)
 
     else:        
-        origM = load_model(mnistProp.basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss}) 
+        origM = load_model(mnistProp.basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss})
+        #origM = load_model(mnistProp.basePath + "/" + savedModelOrig) 
         origM.summary()        
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
