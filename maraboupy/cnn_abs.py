@@ -162,16 +162,14 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
     print("Starting model building")
     #https://keras.io/examples/vision/mnist_convnet/
 
-    #FIXME move to new name convention
-    if cnnSizeChoice != "small":
-        savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
+    savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
             
     if cfg_freshModelOrig:        
         if cnnSizeChoice == "big":
             num_ch = 32
         elif cnnSizeChoice == "medium":
             num_ch = 16
-        elif cnnSizeChoice == "big":
+        elif cnnSizeChoice == "small":
             num_ch = 1
         else:
             raise Exception("cnnSizeChoice {} not supported".format(cnnSizeChoice))
