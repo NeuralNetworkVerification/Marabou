@@ -36,7 +36,7 @@ parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
 parser.add_argument("--run_suffix",     type=str,                                   default="",                     help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default="",                     help="Add unique identifier identifying the whole batch")
-parser.add_argument("--prop_distance",  type=int,                                   default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
+parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")

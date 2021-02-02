@@ -207,7 +207,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM = load_model(mnistProp.basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss})
         #origM = load_model(mnistProp.basePath + "/" + savedModelOrig) 
         origM.summary()        
-        score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=1)
+        score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
         
