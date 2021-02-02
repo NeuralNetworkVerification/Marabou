@@ -195,7 +195,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM.build(input_shape=mnistProp.featureShape)
         origM.summary()
             
-        origM.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=mnistProp.metrics)
+        origM.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
         #origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
         
@@ -209,7 +209,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM = load_model(mnistProp.basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss})
         #origM = load_model(mnistProp.basePath + "/" + savedModelOrig) 
         origM.summary()        
-        score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=1)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
         
