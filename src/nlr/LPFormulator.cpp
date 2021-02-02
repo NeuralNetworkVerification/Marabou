@@ -59,7 +59,14 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     else
         gurobi.setCost( terms );
 
+    printf("Starting - Solving gurobi for %s \n", variableName.ascii());
+    fflush(stdout);
+    String suffix(".lp");
+    String fileName = variableName + suffix;
+    gurobi.dumpModel(fileName.ascii());
     gurobi.solve();
+    printf("Finished - Solving gurobi for %s \n", variableName.ascii());
+    fflush(stdout);    
 
     if ( gurobi.infeasbile() )
     {
@@ -775,7 +782,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                 double sourceUb = sourceLayer->getUb( sourceNeuron );
                 if (sourceUb > maxConcreteLb)
                 {
-                    double sourceLb = sourceLayer->getLb( sourceNeuron );                    
+                    double sourceLb = sourceLayer->getLb( sourceNeuron );
                     double coefficent = (sourceUb - maxConcreteLb) / (sourceUb - sourceLb);
                     scalar -= coefficent * sourceLb;
                     terms.append( GurobiWrapper::Term( -coefficent, Stringf( "x%u", sourceVariable ) ) );            
