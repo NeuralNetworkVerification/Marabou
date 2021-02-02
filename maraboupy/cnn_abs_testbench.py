@@ -9,6 +9,7 @@ from cnn_abs import *
 import logging
 import time
 import argparse
+import datetime
 
 #from itertools import product, chain
 from maraboupy import MarabouNetworkONNX as monnx
@@ -189,7 +190,7 @@ for i, mask in enumerate(maskList):
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
     results.append(("Mask {}/{}".format(i+1, len(maskList)), runtime))
-    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, runtime, time.time()-startTotal))
+    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1
     isSporious = None
     if sat:
@@ -217,7 +218,7 @@ else:
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
     runtime = timt.time() - startLocal
     results.append(("Full", runtime))
-    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(runtime-startLocal, time.time()-startTotal))
+    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1    
 
 if sat:
