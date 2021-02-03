@@ -1108,10 +1108,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( preprocess )
 
         {
-            printf("Started dumping");                        
+            printf("Started dumping\n");                        
             performMILPSolverBoundedTightening();
             _tableau->dumpAssignment();
-            printf("Finished dumping");            
+            printf("Finished dumping\n");            
         }
 
         if ( _splittingStrategy == DivideStrategy::Auto )
