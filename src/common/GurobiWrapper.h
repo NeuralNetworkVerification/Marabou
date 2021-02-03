@@ -116,6 +116,8 @@ public:
     // default
     void dumpModel( String name );
 
+    void computeIIS();
+
 private:
     GRBEnv *_environment;
     GRBModel *_model;
