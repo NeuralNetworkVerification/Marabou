@@ -10,6 +10,7 @@ import logging
 import time
 import argparse
 import datetime
+import json
 
 #from itertools import product, chain
 from maraboupy import MarabouNetworkONNX as monnx
@@ -190,7 +191,11 @@ for i, mask in enumerate(maskList):
     startLocal = time.time()
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
-    results.append(("Mask {}/{}".format(i+1, len(maskList)), runtime))
+    results.append({"type": "mask",
+                     "index" : i+1,
+                     "outOf" : len(maskList),
+                     "brief" : "Mask {}/{}".format(i+1, len(maskList)),
+                     "runtime" : runtime})
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1
     isSporious = None
@@ -218,7 +223,7 @@ else:
     startLocal = time.time()    
     sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
     runtime = timt.time() - startLocal
-    results.append(("Full", runtime))
+    results.append({"type": "full", "index":1, "outOf":1, "brief" : "Full", "runtime" : runtime})
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1    
 
@@ -254,9 +259,11 @@ else:
 
 runtimeTotal = time.time() - startTotal
 
-with open("Results.out", "w") as f:
-    f.write("BATCHID={}".format(cfg_batchDir))
-    f.write("RUNSUFFIX={}".format(cfg_runSuffix))
-    for brief, runtime in results:
-        f.write("DESCRIPTION={} ; RUNTIME={}\n".format(brief, runtime))
-    f.write("TOTAL ; RUNTIME={}\n".format(runtimeTotal))
+with open("Results.json", "w") as f:
+    resultsJson = dict()
+    resultsJson["batchId"] = cfg_batchDir
+    resultsJson["runSuffix"] = cfg_runSuffix
+    runResults = list()
+    resultsJson["subResults"] = results
+    resultsJson["totalRuntime"] = runtimeTotal
+    json.dump(resultsJson, f, indent = 4)

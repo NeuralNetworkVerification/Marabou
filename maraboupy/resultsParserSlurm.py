@@ -4,18 +4,19 @@ import sys
 import argparser
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 
 resultFiles = list()
 for root, dirs, files in os.walk(os.getcwd()):
     for f in files:
-        if str(f) == "Results.out":
+        if str(f) == "Results.json":
             fullpath = root + "/" + f
             resultsFiles.append(fullpath)
             print(fullpath)
 
 
 parser = argparse.ArgumentParser(description='Query log files')
-parser.add_argument("--batch", type=str, default="", help="Limit to  aspecifc batch")            
+parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch")            
 args = parser.parse_args()
 
 perRunTypeResults_total = dict()
@@ -23,12 +24,10 @@ for fullpath in resultsFiles:
     if args.batch and args.batch not in fullpath:
         continue
     with open(fullpath, "r") as f:
-        for line in f.readlines():
-            lineClean = ''.join(line.split())
-            if lineClean.startswith("RUNSUFFIX="):
-                suffix = line.lstrip("RUNSUFFIX=").split("#")[0]
-            elif lineClean.startswith("TOTAL"):
-                total_runtime = line.split("=")[1].split("#")[0]
+        resultDict = json.load(fullpath)
+        runSuffix = resultDict["runSuffix"]
+        totalRuntime = resultDict["totalRuntime"]
+                        
         if suffix not in perRunTypeResults_total:
             perRunTypeResults_total[suffix] = [total_runtime]
         else:
