@@ -332,6 +332,12 @@ void GurobiWrapper::dumpModel( String name )
     _model->write( name.ascii() );
 }
 
+void GurobiWrapper::computeIIS()
+{
+    _model->computeIIS();
+}
+
+
 void GurobiWrapper::log( const String &message )
 {
     if ( GlobalConfiguration::GUROBI_LOGGING )
