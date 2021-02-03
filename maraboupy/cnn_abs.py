@@ -318,7 +318,7 @@ def setCOIBoundes(net, init):
         else:
             newEq = MarabouUtils.Equation()
             newEq.scalar = eq.scalar
-            newEq.EquationType = MarabouCore.Equation.EQ
+            newEq.EquationType = eq.EquationType
             newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
             newEquList.append(newEq)
     net.equList  = newEquList
