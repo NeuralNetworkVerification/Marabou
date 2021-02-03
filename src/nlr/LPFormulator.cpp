@@ -59,7 +59,7 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     else
         gurobi.setCost( terms );
 
-    //printf("Starting - Solving gurobi for %s \n", variableName.ascii());
+    //printf("Solving gurobi in Marabou directory");
     //fflush(stdout);
     //String suffix(".lp");
     //String fileName = variableName + suffix;
@@ -70,14 +70,14 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
 
     if ( gurobi.infeasbile() )
     {
-        printf("Infeasible gurobi for %s ##################################\n", variableName.ascii());
+        printf("Infeasible gurobi (In directoy Marabou) for %s ##################################\n", variableName.ascii());
         fflush(stdout);        
         gurobi.computeIIS();
         String prefix("IIS_");
         String suffix(".lp");
         String fileNameIIS = prefix + variableName + suffix;
         gurobi.dumpModel(fileNameIIS.ascii());
-        printf("Infeasible gurobi for %s, IIS done ##################################\n", variableName.ascii());
+        printf("Infeasible gurobi (In directoy Marabou) for %s, IIS done ##################################\n", variableName.ascii());
         fflush(stdout);        
         
         if ( infeasible )
