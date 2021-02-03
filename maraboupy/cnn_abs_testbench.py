@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 
 tf.compat.v1.enable_v2_behavior()
 
+defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
 parser.add_argument("--no_coi",         action="store_true",                        default=False,                  help="Don't use COI pruning")
 parser.add_argument("--no_verify",      action="store_true",                        default=False,                  help="Don't run verification process")
@@ -36,7 +37,7 @@ parser.add_argument("--fresh",          action="store_true",                    
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small"], default="small",                help="Which CNN size to use")
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
 parser.add_argument("--run_suffix",     type=str,                                   default="",                     help="Add unique identifier identifying this current run")
-parser.add_argument("--batch_id",       type=str,                                   default="",                     help="Add unique identifier identifying the whole batch")
+parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")

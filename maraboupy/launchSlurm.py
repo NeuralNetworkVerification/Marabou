@@ -4,7 +4,7 @@ import sys
 import subprocess
 from datetime import datetime
 
-batchId = datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+batchId = "slurm_" + datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
 if not os.path.exists(basePath + "logs/"):
     os.mkdir(basePath + "logs/")
