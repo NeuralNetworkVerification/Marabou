@@ -191,6 +191,8 @@ struct MarabouOptions {
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
+        , _gamma_abstract( Options::get()->getGammaAbstract( Options::GAMMA_ABSTRACT ) )
+        , _gamma( Options::get()->getGamma( Options::GAMMA ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
@@ -218,6 +220,14 @@ struct MarabouOptions {
     // string options
     Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
+
+    // map options
+    Options::get()->setGammaAbstract( Options::GAMMA_ABSTRACT, _gamma_abstract );
+
+    // list options
+    Options::get()->setGamma( Options::GAMMA, _gamma );
+
+
   }
 
     bool _snc;
@@ -234,6 +244,8 @@ struct MarabouOptions {
     float _preprocessorBoundTolerance;
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
+    Map< unsigned, Pair<unsigned, unsigned> > _gamma_abstract;
+    List<Map<unsigned, PiecewiseLinearCaseSplit>> _gamma;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -414,6 +426,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
+        .def_readwrite("_gamma_abstract", &MarabouOptions::_gamma_abstract)
+        .def_readwrite("_gamma", &MarabouOptions::_gamma)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
         .def_readwrite("_snc", &MarabouOptions::_snc)

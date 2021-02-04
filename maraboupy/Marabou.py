@@ -117,11 +117,14 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 
     return [vals, stats]
 
-def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
-                  timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
-                  splittingStrategy="auto", sncSplittingStrategy="auto",
-                  restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
-                  preprocessorBoundTolerance=0.0000000001):
+def createOptions(
+        numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
+        timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
+        splittingStrategy="auto", sncSplittingStrategy="auto",
+        restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
+        preprocessorBoundTolerance=0.0000000001, gamma_abstract=None,
+        gamma=None
+):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -139,7 +142,9 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
         sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the DNC mode (auto/largest-interval/polarity).
         restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode, defaults to False
         solveWithMILP ( bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
-        preprocessorBoundTolerance ( float, optional): epsilon value for preprocess bound tightening . Defaults to 10^-10.
+        preprocessorBoundTolerance ( float, optional): epsilon value for preprocess bound tightening . Defaults to 10^-10
+        gamma_abstract (map, optional): map from index of abstract node (int) to couple of indices of refined nodes (Pair<int, int>)
+        gamma (list, optional): list of dicts from variable index to status (0/1 in/active resp.), each dict represent activation to nodes whose output is unsat.
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -158,4 +163,6 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._splitThreshold = splitThreshold
     options._solveWithMILP = solveWithMILP
     options._preprocessorBoundTolerance = preprocessorBoundTolerance
+    options._gamma_abstract = gamma_abstract
+    options._gamma = gamma
     return options

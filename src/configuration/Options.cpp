@@ -17,6 +17,7 @@
 #include "Debug.h"
 #include "GlobalConfiguration.h"
 #include "Options.h"
+#include "PiecewiseLinearCaseSplit.h"
 
 Options *Options::get()
 {
@@ -77,6 +78,16 @@ void Options::initializeDefaultValues()
     _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
+
+    /*
+      GammaAbstractOption options
+    */
+    _gammaAbstractOption[GAMMA_ABSTRACT] = NULL;
+    /*
+      GammaAbstractOption options
+    */
+    _gammaOption[GAMMA] = NULL;
+
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -127,6 +138,24 @@ void Options::setFloat( unsigned option, float value )
 void Options::setString( unsigned option, std::string value )
 {
     _stringOptions[option] = value;
+}
+
+void Options::setGammaAbstract( unsigned option,
+                            Map< unsigned, Pair<unsigned, unsigned> > values )
+{
+    _gammaAbstractOption[option] = new Map< unsigned, Pair<unsigned, unsigned> >[values.size()];
+    for (auto item: values){
+        _gammaAbstractOption[option]->insert(item.first, item.second);
+    }
+}
+
+void Options::setGamma( unsigned option,
+                        List<Map<unsigned, PiecewiseLinearCaseSplit>> values )
+{
+    _gammaOption[option] = new List<Map<unsigned, PiecewiseLinearCaseSplit>>[values.size()];
+    for (auto item: values){
+        _gammaOption[option]->append(item);
+    }
 }
 
 DivideStrategy Options::getDivideStrategy() const

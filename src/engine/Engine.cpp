@@ -458,9 +458,8 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
                     bool is_abstract_active = !FloatUtils::lte( 0, _tableau->getLowerBound(abstract_index) );
                     bool is_unsat_seq = false;
                     for ( auto unsat_seq : _statistics.getGammaUnsatSplitSequences() ) {
-                        // each element in seq is (var_index, is_active)
+                        // each element in seq is (var_index, Map<unsigned, PiecewiseLinearCaseSplit>)
                         for ( auto node_activation : unsat_seq ) {
-                            // node_activation is <unsigned, Pair<unsigned, unsigned>>
                             // the next condition checks 1
                             if ( node_activation.first == abstract_index ) {
                                 List<Tightening> bounds = node_activation.second.getBoundTightenings();

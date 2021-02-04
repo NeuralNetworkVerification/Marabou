@@ -19,9 +19,11 @@
 #include "DivideStrategy.h"
 #include "MString.h"
 #include "Map.h"
+#include "Pair.h"
 #include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
+#include "PiecewiseLinearCaseSplit.h"
 
 #include "boost/program_options.hpp"
 
@@ -89,6 +91,14 @@ public:
         QUERY_DUMP_FILE,
     };
 
+    enum GammaAbstractOption {
+        GAMMA_ABSTRACT = 0
+    };
+
+    enum GammaOption {
+        GAMMA = 0
+    };
+
     /*
       The singleton instance
     */
@@ -111,6 +121,8 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
+    Map<unsigned, Pair<unsigned, unsigned>> getGammaAbstract( unsigned option ) const;
+    List<Map<unsigned, PiecewiseLinearCaseSplit>> getGamma( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
@@ -122,6 +134,11 @@ public:
     void setInt( unsigned option, int );
     void setFloat( unsigned option, float );
     void setString( unsigned option, std::string );
+    void setGammaAbstract( unsigned option,
+                           Map< unsigned, Pair<unsigned, unsigned> > values );
+    void setGamma( unsigned option,
+                   List<Map<unsigned, PiecewiseLinearCaseSplit>> values );
+
 
     /*
       Options that are determined at compile time
@@ -156,6 +173,8 @@ private:
     Map<unsigned, int> _intOptions;
     Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
+    Map<unsigned, List<Map<unsigned, PiecewiseLinearCaseSplit>>*> _gammaOption;
+    Map<unsigned, Map<unsigned, Pair<unsigned, unsigned>>*> _gammaAbstractOption;
 };
 
 #endif // __Options_h__
