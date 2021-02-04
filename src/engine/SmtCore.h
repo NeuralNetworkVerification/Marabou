@@ -71,7 +71,7 @@ public:
     /*
       Returns the last split.
     */
-    PiecewiseLinearCaseSplit getLastSplit();
+    PiecewiseLinearCaseSplit* getLastSplit();
 
     /*
       Perform the split according to the constraint marked for
@@ -89,6 +89,11 @@ public:
       The current stack depth.
     */
     unsigned getStackDepth() const;
+
+    /*
+      The current stack.
+    */
+    List<SmtStackEntry*> getStack() const;
 
     /*
       Let the smt core know of an implied valid case split that was discovered.
@@ -162,8 +167,8 @@ private:
       Do we need to perform a split and on which constraint.
     */
     bool _needToSplit;
+    PiecewiseLinearCaseSplit *_lastSplit;
     PiecewiseLinearConstraint *_constraintForSplitting;
-    PiecewiseLinearConstraint *_lastSplit;
 
     /*
       Count how many times each constraint has been violated.

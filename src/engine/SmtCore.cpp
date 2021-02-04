@@ -29,7 +29,7 @@ SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
     , _needToSplit( false )
-    , _lastSplit( NULL )
+    , _lastSplit( new PiecewiseLinearCaseSplit() )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
@@ -48,6 +48,7 @@ void SmtCore::freeMemory()
         delete stackEntry->_engineState;
         delete stackEntry;
     }
+    delete _lastSplit;
 
     _stack.clear();
 }
@@ -94,7 +95,7 @@ bool SmtCore::needToSplit() const
     return _needToSplit;
 }
 
-PiecewiseLinearCaseSplit SmtCore::getLastSplit() const
+PiecewiseLinearCaseSplit* SmtCore::getLastSplit()
 {
     return _lastSplit;
 }
@@ -142,7 +143,7 @@ void SmtCore::performSplit()
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
-    _lastSplit = split;
+    *_lastSplit = *split;
     stackEntry->_pastSplits.append( *split );
 
     // Store the remaining splits on the stack, for later
@@ -168,6 +169,11 @@ void SmtCore::performSplit()
 unsigned SmtCore::getStackDepth() const
 {
     return _stack.size();
+}
+
+List<SmtStackEntry*> SmtCore::getStack() const
+{
+    return _stack;
 }
 
 bool SmtCore::popSplit()
@@ -231,8 +237,8 @@ bool SmtCore::popSplit()
     SMT_LOG( "\tApplying new split - DONE" );
 
     // update lastSplit, _pastSplits with the new split
-    _lastSplit = split;
-    stackEntry->_pastSplits.erase( split );  // TODO: popBack instead of erase?
+    *_lastSplit = *split;
+    stackEntry->_pastSplits.erase( *split );  // TODO: popBack instead of erase?
     stackEntry->_pastSplits.append( *split );
 
     stackEntry->_activeSplit = *split;
@@ -463,12 +469,5 @@ bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
         _constraintForSplitting = _engine->pickSplitPLConstraint();
-    if ( _constraintForSplitting != NULL )
-    {
-        _lastSplit = _constraintForSplitting;
-        return true;
-    }
-    else {  // _lastSplit is not changed
-        return false;
-    }
+    return _constraintForSplitting != NULL;
 }

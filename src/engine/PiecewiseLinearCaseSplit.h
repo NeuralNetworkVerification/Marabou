@@ -26,7 +26,7 @@ class PiecewiseLinearCaseSplit
 {
 public:
     /*
-      Store information regarding a bound tightening.
+      Store/get information regarding a bound tightening.
     */
     void storeBoundTightening( const Tightening &tightening );
     const List<Tightening> &getBoundTightenings() const;

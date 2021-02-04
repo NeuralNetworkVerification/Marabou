@@ -98,6 +98,7 @@ public:
     unsigned getMaxStackDepth() const;
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;
+    List<Map<unsigned, PiecewiseLinearCaseSplit>> getGammaUnsatSplitSequences() const;
     unsigned getNumSplits() const;
     unsigned long long getTotalTime() const;
 
@@ -309,7 +310,7 @@ private:
     unsigned long long _totalTimeSmtCoreMicro;
 
     // List of activation-sequences which lead to UNSAT
-    List<SmtStackEntry> _gammaUnsatSplitSequences;
+    List<Map<unsigned, PiecewiseLinearCaseSplit>> _gammaUnsatSplitSequences;
 
     // Whether the engine quitted with a timeout
     bool _timedOut;

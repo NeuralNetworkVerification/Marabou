@@ -256,8 +256,8 @@ void Statistics::print()
     printf( "\tMax stack depth: %u\n"
             , _maxStackDepth );
 
-    printf( "\t--- Context Statistics ---\n" );
-    printf( "\t:List of UNSAT activation-sequences: \n%s\n", _gammaUnsatSplitSequences );
+//    printf( "\t--- Context Statistics ---\n" );
+//    printf( "\t:List of UNSAT activation-sequences: \n%s\n", _gammaUnsatSplitSequences );
 
     printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
@@ -609,7 +609,7 @@ unsigned Statistics::getNumVisitedTreeStates() const
     return _numVisitedTreeStates;
 }
 
-List<SmtStackEntry> Statistics::getGammaUnsatSplitSequences() const
+List<Map<unsigned, PiecewiseLinearCaseSplit>> Statistics::getGammaUnsatSplitSequences() const
 {
     return _gammaUnsatSplitSequences;
 }

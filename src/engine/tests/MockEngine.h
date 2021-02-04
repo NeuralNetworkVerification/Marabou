@@ -114,6 +114,17 @@ public:
         return _exitCode == IEngine::SAT;
     }
 
+    bool solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A, Map<unsigned, bool> is_pos, Map<unsigned, bool> is_inc, Map<unsigned, unsigned> post_var_indices, unsigned timeoutInSeconds )
+    {
+        if ( timeoutInSeconds >= _timeToSolve )
+            _exitCode = IEngine::TIMEOUT;
+        Gamma_A = Map< unsigned, Pair<unsigned, unsigned> >();
+        is_pos = Map <unsigned, bool>();
+        is_inc = Map <unsigned, bool>();
+        post_var_indices = Map< unsigned, unsigned>();
+        return _exitCode == IEngine::SAT;
+    }
+
     void setTimeToSolve( unsigned timeToSolve )
     {
         _timeToSolve = timeToSolve;
