@@ -174,7 +174,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     if ( isActive() && _constraintBoundTightener )
     {
         // TODO: optimize this. Don't need to recompute ALL possible bounds,
-        // can focus only on the newly learned bound and possible consequences.
+        // Can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
         for ( const auto &tightening : tightenings )
@@ -207,7 +207,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     if ( isActive() && _constraintBoundTightener )
     {
         // TODO: optimize this. Don't need to recompute ALL possible bounds,
-        // can focus only on the newly learned bound and possible consequences.
+        // Can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
         for ( const auto &tightening : tightenings )
@@ -276,7 +276,10 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     {
         // Special case: there is only one element. In that case, the tighter lower
         // bound (in this case, f's) wins.
-        tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
+        if ( !_eliminatedVariables )
+            tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
+        else if ( FloatUtils::gt ( fLB, _maxValueOfEliminated ) )
+            tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
     }
 
     // TODO: can we derive additional bounds?
@@ -318,7 +321,6 @@ unsigned MaxConstraint::getF() const
 
 bool MaxConstraint::satisfied() const
 {
-    // GuyK - I changed the required number of assignments due to base case with eliminatedVar and no elements
     if ( !( _assignment.exists( _f ) && _assignment.size() > 0 ) )
         throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
@@ -477,12 +479,11 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 
 bool MaxConstraint::phaseFixed() const
 {
-//    return _elements.exists( _f ) || _elements.size() == 1; // TODO REMOVE BEFORE FINAL VERSION
     if ( _elements.exists( _f ) )
         return true;
     if ( _elements.size() == 1 )
     {
-        if (!_eliminatedVariables)
+        if ( !_eliminatedVariables )
             return true;
 
         unsigned singleVarLeft = *_elements.begin();
@@ -497,21 +498,19 @@ bool MaxConstraint::phaseFixed() const
         }
     }
 
-
-    // in case all variables are eliminated -> then the max will be (after calling getValidCaseSplits)
+    // In case all variables are eliminated -> then the max will be (after calling getValidCaseSplits)
     if ( _elements.size() == 0 && _eliminatedVariables )
     {
         return true;
     }
 
-
-        return false;
+    return false;
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
     ASSERT( phaseFixed() );
-    if ( !_elements.exists(_f) )
+    if ( !_elements.exists( _f ) )
     {
         ASSERT(_elements.size() == 0 || _elements.size() == 1 ) ;
 
@@ -529,13 +528,13 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
         unsigned singleVariableLeft = *_elements.begin();
 
         if ( !_eliminatedVariables )
-            return getSplit(singleVariableLeft);
+            return getSplit( singleVariableLeft );
 
         // eliminated at least one variable
         // max = b = singleVariableLeft
         if (_lowerBounds.exists(singleVariableLeft) &&
             FloatUtils::gte(_lowerBounds[singleVariableLeft], _maxValueOfEliminated))
-            return getSplit(singleVariableLeft);
+            return getSplit( singleVariableLeft );
 
         // max = maxValueEliminated
         // maxEliminated - f = 0
@@ -551,10 +550,9 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
         // if elements includes _f, this piecewise linear constraint
         // can immediately be transformed into a conjunction of linear
         // constraints
-        return getSplit(_f);
+        return getSplit( _f );
         }
 }
-
 
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
@@ -637,7 +635,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _obsolete = true;
     if ( getParticipatingVariables().size() == 1 )
     {
-        if (!_eliminatedVariables)
+        if ( !_eliminatedVariables )
             _obsolete = true;
 
         // no eliminated variables
@@ -684,14 +682,14 @@ String MaxConstraint::serializeToString() const
     for ( const auto &element : _elements ){
         output += Stringf( ",%u", element );
     }
-    // special delimiter ",e" represents elimination flag and variables
-    output += Stringf(",%s", "e");
-    output += Stringf(",%u", _eliminatedVariables);
-    if (_eliminatedVariables)
-        output += Stringf(",%f", _maxValueOfEliminated);
+    // Special delimiter ",e" represents elimination flag and variables
+    output += Stringf( ",%s", "e" );
+    output += Stringf( ",%u", _eliminatedVariables );
+    if ( _eliminatedVariables )
+        output += Stringf( ",%f", _maxValueOfEliminated );
     else
-        // will be ignored in any case
-        output += Stringf(",%u", 0);
+        // Will be ignored in any case
+        output += Stringf( ",%u", 0 );
 
     return output;
 }
