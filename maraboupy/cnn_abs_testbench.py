@@ -33,6 +33,7 @@ tf.compat.v1.enable_v2_behavior()
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
 parser.add_argument("--no_coi",         action="store_true",                        default=False,                  help="Don't use COI pruning")
+parser.add_argument("--no_mask",        action="store_true",                        default=False,                  help="Don't use mask abstraction")
 parser.add_argument("--no_verify",      action="store_true",                        default=False,                  help="Don't run verification process")
 parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small"], default="small",                help="Which CNN size to use")
@@ -47,10 +48,13 @@ parser.add_argument("--sporious_strict",action="store_true",                    
 parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
 args = parser.parse_args()
 
+resultsJson = dict()
+    
 cfg_freshModelOrig = args.fresh
 cfg_noVerify       = args.no_verify
 cfg_cnnSizeChoice  = args.cnn_size
 cfg_pruneCOI       = not args.no_coi
+cfg_maskAbstract   = not args.no_mask
 cfg_propDist       = args.prop_distance
 cfg_runOn          = args.run_on
 cfg_runSuffix      = args.run_suffix
@@ -60,6 +64,21 @@ cfg_abstractionPolicy = args.policy
 cfg_sporiousStrict = args.sporious_strict
 cfg_sampleIndex    = args.sample
 cfg_doubleCheck    = args.double_check
+
+resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
+resultsJson["cfg_noVerify"]          = cfg_noVerify
+resultsJson["cfg_cnnSizeChoice"]     = cfg_cnnSizeChoice
+resultsJson["cfg_pruneCOI"]          = cfg_pruneCOI
+resultsJson["cfg_maskAbstract"]      = cfg_maskAbstract
+resultsJson["cfg_propDist"]          = cfg_propDist
+resultsJson["cfg_runOn"]             = cfg_runOn
+resultsJson["cfg_runSuffix"]         = cfg_runSuffix
+resultsJson["cfg_batchDir"]          = cfg_batchDir
+resultsJson["cfg_numClusterCPUs"]    = cfg_numClusterCPUs
+resultsJson["cfg_abstractionPolicy"] = cfg_abstractionPolicy
+resultsJson["cfg_sporiousStrict"]    = cfg_sporiousStrict
+resultsJson["cfg_sampleIndex"]       = cfg_sampleIndex
+resultsJson["cfg_doubleCheck"]       = cfg_doubleCheck
 
 cexFromImage = False
 
@@ -173,7 +192,10 @@ plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
 #plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
-maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
+if cfg_maskAbstract:
+    maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
+else:
+    maskList = []
 printLog("Created {} masks".format(len(maskList)))
 
 printLog("Strating verification phase")
@@ -269,10 +291,13 @@ else:
 runtimeTotal = time.time() - startTotal
 
 with open("Results.json", "w") as f:
-    resultsJson = dict()
     resultsJson["batchId"] = cfg_batchDir
     resultsJson["runSuffix"] = cfg_runSuffix
     runResults = list()
     resultsJson["subResults"] = results
+    resultsJson["SAT"] = sat
+    resultsJson["yDataset"] = int(yAdv.item())
+    resultsJson["yMaxPrediction"] = int(yMax)
+    resultsJson["ySecondPrediction"] = int(ySecond)
     resultsJson["totalRuntime"] = runtimeTotal
     json.dump(resultsJson, f, indent = 4)
