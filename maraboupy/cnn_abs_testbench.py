@@ -191,13 +191,15 @@ for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
     results.append({"type": "mask",
-                     "index" : i+1,
-                     "outOf" : len(maskList),
-                     "brief" : "Mask {}/{}".format(i+1, len(maskList)),
-                     "runtime" : runtime})
+                    "index" : i+1,
+                    "outOf" : len(maskList),
+                    "brief" : "Mask {}/{}".format(i+1, len(maskList)),
+                    "runtime" : runtime,
+                    "originalQueryStats" : originalQueryStats,
+                    "finalQueryStats" : finalQueryStats})
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1
     isSporious = None
@@ -223,9 +225,15 @@ else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     startLocal = time.time()    
-    sat, cex, cexPrediction, inputDict, outputDict = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
     runtime = timt.time() - startLocal
-    results.append({"type": "full", "index":1, "outOf":1, "brief" : "Full", "runtime" : runtime})
+    results.append({"type": "full",
+                    "index":1,
+                    "outOf":1,
+                    "brief" : "Full",
+                    "runtime" : runtime,
+                    "originalQueryStats" : originalQueryStats,
+                    "finalQueryStats" : finalQueryStats})
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1    
 
