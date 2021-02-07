@@ -41,8 +41,10 @@ parser.add_argument("--run_suffix",     type=str,                               
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
+parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
+parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
 args = parser.parse_args()
 
 cfg_freshModelOrig = args.fresh
@@ -56,6 +58,8 @@ cfg_batchDir       = args.batch_id if "batch_" + args.batch_id else ""
 cfg_numClusterCPUs = args.num_cpu
 cfg_abstractionPolicy = args.policy
 cfg_sporiousStrict = args.sporious_strict
+cfg_sampleIndex    = args.sample
+cfg_doubleCheck    = args.double_check
 
 cexFromImage = False
 
@@ -145,10 +149,8 @@ if cfg_noVerify:
 
 printLog("Choosing adversarial example")
 
-xAdvInds = range(mnistProp.numTestSamples)
-xAdvInd = xAdvInds[0]
-xAdv = mnistProp.x_test[xAdvInd]
-yAdv = mnistProp.y_test[xAdvInd]
+xAdv = mnistProp.x_test[cfg_sampleIndex]
+yAdv = mnistProp.y_test[cfg_sampleIndex]
 yPredict = modelOrigDense.predict(np.array([xAdv]))
 yMax = yPredict.argmax()
 yPredictNoMax = np.copy(yPredict)
@@ -167,7 +169,7 @@ if ySecondUnproc == yMaxUnproc:
     
 fName = "xAdv.png"
 printLog("Printing original input: {}".format(fName))
-plt.title('Example %d. Label: %d' % (xAdvInd, yAdv))
+plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
 #plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
@@ -228,9 +230,8 @@ else:
     currentMbouRun += 1    
 
 if sat:
-    printLog("SAT, reachedFinal={}".format(reachedFinal))
-    DOUBLE_CHECK_MARABOU = False #FIXME enable
-    if DOUBLE_CHECK_MARABOU:
+    printLog("SAT, reachedFinal={}".format(reachedFinal))    
+    if cfg_doubleCheck:
         verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=cexFromImage)
         print("verifyMarabou={}".format(verificationResult))
         if not verificationResult[0]:
