@@ -23,13 +23,17 @@ commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict"
 numRunsPerType = 20
 
 for i in range(numRunsPerType):
-    suffix = "defaultCfg#{}".format(i)
+    suffix = "MaskCOICfg#{}".format(i)
     runCmds.append(commonFlags + ["--run_suffix", suffix, "--sample", str(i)])
     runSuffices.append(suffix)
-    runBriefs.append("Default run parameters")    
+    runBriefs.append("Run with CNN improvments")
 
+for i in range(numRunsPerType):
+    suffix = "VanillaCfg#{}".format(i)
+    runCmds.append(commonFlags + ["--run_suffix", suffix, "--sample", str(i), "--no_coi", "--no_mask"])
+    runSuffices.append(suffix)
+    runBriefs.append('Run with default ("vanilla") Marabou')    
 
-    
 sbatchFiles = list()
 for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
 
