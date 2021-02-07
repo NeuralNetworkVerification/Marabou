@@ -41,7 +41,6 @@ class mnistProp:
     numCex = 0
     origMConv = None
     origMDense = None
-    numTestSamples = 10
     policies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote"]
     Policy = Enum("Policy"," ".join(policies))
     optionsObj = None
