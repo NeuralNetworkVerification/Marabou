@@ -59,6 +59,20 @@ class mnistProp:
             for i,x in dic.items():
                 f.write("{},{}\n".format(i,x))
 
+
+def marabouNetworkStats(net):
+    return {"numVars" : net.numVars,
+            "numEquations" : len(net.equList),
+            "numReluConstraints" : len(net.reluList),
+            "numMaxConstraints" : len(net.maxList),
+            "numAbsConstraints" : len(net.absList),
+            "numSignConstraints" : len(net.signList),
+            "numDisjunction" : len(net.disjunctionList),
+            "numLowerBounds" : len(net.lowerBounds),
+            "numUpperBounds" : len(net.upperBounds),
+            "numInputVars" : len(net.inputVars),
+            "numOutputVars" : net.outputVars.size}
+
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
     #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer  
@@ -253,7 +267,7 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
         outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(net.outputVars))}
         cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)        
         cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
-    return cex, cexPrediction, inputDict, outputDict
+    return cex, cexPrediction, inputDict, outputDict 
 
 def setCOIBoundes(net, init):
 
@@ -357,6 +371,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnK
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+    originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     if coi:
         inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
         plt.title('COI_{}'.format(runName))
@@ -365,10 +380,11 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnK
     else:
         inputVarsMapping, outputVarsMapping = None, None
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
+    finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
     sat = len(vals) > 0        
     if not sat:
-        return False, np.array([]), np.array([]), dict(), dict()
+        return False, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
     #inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
     #outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
@@ -385,7 +401,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnK
     plt.savefig(fName)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
     mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")        
-    return True, cex, cexPrediction, inputDict, outputDict
+    return True, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
 
 def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="verifyMarabou", fromImage=False):
     mnistProp.printDictToFile(inputDict, "DICT_verifyMarabou_InputDict_in")
