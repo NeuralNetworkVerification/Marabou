@@ -19,34 +19,17 @@ CPUS = 8
 MEM_PER_CPU = "1G"
 TIME_LIMIT = "12:00:00"
 
-commonFlags = ["--run_on", "cluster", "--batch_id", batchId]
+commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict"]
 numRunsPerType = 20
 
 for i in range(numRunsPerType):
     suffix = "defaultCfg#{}".format(i)
-    runCmds.append(commonFlags + ["--run_suffix", suffix])
+    runCmds.append(commonFlags + ["--run_suffix", suffix, "--sample", str(i)])
     runSuffices.append(suffix)
-    runBriefs.append("Default run parameters")
+    runBriefs.append("Default run parameters")    
 
-for i in range(numRunsPerType):
-    suffix = "sporiousStrictCfg#{}".format(i)
-    runCmds.append(commonFlags + ["--run_suffix", suffix, "--sporious_strict"])
-    runSuffices.append(suffix)
-    runBriefs.append("Run with sporious_strict")
 
-for i in range(numRunsPerType):
-    suffix = "propDist05Cfg#{}".format(i)
-    runCmds.append(commonFlags + ["--run_suffix", suffix, "--prop_distance", "0.05"])
-    runSuffices.append(suffix)
-    runBriefs.append("Run with smaller prop distance")
-
-for i in range(numRunsPerType):
-    suffix = "propDist01Cfg#{}".format(i)
-    runCmds.append(commonFlags + ["--run_suffix", suffix, "--prop_distance", "0.01"])
-    runSuffices.append(suffix)
-    runBriefs.append("Run with smaller prop distance")    
     
-
 sbatchFiles = list()
 for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
 

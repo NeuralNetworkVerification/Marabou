@@ -70,7 +70,7 @@ def marabouNetworkStats(net):
             "numDisjunction" : len(net.disjunctionList),
             "numLowerBounds" : len(net.lowerBounds),
             "numUpperBounds" : len(net.upperBounds),
-            "numInputVars" : len(net.inputVars),
+            "numInputVars" : np.array(net.inputVars).size,
             "numOutputVars" : net.outputVars.size}
 
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
