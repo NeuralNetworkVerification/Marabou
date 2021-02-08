@@ -176,7 +176,7 @@ public:
     /*
        Returns number of cases not yet marked as infeasible.
      */
-    unsigned numFeasibleCases()
+    unsigned numFeasibleCases() const
     {
         return _numCases - _cdInfeasibleCases->size();
     }
@@ -184,7 +184,7 @@ public:
     /*
         Returns true if there are feasible cases remaining.
      */
-    bool isFeasible()
+    bool isFeasible() const
     {
         return numFeasibleCases() > 0u;
     }
@@ -192,7 +192,7 @@ public:
     /*
        Returns true if there is only one feasible case remaining.
      */
-    bool isImplication()
+    bool isImplication() const
     {
         return 1u == numFeasibleCases();
     }
