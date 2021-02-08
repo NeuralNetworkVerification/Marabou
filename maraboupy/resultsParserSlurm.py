@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 
+from __future__ import division
+
 TIMEOUT_VAL = 12 * 3600
 
 resultsFiles = list()
@@ -35,17 +37,26 @@ for fullpath in resultsFiles:
             originalQueryStats = resultDict["subResults"][-1]["originalQueryStats"]
             finalQueryStats = resultDict["subResults"][-1]["finalQueryStats"]        
             totalRuntime = resultDict["totalRuntime"]
+            numRuns = len(resultDict["subResults"])
+            finalPartiallity = dict()
+            finalPartiallity["vars"] = finalQueryStats["numVars"] / originalQueryStats["numVars"]
+            finalPartiallity["equations"] = finalQueryStats["numEquations"] / originalQueryStats["numEquations"]
+            finalPartiallity["reluConstraints"] = finalQueryStats["numReluConstraints"] / originalQueryStats["numReluConstraints"]            
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()
             totalRuntime = TIMEOUT_VAL
+            numRuns = 0
+            finalPartiallity = dict()
         sampleIndex = resultDict["cfg_sampleIndex"]
                         
         if runTitle not in perRunTypeResults_total:
             perRunTypeResults_total[runTitle] = dict()
-        perRunTypeResults_total[runTitle][sampleIndex] = {"totalRuntime" : totalRuntime,
+        perRunTypeResults_total[runTitle][sampleIndex] = {"result" : resultDict["Result"].upper(),
+                                                          "totalRuntime" : totalRuntime,
                                                           "originalQueryStats": originalQueryStats,
-                                                          "finalQueryStats": finalQueryStats}
+                                                          "finalQueryStats": finalQueryStats,
+                                                          "finalPartiallity" : finalPartiallity}
 
 
 plt.figure()
@@ -65,14 +76,6 @@ plt.plot([1 if LOGSCALE else 0, TIMEOUT_VAL], [1 if LOGSCALE else 0, TIMEOUT_VAL
 plt.title("CNN abstraction vs. Vanilla Marabou")
 plt.xlabel("Vanilla")
 plt.ylabel("CNN abstraction")
-plt.savefig("ComapreProperties.png")
-
-#plt.figure()
-#fig, axs = plt.subplots(len(perRunTypeResults_total.keys()))
-#for (i, title), vals in zip(enumerate(perRunTypeResults_total.keys()), perRunTypeResults_total.values()):
-#    axs[i].plot(vals, np.zeros_like(vals))
-#    axs[i].set_title(title)
-#plt.show()
-            
+plt.savefig("ComapreProperties.png")            
                 
     

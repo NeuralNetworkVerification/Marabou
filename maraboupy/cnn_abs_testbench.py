@@ -227,7 +227,8 @@ for i, mask in enumerate(maskList):
                     "brief" : "Mask {}/{}".format(i+1, len(maskList)),
                     "runtime" : runtime,
                     "originalQueryStats" : originalQueryStats,
-                    "finalQueryStats" : finalQueryStats})
+                    "finalQueryStats" : finalQueryStats,
+                    "SAT" : sat})
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1
     isSporious = None
@@ -254,14 +255,15 @@ else:
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     startLocal = time.time()    
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
-    runtime = timt.time() - startLocal
+    runtime = time.time() - startLocal
     results.append({"type": "full",
                     "index":1,
                     "outOf":1,
                     "brief" : "Full",
                     "runtime" : runtime,
                     "originalQueryStats" : originalQueryStats,
-                    "finalQueryStats" : finalQueryStats})
+                    "finalQueryStats" : finalQueryStats,
+                    "SAT" : sat})
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1    
 
