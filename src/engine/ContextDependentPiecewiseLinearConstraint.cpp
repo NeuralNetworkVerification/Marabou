@@ -39,7 +39,7 @@ ContextDependentPiecewiseLinearConstraint::ContextDependentPiecewiseLinearConstr
 
 void ContextDependentPiecewiseLinearConstraint::setActiveConstraint( bool active )
 {
-    if ( nullptr != _cdConstraintActive )
+    if ( _cdConstraintActive != nullptr )
         *_cdConstraintActive = active;
     else
         _constraintActive = active;
@@ -47,7 +47,7 @@ void ContextDependentPiecewiseLinearConstraint::setActiveConstraint( bool active
 
 bool ContextDependentPiecewiseLinearConstraint::isActive() const
 {
-    if ( nullptr != _cdConstraintActive )
+    if ( _cdConstraintActive != nullptr )
         return *_cdConstraintActive;
     else
         return _constraintActive;
@@ -56,14 +56,14 @@ bool ContextDependentPiecewiseLinearConstraint::isActive() const
 void ContextDependentPiecewiseLinearConstraint::registerBoundManager(
     BoundManager *boundManager )
 {
-    ASSERT( nullptr == _boundManager );
+    ASSERT( _boundManager == nullptr );
     _boundManager = boundManager;
 }
 
 void ContextDependentPiecewiseLinearConstraint::initializeCDOs(
     CVC4::context::Context *context )
 {
-    ASSERT( nullptr == _context );
+    ASSERT( _context == nullptr );
     _context = context;
 
     initializeCDActiveStatus();
@@ -73,39 +73,39 @@ void ContextDependentPiecewiseLinearConstraint::initializeCDOs(
 
 void ContextDependentPiecewiseLinearConstraint::initializeCDInfeasibleCases()
 {
-    ASSERT( nullptr != _context );
-    ASSERT( nullptr == _cdInfeasibleCases );
+    ASSERT( _context != nullptr );
+    ASSERT( _cdInfeasibleCases == nullptr );
     _cdInfeasibleCases = new ( true ) CVC4::context::CDList<PhaseStatus>( _context );
 }
 
 void ContextDependentPiecewiseLinearConstraint::initializeCDActiveStatus()
 {
-    ASSERT( nullptr != _context );
-    ASSERT( nullptr == _cdConstraintActive );
+    ASSERT( _context != nullptr );
+    ASSERT( _cdConstraintActive == nullptr );
     _cdConstraintActive = new ( true ) CVC4::context::CDO<bool>( _context, true );
 }
 
 void ContextDependentPiecewiseLinearConstraint::initializeCDPhaseStatus()
 {
-    ASSERT( nullptr != _context );
-    ASSERT( nullptr == _cdPhaseStatus );
+    ASSERT( _context != nullptr );
+    ASSERT( _cdPhaseStatus == nullptr );
     _cdPhaseStatus =
         new ( true ) CVC4::context::CDO<PhaseStatus>( _context, PHASE_NOT_FIXED );
 }
 
 void ContextDependentPiecewiseLinearConstraint::cdoCleanup()
 {
-    if ( nullptr != _cdConstraintActive )
+    if ( _cdConstraintActive != nullptr )
         _cdConstraintActive->deleteSelf();
 
     _cdConstraintActive = nullptr;
 
-    if ( nullptr != _cdPhaseStatus )
+    if ( _cdPhaseStatus != nullptr )
         _cdPhaseStatus->deleteSelf();
 
     _cdPhaseStatus = nullptr;
 
-    if ( nullptr != _cdInfeasibleCases )
+    if ( _cdInfeasibleCases != nullptr )
         _cdInfeasibleCases->deleteSelf();
 
     _cdInfeasibleCases = nullptr;
@@ -115,7 +115,7 @@ void ContextDependentPiecewiseLinearConstraint::cdoCleanup()
 
 PhaseStatus ContextDependentPiecewiseLinearConstraint::getPhaseStatus() const
 {
-    if ( nullptr != _cdPhaseStatus )
+    if ( _cdPhaseStatus != nullptr )
         return *_cdPhaseStatus;
     else
         return _phaseStatus;
@@ -123,7 +123,7 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::getPhaseStatus() const
 
 void ContextDependentPiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phaseStatus )
 {
-    if ( nullptr != _cdPhaseStatus )
+    if ( _cdPhaseStatus != nullptr )
         *_cdPhaseStatus = phaseStatus;
     else
         _phaseStatus = phaseStatus;
@@ -132,19 +132,19 @@ void ContextDependentPiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phas
 void ContextDependentPiecewiseLinearConstraint::initializeDuplicatesCDOs(
     ContextDependentPiecewiseLinearConstraint *clone ) const
 {
-    if ( nullptr != clone->_context )
+    if ( clone->_context != nullptr )
     {
-        ASSERT( nullptr != clone->_cdConstraintActive );
+        ASSERT( clone->_cdConstraintActive != nullptr );
         clone->_cdConstraintActive = nullptr;
         clone->initializeCDActiveStatus();
         clone->setActiveConstraint( this->isActive() );
 
-        ASSERT( nullptr != clone->_cdPhaseStatus );
+        ASSERT( clone->_cdPhaseStatus != nullptr );
         clone->_cdPhaseStatus = nullptr;
         clone->initializeCDPhaseStatus();
         clone->setPhaseStatus( this->getPhaseStatus() );
 
-        ASSERT( nullptr != clone->_cdInfeasibleCases );
+        ASSERT( clone->_cdInfeasibleCases != nullptr );
         clone->_cdInfeasibleCases = nullptr;
         clone->initializeCDInfeasibleCases();
         // Does not copy contents

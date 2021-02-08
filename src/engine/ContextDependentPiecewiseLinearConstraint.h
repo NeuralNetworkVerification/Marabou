@@ -194,7 +194,7 @@ public:
      */
     bool isImplication() const
     {
-        return 1u == numFeasibleCases();
+        return numFeasibleCases() == 1u;
     }
 
 protected:
