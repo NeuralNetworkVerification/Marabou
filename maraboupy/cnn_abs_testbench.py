@@ -38,7 +38,7 @@ parser.add_argument("--no_verify",      action="store_true",                    
 parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small"], default="small",                help="Which CNN size to use")
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
-parser.add_argument("--run_suffix",     type=str,                                   default="default",              help="Add unique identifier identifying this current run")
+parser.add_argument("--run_title",     type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
@@ -57,7 +57,7 @@ cfg_pruneCOI       = not args.no_coi
 cfg_maskAbstract   = not args.no_mask
 cfg_propDist       = args.prop_distance
 cfg_runOn          = args.run_on
-cfg_runSuffix      = args.run_suffix
+cfg_runTitle      = args.run_title
 cfg_batchDir       = args.batch_id if "batch_" + args.batch_id else ""
 cfg_numClusterCPUs = args.num_cpu
 cfg_abstractionPolicy = args.policy
@@ -72,7 +72,7 @@ resultsJson["cfg_pruneCOI"]          = cfg_pruneCOI
 resultsJson["cfg_maskAbstract"]      = cfg_maskAbstract
 resultsJson["cfg_propDist"]          = cfg_propDist
 resultsJson["cfg_runOn"]             = cfg_runOn
-resultsJson["cfg_runSuffix"]         = cfg_runSuffix
+resultsJson["cfg_runTitle"]         = cfg_runTitle
 resultsJson["cfg_batchDir"]          = cfg_batchDir
 resultsJson["cfg_numClusterCPUs"]    = cfg_numClusterCPUs
 resultsJson["cfg_abstractionPolicy"] = cfg_abstractionPolicy
@@ -82,7 +82,7 @@ resultsJson["cfg_doubleCheck"]       = cfg_doubleCheck
 
 cexFromImage = False
 
-#mnistProp.runSuffix = cfg_runSuffix
+#mnistProp.runTitle = cfg_runTitle
 
 optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
 optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=cfg_numClusterCPUs)
@@ -99,20 +99,18 @@ if cfg_batchDir:
     currPath += "/" + cfg_batchDir
     if not os.path.exists(currPath):
         os.mkdir(currPath)
-if cfg_runSuffix:
-    currPath += "/" + cfg_runSuffix
+if cfg_runTitle:
+    currPath += "/" + cfg_runTitle
     if not os.path.exists(currPath):
         os.mkdir(currPath)        
 os.chdir(currPath)
 mnistProp.currPath = currPath
-
-cfg_abstractionPolicy
     
 logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = "cnnAbsTB.log", filemode = "w")
-mnistProp.logger = logging.getLogger('cnnAbsTB_{}'.format(cfg_runSuffix))
+mnistProp.logger = logging.getLogger('cnnAbsTB_{}'.format(cfg_runTitle))
 #logger.setLevel(logging.DEBUG)
 mnistProp.logger.setLevel(logging.INFO)
-fh = logging.FileHandler('cnnAbsTB_{}.log'.format(cfg_runSuffix))
+fh = logging.FileHandler('cnnAbsTB_{}.log'.format(cfg_runTitle))
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 mnistProp.logger.addHandler(fh)
@@ -122,6 +120,14 @@ ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(me
 mnistProp.logger.addHandler(ch)
 
 logging.getLogger('matplotlib.font_manager').disabled = True
+
+
+with open("Results.json", "w") as f:
+    defaultResultsJson = resultsJson.copy()
+    defaultResultsJson["SAT"] = None
+    defaultResultsJson["Result"] = "TIMEOUT"
+    defaultResultsJson["subResults"] = []
+    json.dump(defaultResultsJson, f, indent = 4)    
 
 ###############################################################################
 #### ______                                ___  ___          _      _      ####
@@ -292,12 +298,14 @@ runtimeTotal = time.time() - startTotal
 
 with open("Results.json", "w") as f:
     resultsJson["batchId"] = cfg_batchDir
-    resultsJson["runSuffix"] = cfg_runSuffix
-    runResults = list()
+    resultsJson["runTitle"] = cfg_runTitle
     resultsJson["subResults"] = results
     resultsJson["SAT"] = sat
+    resultsJson["Result"] = "SAT" if sat else "UNSAT"    
     resultsJson["yDataset"] = int(yAdv.item())
     resultsJson["yMaxPrediction"] = int(yMax)
     resultsJson["ySecondPrediction"] = int(ySecond)
     resultsJson["totalRuntime"] = runtimeTotal
     json.dump(resultsJson, f, indent = 4)
+
+printLog("Log files at {}".format(currPath))

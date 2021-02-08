@@ -234,7 +234,22 @@ def getBoundsInftyBall(x, r, pos=True):
 
 def inBoundsInftyBall(x, r, p, pos=True):
     l,u = getBoundsInftyBall(x,r,pos=pos)
-    return np.all(np.less_equal(l,p)) and np.all(np.greater_equal(u,p))
+    lowerBoundCond = np.less_equal(l,p)
+    upperBoundCond = np.less_equal(p,u)
+    #print("lowerBoundCond={}".format(lowerBoundCond))
+    #print("upperBoundCond={}".format(upperBoundCond))
+#    if not np.all(lowerBoundCond):
+#        print("np.where(np.less(p,l)={}".format(np.where(np.less(p,l))))
+#        xa, ya, za = np.where(np.less(p,l))
+#        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):
+#            print("l[ind]={}, p[ind]={}".format(l[ind], p[ind]))
+#    if not np.all(upperBoundCond):        
+#        print("np.where(np.less(u,p)={}".format(np.where(np.less(u,p))))
+#        xa, ya, za = np.where(np.less(u,p))
+#        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):        
+#            print("p[ind]={}, u[ind]={}".format(p[ind], u[ind]))
+    ###return np.all(np.less_equal(l,p)) and np.all(np.less_equal(p,u))
+    return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u)))
     
 def setAdversarial(net, x, inDist, yCorrect, yBad):
     inAsNP = np.array(net.inputVars)
@@ -263,8 +278,8 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)      
     else:
-        inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(net.inputVars))}
-        outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(net.outputVars))}
+        inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars))}
+        outputDict = {o.item():valDict[o.item()] for o in np.nditer(np.array(net.outputVars))}
         cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)        
         cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction, inputDict, outputDict 
@@ -437,6 +452,10 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect. 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex):
+    #print("x={}".format(x))
+    #print("cex={}".format(cex))
+    #print("x - cex={}".format(x - cex))
+    print("|x - cex|={}".format(np.absolute(x - cex)))
     if not inBoundsInftyBall(x, inDist, cex):        
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))
