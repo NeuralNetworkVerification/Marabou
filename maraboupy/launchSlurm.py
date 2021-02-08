@@ -12,7 +12,7 @@ batchDirPath = basePath + "logs/" + batchId
 if not os.path.exists(batchDirPath):
     os.mkdir(batchDirPath)
 runCmds = list()
-runSuffices = list()
+runTitles = list()
 runBriefs = list()
     
 CPUS = 8
@@ -23,31 +23,31 @@ commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict"
 numRunsPerType = 20
 
 for i in range(numRunsPerType):
-    suffix = "MaskCOICfg#{}".format(i)
-    runCmds.append(commonFlags + ["--run_suffix", suffix, "--sample", str(i)])
-    runSuffices.append(suffix)
+    title = "MaskCOICfg---{}".format(i)
+    runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i)])
+    runTitles.append(title)
     runBriefs.append("Run with CNN improvments")
 
 for i in range(numRunsPerType):
-    suffix = "VanillaCfg#{}".format(i)
-    runCmds.append(commonFlags + ["--run_suffix", suffix, "--sample", str(i), "--no_coi", "--no_mask"])
-    runSuffices.append(suffix)
+    title = "VanillaCfg---{}".format(i)
+    runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
+    runTitles.append(title)
     runBriefs.append('Run with default ("vanilla") Marabou')    
 
 sbatchFiles = list()
-for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
+for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
 
-    runDirPath = batchDirPath + "/" + suffix
+    runDirPath = batchDirPath + "/" + title
     if not os.path.exists(runDirPath):
         os.mkdir(runDirPath)
     os.chdir(runDirPath)
 
     sbatchCode = list()
     sbatchCode.append("#!/bin/bash")
-    sbatchCode.append("#SBATCH --job-name=cnnAbsTB_{}_{}".format(batchId, suffix))
+    sbatchCode.append("#SBATCH --job-name=cnnAbsTB_{}_{}".format(batchId, title))
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
-    sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, suffix))
+    sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, title))
     sbatchCode.append("#SBATCH --partition=long")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
@@ -67,7 +67,7 @@ for cmd, suffix, brief in zip(runCmds, runSuffices, runBriefs):
     sbatchCode.append("")
     sbatchCode.append("date")
 
-    sbatchFiles.append(runDirPath + "/" + "cnnAbsRun-{}.sbatch".format(suffix))
+    sbatchFiles.append(runDirPath + "/" + "cnnAbsRun-{}.sbatch".format(title))
     with open(sbatchFiles[-1], "w") as f:
         for line in sbatchCode:
             f.write(line + "\n")
