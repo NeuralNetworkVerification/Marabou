@@ -82,7 +82,7 @@ void ContextDependentPiecewiseLinearConstraint::initializeCDActiveStatus()
 {
     ASSERT( _context != nullptr );
     ASSERT( _cdConstraintActive == nullptr );
-    _cdConstraintActive = new ( true ) CVC4::context::CDO<bool>( _context, true );
+    _cdConstraintActive = new ( true ) CVC4::context::CDO<bool>( _context, _constraintActive );
 }
 
 void ContextDependentPiecewiseLinearConstraint::initializeCDPhaseStatus()
