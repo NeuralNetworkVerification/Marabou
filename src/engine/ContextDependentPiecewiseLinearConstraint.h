@@ -66,8 +66,7 @@ class ITableau;
 class InputQuery;
 class String;
 
-class ContextDependentPiecewiseLinearConstraint
-   : public virtual PiecewiseLinearConstraint
+class ContextDependentPiecewiseLinearConstraint : public PiecewiseLinearConstraint
 {
 public:
     ContextDependentPiecewiseLinearConstraint();
