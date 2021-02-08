@@ -98,7 +98,6 @@ public:
      */
     virtual PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus caseId ) const = 0;
 
-
     /*
       Check if the constraint's phase has been fixed.
     */
