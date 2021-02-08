@@ -131,7 +131,7 @@ public:
     /*
       Get the context object - debugging purposes only
     */
-    CVC4::context::Context *getContext() const
+    const CVC4::context::Context *getContext() const
     {
         return _context;
     }
@@ -139,7 +139,7 @@ public:
     /*
       Get the active status object - debugging purposes only
     */
-    CVC4::context::CDO<bool> *getActiveStatusCDO() const
+    const CVC4::context::CDO<bool> *getActiveStatusCDO() const
     {
         return _cdConstraintActive;
     };
@@ -147,7 +147,7 @@ public:
     /*
       Get the current phase status object - debugging purposes only
     */
-    CVC4::context::CDO<PhaseStatus> *getPhaseStatusCDO() const
+    const CVC4::context::CDO<PhaseStatus> *getPhaseStatusCDO() const
     {
         return _cdPhaseStatus;
     }
@@ -155,7 +155,7 @@ public:
     /*
       Get the infeasible cases object - debugging purposes only
     */
-    CVC4::context::CDList<PhaseStatus> *getInfeasibleCasesCDList() const
+    const CVC4::context::CDList<PhaseStatus> *getInfeasibleCasesCDList() const
     {
         return _cdInfeasibleCases;
     }
