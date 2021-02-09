@@ -171,7 +171,7 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::nextFeasibleCase()
             std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), thisCase );
 
         // Case not found, therefore it is feasible
-        if ( _cdInfeasibleCases->end() == loc )
+        if ( loc == _cdInfeasibleCases->end() )
             return thisCase;
     }
 
