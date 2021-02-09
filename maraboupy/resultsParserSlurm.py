@@ -1,12 +1,10 @@
-
+from __future__ import division
 import os
 import sys
 import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import json
-
-from __future__ import division
 
 TIMEOUT_VAL = 12 * 3600
 
@@ -78,4 +76,24 @@ plt.xlabel("Vanilla")
 plt.ylabel("CNN abstraction")
 plt.savefig("ComapreProperties.png")            
                 
-    
+plt.figure()
+
+# Pie chart, where the slices will be ordered and plotted counter-clockwise:
+labels = 'SAT', 'UNSAT', 'TIMEOUT'
+print("vanillaDict.values()={}".format(len(vanillaDict.values())))
+print("maskCOIDict.values()={}".format(len(maskCOIDict.values())))
+sizesVanilla = [len([v for v in vanillaDict.values() if v["result"] == l]) for l in labels]
+sizesMaskCOI = [len([v for v in maskCOIDict.values() if v["result"] == l]) for l in labels]
+#explode = (0, 0.1, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
+
+fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+plt.subplots_adjust(wspace=1)
+ax1.pie(sizesMaskCOI, labels=labels, colors=["red","green","yellow"], autopct=lambda p : "{:1.1f}%".format(p), shadow=True, startangle=90)
+ax1.set_title("CNN abstraction")
+ax2.pie(sizesVanilla, labels=labels, colors=["red","green","yellow"], autopct=lambda p : "{:1.1f}%".format(p), shadow=True, startangle=90)
+ax2.set_title("Vanilla Marabou")
+
+ax1.axis('equal')
+ax2.axis('equal')
+
+plt.savefig("resultPie.png")
