@@ -4,7 +4,7 @@ import sys
 import subprocess
 from datetime import datetime
 
-batchId = "slurm_" + datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+batchId = "slurm_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
 if not os.path.exists(basePath + "logs/"):
     os.mkdir(basePath + "logs/")
@@ -51,6 +51,7 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
     sbatchCode.append("#SBATCH --partition=long")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
+    sbatchCode.append("#SBATCH --reservation 5781")    
     sbatchCode.append("")
     sbatchCode.append("pwd; hostname; date")
     sbatchCode.append("")

@@ -256,6 +256,12 @@ else:
     startLocal = time.time()    
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
+    isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
+    isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
+    if isSporious:
+        printLog("Sporious CEX after end")        
+        raise Exception("Sporious CEX after end.")
+
     results.append({"type": "full",
                     "index":1,
                     "outOf":1,
@@ -274,12 +280,6 @@ if sat:
         print("verifyMarabou={}".format(verificationResult))
         if not verificationResult[0]:
             raise Exception("Inconsistant Marabou result, marabou double check failed")
-    isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
-    isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
-    if isSporious:
-        assert reachedFinal
-        printLog("Sporious CEX after end")        
-        raise Exception("Sporious CEX after end with verified Marabou result")
     if modelOrigDense.predict(np.array([cex])).argmax() != ySecond:
         printLog("Unexepcted prediction result, cex result is {}".format(modelOrigDense.predict(np.array([cex])).argmax()))
     printLog("Found CEX in origin")
