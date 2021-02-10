@@ -198,10 +198,10 @@ plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
 #plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
-if cfg_maskAbstract:
-    maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
-else:
+maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
+if not cfg_maskAbstract:
     maskList = []
+    #maskList = [np.ones_like(maskList[0])]
 printLog("Created {} masks".format(len(maskList)))
 
 printLog("Strating verification phase")
