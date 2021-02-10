@@ -166,10 +166,10 @@ public:
 
     /*
       Returns phaseStatus representing next feasible case.
-      Returns PHASE_NOT_FIXED if no feasible case exists.
+      Returns CONSTRAINT_INFEASIBLE if no feasible case exists.
       Assumes the contraint phase is PHASE_NOT_FIXED.
       Worst case complexity O(n^2)
-      This method should be overloaded for MAX and DISJUNCTION constraints.
+      This method is overloaded in MAX and DISJUNCTION constraints.
      */
     virtual PhaseStatus nextFeasibleCase();
 

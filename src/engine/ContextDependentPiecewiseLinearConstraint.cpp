@@ -162,7 +162,7 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::nextFeasibleCase()
     ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
 
     if ( !isFeasible() )
-        return PHASE_NOT_FIXED;
+        return CONSTRAINT_INFEASIBLE;
 
     List<PhaseStatus> allCases = getAllCases();
     for ( PhaseStatus thisCase : allCases )
@@ -170,14 +170,14 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::nextFeasibleCase()
         auto loc =
             std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), thisCase );
 
-        // Case not found, therefore it is feasible
+        // Case is not infeasible, return it as feasible
         if ( loc == _cdInfeasibleCases->end() )
             return thisCase;
     }
 
     // UNREACHABLE
     ASSERT( false );
-    return PHASE_NOT_FIXED;
+    return CONSTRAINT_INFEASIBLE;
 }
 
 //
