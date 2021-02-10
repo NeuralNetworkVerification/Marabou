@@ -184,6 +184,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
             num_ch = 16
         elif cnnSizeChoice == "small":
             num_ch = 1
+        elif cnnSizeChoice == "toy":
+            raise Exception("Toy network is not meant to be retrained")
         else:
             raise Exception("cnnSizeChoice {} not supported".format(cnnSizeChoice))
         origM = tf.keras.Sequential(
@@ -455,7 +457,7 @@ def isCEXSporious(model, x, inDist, yCorrect, yBad, cex):
     #print("x={}".format(x))
     #print("cex={}".format(cex))
     #print("x - cex={}".format(x - cex))
-    print("|x - cex|={}".format(np.absolute(x - cex)))
+    #print("|x - cex|={}".format(np.absolute(x - cex)))
     if not inBoundsInftyBall(x, inDist, cex):        
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))

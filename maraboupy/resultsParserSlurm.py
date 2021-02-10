@@ -8,6 +8,15 @@ import json
 
 TIMEOUT_VAL = 12 * 3600
 
+def pctFunc(pct, data):
+    absolute = int(pct/100.*np.sum(data))
+    return "{:1.1f}%\n({})".format(pct, absolute) if pct > 0 else ""
+
+def countSame(x,y):
+    xy = list(zip(x,y))
+    xyCount = [xy.count(el) for el in xy]    
+    return list(zip(xyCount, xy))
+
 resultsFiles = list()
 for root, dirs, files in os.walk(os.getcwd()):
     for f in files:
@@ -33,13 +42,15 @@ for fullpath in resultsFiles:
             runTitle = resultDict["cfg_runSuffix"].split("---")[0]
         if resultDict["Result"].upper() != "TIMEOUT":
             originalQueryStats = resultDict["subResults"][-1]["originalQueryStats"]
-            finalQueryStats = resultDict["subResults"][-1]["finalQueryStats"]        
+            finalQueryStats = resultDict["subResults"][-1]["finalQueryStats"]
+            assert len(originalQueryStats) == len(finalQueryStats)
             totalRuntime = resultDict["totalRuntime"]
             numRuns = len(resultDict["subResults"])
             finalPartiallity = dict()
             finalPartiallity["vars"] = finalQueryStats["numVars"] / originalQueryStats["numVars"]
             finalPartiallity["equations"] = finalQueryStats["numEquations"] / originalQueryStats["numEquations"]
-            finalPartiallity["reluConstraints"] = finalQueryStats["numReluConstraints"] / originalQueryStats["numReluConstraints"]            
+            finalPartiallity["reluConstraints"] = finalQueryStats["numReluConstraints"] / originalQueryStats["numReluConstraints"]
+            finalPartiallity["numRuns"] = len(originalQueryStats)
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()
@@ -69,9 +80,16 @@ mutual = list(set(vanillaDict.keys()) & set(maskCOIDict.keys()))
 #assert maskCOIDict.keys() == vanillaDict.keys()
 x = [vanillaDict[sample]["totalRuntime"] for sample in mutual]
 y = [maskCOIDict[sample]["totalRuntime"] for sample in mutual]
-plt.scatter(x, y, marker='x')
-plt.plot([1 if LOGSCALE else 0, TIMEOUT_VAL], [1 if LOGSCALE else 0, TIMEOUT_VAL], color='red')
-plt.title("CNN abstraction vs. Vanilla Marabou")
+xyCountSame = countSame(x,y)
+plt.scatter(x, y, s=70, alpha=0.3)
+for count, coor in countSame(x,y):
+    plt.annotate(count, coor)
+bottom = 1 if LOGSCALE else 0
+top = TIMEOUT_VAL
+plt.plot([bottom, top], [bottom, top], 'r:')
+plt.plot([bottom, top], [top   , top], 'r:')
+plt.plot([top,    top], [bottom, top], 'r:')
+plt.title("CNN abstraction vs. Vanilla Marabou, {} samples".format(len(mutual)))
 plt.xlabel("Vanilla")
 plt.ylabel("CNN abstraction")
 plt.savefig("ComapreProperties.png")            
@@ -87,13 +105,35 @@ sizesMaskCOI = [len([v for v in maskCOIDict.values() if v["result"] == l]) for l
 #explode = (0, 0.1, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
 
 fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
+fig.suptitle("Run Results", fontsize=20)
 plt.subplots_adjust(wspace=1)
-ax1.pie(sizesMaskCOI, labels=labels, colors=["red","green","yellow"], autopct=lambda p : "{:1.1f}%".format(p), shadow=True, startangle=90)
-ax1.set_title("CNN abstraction, {} samples".format(len(maskCOIDict)))
-ax2.pie(sizesVanilla, labels=labels, colors=["red","green","yellow"], autopct=lambda p : "{:1.1f}%".format(p), shadow=True, startangle=90)
-ax2.set_title("Vanilla Marabou, {} samples".format(len(vanillaDict)))
+ax1.pie(sizesMaskCOI, labels=[l if s > 0 else "" for l,s in zip(labels, sizesMaskCOI)], colors=["darkred","darkgreen","gold"], autopct=lambda pct: pctFunc(pct, sizesMaskCOI), shadow=True, startangle=90, textprops=dict(color="k"))
+ax1.set_title("CNN abstraction, {} samples".format(len(maskCOIDict)), fontdict=dict(fontsize=12))
+ax2.pie(sizesVanilla, labels=[l if s > 0 else "" for l,s in zip(labels, sizesVanilla)], colors=["darkred","darkgreen","gold"], autopct=lambda pct: pctFunc(pct, sizesVanilla), shadow=True, startangle=90, textprops=dict(color="k"))
+ax2.set_title("Vanilla Marabou, {} samples".format(len(vanillaDict)), fontdict=dict(fontsize=12))
 
 ax1.axis('equal')
 ax2.axis('equal')
 
-plt.savefig("resultPie.png")
+plt.savefig("ResultPie.png")
+
+
+plt.figure()
+fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+solved = [k for k,v in maskCOIDict.items() if v["result"] in ["UNSAT", "SAT"]]
+x  = [maskCOIDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
+y1 = [maskCOIDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
+y2 = [maskCOIDict[sample]["finalPartiallity"]["equations"] for sample in solved]
+c  = ["darkred" if maskCOIDict[sample]["result"] == "SAT" else "darkgreen" for sample in solved]
+fig.suptitle("CNN abstraction - Variables and Equations Ratio, {} Samples".format(len(solved)))
+ax2.set_xlabel("Number of Runs")
+ax1.set_ylabel("Eventuall Variables Ratio")
+ax2.set_ylabel("Eventuall Equation Ratio")
+ax1.scatter(x, y1, s=70, alpha=0.3, c=c)
+ax2.scatter(x, y2, s=70, alpha=0.3, c=c)
+
+for count, coor in countSame(x,y1):
+    ax1.annotate(count, coor)
+for count, coor in countSame(x,y2):
+    ax2.annotate(count, coor)    
+plt.savefig("COIRatio.png")            
