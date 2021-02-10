@@ -37,10 +37,10 @@
 #ifndef __BoundManager_h__
 #define __BoundManager_h__
 
-#include "context/cdo.h"
-#include "context/context.h"
 #include "List.h"
 #include "Vector.h"
+#include "context/cdo.h"
+#include "context/context.h"
 
 class Tableau;
 class Tightening;

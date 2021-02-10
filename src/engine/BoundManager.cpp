@@ -14,6 +14,7 @@
 **/
 
 #include "BoundManager.h"
+
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"

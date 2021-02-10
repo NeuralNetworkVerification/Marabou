@@ -13,6 +13,8 @@
 
  **/
 
+#include "Tableau.h"
+
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
 #include "ConstraintMatrixAnalyzer.h"
@@ -25,7 +27,6 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
 
