@@ -89,9 +89,9 @@ sizesMaskCOI = [len([v for v in maskCOIDict.values() if v["result"] == l]) for l
 fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 plt.subplots_adjust(wspace=1)
 ax1.pie(sizesMaskCOI, labels=labels, colors=["red","green","yellow"], autopct=lambda p : "{:1.1f}%".format(p), shadow=True, startangle=90)
-ax1.set_title("CNN abstraction")
+ax1.set_title("CNN abstraction, {} samples".format(len(maskCOIDict)))
 ax2.pie(sizesVanilla, labels=labels, colors=["red","green","yellow"], autopct=lambda p : "{:1.1f}%".format(p), shadow=True, startangle=90)
-ax2.set_title("Vanilla Marabou")
+ax2.set_title("Vanilla Marabou, {} samples".format(len(vanillaDict)))
 
 ax1.axis('equal')
 ax2.axis('equal')
