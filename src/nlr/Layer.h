@@ -72,9 +72,13 @@ public:
     double getWeight( unsigned sourceLayer,
                       unsigned sourceNeuron,
                       unsigned targetNeuron ) const;
+    double *getWeights( unsigned sourceLayerIndex ) const;
+    double *getPositiveWeights( unsigned sourceLayerIndex ) const;
+    double *getNegativeWeights( unsigned sourceLayerIndex ) const;
 
     void setBias( unsigned neuron, double bias );
     double getBias( unsigned neuron ) const;
+    double *getBiases() const;
 
     void addActivationSource( unsigned sourceLayer,
                               unsigned sourceNeuron,
@@ -108,6 +112,9 @@ public:
     double getLb( unsigned neuron ) const;
     double getUb( unsigned neuron ) const;
 
+    double *getLbs() const;
+    double *getUbs() const;
+
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
@@ -121,6 +128,11 @@ public:
     bool neuronEliminated( unsigned neuron ) const;
     double getEliminatedNeuronValue( unsigned neuron ) const;
     void reduceIndexAfterMerge( unsigned startIndex );
+
+    /*
+      Print out the variable bounds of this layer
+    */
+    void dumpBounds() const;
 
     /*
       For debugging purposes

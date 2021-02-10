@@ -206,9 +206,9 @@ if (${ENABLE_GUROBI})
 
   # MACOSx uses .dylib instead of .so for its Gurobi downloads.
   if (APPLE)
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.dylib)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.dylib)
   else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi90.so)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.so)
   endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})
