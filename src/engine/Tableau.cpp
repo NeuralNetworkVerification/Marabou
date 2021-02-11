@@ -1731,18 +1731,18 @@ void Tableau::ensureNonBasicVariableLTUB( unsigned variable, double value )
 {
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
-        {
-            if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
-                setNonBasicAssignment( variable, value, true );
-        }
+    {
+        if ( FloatUtils::lt( value, _nonBasicAssignment[index] ) )
+            setNonBasicAssignment( variable, value, true );
+    }
     else
-        {
-            // Recompute the status of an affected basic variable
-            // If the status changes, invalidate the cost function
-            unsigned oldStatus = _basicStatus[index];
-            computeBasicStatus( index );
-            if ( _basicStatus[index] != oldStatus )
-                _costFunctionManager->invalidateCostFunction();
+    {
+        // Recompute the status of an affected basic variable
+        // If the status changes, invalidate the cost function
+        unsigned oldStatus = _basicStatus[index];
+        computeBasicStatus( index );
+        if ( _basicStatus[index] != oldStatus )
+            _costFunctionManager->invalidateCostFunction();
     }
 }
 
