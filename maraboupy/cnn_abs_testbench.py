@@ -30,6 +30,11 @@ import matplotlib.pyplot as plt
 
 tf.compat.v1.enable_v2_behavior()
 
+def dumpJson(jsonDict):
+    with open("Results.json", "w") as f:
+        json.dump(jsonDict, f, indent = 4)    
+    
+
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
 parser.add_argument("--no_coi",         action="store_true",                        default=False,                  help="Don't use COI pruning")
@@ -80,6 +85,12 @@ resultsJson["cfg_sporiousStrict"]    = cfg_sporiousStrict
 resultsJson["cfg_sampleIndex"]       = cfg_sampleIndex
 resultsJson["cfg_doubleCheck"]       = cfg_doubleCheck
 
+resultsJson["SAT"] = None
+resultsJson["Result"] = "TIMEOUT"
+resultsJson["subResults"] = []
+
+dumpJson(resultsJson)
+
 cexFromImage = False
 
 #mnistProp.runTitle = cfg_runTitle
@@ -120,14 +131,6 @@ ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(me
 mnistProp.logger.addHandler(ch)
 
 logging.getLogger('matplotlib.font_manager').disabled = True
-
-
-with open("Results.json", "w") as f:
-    defaultResultsJson = resultsJson.copy()
-    defaultResultsJson["SAT"] = None
-    defaultResultsJson["Result"] = "TIMEOUT"
-    defaultResultsJson["subResults"] = []
-    json.dump(defaultResultsJson, f, indent = 4)    
 
 ###############################################################################
 #### ______                                ___  ___          _      _      ####
@@ -198,6 +201,11 @@ plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
 #plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
+resultsJson["yDataset"] = int(yAdv.item())
+resultsJson["yMaxPrediction"] = int(yMax)
+resultsJson["ySecondPrediction"] = int(ySecond)
+dumpJson(resultsJson)    
+
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
 if not cfg_maskAbstract:
     maskList = []
@@ -213,22 +221,23 @@ successful = None
 reachedFinal = False
 startTotal = time.time()
 
-results = list()
-
 for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
-    results.append({"type": "mask",
-                    "index" : i+1,
-                    "outOf" : len(maskList),
-                    "brief" : "Mask {}/{}".format(i+1, len(maskList)),
-                    "runtime" : runtime,
-                    "originalQueryStats" : originalQueryStats,
-                    "finalQueryStats" : finalQueryStats,
-                    "SAT" : sat})
+    runtimeTotal = time.time() - startTotal    
+    resultsJson["subResults"].append({"type": "mask",
+                                      "index" : i+1,
+                                      "outOf" : len(maskList),
+                                      "brief" : "Mask {}/{}".format(i+1, len(maskList)),
+                                      "runtime" : runtime,
+                                      "runtimeTotal" : runtimeTotal,                                      
+                                      "originalQueryStats" : originalQueryStats,
+                                      "finalQueryStats" : finalQueryStats,
+                                      "SAT" : sat})
+    dumpJson(resultsJson)
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1
     isSporious = None
@@ -256,20 +265,23 @@ else:
     startLocal = time.time()    
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
+    runtimeTotal = time.time() - startTotal
     isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
     isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
     if isSporious:
         printLog("Sporious CEX after end")        
         raise Exception("Sporious CEX after end.")
 
-    results.append({"type": "full",
-                    "index":1,
-                    "outOf":1,
-                    "brief" : "Full",
-                    "runtime" : runtime,
-                    "originalQueryStats" : originalQueryStats,
-                    "finalQueryStats" : finalQueryStats,
-                    "SAT" : sat})
+    resultsJson["subResults"].append({"type": "full",
+                                      "index":1,
+                                      "outOf":1,
+                                      "brief" : "Full",
+                                      "runtime" : runtime,
+                                      "runtimeTotal" : runtimeTotal,
+                                      "originalQueryStats" : originalQueryStats,
+                                      "finalQueryStats" : finalQueryStats,
+                                      "SAT" : sat})
+    dumpJson(resultsJson)
     printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1    
 
@@ -287,27 +299,12 @@ if sat:
     printLog("SAT")
 else:
     printLog("UNSAT")
-    #printLog("verifying UNSAT on unprocessed network")
-    #FIXME this is not exactly the same query as the proccessed one.
-    #sat, cex, cexPrediction = runMarabouOnKeras(modelOrig, xAdv, cfg_propDist, yMaxUnproc, ySecondUnproc)
-    #if not sat:
-    #    printLog("Proved UNSAT on unprocessed network")
-    #else:
-    #    printLog("Found CEX on unprocessed network")
-
 
 runtimeTotal = time.time() - startTotal
 
-with open("Results.json", "w") as f:
-    resultsJson["batchId"] = cfg_batchDir
-    resultsJson["runTitle"] = cfg_runTitle
-    resultsJson["subResults"] = results
-    resultsJson["SAT"] = sat
-    resultsJson["Result"] = "SAT" if sat else "UNSAT"    
-    resultsJson["yDataset"] = int(yAdv.item())
-    resultsJson["yMaxPrediction"] = int(yMax)
-    resultsJson["ySecondPrediction"] = int(ySecond)
-    resultsJson["totalRuntime"] = runtimeTotal
-    json.dump(resultsJson, f, indent = 4)
+resultsJson["SAT"] = sat
+resultsJson["Result"] = "SAT" if sat else "UNSAT"    
+resultsJson["totalRuntime"] = runtimeTotal
+dumpJson(resultsJson)    
 
 printLog("Log files at {}".format(currPath))

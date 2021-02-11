@@ -50,6 +50,7 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
     sbatchCode.append("#SBATCH --partition=long")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
+    sbatchCode.append("#SBATCH -C avx2")
     #sbatchCode.append("#SBATCH --reservation 5781")    
     sbatchCode.append("")
     sbatchCode.append("pwd; hostname; date")

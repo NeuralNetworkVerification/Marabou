@@ -28,6 +28,11 @@ def cellColor(result):
         return 'red'
     return None
 
+def setFigSize():
+    figure = plt.gcf()
+    figure.set_size_inches(12, 9)
+
+
 resultsFiles = list()
 for root, dirs, files in os.walk(os.getcwd()):
     for f in files:
@@ -51,23 +56,21 @@ for fullpath in resultsFiles:
             runTitle = resultDict["cfg_runTitle"].split("---")[0]
         else:
             runTitle = resultDict["cfg_runSuffix"].split("---")[0]
-        if resultDict["Result"].upper() != "TIMEOUT":
+        if resultDict["subResults"]:
             originalQueryStats = resultDict["subResults"][-1]["originalQueryStats"]
             finalQueryStats = resultDict["subResults"][-1]["finalQueryStats"]
-            assert len(originalQueryStats) == len(finalQueryStats)
-            totalRuntime = resultDict["totalRuntime"]
-            numRuns = len(resultDict["subResults"])
-            finalPartiallity = dict()
+            finalPartiallity = dict()            
             finalPartiallity["vars"] = finalQueryStats["numVars"] / originalQueryStats["numVars"]
             finalPartiallity["equations"] = finalQueryStats["numEquations"] / originalQueryStats["numEquations"]
             finalPartiallity["reluConstraints"] = finalQueryStats["numReluConstraints"] / originalQueryStats["numReluConstraints"]
-            finalPartiallity["numRuns"] = len(originalQueryStats)
+            finalPartiallity["numRuns"] = len(resultDict["subResults"])            
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()
-            totalRuntime = TIMEOUT_VAL
-            numRuns = 0
             finalPartiallity = dict()
+            
+        assert len(originalQueryStats) == len(finalQueryStats)
+        totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
         sampleIndex = resultDict["cfg_sampleIndex"]
                         
         if runTitle not in perRunTypeResults_total:
@@ -92,18 +95,24 @@ mutual = list(set(vanillaDict.keys()) & set(maskCOIDict.keys()))
 x = [vanillaDict[sample]["totalRuntime"] for sample in mutual]
 y = [maskCOIDict[sample]["totalRuntime"] for sample in mutual]
 xyCountSame = countSame(x,y)
-plt.scatter(x, y, s=70, alpha=0.3)
+plt.scatter(x, y, s=70, marker="x", alpha=0.3)
 for count, coor in countSame(x,y):
-    plt.annotate(count, coor)
+    if count > 1:
+        plt.annotate(count, coor)
 bottom = 1 if LOGSCALE else 0
 top = TIMEOUT_VAL
+axisTop = 2 * TIMEOUT_VAL if LOGSCALE else TIMEOUTVAL + 100
 plt.plot([bottom, top], [bottom, top], 'r:')
 plt.plot([bottom, top], [top   , top], 'r:')
 plt.plot([top,    top], [bottom, top], 'r:')
 plt.title("CNN abstraction vs. Vanilla Marabou, {} samples".format(len(mutual)))
-plt.xlabel("Vanilla")
-plt.ylabel("CNN abstraction")
-plt.savefig("ComapreProperties.png")            
+plt.xlabel("Vanilla [sec]")
+plt.ylabel("CNN abstraction [sec]")
+plt.xlim([bottom, axisTop])
+plt.ylim([bottom, axisTop])
+
+setFigSize()
+plt.savefig("ComapreProperties.png", dpi=100) 
                 
 plt.figure()
 
@@ -126,12 +135,13 @@ ax2.set_title("Vanilla Marabou, {} samples".format(len(vanillaDict)), fontdict=d
 ax1.axis('equal')
 ax2.axis('equal')
 
-plt.savefig("ResultPie.png")
+setFigSize()
+plt.savefig("ResultPie.png", dpi=100)
 
 plt.figure()
 fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
-#ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
-#ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 solved = [k for k,v in maskCOIDict.items() if v["result"] in ["UNSAT", "SAT"]]
 x  = [maskCOIDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
 y1 = [maskCOIDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
@@ -147,8 +157,10 @@ ax2.scatter(x, y2, s=70, alpha=0.3, c=c)
 for count, coor in countSame(x,y1):
     ax1.annotate(count, coor)
 for count, coor in countSame(x,y2):
-    ax2.annotate(count, coor)    
-plt.savefig("COIRatio.png")
+    ax2.annotate(count, coor)
+
+setFigSize()
+plt.savefig("COIRatio.png", dpi=100)
 
 plt.figure()
 fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -156,15 +168,18 @@ fig.patch.set_visible(False)
 ax.axis('off')
 ax.axis('tight')
 
+addPlus = lambda runtime: "{:.2f}".format(runtime) if runtime < TIMEOUT_VAL else (str(TIMEOUT_VAL) + "+")
 samplesTotal = list(set(vanillaDict.keys()) | set(maskCOIDict.keys()))
-maskCOITimes  = [maskCOIDict[s]["totalRuntime"] if s in maskCOIDict else -1 for s in samplesTotal]
-vanillaTimes  = [vanillaDict[s]["totalRuntime"] if s in vanillaDict else -1 for s in samplesTotal]
+maskCOITimes  = [addPlus(maskCOIDict[s]["totalRuntime"]) if s in maskCOIDict else -1 for s in samplesTotal]
+vanillaTimes  = [addPlus(vanillaDict[s]["totalRuntime"])if s in vanillaDict else -1 for s in samplesTotal]
 maskCOIColors = [cellColor(maskCOIDict[s]["result"]) if s in maskCOIDict else None for s in samplesTotal]
 vanillaColors = [cellColor(vanillaDict[s]["result"]) if s in vanillaDict else None for s in samplesTotal]
 colors = np.transpose(np.array([maskCOIColors, vanillaColors]))
-df = pd.DataFrame(np.transpose(np.array([maskCOITimes, vanillaTimes])), columns=['CNN Abstraction', 'Vanilla'], index=samplesTotal)
+df = pd.DataFrame(np.transpose(np.array([maskCOITimes, vanillaTimes])), columns=['CNN Abstraction [sec]', 'Vanilla [sec]'], index=samplesTotal)
 ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center', cellColours=colors)
 
-fig.tight_layout()
-plt.savefig("PerSampleResult.png")
+fig.canvas.draw()
+
+setFigSize()
+plt.savefig("ResultSummary.png", bbox_inches="tight", dpi=100)
 
