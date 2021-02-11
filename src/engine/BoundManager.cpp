@@ -32,7 +32,7 @@ BoundManager::BoundManager( Context &context )
 
 BoundManager::~BoundManager()
 {
-    for ( unsigned i = 0; i < _size; ++i)
+    for ( unsigned i = 0; i < _size; ++i )
     {
         _lowerBounds[i]->deleteSelf();
         _upperBounds[i]->deleteSelf();
@@ -81,7 +81,7 @@ unsigned BoundManager::getNumberOfVariables()
 bool BoundManager::tightenLowerBound( unsigned variable, double value )
 {
     bool tightened = setLowerBound( variable, value );
-    if ( tightened &&  nullptr != _tableau )
+    if ( tightened && nullptr != _tableau )
         _tableau->ensureNonBasicVariableGTLB( variable, value );
     return tightened;
 }
@@ -113,7 +113,7 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
     ASSERT( variable < _size );
     if ( value < getUpperBound( variable ) )
     {
-        *_upperBounds[variable] = value ;
+        *_upperBounds[variable] = value;
         *_tightenedUpper[variable] = true;
         if ( !consistentBounds( variable ) )
             throw InfeasibleQueryException();
