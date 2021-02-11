@@ -33,8 +33,8 @@
 #include <string.h>
 
 Tableau::Tableau()
-    : _n ( 0 )
-    , _m ( 0 )
+    : _n( 0 )
+    , _m( 0 )
     , _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _sparseRowsOfA( NULL )
@@ -348,7 +348,7 @@ void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
 
     // Assign the basic indices
     unsigned basicIndex = 0;
-    for( unsigned basicVar : initialBasicVariables )
+    for ( unsigned basicVar : initialBasicVariables )
     {
         markAsBasic( basicVar );
         assignIndexToBasicVariable( basicVar, basicIndex );
