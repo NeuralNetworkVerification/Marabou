@@ -90,7 +90,7 @@ void ContextDependentPiecewiseLinearConstraint::initializeCDPhaseStatus()
     ASSERT( _context != nullptr );
     ASSERT( _cdPhaseStatus == nullptr );
     _cdPhaseStatus =
-        new ( true ) CVC4::context::CDO<PhaseStatus>( _context, PHASE_NOT_FIXED );
+        new ( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
 }
 
 void ContextDependentPiecewiseLinearConstraint::cdoCleanup()
