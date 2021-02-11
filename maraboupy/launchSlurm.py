@@ -18,8 +18,7 @@ runBriefs = list()
 CPUS = 8
 MEM_PER_CPU = "1G"
 TIME_LIMIT = "12:00:00"
-
-commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict"]
+commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
 numRunsPerType = 20
 
 for i in range(numRunsPerType):
@@ -51,7 +50,7 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
     sbatchCode.append("#SBATCH --partition=long")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
-    sbatchCode.append("#SBATCH --reservation 5781")    
+    #sbatchCode.append("#SBATCH --reservation 5781")    
     sbatchCode.append("")
     sbatchCode.append("pwd; hostname; date")
     sbatchCode.append("")
@@ -63,7 +62,8 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
     sbatchCode.append("export GRB_LICENSE_FILE=/cs/share/etc/license/gurobi/gurobi.lic")
     sbatchCode.append("")
     sbatchCode.append("### Description of this specific run is : {}".format(brief))
-    sbatchCode.append("")    
+    sbatchCode.append("")
+    sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
     sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/cnn_abs_testbench.py {}".format(" ".join(cmd)))
     sbatchCode.append("")
     sbatchCode.append("date")
