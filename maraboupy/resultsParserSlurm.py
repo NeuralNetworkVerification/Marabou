@@ -5,6 +5,8 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import pandas as pd
+from matplotlib.ticker import MaxNLocator
 
 TIMEOUT_VAL = 12 * 3600
 
@@ -16,6 +18,15 @@ def countSame(x,y):
     xy = list(zip(x,y))
     xyCount = [xy.count(el) for el in xy]    
     return list(zip(xyCount, xy))
+
+def cellColor(result):
+    if result.upper() == 'TIMEOUT':
+        return 'yellow'
+    elif result.upper() == 'UNSAT':
+        return 'green'
+    elif result.upper() == 'SAT':
+        return 'red'
+    return None
 
 resultsFiles = list()
 for root, dirs, files in os.walk(os.getcwd()):
@@ -117,9 +128,10 @@ ax2.axis('equal')
 
 plt.savefig("ResultPie.png")
 
-
 plt.figure()
 fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
+#ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+#ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 solved = [k for k,v in maskCOIDict.items() if v["result"] in ["UNSAT", "SAT"]]
 x  = [maskCOIDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
 y1 = [maskCOIDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
@@ -136,4 +148,23 @@ for count, coor in countSame(x,y1):
     ax1.annotate(count, coor)
 for count, coor in countSame(x,y2):
     ax2.annotate(count, coor)    
-plt.savefig("COIRatio.png")            
+plt.savefig("COIRatio.png")
+
+plt.figure()
+fig, ax = plt.subplots(nrows=1, ncols=1)
+fig.patch.set_visible(False)
+ax.axis('off')
+ax.axis('tight')
+
+samplesTotal = list(set(vanillaDict.keys()) | set(maskCOIDict.keys()))
+maskCOITimes  = [maskCOIDict[s]["totalRuntime"] if s in maskCOIDict else -1 for s in samplesTotal]
+vanillaTimes  = [vanillaDict[s]["totalRuntime"] if s in vanillaDict else -1 for s in samplesTotal]
+maskCOIColors = [cellColor(maskCOIDict[s]["result"]) if s in maskCOIDict else None for s in samplesTotal]
+vanillaColors = [cellColor(vanillaDict[s]["result"]) if s in vanillaDict else None for s in samplesTotal]
+colors = np.transpose(np.array([maskCOIColors, vanillaColors]))
+df = pd.DataFrame(np.transpose(np.array([maskCOITimes, vanillaTimes])), columns=['CNN Abstraction', 'Vanilla'], index=samplesTotal)
+ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center', cellColours=colors)
+
+fig.tight_layout()
+plt.savefig("PerSampleResult.png")
+
