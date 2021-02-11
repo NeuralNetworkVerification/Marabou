@@ -93,14 +93,13 @@ public:
     void getTightenings( List<Tightening> &tightenings );
 
     /*
-          Returns true if the bounds for the variable is valid, used to
-          detect a conflict state.
+      Returns true if the bounds for the variable is valid, used to
+      detect a conflict state.
     */
     bool consistentBounds( unsigned variable );
 
-
     /*
-       Register Tableau reference for callbacks from tighten*Bound methods. 
+       Register Tableau reference for callbacks from tighten*Bound methods.
      */
     void registerTableauReference( Tableau *tableau );
 
