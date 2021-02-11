@@ -65,7 +65,7 @@ public:
     /*
        Returns number of registered variables
      */
-    unsigned getNumberOfVariables();
+    unsigned getNumberOfVariables() const;
 
     /*
        Communicates bounds to the bound Manager and informs _tableau of the

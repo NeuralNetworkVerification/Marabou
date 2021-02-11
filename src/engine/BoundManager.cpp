@@ -73,7 +73,7 @@ unsigned BoundManager::registerNewVariable()
     return newVar;
 }
 
-unsigned BoundManager::getNumberOfVariables()
+unsigned BoundManager::getNumberOfVariables() const
 {
     return _size;
 }
