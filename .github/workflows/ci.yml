@@ -94,7 +94,7 @@ jobs:
 
       - name: Generate Python Code Coverage
         if: ${{ matrix.compiler == 'g++' }} 
-        run: python3 -m pytest --cov=maraboupy --cov-report=xml  $(find $GITHUB_WORKSPACE -name "maraboupy" -type d)/test
+        run: python3 -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
 
       - name: Upload coverage to Codecov
         if: ${{ matrix.compiler == 'g++' }} 
