@@ -251,7 +251,7 @@ def inBoundsInftyBall(x, r, p, pos=True):
 #        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):        
 #            print("p[ind]={}, u[ind]={}".format(p[ind], u[ind]))
     ###return np.all(np.less_equal(l,p)) and np.all(np.less_equal(p,u))
-    return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u)))
+    return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u))) #FIXME shouldn't allow isclose, floating point errors?
     
 def setAdversarial(net, x, inDist, yCorrect, yBad):
     inAsNP = np.array(net.inputVars)

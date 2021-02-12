@@ -11,7 +11,7 @@ from matplotlib.ticker import MaxNLocator
 TIMEOUT_VAL = 12 * 3600
 
 def pctFunc(pct, data):
-    absolute = int(pct/100.*np.sum(data))
+    absolute = int(np.round(pct/100.*np.sum(data)))
     return "{:1.1f}%\n({})".format(pct, absolute) if pct > 0 else ""
 
 def countSame(x,y):
@@ -19,14 +19,24 @@ def countSame(x,y):
     xyCount = [xy.count(el) for el in xy]    
     return list(zip(xyCount, xy))
 
-def cellColor(result):
+def cellColor(result, dark=False):
     if result.upper() == 'TIMEOUT':
-        return 'yellow'
+        return 'yellow' if not dark else 'gold'
     elif result.upper() == 'UNSAT':
-        return 'green'
+        return 'green' if not dark else 'darkgreen'
     elif result.upper() == 'SAT':
-        return 'red'
+        return 'red' if not dark else 'darkred'
     return None
+
+def markerChoice(result):
+    if result.upper() == 'TIMEOUT':
+        return "x"
+    elif result.upper() == 'UNSAT':
+        return "|" 
+    elif result.upper() == 'SAT':
+        return "_" 
+    return None
+
 
 def setFigSize():
     figure = plt.gcf()
@@ -112,7 +122,7 @@ plt.xlim([bottom, axisTop])
 plt.ylim([bottom, axisTop])
 
 setFigSize()
-plt.savefig("ComapreProperties.png", dpi=100) 
+plt.savefig("CompareProperties.png", dpi=100) 
                 
 plt.figure()
 
@@ -142,17 +152,19 @@ plt.figure()
 fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
 ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
 ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
-solved = [k for k,v in maskCOIDict.items() if v["result"] in ["UNSAT", "SAT"]]
+#solved = [k for k,v in maskCOIDict.items() if v["result"] in ["UNSAT", "SAT"]]
+solved = [k for k,v in maskCOIDict.items() if v["result"] in ["UNSAT", "SAT", "TIMEOUT"]]
 x  = [maskCOIDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
 y1 = [maskCOIDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
 y2 = [maskCOIDict[sample]["finalPartiallity"]["equations"] for sample in solved]
-c  = ["darkred" if maskCOIDict[sample]["result"] == "SAT" else "darkgreen" for sample in solved]
+c  = [cellColor(maskCOIDict[sample]["result"]) for sample in solved]
+marker = [markerChoice(maskCOIDict[sample]["result"]) for sample in solved]
 fig.suptitle("CNN abstraction - Variables and Equations Ratio, {} Samples".format(len(solved)))
 ax2.set_xlabel("Number of Runs")
 ax1.set_ylabel("Eventuall Variables Ratio")
 ax2.set_ylabel("Eventuall Equation Ratio")
-ax1.scatter(x, y1, s=70, alpha=0.3, c=c)
-ax2.scatter(x, y2, s=70, alpha=0.3, c=c)
+ax1.scatter(x, y1, s=70, alpha=0.3, c=c)#, marker=marker)
+ax2.scatter(x, y2, s=70, alpha=0.3, c=c)#, marker=marker)
 
 for count, coor in countSame(x,y1):
     ax1.annotate(count, coor)
