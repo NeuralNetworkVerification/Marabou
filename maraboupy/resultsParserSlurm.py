@@ -5,6 +5,7 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import csv
 import pandas as pd
 from matplotlib.ticker import MaxNLocator
 
@@ -38,9 +39,9 @@ def markerChoice(result):
     return None
 
 
-def setFigSize():
+def setFigSize(w=12, h=9):
     figure = plt.gcf()
-    figure.set_size_inches(12, 9)
+    figure.set_size_inches(w, hxo)
 
 
 resultsFiles = list()
@@ -77,7 +78,7 @@ for fullpath in resultsFiles:
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()
-            finalPartiallity = dict()
+            finalPartiallity = dict(numRuns=0, vars=0, equations=0, reluConstraints=0)
             
         assert len(originalQueryStats) == len(finalQueryStats)
         totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
@@ -174,6 +175,7 @@ for count, coor in countSame(x,y2):
 setFigSize()
 plt.savefig("COIRatio.png", dpi=100)
 
+tableLabels = ['CNN Abstraction [sec]', 'Vanilla [sec]']
 plt.figure()
 fig, ax = plt.subplots(nrows=1, ncols=1)
 fig.patch.set_visible(False)
@@ -184,14 +186,23 @@ addPlus = lambda runtime: "{:.2f}".format(runtime) if runtime < TIMEOUT_VAL else
 samplesTotal = list(set(vanillaDict.keys()) | set(maskCOIDict.keys()))
 maskCOITimes  = [addPlus(maskCOIDict[s]["totalRuntime"]) if s in maskCOIDict else -1 for s in samplesTotal]
 vanillaTimes  = [addPlus(vanillaDict[s]["totalRuntime"])if s in vanillaDict else -1 for s in samplesTotal]
+maskCOIResult = [maskCOIDict[s]["result"] if s in maskCOIDict else "MISSING" for s in samplesTotal]
+vanillaResult = [vanillaDict[s]["result"] if s in vanillaDict else "MISSING" for s in samplesTotal]
 maskCOIColors = [cellColor(maskCOIDict[s]["result"]) if s in maskCOIDict else None for s in samplesTotal]
 vanillaColors = [cellColor(vanillaDict[s]["result"]) if s in vanillaDict else None for s in samplesTotal]
 colors = np.transpose(np.array([maskCOIColors, vanillaColors]))
-df = pd.DataFrame(np.transpose(np.array([maskCOITimes, vanillaTimes])), columns=['CNN Abstraction [sec]', 'Vanilla [sec]'], index=samplesTotal)
+df = pd.DataFrame(np.transpose(np.array([maskCOITimes, vanillaTimes])), columns=tableLabels, index=samplesTotal)
 ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center', cellColours=colors)
 
 fig.canvas.draw()
 
 setFigSize()
 plt.savefig("ResultSummary.png", bbox_inches="tight", dpi=100)
+
+with open('ResultSummary.csv', mode='w') as f:
+        wr = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        wr.writerow(['', 'CNN Abstraction [sec]', 'CNN Abstraction Result', 'Vanilla [sec]', 'Vanilla Result'])
+        for sample, cnnAbs, cnnAbsResult, vanilla, vanillaResult in zip(samplesTotal, maskCOITimes, maskCOIResult, vanillaTimes, vanillaResult):
+            wr.writerow([sample, cnnAbs, cnnAbsResult, vanilla, vanillaResult])
+        
 
