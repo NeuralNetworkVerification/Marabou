@@ -19,7 +19,7 @@ CPUS = 8
 MEM_PER_CPU = "1G"
 TIME_LIMIT = "12:00:00"
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
-numRunsPerType = 20
+numRunsPerType = 50
 
 for i in range(numRunsPerType):
     title = "MaskCOICfg---{}".format(i)

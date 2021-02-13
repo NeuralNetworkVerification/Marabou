@@ -225,10 +225,21 @@ for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
+    resultsJson["subResults"].append({"type": "mask",
+                                      "index" : i+1,
+                                      "outOf" : len(maskList),
+                                      "brief" : "Mask {}/{}".format(i+1, len(maskList)),
+                                      "runtime" : None,
+                                      "runtimeTotal": None,
+                                      "originalQueryStats" : None,
+                                      "finalQueryStats" : None,
+                                      "SAT" : None}
+    dumpJson(resultsJson)
+    
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
     runtime = time.time() - startLocal
     runtimeTotal = time.time() - startTotal    
-    resultsJson["subResults"].append({"type": "mask",
+    resultsJson["subResults"][-1] = {"type": "mask",
                                       "index" : i+1,
                                       "outOf" : len(maskList),
                                       "brief" : "Mask {}/{}".format(i+1, len(maskList)),
@@ -262,27 +273,44 @@ for i, mask in enumerate(maskList):
 else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
-    startLocal = time.time()    
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
-    runtime = time.time() - startLocal
-    runtimeTotal = time.time() - startTotal
-    isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
-    isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
-    if isSporious:
-        printLog("Sporious CEX after end")        
-        raise Exception("Sporious CEX after end.")
-
+    startLocal = time.time()
     resultsJson["subResults"].append({"type": "full",
                                       "index":1,
                                       "outOf":1,
                                       "brief" : "Full",
-                                      "runtime" : runtime,
-                                      "runtimeTotal" : runtimeTotal,
-                                      "originalQueryStats" : originalQueryStats,
-                                      "finalQueryStats" : finalQueryStats,
-                                      "SAT" : sat})
+                                      "runtime" : None,
+                                      "runtimeTotal" : None,
+                                      "originalQueryStats" : None,
+                                      "finalQueryStats" : None,
+                                      "SAT" : None})
+    dumpJson(resultsJson)    
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
+    runtime = time.time() - startLocal
+    runtimeTotal = time.time() - startTotal    
+    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))    
+    if sat:
+        printLog("Found CEX in full network, checking if sporious.")        
+        isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
+        printLog("CEX has ySecond {} yMax".format("lt" if isSecondLtMax else "gte"))
+        printLog("yMax is{} the maximal value in CEX prediction".format("" if isYMaxMax else " not"))
+        isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
+        printLog("CEX in full netrowk is {}sporious.".format("" if isSporious else "not "))        
+        if isSporious:
+            printLog("Sporious CEX after end")        
+            raise Exception("Sporious CEX after end.")
+    else:
+        printLog("Found UNSAT in full network")
+
+    resultsJson["subResults"][-1] {"type": "full",
+                                   "index":1,
+                                   "outOf":1,
+                                   "brief" : "Full",
+                                   "runtime" : runtime,
+                                   "runtimeTotal" : runtimeTotal,
+                                   "originalQueryStats" : originalQueryStats,
+                                   "finalQueryStats" : finalQueryStats,
+                                   "SAT" : sat}
     dumpJson(resultsJson)
-    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1    
 
 if sat:
