@@ -233,7 +233,7 @@ for i, mask in enumerate(maskList):
                                       "runtimeTotal": None,
                                       "originalQueryStats" : None,
                                       "finalQueryStats" : None,
-                                      "SAT" : None}
+                                      "SAT" : None})
     dumpJson(resultsJson)
     
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
@@ -247,7 +247,7 @@ for i, mask in enumerate(maskList):
                                       "runtimeTotal" : runtimeTotal,                                      
                                       "originalQueryStats" : originalQueryStats,
                                       "finalQueryStats" : finalQueryStats,
-                                      "SAT" : sat})
+                                      "SAT" : sat}
     dumpJson(resultsJson)
     printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
     currentMbouRun += 1
@@ -301,15 +301,15 @@ else:
     else:
         printLog("Found UNSAT in full network")
 
-    resultsJson["subResults"][-1] {"type": "full",
-                                   "index":1,
-                                   "outOf":1,
-                                   "brief" : "Full",
-                                   "runtime" : runtime,
-                                   "runtimeTotal" : runtimeTotal,
-                                   "originalQueryStats" : originalQueryStats,
-                                   "finalQueryStats" : finalQueryStats,
-                                   "SAT" : sat}
+    resultsJson["subResults"][-1] = {"type": "full",
+                                     "index":1,
+                                     "outOf":1,
+                                    "brief" : "Full",
+                                     "runtime" : runtime,
+                                     "runtimeTotal" : runtimeTotal,
+                                     "originalQueryStats" : originalQueryStats,
+                                     "finalQueryStats" : finalQueryStats,
+                                     "SAT" : sat}
     dumpJson(resultsJson)
     currentMbouRun += 1    
 
