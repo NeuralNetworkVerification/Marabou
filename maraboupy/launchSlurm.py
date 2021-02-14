@@ -4,6 +4,14 @@ import sys
 import subprocess
 from datetime import datetime
 import json
+import itertools
+import argparse
+from cnn_abs import *
+tf.compat.v1.enable_v2_behavior()
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
 
 def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
 
@@ -26,7 +34,8 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
         runBriefs.append('Run with default ("vanilla") Marabou')
         
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
-        jsonDict = {"TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+        jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
+                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : {'MaskCOICfg' : 'CNN Abstraction', 'VanillaCfg' : 'Vanilla Marabou'},
                     "COIRatio"    : ['MaskCOICfg'],
                     "compareProperties": [('VanillaCfg', 'MaskCOICfg')]}
@@ -40,7 +49,57 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
 ####################################################################################################
 ####################################################################################################
 
-batchId = "slurm_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
+def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
+
+    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = 12, 0, 0
+    
+    runCmds = list()
+    runTitles = list()
+    runBriefs = list()
+    title2Label = dict()
+
+    for policy in mnistProp.policies:
+        title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
+        for i in range(numRunsPerType):
+            title = "{}Cfg---{}".format(policy, i)
+            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy])
+            runTitles.append(title)
+            runBriefs.append("Run with abstraction policy {}.".format(policy))
+
+    title2Label["VanillaCfg"] = 'Vanilla Marabou'
+    for i in range(numRunsPerType):
+        title = "VanillaCfg---{}".format(i)
+        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
+        runTitles.append(title)
+        runBriefs.append('Run with default ("vanilla") Marabou')
+
+    with open(batchDirPath + "/plotSpec.json", 'w') as f:
+        jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
+                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "title2Label" : title2Label,
+                    "COIRatio"    : mnistProp.policies,
+                    "compareProperties": list(itertools.combinations(mnistProp.policies, 2)) + [('VanillaCfg', policy) for policy in mnistProp.policies]}
+        json.dump(jsonDict, f, indent = 4)
+
+    TIME_LIMIT = "12:00:00".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
+
+    return runCmds, runTitles, runBriefs, TIME_LIMIT
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+
+experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
+               "AbsPolicies"    : experimentAbsPolicies}
+parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
+parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch", required=True)
+args = parser.parse_args()
+experiment = args.exp
+experimentFunc = experiments[experiment]
+
+####################################################################################################
+
+batchId = "slurm_" + experiment + "_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
 if not os.path.exists(basePath + "logs/"):
     os.mkdir(basePath + "logs/")
@@ -52,8 +111,9 @@ CPUS = 8
 MEM_PER_CPU = "1G"
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
 numRunsPerType = 50
-
-runCmds, runTitles, runBriefs, TIME_LIMIT = experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath)
+    
+runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)    
+    
 sbatchFiles = list()
 for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
 
