@@ -3,6 +3,42 @@ import os
 import sys
 import subprocess
 from datetime import datetime
+import json
+
+def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
+
+    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = 12, 0, 0
+    
+    runCmds = list()
+    runTitles = list()
+    runBriefs = list()    
+
+    for i in range(numRunsPerType):
+        title = "MaskCOICfg---{}".format(i)
+        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i)])
+        runTitles.append(title)
+        runBriefs.append("Run with CNN improvments")
+        
+    for i in range(numRunsPerType):
+        title = "VanillaCfg---{}".format(i)
+        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
+        runTitles.append(title)
+        runBriefs.append('Run with default ("vanilla") Marabou')
+        
+    with open(batchDirPath + "/plotSpec.json", 'w') as f:
+        jsonDict = {"TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "title2Label" : {'MaskCOICfg' : 'CNN Abstraction', 'VanillaCfg' : 'Vanilla Marabou'},
+                    "COIRatio"    : ['MaskCOICfg'],
+                    "compareProperties": [('VanillaCfg', 'MaskCOICfg')]}
+        json.dump(jsonDict, f, indent = 4)
+
+    TIME_LIMIT = "12:00:00".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
+
+    return runCmds, runTitles, runBriefs, TIME_LIMIT
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
 
 batchId = "slurm_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
@@ -11,28 +47,13 @@ if not os.path.exists(basePath + "logs/"):
 batchDirPath = basePath + "logs/" + batchId
 if not os.path.exists(batchDirPath):
     os.mkdir(batchDirPath)
-runCmds = list()
-runTitles = list()
-runBriefs = list()
     
 CPUS = 8
 MEM_PER_CPU = "1G"
-TIME_LIMIT = "12:00:00"
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
 numRunsPerType = 50
 
-for i in range(numRunsPerType):
-    title = "MaskCOICfg---{}".format(i)
-    runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i)])
-    runTitles.append(title)
-    runBriefs.append("Run with CNN improvments")
-
-for i in range(numRunsPerType):
-    title = "VanillaCfg---{}".format(i)
-    runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
-    runTitles.append(title)
-    runBriefs.append('Run with default ("vanilla") Marabou')    
-
+runCmds, runTitles, runBriefs, TIME_LIMIT = experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath)
 sbatchFiles = list()
 for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
 
