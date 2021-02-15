@@ -413,7 +413,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnK
         origMConvPrediction = mnistProp.origMConv.predict(np.array([cex])).argmax()
         origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
         print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
-    plt.title('CEX, MarabouY={}, modelY={}'.format(mbouPrediction, kerasPrediction))
+    plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
     plt.savefig(fName)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
