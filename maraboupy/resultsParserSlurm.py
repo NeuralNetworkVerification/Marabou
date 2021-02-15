@@ -77,7 +77,8 @@ def plotCompareProperties(xDict, yDict):
     setFigSize()
     noWhiteXLabel = xLabel.replace(' ','')
     noWhiteYLabel = yLabel.replace(' ','')
-    plt.savefig("CompareProperties-{}_vs_{}.png".format(noWhiteXLabel, noWhiteYLabel), dpi=100) 
+    plt.savefig("CompareProperties-{}_vs_{}.png".format(noWhiteXLabel, noWhiteYLabel), dpi=100)
+    plt.close()
 
 def plotCOIRatio(resultDict):
     plt.figure()
@@ -90,7 +91,7 @@ def plotCOIRatio(resultDict):
     y2 = [resultDict[sample]["finalPartiallity"]["equations"] for sample in solved]
     c  = [cellColor(resultDict[sample]["result"]) for sample in solved]
     marker = [markerChoice(resultDict[sample]["result"]) for sample in solved]
-    fig.suptitle("CNN abstraction - Variables and Equations Ratio, {} Samples".format(len(solved)))
+    fig.suptitle("{} - Variables and Equations Ratio, {} Samples".format(resultDict["label"], len(solved)))
     ax2.set_xlabel("Number of Runs")
     ax1.set_ylabel("Eventuall Variables Ratio")
     ax2.set_ylabel("Eventuall Equation Ratio")
@@ -105,6 +106,7 @@ def plotCOIRatio(resultDict):
     setFigSize()
     noWhiteLabel = resultDict['label'].replace(' ','')
     plt.savefig("COIRatio-{}.png".format(noWhiteLabel), dpi=100)
+    plt.close()    
 
 ####################################################################################################
 ####################################################################################################
@@ -204,12 +206,15 @@ runResults = [[resultDict[s]["result"]                 if s in resultDict else "
 runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in samplesTotal] for resultDict in resultDicts]
 colors = np.transpose(np.array(runColors))
 df = pd.DataFrame(np.transpose(np.array(runtimes)), columns=tableLabels, index=samplesTotal)
-ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center', cellColours=colors)
+table = ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center', cellColours=colors)
+table.auto_set_font_size(False)
+table.set_fontsize(12)
 
 fig.canvas.draw()
 
 setFigSize()
 plt.savefig("ResultSummary.png", bbox_inches="tight", dpi=100)
+plt.close()
 
 with open('ResultSummary.csv', mode='w') as f:
         wr = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -241,6 +246,7 @@ for resultDict, ax , sampleNum in zip(resultDicts, axes, runSampleNum):
 
     setFigSize()
 plt.savefig("ResultPie.png", dpi=100)
+plt.close()
 
 ####################################################################################################
 ####################################################################################################

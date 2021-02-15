@@ -74,11 +74,12 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
         runBriefs.append('Run with default ("vanilla") Marabou')
 
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
+        policiesCfg = ["{}Cfg".format(policy) for policy in mnistProp.policies]        
         jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
                     "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : title2Label,
-                    "COIRatio"    : mnistProp.policies,
-                    "compareProperties": list(itertools.combinations(mnistProp.policies, 2)) + [('VanillaCfg', policy) for policy in mnistProp.policies]}
+                    "COIRatio"    : policiesCfg,
+                    "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg]}
         json.dump(jsonDict, f, indent = 4)
 
     TIME_LIMIT = "12:00:00".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
@@ -112,8 +113,8 @@ MEM_PER_CPU = "1G"
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
 numRunsPerType = 50
     
-runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)    
-    
+runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
+
 sbatchFiles = list()
 for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
 
