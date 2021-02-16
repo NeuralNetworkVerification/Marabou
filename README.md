@@ -189,7 +189,7 @@ sub-problem that times out will be divided into *2^n* additional sub-problems,
 *--timeout-factor=f*. Number of parallel threads *t* is specified by
 *--num-workers=t*.
 
-So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
+So to solve a problem in SNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
 ```
 build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --snc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
