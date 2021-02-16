@@ -450,7 +450,7 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         mnistProp.printDictToFile(inputDictInner, "DICT_verifyMarabou_InputDict_out")
         mnistProp.printDictToFile(outputDictInner, "DICT_verifyMarabou_OutputDict_out")
         equality = (set(outputDictInner.keys()) == set(outputDict.keys())) and all([outputDict[k] == outputDictInner[k] for k in outputDict.keys()])        
-        return tuple((outputDictInner == outputDict) and equality)
+        return (outputDictInner == outputDict) and equality,
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect. 
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex):
@@ -520,14 +520,14 @@ def genActivationMaskSingleClassRank(intermidModel, prediction):
 #Policy - calculate per class 
 def genActivationMaskMajorityClassVote(intermidModel):
     features = [[x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label] for label in range(mnistProp.num_classes)]
-    actMaps = [meanActivation(intermidModel.predict(feat)) for feat in features]
-    dicriminate = lambda actM : np.square(actM) #FIXME explore discriminating schemes.
+    actMaps = [meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
+    discriminate = lambda actM : np.square(actM) #FIXME explore discriminating schemes.
     actMaps = [discriminate(actMap) for actMap in actMaps]
     sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
-    return genMaskByOrderedInd(sortedIndReverseDiscriminated, stepSize=10)
+    return genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], stepSize=10)
 
 #Policy - most important neurons are the center of the image.
-def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons than the others.
+def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons and add more in every step than the others.
     maskShape = intermidModel.output_shape[1:]
     for thresh in reversed(range(int(min(maskShape)/2))):        
         yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])

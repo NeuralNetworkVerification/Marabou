@@ -264,6 +264,15 @@ for i, mask in enumerate(maskList):
             printLog("Found real CEX in mask number {} out of {}".format(i+1, len(maskList)))
             printLog("successful={}/{}".format(i+1, len(maskList)))
             successful = i
+
+            #FIXME check SingleClass vs AllClass
+            '''maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
+            mask = maskListSingleClass[0]
+            modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+            printLog("yMax={}, ySecond={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
+            _sat, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_mask_{}".format(1), coi=cfg_pruneCOI)
+            printLog("_sat={}".format(_sat))'''
+
             break;
     else:
         printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
@@ -298,6 +307,7 @@ else:
         if isSporious:
             printLog("Sporious CEX after end")        
             raise Exception("Sporious CEX after end.")
+        
     else:
         printLog("Found UNSAT in full network")
 

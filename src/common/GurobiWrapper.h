@@ -180,6 +180,8 @@ public:
     double getObjectiveBound() { return 0; };
     void dump() {}
     static void log( const String & );
+    void dumpModel(__attribute__((unused)) String name) {};
+    void computeIIS();
 };
 
 #endif // ENABLE_GUROBI
