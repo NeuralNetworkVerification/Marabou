@@ -32,7 +32,30 @@ tf.compat.v1.enable_v2_behavior()
 
 def dumpJson(jsonDict):
     with open("Results.json", "w") as f:
-        json.dump(jsonDict, f, indent = 4)    
+        json.dump(jsonDict, f, indent = 4)
+
+def subResultAppend(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None):
+    resultsJson["subResults"].append({"type": runType,
+                                      "index" : index,
+                                      "outOf" : numMasks,
+                                      "runtime" : runtime,
+                                      "runtimeTotal":runtimeTotal,
+                                      "originalQueryStats" : originalQueryStats,
+                                      "finalQueryStats" : finalQueryStats,
+                                      "SAT" : sat})
+    dumpJson(resultsJson)
+
+def subResultUpdate(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None):
+    resultsJson["subResults"][-1] = {"type": runType,
+                                     "index" : index,
+                                     "outOf" : numMasks,
+                                     "runtime" : runtime,
+                                     "runtimeTotal":runtimeTotal,
+                                     "originalQueryStats" : originalQueryStats,
+                                     "finalQueryStats" : finalQueryStats,
+                                     "SAT" : sat}
+    dumpJson(resultsJson)
+
     
 
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
@@ -186,14 +209,6 @@ yPredictNoMax[0][yMax] = np.min(yPredict)
 ySecond = yPredictNoMax.argmax()
 if ySecond == yMax:
     ySecond = 0 if yMax > 0 else 1
-
-'''yPredictUnproc = modelOrig.predict(np.array([xAdv]))
-yMaxUnproc = yPredictUnproc.argmax()
-yPredictNoMaxUnproc = np.copy(yPredictUnproc)
-yPredictNoMaxUnproc[0][yMaxUnproc] = np.min(yPredictUnproc)
-ySecondUnproc = yPredictNoMaxUnproc.argmax()
-if ySecondUnproc == yMaxUnproc:
-    ySecondUnproc = 0 if yMaxUnproc > 0 else 1'''
     
 fName = "xAdv.png"
 printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, cfg_sampleIndex, yAdv))
@@ -221,28 +236,9 @@ for i, mask in enumerate(maskList):
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    resultsJson["subResults"].append({"type": "mask",
-                                      "index" : i+1,
-                                      "outOf" : len(maskList),
-                                      "brief" : "Mask {}/{}".format(i+1, len(maskList)),
-                                      "runtime" : None,
-                                      "runtimeTotal": None,
-                                      "originalQueryStats" : None,
-                                      "finalQueryStats" : None,
-                                      "SAT" : None})
-    dumpJson(resultsJson)
-    
+    subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))    
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
-    resultsJson["subResults"][-1] = {"type": "mask",
-                                      "index" : i+1,
-                                      "outOf" : len(maskList),
-                                      "brief" : "Mask {}/{}".format(i+1, len(maskList)),
-                                      "runtime" : time.time() - startLocal,
-                                      "runtimeTotal" : time.time() - startTotal,
-                                      "originalQueryStats" : originalQueryStats,
-                                      "finalQueryStats" : finalQueryStats,
-                                      "SAT" : sat}
-    dumpJson(resultsJson)
+    subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
     printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
     if sat:
         isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
@@ -252,11 +248,11 @@ for i, mask in enumerate(maskList):
             successful = i
 
             #FIXME check SingleClass vs AllClass
-            maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
-            modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, maskListSingleClass[0])
-            printLog("yMax={}, ySecond={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
-            _sat, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_mask_{}".format(1), coi=cfg_pruneCOI)
-            printLog("_sat={}".format(_sat))            
+            #maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
+            #modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, maskListSingleClass[0])
+            #printLog("yMax={}, ySecond={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
+            #_sat, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbsSingle, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_mask_{}".format(1), coi=cfg_pruneCOI)
+            #printLog("_sat={}".format(_sat))            
 
             break;
     else:
@@ -267,17 +263,9 @@ else:
     reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     startLocal = time.time()
-    resultsJson["subResults"].append({"type": "full",
-                                      "index":1,
-                                      "outOf":1,
-                                      "brief" : "Full",
-                                      "runtime" : None,
-                                      "runtimeTotal" : None,
-                                      "originalQueryStats" : None,
-                                      "finalQueryStats" : None,
-                                      "SAT" : None})
-    dumpJson(resultsJson)    
+    subResultAppend(resultsJson, runType="full")
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full", coi=cfg_pruneCOI)
+    subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
     printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
     successful = len(maskList)
     if sat:
@@ -288,22 +276,11 @@ else:
     else:
         printLog("Found UNSAT in full network")
 
-    resultsJson["subResults"][-1] = {"type": "full",
-                                     "index":1,
-                                     "outOf":1,
-                                     "brief" : "Full",
-                                     "runtime" : time.time() - startLocal,
-                                     "runtimeTotal" : time.time() - startTotal,
-                                     "originalQueryStats" : originalQueryStats,
-                                     "finalQueryStats" : finalQueryStats,
-                                     "SAT" : sat}
-    dumpJson(resultsJson)
-
 printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else printLog("successful=Full")
+printLog("ReachedFinal={}".format(reachedFinal))
 
 if sat:
     printLog("SAT")    
-    printLog("ReachedFinal={}".format(reachedFinal))    
     if cfg_doubleCheck:
         verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou", fromImage=cexFromImage)
         print("verifyMarabou={}".format(verificationResult))

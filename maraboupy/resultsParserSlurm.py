@@ -206,7 +206,7 @@ runResults = [[resultDict[s]["result"]                 if s in resultDict else "
 runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in samplesTotal] for resultDict in resultDicts]
 colors = np.transpose(np.array(runColors))
 df = pd.DataFrame(np.transpose(np.array(runtimes)), columns=tableLabels, index=samplesTotal)
-table = ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc='center', cellColours=colors)
+table = ax.table(cellText=df.values, colLabels=df.columns, colWidths=[2.0 / len(resultDicts)] * len(resultDicts), rowLabels=df.index, loc='center', cellColours=colors)
 table.auto_set_font_size(False)
 table.set_fontsize(12)
 
