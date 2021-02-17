@@ -154,11 +154,12 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
     print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
     print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
 
-    if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-    #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-        print("Prediction aligned")    
-    else:
-        print("Prediction not aligned")
+    if np.all(np.equal(mask, np.ones_like(mask))):
+        if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+            #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+            print("Prediction aligned")    
+        else:
+            print("Prediction not aligned")
 
     return clnM
 
@@ -453,25 +454,18 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         return (outputDictInner == outputDict) and equality,
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect. 
-def isCEXSporious(model, x, inDist, yCorrect, yBad, cex):
-    #print("x={}".format(x))
-    #print("cex={}".format(cex))
-    #print("x - cex={}".format(x - cex))
-    #print("|x - cex|={}".format(np.absolute(x - cex)))
+def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, sporiousStrict=False):
     if not inBoundsInftyBall(x, inDist, cex):        
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))
-    if prediction.argmax() == yCorrect:
-        return True, True
-    elif prediction[0,yBad] < prediction[0,yCorrect]:
-        return False, True
-    else:
-        return False, False                
+    if not sporiousStrict:
+        return prediction.argmax() == yCorrect
+    return prediction[0,yBad] < prediction[0,yCorrect]
 
 def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.SingleClassRank):
     if policy == mnistProp.Policy.AllClassRank or policy == mnistProp.Policy.AllClassRank.name:
-        return genActivationMaskAllClassRank(intermidModel)
-    elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:
+        return genActivationMaskAllClassRank(intermidModel)        
+    elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:        
         return genActivationMaskSingleClassRank(intermidModel, prediction)
     elif policy == mnistProp.Policy.MajorityClassVote or policy == mnistProp.Policy.MajorityClassVote.name:
         return genActivationMaskMajorityClassVote(intermidModel)
