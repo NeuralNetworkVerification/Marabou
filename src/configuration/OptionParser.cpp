@@ -47,7 +47,7 @@ void OptionParser::initialize()
           "Use the split-and-conquer solving mode: largest-interval/polarity/auto. default: auto" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
-          "Restore tree states in snc mode" )
+          "Restore tree states in SnC mode" )
         ( "dump-bounds",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
           "Dump the bounds after preprocessing" )
