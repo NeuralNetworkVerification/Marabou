@@ -182,23 +182,22 @@ yAdv = mnistProp.y_test[cfg_sampleIndex]
 yPredict = modelOrigDense.predict(np.array([xAdv]))
 yMax = yPredict.argmax()
 yPredictNoMax = np.copy(yPredict)
-yPredictNoMax[0][yMax] = 0
+yPredictNoMax[0][yMax] = np.min(yPredict)
 ySecond = yPredictNoMax.argmax()
 if ySecond == yMax:
     ySecond = 0 if yMax > 0 else 1
 
-yPredictUnproc = modelOrig.predict(np.array([xAdv]))
+'''yPredictUnproc = modelOrig.predict(np.array([xAdv]))
 yMaxUnproc = yPredictUnproc.argmax()
 yPredictNoMaxUnproc = np.copy(yPredictUnproc)
-yPredictNoMaxUnproc[0][yMaxUnproc] = 0
+yPredictNoMaxUnproc[0][yMaxUnproc] = np.min(yPredictUnproc)
 ySecondUnproc = yPredictNoMaxUnproc.argmax()
 if ySecondUnproc == yMaxUnproc:
-    ySecondUnproc = 0 if yMaxUnproc > 0 else 1
+    ySecondUnproc = 0 if yMaxUnproc > 0 else 1'''
     
 fName = "xAdv.png"
-printLog("Printing original input: {}".format(fName))
+printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, cfg_sampleIndex, yAdv))
 plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
-#plt.imshow(xAdv.reshape(xAdv.shape[:-1]), cmap='Greys')
 plt.savefig(fName)
 
 resultsJson["yDataset"] = int(yAdv.item())
@@ -209,13 +208,10 @@ dumpJson(resultsJson)
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
 if not cfg_maskAbstract:
     maskList = []
-    #maskList = [np.ones_like(maskList[0])]
 printLog("Created {} masks".format(len(maskList)))
 
 printLog("Strating verification phase")
 
-currentMbouRun = 0
-isSporious = False
 reachedFull = False
 successful = None
 reachedFinal = False
@@ -237,46 +233,34 @@ for i, mask in enumerate(maskList):
     dumpJson(resultsJson)
     
     sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
-    runtime = time.time() - startLocal
-    runtimeTotal = time.time() - startTotal    
     resultsJson["subResults"][-1] = {"type": "mask",
                                       "index" : i+1,
                                       "outOf" : len(maskList),
                                       "brief" : "Mask {}/{}".format(i+1, len(maskList)),
-                                      "runtime" : runtime,
-                                      "runtimeTotal" : runtimeTotal,                                      
+                                      "runtime" : time.time() - startLocal,
+                                      "runtimeTotal" : time.time() - startTotal,
                                       "originalQueryStats" : originalQueryStats,
                                       "finalQueryStats" : finalQueryStats,
                                       "SAT" : sat}
     dumpJson(resultsJson)
-    printLog("\n\n\n ----- Finished Solving mask number {}. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(i+1, str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))
-    currentMbouRun += 1
-    isSporious = None
+    printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
     if sat:
-        printLog("Found CEX in mask number {} out of {}, checking if sporious.".format(i+1, len(maskList)))
-        isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
-        printLog("CEX has ySecond {} yMax".format("lt" if isSecondLtMax else "gte"))
-        printLog("yMax is{} the maximal value in CEX prediction".format("" if isYMaxMax else " not"))
-        isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
-        printLog("CEX in mask number {} out of {} is {}sporious.".format(i+1, len(maskList), "" if isSporious else "not "))
+        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
+        printLog("Found {} CEX in mask {}/{}.".format(i+1, len(maskList), "sporious" if isSporious else "real"))        
 
         if not isSporious:
-            printLog("Found real CEX in mask number {} out of {}".format(i+1, len(maskList)))
-            printLog("successful={}/{}".format(i+1, len(maskList)))
             successful = i
 
             #FIXME check SingleClass vs AllClass
-            '''maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
-            mask = maskListSingleClass[0]
-            modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+            maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
+            modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, maskListSingleClass[0])
             printLog("yMax={}, ySecond={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
             _sat, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_mask_{}".format(1), coi=cfg_pruneCOI)
-            printLog("_sat={}".format(_sat))'''
+            printLog("_sat={}".format(_sat))            
 
             break;
     else:
         printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
-        printLog("successful={}/{}".format(i+1, len(maskList)))
         successful = i
         break;
 else:
@@ -293,56 +277,44 @@ else:
                                       "finalQueryStats" : None,
                                       "SAT" : None})
     dumpJson(resultsJson)    
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full{}".format(currentMbouRun), coi=cfg_pruneCOI)
-    runtime = time.time() - startLocal
-    runtimeTotal = time.time() - startTotal    
-    printLog("\n\n\n ----- Finished Solving Full. TimeLocal={}, TimeTotal={} ----- \n\n\n".format(str(datetime.timedelta(seconds=runtime)), str(datetime.timedelta(seconds=time.time()-startTotal))))    
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full", coi=cfg_pruneCOI)
+    printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
+    successful = len(maskList)
     if sat:
-        printLog("Found CEX in full network, checking if sporious.")        
-        isYMaxMax, isSecondLtMax = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex)
-        printLog("CEX has ySecond {} yMax".format("lt" if isSecondLtMax else "gte"))
-        printLog("yMax is{} the maximal value in CEX prediction".format("" if isYMaxMax else " not"))
-        isSporious = isSecondLtMax if cfg_sporiousStrict else isYMaxMax
-        printLog("CEX in full netrowk is {}sporious.".format("" if isSporious else "not "))        
+        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
+        printLog("Found {} CEX in full network.".format("sporious" if isSporious else "real"))
         if isSporious:
-            printLog("Sporious CEX after end")        
-            raise Exception("Sporious CEX after end.")
-        
+            raise Exception("Sporious CEX at full network.")
     else:
         printLog("Found UNSAT in full network")
 
     resultsJson["subResults"][-1] = {"type": "full",
                                      "index":1,
                                      "outOf":1,
-                                    "brief" : "Full",
-                                     "runtime" : runtime,
-                                     "runtimeTotal" : runtimeTotal,
+                                     "brief" : "Full",
+                                     "runtime" : time.time() - startLocal,
+                                     "runtimeTotal" : time.time() - startTotal,
                                      "originalQueryStats" : originalQueryStats,
                                      "finalQueryStats" : finalQueryStats,
                                      "SAT" : sat}
     dumpJson(resultsJson)
-    currentMbouRun += 1    
+
+printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else printLog("successful=Full")
 
 if sat:
-    printLog("SAT, reachedFinal={}".format(reachedFinal))    
+    printLog("SAT")    
+    printLog("ReachedFinal={}".format(reachedFinal))    
     if cfg_doubleCheck:
-        verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou_{}".format(currentMbouRun-1), fromImage=cexFromImage)
+        verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou", fromImage=cexFromImage)
         print("verifyMarabou={}".format(verificationResult))
         if not verificationResult[0]:
             raise Exception("Inconsistant Marabou result, marabou double check failed")
-    if modelOrigDense.predict(np.array([cex])).argmax() != ySecond:
-        printLog("Unexepcted prediction result, cex result is {}".format(modelOrigDense.predict(np.array([cex])).argmax()))
-    printLog("Found CEX in origin")
-    printLog("successful=original")
-    printLog("SAT")
 else:
     printLog("UNSAT")
 
-runtimeTotal = time.time() - startTotal
-
 resultsJson["SAT"] = sat
 resultsJson["Result"] = "SAT" if sat else "UNSAT"    
-resultsJson["totalRuntime"] = runtimeTotal
+resultsJson["totalRuntime"] = time.time() - startTotal
 dumpJson(resultsJson)    
 
 printLog("Log files at {}".format(currPath))
