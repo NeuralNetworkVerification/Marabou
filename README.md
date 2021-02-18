@@ -180,18 +180,18 @@ on Windows.
 Please see our [documentation](https://neuralnetworkverification.github.io/Marabou/)
 for the python interface, which contains examples, API documentation, and a developer's guide.
 
-### Using the Divide and Conquer (DNC) mode
-In the DNC mode, activated by *--dnc* Marabou decomposes the problem into *n0*
+### Using the Split and Conquer (SNC) mode
+In the SNC mode, activated by *--snc* Marabou decomposes the problem into *2^n0*
 sub-problems, specified by *--initial-divides=n0*. Each sub-problem will be
 solved with initial timeout of *t0*, supplied by *--initial-timeout=t0*. Every
-sub-problem that times out will be divided into *n* additional sub-problems,
+sub-problem that times out will be divided into *2^n* additional sub-problems,
 *--num-online-divides=n*, and the timeout is multiplied by a factor of *f*,
 *--timeout-factor=f*. Number of parallel threads *t* is specified by
 *--num-workers=t*.
 
-So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
+So to solve a problem in SNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
 ```
-build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
+build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --snc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
 
 ### Use LP Relaxation
