@@ -1,10 +1,4 @@
-[![Marabou](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml/badge.svg)](
-https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml)
-[![codecov.io](
-  https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](
-    https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
-
-#  Marabou
+#  Marabou [![Marabou](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml/badge.svg)](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml) [![codecov.io](https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
 Deep neural networks are revolutionizing the way complex systems are designed.
 Instead of spending long hours hand-crafting complex software, many engineers
 now opt to use deep neural networks (DNNs) - machine learning models, created by
