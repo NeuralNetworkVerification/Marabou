@@ -39,7 +39,7 @@ For more information about the input formats please check the
 
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
+The latest version of Marabou is available on https://github.com/NeuralNetworkVerification/Marabou.
 
 Build and Dependencies
 ------------------------------------------------------------------------------
