@@ -37,6 +37,11 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 For more information about the input formats please check the
 [wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
+Research
+------------------------------------------------------------------------------
+More information about publications involving Marabou can be found
+[here](https://neuralnetworkverification.github.io/).
+
 Download
 ------------------------------------------------------------------------------
 The latest version of Marabou is available on https://github.com/NeuralNetworkVerification/Marabou.
