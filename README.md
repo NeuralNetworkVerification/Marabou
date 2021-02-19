@@ -101,6 +101,9 @@ make check -j PROC_NUM
 ```
 ### Build Instructions for Windows using Visual Studio
 
+We no longer provide Windows support. The below instructions apply to commits up
+to [0fc1d10](https://github.com/NeuralNetworkVerification/Marabou/commit/0fc1d10ff0e1859cf32abe54eb22f3ec0fec59f6).
+
 First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
 Ensure that CMake is installed and added to your PATH.
 
