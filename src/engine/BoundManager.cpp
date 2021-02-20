@@ -122,16 +122,16 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
     return false;
 }
 
-double BoundManager::getLowerBound( unsigned variable )
+double BoundManager::getLowerBound( unsigned variable ) const
 {
     ASSERT( variable < _size );
-    return *_lowerBounds[variable];
+    return *_lowerBounds.get(variable);
 }
 
-double BoundManager::getUpperBound( unsigned variable )
+double BoundManager::getUpperBound( unsigned variable ) const
 {
     ASSERT( variable < _size );
-    return *_upperBounds[variable];
+    return *_upperBounds.get(variable);
 }
 
 void BoundManager::getTightenings( List<Tightening> &tightenings )

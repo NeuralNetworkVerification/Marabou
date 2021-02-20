@@ -83,8 +83,8 @@ public:
     /*
        Return current bound value.
      */
-    double getLowerBound( unsigned variable );
-    double getUpperBound( unsigned variable );
+    double getLowerBound( unsigned variable ) const;
+    double getUpperBound( unsigned variable ) const;
 
     /*
        Obtain a list of all the bound updates since the last call to
