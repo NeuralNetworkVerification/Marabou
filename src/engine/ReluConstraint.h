@@ -16,6 +16,8 @@
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
+#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 #include <cmath>

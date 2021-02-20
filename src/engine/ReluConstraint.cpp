@@ -12,7 +12,10 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "ReluConstraint.h"
+
 #include "ConstraintBoundTightener.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -21,7 +24,6 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluConstraint.h"
 #include "MarabouError.h"
 #include "Statistics.h"
 #include "TableauRow.h"
