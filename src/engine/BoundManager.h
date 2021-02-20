@@ -96,7 +96,7 @@ public:
       Returns true if the bounds for the variable is valid, used to
       detect a conflict state.
     */
-    bool consistentBounds( unsigned variable );
+    bool consistentBounds( unsigned variable ) const;
 
     /*
        Register Tableau reference for callbacks from tighten*Bound methods.

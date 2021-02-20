@@ -152,7 +152,7 @@ void BoundManager::getTightenings( List<Tightening> &tightenings )
     }
 }
 
-bool BoundManager::consistentBounds( unsigned variable )
+bool BoundManager::consistentBounds( unsigned variable ) const
 {
     ASSERT( variable < _size );
     return FloatUtils::gte( getUpperBound( variable ), getLowerBound( variable ) );
