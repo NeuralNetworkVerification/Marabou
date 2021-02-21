@@ -94,8 +94,10 @@ experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                "AbsPolicies"    : experimentAbsPolicies}
 parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
 parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch", required=True)
+parser.add_argument("--runs_per_type", type=int, default=50, help="Number of runs per type.")
 args = parser.parse_args()
 experiment = args.exp
+numRunsPerType = args.runs_per_type
 experimentFunc = experiments[experiment]
 
 ####################################################################################################
@@ -111,7 +113,6 @@ if not os.path.exists(batchDirPath):
 CPUS = 8
 MEM_PER_CPU = "1G"
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
-numRunsPerType = 50
     
 runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
 
