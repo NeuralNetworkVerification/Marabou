@@ -302,14 +302,11 @@ def setUnconnectedAsInputs(net):
         varsWithIngoingEdgesOrInputs.add(absCons[1])
     varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
     for v in varsWithoutIngoingEdges:
-        if not net.lowerBoundExists(v):
-            #net.setLowerBound(v, -sys.float_info.max)
+        if not net.lowerBoundExists(v):          
             net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
-            #net.setUpperBound(v,  sys.float_info.max)
             net.setUpperBound(v,  100000)            
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
-    #exit()
     
 def setCOIBoundes(net, init):
 
