@@ -250,10 +250,13 @@ for i, mask in enumerate(maskList):
             #FIXME check SingleClass vs AllClass
             #maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
             #modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, maskListSingleClass[0])
-            #printLog("yMax={}, ySecond={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
-            #_sat, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbsSingle, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_mask_{}".format(1), coi=cfg_pruneCOI)
-            #printLog("_sat={}".format(_sat))            
-
+            #_sat1, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbsSingle, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_{}".format(1), coi=cfg_pruneCOI)
+            #_sat2, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbsSingle, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_{}".format(2), coi=False)
+            #printLog("yMax={}, ySecond={}, AllClassPredictCEX={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
+            #printLog("yPredictAll={}".format(modelAbs.predict(np.array([cex]))))
+            #printLog("yPredictSingle={}".format(modelAbsSingle.predict(np.array([cex]))))
+            #printLog("_sat1 (COI) = {}".format(_sat1))            
+            #printLog("_sat2 (no COI) = {}".format(_sat2))            
             break;
     else:
         printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
