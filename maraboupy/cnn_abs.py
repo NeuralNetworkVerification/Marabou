@@ -287,6 +287,30 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
         cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction, inputDict, outputDict 
 
+def setUnconnectedAsInputs(net):
+    varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr)])
+    for eq in net.equList:
+        if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
+            varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
+    for maxCons in net.maxList:
+        varsWithIngoingEdgesOrInputs.add(maxCons[1])
+    for reluCons in net.reluList:
+        varsWithIngoingEdgesOrInputs.add(reluCons[1])
+    for signCons in net.signList:
+        varsWithIngoingEdgesOrInputs.add(signCons[1])
+    for absCons in net.absList:
+        varsWithIngoingEdgesOrInputs.add(absCons[1])
+    varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
+    for v in varsWithoutIngoingEdges:
+        if not net.lowerBoundExists(v):
+            #net.setLowerBound(v, -sys.float_info.max)
+            net.setLowerBound(v, -100000)
+        if not net.upperBoundExists(v):
+            #net.setUpperBound(v,  sys.float_info.max)
+            net.setUpperBound(v,  100000)            
+    net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
+    #exit()
+    
 def setCOIBoundes(net, init):
 
     print("len(net.equList)={}".format(len(net.equList)))
@@ -344,6 +368,8 @@ def setCOIBoundes(net, init):
             newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in reach]
             if (eq.addendList[-1][1] not in reach) or len(newEq.addendList) == 1:
                 continue
+            if all([el[0] == 0 for el in eq.addendList[:-1]]):
+                continue
             if newEq.addendList:
                 newEquList.append(newEq)
         else:
@@ -378,7 +404,6 @@ def setCOIBoundes(net, init):
     print("len(net.inputVars)={}".format(len(net.inputVars)))
     print("len(net.outputVars)={}".format(len(net.outputVars)))    
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
-    #exit()
     return inputVarsMapping, outputVarsMapping
     
 def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras", coi=True):
@@ -397,6 +422,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnK
         plt.savefig('COI_{}'.format(runName))    
     else:
         inputVarsMapping, outputVarsMapping = None, None
+    setUnconnectedAsInputs(modelOnnxMarabou)
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
     finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
