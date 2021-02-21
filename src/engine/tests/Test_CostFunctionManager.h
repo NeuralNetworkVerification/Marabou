@@ -62,7 +62,7 @@ public:
 
         unsigned n = 5;
         unsigned m = 3;
-        tableau.setDimensions( m, n );
+        tableau.setDimensions( m, n, m, n );
 
         TS_ASSERT( manager = new CostFunctionManager( &tableau ) );
         TS_ASSERT_THROWS_NOTHING( manager->initialize() );
@@ -122,7 +122,7 @@ public:
 
         unsigned n = 5;
         unsigned m = 3;
-        tableau.setDimensions( m, n );
+        tableau.setDimensions( m, n, m, n );
 
         TS_ASSERT( manager = new CostFunctionManager( &tableau ) );
         TS_ASSERT_THROWS_NOTHING( manager->initialize() );

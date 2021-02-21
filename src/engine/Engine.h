@@ -180,6 +180,8 @@ private:
         PERFORMED_WEAK_RESTORATION = 2,
     };
 
+    int _work_alloc;
+
 
     /*
       Perform bound tightening operations that require

@@ -45,7 +45,7 @@ public:
     {
         ConstraintBoundTightener tightener( *tableau );
 
-        tableau->setDimensions( 2, 5 );
+        tableau->setDimensions( 2, 5, 2, 5 );
 
         // Current bounds:
         //  0 <= x0 <= 0

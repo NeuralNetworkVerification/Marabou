@@ -44,7 +44,7 @@ public:
       n: total number of variables
       m: number of constraints (rows)
     */
-    void setDimensions( unsigned m, unsigned n );
+    void setDimensions( unsigned m, unsigned n, unsigned alloc_m, unsigned alloc_n );
 
     /*
       Initialize the constraint matrix
@@ -461,8 +461,8 @@ private:
     /*
       The dimensions of matrix A
     */
-    unsigned _n;
-    unsigned _m;
+    unsigned _n, _n_alloc;
+    unsigned _m, _m_alloc;
 
     /*
       The constraint matrix A, and a collection of its

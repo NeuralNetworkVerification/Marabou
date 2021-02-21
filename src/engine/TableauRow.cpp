@@ -29,6 +29,13 @@ TableauRow::~TableauRow()
     delete[] _row;
 }
 
+void TableauRow::reset() {
+    for (unsigned i = 0; i < _size; ++i) {
+        _row[i]._var = 0;
+        _row[i]._coefficient = 0.0;
+   }
+}
+
 double TableauRow::operator[]( unsigned index ) const
 {
     return _row[index]._coefficient;

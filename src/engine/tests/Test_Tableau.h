@@ -114,7 +114,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < tableau->getN(); ++i )
@@ -132,7 +132,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -177,7 +177,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         initializeTableauValues( *tableau );
 
         for ( unsigned i = 0; i < 4; ++i )
@@ -234,7 +234,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -286,7 +286,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -338,7 +338,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -449,7 +449,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -511,7 +511,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -589,7 +589,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -798,7 +798,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -1001,7 +1001,7 @@ public:
 
         // Initialization steps
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -1129,7 +1129,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -1286,7 +1286,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 
@@ -1363,7 +1363,7 @@ public:
 
         TS_ASSERT( tableau = new Tableau );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7, 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
 

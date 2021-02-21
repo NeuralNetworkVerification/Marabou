@@ -61,6 +61,7 @@ public:
     double operator[]( unsigned index ) const;
 
     void dump() const;
+    void reset();
 };
 
 #endif // __TableauRow_h__

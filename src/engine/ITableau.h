@@ -93,7 +93,7 @@ public:
 
     virtual ~ITableau() {};
 
-    virtual void setDimensions( unsigned m, unsigned n ) = 0;
+    virtual void setDimensions( unsigned m, unsigned n, unsigned m_alloc, unsigned n_alloc ) = 0;
     virtual void setConstraintMatrix( const double *A ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;

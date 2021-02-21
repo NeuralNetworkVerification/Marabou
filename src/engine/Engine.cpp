@@ -32,7 +32,8 @@
 #include "TimeUtils.h"
 
 Engine::Engine()
-    : _rowBoundTightener( *_tableau )
+    : _work_alloc( 0 )
+    , _rowBoundTightener( *_tableau )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -73,6 +74,7 @@ Engine::~Engine()
     {
         delete[] _work;
         _work = NULL;
+        _work_alloc = 0;
     }
 }
 
@@ -83,15 +85,21 @@ void Engine::setVerbosity( unsigned verbosity )
 
 void Engine::adjustWorkMemorySize()
 {
+    int new_alloc = _tableau->getM();
+
+    if ( _work_alloc >= new_alloc ) return;
+
     if ( _work )
     {
         delete[] _work;
         _work = NULL;
+        _work_alloc = 0;
     }
 
-    _work = new double[_tableau->getM()];
+    _work = new double[new_alloc];
     if ( !_work )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
+    _work_alloc = new_alloc;
 }
 
 bool Engine::solve( unsigned timeoutInSeconds )
@@ -213,6 +221,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 _smtCore.performSplit();
                 splitJustPerformed = true;
+
+                _precisionRestorer.restoreTableau( *this, *_tableau, _smtCore, PrecisionRestorer::RESTORE_BASICS );
+                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+                _rowBoundTightener->clear();
+                _constraintBoundTightener->resetBounds();
+
                 continue;
             }
 
@@ -1009,7 +1023,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     unsigned m = equations.size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
-    _tableau->setDimensions( m, n );
+    _tableau->setDimensions( m, n, m, n );
 
     adjustWorkMemorySize();
 
