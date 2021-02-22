@@ -82,7 +82,7 @@ bool BoundManager::tightenLowerBound( unsigned variable, double value )
 {
     bool tightened = setLowerBound( variable, value );
     if ( tightened && _tableau != nullptr )
-        _tableau->ensureNonBasicVariableGTLB( variable, value );
+        _tableau->updateVariableToComplyWithLowerBoundUpdate( variable, value );
     return tightened;
 }
 
@@ -90,7 +90,7 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value )
 {
     bool tightened = setUpperBound( variable, value );
     if ( tightened && _tableau != nullptr )
-        _tableau->ensureNonBasicVariableLTUB( variable, value );
+        _tableau->updateVariableToComplyWithUpperBoundUpdate( variable, value );
     return tightened;
 }
 

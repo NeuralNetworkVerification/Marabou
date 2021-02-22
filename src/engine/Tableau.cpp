@@ -1705,8 +1705,8 @@ bool Tableau::allBoundsValid() const
     return _boundsValid;
 }
 
-// Ensure that non-basic variables are within bounds
-void Tableau::ensureNonBasicVariableGTLB( unsigned variable, double value )
+
+void Tableau::updateVariableAfterLowerBoundUpdate( unsigned variable, double value )
 {
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
@@ -1725,9 +1725,7 @@ void Tableau::ensureNonBasicVariableGTLB( unsigned variable, double value )
     }
 }
 
-
-// Ensure that non-basic variables are within bounds
-void Tableau::ensureNonBasicVariableLTUB( unsigned variable, double value )
+void Tableau::updateVariableAfterUpperBoundUpdate( unsigned variable, double value )
 {
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
@@ -1758,7 +1756,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
 
     setLowerBound( variable, value );
 
-    ensureNonBasicVariableGTLB( variable, value );
+    updateVariableAfterLowerBoundUpdate( variable, value );
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1773,7 +1771,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 
     setUpperBound( variable, value );
 
-    ensureNonBasicVariableLTUB( variable, value );
+    updateVariableAfterUpperBoundUpdate( variable, value );
 }
 
 unsigned Tableau::addEquation( const Equation &equation )
