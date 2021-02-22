@@ -133,9 +133,9 @@ void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
+        NeuronIndex sourceIndex = *( _layer->
+                                     getActivationSources( i ).begin() );
         DEBUG({
-                NeuronIndex sourceIndex = *( _layer->
-                                             getActivationSources( i ).begin() );
                 ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
             });
 
@@ -162,7 +162,7 @@ void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
             // The symbolic lower- and upper- bounds of the j-th neuron in the
             // target layer are ... + weightLb * f_i + ...
             // and ... + weightUb * f_i + ..., respectively.
-            unsigned index = i * targetLayerSize + j;
+            unsigned index = sourceIndex._neuron * targetLayerSize + j;
 
             // Update the symbolic lower bound
             double weightLb = symbolicLb[index];
