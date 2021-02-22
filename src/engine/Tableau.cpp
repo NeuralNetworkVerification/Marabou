@@ -1706,7 +1706,7 @@ bool Tableau::allBoundsValid() const
 }
 
 
-void Tableau::updateVariableAfterLowerBoundUpdate( unsigned variable, double value )
+void Tableau::updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value )
 {
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
@@ -1725,7 +1725,7 @@ void Tableau::updateVariableAfterLowerBoundUpdate( unsigned variable, double val
     }
 }
 
-void Tableau::updateVariableAfterUpperBoundUpdate( unsigned variable, double value )
+void Tableau::updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value )
 {
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
@@ -1756,7 +1756,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
 
     setLowerBound( variable, value );
 
-    updateVariableAfterLowerBoundUpdate( variable, value );
+    updateVariableToComplyWithLowerBoundUpdate( variable, value );
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1771,7 +1771,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 
     setUpperBound( variable, value );
 
-    updateVariableAfterUpperBoundUpdate( variable, value );
+    updateVariableToComplyWithUpperBoundUpdate( variable, value );
 }
 
 unsigned Tableau::addEquation( const Equation &equation )
