@@ -11,7 +11,7 @@ import os
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
 TOL = 1e-4                                 # Set tolerance for checking Marabou evaluations
-NETWORK_FOLDER = "./../../resources/onnx/"   # Folder for test networks
+NETWORK_FOLDER = "../../resources/onnx/"   # Folder for test networks
 np.random.seed(123)                        # Seed random numbers for repeatability
 NUM_RAND = 10                              # Default number of random test points per example
 
