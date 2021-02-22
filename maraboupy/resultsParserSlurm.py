@@ -8,6 +8,7 @@ import json
 import csv
 import pandas as pd
 from matplotlib.ticker import MaxNLocator
+from datetime import datetime
 
 def pctFunc(pct, data):
     absolute = int(np.round(pct/100.*np.sum(data)))
@@ -128,7 +129,7 @@ args = parser.parse_args()
 ####################################################################################################
 
 if os.path.isfile(os.getcwd() + "/plotSpec.json"):
-    with open("plotSpec.json", "r") as f:
+    with open(os.getcwd() + "/plotSpec.json", "r") as f:
         plotSpec = json.load(f)
         comparePropertiesPairs = plotSpec["compareProperties"]
         COIRatioKeys  = plotSpec["COIRatio"] 
@@ -182,6 +183,11 @@ for fullpath in resultsFiles:
         results[runTitle]["label"] = runTitleToLabel[runTitle]
 
 resultDicts = list(results.values())
+
+graphDir = os.getcwd() + "/__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
+if not os.path.exists(graphDir):
+    os.mkdir(graphDir)
+os.chdir(graphDir)
 
 ####################################################################################################
 ####################################################################################################
