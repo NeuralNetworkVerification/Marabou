@@ -233,6 +233,11 @@ struct MarabouOptions {
     std::string _sncSplittingStrategyString;
 };
 
+bool processInputQuery(InputQuery &inputQuery) {
+        Engine engine;
+        return engine.processInputQuery(inputQuery);
+}
+
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
 std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
@@ -309,6 +314,17 @@ InputQuery loadQuery(std::string filename){
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
+    m.def("processInputQuery", &processInputQuery, R"pbdoc(
+        Takes in a description of the InputQuery, perform engine::processInputQuery and return False if found UNSAT else true.
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+
+        Returns:
+            (bool): False if found UNSAT query, else True.
+        )pbdoc",
+        py::arg("inputQuery") = "");
+    
     m.def("solve", &solve, R"pbdoc(
         Takes in a description of the InputQuery and returns the solution
 
