@@ -1,8 +1,4 @@
-[![codecov.io](
-  https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](
-    https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
-
-#  Marabou
+#  Marabou [![Marabou](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml/badge.svg)](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml) [![codecov.io](https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
 Deep neural networks are revolutionizing the way complex systems are designed.
 Instead of spending long hours hand-crafting complex software, many engineers
 now opt to use deep neural networks (DNNs) - machine learning models, created by
@@ -41,9 +37,14 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 For more information about the input formats please check the
 [wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
+Research
+------------------------------------------------------------------------------
+More information about publications involving Marabou can be found
+[here](https://neuralnetworkverification.github.io/).
+
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
+The latest version of Marabou is available on https://github.com/NeuralNetworkVerification/Marabou.
 
 Build and Dependencies
 ------------------------------------------------------------------------------
@@ -104,6 +105,9 @@ cmake ..
 make check -j PROC_NUM
 ```
 ### Build Instructions for Windows using Visual Studio
+
+We no longer provide Windows support. The below instructions apply to commits up
+to [0fc1d10](https://github.com/NeuralNetworkVerification/Marabou/commit/0fc1d10ff0e1859cf32abe54eb22f3ec0fec59f6).
 
 First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
 Ensure that CMake is installed and added to your PATH.
