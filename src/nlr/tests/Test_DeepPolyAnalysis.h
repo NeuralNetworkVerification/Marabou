@@ -587,16 +587,16 @@ public:
     {
         /*
 
-              1      R       1             1  1
-          x0 --- x2 ---> x4 --- x6     x9 --- x10
-            \    /        \    /  \    / \    /
-           1 \  /        1 \  /  R \  / 1 \  /
-              \/            \/      \/     \/
-              /\            /\      /\     /\
-           1 /  \        1 /  \  R /  \ 1 /  \
-            /    \   R    /    \  /    \ / 0  \
-          x1 --- x3 ---> x5 --- x7     x8 --- x11
-              -1            -1
+              1             1            1   1
+          x0 --- x2    x5 --- x6     x9 --- x10
+            \    /\    /\    /  \    / \    /
+           1 \  / R\  /-1\  /  R \  / 1 \  /
+              \/    \/    \/      \/     \/
+              /\    /\    /\      /\     /\
+           1 /  \ R/  \ 1/  \  R /  \ 1 /  \
+            /    \/    \/    \  /    \ / 0  \
+          x1 --- x3    x4 --- x7     x8 --- x11
+              -1           1
 
           The example described in Fig. 3 of
           https://files.sri.inf.ethz.ch/website/papers/DeepPoly.pdf
@@ -621,9 +621,9 @@ public:
         nlr.setWeight( 0, 1, 1, 1, -1 );
 
         nlr.setWeight( 2, 0, 3, 0, 1 );
-        nlr.setWeight( 2, 0, 3, 1, 1 );
+        nlr.setWeight( 2, 0, 3, 1, -1 );
         nlr.setWeight( 2, 1, 3, 0, 1 );
-        nlr.setWeight( 2, 1, 3, 1, -1 );
+        nlr.setWeight( 2, 1, 3, 1, 1 );
 
         nlr.setWeight( 4, 0, 5, 0, 1 );
         nlr.setWeight( 4, 0, 5, 1, 1 );
@@ -633,8 +633,8 @@ public:
         nlr.setBias( 5, 0, 1 );
 
         // Mark the ReLU sources
-        nlr.addActivationSource( 1, 0, 2, 0 );
-        nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 1, 0, 2, 1 );
+        nlr.addActivationSource( 1, 1, 2, 0 );
 
         nlr.addActivationSource( 3, 0, 4, 1 );
         nlr.addActivationSource( 3, 1, 4, 0 );
@@ -760,6 +760,4 @@ public:
         for ( const auto &bound : expectedBounds )
             TS_ASSERT( bounds.exists( bound ) );
     }
-
-
 };
