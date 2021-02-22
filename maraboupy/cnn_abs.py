@@ -70,7 +70,7 @@ def marabouNetworkStats(net):
             "numDisjunction" : len(net.disjunctionList),
             "numLowerBounds" : len(net.lowerBounds),
             "numUpperBounds" : len(net.upperBounds),
-            "numInputVars" : np.array(net.inputVars).size,
+            "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
             "numOutputVars" : net.outputVars.size}
 
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
@@ -255,7 +255,7 @@ def inBoundsInftyBall(x, r, p, pos=True):
     return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u))) #FIXME shouldn't allow isclose, floating point errors?
     
 def setAdversarial(net, x, inDist, yCorrect, yBad):
-    inAsNP = np.array(net.inputVars)
+    inAsNP = np.array(net.inputVars[0])
     x = x.reshape(inAsNP.shape)
     xDown, xUp = getBoundsInftyBall(x, inDist)
     for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
@@ -281,9 +281,9 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)      
     else:
-        inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars))}
+        inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))}
         outputDict = {o.item():valDict[o.item()] for o in np.nditer(np.array(net.outputVars))}
-        cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars))]).reshape(xAdv.shape)        
+        cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))]).reshape(xAdv.shape)        
         cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
     return cex, cexPrediction, inputDict, outputDict 
 
@@ -452,7 +452,7 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     if fromImage:
-        inAsNP = np.array(modelOnnxMarabou.inputVars)
+        inAsNP = np.array(modelOnnxMarabou.inputVars[0])
         xAdv = xAdv.reshape(inAsNP.shape)
         for i,x in zip(np.nditer(inAsNP),np.nditer(xAdv)):    
             modelOnnxMarabou.setLowerBound(i.item(),x.item())
@@ -469,7 +469,7 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         print("xPrediction={}".format(xPrediction))    
         return xPrediction.argmax() == predictionMbou.argmax(), np.all(xPrediction == predictionMbou), predictionMbou
     else:
-        inputDictInner = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
+        inputDictInner = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars[0]))}
         outputDictInner = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
         mnistProp.printDictToFile(inputDictInner, "DICT_verifyMarabou_InputDict_out")
         mnistProp.printDictToFile(outputDictInner, "DICT_verifyMarabou_OutputDict_out")
