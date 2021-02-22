@@ -31,6 +31,10 @@
 
 #include <string.h>
 
+#include <iostream>
+#include <fstream>
+
+
 Tableau::Tableau()
     : _n ( 0 )
     , _m ( 0 )
@@ -1468,12 +1472,21 @@ void Tableau::dumpAssignment()
             printf( "%.5lf ] ", _upperBounds[i] );
         else
             printf( "INFTY ] " );
-
         if ( basic && basicOutOfBounds( _variableToIndex[i] ) )
             printf( "*" );
 
         printf( "\n" );
     }
+
+    std::ofstream bounds;
+    bounds.open("dumpBounds.json");
+    bounds << "[" << std::endl;
+    for(unsigned i = 0 ; i < _n ; ++i) {
+        bounds << "{\"index\":" << i << ", " << "\"lower\":" << _lowerBounds[i] << ", " << "\"upper\":" << _upperBounds[i] << (i==_n-1 ? "}" : "},") << std::endl;
+    }
+    bounds << "]" << std::endl;
+    bounds.close();
+    
 }
 
 void Tableau::dump() const

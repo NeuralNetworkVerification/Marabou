@@ -220,6 +220,14 @@ resultsJson["yMaxPrediction"] = int(yMax)
 resultsJson["ySecondPrediction"] = int(ySecond)
 dumpJson(resultsJson)    
 
+dumpBounds(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond)
+if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
+    with open('dumpBounds.json', 'r') as boundFile:
+        boundList = json.load(boundFile)
+        boundDict = {bound["index"] : (bound["lower"], bound["upper"]) for bound in boundList}
+else:
+    boundDict = None
+
 maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
 if not cfg_maskAbstract:
     maskList = []
@@ -237,7 +245,7 @@ for i, mask in enumerate(maskList):
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))    
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
     subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
     printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
     if sat:

@@ -402,8 +402,26 @@ def setCOIBoundes(net, init):
     print("len(net.outputVars)={}".format(len(net.outputVars)))    
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     return inputVarsMapping, outputVarsMapping
+
+def dumpBounds(model, xAdv, inDist, yMax, ySecond):
+    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
+    modelOnnxName = mnistProp.output_model_path(model)
+    keras2onnx.save_model(modelOnnx, modelOnnxName)
+    modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
+    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+    processInputQuery(modelOnnxMarabou)    
     
-def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnKeras", coi=True):
+def processInputQuery(net):
+    MarabouCore.processInputQuery(net.getMarabouQuery())
+
+def setBounds(model, boundDict):
+    for i, (lb, ub) in boundDict.items():
+        if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
+            model.setLowerBound(i,lb)
+        if (not i in model.upperBounds) or (ub < model.upperBounds[i]):            
+            model.setUpperBound(i,ub)
+    
+def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
     #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
@@ -411,6 +429,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, runName="runMarabouOnK
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+    setBounds(modelOnnxMarabou, boundDict)
     originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     if coi:
         inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
