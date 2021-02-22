@@ -105,6 +105,7 @@ endif()
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
 add_library(${MARABOU_LIB} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
+target_include_directories(${MARABOU_LIB} PRIVATE SYSTEM)
 
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
 set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
@@ -306,7 +307,7 @@ if(CXXTEST_FOUND)
     enable_testing()
 endif()
 
-target_link_libraries(${MARABOU_TEST_LIB} ${LIBS})
+target_link_libraries(${MARABOU_TEST_LIB} ${MARABOU_LIB} ${LIBS})
 target_include_directories(${MARABOU_TEST_LIB} PRIVATE ${LIBS_INCLUDES} )
 target_compile_options(${MARABOU_TEST_LIB} PRIVATE ${CXXTEST_FLAGS})
 

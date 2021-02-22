@@ -18,6 +18,7 @@ endmacro()
 
 engine_add_unit_test(AbsoluteValueConstraint)
 engine_add_unit_test(BlandsRule)
+engine_add_unit_test(BoundManager)
 engine_add_unit_test(ConstraintBoundTightener)
 engine_add_unit_test(ConstraintMatrixAnalyzer)
 engine_add_unit_test(CostFunctionManager)
