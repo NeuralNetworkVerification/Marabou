@@ -756,7 +756,7 @@ public:
 
     void test_phase_fixed_with_variable_elimination()
     {
-        // check phase fixed after eliminating - and upper bound updated
+        // Check phase fixed after eliminating - and upper bound updated
         unsigned f = 4;
         Set<unsigned> elements;
 
@@ -779,7 +779,7 @@ public:
         max.notifyUpperBound( 0,13 );
         TS_ASSERT( max.phaseFixed() )
 
-        // check phase fixed after eliminating - and lower bound updated
+        // Check phase fixed after eliminating - and lower bound updated
         unsigned f2 = 44;
         Set<unsigned> elements2;
 
@@ -821,17 +821,17 @@ public:
         // f = 1
 
         TS_ASSERT( !max.wereVariablesEliminated() );
-        // eliminate single variable x_5 = 5
+        // Eliminate single variable x_5 = 5
         unsigned eliminatedVariableValue = 5;
         max.eliminateVariable( 5,eliminatedVariableValue );
         TS_ASSERT( max.wereVariablesEliminated() );
 
         List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
 
-        // there are 4 possible phases: f1=b2, f1=b3, f1=b4, f1=maxValueOfEliminated
+        // There are 4 possible phases: f1=b2, f1=b3, f1=b4, f1=maxValueOfEliminated
         TS_ASSERT_EQUALS( splits.size(), 4U );
 
-        // check first two phases: f1=b2, f1=b3
+        // Check first two phases: f1=b2, f1=b3
         auto split = splits.begin();
         for ( unsigned i = 2; i < 5; ++i, ++split )
         {
@@ -852,7 +852,7 @@ public:
 
             auto cur = equations.begin();
 
-            // check equation f = b_i
+            // Check equation f = b_i
             TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
             TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
             TS_ASSERT_EQUALS( cur->_type, Equation::EQ );
@@ -870,7 +870,8 @@ public:
             ++cur;
 
             for ( unsigned j = 2; j < 5;  ++j )
-            { // check that there is bi >= bj for each couple (i, j) of input elements
+            {
+                // Check that there is bi >= bj for each couple (i, j) of input elements
                 if ( i == j ) continue;
 
                 TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
@@ -905,21 +906,21 @@ public:
         max2.notifyVariableValue( f, 1 );
 
         TS_ASSERT( !max2.wereVariablesEliminated() );
-        // eliminate single variable x_5 = 5
+        // Eliminate single variable x_5 = 5
         double eliminatedVariableValue2 = 5;
         max2.eliminateVariable( 5,eliminatedVariableValue2 );
         TS_ASSERT( max2.wereVariablesEliminated() );
 
         splits = max2.getCaseSplits();
 
-        // there is one possible phase (because 7 is an element now)
+        // There is one possible phase (because 7 is an element now)
         TS_ASSERT_EQUALS( splits.size(), 1U );
 
         split = splits.begin();
 
         List<Tightening> bounds = split->getBoundTightenings();
 
-        // check single bound f >= maxValueEliminated
+        // Check single bound f >= maxValueEliminated
         TS_ASSERT_EQUALS( bounds.size(), 1U );
 
         auto it = bounds.begin();
@@ -933,12 +934,12 @@ public:
         // f >= x2, f >= x3, f >= x4
         TS_ASSERT_EQUALS( equations.size(), 3U );
 
-        // first phase is the one without max=_maxEliminated
+        // First phase is the one without max=_maxEliminated
         auto cur = equations.begin();
 
         for ( unsigned i = 2; i < 5;  ++i )
         {
-            // check that there is f >= bj for each input element j
+            // Check that there is f >= bj for each input element j
             TS_ASSERT_EQUALS( cur->_addends.size(), 2U );
             TS_ASSERT_EQUALS( cur->_scalar, 0.0 );
             TS_ASSERT_EQUALS( cur->_type, Equation::GE );
@@ -959,10 +960,10 @@ public:
 
     void test_max_phase_fixed_with_variable_elimination()
     {
-        // for all the following tests the f variable is not in the input (in the next test it is)
+        // For all the following tests the f variable is not in the input (in the next test it is)
 
-        // case 1
-        // check the case in which an input variable is the max, and higher than the eliminated one
+        // Case 1
+        // Check the case in which an input variable is the max, and higher than the eliminated one
         unsigned f = 1;
         Set<unsigned> elements;
 
@@ -971,35 +972,35 @@ public:
 
         MaxConstraint max( f, elements );
 
-        // all input variables initially between 1 and 10
+        // All input variables initially between 1 and 10
         for ( unsigned i = 2; i < 6; i++ ) {
             max.notifyUpperBound( i, 10 );
             max.notifyLowerBound( i, 1 );
         }
 
         TS_ASSERT( !max.wereVariablesEliminated() );
-        // eliminate single variable x_5 = 5.5
+        // Eliminate single variable x_5 = 5.5
         max.eliminateVariable( 5, 5.5 );
         TS_ASSERT( max.wereVariablesEliminated() );
 
         TS_ASSERT( !max.phaseFixed() );
 
-        // set x_2 to be at least 6, and x_3 and x_4 to be at most 5
+        // Set x_2 to be at least 6, and x_3 and x_4 to be at most 5
         max.notifyLowerBound( 2, 6 );
         for ( unsigned i = 3; i < 5; i++)
             max.notifyUpperBound( i, 5 );
 
         max.notifyVariableValue( 2, 7 );
-        // now, phase should be fixed to x_2; all other variables should be removed
+        // Now, phase should be fixed to x_2; all other variables should be removed
         TS_ASSERT( max.phaseFixed() );
         TS_ASSERT_EQUALS( max.getParticipatingVariables().size(), 2U );
 
-        // in the case f is no in the input elements, and variables were eliminated
+        // In the case f is no in the input elements, and variables were eliminated
         PiecewiseLinearCaseSplit validSplit = max.getValidCaseSplit();
 
         List<Tightening> bounds = validSplit.getBoundTightenings();
 
-        // check single bound f >= maxValueEliminated
+        // Check single bound f >= maxValueEliminated
         TS_ASSERT_EQUALS( bounds.size(), 1U );
 
         auto it = bounds.begin();
@@ -1008,7 +1009,7 @@ public:
         TS_ASSERT_EQUALS( it->_value, 5.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
-        // equation is: f=x_2
+        // The equation is: f=x_2
         auto equations = validSplit.getEquations();
 
         TS_ASSERT_EQUALS( equations.size(), 1U );
@@ -1030,8 +1031,8 @@ public:
 
         ++cur;
 
-        // case 2
-        // check the case in which the eliminated variable is the maximum
+        // Case 2
+        // Check the case in which the eliminated variable is the maximum
 
         unsigned f2 = 1;
         Set<unsigned> elements2;
@@ -1041,20 +1042,20 @@ public:
 
         MaxConstraint max2( f2, elements2 );
 
-        // all input variables initially between 1 and 10
+        // All input variables initially between 1 and 10
         for ( unsigned i = 2; i < 6; i++ ) {
             max2.notifyUpperBound( i, 10 );
             max2.notifyLowerBound( i, 1 );
         }
 
         TS_ASSERT( !max2.wereVariablesEliminated() );
-        // eliminate single variable x_5 = 9.5
+        // Eliminate single variable x_5 = 9.5
         max2.eliminateVariable(5, 9.5 );
         TS_ASSERT( max2.wereVariablesEliminated() );
 
         TS_ASSERT( !max2.phaseFixed() );
 
-        // set x_2 to be at least 6, and x_3 and x_4 to be at most 5
+        // Set x_2 to be at least 6, and x_3 and x_4 to be at most 5
         for ( unsigned i = 3; i < 5; i++ ) {
             max2.notifyUpperBound( i, 5 );
         }
@@ -1064,18 +1065,18 @@ public:
         max2.notifyUpperBound( 2, 8 );
 
 
-        // now, phase should be fixed - there are no variables but there is an eliminatedValue
+        // Now, phase should be fixed - there are no variables but there is an eliminatedValue
         TS_ASSERT( max2.phaseFixed() );
         // f is the single participating variable
         TS_ASSERT_EQUALS( max2.getParticipatingVariables().size(), 1U );
 
-        // in the case f is not in the input elements, and variables were eliminated
+        // In the case f is not in the input elements, and variables were eliminated
         PiecewiseLinearCaseSplit validSplit2 = max2.getValidCaseSplit();
 
         bounds = validSplit2.getBoundTightenings();
 
         // f = maxValueEliminated
-        // check 2 bounds bound f >= maxValueEliminated, f <= maxValueEliminated
+        // Check 2 bounds bound f >= maxValueEliminated, f <= maxValueEliminated
         TS_ASSERT_EQUALS( bounds.size(), 2U );
 
         it = bounds.begin();
@@ -1090,13 +1091,13 @@ public:
         TS_ASSERT_EQUALS( it->_value, 9.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
-        // no additional equations
+        // No additional equations
         auto equations2 = validSplit2.getEquations();
 
         TS_ASSERT_EQUALS( equations2.size(), 0U );
 
-        // case 3
-        // check the case in which the eliminated variable is the range of the single variable which is larger than the rest
+        // Case 3
+        // Check the case in which the eliminated variable is the range of the single variable which is larger than the rest
         // (but may or may not be larger than the eliminated value)
 
         unsigned f3 = 1;
@@ -1107,20 +1108,20 @@ public:
 
         MaxConstraint max3( f3, elements3 );
 
-        // all input variables initially between 1 and 10
+        // All input variables initially between 1 and 10
         for ( unsigned i = 2; i < 6; i++ ) {
             max3.notifyUpperBound( i, 10 );
             max3.notifyLowerBound( i, 1 );
         }
 
         TS_ASSERT( !max3.wereVariablesEliminated() );
-        // eliminate single variable x_5 = 7.5
+        // Eliminate single variable x_5 = 7.5
         max3.eliminateVariable( 5, 7.5 );
         TS_ASSERT( max3.wereVariablesEliminated() );
 
         TS_ASSERT( !max3.phaseFixed() );
 
-        // set x_2 to be at least 6, and x_3 and x_4 to be at most 5
+        // Set x_2 to be at least 6, and x_3 and x_4 to be at most 5
         for ( unsigned i = 3; i < 5; i++ ) {
             max3.notifyUpperBound( i, 5 );
         }
@@ -1128,16 +1129,16 @@ public:
         max3.notifyLowerBound( 2, 6 );
         max3.notifyUpperBound( 2, 9 );
 
-        // now, phase should not be fixed! because maxEliminated = 7.5 in range of X_2 = [6, 9]
+        // Now, phase should not be fixed! because maxEliminated = 7.5 in range of X_2 = [6, 9]
         TS_ASSERT( !max3.phaseFixed() );
     }
 
     void test_max_phase_fixed_with_variable_elimination_2()
     {
-        // for all the following tests the f variable is in the input (unlike the previous test)
+        // For all the following tests the f variable is in the input (unlike the previous test)
 
-        // case 1
-        // check the case in which an input variable is the max, and higher than the eliminated one
+        // Case 1
+        // Check the case in which an input variable is the max, and higher than the eliminated one
         unsigned f = 1;
         Set<unsigned> elements;
 
@@ -1146,14 +1147,14 @@ public:
 
         MaxConstraint max( f, elements );
 
-        // all variables initially between 1 and 10
+        // All variables initially between 1 and 10
         for ( unsigned i = 1; i < 10; i++ )
         {
             max.notifyUpperBound( i, 10 );
             max.notifyLowerBound( i, 1 );
         }
 
-        // set x_2 and x_3 to be at least 6, others to be at most 5
+        // Set x_2 and x_3 to be at least 6, others to be at most 5
         max.notifyLowerBound( 2, 6 );
         max.notifyLowerBound( 3, 6 );
         for( unsigned i = 5; i < 10; i++ )
@@ -1161,11 +1162,11 @@ public:
         max.notifyUpperBound( f, 5 );
 
         max.notifyVariableValue( f, 5);
-        // now, phase should be fixed to x_2 and x_3; all other variables should be removed
+        // Now, phase should be fixed to x_2 and x_3; all other variables should be removed
         TS_ASSERT( max.phaseFixed() );
 
         TS_ASSERT( !max.wereVariablesEliminated() );
-        // eliminate single variable x_4 = 5.5
+        // Eliminate single variable x_4 = 5.5
         max.eliminateVariable( 4, 5.5 );
         TS_ASSERT( max.wereVariablesEliminated() );
 
@@ -1175,7 +1176,7 @@ public:
 
         List<Tightening> bounds = validSplit.getBoundTightenings();
 
-        // check 3 bounds
+        // Check 3 bounds
         TS_ASSERT_EQUALS( bounds.size(), 3U );
 
         auto it = bounds.begin();
@@ -1236,8 +1237,8 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, f );
 
 
-        // case 2
-        // the eliminated variable is larger than f
+        // Case 2
+        // The eliminated variable is larger than f
         unsigned f2 = 1;
         Set<unsigned> elements2;
 
@@ -1246,14 +1247,14 @@ public:
 
         MaxConstraint max2( f2, elements2 );
 
-        // all variables initially between 1 and 10
+        // All variables initially between 1 and 10
         for ( unsigned i = 1; i < 10; i++ )
         {
             max2.notifyUpperBound( i, 10 );
             max2.notifyLowerBound( i, 1 );
         }
 
-        // set x_2 and x_3 to be at least 6, others to be at most 5
+        // Set x_2 and x_3 to be at least 6, others to be at most 5
         max2.notifyUpperBound( 2, 8 );
         max2.notifyLowerBound( 2, 6 );
 
@@ -1265,11 +1266,11 @@ public:
         max2.notifyUpperBound( f2, 5 );
 
         max2.notifyVariableValue( f2, 5 );
-        // now, phase should be fixed to x_2 and x_3; all other variables should be removed
+        // Now, phase should be fixed to x_2 and x_3; all other variables should be removed
         TS_ASSERT( max2.phaseFixed() );
 
         TS_ASSERT( !max2.wereVariablesEliminated() );
-        // eliminate single variable x_4 = 9.5
+        // Eliminate single variable x_4 = 9.5
         max2.eliminateVariable( 4, 9.5);
         TS_ASSERT( max2.wereVariablesEliminated() );
 
@@ -1279,7 +1280,7 @@ public:
 
         bounds = validSplit2.getBoundTightenings();
 
-        // check 3 bounds
+        // Check 3 bounds
         TS_ASSERT_EQUALS( bounds.size(), 3U );
 
         it = bounds.begin();
@@ -1339,8 +1340,8 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f2 );
 
-        // case 3
-        // the eliminated variable is in f's range
+        // Case 3
+        // The eliminated variable is in f's range
         unsigned f3 = 1;
         Set<unsigned> elements3;
 
@@ -1349,14 +1350,14 @@ public:
 
         MaxConstraint max3( f3, elements3 );
 
-        // all variables initially between 1 and 10
+        // All variables initially between 1 and 10
         for ( unsigned i = 1; i < 10; i++ )
         {
             max3.notifyUpperBound( i, 10 );
             max3.notifyLowerBound( i, 1 );
         }
 
-        // set x_2 and x_3 to be at least 6, others to be at most 5
+        // Set x_2 and x_3 to be at least 6, others to be at most 5
         max3.notifyUpperBound( 2, 8 );
         max3.notifyLowerBound( 2, 6 );
 
@@ -1368,11 +1369,11 @@ public:
         max3.notifyUpperBound( f3, 5 );
 
         max3.notifyVariableValue( f3, 5);
-        // now, phase should be fixed to x_2 and x_3; all other variables should be removed
+        // Now, phase should be fixed to x_2 and x_3; all other variables should be removed
         TS_ASSERT( max3.phaseFixed() );
 
         TS_ASSERT( !max3.wereVariablesEliminated() );
-        // eliminate single variable x_4 = 7
+        // Eliminate single variable x_4 = 7
         max3.eliminateVariable( 4, 7 );
         TS_ASSERT( max3.wereVariablesEliminated() );
 
@@ -1382,7 +1383,7 @@ public:
 
         bounds = validSplit3.getBoundTightenings();
 
-        // check 3 bounds
+        // Check 3 bounds
         TS_ASSERT_EQUALS( bounds.size(), 3U );
 
         it = bounds.begin();
@@ -1454,7 +1455,7 @@ public:
 
         MaxConstraint max( f, elements );
 
-        // eliminate variable x_4 = 2.5
+        // Eliminate variable x_4 = 2.5
         TS_ASSERT( !max.wereVariablesEliminated() );
         max.eliminateVariable( 4, 2.5 );
         TS_ASSERT( max.wereVariablesEliminated() );
@@ -1467,24 +1468,24 @@ public:
         List<Tightening> tightenings;
         TS_ASSERT_THROWS_NOTHING( max.getEntailedTightenings( tightenings ) );
 
-        // expect f to be in the range [1, 8]
+        // Expect f to be in the range [1, 8]
         TS_ASSERT_EQUALS( tightenings.size(), 2U );
         auto it = tightenings.begin();
 
-        // update f_UB to have the value of max_(Element_UB) = 8 (=x_2_UB)
+        // Update f_UB to have the value of max_(Element_UB) = 8 (=x_2_UB)
         TS_ASSERT_EQUALS( it->_variable, 1U );
         TS_ASSERT_EQUALS( it->_value, 8 );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
         ++it;
 
-        // update f_LB to have the value of max_(Element_LB) = 2.5 (= maxValueEliminated)
+        // Update f_LB to have the value of max_(Element_LB) = 2.5 (= maxValueEliminated)
         TS_ASSERT_EQUALS( it->_variable, 1U );
         TS_ASSERT_EQUALS( it->_value, 2.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
-         //From here, the test is going to run tests for the case that f is included in elements.
-         // also here - with a value eliminated
+        //From here, the test is going to run tests for the case that f is included in elements.
+        // also here - with a value eliminated
 
         Set<unsigned> elements2;
         elements2.insert( 1 );
@@ -1504,7 +1505,7 @@ public:
         // No lower bound for 3
         max2.notifyUpperBound( 3, 6 );
 
-        // eliminate variable x_4 = 9.5
+        // Eliminate variable x_4 = 9.5
         TS_ASSERT( !max2.wereVariablesEliminated() );
         max2.eliminateVariable( 4, 9.5 );
         TS_ASSERT( max2.wereVariablesEliminated() );
@@ -1512,18 +1513,18 @@ public:
         List<Tightening> tightenings2;
         TS_ASSERT_THROWS_NOTHING( max2.getEntailedTightenings( tightenings2 ) );
 
-        // expect f to be in the range [1, 7], x2 to be in the range [1, 7]
+        // Expect f to be in the range [1, 7], x2 to be in the range [1, 7]
         TS_ASSERT_EQUALS( tightenings2.size(), 2U );
         it = tightenings2.begin();
 
-        // update X_2_UB = 7
+        // Update X_2_UB = 7
         TS_ASSERT_EQUALS( it->_variable, 2U );
         TS_ASSERT_EQUALS( it->_value, 7 );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
         ++it;
 
-        // update f_LB = 9.5
+        // Update f_LB = 9.5
         TS_ASSERT_EQUALS( it->_variable, 1U );
         TS_ASSERT_EQUALS( it->_value, 9.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
@@ -1549,19 +1550,19 @@ public:
             max.notifyVariableValue( i, i );
         }
 
-        // constraint not satisfied
+        // Constraint not satisfied
         TS_ASSERT(!max.satisfied());
 
-        // eliminate variable x_4 = 9.5
+        // Eliminate variable x_4 = 9.5
         TS_ASSERT( !max.wereVariablesEliminated() );
         max.eliminateVariable( 4, 9.5 );
         TS_ASSERT( max.wereVariablesEliminated() );
 
-        // constraint not satisfied
+        // Constraint not satisfied
         max.notifyVariableValue( f, 9 );
         TS_ASSERT( !max.satisfied() );
 
-        // constraint satisfied
+        // Constraint satisfied
         max.notifyVariableValue( f, 9.5);
         TS_ASSERT( max.satisfied() );
     }
