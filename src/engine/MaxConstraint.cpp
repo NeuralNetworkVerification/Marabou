@@ -238,7 +238,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     }
 
     // Treat the maxValueEliminated as an element
-    if ( _maxValueOfEliminated )
+    if ( _eliminatedVariables )
     {
         maxElementLB = FloatUtils::max( _maxValueOfEliminated, maxElementLB );
         maxElementUB = FloatUtils::max( _maxValueOfEliminated, maxElementUB );
