@@ -400,11 +400,6 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
                 greaterVar = element;
             }
         }
-        if ( _eliminatedVariables && FloatUtils::gt( _maxValueOfEliminated, fValue ) )
-        {
-            ++numGreater;
-            greaterVar = _maxValueOfEliminated;
-        }
         if ( numGreater == 1 )
         {
             fixes.append( PiecewiseLinearConstraint::Fix( greaterVar, fValue ) );
