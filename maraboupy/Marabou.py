@@ -122,7 +122,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
                   splittingStrategy="auto", sncSplittingStrategy="auto",
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
-                  tighteningStrategy="deeppoly" ):
+                  tighteningStrategy="deeppoly", milpTightening="lp" ):
     """Create an options object for how Marabou should solve the query
 
     Args:
