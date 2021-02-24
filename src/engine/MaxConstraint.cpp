@@ -32,14 +32,14 @@
 #endif
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
-        : _f( f )
-        , _elements( elements )
-        , _initialElements( elements )
-        , _maxIndexSet( false )
-        , _maxLowerBound( FloatUtils::negativeInfinity() )
-        , _obsolete( false )
-        , _eliminatedVariables( false )
-        , _maxValueOfEliminated( FloatUtils::negativeInfinity() )
+	: _f( f )
+	, _elements( elements )
+	, _initialElements( elements )
+	, _maxIndexSet( false )
+	, _maxLowerBound( FloatUtils::negativeInfinity() )
+	, _obsolete( false )
+	, _eliminatedVariables( false )
+	, _maxValueOfEliminated( FloatUtils::negativeInfinity() )
 {
 }
 
@@ -251,10 +251,9 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         {
             tightenings.append( Tightening( _f, maxElementUB, Tightening::UB ) );
         }
-
-            // f_UB <= maxElementUB
-        else
+		else
         {
+			// f_UB <= maxElementUB
             for ( const auto &element : _elements )
             {
                 if ( !_upperBounds.exists( element ) || FloatUtils::gt( _upperBounds[element], fUB ) )
@@ -267,7 +266,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     if ( FloatUtils::lt( fLB, maxElementLB ) )
         tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
 
-        // f_LB >= maxElementLB & single input element
+	// f_LB >= maxElementLB & single input element
     else if ( _elements.size() == 1 )
     {
         // Special case: there is only one element. In that case, the tighter lower

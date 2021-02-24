@@ -133,7 +133,6 @@ public:
     */
     String serializeToString() const;
 
-
     /*
      * Returns a boolean value indicating if at least one input variable was eliminated (True)
      * or not (False)
