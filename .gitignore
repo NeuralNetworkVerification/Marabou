@@ -39,3 +39,4 @@ _deps
 /tools/pybind11_2_3_0.tar.gz
 build
 /.idea/
+cmake-build-debug/
