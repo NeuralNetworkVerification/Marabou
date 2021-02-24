@@ -35,6 +35,7 @@ namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _tableau( NULL )
+    , _deepPolyAnalysis( nullptr )
 {
 }
 
@@ -135,14 +136,24 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
+void NetworkLevelReasoner::deepPolyPropagation()
+{
+    if ( _deepPolyAnalysis == nullptr )
+        _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>
+            ( new DeepPolyAnalysis( this ) );
+    _deepPolyAnalysis->run();
+}
+
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );
     lpFormulator.setCutoff( 0 );
 
-    if ( Options::get()->getMILPSolverBoundTighteningType() == LP_RELAXATION )
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::LP_RELAXATION )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
-    else if ( Options::get()->getMILPSolverBoundTighteningType() == LP_RELAXATION_INCREMENTAL )
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL )
         lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 
@@ -151,9 +162,11 @@ void NetworkLevelReasoner::MILPPropagation()
     MILPFormulator milpFormulator( this );
     milpFormulator.setCutoff( 0 );
 
-    if ( Options::get()->getMILPSolverBoundTighteningType() == MILP_ENCODING )
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::MILP_ENCODING )
         milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
-    else if ( Options::get()->getMILPSolverBoundTighteningType() == MILP_ENCODING_INCREMENTAL )
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL )
         milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
 }
 
@@ -229,8 +242,13 @@ void NetworkLevelReasoner::dumpTopology() const
 {
     printf( "Number of layers: %u. Sizes:\n", _layerIndexToLayer.size() );
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
-        printf( "\tLayer %u: %u \t[%s]\n", i, _layerIndexToLayer[i]->getSize(), Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
-
+    {
+        printf( "\tLayer %u: %u \t[%s]", i, _layerIndexToLayer[i]->getSize(), Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
+        printf("\tSource layers:");
+        for ( const auto &sourceLayer : _layerIndexToLayer[i]->getSourceLayers() )
+            printf(" %u", sourceLayer.first );
+        printf("\n");
+    }
     for ( const auto &layer : _layerIndexToLayer )
         layer.second->dump();
 }
@@ -568,6 +586,32 @@ void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex
     // Update the mapping in the NLR
     _layerIndexToLayer[layer - 1] = _layerIndexToLayer[layer];
     _layerIndexToLayer.erase( layer );
+}
+
+void NetworkLevelReasoner::dumpBounds()
+{
+    obtainCurrentBounds();
+
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->dumpBounds();
+}
+
+unsigned NetworkLevelReasoner::getMaxLayerSize() const
+{
+    unsigned maxSize = 0;
+    for ( const auto &layer : _layerIndexToLayer )
+    {
+        unsigned currentSize = layer.second->getSize();
+        if ( currentSize > maxSize )
+            maxSize = currentSize;
+    }
+    ASSERT( maxSize > 0 );
+    return maxSize;
+}
+
+const Map<unsigned, Layer *> &NetworkLevelReasoner::getLayerIndexToLayer() const
+{
+    return _layerIndexToLayer;
 }
 
 } // namespace NLR

@@ -14,6 +14,8 @@
  **/
 
 #include "Layer.h"
+#include "Options.h"
+#include "SymbolicBoundTighteningType.h"
 
 namespace NLR {
 
@@ -66,7 +68,8 @@ void Layer::allocateMemory()
     _assignment = new double[_size];
 
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
-    if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
+    if ( Options::get()->getSymbolicBoundTighteningType() ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
     {
         _symbolicLb = new double[_size * _inputLayerSize];
         _symbolicUb = new double[_size * _inputLayerSize];
@@ -263,6 +266,21 @@ double Layer::getWeight( unsigned sourceLayer,
     return _layerToWeights[sourceLayer][index];
 }
 
+double *Layer::getWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToWeights[sourceLayerIndex];
+}
+
+double *Layer::getPositiveWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToPositiveWeights[sourceLayerIndex];
+}
+
+double *Layer::getNegativeWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToNegativeWeights[sourceLayerIndex];
+}
+
 void Layer::setBias( unsigned neuron, double bias )
 {
     _bias[neuron] = bias;
@@ -271,6 +289,11 @@ void Layer::setBias( unsigned neuron, double bias )
 double Layer::getBias( unsigned neuron ) const
 {
     return _bias[neuron];
+}
+
+double *Layer::getBiases() const
+{
+    return _bias;
 }
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
@@ -344,6 +367,16 @@ double Layer::getUb( unsigned neuron ) const
         return _eliminatedNeurons[neuron];
 
     return _ub[neuron];
+}
+
+double *Layer::getLbs() const
+{
+    return _lb;
+}
+
+double *Layer::getUbs() const
+{
+    return _ub;
 }
 
 void Layer::setLb( unsigned neuron, double bound )
@@ -1799,6 +1832,16 @@ unsigned Layer::getMaxVariable() const
             result = pair.second;
 
     return result;
+}
+
+void Layer::dumpBounds() const
+{
+    printf( "Layer %u:\n", _layerIndex );
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        printf( "\tNeuron%u\tLB: %.4f, UB: %.4f \n", i + 1, _lb[i], _ub[i] );
+    }
+    printf("\n");
 }
 
 } // namespace NLR

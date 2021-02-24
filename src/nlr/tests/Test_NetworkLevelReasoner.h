@@ -20,6 +20,7 @@
 #include "InputQuery.h"
 #include "Layer.h"
 #include "NetworkLevelReasoner.h"
+#include "Options.h"
 #include "Tightening.h"
 
 class MockForNetworkLevelReasoner
@@ -726,8 +727,8 @@ public:
 
     void test_sbt_relus_all_active()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -796,8 +797,8 @@ public:
 
     void test_sbt_relus_active_and_inactive()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -870,8 +871,8 @@ public:
 
     void test_sbt_relus_active_and_not_fixed()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -948,8 +949,8 @@ public:
 
     void test_sbt_relus_active_and_externally_fixed()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -1025,8 +1026,8 @@ public:
 
     void test_sbt_abs_all_positive()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -1137,8 +1138,8 @@ public:
 
     void test_sbt_abs_positive_and_negative()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -1253,8 +1254,8 @@ public:
 
     void test_sbt_absolute_values_positive_and_not_fixed()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
@@ -1372,8 +1373,9 @@ public:
 
     void test_sbt_absolute_values_active_and_externally_fixed()
     {
-        if ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
-            return;
+
+        Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE,
+                                   "sbt" );
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
