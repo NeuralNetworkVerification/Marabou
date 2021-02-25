@@ -236,6 +236,24 @@ with open('ResultSummary.csv', mode='w') as f:
 ####################################################################################################
 ####################################################################################################
 
+cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
+plt.figure()
+
+runtimesSolved = [[resultDict[s]["totalRuntime"] for s in samplesTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
+[result.sort() for result in runtimesSolved]
+sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesSolved]
+#[plt.stairs(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)] FIXME
+[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
+plt.xlabel("Runtime")
+plt.ylabel("Instances solved")
+plt.legend()
+setFigSize()
+plt.savefig("Cactus.png", bbox_inches="tight", dpi=100)
+plt.close()
+            
+####################################################################################################
+####################################################################################################
+####################################################################################################
 plt.figure()
 
 # Pie chart, where the slices will be ordered and plotted counter-clockwise:
