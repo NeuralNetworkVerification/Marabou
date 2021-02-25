@@ -275,7 +275,7 @@ else:
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     startLocal = time.time()
     subResultAppend(resultsJson, runType="full")
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_Full", coi=cfg_pruneCOI)
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI)
     subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
     printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
     successful = len(maskList)

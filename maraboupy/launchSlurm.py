@@ -111,7 +111,7 @@ if not os.path.exists(batchDirPath):
     os.mkdir(batchDirPath)
     
 CPUS = 8
-MEM_PER_CPU = "1G"
+MEM_PER_CPU = "2G"
 commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS)]
     
 runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)

@@ -415,11 +415,12 @@ def processInputQuery(net):
     MarabouCore.processInputQuery(net.getMarabouQuery())
 
 def setBounds(model, boundDict):
-    for i, (lb, ub) in boundDict.items():
-        if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
-            model.setLowerBound(i,lb)
-        if (not i in model.upperBounds) or (ub < model.upperBounds[i]):            
-            model.setUpperBound(i,ub)
+    if boundDict:
+        for i, (lb, ub) in boundDict.items():
+            if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
+                model.setLowerBound(i,lb)
+            if (not i in model.upperBounds) or (ub < model.upperBounds[i]):            
+                model.setUpperBound(i,ub)
     
 def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
