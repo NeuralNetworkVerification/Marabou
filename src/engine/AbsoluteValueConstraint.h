@@ -16,9 +16,9 @@
 #ifndef __AbsoluteValueConstraint_h__
 #define __AbsoluteValueConstraint_h__
 
-#include "PiecewiseLinearConstraint.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 
-class AbsoluteValueConstraint : public PiecewiseLinearConstraint
+class AbsoluteValueConstraint : public ContextDependentPiecewiseLinearConstraint
 {
 
 public:
@@ -37,7 +37,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    PiecewiseLinearConstraint *duplicateConstraint() const;
+    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -95,15 +95,32 @@ public:
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
-      Check whether the constraint's phase has been fixed.
+      If the constraint's phase has been fixed, get the (valid) case split.
     */
-    void fixPhaseIfNeeded();
-    bool phaseFixed() const;
+    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    /*
+       Returns a list of all cases - { ABS_POSITIVE, ABS_NEGATIVE }
+       The order of returned cases affects the search, and this method is where related
+       heuristics should be implemented.
+     */
+    List<PhaseStatus> getAllCases() const override;
+
+    /*
+       Returns case split corresponding to the given phase/id
+     */
+    PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
 
     /*
      * If the constraint's phase has been fixed, get the (valid) case split.
      */
-    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+    PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
+
+    /*
+      Check whether the constraint's phase has been fixed.
+     */
+    void fixPhaseIfNeeded();
+    bool phaseFixed() const;
 
     /*
       Preprocessing related functions, to inform that a variable has
