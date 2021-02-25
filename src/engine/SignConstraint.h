@@ -2,7 +2,7 @@
 /*! \file ReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Amir
+ **   Guy Amir, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -17,14 +17,14 @@
 #define __SignConstraint_h__
 
 #include "Map.h"
-#include "PiecewiseLinearConstraint.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 
 /*
   The Sign function returns +1 for any input x >=0 (including 0),
   and -1 if x < 0
 */
 
-class SignConstraint : public PiecewiseLinearConstraint
+class SignConstraint : public ContextDependentPiecewiseLinearConstraint
 {
 public:
     /*
@@ -55,7 +55,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    PiecewiseLinearConstraint *duplicateConstraint() const;
+    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -98,14 +98,30 @@ public:
     List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
 
     /*
-      Check if the constraint's phase has been fixed.
+      If the constraint's phase has been fixed, get the (valid) case split.
     */
-    bool phaseFixed() const;
+    PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
     */
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    /*
+       Returns case split corresponding to the given phase/id
+     */
+    PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
+
+    /*
+       Returns a list of all cases - { ABS_POSITIVE, ABS_NEGATIVE }
+       The order of returned cases affects the search, and this method is where related
+       heuristics should be implemented.
+     */
+    List<PhaseStatus> getAllCases() const override;
+    /*
+      Check if the constraint's phase has been fixed.
+    */
+    bool phaseFixed() const;
 
     /*
       Preprocessing related functions, to inform that a variable has
