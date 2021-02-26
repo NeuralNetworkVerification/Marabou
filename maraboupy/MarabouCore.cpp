@@ -138,6 +138,24 @@ bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
   return true;
 }
 
+bool loadProperty(InputQuery &inputQuery, std::string propertyFilePath){
+    try{
+        String propertyFilePathM = String(propertyFilePath);
+        if ( propertyFilePath != "" )
+            {
+                printf( "Property: %s\n", propertyFilePathM.ascii() );
+                PropertyParser().parse( propertyFilePathM, inputQuery );
+            }
+        else
+            printf( "Property: None\n" );
+    }
+    catch(const InputParserError &e){
+        printf( "Caught an InputParserError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        return false;
+    }
+    return true;
+}
+
 void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equation>>
                               &disjuncts ){
     List<PiecewiseLinearCaseSplit> disjunctList;
@@ -192,9 +210,11 @@ struct MarabouOptions {
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
+        , _milpTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
     {};
 
   void setOptions()
@@ -217,11 +237,13 @@ struct MarabouOptions {
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
     Options::get()->setFloat( Options::PREPROCESSOR_BOUND_TOLERANCE, _preprocessorBoundTolerance );
+    Options::get()->setFloat( Options::MILP_SOLVER_TIMEOUT, _milpTimeout );
 
     // string options
     Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
+    Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
   }
 
     bool _snc;
@@ -237,9 +259,11 @@ struct MarabouOptions {
     unsigned _splitThreshold;
     float _timeoutFactor;
     float _preprocessorBoundTolerance;
+    float _milpTimeout;
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
+    std::string _milpTighteningString;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -317,6 +341,7 @@ InputQuery loadQuery(std::string filename){
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
+    m.def("loadProperty", &loadProperty, "Create input query from property file");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("solve", &solve, R"pbdoc(
         Takes in a description of the InputQuery and returns the solution
@@ -420,6 +445,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
+        .def_readwrite("_milpTimeout", &MarabouOptions::_milpTimeout)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
         .def_readwrite("_snc", &MarabouOptions::_snc)
@@ -428,7 +454,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
-        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString);
+        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
+        .def_readwrite("_milpTighteningStrategy", &MarabouOptions::_milpTighteningString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
