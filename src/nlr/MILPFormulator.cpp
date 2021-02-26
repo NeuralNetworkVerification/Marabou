@@ -474,11 +474,11 @@ void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer
             break;
 
         case Layer::RELU:
-            addReluNeuronToModel( gurobi, layer, i, layerOwner );
+            addReluNeuronToModel( gurobi, layer, neuron, layerOwner );
             break;
             
         case Layer::MAX:
-            addMaxNeuronToModel( gurobi, layer, i, layerOwner );
+            addMaxNeuronToModel( gurobi, layer, neuron, layerOwner );
             break;
             
         default:
@@ -562,7 +562,7 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
     double maxLb = FloatUtils::negativeInfinity();        
     for ( const auto &source : sources )
     {
-        const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+        const Layer *sourceLayer = layerOwner->getLayer( source._layer );
         unsigned sourceNeuron = source._neuron;           
         double sourceLb = sourceLayer->getLb( sourceNeuron );
         double sourceUb = sourceLayer->getUb( sourceNeuron );        
@@ -577,7 +577,7 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
 
     for ( const auto &source : sources )
     {
-        const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+        const Layer *sourceLayer = layerOwner->getLayer( source._layer );
         unsigned sourceNeuron = source._neuron;                    
         if(sourceLayer->neuronToVariable( sourceNeuron ) != maxUbVariable)
         {             
@@ -614,7 +614,14 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
         double sourceLb = sourceLayer->getLb( sourceNeuron );
         double sourceUb = sourceLayer->getUb( sourceNeuron );
 
-        std::bitset<clog2n> sourceBinary ( sourceVariable );        
+        std::vector<bool> sourceBinary ( clog2n , 0 );        ;        
+        unsigned index = 0;
+        unsigned sourceBinaryCount = 0;        
+        for ( unsigned sourceVariableDiv = sourceVariable ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )
+        {
+            sourceBinary[index] = sourceVariable % 2;
+            sourceBinaryCount += sourceVariable % 2;
+        }
         if ( FloatUtils::gt(maxLb, sourceUb) )
         {
             terms.clear();
@@ -622,7 +629,7 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
             {
                 terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) , Stringf( "at%uj%u", targetVariable, i ) ) );            
             }
-            gurobi.addLeqConstraint( terms, sourceBinary.count() - 1 );            
+            gurobi.addLeqConstraint( terms, sourceBinaryCount - 1 );            
             continue;
         }
 
@@ -647,7 +654,7 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
         {
             terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) * scalarUb , Stringf( "at%uj%u", targetVariable, i ) ) );            
         }
-        gurobi.addLeqConstraint( terms, sourceBinary.count() * scalarUb );
+        gurobi.addLeqConstraint( terms, sourceBinaryCount * scalarUb );
     }
 }
 

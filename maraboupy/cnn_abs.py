@@ -305,7 +305,7 @@ def setUnconnectedAsInputs(net):
         if not net.lowerBoundExists(v):          
             net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
-            net.setUpperBound(v,  100000)            
+            net.setUpperBound(v,  100000)
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
     
 def setCOIBoundes(net, init):
@@ -422,7 +422,7 @@ def setBounds(model, boundDict):
             if (not i in model.upperBounds) or (ub < model.upperBounds[i]):            
                 model.setUpperBound(i,ub)
     
-def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True):
+def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
     #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
@@ -430,7 +430,8 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    setBounds(modelOnnxMarabou, boundDict)
+    if mask: #FIXME why was this failing? created a bound for a variable with index above the number of veriables number.
+        setBounds(modelOnnxMarabou, boundDict)
     originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     if coi:
         inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
@@ -439,7 +440,8 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         plt.savefig('COI_{}'.format(runName))    
     else:
         inputVarsMapping, outputVarsMapping = None, None
-    setUnconnectedAsInputs(modelOnnxMarabou)
+    if mask: #FIXME why was this failing? created a bound for a variable with index above the number of veriables number.
+        setUnconnectedAsInputs(modelOnnxMarabou)
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
     finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)

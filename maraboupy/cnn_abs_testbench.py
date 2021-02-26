@@ -245,7 +245,7 @@ for i, mask in enumerate(maskList):
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))    
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI)
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI, mask=cfg_maskAbstract)
     subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
     printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
     if sat:
@@ -254,17 +254,6 @@ for i, mask in enumerate(maskList):
 
         if not isSporious:
             successful = i
-
-            #FIXME check SingleClass vs AllClass
-            #maskListSingleClass = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy="SingleClassRank"))
-            #modelAbsSingle = cloneAndMaskConvModel(modelOrig, replaceLayerName, maskListSingleClass[0])
-            #_sat1, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbsSingle, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_{}".format(1), coi=cfg_pruneCOI)
-            #_sat2, _cex, _cexPrediction, _inputDict, _outputDict, _originalQueryStats, _finalQueryStats = runMarabouOnKeras(modelAbsSingle, xAdv, cfg_propDist, yMax, ySecond, "runMarabouOnKeras_SingleClass_{}".format(2), coi=False)
-            #printLog("yMax={}, ySecond={}, AllClassPredictCEX={}, SingleClassAbsPredictCEX={}".format(yMax, ySecond, modelAbs.predict(np.array([cex])).argmax(), modelAbsSingle.predict(np.array([cex])).argmax()))
-            #printLog("yPredictAll={}".format(modelAbs.predict(np.array([cex]))))
-            #printLog("yPredictSingle={}".format(modelAbsSingle.predict(np.array([cex]))))
-            #printLog("_sat1 (COI) = {}".format(_sat1))            
-            #printLog("_sat2 (no COI) = {}".format(_sat2))            
             break;
     else:
         printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
@@ -275,7 +264,7 @@ else:
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     startLocal = time.time()
     subResultAppend(resultsJson, runType="full")
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI)
+    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI, mask=cfg_maskAbstract)
     subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
     printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
     successful = len(maskList)
