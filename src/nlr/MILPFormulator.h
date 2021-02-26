@@ -25,6 +25,7 @@
 #include <boost/chrono.hpp>
 #include <climits>
 #include <mutex>
+#include <cmath>
 
 namespace NLR {
 
@@ -77,14 +78,24 @@ private:
     static void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
                                  LayerOwner *layerOwner );
 
-    static void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
+    static void addLayerToMILPFormulation( GurobiWrapper &gurobi,
                                                const Layer *layer,
                                                LayerOwner *layerOwner );
-
+    
     static void addNeuronToModel( GurobiWrapper &gurobi,
                                   const Layer *layer,
                                   unsigned neuron,
                                   LayerOwner *layerOwner );
+
+    static void addReluNeuronToModel( GurobiWrapper &gurobi,
+                                      const Layer *layer,
+                                      unsigned neuron,
+                                      LayerOwner *layerOwner );
+   
+    static void addMaxNeuronToModel( GurobiWrapper &gurobi,
+                                     const Layer *layer,
+                                     unsigned neuron,
+                                     LayerOwner *layerOwner );
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints

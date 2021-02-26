@@ -454,9 +454,10 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
             break;
 
         case Layer::RELU:
-            addReluLayerToMILPFormulation( gurobi, layer, layerOwner );
+        case Layer::MAX:
+            addLayerToMILPFormulation( gurobi, layer, layerOwner );
             break;
-
+            
         default:
             throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
             break;
@@ -464,7 +465,30 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
 }
 
 void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer,
-                                       unsigned neuron, LayerOwner *layerOwner )
+                                           unsigned neuron, LayerOwner *layerOwner )
+{
+    switch ( layer->getLayerType() )
+    {
+        case Layer::INPUT:
+        case Layer::WEIGHTED_SUM:
+            break;
+
+        case Layer::RELU:
+            addReluNeuronToModel( gurobi, layer, i, layerOwner );
+            break;
+            
+        case Layer::MAX:
+            addMaxNeuronToModel( gurobi, layer, i, layerOwner );
+            break;
+            
+        default:
+            throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
+            break;
+    }    
+}
+
+void MILPFormulator::addReluNeuronToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                           unsigned neuron, LayerOwner *layerOwner )
 {
     if ( layer->getLayerType() != Layer::RELU )
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
@@ -519,15 +543,126 @@ void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer
     gurobi.addLeqConstraint( terms, 0 );
 }
 
-void MILPFormulator::addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                                    const Layer *layer,
-                                                    LayerOwner *layerOwner )
+
+void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                          unsigned neuron, LayerOwner *layerOwner )
+{
+    if ( layer->getLayerType() != Layer::MAX )
+        throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
+
+    if ( layer->neuronEliminated( neuron ) )
+        return;
+
+    unsigned targetVariable = layer->neuronToVariable( neuron );
+
+    List<NeuronIndex> sources = layer->getActivationSources( neuron );
+    double maxUb = FloatUtils::negativeInfinity();
+    unsigned maxUbVariable = 0;    
+    double secondMaxUb = FloatUtils::negativeInfinity();
+    double maxLb = FloatUtils::negativeInfinity();        
+    for ( const auto &source : sources )
+    {
+        const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+        unsigned sourceNeuron = source._neuron;           
+        double sourceLb = sourceLayer->getLb( sourceNeuron );
+        double sourceUb = sourceLayer->getUb( sourceNeuron );        
+        if ( sourceUb > maxUb )
+        {
+            maxUb = sourceUb;
+            maxUbVariable = sourceLayer->neuronToVariable( sourceNeuron );
+        }
+        if ( sourceLb > maxLb )
+            maxLb = sourceLb;            
+    }
+
+    for ( const auto &source : sources )
+    {
+        const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
+        unsigned sourceNeuron = source._neuron;                    
+        if(sourceLayer->neuronToVariable( sourceNeuron ) != maxUbVariable)
+        {             
+            double sourceUb = sourceLayer->getUb( sourceNeuron );
+            if ( sourceUb > secondMaxUb )
+                secondMaxUb = sourceUb;
+        }
+    }    
+
+    if ( FloatUtils::gt(maxLb, secondMaxUb) )
+    {
+        // This Max is fixed in one of its phases - one source overshadows the rest
+        return;
+    }
+
+    unsigned clog2n = std::ceil( std::log2( sources.size() ) );
+    List<GurobiWrapper::Term> terms;        
+
+    // Constrain indicator variables to be onehot
+    terms.clear();
+    for ( unsigned i = 0 ; i < clog2n ; ++i )
+    {
+        gurobi.addVariable( Stringf( "at%uj%u", targetVariable, i ), 0, 1, GurobiWrapper::BINARY );
+        terms.append( GurobiWrapper::Term( std::pow(2,i), Stringf( "at%uj%u", targetVariable, i ) ) );        
+    }
+    gurobi.addLeqConstraint( terms, clog2n );
+    
+    for ( const auto &source : sources )
+    {
+        const Layer *sourceLayer = layerOwner->getLayer( source._layer );        
+        unsigned sourceNeuron = source._neuron;
+        unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
+        
+        double sourceLb = sourceLayer->getLb( sourceNeuron );
+        double sourceUb = sourceLayer->getUb( sourceNeuron );
+
+        std::bitset<clog2n> sourceBinary ( sourceVariable );        
+        if ( FloatUtils::gt(maxLb, sourceUb) )
+        {
+            terms.clear();
+            for ( unsigned i = 0 ; i < clog2n ; ++i)
+            {
+                terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) , Stringf( "at%uj%u", targetVariable, i ) ) );            
+            }
+            gurobi.addLeqConstraint( terms, sourceBinary.count() - 1 );            
+            continue;
+        }
+
+        /*
+          The underlying LP relaxation defines the basic max constaints ; 
+          we add the indicator variable a_j \in {0,1}, when a_j iff y == x_j.
+          The notation x_j[i] is the i-th bit in the binary representation of j.
+
+          y <= x_j + ( u_f - l_j ) * sum {i < clog2n} ( (1 - j[i] ) * a_i + ( 1 - a_i ) * j[i] )
+
+          Or, alternatively:
+
+          y - x_j - ( u_f - l_j ) * sum {j[i] == 0} a_i + ( u_f - l_j ) * sum {j[i] == 1} a_i <= sum { i < clog2n } ( j[i] )
+          
+        */
+
+        terms.clear();
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+        double scalarUb = maxUb - sourceLb;
+        for ( unsigned i = 0 ; i < clog2n ; ++i)
+        {
+            terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) * scalarUb , Stringf( "at%uj%u", targetVariable, i ) ) );            
+        }
+        gurobi.addLeqConstraint( terms, sourceBinary.count() * scalarUb );
+    }
+}
+
+
+void MILPFormulator::addLayerToMILPFormulation( GurobiWrapper &gurobi,
+                                                const Layer *layer,
+                                                LayerOwner *layerOwner )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
         addNeuronToModel( gurobi, layer, i, layerOwner );
     }
 }
+
+
 
 double MILPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
                                            MinOrMax minOrMax, String variableName,
