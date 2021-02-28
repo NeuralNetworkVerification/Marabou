@@ -79,9 +79,9 @@ private:
                                  LayerOwner *layerOwner );
 
     static void addLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                               const Layer *layer,
-                                               LayerOwner *layerOwner );
-    
+                                           const Layer *layer,
+                                           LayerOwner *layerOwner );
+
     static void addNeuronToModel( GurobiWrapper &gurobi,
                                   const Layer *layer,
                                   unsigned neuron,
@@ -91,7 +91,7 @@ private:
                                       const Layer *layer,
                                       unsigned neuron,
                                       LayerOwner *layerOwner );
-   
+
     static void addMaxNeuronToModel( GurobiWrapper &gurobi,
                                      const Layer *layer,
                                      unsigned neuron,
