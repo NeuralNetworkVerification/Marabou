@@ -112,8 +112,6 @@ resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
 resultsJson["subResults"] = []
 
-dumpJson(resultsJson)
-
 cexFromImage = False
 
 #mnistProp.runTitle = cfg_runTitle
@@ -154,6 +152,8 @@ ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(me
 mnistProp.logger.addHandler(ch)
 
 logging.getLogger('matplotlib.font_manager').disabled = True
+
+dumpJson(resultsJson)
 
 ###############################################################################
 #### ______                                ___  ___          _      _      ####
