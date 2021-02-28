@@ -587,13 +587,26 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
         }
     }    
 
-    if ( FloatUtils::gt(maxLb, secondMaxUb) )
+    if ( FloatUtils::gte(maxLb, secondMaxUb) )
     {
         // This Max is fixed in one of its phases - one source overshadows the rest
         return;
     }
-
-    unsigned clog2n = std::ceil( std::log2( sources.size() ) );
+    std::map<unsigned, unsigned> variable2Reduced;
+    unsigned numActiveVariables = 0;
+    for ( const auto &source : sources )
+    {
+        const Layer *sourceLayer = layerOwner->getLayer( source._layer );        
+        unsigned sourceNeuron = source._neuron;
+        unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
+        
+        double sourceUb = sourceLayer->getUb( sourceNeuron );
+        if ( FloatUtils::gt( sourceUb, maxLb ) )
+            variable2Reduced[sourceVariable] = numActiveVariables++;
+    }
+    
+    //unsigned clog2n = std::ceil( std::log2( sources.size() ) );
+    unsigned clog2n = std::ceil( std::log2( numActiveVariables ) );
     List<GurobiWrapper::Term> terms;        
 
     // Constrain indicator variables to be onehot
@@ -603,8 +616,8 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
         gurobi.addVariable( Stringf( "at%uj%u", targetVariable, i ), 0, 1, GurobiWrapper::BINARY );
         terms.append( GurobiWrapper::Term( std::pow(2,i), Stringf( "at%uj%u", targetVariable, i ) ) );        
     }
-    gurobi.addLeqConstraint( terms, clog2n );
-    
+    gurobi.addLeqConstraint( terms, numActiveVariables );
+
     for ( const auto &source : sources )
     {
         const Layer *sourceLayer = layerOwner->getLayer( source._layer );        
@@ -616,20 +629,21 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
 
         std::vector<bool> sourceBinary ( clog2n , 0 );        ;        
         unsigned index = 0;
-        unsigned sourceBinaryCount = 0;        
-        for ( unsigned sourceVariableDiv = sourceVariable ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )
+        unsigned sourceBinaryCount = 0;
+//        for ( unsigned sourceVariableDiv = sourceVariable ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )        
+        for ( unsigned sourceVariableDiv = variable2Reduced[sourceVariable] ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )
         {
-            sourceBinary[index] = sourceVariable % 2;
-            sourceBinaryCount += sourceVariable % 2;
+            sourceBinary[index] = sourceVariableDiv % 2;
+            sourceBinaryCount += sourceVariableDiv % 2;
         }
-        if ( FloatUtils::gt(maxLb, sourceUb) )
+        if ( FloatUtils::gt( maxLb, sourceUb ) )
         {
-            terms.clear();
-            for ( unsigned i = 0 ; i < clog2n ; ++i)
-            {
-                terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) , Stringf( "at%uj%u", targetVariable, i ) ) );            
-            }
-            gurobi.addLeqConstraint( terms, sourceBinaryCount - 1 );            
+//            terms.clear();
+//            for ( unsigned i = 0 ; i < clog2n ; ++i)
+//            {
+//                terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) , Stringf( "at%uj%u", targetVariable, i ) ) );            
+//            }
+//            gurobi.addLeqConstraint( terms, sourceBinaryCount - 1 );            
             continue;
         }
 
