@@ -15,6 +15,7 @@
 
 #include "ConfigurationError.h"
 #include "Debug.h"
+#include "GlobalConfiguration.h"
 #include "Options.h"
 
 Options *Options::get()
@@ -63,6 +64,8 @@ void Options::initializeDefaultValues()
     */
     _floatOptions[TIMEOUT_FACTOR] = 1.5;
     _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
+    _floatOptions[PREPROCESSOR_BOUND_TOLERANCE] = \
+        GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
 
     /*
       String options
