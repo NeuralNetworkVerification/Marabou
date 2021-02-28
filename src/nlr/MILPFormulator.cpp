@@ -605,7 +605,6 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
             variable2Reduced[sourceVariable] = numActiveVariables++;
     }
     
-    //unsigned clog2n = std::ceil( std::log2( sources.size() ) );
     unsigned clog2n = std::ceil( std::log2( numActiveVariables ) );
     List<GurobiWrapper::Term> terms;        
 
@@ -618,6 +617,7 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
     }
     gurobi.addLeqConstraint( terms, numActiveVariables );
 
+    unsigned activeVariableIndex = 0;
     for ( const auto &source : sources )
     {
         const Layer *sourceLayer = layerOwner->getLayer( source._layer );        
@@ -627,24 +627,16 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
         double sourceLb = sourceLayer->getLb( sourceNeuron );
         double sourceUb = sourceLayer->getUb( sourceNeuron );
 
+        if ( FloatUtils::gt( maxLb, sourceUb ) )
+            continue;
+        
         std::vector<bool> sourceBinary ( clog2n , 0 );        ;        
         unsigned index = 0;
         unsigned sourceBinaryCount = 0;
-//        for ( unsigned sourceVariableDiv = sourceVariable ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )        
-        for ( unsigned sourceVariableDiv = variable2Reduced[sourceVariable] ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )
+        for ( unsigned sourceVariableDiv = activeVariableIndex ; sourceVariableDiv > 0 ; sourceVariableDiv /= 2 )
         {
-            sourceBinary[index] = sourceVariableDiv % 2;
+            sourceBinary[index++] = sourceVariableDiv % 2;
             sourceBinaryCount += sourceVariableDiv % 2;
-        }
-        if ( FloatUtils::gt( maxLb, sourceUb ) )
-        {
-//            terms.clear();
-//            for ( unsigned i = 0 ; i < clog2n ; ++i)
-//            {
-//                terms.append( GurobiWrapper::Term( ( sourceBinary[i] ? 1 : -1 ) , Stringf( "at%uj%u", targetVariable, i ) ) );            
-//            }
-//            gurobi.addLeqConstraint( terms, sourceBinaryCount - 1 );            
-            continue;
         }
 
         /*
