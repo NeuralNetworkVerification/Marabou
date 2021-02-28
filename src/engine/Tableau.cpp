@@ -1482,7 +1482,7 @@ void Tableau::dumpAssignment()
     bounds.open("dumpBounds.json");
     bounds << "[" << std::endl;
     for(unsigned i = 0 ; i < _n ; ++i) {
-        bounds << "{\"index\":" << i << ", " << "\"lower\":" << _lowerBounds[i] << ", " << "\"upper\":" << _upperBounds[i] << (i==_n-1 ? "}" : "},") << std::endl;
+        bounds << "{\"variable\":" << i << ", " << "\"lower\":" << _lowerBounds[i] << ", " << "\"upper\":" << _upperBounds[i] << (i==_n-1 ? "}" : "},") << std::endl;
     }
     bounds << "]" << std::endl;
     bounds.close();

@@ -224,7 +224,7 @@ dumpBounds(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond)
 if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
     with open('dumpBounds.json', 'r') as boundFile:
         boundList = json.load(boundFile)
-        boundDict = {bound["index"] : (bound["lower"], bound["upper"]) for bound in boundList}
+        boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 else:
     boundDict = None
 
