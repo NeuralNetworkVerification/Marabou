@@ -59,14 +59,7 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     else
         gurobi.setCost( terms );
 
-    //printf("Solving gurobi in Marabou directory");
-    //fflush(stdout);
-    //String suffix(".lp");
-    //String fileName = variableName + suffix;
-    //gurobi.dumpModel(fileName.ascii());
     gurobi.solve();
-    //printf("Finished - Solving gurobi for %s \n", variableName.ascii());
-    //fflush(stdout);    
 
     if ( gurobi.infeasbile() )
     {
@@ -780,20 +773,6 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
             gurobi.addLeqConstraint( terms, maxConcreteUb );
            
-            //Debug code
-            //printf("targetVariable=%u, maxConcreteLb=%lf\n", targetVariable, maxConcreteLb);
-            //for ( const auto &source : sources )
-            //{
-            //    const Layer *sourceLayer = _layerOwner->getLayer( source._layer );                
-            //    unsigned sourceNeuron = source._neuron;
-            //    unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
-            //    double sourceLb = sourceLayer->getLb( sourceNeuron );
-            //    double sourceUb = sourceLayer->getUb( sourceNeuron );
-            //    printf("sourceVariable=%u, sourceLb=%lf, sourceUb=%lf\n", sourceVariable, sourceLb, sourceUb);
-            //}               
-            //fflush(stdout);
-            //
-
             // If the largest lower bound is bigger than the second largest upper bound, then the variable corresponding to that lower bound is the maximal variable.
             if (maxConcreteLb >= secondMaxConcreteUb)
             {
