@@ -74,6 +74,8 @@ parser.add_argument("--sample",         type=int,                               
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
 parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
+parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-inc", "milp", "milp-inc", "iter-prop", "none"], default="none", help="Which bound tightening technique to use.")
+parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "none"], default="none",              help="Which bound tightening technique to use.")
 args = parser.parse_args()
 
 resultsJson = dict()
@@ -92,6 +94,9 @@ cfg_abstractionPolicy = args.policy
 cfg_sporiousStrict    = args.sporious_strict
 cfg_sampleIndex       = args.sample
 cfg_doubleCheck       = args.double_check
+cfg_boundTightening   = args.bound_tightening
+cfg_solveWithMILP     = cfg_boundTightening != "none"
+cfg_symbolicTightening= args.symbolic
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -107,6 +112,9 @@ resultsJson["cfg_abstractionPolicy"] = cfg_abstractionPolicy
 resultsJson["cfg_sporiousStrict"]    = cfg_sporiousStrict
 resultsJson["cfg_sampleIndex"]       = cfg_sampleIndex
 resultsJson["cfg_doubleCheck"]       = cfg_doubleCheck
+resultsJson["cfg_boundTightening"]   = cfg_boundTightening
+resultsJson["cfg_solveWithMILP"]     = cfg_solveWithMILP
+resultsJson["cfg_symbolicTightening"]= cfg_symbolicTightening
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -116,8 +124,8 @@ cexFromImage = False
 
 #mnistProp.runTitle = cfg_runTitle
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=2, solveWithMILP=True)
-optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, solveWithMILP=True, numWorkers=cfg_numClusterCPUs)
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
+optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     mnistProp.optionsObj = optionsLocal
 else :
