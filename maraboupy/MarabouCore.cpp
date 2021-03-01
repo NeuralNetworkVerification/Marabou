@@ -192,11 +192,11 @@ struct MarabouOptions {
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
+        , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
-        , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
     {};
 
   void setOptions()
@@ -466,6 +466,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
+        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
         .def_readwrite("_snc", &MarabouOptions::_snc)
@@ -475,8 +476,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
-        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
-        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout);
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
