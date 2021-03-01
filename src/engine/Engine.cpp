@@ -1115,7 +1115,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         {
             _networkLevelReasoner->dumpBounds();
-            //_tableau->dumpAssignment();
+            _tableau->dumpAssignment();
         }
 
         if ( _splittingStrategy == DivideStrategy::Auto )
