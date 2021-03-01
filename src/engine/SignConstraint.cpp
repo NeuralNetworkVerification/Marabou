@@ -172,22 +172,22 @@ List<PhaseStatus> SignConstraint::getAllCases() const
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     if ( _direction == SIGN_PHASE_NEGATIVE )
-      return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE };
+      return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
 
     if ( _direction == SIGN_PHASE_POSITIVE )
-      return { ABS_PHASE_POSITIVE, ABS_PHASE_NEGATIVE };
+      return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
     if ( _assignment.exists( _f ) )
     {
         if ( FloatUtils::isPositive( _assignment[_f] ) )
-          return { ABS_PHASE_POSITIVE, ABS_PHASE_NEGATIVE };
+          return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
         else
-          return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE };
+          return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
     }
 
-    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE };
+    return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
 }
 
 PiecewiseLinearCaseSplit SignConstraint::getCaseSplit( PhaseStatus phase ) const
