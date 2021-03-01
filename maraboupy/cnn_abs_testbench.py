@@ -116,8 +116,8 @@ cexFromImage = False
 
 #mnistProp.runTitle = cfg_runTitle
 
-optionsLocal = Marabou.createOptions(snc=False, verbosity=2)
-optionsCluster = Marabou.createOptions(snc=True, verbosity=0, numWorkers=cfg_numClusterCPUs)
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=2, solveWithMILP=True)
+optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, solveWithMILP=True, numWorkers=cfg_numClusterCPUs)
 if cfg_runOn == "local":
     mnistProp.optionsObj = optionsLocal
 else :
