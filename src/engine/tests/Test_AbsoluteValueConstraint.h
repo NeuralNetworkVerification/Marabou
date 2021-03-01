@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_ReluConstraint.h
+/*! \file Test_AbsoluteValueConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Shiran Aziz, Aleksandar Zeljic, Andrew Wu
@@ -1189,7 +1189,7 @@ public:
      * 1. Check that all cases are returned by AbsoluteValueConstraint::getAllCases
      * 2. Check that AbsoluteValueConstraint::getCaseSplit( case ) returns the correct case
      */
-    void test_relu_get_cases()
+    void test_abs_get_cases()
     {
         AbsoluteValueConstraint abs( 4, 6 );
 
