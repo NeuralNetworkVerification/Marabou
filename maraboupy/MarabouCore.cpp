@@ -195,6 +195,7 @@ struct MarabouOptions {
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
     {};
 
   void setOptions()
@@ -222,6 +223,7 @@ struct MarabouOptions {
     Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
+    Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
   }
 
     bool _snc;
@@ -240,6 +242,7 @@ struct MarabouOptions {
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
+    std::string _milpTighteningString;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -428,7 +431,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
-        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString);
+        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
