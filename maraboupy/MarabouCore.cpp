@@ -182,6 +182,7 @@ struct MarabouOptions {
         : _snc( Options::get()->getBool( Options::DNC_MODE ) )
         , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
         , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
+        , _dumpBounds( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
@@ -193,6 +194,8 @@ struct MarabouOptions {
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
+        , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
     {};
 
   void setOptions()
@@ -201,6 +204,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::DNC_MODE, _snc );
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
+    Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -218,11 +222,14 @@ struct MarabouOptions {
     // string options
     Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
+    Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
+    Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
   }
 
     bool _snc;
     bool _restoreTreeStates;
     bool _solveWithMILP;
+    bool _dumpBounds;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -234,6 +241,8 @@ struct MarabouOptions {
     float _preprocessorBoundTolerance;
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
+    std::string _tighteningStrategyString;
+    std::string _milpTighteningString;
 };
 
 bool processInputQuery(InputQuery &inputQuery) {
@@ -434,9 +443,12 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
         .def_readwrite("_snc", &MarabouOptions::_snc)
         .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
+        .def_readwrite("_dumpBounds", &MarabouOptions::_dumpBounds)
         .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
-        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString);
+        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
+        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)

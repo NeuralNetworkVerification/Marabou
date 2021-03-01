@@ -50,6 +50,7 @@ Engine::Engine()
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( Options::get()->getDivideStrategy() )
+    , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
@@ -1106,12 +1107,15 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         if ( preprocess )
-
         {
-            printf("Started dumping\n");                        
+            performSymbolicBoundTightening();
             performMILPSolverBoundedTightening();
-            _tableau->dumpAssignment();
-            printf("Finished dumping\n");            
+        }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        {
+            _networkLevelReasoner->dumpBounds();
+            //_tableau->dumpAssignment();
         }
 
         if ( _splittingStrategy == DivideStrategy::Auto )
@@ -1822,7 +1826,7 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSymbolicBoundTightening()
 {
-    if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
+    if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) )
         return;
 
@@ -1834,7 +1838,12 @@ void Engine::performSymbolicBoundTightening()
     _networkLevelReasoner->obtainCurrentBounds();
 
     // Step 2: perform SBT
-    _networkLevelReasoner->symbolicBoundPropagation();
+    if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+        _networkLevelReasoner->symbolicBoundPropagation();
+    else if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::DEEP_POLY )
+        _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
@@ -2203,20 +2212,27 @@ void Engine::storeSmtState( SmtState & smtState )
 
 bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
-    // Apply bound tightening before handing to Gurobi
-    if ( _tableau->basisMatrixAvailable() )
-        {
-            explicitBasisBoundTightening();
-            applyAllBoundTightenings();
-            applyAllValidConstraintCaseSplits();
-        }
-
-    do
+    try
     {
-        performSymbolicBoundTightening();
+        // Apply bound tightening before handing to Gurobi
+        if ( _tableau->basisMatrixAvailable() )
+        {
+	    explicitBasisBoundTightening();
+	    applyAllBoundTightenings();
+	    applyAllValidConstraintCaseSplits();
+	}
+	do
+	{
+	    performSymbolicBoundTightening();
+	}
+	while ( applyAllValidConstraintCaseSplits() );
     }
-    while ( applyAllValidConstraintCaseSplits() );
-
+    catch ( const InfeasibleQueryException & )
+    {
+        _exitCode = Engine::UNSAT;
+        return false;
+    }
+    
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
