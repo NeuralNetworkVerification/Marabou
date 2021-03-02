@@ -22,12 +22,6 @@ SingleVarBoundsExplanator::SingleVarBoundsExplanator( const unsigned length )
 {
 }
 
-SingleVarBoundsExplanator::~SingleVarBoundsExplanator()
-{
-	_upper.clear();
-	_lower.clear();
-}
-
 void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bound, const bool isUpper ) const
 {
 	ASSERT( bound.size() == _length )
@@ -55,12 +49,6 @@ BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsN
 	,_bounds( varsNum, SingleVarBoundsExplanator( rowsNum ) )
 {
 
-}
-
-BoundsExplanator::~BoundsExplanator()
-{
-	_bounds.clear(); //TODO verify memory management
-	// Guy: this is fine. In fact, you can erase the destructor altogether - this is the default behavior.
 }
 
 void BoundsExplanator::getOneBoundExplanation( std::vector<double>& bound, const unsigned var, const bool isUpper ) const

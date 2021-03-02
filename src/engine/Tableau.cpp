@@ -2092,6 +2092,9 @@ void Tableau::addRow()
         _statistics->incNumAddedRows();
         _statistics->setCurrentTableauDimension( _m, _n );
     }
+
+    if (GlobalConfiguration::PROOF_CERTIFICATE)
+        _boundsExplanator = new BoundsExplanator(_n, _m); //TODO erase after registration as resizeWatcher
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )

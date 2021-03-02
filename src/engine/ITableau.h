@@ -188,6 +188,7 @@ public:
     virtual SingleVarBoundsExplanator& ExplainBound( const unsigned variable ) const = 0;
     virtual void updateExplanation( const TableauRow& row, const bool isUpper ) const = 0;
     virtual void updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const = 0;
+
    
 };
 

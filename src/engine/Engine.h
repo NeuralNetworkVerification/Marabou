@@ -544,6 +544,20 @@ private:
     */
     void Engine::simplexBoundsUpdate();
 
+    std::vector<std::vector<double>> _initialTableau;
+    std::vector<double> _initialLowerBounds;
+    std::vector<double> _initialUpperBounds;
+
+    /*
+     Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
+    */
+    bool Engine::certifyInfeasibility();
+
+    /*
+     Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds
+    */
+    double Engine::getExplainedBound(const unsigned var, const bool isUpper);
+
     /*
      Prints coefficents of Simplex equations that witness UNSAT
      TODO erase

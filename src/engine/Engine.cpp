@@ -53,6 +53,9 @@ Engine::Engine()
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
+    , _initialTableau {}
+    , _initialLowerBounds {}
+    , _initialUpperBounds {}
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -308,7 +311,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
                     if ( GlobalConfiguration::PROOF_CERTIFICATE )
+                    {
                         printInfeasibilityCertificate();
+                        ASSERT(certifyInfeasibility());
+                    }     
                 }
                 _exitCode = Engine::UNSAT;
                 return false;
@@ -772,6 +778,37 @@ double *Engine::createConstraintMatrix()
         ++equationIndex;
     }
 
+    if ( GlobalConfiguration::PROOF_CERTIFICATE )
+    {
+        unsigned varIndex = 0;
+        unsigned count = 0;
+
+        // Store initial bounds
+        _initialLowerBounds = std::vector<double>( n, 0 ); // Where should be cleared?
+        _initialUpperBounds = std::vector<double>( n, 0 );
+
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _initialLowerBounds[i] = _preprocessedQuery.getLowerBound( i );
+            _initialUpperBounds[i] = _preprocessedQuery.getUpperBound( i );
+        }
+
+        // Set vector of initial rows
+        _initialTableau = std::vector<std::vector<double>>( m );
+ 
+        // Keep m vectors of n+1 numbers, where the last coefficient in each row corresponds to scalar
+        for ( const auto& equation : equations )
+        {
+            _initialTableau[count] = std::vector<double>( n + 1, 0 );
+
+            for ( const auto& addend : equation._addends )
+                _initialTableau[count][addend._variable] = addend._coefficient;
+
+            _initialTableau[count][n] = equation._scalar;
+            ++count;
+        }
+    }
+
     return constraintMatrix;
 }
 
@@ -1106,7 +1143,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::WARM_START )
             warmStart();
-
+       
         delete[] constraintMatrix;
 
         if ( preprocess )
@@ -2318,7 +2355,6 @@ void Engine::printInfeasibilityCertificate()
     for ( unsigned i = 0; i < m; ++i )
         printf( "%.2lf ,", expl[i] );
     printf( "]\n" );
-
     expl.clear();
 }
 
@@ -2334,6 +2370,71 @@ void Engine::simplexBoundsUpdate()
         _tableau->tightenUpperBound(boundUpdateRow._lhs, _tableau->computeRowBound(boundUpdateRow, true));
     else
         _tableau->tightenLowerBound(boundUpdateRow._lhs, _tableau->computeRowBound(boundUpdateRow, false));
+}
+
+bool Engine::certifyInfeasibility()
+{
+    int var = _tableau->getInfeasibleVar();
+    double upper, lower;
+
+    upper = getExplainedBound( var, true );
+    lower = getExplainedBound( var, false );
+
+    return upper < lower;
+}
+
+double Engine::getExplainedBound( const unsigned var, const bool isUpper )
+{
+    unsigned n = _tableau->getN(), m = _tableau->getM();
+    double derived_bound = 0, scalar = 0, c = 0, temp = 0;
+    SingleVarBoundsExplanator certificate = _tableau->ExplainBound( var );
+
+    // Retrieve bound explanation
+    std::vector<double> expl = std::vector<double>( m, 0 );
+    certificate.getVarBoundExplanation( expl, isUpper );
+
+ 
+    // If explanation is all zeros, return original bound
+    if ( std::all_of( expl.begin(), expl.end(), []( int i ) { return i == 0; } ) )
+        return isUpper? _initialUpperBounds[var] : _initialLowerBounds[var];
+
+    // Create linear combination of originial rows implied from explanation
+    std::vector<double> explanationRowsCombination = std::vector<double>( n, 0 );
+
+    for ( unsigned i = 0; i < m; ++i )
+    {
+        for ( unsigned j = 0; j < n; ++j )
+            explanationRowsCombination[j] += _initialTableau[i][j] * expl[i];
+
+        scalar += _initialTableau[i][n] * expl[i];
+    }
+
+    // Isolate var in the linear combination - compute its coefficient and divide by -c.
+    // Then erase the coefficient of var
+    c = explanationRowsCombination[var];
+
+    ASSERT( c );
+    for ( unsigned i = 0; i < n; ++i )
+        explanationRowsCombination[i] /= -c;
+    explanationRowsCombination[var] = 0;
+    scalar /= -c;
+
+    // Set the  bound derived from the linear combination, using original bounds.
+    for ( unsigned i = 0; i < n; ++i )
+    {
+        temp = explanationRowsCombination[i];
+        if ( isUpper )
+            temp *= explanationRowsCombination[i] > 0 ? _initialUpperBounds[i] : _initialLowerBounds[i];
+        else
+            temp *= explanationRowsCombination[i] > 0 ? _initialLowerBounds[i] : _initialUpperBounds[i];
+        derived_bound += temp;
+    }
+
+    derived_bound += scalar;
+    explanationRowsCombination.clear();
+    expl.clear();
+    ASSERT( derived_bound == ( isUpper? _tableau->getUpperBound( var ) : _tableau->getLowerBound( var ) ) );
+    return derived_bound;
 }
 
 //TODO erase

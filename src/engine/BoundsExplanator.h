@@ -21,7 +21,6 @@
 class SingleVarBoundsExplanator {
 public:
 	SingleVarBoundsExplanator( const unsigned length );
-	~SingleVarBoundsExplanator();
 
 	/*
 	  Puts the values of a bound explanation in the array bound.
@@ -46,7 +45,6 @@ private:
 class BoundsExplanator {
 public:
 	BoundsExplanator( const unsigned varsNum, const unsigned rowsNum );
-	~BoundsExplanator();
 
 	/*
 	  Puts the values of a bound explanation in the array bound.
@@ -64,7 +62,7 @@ public:
 	void updateBoundExplanation( const TableauRow& row, const bool isUpper );
 
 	/*
-	  	  Given a row, updates the values of the bound explanations of a var according to the row
+	  Given a row, updates the values of the bound explanations of a var according to the row
 	*/
 	void updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned var );
 
