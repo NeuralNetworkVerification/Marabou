@@ -115,9 +115,10 @@ void DeepPolySignElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
+        NeuronIndex sourceIndex = *( _layer->
+                                     getActivationSources( i ).begin() );
+        unsigned sourceNeuronIndex = sourceIndex._neuron;
         DEBUG({
-                NeuronIndex sourceIndex = *( _layer->
-                                             getActivationSources( i ).begin() );
                 ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
             });
 
@@ -144,29 +145,30 @@ void DeepPolySignElement::symbolicBoundInTermsOfPredecessor
             // The symbolic lower- and upper- bounds of the j-th neuron in the
             // target layer are ... + weightLb * f_i + ...
             // and ... + weightUb * f_i + ..., respectively.
-            unsigned index = i * targetLayerSize + j;
+            unsigned newIndex = sourceNeuronIndex * targetLayerSize + j;
+            unsigned oldIndex = i * targetLayerSize + j;
 
             // Update the symbolic lower bound
-            double weightLb = symbolicLb[index];
+            double weightLb = symbolicLb[oldIndex];
             if ( weightLb >= 0 )
             {
-                symbolicLbInTermsOfPredecessor[index] += weightLb * coeffLb;
+                symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffLb;
                 symbolicLowerBias[j] += weightLb * lowerBias;
             } else
             {
-                symbolicLbInTermsOfPredecessor[index] += weightLb * coeffUb;
+                symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;
             }
 
             // Update the symbolic upper bound
-            double weightUb = symbolicUb[index];
+            double weightUb = symbolicUb[oldIndex];
             if ( weightUb >= 0 )
             {
-                symbolicUbInTermsOfPredecessor[index] += weightUb * coeffUb;
+                symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffUb;
                 symbolicUpperBias[j] += weightUb * upperBias;
             } else
             {
-                symbolicUbInTermsOfPredecessor[index] += weightUb * coeffLb;
+                symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffLb;
                 symbolicUpperBias[j] += weightUb * lowerBias;
             }
         }

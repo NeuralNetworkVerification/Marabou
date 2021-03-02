@@ -38,7 +38,10 @@ enum PhaseStatus : unsigned {
     ABS_PHASE_POSITIVE = 3,
     ABS_PHASE_NEGATIVE = 4,
     SIGN_PHASE_POSITIVE = 5,
-    SIGN_PHASE_NEGATIVE = 6
+    SIGN_PHASE_NEGATIVE = 6,
+
+    // SENTINEL VALUE
+    CONSTRAINT_INFEASIBLE = 65535
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher

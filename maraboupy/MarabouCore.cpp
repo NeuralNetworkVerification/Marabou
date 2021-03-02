@@ -193,9 +193,11 @@ struct MarabouOptions {
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
+        , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
     {};
 
   void setOptions()
@@ -219,11 +221,13 @@ struct MarabouOptions {
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
     Options::get()->setFloat( Options::PREPROCESSOR_BOUND_TOLERANCE, _preprocessorBoundTolerance );
+    Options::get()->setFloat( Options::MILP_SOLVER_TIMEOUT, _milpSolverTimeout );
 
     // string options
     Options::get()->setString( Options::SPLITTING_STRATEGY, _splittingStrategyString );
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
+    Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
   }
 
     bool _snc;
@@ -240,10 +244,40 @@ struct MarabouOptions {
     unsigned _numSimulations;
     float _timeoutFactor;
     float _preprocessorBoundTolerance;
+    float _milpSolverTimeout;
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
+    std::string _milpTighteningString;
 };
+
+
+/* The default parameters here are just for readability, you should specify
+ * them to make them work*/
+InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::string redirect=""){
+    // Preprocess the input inquery (e.g., one can use it to just compute the gurobi bounds)
+    // Arguments: InputQuery object, filename to redirect output
+    // Returns: Preprocessed input query
+
+    Engine engine;
+    int output=-1;
+    if(redirect.length()>0)
+        output=redirectOutputToFile(redirect);
+    try{
+        options.setOptions();
+        engine.processInputQuery(inputQuery);
+    }
+    catch(const MarabouError &e){
+        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+    }
+
+    if(output != -1)
+        restoreOutputStream(output);
+
+    return *(engine.getInputQuery());
+}
+
+
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
@@ -321,6 +355,18 @@ InputQuery loadQuery(std::string filename){
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
+    m.def("preprocess", &preprocess, R"pbdoc(
+         Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
+
+         Args:
+             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be preproccessed
+             options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+             redirect (str, optional): Filepath to direct standard output, defaults to ""
+
+         Returns:
+                 InputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): the preprocessed input query
+         )pbdoc",
+         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
     m.def("solve", &solve, R"pbdoc(
         Takes in a description of the InputQuery and returns the solution
 
@@ -423,6 +469,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
         .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
         .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
+        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout)
         .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
         .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
         .def_readwrite("_snc", &MarabouOptions::_snc)
@@ -432,6 +479,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
