@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReluConstraint.cpp
+/*! \file AbsoluteValueConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Shiran Aziz, Guy Katz
@@ -13,6 +13,7 @@
  **/
 
 #include "AbsoluteValueConstraint.h"
+
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -86,7 +87,7 @@ void AbsoluteValueConstraint::restoreState( const PiecewiseLinearConstraint *sta
     ASSERT( nullptr != getContext() );
     ASSERT( nullptr != getActiveStatusCDO() );
     ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == relu->getContext() );
+    ASSERT( getContext() == abs->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
