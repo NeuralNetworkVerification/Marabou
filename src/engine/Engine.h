@@ -477,6 +477,12 @@ private:
     void performSymbolicBoundTightening();
 
     /*
+      Perform a simulation which calculates concrete values of each layer with
+      randomly generated input values.
+    */
+    void performSimulation();
+
+    /*
       Check whether a timeout value has been provided and exceeded.
     */
     bool shouldExitDueToTimeout( unsigned timeout ) const;

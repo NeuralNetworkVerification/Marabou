@@ -73,6 +73,11 @@ public:
     void evaluate( double *input , double *output );
 
     /*
+      Perform a simulation of the network for a specific input
+    */
+   void simulate( std::vector<std::vector<double>> *input );
+
+    /*
       Bound propagation methods:
 
         - obtainCurrentBounds: make the NLR obtain the current bounds

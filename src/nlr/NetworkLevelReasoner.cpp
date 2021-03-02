@@ -114,6 +114,13 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
+void NetworkLevelReasoner::simulate( std::vector<std::vector<double>> *input )
+{
+    _layerIndexToLayer[0]->setSimulations( input );
+    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
+        _layerIndexToLayer[i]->computeSimulations();
+}
+
 void NetworkLevelReasoner::setNeuronVariable( NeuronIndex index, unsigned variable )
 {
     _layerIndexToLayer[index._layer]->setNeuronVariable( index._neuron, variable );

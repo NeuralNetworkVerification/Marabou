@@ -1590,4 +1590,191 @@ public:
         TS_ASSERT( FloatUtils::areEqual( output[0], 4 ) );
         TS_ASSERT( FloatUtils::areEqual( output[1], 4 ) );
     }
+
+    void test_simulate_relus()
+    {
+        NLR::NetworkLevelReasoner nlr;
+
+        populateNetwork( nlr );
+
+        unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
+
+        // With ReLUs, Inputs are zeros, only biases count
+        std::vector<std::vector<double>> simulations1;
+        simulations1.push_back( std::vector<double>( simulationSize, 0 ) );
+        simulations1.push_back( std::vector<double>( simulationSize, 0 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 1 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 4 ) );
+        }
+
+        // With ReLUs, case 1
+        std::vector<std::vector<double>> simulations2;
+        simulations2.push_back( std::vector<double>( simulationSize, 1 ) );
+        simulations2.push_back( std::vector<double>( simulationSize, 1 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 1 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 1 ) );
+        }
+
+        // With ReLUs, case 1 and 2
+        std::vector<std::vector<double>> simulations3;
+        simulations3.push_back( std::vector<double>( simulationSize, 1 ) );
+        simulations3.push_back( std::vector<double>( simulationSize, 2 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations3 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 0 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 0 ) );
+        }
+    }
+    void test_simulate_non_consecutive_layers()
+    {
+        NLR::NetworkLevelReasoner nlr;
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 3 );
+        nlr.addLayer( 2, NLR::Layer::RELU, 3 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 4, NLR::Layer::RELU, 3 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 1 );
+
+        // Mark layer dependencies
+        nlr.addLayerDependency( 0, 1 );
+        nlr.addLayerDependency( 1, 2 );
+        nlr.addLayerDependency( 2, 3 );
+        nlr.addLayerDependency( 0, 3 );
+        nlr.addLayerDependency( 3, 4 );
+        nlr.addLayerDependency( 0, 4 );
+        nlr.addLayerDependency( 4, 5 );
+
+        // Set the weights and relus
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, 2 );
+        nlr.setWeight( 0, 1, 1, 1, -3 );
+        nlr.setWeight( 0, 1, 1, 2, 1 );
+
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 1, 2, 2, 2 );
+
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, 2 );
+        nlr.setWeight( 2, 2, 3, 1, -2 );
+        nlr.setWeight( 0, 1, 3, 1, 1 );
+
+        nlr.addActivationSource( 3, 0, 4, 0 );
+        nlr.addActivationSource( 3, 1, 4, 1 );
+        nlr.addActivationSource( 0, 0, 4, 2 );
+
+        nlr.setWeight( 4, 0, 5, 0, 1 );
+        nlr.setWeight( 4, 1, 5, 0, 1 );
+        nlr.setWeight( 4, 2, 5, 0, 1 );
+
+        unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
+
+        // Simulate1
+        std::vector<std::vector<double>> simulations1;
+        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
+        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 2 ) );
+
+        // Simulate2
+        std::vector<std::vector<double>> simulations2;
+        simulations2.push_back( std::vector<double>( simulationSize, -1 ) );
+        simulations2.push_back( std::vector<double>( simulationSize, 2 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 0 ) );
+    }
+
+    void test_simulate_relus_and_abs()
+    {
+        NLR::NetworkLevelReasoner nlr;
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 3 );
+        nlr.addLayer( 2, NLR::Layer::ABSOLUTE_VALUE, 3 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 4, NLR::Layer::RELU, 2 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 );
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 5; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, 2 );
+        nlr.setWeight( 0, 1, 1, 1, -3 );
+        nlr.setWeight( 0, 1, 1, 2, 1 );
+
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 0, 3, 1, -1 );
+        nlr.setWeight( 2, 1, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 1, 1 );
+        nlr.setWeight( 2, 2, 3, 0, -1 );
+        nlr.setWeight( 2, 2, 3, 1, -5 );
+
+        nlr.setWeight( 4, 0, 5, 0, 1 );
+        nlr.setWeight( 4, 0, 5, 1, 1 );
+        nlr.setWeight( 4, 1, 5, 1, 3 );
+
+        nlr.setBias( 1, 0, 1 );
+        nlr.setBias( 3, 1, 2 );
+
+        // Mark the ReLU/Abs sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 1, 2, 2, 2 );
+
+        nlr.addActivationSource( 3, 0, 4, 0 );
+        nlr.addActivationSource( 3, 1, 4, 1 );
+
+        unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
+
+        // Simulate1
+        std::vector<std::vector<double>> simulations1;
+        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
+        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 2 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 2 ) );
+        }
+
+        // Simulate2
+        std::vector<std::vector<double>> simulations2;
+        simulations2.push_back( std::vector<double>( simulationSize, 1 ) );
+        simulations2.push_back( std::vector<double>( simulationSize, 2 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 4 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 4 ) );
+        }
+    }
 };

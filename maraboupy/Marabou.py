@@ -122,7 +122,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
                   splittingStrategy="auto", sncSplittingStrategy="auto",
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
-                  tighteningStrategy="deeppoly" ):
+                  tighteningStrategy="deeppoly", numSimulations=10 ):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -143,6 +143,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
         preprocessorBoundTolerance ( float, optional): epsilon value for preprocess bound tightening . Defaults to 10^-10.
         dumpBounds (bool, optional): Print out the bounds of each neuron after preprocessing. defaults to False
         tighteningStrategy (string, optional): The abstract-interpretation-based bound tightening techniques used during the search (deeppoly/sbt/none). default to deeppoly.
+        numSimulations (int, optional): Number of simulations generated per neuron, defaults to 10
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -163,4 +164,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._preprocessorBoundTolerance = preprocessorBoundTolerance
     options._dumpBounds = dumpBounds
     options._tighteningStrategy = tighteningStrategy
+    options._numSimulations = numSimulations;
     return options

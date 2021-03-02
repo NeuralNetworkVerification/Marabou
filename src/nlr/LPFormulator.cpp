@@ -279,9 +279,18 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     gurobiStart = TimeUtils::sampleMicro();
 
+    bool skipTightenLb = false; // If true, skip lower bound tightening
+    bool skipTightenUb = false; // If true, skip upper bound tightening
+
+    unsigned skipTighterLowerBoundCounter = 0;
+    unsigned skipTighterUpperBoundCounter = 0;
+
     for ( const auto &currentLayer : layers )
     {
         Layer *layer = currentLayer.second;
+
+        // declare simulations as local var to avoid a problem which can happen due to multi thread process.
+        const std::vector<std::vector<double>> *simulations = _layerOwner->getLayer( currentLayer.first )->getSimulations();
 
         for ( unsigned i = 0; i < layer->getSize(); ++i )
         {
@@ -293,6 +302,45 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
             if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
                 continue;
+
+            skipTightenLb = false;
+            skipTightenUb = false;
+
+            // Loop for simulation
+            // for ( const auto &simValue : ( *( _layerOwner->getLayer( currentLayer.first )->getSimulations() ) )[i] )
+            for ( const auto &simValue : (*simulations)[i] )
+            {
+                if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to call tightning upper bound.
+                    skipTightenUb = true;
+
+                if ( _cutoffInUse && simValue <= _cutoffValue ) // If x_sim < 0 < x_upper, do not try to call tightning lower bound.
+                    skipTightenLb = true;
+
+                if ( skipTightenUb && skipTightenLb )
+                    break;
+            }
+
+            // If no tightning is needed, continue
+            if ( skipTightenUb && skipTightenLb )
+            {
+                mtx.lock();
+                ++skipTighterUpperBoundCounter;
+                ++skipTighterLowerBoundCounter;
+                mtx.unlock();
+                continue;
+            }
+            else if ( skipTightenUb )
+            {
+                mtx.lock();
+                ++skipTighterUpperBoundCounter;
+                mtx.unlock();
+            }
+            else if ( skipTightenLb )
+            {
+                mtx.lock();
+                ++skipTighterLowerBoundCounter;
+                mtx.unlock();
+            }
 
             if ( infeasible )
             {
@@ -325,7 +373,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                                      std::ref( mtx ), std::ref( infeasible ),
                                      std::ref( tighterBoundCounter ),
                                      std::ref( signChanges ),
-                                     std::ref( cutoffs ) );
+                                     std::ref( cutoffs ),
+                                     skipTightenLb, 
+                                     skipTightenUb );
 
             if ( numberOfWorkers == 1 )
                 tightenSingleVariableBoundsWithLPRelaxation( argument );
@@ -344,6 +394,8 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
                                tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ).ascii() );
+    LPFormulator_LOG( Stringf( "Number of skipped tighter lower bounds by simulation: %u\n", skipTighterLowerBoundCounter ) );
+    LPFormulator_LOG( Stringf( "Number of skipped tighter upper bounds by simulation: %u\n", skipTighterUpperBoundCounter ) );
     LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
 
     clearSolverQueue( freeSolvers );
@@ -370,6 +422,8 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
         std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
         std::atomic_uint &signChanges = argument._signChanges;
         std::atomic_uint &cutoffs = argument._cutoffs;
+        bool skipTightenLb = argument._skipTightenLb;
+        bool skipTightenUb = argument._skipTightenUb;
 
         LPFormulator_LOG( Stringf( "Tightening bounds for layer %u index %u",
                                    layer->getLayerIndex(), index ).ascii() );
@@ -377,59 +431,62 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
         unsigned variable = layer->neuronToVariable( index );
         Stringf variableName( "x%u", variable );
 
-        LPFormulator_LOG( Stringf( "Computing upperbound..." ).ascii() );
-        double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
-                                        cutoffValue, &infeasible );
-        LPFormulator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
-
-        // Store the new bound if it is tighter
-        if ( ub < currentUb )
+        if ( !skipTightenUb )
         {
-            if ( FloatUtils::isPositive( currentUb ) &&
-                 !FloatUtils::isPositive( ub ) )
-                ++signChanges;
+            LPFormulator_LOG( Stringf( "Computing upperbound..." ).ascii() );
+            double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
+                                            cutoffValue, &infeasible );
+            LPFormulator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
 
-            mtx.lock();
-            layer->setUb( index, ub );
-            layerOwner->receiveTighterBound( Tightening( variable,
-                                                         ub,
-                                                         Tightening::UB ) );
-            mtx.unlock();
-
-            ++tighterBoundCounter;
-
-            if ( cutoffInUse && ub < cutoffValue )
+            // Store the new bound if it is tighter
+            if ( ub < currentUb )
             {
-                ++cutoffs;
-                enqueueSolver( freeSolvers, gurobi );
-                return;
+                if ( FloatUtils::isPositive( currentUb ) &&
+                    !FloatUtils::isPositive( ub ) )
+                    ++signChanges;
+
+                mtx.lock();
+                layer->setUb( index, ub );
+                layerOwner->receiveTighterBound( Tightening( variable,
+                                                            ub,
+                                                            Tightening::UB ) );
+                mtx.unlock();
+
+                ++tighterBoundCounter;
+
+                if ( cutoffInUse && ub < cutoffValue )
+                {
+                    ++cutoffs;
+                    enqueueSolver( freeSolvers, gurobi );
+                    return;
+                }
             }
         }
 
-        LPFormulator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
-        gurobi->reset();
-        double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
-                                        cutoffValue, &infeasible );
-        LPFormulator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
-
-        // Store the new bound if it is tighter
-        if ( lb > currentLb )
+        if ( !skipTightenLb )
         {
-            if ( FloatUtils::isNegative( currentLb ) &&
-                 !FloatUtils::isNegative( lb ) )
-                ++signChanges;
-
-            mtx.lock();
-            layer->setLb( index, lb );
-            layerOwner->receiveTighterBound( Tightening( variable,
-                                                         lb,
-                                                         Tightening::LB ) );
-            mtx.unlock();
-            ++tighterBoundCounter;
-
-            if ( cutoffInUse && lb > cutoffValue )
+            LPFormulator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
+            gurobi->reset();
+            double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                            cutoffValue, &infeasible );
+            LPFormulator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
+            // Store the new bound if it is tighter
+            if ( lb > currentLb )
             {
-                ++cutoffs;
+                if ( FloatUtils::isNegative( currentLb ) &&
+                    !FloatUtils::isNegative( lb ) )
+                    ++signChanges;
+
+                mtx.lock();
+                layer->setLb( index, lb );
+                layerOwner->receiveTighterBound( Tightening( variable,
+                                                            lb,
+                                                            Tightening::LB ) );
+                mtx.unlock();
+                ++tighterBoundCounter;
+
+                if ( cutoffInUse && lb > cutoffValue )
+                    ++cutoffs;
             }
         }
         enqueueSolver( freeSolvers, gurobi );

@@ -133,6 +133,9 @@ public:
     // If the cost function error exceeds this threshold, it is recomputed
     static const double COST_FUNCTION_ERROR_THRESHOLD;
 
+    // Random seed for generating simulation values.
+    static const unsigned SIMULATION_RANDOM_SEED;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
