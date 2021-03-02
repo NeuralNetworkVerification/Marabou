@@ -32,7 +32,8 @@
 #endif
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
-	: _f( f )
+  : ContextDependentPiecewiseLinearConstraint( elements.size() )
+  , _f( f )
 	, _elements( elements )
 	, _initialElements( elements )
 	, _maxIndexSet( false )
@@ -85,19 +86,31 @@ PiecewiseLinearFunctionType MaxConstraint::getType() const
     return PiecewiseLinearFunctionType::MAX;
 }
 
-PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
-    *clone = *this;
+   *clone = *this;
     clone->_eliminatedVariables = _eliminatedVariables;
     clone->_maxValueOfEliminated = _maxValueOfEliminated;
+    this->initializeDuplicatesCDOs( clone );
     return clone;
 }
 
 void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const MaxConstraint *max = dynamic_cast<const MaxConstraint *>( state );
+    ASSERT( nullptr != getContext() );
+    ASSERT( nullptr != getActiveStatusCDO() );
+    ASSERT( nullptr != getPhaseStatusCDO() );
+    ASSERT( getContext() == max->getContext() );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *max;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
@@ -417,6 +430,34 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
     return getPossibleFixes();
 }
 
+List<PhaseStatus> MaxConstraint::getAllCases() const
+{
+    if ( _phaseStatus != PHASE_NOT_FIXED )
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
+    ASSERT(	_assignment.exists( _f ) );
+
+    List<PhaseStatus> cases;
+
+    if ( !_elements.exists( _f ) )
+    {
+        for ( unsigned element : _elements )
+            cases.append( static_cast<PhaseStatus>( element ) );
+
+        if ( _eliminatedVariables )
+            cases.append( MAX_PHASE_ELIMINATED );
+    }
+    else
+    {
+        // if elements includes _f, this piecewise linear constraint
+        // can immediately be transformed into a conjunction of linear
+        // constraints
+        cases.append( static_cast<PhaseStatus>( _f ) );
+    }
+
+    return cases;
+}
+
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
     if ( phaseFixed() && !_elements.exists( _f ) )
@@ -486,7 +527,7 @@ bool MaxConstraint::phaseFixed() const
     return false;
 }
 
-PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
+PiecewiseLinearCaseSplit MaxConstraint::getImpliedCaseSplit() const
 {
     ASSERT( phaseFixed() );
     if ( !_elements.exists( _f ) )
@@ -529,6 +570,17 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
         // constraints
         return getSplit( _f );
     }
+}
+
+
+PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
+{
+    return getImpliedCaseSplit();
+}
+
+PiecewiseLinearCaseSplit MaxConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    return getSplit( static_cast<unsigned>( phase ) );
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const

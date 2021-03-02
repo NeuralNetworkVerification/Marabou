@@ -17,9 +17,9 @@
 #define __MaxConstraint_h__
 
 #include "Map.h"
-#include "PiecewiseLinearConstraint.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 
-class MaxConstraint : public PiecewiseLinearConstraint
+class MaxConstraint : public ContextDependentPiecewiseLinearConstraint
 {
 public:
     ~MaxConstraint();
@@ -39,7 +39,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    PiecewiseLinearConstraint *duplicateConstraint() const;
+    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -91,15 +91,29 @@ public:
     */
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
-    /*
-      Check if the constraint's phase has been fixed.
-    */
-    bool phaseFixed() const;
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
     */
+    PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
     PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    /*
+       Returns case split corresponding to the given phase/id
+     */
+    PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
+
+    /*
+       Returns a list of all cases - { ABS_POSITIVE, ABS_NEGATIVE }
+       The order of returned cases affects the search, and this method is where related
+       heuristics should be implemented.
+     */
+    List<PhaseStatus> getAllCases() const override;
+
+    /*
+      Check if the constraint's phase has been fixed.
+    */
+    bool phaseFixed() const;
 
     /*
       Return a list of smart fixes for violated constraint.
