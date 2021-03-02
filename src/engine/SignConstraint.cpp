@@ -12,6 +12,8 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "SignConstraint.h"
+
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -72,7 +74,7 @@ void SignConstraint::restoreState( const PiecewiseLinearConstraint *state )
     ASSERT( nullptr != getContext() );
     ASSERT( nullptr != getActiveStatusCDO() );
     ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == relu->getContext() );
+    ASSERT( getContext() == sign->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
@@ -400,11 +402,6 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
         tightenings.append( Tightening( _b, 0, Tightening::UB ) );
         tightenings.append( Tightening( _f, -1, Tightening::UB ) );
     }
-}
-
-void SignConstraint::setPhaseStatus( PhaseStatus phaseStatus )
-{
-    _phaseStatus = phaseStatus;
 }
 
 void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

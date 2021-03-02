@@ -199,10 +199,6 @@ private:
 
     bool _haveEliminatedVariables;
 
-    /*
-      Set the phase status.
-    */
-    void setPhaseStatus( PhaseStatus phaseStatus );
     static String phaseToString( PhaseStatus phase );
 
     /*
