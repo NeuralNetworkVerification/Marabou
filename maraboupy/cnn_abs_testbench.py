@@ -228,7 +228,9 @@ resultsJson["yMaxPrediction"] = int(yMax)
 resultsJson["ySecondPrediction"] = int(ySecond)
 dumpJson(resultsJson)    
 
+printLog("Started dumping bounds - used for abstraction")
 dumpBounds(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond)
+printLog("Finished dumping bounds - used for abstraction")
 if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
     with open('dumpBounds.json', 'r') as boundFile:
         boundList = json.load(boundFile)
