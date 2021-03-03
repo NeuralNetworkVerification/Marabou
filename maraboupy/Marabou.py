@@ -122,7 +122,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
                   splittingStrategy="auto", sncSplittingStrategy="auto",
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
-                  tighteningStrategy="deeppoly", milpTightening="lp" ):
+                  tighteningStrategy="deeppoly", milpTightening="lp", milpSolverTimeout=0):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -144,6 +144,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
         dumpBounds (bool, optional): Print out the bounds of each neuron after preprocessing. defaults to False
         tighteningStrategy (string, optional): The abstract-interpretation-based bound tightening techniques used during the search (deeppoly/sbt/none). default to deeppoly.
         milpTightening (string, optional): The (mi)lp-based bound tightening techniques used to preprocess the query (milp-inc/lp-inc/milp/lp/none). default to lp.
+        milpSolverTimeout (float, optional): Timeout duration for MILP
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -165,4 +166,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options._dumpBounds = dumpBounds
     options._tighteningStrategy = tighteningStrategy
     options._milpTightening = milpTightening
+    options._milpSolverTimeout = milpSolverTimeout
     return options
