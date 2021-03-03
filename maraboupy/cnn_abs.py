@@ -409,10 +409,10 @@ def dumpBounds(model, xAdv, inDist, yMax, ySecond):
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    processInputQuery(modelOnnxMarabou)    
+    return processInputQuery(modelOnnxMarabou)
     
 def processInputQuery(net):
-    MarabouCore.processInputQuery(net.getMarabouQuery())
+    return MarabouCore.preprocess(net.getMarabouQuery(), mnistProp.optionsObj)
 
 def setBounds(model, boundDict):
     if boundDict:
