@@ -28,6 +28,21 @@ class MockForMaxConstraint
 public:
 };
 
+/*
+   Exposes protected members of AbsConstraint for testing.
+ */
+class TestMaxConstraint : public MaxConstraint
+{
+public:
+    TestMaxConstraint( unsigned f, const Set<unsigned> elements  )
+        : MaxConstraint( f, elements )
+    {}
+
+    using MaxConstraint::getPhaseStatus;
+};
+
+using namespace CVC4::context;
+
 class MaxConstraintTestSuite : public CxxTest::TestSuite
 {
 public:
@@ -1567,6 +1582,109 @@ public:
         TS_ASSERT( max.satisfied() );
     }
 
+    void test_initialization_of_CDOs()
+    {
+        Context context;
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 10; ++i )
+            elements.insert( i );
+
+        MaxConstraint max( f, elements );
+
+        TS_ASSERT_EQUALS( max.getContext(), static_cast<Context*>( nullptr ) );
+        TS_ASSERT_EQUALS( max.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_EQUALS( max.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( max.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_THROWS_NOTHING( max.initializeCDOs( &context ) );
+        TS_ASSERT_EQUALS( max.getContext(), &context );
+        TS_ASSERT_DIFFERS( max.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( max.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( max.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+
+        bool active = false;
+        TS_ASSERT_THROWS_NOTHING( active = max.isActive() );
+        TS_ASSERT_EQUALS( active, true );
+
+        bool phaseFixed = true;
+        TS_ASSERT_THROWS_NOTHING( phaseFixed = max.phaseFixed() );
+        TS_ASSERT_EQUALS( phaseFixed, PHASE_NOT_FIXED );
+        TS_ASSERT_EQUALS( max.numFeasibleCases(), 8u );
+    }
+
+    /*
+     * Test Case functionality of MaxConstraint
+     * 1. Check that all cases are returned by MaxConstraint::getAllCases
+     * 2. Check that MaxConstraint::getCaseSplit( case ) returns the correct case
+     */
+    void test_max_get_cases()
+    {
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 10; ++i )
+            elements.insert( i );
+
+        MaxConstraint max( f, elements );
+
+        List<PhaseStatus> cases = max.getAllCases();
+
+        TS_ASSERT_EQUALS( cases.size(), elements.size() );
+
+        for ( auto e : elements )
+        {
+            TS_ASSERT_DIFFERS( std::find( elements.begin(), elements.end(), e ), elements.end() );
+        }
+
+        List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), elements.size() );
+
+        PiecewiseLinearCaseSplit split;
+        for ( auto e : elements )
+        {
+            split = max.getCaseSplit( static_cast<PhaseStatus>( e ) );
+            TS_ASSERT_DIFFERS( std::find( splits.begin(), splits.end(), split ), splits.end() );
+        }
+
+
+        // TODO: Test cases when variables are eliminated
+    }
+
+    /*
+      Test context-dependent Max state behavior.
+     */
+    void test_sign_context_dependent_state()
+    {
+        Context context;
+
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 10; ++i )
+            elements.insert( i );
+
+        TestMaxConstraint max( f, elements );
+
+
+        max.initializeCDOs( &context );
+
+        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED ); */
+
+        /* context.push(); */
+        /* sign.notifyUpperBound( b, -1 ); */
+        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), SIGN_PHASE_NEGATIVE ); */
+
+        /* context.pop(); */
+        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED ); */
+        /* context.push(); */
+
+        /* sign.notifyLowerBound( b, 3 ); */
+        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), SIGN_PHASE_POSITIVE ); */
+
+        /* context.pop(); */
+        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED ); */
+    }
 };
 
 
