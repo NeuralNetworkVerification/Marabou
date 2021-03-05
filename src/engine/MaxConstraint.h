@@ -153,17 +153,47 @@ public:
      */
     bool wereVariablesEliminated() const;
 
+
+
+
 private:
     unsigned _f;
     Set<unsigned> _elements;
     Set<unsigned> _initialElements;
 
-    unsigned _maxIndex;
-    bool _maxIndexSet;
     double _maxLowerBound;
     bool _obsolete;
     bool _eliminatedVariables;
     double _maxValueOfEliminated;
+
+    /*
+       Functions that abstract away _maxIndex and _maxIndexSet, and use the
+       refactored PhaseStatus to store this information.
+
+       Makes two assumptions:
+        - 0 is not a valid variable value, since its reserved for PHASE_NOT_FIXED
+        - total number of variables does not reach the value of MAX_PHASE_ELIMINATED
+     */
+    bool maxIndexSet() const
+    {
+        return getPhaseStatus() != PHASE_NOT_FIXED;
+    }
+
+    void setMaxIndex( unsigned variable )
+    {
+        setPhaseStatus( static_cast<PhaseStatus>( variable ) );
+    }
+
+    unsigned getMaxIndex() const
+    {
+        ASSERT( maxIndexSet() );
+        return static_cast<unsigned>( getPhaseStatus() );
+    }
+
+    void clearMaxIndex()
+    {
+        setPhaseStatus( PHASE_NOT_FIXED );
+    }
 
     void resetMaxIndex();
 
@@ -171,6 +201,8 @@ private:
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
+
+
 };
 
 #endif // __MaxConstraint_h__

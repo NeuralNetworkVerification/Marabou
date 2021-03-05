@@ -36,7 +36,6 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
   , _f( f )
 	, _elements( elements )
 	, _initialElements( elements )
-	, _maxIndexSet( false )
 	, _maxLowerBound( FloatUtils::negativeInfinity() )
 	, _obsolete( false )
 	, _eliminatedVariables( false )
@@ -135,10 +134,9 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
     if ( ( _elements.exists( _f ) || variable != _f )
          &&
-         ( !_maxIndexSet || _assignment.get( _maxIndex ) < value ) )
+         ( !maxIndexSet() || _assignment.get( getMaxIndex() ) < value ) )
     {
-        _maxIndex = variable;
-        _maxIndexSet = true;
+        setMaxIndex( variable );
     }
     _assignment[variable] = value;
 }
@@ -174,7 +172,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         {
             _elements.erase( removeVar );
 
-            if ( _maxIndex == removeVar )
+            if ( getMaxIndex() == removeVar )
                 maxErased = true;
         }
     }
@@ -333,14 +331,14 @@ bool MaxConstraint::satisfied() const
         throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
     double fValue = _assignment.get( _f );
-    double maxValue = FloatUtils::max( _assignment.get( _maxIndex ), _maxValueOfEliminated );
+    double maxValue = FloatUtils::max( _assignment.get( getMaxIndex() ), _maxValueOfEliminated );
     return FloatUtils::areEqual( maxValue, fValue );
 }
 
 void MaxConstraint::resetMaxIndex()
 {
     double maxValue = FloatUtils::negativeInfinity();
-    _maxIndexSet = false;
+    clearMaxIndex();
 
     if ( _assignment.empty() ||
          ( _assignment.size() == 1 && !_elements.exists( _f ) && _assignment.begin()->first == _f ) )
@@ -357,24 +355,18 @@ void MaxConstraint::resetMaxIndex()
             {
                 double elementValue = _assignment[element];
 
-                if ( !_maxIndexSet )
+                if ( !maxIndexSet() || elementValue > maxValue )
                 {
-                    _maxIndexSet = true;
-                    _maxIndex = element;
-                    maxValue = elementValue;
-                }
-                else if ( elementValue > maxValue )
-                {
-                    _maxIndex = element;
+                    setMaxIndex( element );
                     maxValue = elementValue;
                 }
             }
         }
 
-        ASSERT( _maxIndexSet );
+        ASSERT( maxIndexSet() );
     }
 
-    ASSERT( !_maxIndexSet || FloatUtils::isFinite( maxValue ) );
+    ASSERT( !maxIndexSet() || FloatUtils::isFinite( maxValue ) );
 }
 
 List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
@@ -383,7 +375,7 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
     ASSERT( _assignment.exists( _f ) && ( _assignment.size() > 1 || _eliminatedVariables ) );
 
     double fValue = _assignment.get( _f );
-    double maxVal = FloatUtils::max( _assignment.get( _maxIndex ), _maxValueOfEliminated );
+    double maxVal = FloatUtils::max( _assignment.get( getMaxIndex() ), _maxValueOfEliminated );
 
     List<PiecewiseLinearConstraint::Fix> fixes;
 
