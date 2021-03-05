@@ -567,8 +567,8 @@ void Preprocessor::collectFixedValues()
 
     // Collect any variables with identical lower and upper bounds, or
     // which are unused
-	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-	{
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
         {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );
