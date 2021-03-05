@@ -89,7 +89,7 @@ PiecewiseLinearFunctionType MaxConstraint::getType() const
 ContextDependentPiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
-   *clone = *this;
+    *clone = *this;
     clone->_eliminatedVariables = _eliminatedVariables;
     clone->_maxValueOfEliminated = _maxValueOfEliminated;
     this->initializeDuplicatesCDOs( clone );
