@@ -550,19 +550,23 @@ private:
 
     /*
      Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
+     Asserts the computed bound is epsilon close to the real one.
     */
-    bool Engine::certifyInfeasibility();
+    bool Engine::certifyInfeasibility( const double epsilon ) const;
 
     /*
      Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds
+     
     */
-    double Engine::getExplainedBound(const unsigned var, const bool isUpper);
+    double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const;
+
 
     /*
-     Prints coefficents of Simplex equations that witness UNSAT
-     TODO erase
-   */
-    void Engine::printSimplexUNSATCertificate();
+     Validates that all explanations epsilon close to real bounds
+     Separately for tightenings and actual bounds
+     TODO erase upon completion?
+    */
+    void Engine::validateAllBounds( const double epsilon ) const;
 };
 
 #endif // __Engine_h__

@@ -187,7 +187,9 @@ public:
     virtual double computeRowBound( const TableauRow& row, const bool isUpper ) const = 0;
     virtual SingleVarBoundsExplanator& ExplainBound( const unsigned variable ) const = 0;
     virtual void updateExplanation( const TableauRow& row, const bool isUpper ) const = 0;
-    virtual void updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const = 0;
+    virtual void updateExplanation( const TableauRow& row, const bool isUpper, unsigned varIndex ) const = 0;
+    virtual void updateExplanation(const SparseUnsortedList& row, const bool isUpper, unsigned varIndex) const = 0;
+
 
    
 };

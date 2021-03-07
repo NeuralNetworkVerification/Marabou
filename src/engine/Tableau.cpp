@@ -1746,7 +1746,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
-
+    /* TODO erase - since explanations are already updated via rowBoundTightener
     // Update only for a basic var
     if ( GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable) )
     {
@@ -1754,6 +1754,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         getTableauRow( _variableToIndex[variable], &row );
         _boundsExplanator->updateBoundExplanation( row, false );
     }
+    */
 }
 
 void Tableau::tightenUpperBound( unsigned variable, double value )
@@ -1784,7 +1785,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         if ( _basicStatus[index] != oldStatus )
             _costFunctionManager->invalidateCostFunction();
     }
-
+    /* TODO erase - since explanations are already updated via rowBoundTightener
     // Update only for a basic var
     if ( GlobalConfiguration::PROOF_CERTIFICATE && _basicVariables.exists(variable) )
     {
@@ -1792,6 +1793,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         getTableauRow( _variableToIndex[variable], &row );
         _boundsExplanator->updateBoundExplanation( row, true );
     }
+    */
 }
 
 unsigned Tableau::addEquation( const Equation &equation )
@@ -2607,10 +2609,11 @@ int Tableau::getInfeasibleRow( TableauRow& row )
 {
     for ( unsigned i = 0; i < _m; ++i )
     {
-        if (basicOutOfBounds( i ))
+        if ( basicOutOfBounds( i )  )
         {
             Tableau::getTableauRow( i, &row );
-            return i;
+            if ( ( computeRowBound( row, true ) < _lowerBounds[row._lhs] || computeRowBound( row, false ) > _upperBounds[row._lhs] ) )
+                return i;
         }
     }
     return -1;
@@ -2636,13 +2639,19 @@ void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) con
         _boundsExplanator->updateBoundExplanation( row, isUpper );
 }
 
-void Tableau::updateExplanation(const TableauRow& row, const bool isUpper, unsigned var) const
+void Tableau::updateExplanation( const TableauRow& row, const bool isUpper, unsigned varIndex ) const
 {
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
-        _boundsExplanator->updateBoundExplanation( row, isUpper, var );
+        _boundsExplanator->updateBoundExplanation( row, isUpper, varIndex );
 }
 
-double Tableau::computeRowBound(const TableauRow& row, const bool isUpper) const
+void Tableau::updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned var ) const
+{
+    if ( GlobalConfiguration::PROOF_CERTIFICATE )
+        _boundsExplanator->updateBoundExplanationSparse( row, isUpper, var );
+}
+
+double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) const
 {
     double bound = 0, multiplier;
     unsigned var;

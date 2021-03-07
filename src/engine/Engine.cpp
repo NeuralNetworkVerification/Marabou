@@ -120,7 +120,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
-    {
+    {   
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
@@ -312,8 +312,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     _statistics.print();
                     if ( GlobalConfiguration::PROOF_CERTIFICATE )
                     {
+                        // Certification relevant to simplex failure
                         printInfeasibilityCertificate();
-                        ASSERT(certifyInfeasibility());
+                        validateAllBounds( 0.0375 );
+                        certifyInfeasibility( 0.001 );
                     }     
                 }
                 _exitCode = Engine::UNSAT;
@@ -2332,19 +2334,16 @@ void Engine::printInfeasibilityCertificate()
         printf("In order to provide a proof certificate, set GlobalConfiguration::PROOF_CERTIFICATE to true.\n");
         return;
     }
-        
-    printf( "The final dictionary:\n" );
-    _tableau->dumpEquations();
-    unsigned m = _tableau->getM(), n = _tableau->getN();
+
     int var = _tableau->getInfeasibleVar();
+    ASSERT( var > 0 );
 
     printf( "Found a variable with infeasible bounds: x%d\n", var );
-    if( var < 0 )
-        return;
-   
+    unsigned m = _tableau->getM(), n = _tableau->getN();
     SingleVarBoundsExplanator certificate = _tableau->ExplainBound( var );
     std::vector<double> expl = std::vector<double>( m, 0 ); 
     certificate.getVarBoundExplanation( expl, true );
+
     printf( "Upper bound explanataion:\n[" );
     for ( unsigned i = 0; i < m; ++i )
         printf( "%.2lf ,", expl[i] );
@@ -2360,30 +2359,44 @@ void Engine::printInfeasibilityCertificate()
 
 void Engine::simplexBoundsUpdate()
 {
+    applyAllRowTightenings();
     // Failure of a simplex step implies infeasible bounds imposed by the row
-    TableauRow boundUpdateRow = TableauRow(_tableau->getN());
+    TableauRow boundUpdateRow = TableauRow( _tableau->getN() );
     // If an infeasible basic is lower than its lower bound, then it cannot be increased.
     // Thus the upper bound imposed by the row is too low
-    int rowIndex = _tableau->getInfeasibleRow(boundUpdateRow);
-    ASSERT(rowIndex >= 0);
-    if (_tableau->basicTooLow(rowIndex))
-        _tableau->tightenUpperBound(boundUpdateRow._lhs, _tableau->computeRowBound(boundUpdateRow, true));
-    else
-        _tableau->tightenLowerBound(boundUpdateRow._lhs, _tableau->computeRowBound(boundUpdateRow, false));
+    unsigned rowIndex = _tableau->getInfeasibleRow( boundUpdateRow );
+    unsigned var = boundUpdateRow._lhs;
+    double newBound;
+    ASSERT( rowIndex <= _tableau->getM() );
+
+    newBound = _tableau->computeRowBound( boundUpdateRow, true );
+    if ( newBound < _tableau->getUpperBound( var ) )
+    {
+        _tableau->tightenUpperBound( var, newBound );
+        _tableau->updateExplanation( boundUpdateRow, true );
+    }
+       
+
+    newBound = _tableau->computeRowBound( boundUpdateRow, false );
+    if ( newBound > _tableau->getLowerBound( var ) )
+    {
+        _tableau->tightenLowerBound( var, newBound );
+        _tableau->updateExplanation( boundUpdateRow, false );
+    }
 }
 
-bool Engine::certifyInfeasibility()
+bool Engine::certifyInfeasibility( const double epsilon ) const
 {
     int var = _tableau->getInfeasibleVar();
-    double upper, lower;
+    double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
 
-    upper = getExplainedBound( var, true );
-    lower = getExplainedBound( var, false );
+    ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
+    ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
 
-    return upper < lower;
+    ASSERT( computedUpper < computedLower );
 }
 
-double Engine::getExplainedBound( const unsigned var, const bool isUpper )
+double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 {
     unsigned n = _tableau->getN(), m = _tableau->getM();
     double derived_bound = 0, scalar = 0, c = 0, temp = 0;
@@ -2395,7 +2408,11 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper )
 
  
     // If explanation is all zeros, return original bound
-    if ( std::all_of( expl.begin(), expl.end(), []( int i ) { return i == 0; } ) )
+    bool allZeros = true;
+    for( unsigned i = 0; i < expl.size(); ++i )
+        if ( expl[i] )
+            allZeros = false;
+    if ( allZeros )
         return isUpper? _initialUpperBounds[var] : _initialLowerBounds[var];
 
     // Create linear combination of originial rows implied from explanation
@@ -2433,33 +2450,16 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper )
     derived_bound += scalar;
     explanationRowsCombination.clear();
     expl.clear();
-    ASSERT( derived_bound == ( isUpper? _tableau->getUpperBound( var ) : _tableau->getLowerBound( var ) ) );
     return derived_bound;
 }
 
-//TODO erase
-void Engine::printSimplexUNSATCertificate()
+void Engine::validateAllBounds( const double epsilon ) const
 {
-    printf("The final dictionary:\n");
-    _tableau->dumpEquations();
-    const int m = _tableau->getM(), n = _tableau->getN();
-    double* coeff = new double[m];
-
-    for (int i = 0; i < m; ++i)
-        coeff[i] = 0;
-
-    TableauRow row = TableauRow(n);
-    int success = _tableau->getInfeasibleRow(row);
-
-    if (success) {
-        for (int i = 0; i < row._size; ++i)
-            if (row._row[i]._var >= n - m) // If var was part of original basis, store the relevant coefficient
-                coeff[row._row[i]._var - n + m] = row._row[i]._coefficient;
-
-        if (row._lhs >= n - m) //If the lhs was part of original basis, its coefficient is -1
-            coeff[row._lhs - n + m] = -1;
-        printf("The coefficents witness infeasibility are:\n");
-        for (int i = 0; i < m; ++i)
-            printf("%.2lf ,", coeff[i]);
+    //Assuming all tightening were applied
+    //TODO consider applying again here
+    for ( unsigned var = 0; var < _tableau->getN(); ++var )
+    {
+            ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
+            ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
     }
 }

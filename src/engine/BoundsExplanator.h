@@ -14,6 +14,7 @@
 #define __BoundsExplanator_h__
 #include "TableauRow.h"
 #include "Vector.h"
+#include "SparseUnsortedList.h"
 
 /*
   A class which encapsulates the bounds explanations of a single variable 
@@ -64,7 +65,12 @@ public:
 	/*
 	  Given a row, updates the values of the bound explanations of a var according to the row
 	*/
-	void updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned var );
+	void updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned varIndex );
+
+	/*
+	Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row
+	*/
+	void updateBoundExplanationSparse( const SparseUnsortedList& row, const bool isUpper, const unsigned var );
 
 private:
 	unsigned _varsNum;
@@ -82,5 +88,12 @@ private:
 	  Assumption - the slack variables indices are alwas the last m.
 	*/
 	void extractRowCoefficients( const TableauRow& row, std::vector<double>& coefficients ) const;
+
+	/*
+	Upon receiving a row given as a SparseUnsortedList, extract coefficients of the original tableau's equations that creates the row
+	It is merely the coefficients of the slack variables.
+	Assumption - the slack variables indices are alwas the last m.
+	*/
+	void extractSparseRowCoefficients( const SparseUnsortedList& row, std::vector<double>& coefficients ) const;
 };
 #endif // __BoundsExplanator_h__

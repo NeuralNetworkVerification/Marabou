@@ -373,7 +373,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     {
         _upperBounds[y] = upperBound;
         _tightenedUpper[y] = true;
-        if (    GlobalConfiguration::PROOF_CERTIFICATE  )
+        if ( GlobalConfiguration::PROOF_CERTIFICATE )
             _tableau.updateExplanation( row, true );
         ++result;
     }
@@ -455,7 +455,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             _lowerBounds[xi] = lowerBound;
             _tightenedLower[xi] = true;
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                _tableau.updateExplanation( row, false, xi );
+                _tableau.updateExplanation( row, false, i );
             ++result;
         }
 
@@ -464,7 +464,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             _upperBounds[xi] = upperBound;
             _tightenedUpper[xi] = true;
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                _tableau.updateExplanation( row, true, xi );
+                _tableau.updateExplanation( row, true, i );
             ++result;
         }
 
@@ -629,7 +629,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
             _lowerBounds[index] = lowerBound;
             _tightenedLower[index] = true;
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                _tableau.updateExplanation( row, false ); 
+                _tableau.updateExplanation( *sparseRow, false, index );
             ++result;
         }
 
@@ -638,7 +638,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
             _upperBounds[index] = upperBound;
             _tightenedUpper[index] = true;
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                _tableau.updateExplanation( row, true );
+                _tableau.updateExplanation( *sparseRow, true, index );
             ++result;
         }
 
@@ -706,7 +706,6 @@ void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n 
 {
     setDimensions();
 }
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

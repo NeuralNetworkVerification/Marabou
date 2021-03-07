@@ -652,7 +652,7 @@ private:
     * Computes the upper bound imposed by row rhs
     * Consider making a static function
     */
-    double Tableau::computeRowBound(const TableauRow& row, const bool isUpper) const;
+    double Tableau::computeRowBound(const TableauRow& row, const bool isUpper ) const;
 
     /*
       Returns the bounds explanation of a variable in the tableau
@@ -668,6 +668,12 @@ private:
     Update a bound explanation of a specific var in a row 
    */
     void Tableau::updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const;
+
+    /*
+     Update a bound explanation of a specific var in a row, when it is given as a SparseUnsortedList.
+    */
+    void Tableau::updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned varIndex ) const;
+
 
     /*
       Explanator of all bounds 
