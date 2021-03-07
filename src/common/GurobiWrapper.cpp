@@ -34,11 +34,15 @@ GurobiWrapper::GurobiWrapper()
 {
     _environment = new GRBEnv;
     resetModel();
+    cout << "Created GurobiWrapper" << std::endl;
+    fflush(stdout);
 }
 
 GurobiWrapper::~GurobiWrapper()
 {
     freeMemoryIfNeeded();
+    cout << "Deleted GurobiWrapper" << std::endl;
+    fflush(stdout);
 }
 
 void GurobiWrapper::freeModelIfNeeded()
@@ -240,6 +244,7 @@ void GurobiWrapper::solve()
 {
     try
     {
+        _model->write( "LastGurobiQuery.lp");
         _model->optimize();
     }
     catch ( GRBException e )
