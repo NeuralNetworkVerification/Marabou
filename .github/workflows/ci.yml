@@ -23,7 +23,9 @@ jobs:
            sudo apt-get update
            sudo apt-get install -y \
              ccache \
-             cxxtest
+             cxxtest \
+             protobuf-compiler \
+             libprotoc-dev
            python3 -m pip install --user --upgrade pip
            python3 -m pip install --user --upgrade setuptools
            python3 -m pip install --user wheel
