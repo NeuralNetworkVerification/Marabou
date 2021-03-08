@@ -2375,7 +2375,6 @@ void Engine::simplexBoundsUpdate()
         _tableau->tightenUpperBound( var, newBound );
         _tableau->updateExplanation( boundUpdateRow, true );
     }
-       
 
     newBound = _tableau->computeRowBound( boundUpdateRow, false );
     if ( newBound > _tableau->getLowerBound( var ) )

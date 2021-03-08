@@ -93,7 +93,8 @@ private:
 	Upon receiving a row given as a SparseUnsortedList, extract coefficients of the original tableau's equations that creates the row
 	It is merely the coefficients of the slack variables.
 	Assumption - the slack variables indices are alwas the last m.
+	All coefficients are divided by -ci, the coefficient of the lhs in the row, for normalization.   
 	*/
-	void extractSparseRowCoefficients( const SparseUnsortedList& row, std::vector<double>& coefficients ) const;
+	void extractSparseRowCoefficients( const SparseUnsortedList& row, std::vector<double>& coefficients, double ci ) const;
 };
 #endif // __BoundsExplanator_h__

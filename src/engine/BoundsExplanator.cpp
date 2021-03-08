@@ -152,7 +152,7 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 		addVecTimesScalar( sum, tempBound, curCoefficient / -ci );
 	}
 
-	extractSparseRowCoefficients( row, rowCoefficients ); // Update according to row coefficients
+	extractSparseRowCoefficients( row, rowCoefficients, ci ); // Update according to row coefficients
 	addVecTimesScalar( sum, rowCoefficients, 1 );
 	_bounds[var].updateVarBoundExplanation( sum, isUpper );
 
@@ -183,12 +183,12 @@ void BoundsExplanator::extractRowCoefficients( const TableauRow& row, std::vecto
 }
 
 
-void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& row, std::vector<double>& coefficients ) const
+void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& row, std::vector<double>& coefficients, double ci ) const
 {
 	ASSERT( coefficients.size() == _rowsNum );
 
 	//The coefficients of the row m highest-indices vars are the coefficents of slack variables
 	for ( const auto& entry : row )
 		if ( entry._index >= _varsNum - _rowsNum )
-				coefficients[entry._index - _varsNum + _rowsNum] = entry._value;
+				coefficients[entry._index - _varsNum + _rowsNum] = entry._value / -ci;
 }
