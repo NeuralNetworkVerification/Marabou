@@ -114,7 +114,7 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
-void NetworkLevelReasoner::simulate( std::vector<std::vector<double>> *input )
+void NetworkLevelReasoner::simulate( Vector<Vector<double>> *input )
 {
     _layerIndexToLayer[0]->setSimulations( input );
     for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )

@@ -22,6 +22,7 @@
 #include "NLRError.h"
 #include "Options.h"
 #include "TimeUtils.h"
+#include "Vector.h"
 
 #include <boost/thread.hpp>
 
@@ -186,7 +187,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
         Layer *layer = currentLayer.second;
 
         // declare simulations as local var to avoid a problem which can happen due to multi thread process.
-        const std::vector<std::vector<double>> *simulations = _layerOwner->getLayer( currentLayer.first )->getSimulations();
+        const Vector<Vector<double>> *simulations = _layerOwner->getLayer( currentLayer.first )->getSimulations();
 
         for ( unsigned i = 0; i < layer->getSize(); ++i )
         {
@@ -202,8 +203,7 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             skipTightenUb = false;
 
             // Loop for simulation
-            // for ( const auto &simValue : ( *( _layerOwner->getLayer( currentLayer.first )->getSimulations() ) )[i] )
-            for ( const auto &simValue : (*simulations)[i] )
+            for ( const auto &simValue : (*simulations).get( i ) )
             {
                 if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to call tightning upper bound.
                     skipTightenUb = true;

@@ -67,7 +67,7 @@ void Layer::allocateMemory()
 
     _assignment = new double[_size];
 
-    _simulations.assign( _size, std::vector<double>( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) ) );
+    _simulations.assign( _size, Vector<double>( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) ) );
 
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
     if ( Options::get()->getSymbolicBoundTighteningType() ==
@@ -113,12 +113,12 @@ double Layer::getAssignment( unsigned neuron ) const
     return _assignment[neuron];
 }
 
-void Layer::setSimulations( const std::vector<std::vector<double>> *values )
+void Layer::setSimulations( const Vector<Vector<double>> *values )
 {
     _simulations = *values;
 }
 
-const std::vector<std::vector<double>> *Layer::getSimulations() const
+const Vector<Vector<double>> *Layer::getSimulations() const
 {
     return &_simulations;
 }
@@ -218,7 +218,7 @@ void Layer::computeSimulations()
         for ( auto &sourceLayerEntry : _sourceLayers )
         {
             const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
-            const std::vector<std::vector<double>> *sourceSimulations = sourceLayer->getSimulations();
+            const Vector<Vector<double>> *sourceSimulations = sourceLayer->getSimulations();
 
             unsigned sourceSize = sourceLayerEntry.second;
             const double *weights = _layerToWeights[sourceLayerEntry.first];
@@ -232,7 +232,7 @@ void Layer::computeSimulations()
             for ( unsigned i = 0; i < sourceSize; ++i )
                 for ( unsigned j = 0; j < simulationSize; ++j )
                     for ( unsigned k = 0; k < _size; ++k )
-                        _simulations[k][j] += ( ( *sourceSimulations )[i][j] * weights[i * _size + k] );
+                        _simulations[k][j] += ( ( *sourceSimulations ).get( i ).get( j ) * weights[i * _size + k] );
         }
     } 
     else if ( _type == RELU )
@@ -240,9 +240,9 @@ void Layer::computeSimulations()
         for ( unsigned i = 0; i < _size; ++i )
         {
             NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();            
-            const std::vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) )[sourceIndex._neuron];
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
             for ( unsigned j = 0; j < simulationSize; ++j )
-                _simulations[i][j] = FloatUtils::max( simulations[j], 0 );
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), 0 );
         }
     }
     else if ( _type == ABSOLUTE_VALUE )
@@ -250,9 +250,9 @@ void Layer::computeSimulations()
         for ( unsigned i = 0; i < _size; ++i )
         {
             NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
-            const std::vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) )[sourceIndex._neuron];
-            for ( unsigned j = 0; j < simulationSize; ++j )
-                _simulations[i][j] = FloatUtils::abs( simulations[j] );
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j ) 
+                _simulations[i][j] = FloatUtils::abs( simulations.get( j ) );
         }
     }
     else if ( _type == MAX )
@@ -265,7 +265,8 @@ void Layer::computeSimulations()
 
                 for ( const auto &input : _neuronToActivationSources[i] )
                 {
-                    double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) )[input._neuron][j];
+                    //double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) )[input._neuron][j];
+                    double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) ).get( input._neuron ).get( j );
                     if ( value > _simulations[i][j] )
                         _simulations[i][j] = value;
                 }
@@ -277,9 +278,9 @@ void Layer::computeSimulations()
         for ( unsigned i = 0; i < _size; ++i )
         {
             NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
-            const std::vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) )[i];
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
             for ( unsigned j = 0; j < simulationSize; ++j )
-                _simulations[i][j] = FloatUtils::isNegative( simulations[j] ) ? -1 : 1;
+                _simulations[i][j] = FloatUtils::isNegative( simulations.get( j ) ) ? -1 : 1;
         }
     }
     else

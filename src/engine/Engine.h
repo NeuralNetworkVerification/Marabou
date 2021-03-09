@@ -212,10 +212,10 @@ private:
     */
     PiecewiseLinearConstraint *_plConstraintToFix;
 
-	/*
-	  Preprocessed InputQuery
-	*/
-	InputQuery _preprocessedQuery;
+    /*
+      Preprocessed InputQuery
+    */
+    InputQuery _preprocessedQuery;
 
     /*
       Pivot selection strategies.
@@ -358,6 +358,11 @@ private:
       MILPEncoder
     */
     std::unique_ptr<MILPEncoder> _milpEncoder;
+
+    /*
+      Number of simulations
+    */
+    unsigned _simulationSize;
 
     /*
       Perform a simplex step: compute the cost function, pick the

@@ -26,6 +26,7 @@
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
+#include "Vector.h"
 
 namespace NLR {
 
@@ -106,9 +107,9 @@ public:
     /*
       Set/get the simulations, or compute it from source layers
     */
-   void setSimulations( const std::vector<std::vector<double>> *values );
+   void setSimulations( const Vector<Vector<double>> *values );
    void computeSimulations();
-   const std::vector<std::vector<double>> *getSimulations() const;
+   const Vector<Vector<double>> *getSimulations() const;
 
     /*
       Bound related functionality: grab the current bounds from the
@@ -164,7 +165,7 @@ private:
 
     double *_assignment;
 
-    std::vector<std::vector<double>> _simulations;
+    Vector<Vector<double>> _simulations;
 
     double *_lb;
     double *_ub;

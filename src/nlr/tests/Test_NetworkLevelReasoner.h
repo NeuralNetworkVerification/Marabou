@@ -22,6 +22,7 @@
 #include "NetworkLevelReasoner.h"
 #include "Options.h"
 #include "Tightening.h"
+#include "Vector.h"
 
 class MockForNetworkLevelReasoner
 {
@@ -1600,42 +1601,42 @@ public:
         unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
 
         // With ReLUs, Inputs are zeros, only biases count
-        std::vector<std::vector<double>> simulations1;
-        simulations1.push_back( std::vector<double>( simulationSize, 0 ) );
-        simulations1.push_back( std::vector<double>( simulationSize, 0 ) );
+        Vector<Vector<double>> simulations1;
+        simulations1.append( Vector<double>( simulationSize, 0 ) );
+        simulations1.append( Vector<double>( simulationSize, 0 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
         {
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 1 ) );
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 4 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 1 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 4 ) );
         }
 
         // With ReLUs, case 1
-        std::vector<std::vector<double>> simulations2;
-        simulations2.push_back( std::vector<double>( simulationSize, 1 ) );
-        simulations2.push_back( std::vector<double>( simulationSize, 1 ) );
+        Vector<Vector<double>> simulations2;
+        simulations2.append( Vector<double>( simulationSize, 1 ) );
+        simulations2.append( Vector<double>( simulationSize, 1 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
         {
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 1 ) );
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 1 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 1 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 1 ) );
         }
 
         // With ReLUs, case 1 and 2
-        std::vector<std::vector<double>> simulations3;
-        simulations3.push_back( std::vector<double>( simulationSize, 1 ) );
-        simulations3.push_back( std::vector<double>( simulationSize, 2 ) );
+        Vector<Vector<double>> simulations3;
+        simulations3.append( Vector<double>( simulationSize, 1 ) );
+        simulations3.append( Vector<double>( simulationSize, 2 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations3 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
         {
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 0 ) );
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 0 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 0 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 0 ) );
         }
     }
     void test_simulate_non_consecutive_layers()
@@ -1685,24 +1686,24 @@ public:
         unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
 
         // Simulate1
-        std::vector<std::vector<double>> simulations1;
-        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
-        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
+        Vector<Vector<double>> simulations1;
+        simulations1.append( Vector<double>( simulationSize, 1 ) );
+        simulations1.append( Vector<double>( simulationSize, 1 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 2 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 2 ) );
 
         // Simulate2
-        std::vector<std::vector<double>> simulations2;
-        simulations2.push_back( std::vector<double>( simulationSize, -1 ) );
-        simulations2.push_back( std::vector<double>( simulationSize, 2 ) );
+        Vector<Vector<double>> simulations2;
+        simulations2.append( Vector<double>( simulationSize, -1 ) );
+        simulations2.append( Vector<double>( simulationSize, 2 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 0 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 0 ) );
     }
 
     void test_simulate_relus_and_abs()
@@ -1752,29 +1753,29 @@ public:
         unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
 
         // Simulate1
-        std::vector<std::vector<double>> simulations1;
-        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
-        simulations1.push_back( std::vector<double>( simulationSize, 1 ) );
+        Vector<Vector<double>> simulations1;
+        simulations1.append( Vector<double>( simulationSize, 1 ) );
+        simulations1.append( Vector<double>( simulationSize, 1 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
         {
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 2 ) );
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 2 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 2 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 2 ) );
         }
 
         // Simulate2
-        std::vector<std::vector<double>> simulations2;
-        simulations2.push_back( std::vector<double>( simulationSize, 1 ) );
-        simulations2.push_back( std::vector<double>( simulationSize, 2 ) );
+        Vector<Vector<double>> simulations2;
+        simulations2.append( Vector<double>( simulationSize, 1 ) );
+        simulations2.append( Vector<double>( simulationSize, 2 ) );
 
         TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
 
         for ( unsigned i = 0; i < simulationSize; ++i )
         {
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[0][i], 4 ) );
-            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) )[1][i], 4 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 4 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 4 ) );
         }
     }
 };

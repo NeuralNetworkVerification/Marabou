@@ -30,6 +30,7 @@
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "Vector.h" 
 
 #include <random>
 
@@ -56,6 +57,7 @@ Engine::Engine()
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
+    , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1826,9 +1828,12 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSimulation()
 {
+    if ( _simulationSize == 0 )
+        return;
+
     // outer vector is for neuron
     // inner vector is for simulation value
-    std::vector<std::vector<double>> simulations;
+    Vector<Vector<double>> simulations;
 
     std::mt19937 mt( GlobalConfiguration::SIMULATION_RANDOM_SEED );
 
@@ -1836,11 +1841,11 @@ void Engine::performSimulation()
     {
         std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
                                                                 _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
-        std::vector<double> simulationInput( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) );
+        Vector<double> simulationInput( _simulationSize );
 
         for ( int j = 0; j < Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ); ++j )
             simulationInput[j] = distribution( mt );
-        simulations.push_back( simulationInput );
+        simulations.append( simulationInput );
     }
     _networkLevelReasoner->simulate( &simulations );
 }
