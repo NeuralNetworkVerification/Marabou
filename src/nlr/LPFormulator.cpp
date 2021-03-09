@@ -283,9 +283,6 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     bool skipTightenLb = false; // If true, skip lower bound tightening
     bool skipTightenUb = false; // If true, skip upper bound tightening
 
-    unsigned skipTighterLowerBoundCounter = 0;
-    unsigned skipTighterUpperBoundCounter = 0;
-
     for ( const auto &currentLayer : layers )
     {
         Layer *layer = currentLayer.second;
@@ -323,23 +320,19 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             // If no tightning is needed, continue
             if ( skipTightenUb && skipTightenLb )
             {
-                mtx.lock();
-                ++skipTighterUpperBoundCounter;
-                ++skipTighterLowerBoundCounter;
-                mtx.unlock();
+                LPFormulator_LOG( Stringf( "Skip tightening lower and upper bounds for layer %d index %u",
+                                   currentLayer.first, i ).ascii() );
                 continue;
             }
             else if ( skipTightenUb )
             {
-                mtx.lock();
-                ++skipTighterUpperBoundCounter;
-                mtx.unlock();
+                LPFormulator_LOG( Stringf( "Skip tightening upper bound for layer %u index %u",
+                                   currentLayer.first, i ).ascii() );
             }
             else if ( skipTightenLb )
             {
-                mtx.lock();
-                ++skipTighterLowerBoundCounter;
-                mtx.unlock();
+                LPFormulator_LOG( Stringf( "Skip tightening lower bound for layer %u index %u",
+                                   currentLayer.first, i ).ascii() );
             }
 
             if ( infeasible )
@@ -394,8 +387,6 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
                                tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ).ascii() );
-    LPFormulator_LOG( Stringf( "Number of skipped tighter lower bounds by simulation: %u\n", skipTighterLowerBoundCounter ) );
-    LPFormulator_LOG( Stringf( "Number of skipped tighter upper bounds by simulation: %u\n", skipTighterUpperBoundCounter ) );
     LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
 
     clearSolverQueue( freeSolvers );

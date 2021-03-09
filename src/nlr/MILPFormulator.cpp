@@ -179,9 +179,6 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
     bool skipTightenLb = false; // If true, skip lower bound tightening
     bool skipTightenUb = false; // If true, skip upper bound tightening
 
-    unsigned skipTighterLowerBoundCounter = 0;
-    unsigned skipTighterUpperBoundCounter = 0;
-
     for ( const auto &currentLayer : layers )
     {
         Layer *layer = currentLayer.second;
@@ -218,23 +215,19 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
             // If no tightning is needed, continue
             if ( skipTightenUb && skipTightenLb )
             {
-                mtx.lock();
-                ++skipTighterUpperBoundCounter;
-                ++skipTighterLowerBoundCounter;
-                mtx.unlock();
+                log( Stringf( "Skip tightening lower and upper bounds for layer %d index %u",
+                                   currentLayer.first, i ).ascii() );
                 continue;
             }
             else if ( skipTightenUb )
             {
-                mtx.lock();
-                ++skipTighterUpperBoundCounter;
-                mtx.unlock();
+                log( Stringf( "Skip tightening upper bound for layer %u index %u",
+                                   currentLayer.first, i ).ascii() );
             }
             else if ( skipTightenLb )
             {
-                mtx.lock();
-                ++skipTighterLowerBoundCounter;
-                mtx.unlock();
+                log( Stringf( "Skip tightening lower bound for layer %u index %u",
+                                   currentLayer.first, i ).ascii() );
             }
 
             if ( infeasible )
@@ -289,8 +282,6 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
 
     log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
                   tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ) );
-    log( Stringf( "Number of skipped tighter lower bounds by simulation: %u\n", skipTighterLowerBoundCounter ) );
-    log( Stringf( "Number of skipped tighter upper bounds by simulation: %u\n", skipTighterUpperBoundCounter ) );
     log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
     clearSolverQueue( freeSolvers );
 
