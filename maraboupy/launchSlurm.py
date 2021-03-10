@@ -112,7 +112,7 @@ if not os.path.exists(batchDirPath):
     
 CPUS = 8
 MEM_PER_CPU = "2G"
-commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "sbt"]
+commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "none"]
     
 runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
 
@@ -140,7 +140,7 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
     sbatchCode.append("")
     sbatchCode.append("csh /cs/labs/guykatz/matanos/py_env/bin/activate.csh")
     sbatchCode.append("export PYTHONPATH=$PYTHONPATH:/cs/labs/guykatz/matanos/Marabou")
-    sbatchCode.append("export GUROBI_HOME=/cs/labs/guykatz/matanos/gurobi900/linux64")
+    sbatchCode.append("export GUROBI_HOME=/cs/labs/guykatz/matanos/gurobi911/linux64")
     sbatchCode.append("export PATH=$PATH:${GUROBI_HOME}/bin")
     sbatchCode.append("export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib")
     sbatchCode.append("export GRB_LICENSE_FILE=/cs/share/etc/license/gurobi/gurobi.lic")
