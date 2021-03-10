@@ -612,8 +612,8 @@ void MILPFormulator::addMaxNeuronToModel( GurobiWrapper &gurobi, const Layer *la
     terms.clear();
     for ( unsigned i = 0 ; i < clog2n ; ++i )
     {
-        gurobi.addVariable( Stringf( "at%uj%u", targetVariable, i ), 0, 1, GurobiWrapper::BINARY );
-        terms.append( GurobiWrapper::Term( std::pow(2,i), Stringf( "at%uj%u", targetVariable, i ) ) );        
+        gurobi.addVariable( Stringf( "a%u_%u", targetVariable, i ), 0, 1, GurobiWrapper::BINARY );
+        terms.append( GurobiWrapper::Term( std::pow(2,i), Stringf( "a%u_%u", targetVariable, i ) ) );        
     }
     gurobi.addLeqConstraint( terms, numActiveVariables );
 
