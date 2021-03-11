@@ -1073,7 +1073,6 @@ void Engine::initializeNetworkLevelReasoning()
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
-
     struct timespec start = TimeUtils::sampleMicro();
 
     try
@@ -1828,8 +1827,11 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSimulation()
 {
-    if ( _simulationSize == 0 )
+    if ( _simulationSize == 0 || !_networkLevelReasoner )
+    {
+        ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
         return;
+    }
 
     // outer vector is for neuron
     // inner vector is for simulation value
