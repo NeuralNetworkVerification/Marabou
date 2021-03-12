@@ -647,6 +647,14 @@ bool MaxConstraint::constraintObsolete() const
 
 void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
+    // First elimination does not remove number of cases, since it
+    // simultaneously adds MAX_PHASE_ELIMINATED
+    if ( _eliminatedVariables )
+    {
+        ASSERT( _numCases > 1u ); // MAX_PHASE_ELIMINATED cannot be removed
+        --_numCases;
+    }
+
     _eliminatedVariables = true;
     _maxValueOfEliminated = FloatUtils::max( value, _maxValueOfEliminated );
     _maxLowerBound = FloatUtils::max( _maxLowerBound, _maxValueOfEliminated );
