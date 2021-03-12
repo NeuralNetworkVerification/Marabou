@@ -192,7 +192,7 @@ public:
     /*
        Returns true if there is only one feasible case remaining.
      */
-    bool isImplication() const
+    virtual bool isImplication() const
     {
         return numFeasibleCases() == 1u;
     }
