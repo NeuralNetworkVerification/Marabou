@@ -9,7 +9,25 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** MaxConstraint implements the following constraint:
+ ** _f = Max( e1, e2, ..., eM), where _elements = { e1, e2, ..., eM}
+ **
+ ** The constraint will refer to elements as its phases, by wrapping the
+ ** variable identifiers as PhaseStatus enumeration. Additionally, during
+ ** preprocessing one or more phases may be eliminated from the constraint. A
+ ** maximum of such constraints is stored locally, and to denote this phase a
+ ** special value PhaseStatus::MAX_PHASE_ELIMINATED is used.
+
+ ** In case of explicit search, MAX_PHASE_ELIMINATED case **has** to be explored
+ ** last.
+
+ ** Unlike other PiecewiseLinearConstraints phases of MaxConstraint are dynamic
+ ** because they depend on the exact set of its elements. Therefore,
+ ** MaxConstraint class overrides some of the default methods of
+ ** ContextDependentPiecewiseLinearConstraint.
+
+ ** Eliminating the variables will update the CDPWLC::_numCases member.
+ ** 
 
 **/
 
