@@ -519,51 +519,32 @@ bool MaxConstraint::phaseFixed() const
     return false;
 }
 
+bool MaxConstraint::isImplication() const
+{
+    return _elements.exists( _f ) || numFeasibleCases() == 1u;
+}
+
+
 PiecewiseLinearCaseSplit MaxConstraint::getImpliedCaseSplit() const
 {
+    ASSERT( isImplication() );
+
     ASSERT( phaseFixed() );
-    if ( !_elements.exists( _f ) )
+
+    PhaseStatus phase = getPhaseStatus();
+
+    ASSERT ( phase != PHASE_NOT_FIXED );
+
+    if ( phase == MAX_PHASE_ELIMINATED )
     {
-        ASSERT( _elements.empty() || _elements.size() == 1 );
-
-        // Case 1 - no elements, and then f = maxEliminated
-        if ( _elements.empty() )
-        {
-            ASSERT( _eliminatedVariables );
-            PiecewiseLinearCaseSplit phaseOfEliminatedIsMax;
-            phaseOfEliminatedIsMax.storeBoundTightening( Tightening( _f, _maxValueOfEliminated, Tightening::LB ) );
-            phaseOfEliminatedIsMax.storeBoundTightening( Tightening( _f, _maxValueOfEliminated, Tightening::UB ) );
-            return phaseOfEliminatedIsMax;
-        }
-
-        // Case 2 - one element
-        unsigned singleVariableLeft = *_elements.begin();
-
-        if ( !_eliminatedVariables )
-            return getSplit( singleVariableLeft );
-
-        // Eliminated at least one variable
-        // max = b = singleVariableLeft
-        if ( _lowerBounds.exists( singleVariableLeft ) &&
-             FloatUtils::gte( _lowerBounds[singleVariableLeft], _maxValueOfEliminated ) )
-            return getSplit( singleVariableLeft );
-
-        // max = maxValueEliminated
         PiecewiseLinearCaseSplit phaseOfEliminatedIsMax;
         phaseOfEliminatedIsMax.storeBoundTightening( Tightening( _f, _maxValueOfEliminated, Tightening::LB ) );
         phaseOfEliminatedIsMax.storeBoundTightening( Tightening( _f, _maxValueOfEliminated, Tightening::UB ) );
-
         return phaseOfEliminatedIsMax;
     }
-    else
-    {
-        // If elements includes _f, this piecewise linear constraint
-        // can immediately be transformed into a conjunction of linear
-        // constraints
-        return getSplit( _f );
-    }
-}
 
+    return getSplit( phase ); // Handles the special case of _f being the phase
+}
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 {
