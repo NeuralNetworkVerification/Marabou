@@ -155,6 +155,7 @@ public:
 
 
 
+    bool isImplication() const override;
 
 private:
     unsigned _f;
