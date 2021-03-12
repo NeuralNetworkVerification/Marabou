@@ -1845,7 +1845,7 @@ void Engine::performSimulation()
                                                                 _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
         Vector<double> simulationInput( _simulationSize );
 
-        for ( int j = 0; j < Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ); ++j )
+        for ( unsigned j = 0; j < _simulationSize; ++j )
             simulationInput[j] = distribution( mt );
         simulations.append( simulationInput );
     }

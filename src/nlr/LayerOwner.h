@@ -17,9 +17,6 @@
 #define __LayerOwner_h__
 
 #include "Tightening.h"
-#include "Vector.h"
-
-// #include <vector>
 
 namespace NLR {
 
@@ -35,7 +32,6 @@ public:
     virtual const ITableau *getTableau() const = 0;
     virtual unsigned getNumberOfLayers() const = 0;
     virtual void receiveTighterBound( Tightening tightening ) = 0;
-    virtual void simulate( Vector<Vector<double>> *input ) = 0; 
 };
 
 } // namespace NLR

@@ -131,7 +131,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             currentLb = layer->getLb( j );
             currentUb = layer->getUb( j );
 
-            if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
+            if ( _cutoffInUse && ( currentLb >= _cutoffValue || currentUb <= _cutoffValue ) )
                 continue;
 
             unsigned variable = layer->neuronToVariable( j );
@@ -227,7 +227,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
                                                               Tightening::LB ) );
                 ++tighterBoundCounter;
 
-                if ( _cutoffInUse && lb > _cutoffValue )
+                if ( _cutoffInUse && lb >= _cutoffValue )
                 {
                     ++cutoffs;
                     continue;
@@ -298,7 +298,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
             currentLb = layer->getLb( i );
             currentUb = layer->getUb( i );
 
-            if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
+            if ( _cutoffInUse && ( currentLb >= _cutoffValue || currentUb <= _cutoffValue ) )
                 continue;
 
             skipTightenLb = false;
@@ -310,7 +310,7 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
                 if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to call tightning upper bound.
                     skipTightenUb = true;
 
-                if ( _cutoffInUse && simValue <= _cutoffValue ) // If x_sim < 0 < x_upper, do not try to call tightning lower bound.
+                if ( _cutoffInUse && simValue < _cutoffValue ) // If x_sim < 0 < x_upper, do not try to call tightning lower bound.
                     skipTightenLb = true;
 
                 if ( skipTightenUb && skipTightenLb )
