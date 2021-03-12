@@ -209,6 +209,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     if ( _elements.exists( variable ) && _f != variable && FloatUtils::lt( value, _maxLowerBound ) )
         _elements.erase( variable );
 
+    if ( _elements.size() == 0)
+        setMaxIndex( MAX_PHASE_ELIMINATED );
+
     // There is no need to recompute the max lower bound and max index here.
 
     if ( isActive() && _constraintBoundTightener )
