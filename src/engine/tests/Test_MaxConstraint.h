@@ -1652,38 +1652,122 @@ public:
     }
 
     /*
-      Test context-dependent Max state behavior.
+       Test context-dependent Max state behavior.
      */
-    void test_sign_context_dependent_state()
+    void test_max_context_dependent_state()
     {
         Context context;
 
         unsigned f = 1;
         Set<unsigned> elements;
 
-        for ( unsigned i = 2; i < 10; ++i )
+        for ( unsigned i = 2; i < 5; ++i )
             elements.insert( i );
 
         TestMaxConstraint max( f, elements );
 
 
+        // During pre-processing we eliminate some variables
+        // max.eliminateVariable( 5, 4 );
+
+        // In search phase, we initialize context-dependent structures
         max.initializeCDOs( &context );
+        context.push();
 
-        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED ); */
+        TS_ASSERT_EQUALS( max.getPhaseStatus(), PHASE_NOT_FIXED );
 
-        /* context.push(); */
-        /* sign.notifyUpperBound( b, -1 ); */
-        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), SIGN_PHASE_NEGATIVE ); */
+        max.notifyLowerBound( 4, 7 );
+        max.notifyLowerBound( 3, 5 );
+        max.notifyUpperBound( 2, 4 ); // This should eliminate variable 2;
 
-        /* context.pop(); */
-        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED ); */
-        /* context.push(); */
+        TS_ASSERT_EQUALS( max.numFeasibleCases(), 2u );
 
-        /* sign.notifyLowerBound( b, 3 ); */
-        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), SIGN_PHASE_POSITIVE ); */
+        context.push(); // L1
+        max.notifyUpperBound( 3, 6 ); // This should eliminate variable 3;
+        TS_ASSERT( max.isImplication() );
 
-        /* context.pop(); */
-        /* TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED ); */
+        context.pop(); // L0
+        TS_ASSERT( !max.isImplication() );
+
+        context.push(); // L1
+        PhaseStatus phase = max.nextFeasibleCase();
+        max.markInfeasible( phase );
+        TS_ASSERT( max.isImplication() );
+
+        context.pop(); // L0
+        TS_ASSERT( !max.isImplication() );
+        phase = max.nextFeasibleCase();
+        max.markInfeasible( phase );
+
+        TS_ASSERT( max.isImplication() );
+
+        phase = max.nextFeasibleCase();
+        max.markInfeasible( phase );
+        TS_ASSERT( !max.isFeasible() );
+
+        context.pop(); // L1
+
+        TS_ASSERT_EQUALS( max.getPhaseStatus(), PHASE_NOT_FIXED );
+
+        context.pop(); // L0
+    }
+
+    void test_max_context_dependent_state_with_elimination()
+    {
+        // Case 2 - with eliminated variables during pre-processing
+        Context context;
+
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 6; ++i )
+            elements.insert( i );
+
+        TestMaxConstraint max( f, elements );
+
+
+        // During pre-processing we eliminate some variables
+        max.eliminateVariable( 5, 7 );
+
+        // In search phase, we initialize context-dependent structures
+        max.initializeCDOs( &context );
+        context.push();
+
+        TS_ASSERT_EQUALS( max.getPhaseStatus(), PHASE_NOT_FIXED );
+
+        max.notifyLowerBound( 4, 6 );
+        max.notifyLowerBound( 3, 5 );
+        max.notifyUpperBound( 2, 4 ); // This should eliminate variable 2;
+
+        TS_ASSERT_EQUALS( max.numFeasibleCases(), 3u );
+
+        context.push(); // L1
+        max.notifyUpperBound( 3, 5 ); // This should eliminate variable 3;
+        TS_ASSERT_EQUALS( max.numFeasibleCases(), 2u );
+
+        context.push(); // L2
+        PhaseStatus phase = max.nextFeasibleCase();
+        TS_ASSERT_DIFFERS( phase, MAX_PHASE_ELIMINATED );
+
+        max.markInfeasible( phase );
+        TS_ASSERT( max.isImplication() );
+        TS_ASSERT_EQUALS( max.nextFeasibleCase(), MAX_PHASE_ELIMINATED );
+
+        context.pop(); // L1
+        TS_ASSERT( !max.isImplication() );
+        max.notifyUpperBound( 4, 6 ); // This should eliminate variable 4;
+        TS_ASSERT( max.isImplication() );
+
+        phase = max.nextFeasibleCase();
+        TS_ASSERT_EQUALS( phase, MAX_PHASE_ELIMINATED );
+
+        max.markInfeasible( phase );
+        TS_ASSERT( !max.isFeasible() );
+
+        context.pop(); // L1
+
+        TS_ASSERT_EQUALS( max.getPhaseStatus(), PHASE_NOT_FIXED );
+
     }
 };
 
