@@ -111,6 +111,13 @@ public:
     List<PhaseStatus> getAllCases() const override;
 
     /*
+       Checks whether a case has been flagged as infeasible. Works only in
+       context-dependent mode.
+     */
+    bool isCaseInfeasible( PhaseStatus phase ) const;
+    bool isCaseInfeasible( unsigned phase ) const;
+
+    /*
       Check if the constraint's phase has been fixed.
     */
     bool phaseFixed() const;

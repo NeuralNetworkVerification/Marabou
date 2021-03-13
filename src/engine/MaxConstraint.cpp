@@ -188,7 +188,10 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
         for ( unsigned removeVar : toRemove )
         {
-            _elements.erase( removeVar );
+            if ( _cdInfeasibleCases )
+                markInfeasible( static_cast<PhaseStatus>( variable ) );
+            else
+                _elements.erase( removeVar );
 
             if ( getMaxIndex() == removeVar )
                 maxErased = true;
@@ -225,8 +228,14 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     _upperBounds[variable] = value;
 
     if ( _elements.exists( variable ) && _f != variable && FloatUtils::lt( value, _maxLowerBound ) )
-        _elements.erase( variable );
+    {
+        if ( _cdInfeasibleCases )
+            markInfeasible( static_cast<PhaseStatus>( variable ) );
+        else
+            _elements.erase( variable );
+    }
 
+    // If all elements have been eliminated, set the phase of the constraint.
     if ( _elements.size() == 0)
         setMaxIndex( MAX_PHASE_ELIMINATED );
 
@@ -356,6 +365,18 @@ bool MaxConstraint::satisfied() const
     return FloatUtils::areEqual( maxValue, fValue );
 }
 
+
+bool MaxConstraint::isCaseInfeasible( PhaseStatus phase ) const
+{
+    ASSERT( _cdInfeasibleCases );
+    return std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), phase ) != _cdInfeasibleCases->end();
+}
+
+bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
+{
+    return isCaseInfeasible( static_cast<PhaseStatus>( variable ) );
+}
+
 void MaxConstraint::resetMaxIndex()
 {
     double maxValue = FloatUtils::negativeInfinity();
@@ -372,6 +393,9 @@ void MaxConstraint::resetMaxIndex()
     {
         for ( auto element : _elements )
         {
+            if ( _cdInfeasibleCases && isCaseInfeasible( element ) )
+                continue;
+
             if ( _assignment.exists( element ) )
             {
                 double elementValue = _assignment[element];
@@ -409,7 +433,8 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
     {
         fixes.append( PiecewiseLinearConstraint::Fix( _f, maxVal ) );
         for ( auto elem : _elements )
-            fixes.append( PiecewiseLinearConstraint::Fix( elem, fValue ) );
+            if ( !_cdInfeasibleCases || !isCaseInfeasible( elem ) )
+                fixes.append( PiecewiseLinearConstraint::Fix( elem, fValue ) );
     }
     else if ( FloatUtils::lt( fValue, maxVal ) )
     {
@@ -419,6 +444,9 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getPossibleFixes() const
         unsigned numGreater = 0;
         for ( auto element : _elements )
         {
+            if ( _cdInfeasibleCases && !isCaseInfeasible( element ) )
+                continue;
+
             if ( _assignment.exists( element ) && FloatUtils::gt( _assignment[element], fValue ) )
             {
                 ++numGreater;
@@ -484,7 +512,8 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
     {
         for ( unsigned element : _elements )
         {
-            splits.append( getSplit( element ) );
+            if ( !_cdInfeasibleCases || !isCaseInfeasible( element ) )
+                splits.append( getSplit( element ) );
         }
 
         if ( _eliminatedVariables )
