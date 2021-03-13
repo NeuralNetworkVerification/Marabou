@@ -17,18 +17,15 @@
  ** preprocessing one or more phases may be eliminated from the constraint. A
  ** maximum of such constraints is stored locally, and to denote this phase a
  ** special value PhaseStatus::MAX_PHASE_ELIMINATED is used.
-
- ** In case of explicit search, MAX_PHASE_ELIMINATED case **has** to be explored
- ** last.
-
- ** Unlike other PiecewiseLinearConstraints phases of MaxConstraint are dynamic
- ** because they depend on the exact set of its elements. Therefore,
- ** MaxConstraint class overrides some of the default methods of
- ** ContextDependentPiecewiseLinearConstraint.
-
- ** Eliminating the variables will update the CDPWLC::_numCases member.
- ** 
-
+ **
+ ** MaxConstraint operates in two modes: preprocessing, which uses local bounds
+ ** and values, and context-dependent mode which automatically backtracks the
+ ** constraint state. A MaxConstraints object enters context-dependent mode upon
+ ** invocation of MaxConstraint::initializeCDOs() and it cannot be undone.
+ **
+ ** Once in the context-dependent mode, MaxConstraint can be used for explicit
+ ** exploration of the search space, using the markInfeasible/nextFeasibleCase
+ ** methods.
 **/
 
 #include "Debug.h"
