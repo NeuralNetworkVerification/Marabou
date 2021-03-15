@@ -70,6 +70,8 @@ parser.add_argument("--run_title",      type=str,                               
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
+parser.add_argument("--timeout",        type=int,                                   default=600,                    help="Solver timeout in seconds.")
+#parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                    help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
@@ -98,6 +100,7 @@ cfg_doubleCheck       = args.double_check
 cfg_boundTightening   = args.bound_tightening
 cfg_solveWithMILP     = args.solve_with_milp
 cfg_symbolicTightening= args.symbolic
+cfg_timeoutInSeconds  = args.timeout
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -116,6 +119,7 @@ resultsJson["cfg_doubleCheck"]       = cfg_doubleCheck
 resultsJson["cfg_boundTightening"]   = cfg_boundTightening
 resultsJson["cfg_solveWithMILP"]     = cfg_solveWithMILP
 resultsJson["cfg_symbolicTightening"]= cfg_symbolicTightening
+resultsJson["cfg_timeoutInSeconds"]  = cfg_timeoutInSeconds
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -125,8 +129,8 @@ cexFromImage = False
 
 #mnistProp.runTitle = cfg_runTitle
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
-optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
+optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     mnistProp.optionsObj = optionsLocal
 else :
