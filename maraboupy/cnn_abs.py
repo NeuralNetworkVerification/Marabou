@@ -41,7 +41,7 @@ class mnistProp:
     numCex = 0
     origMConv = None
     origMDense = None
-    policies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote"]
+    policies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote", "Random"]
     Policy = Enum("Policy"," ".join(policies))
     optionsObj = None
     runSuffix = ""
@@ -75,13 +75,13 @@ def marabouNetworkStats(net):
 
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
-    #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer  
+    #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer
     if convOutShape[0] == None:
         convOutShape = convOutShape[1:]
     if convInShape[0] == None:
-        convInShape = convInShape[1:]        
+        convInShape = convInShape[1:]
     replaceW = np.zeros((np.prod(convInShape), np.prod(convOutShape)))
-    replaceB = np.zeros(np.prod(convOutShape))    
+    replaceB = np.zeros(np.prod(convOutShape))
     fDim = origW.shape[:-2] # W/O in/out channels.
 
     sOff = [int(np.prod(convInShape[i+1:]))  for i in range(len(convInShape))]
@@ -90,7 +90,7 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     tCoors = product(*[range(d) for d in convOutShape[:-1]])
     inChNum = origW.shape[-2]
     outChNum = origW.shape[-1]
-    for tCoor in tCoors:                
+    for tCoor in tCoors:
         if mask[tCoor]:
             sCoors = product(*[[coor for coor in [j*s+t for j in range(f)] if coor < i] for f,s,t,i in zip(fDim, strides, tCoor, convInShape)])
             sCoors = list(sCoors)
@@ -107,10 +107,10 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
     return replaceW, replaceB
 
 def cloneAndMaskConvModel(origM, rplcLayerName, mask):
-    rplcIn = origM.get_layer(name=rplcLayerName).input_shape        
+    rplcIn = origM.get_layer(name=rplcLayerName).input_shape
     rplcOut = origM.get_layer(name=rplcLayerName).output_shape
     origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
-    origB = origM.get_layer(name=rplcLayerName).get_weights()[1]    
+    origB = origM.get_layer(name=rplcLayerName).get_weights()[1]
     strides = origM.get_layer(name=rplcLayerName).strides
     clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
     clnLayers = [tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM")]
@@ -136,7 +136,7 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
             else:
                 raise Exception("Not implemented")
             toSetWeights[newL.name] = l.get_weights()
-            clnLayers.append(newL)                          
+            clnLayers.append(newL)
     clnM = tf.keras.Sequential(
         clnLayers,
         name=("AbsModel_{}".format(mnistProp.numClones))
@@ -516,6 +516,8 @@ def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Polic
         return genActivationMaskMajorityClassVote(intermidModel)
     elif policy == mnistProp.Policy.Centered or policy == mnistProp.Policy.Centered.name:
         return genActivationMaskCentered(intermidModel)
+    elif policy == mnistProp.Policy.Random or policy == mnistProp.Policy.Random.name:
+        return genActivationMaskRandom(intermidModel)                
     raise Exception("genActivationMask - policy not implemented:{}".format(policy))
 
 def sortActMapReverse(actMap):
@@ -530,15 +532,13 @@ def sortReverseNeuronsByActivation(intermidModel, samples):
     return sortedIndReverse
 
 def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
-    numberOfNeurons = 0
     mask = np.zeros(maskShape)
-    numNeurons = len(sortedIndReverse)
     masks = list()
-    while numberOfNeurons < numNeurons and len(sortedIndReverse) > 0:
+    stepSize = max(stepSize,1)
+    while len(sortedIndReverse) > 0:
         toAdd = min(stepSize, len(sortedIndReverse))
         for coor in sortedIndReverse[:toAdd]:
             mask[tuple(coor)] = 1
-        numberOfNeurons += toAdd
         sortedIndReverse = sortedIndReverse[toAdd:]
         masks.append(mask.copy())
     return masks
@@ -546,6 +546,8 @@ def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
 def genMaskByActivation(intermidModel, features, stepSize=10):
     sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
     return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1], stepSize=stepSize)
+
+#FIXME set stepSizes as a shared configuration.
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.
 def genActivationMaskAllClassRank(intermidModel, stepSize=10):
@@ -565,11 +567,26 @@ def genActivationMaskMajorityClassVote(intermidModel):
     sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
     return genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], stepSize=10)
 
-#Policy - most important neurons are the center of the image.
+#Policy - Most important neurons are the center of the image.
 def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons and add more in every step than the others.
     maskShape = intermidModel.output_shape[1:]
     for thresh in reversed(range(int(min(maskShape)/2))):        
         yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
+
+#Policy - Add neurons randomly.
+def genActivationMaskRandom(intermidModel, stepSize=10):
+    maskShape = intermidModel.output_shape[1:]    
+    mask = np.zeros(maskShape)
+    indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
+    masks = list()
+    stepSize = max(stepSize,1)
+    while len(indices) > 0:
+        toAdd = min(stepSize, len(indices))
+        for coor in indices[:toAdd]:
+            mask[tuple(coor)] = 1
+        indices = indices[toAdd:]
+        masks.append(mask.copy())
+    return masks    
     
 def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
