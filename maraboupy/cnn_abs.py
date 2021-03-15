@@ -141,14 +141,14 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
         clnLayers,
         name=("AbsModel_{}".format(mnistProp.numClones))
     )
-    mnistProp.numClones += 1            
+    mnistProp.numClones += 1
 
     clnM.build(input_shape=mnistProp.featureShape)
     clnM.compile(loss=mnistProp.loss, optimizer=mnistProp.optimizer, metrics=mnistProp.metrics)
     clnM.summary()
-    
+
     for l,w in toSetWeights.items():
-        clnM.get_layer(name=l).set_weights(w)    
+        clnM.get_layer(name=l).set_weights(w)
 
     score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
     print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
@@ -157,7 +157,7 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
     if np.all(np.equal(mask, np.ones_like(mask))):
         if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
             #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-            print("Prediction aligned")    
+            print("Prediction aligned")
         else:
             print("Prediction not aligned")
 
@@ -172,13 +172,13 @@ def printLog(s):
 
 
 def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small"):
-        
+
     print("Starting model building")
     #https://keras.io/examples/vision/mnist_convnet/
 
     savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
-            
-    if cfg_freshModelOrig:        
+
+    if cfg_freshModelOrig:
         if cnnSizeChoice == "big":
             num_ch = 32
         elif cnnSizeChoice == "medium":
@@ -197,36 +197,36 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
                 layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c2"),
                 layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
                 layers.Flatten(name="f1"),
-                layers.Dense(40, activation="relu", name="fc1"),                    
+                layers.Dense(40, activation="relu", name="fc1"),
                 layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
             ],
             name="origModel_" + cnnSizeChoice
         )
-   
+
         batch_size = 128
         epochs = 15
 
         origM.build(input_shape=mnistProp.featureShape)
         origM.summary()
-            
+
         origM.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
         #origM.compile(optimizer=mnistProp.optimizer, loss=mnistProp.loss, metrics=mnistProp.metrics)
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
-        
+
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
-        
+
         origM.save(mnistProp.basePath + "/" + savedModelOrig)
 
-    else:        
+    else:
         origM = load_model(mnistProp.basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss})
-        #origM = load_model(mnistProp.basePath + "/" + savedModelOrig) 
-        origM.summary()        
+        #origM = load_model(mnistProp.basePath + "/" + savedModelOrig)
+        origM.summary()
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
-        
+
     rplcLayerName = "c2"
     return origM, rplcLayerName
 
@@ -246,21 +246,21 @@ def inBoundsInftyBall(x, r, p, pos=True):
 #        xa, ya, za = np.where(np.less(p,l))
 #        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):
 #            print("l[ind]={}, p[ind]={}".format(l[ind], p[ind]))
-#    if not np.all(upperBoundCond):        
+#    if not np.all(upperBoundCond):
 #        print("np.where(np.less(u,p)={}".format(np.where(np.less(u,p))))
 #        xa, ya, za = np.where(np.less(u,p))
-#        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):        
+#        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):
 #            print("p[ind]={}, u[ind]={}".format(p[ind], u[ind]))
     ###return np.all(np.less_equal(l,p)) and np.all(np.less_equal(p,u))
     return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u))) #FIXME shouldn't allow isclose, floating point errors?
-    
+
 def setAdversarial(net, x, inDist, yCorrect, yBad):
     inAsNP = np.array(net.inputVars[0])
     x = x.reshape(inAsNP.shape)
     xDown, xUp = getBoundsInftyBall(x, inDist)
     for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
         net.lowerBounds.pop(i.item(), None)
-        net.upperBounds.pop(i.item(), None)        
+        net.upperBounds.pop(i.item(), None)
         net.setLowerBound(i.item(),d.item())
         net.setUpperBound(i.item(),u.item())
     for j,o in enumerate(np.nditer(np.array(net.outputVars))):
@@ -270,22 +270,22 @@ def setAdversarial(net, x, inDist, yCorrect, yBad):
             yBadVar = o.item()
     net.addInequality([yCorrectVar, yBadVar], [1,-1], 0) # correct - bad <= 0
     return net
-    
+
 def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
     if useMapping:
         lBounds = getBoundsInftyBall(xAdv, inDist)[0]
 
         inputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig,indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping))), np.nditer(lBounds))}
         outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0 for indOrig, indCOI in enumerate(np.nditer(np.array(outputVarsMapping)))}
-        
+
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
-        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)      
+        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)
     else:
         inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))}
         outputDict = {o.item():valDict[o.item()] for o in np.nditer(np.array(net.outputVars))}
-        cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))]).reshape(xAdv.shape)        
+        cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))]).reshape(xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
-    return cex, cexPrediction, inputDict, outputDict 
+    return cex, cexPrediction, inputDict, outputDict
 
 def setUnconnectedAsInputs(net):
     varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr)])
@@ -302,12 +302,12 @@ def setUnconnectedAsInputs(net):
         varsWithIngoingEdgesOrInputs.add(absCons[1])
     varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
     for v in varsWithoutIngoingEdges:
-        if not net.lowerBoundExists(v):          
+        if not net.lowerBoundExists(v):
             net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
             net.setUpperBound(v,  100000)
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
-    
+
 def setCOIBoundes(net, init):
 
     print("len(net.equList)={}".format(len(net.equList)))
@@ -318,8 +318,8 @@ def setCOIBoundes(net, init):
     print("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
     print("len(net.upperBounds)={}".format(len(net.upperBounds)))
     print("len(net.inputVars)={}".format(len(net.inputVars)))
-    print("len(net.outputVars)={}".format(len(net.outputVars)))    
-    
+    print("len(net.outputVars)={}".format(len(net.outputVars)))
+
     reach = set(init)
     lastLen = 0
     while len(reach) > lastLen:
@@ -332,7 +332,7 @@ def setCOIBoundes(net, init):
                 [reach.add(v) for w,v in eq.addendList]
                 print("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
         for maxArgs, maxOut in net.maxList:
-            if maxOut in reachPrev:            
+            if maxOut in reachPrev:
                 [reach.add(arg) for arg in maxArgs]
         [reach.add(vin) for vin,vout in net.reluList if vout in reachPrev]
         [reach.add(vin) for vin,vout in net.absList  if vout in reachPrev]
@@ -341,14 +341,14 @@ def setCOIBoundes(net, init):
             raise Exception("Not implemented")
     unreach = set([v for v in range(net.numVars) if v not in reach])
 
-    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))        
+    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
 
     reachList = list(reach)
     reachList.sort()
     reachDict = {v:i for i,v in enumerate(reachList)}
     assert reach == set(reachDict.keys())
     tr = lambda v: reachDict[v] if v in reachDict else -1
-    
+
     for vin,vout in net.reluList:
         assert (vin not in reach) == (vout not in reach)
     for vin,vout in net.absList:
@@ -356,9 +356,9 @@ def setCOIBoundes(net, init):
     for vin,vout in net.signList:
         assert (vin not in reach) == (vout not in reach)
 
-    newEquList = list()        
+    newEquList = list()
     for eq in net.equList:
-        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?            
+        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
             newEq = MarabouUtils.Equation()
             newEq.scalar = eq.scalar
             newEq.EquationType = MarabouCore.Equation.EQ
@@ -399,7 +399,7 @@ def setCOIBoundes(net, init):
     print("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
     print("len(net.upperBounds)={}".format(len(net.upperBounds)))
     print("len(net.inputVars)={}".format(len(net.inputVars)))
-    print("len(net.outputVars)={}".format(len(net.outputVars)))    
+    print("len(net.outputVars)={}".format(len(net.outputVars)))
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     return inputVarsMapping, outputVarsMapping
 
@@ -410,7 +410,7 @@ def dumpBounds(model, xAdv, inDist, yMax, ySecond):
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
     return processInputQuery(modelOnnxMarabou)
-    
+
 def processInputQuery(net):
     return MarabouCore.preprocess(net.getMarabouQuery(), mnistProp.optionsObj)
 
@@ -419,9 +419,9 @@ def setBounds(model, boundDict):
         for i, (lb, ub) in boundDict.items():
             if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
                 model.setLowerBound(i,lb)
-            if (not i in model.upperBounds) or (ub < model.upperBounds[i]):            
+            if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
                 model.setUpperBound(i,ub)
-    
+
 def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True):
     #runName = runName + "_" + str(mnistProps.numInputQueries)
     #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
@@ -437,7 +437,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
         plt.title('COI_{}'.format(runName))
         plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
-        plt.savefig('COI_{}'.format(runName))    
+        plt.savefig('COI_{}'.format(runName))
     else:
         inputVarsMapping, outputVarsMapping = None, None
     if mask: #FIXME why was this failing? created a bound for a variable with index above the number of veriables number.
@@ -445,7 +445,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
     finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
-    sat = len(vals) > 0        
+    sat = len(vals) > 0
     if not sat:
         return False, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
     #inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
@@ -463,12 +463,12 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
     plt.savefig(fName)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
-    mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")        
+    mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")
     return True, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
 
 def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="verifyMarabou", fromImage=False):
     mnistProp.printDictToFile(inputDict, "DICT_verifyMarabou_InputDict_in")
-    mnistProp.printDictToFile(outputDict, "DICT_verifyMarabou_OutputDict_in")    
+    mnistProp.printDictToFile(outputDict, "DICT_verifyMarabou_OutputDict_in")
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
@@ -476,11 +476,11 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
     if fromImage:
         inAsNP = np.array(modelOnnxMarabou.inputVars[0])
         xAdv = xAdv.reshape(inAsNP.shape)
-        for i,x in zip(np.nditer(inAsNP),np.nditer(xAdv)):    
+        for i,x in zip(np.nditer(inAsNP),np.nditer(xAdv)):
             modelOnnxMarabou.setLowerBound(i.item(),x.item())
             modelOnnxMarabou.setUpperBound(i.item(),x.item())
     else:
-        for i,x in inputDict.items():    
+        for i,x in inputDict.items():
             modelOnnxMarabou.setLowerBound(i,x)
             modelOnnxMarabou.setUpperBound(i,x)
     vals, stats = modelOnnxMarabou.solve(verbose=True, options=mnistProp.optionsObj)
@@ -488,19 +488,19 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
     if fromImage:
         predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
         print("predictionMbou={}".format(predictionMbou))
-        print("xPrediction={}".format(xPrediction))    
+        print("xPrediction={}".format(xPrediction))
         return xPrediction.argmax() == predictionMbou.argmax(), np.all(xPrediction == predictionMbou), predictionMbou
     else:
         inputDictInner = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars[0]))}
         outputDictInner = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
         mnistProp.printDictToFile(inputDictInner, "DICT_verifyMarabou_InputDict_out")
         mnistProp.printDictToFile(outputDictInner, "DICT_verifyMarabou_OutputDict_out")
-        equality = (set(outputDictInner.keys()) == set(outputDict.keys())) and all([outputDict[k] == outputDictInner[k] for k in outputDict.keys()])        
+        equality = (set(outputDictInner.keys()) == set(outputDict.keys())) and all([outputDict[k] == outputDictInner[k] for k in outputDict.keys()])
         return (outputDictInner == outputDict) and equality,
 
-#Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect. 
+#Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
 def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, sporiousStrict=False):
-    if not inBoundsInftyBall(x, inDist, cex):        
+    if not inBoundsInftyBall(x, inDist, cex):
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))
     if not sporiousStrict:
@@ -509,22 +509,22 @@ def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, sporiousStrict=False):
 
 def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.SingleClassRank):
     if policy == mnistProp.Policy.AllClassRank or policy == mnistProp.Policy.AllClassRank.name:
-        return genActivationMaskAllClassRank(intermidModel)        
-    elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:        
+        return genActivationMaskAllClassRank(intermidModel)
+    elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:
         return genActivationMaskSingleClassRank(intermidModel, prediction)
     elif policy == mnistProp.Policy.MajorityClassVote or policy == mnistProp.Policy.MajorityClassVote.name:
         return genActivationMaskMajorityClassVote(intermidModel)
     elif policy == mnistProp.Policy.Centered or policy == mnistProp.Policy.Centered.name:
         return genActivationMaskCentered(intermidModel)
     elif policy == mnistProp.Policy.Random or policy == mnistProp.Policy.Random.name:
-        return genActivationMaskRandom(intermidModel)                
+        return genActivationMaskRandom(intermidModel)
     raise Exception("genActivationMask - policy not implemented:{}".format(policy))
 
 def sortActMapReverse(actMap):
     sorted = list(np.array(list(product(*[range(d) for d in actMap.shape])))[actMap.flatten().argsort()])
     sorted.reverse()
     return sorted
-    
+
 def sortReverseNeuronsByActivation(intermidModel, samples):
     actMap = meanActivation(intermidModel.predict(samples))
     sortedIndReverse = sortActMapReverse(actMap)
@@ -542,7 +542,7 @@ def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
         sortedIndReverse = sortedIndReverse[toAdd:]
         masks.append(mask.copy())
     return masks
-    
+
 def genMaskByActivation(intermidModel, features, stepSize=10):
     sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
     return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1], stepSize=stepSize)
@@ -558,7 +558,7 @@ def genActivationMaskSingleClassRank(intermidModel, prediction):
     features = [x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == prediction]
     return genMaskByActivation(intermidModel, np.array(features), stepSize=10)
 
-#Policy - calculate per class 
+#Policy - calculate per class
 def genActivationMaskMajorityClassVote(intermidModel):
     features = [[x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label] for label in range(mnistProp.num_classes)]
     actMaps = [meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
@@ -570,12 +570,12 @@ def genActivationMaskMajorityClassVote(intermidModel):
 #Policy - Most important neurons are the center of the image.
 def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons and add more in every step than the others.
     maskShape = intermidModel.output_shape[1:]
-    for thresh in reversed(range(int(min(maskShape)/2))):        
+    for thresh in reversed(range(int(min(maskShape)/2))):
         yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
 
 #Policy - Add neurons randomly.
 def genActivationMaskRandom(intermidModel, stepSize=10):
-    maskShape = intermidModel.output_shape[1:]    
+    maskShape = intermidModel.output_shape[1:]
     mask = np.zeros(maskShape)
     indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
     masks = list()
@@ -586,8 +586,8 @@ def genActivationMaskRandom(intermidModel, stepSize=10):
             mask[tuple(coor)] = 1
         indices = indices[toAdd:]
         masks.append(mask.copy())
-    return masks    
-    
+    return masks
+
 def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
     mask = np.zeros(shape)
@@ -631,7 +631,7 @@ def printImg(image, title):
         plt.title(title + suff)
         plt.imshow(im, cmap='Greys')
         plt.savefig(title + suff + ".png")
-    
+
 def outputLayerName(model):
     return model.layers[-1].name
 
@@ -644,7 +644,7 @@ def printAvgDomain(model, from_label=False): #from_label or from_prediction
     meanAct = [meanActivation(model, outputLayerName(model), x_test_by_class[y]) for y in range(mnistProp.num_classes)]
     for y in range(mnistProp.num_classes):
         printImg(meanAct[y], "{}_meanAct_label_{}.png".format(model.name, y))
-    
+
 #https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
 def compareModels(origM, absM):
     print("compareModels - Starting evaluation of differances between models.")
@@ -655,12 +655,12 @@ def compareModels(origM, absM):
     #[print(l,l.input) for l in origM.layers]
     #print(origM.input)
     #print("abs")
-    #[print(l,l.input) for l in absM.layers]        
+    #[print(l,l.input) for l in absM.layers]
     #print(absM.input)
     equal_full   = np.all(np.equal  (origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
     isclose_full = np.all(np.isclose(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
     print("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
-    for lo, la in zip(layersOrig, layersAbs):            
+    for lo, la in zip(layersOrig, layersAbs):
         mid_origM = intermidModel(origM, lo)
         mid_absM  = intermidModel(absM , la)
         print("compare {} to {}".format(lo, la))
