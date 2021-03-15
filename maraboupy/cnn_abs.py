@@ -446,8 +446,9 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
     sat = len(vals) > 0
+    timedOut = stats.hasTimedOut()
     if not sat:
-        return False, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
+        return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
     #inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
     #outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
@@ -464,7 +465,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     plt.savefig(fName)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
     mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")
-    return True, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
+    return True, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
 
 def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="verifyMarabou", fromImage=False):
     mnistProp.printDictToFile(inputDict, "DICT_verifyMarabou_InputDict_in")

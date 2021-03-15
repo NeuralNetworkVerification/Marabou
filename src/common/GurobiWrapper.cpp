@@ -34,15 +34,11 @@ GurobiWrapper::GurobiWrapper()
 {
     _environment = new GRBEnv;
     resetModel();
-    cout << "Created GurobiWrapper" << std::endl;
-    fflush(stdout);
 }
 
 GurobiWrapper::~GurobiWrapper()
 {
     freeMemoryIfNeeded();
-    cout << "Deleted GurobiWrapper" << std::endl;
-    fflush(stdout);
 }
 
 void GurobiWrapper::freeModelIfNeeded()

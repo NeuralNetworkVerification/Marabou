@@ -34,7 +34,7 @@ def dumpJson(jsonDict):
     with open("Results.json", "w") as f:
         json.dump(jsonDict, f, indent = 4)
 
-def subResultAppend(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None):
+def subResultAppend(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
     resultsJson["subResults"].append({"type": runType,
                                       "index" : index,
                                       "outOf" : numMasks,
@@ -42,10 +42,11 @@ def subResultAppend(resultsJson, runType=None, index=None, numMasks=None, runtim
                                       "runtimeTotal":runtimeTotal,
                                       "originalQueryStats" : originalQueryStats,
                                       "finalQueryStats" : finalQueryStats,
-                                      "SAT" : sat})
+                                      "SAT" : sat,
+                                      "timedOut" : timedOut})
     dumpJson(resultsJson)
 
-def subResultUpdate(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None):
+def subResultUpdate(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
     resultsJson["subResults"][-1] = {"type": runType,
                                      "index" : index,
                                      "outOf" : numMasks,
@@ -53,7 +54,8 @@ def subResultUpdate(resultsJson, runType=None, index=None, numMasks=None, runtim
                                      "runtimeTotal":runtimeTotal,
                                      "originalQueryStats" : originalQueryStats,
                                      "finalQueryStats" : finalQueryStats,
-                                     "SAT" : sat}
+                                     "SAT" : sat,
+                                     "timedOut" : timedOut}
     dumpJson(resultsJson)
 
     
@@ -70,7 +72,7 @@ parser.add_argument("--run_title",      type=str,                               
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
-parser.add_argument("--timeout",        type=int,                                   default=600,                    help="Solver timeout in seconds.")
+parser.add_argument("--timeout",        type=int,                                   default=1200,                    help="Solver timeout in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                    help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
@@ -260,9 +262,13 @@ for i, mask in enumerate(maskList):
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))    
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI, mask=cfg_maskAbstract)
-    subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
+    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI, mask=cfg_maskAbstract)
+    subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
     printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
+    if timedOut:
+        assert not sat
+        printLog("\n\n\n ----- Timed out in mask number {} ----- \n\n\n".format(i+1))
+        continue
     if sat:
         isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
         printLog("Found {} CEX in mask {}/{}.".format(i+1, len(maskList), "sporious" if isSporious else "real"))        
@@ -279,8 +285,10 @@ else:
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     startLocal = time.time()
     subResultAppend(resultsJson, runType="full")
-    sat, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI, mask=cfg_maskAbstract)
-    subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat)
+    mnistProp.optionsObj._timeoutInSeconds = 0
+    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI, mask=cfg_maskAbstract)
+    assert not timedOut
+    subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
     printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
     successful = len(maskList)
     if sat:
@@ -304,8 +312,9 @@ if sat:
 else:
     printLog("UNSAT")
 
-resultsJson["SAT"] = sat
-resultsJson["Result"] = "SAT" if sat else "UNSAT"    
+if not timedOut:    
+    resultsJson["SAT"] = sat
+    resultsJson["Result"] = "SAT" if sat else "UNSAT"    
 resultsJson["totalRuntime"] = time.time() - startTotal
 dumpJson(resultsJson)    
 
