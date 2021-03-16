@@ -16,14 +16,15 @@
 #ifndef __DisjunctionConstraint_h__
 #define __DisjunctionConstraint_h__
 
-#include "Map.h"
-#include "PiecewiseLinearConstraint.h"
+#include "Vector.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 
-class DisjunctionConstraint : public PiecewiseLinearConstraint
+class DisjunctionConstraint : public ContextDependentPiecewiseLinearConstraint
 {
 public:
     ~DisjunctionConstraint() {};
     DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts );
+    DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const String &serializedDisjunction );
 
     /*
@@ -34,7 +35,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    PiecewiseLinearConstraint *duplicateConstraint() const;
+    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -90,14 +91,31 @@ public:
     List<PiecewiseLinearCaseSplit> getCaseSplits() const;
 
     /*
+      If the constraint's phase has been fixed, get the (valid) case split.
+    */
+    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+
+    /*
+       Returns a list of all cases. The order of returned cases affects the
+       search, and this method is where related heuristics should be
+       implemented.
+     */
+    List<PhaseStatus> getAllCases() const override;
+
+    /*
+       Returns case split corresponding to the given phase id.
+     */
+    PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
+
+    /*
       Check if the constraint's phase has been fixed.
     */
     bool phaseFixed() const;
 
     /*
-      If the constraint's phase has been fixed, get the (valid) case split.
+      If the constraint's phase has been fixed, get the implied case split.
     */
-    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+    PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
@@ -144,13 +162,13 @@ private:
     /*
       The disjuncts that form this PL constraint
     */
-    List<PiecewiseLinearCaseSplit> _disjuncts;
+    Vector<PiecewiseLinearCaseSplit> _disjuncts;
 
     /*
       The disjuncts that are still possible, given the current
       lower and upper bounds
     */
-    List<PiecewiseLinearCaseSplit> _feasibleDisjuncts;
+    List<unsigned> _feasibleDisjuncts;
 
     /*
       The list of variables that appear in any of the disjuncts

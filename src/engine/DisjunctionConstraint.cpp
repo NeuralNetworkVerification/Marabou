@@ -19,9 +19,24 @@
 #include "Statistics.h"
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
-    : _disjuncts( disjuncts )
-    , _feasibleDisjuncts( disjuncts )
+    : ContextDependentPiecewiseLinearConstraint( disjuncts.size() )
+    , _disjuncts( disjuncts.begin(), disjuncts.end() )
+    , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
+    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+        _feasibleDisjuncts.append( ind );
+
+    extractParticipatingVariables();
+}
+
+DisjunctionConstraint::DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts )
+    : ContextDependentPiecewiseLinearConstraint( disjuncts.size() )
+    , _disjuncts( disjuncts )
+    , _feasibleDisjuncts( disjuncts.size(), 0 )
+{
+    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+        _feasibleDisjuncts.append( ind );
+
     extractParticipatingVariables();
 }
 
@@ -36,17 +51,29 @@ PiecewiseLinearFunctionType DisjunctionConstraint::getType() const
     return PiecewiseLinearFunctionType::DISJUNCTION;
 }
 
-PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
 {
     DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );
     *clone = *this;
+    initializeDuplicatesCDOs( clone );
     return clone;
 }
 
 void DisjunctionConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const DisjunctionConstraint *disjunction = dynamic_cast<const DisjunctionConstraint *>( state );
+    ASSERT( nullptr != getContext() );
+    ASSERT( nullptr != getActiveStatusCDO() );
+    ASSERT( nullptr != getPhaseStatusCDO() );
+    ASSERT( getContext() == disjunction->getContext() );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *disjunction;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void DisjunctionConstraint::registerAsWatcher( ITableau *tableau )
@@ -127,17 +154,35 @@ List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITabl
 
 List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 {
-    return _disjuncts;
+    return List<PiecewiseLinearCaseSplit>( _disjuncts.begin(), _disjuncts.end() );
 }
 
+List<PhaseStatus> DisjunctionConstraint::getAllCases() const
+{
+    List<PhaseStatus> cases;
+    for ( unsigned i = 0; i < _disjuncts.size(); )
+        cases.append( static_cast<PhaseStatus>( ++i ) );
+
+    return cases;
+}
+
+PiecewiseLinearCaseSplit DisjunctionConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    return _disjuncts.get( static_cast<unsigned>( phase ) - 1 );
+}
 bool DisjunctionConstraint::phaseFixed() const
 {
     return _feasibleDisjuncts.size() == 1;
 }
 
+PiecewiseLinearCaseSplit DisjunctionConstraint::getImpliedCaseSplit() const
+{
+    return _disjuncts.get( *_feasibleDisjuncts.begin() );
+}
+
 PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
 {
-    return *_feasibleDisjuncts.begin();
+    return getImpliedCaseSplit();
 }
 
 void DisjunctionConstraint::dump( String &output ) const
@@ -265,10 +310,10 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
 {
     _feasibleDisjuncts.clear();
 
-    for ( const auto &disjunct : _disjuncts )
+    for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
     {
-        if ( disjunctIsFeasible( disjunct ) )
-            _feasibleDisjuncts.append( disjunct );
+        if ( disjunctIsFeasible( _disjuncts[ind]) )
+            _feasibleDisjuncts.append( ind );
     }
 }
 
