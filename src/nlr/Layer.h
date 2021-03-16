@@ -26,6 +26,7 @@
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
+#include "Vector.h"
 
 namespace NLR {
 
@@ -104,6 +105,13 @@ public:
     void computeAssignment();
 
     /*
+      Set/get the simulations, or compute it from source layers
+    */
+   void setSimulations( const Vector<Vector<double>> *values );
+   void computeSimulations();
+   const Vector<Vector<double>> *getSimulations() const;
+
+    /*
       Bound related functionality: grab the current bounds from the
       Tableau, or compute bounds from source layers
     */
@@ -156,6 +164,8 @@ private:
     double *_bias;
 
     double *_assignment;
+
+    Vector<Vector<double>> _simulations;
 
     double *_lb;
     double *_ub;

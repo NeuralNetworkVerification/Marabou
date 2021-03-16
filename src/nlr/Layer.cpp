@@ -67,6 +67,8 @@ void Layer::allocateMemory()
 
     _assignment = new double[_size];
 
+    _simulations.assign( _size, Vector<double>( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) ) );
+
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
     if ( Options::get()->getSymbolicBoundTighteningType() ==
          SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
@@ -109,6 +111,16 @@ const double *Layer::getAssignment() const
 double Layer::getAssignment( unsigned neuron ) const
 {
     return _assignment[neuron];
+}
+
+void Layer::setSimulations( const Vector<Vector<double>> *values )
+{
+    _simulations = *values;
+}
+
+const Vector<Vector<double>> *Layer::getSimulations() const
+{
+    return &_simulations;
 }
 
 void Layer::computeAssignment()
@@ -193,6 +205,98 @@ void Layer::computeAssignment()
     // prevail.
     for ( const auto &eliminated : _eliminatedNeurons )
         _assignment[eliminated.first] = eliminated.second;
+}
+
+void Layer::computeSimulations()
+{
+    ASSERT( _type != INPUT );
+
+    unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
+    if ( _type == WEIGHTED_SUM )
+    {
+        // Process each of the source layers
+        for ( auto &sourceLayerEntry : _sourceLayers )
+        {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
+            const Vector<Vector<double>> *sourceSimulations = sourceLayer->getSimulations();
+
+            unsigned sourceSize = sourceLayerEntry.second;
+            const double *weights = _layerToWeights[sourceLayerEntry.first];
+
+            for ( unsigned i = 0; i < _size; i++ )
+            {
+                for ( unsigned j = 0; j < simulationSize; ++j )
+                    _simulations[i][j] = _bias[i];
+            }
+
+            for ( unsigned i = 0; i < sourceSize; ++i )
+                for ( unsigned j = 0; j < simulationSize; ++j )
+                    for ( unsigned k = 0; k < _size; ++k )
+                        _simulations[k][j] += ( ( *sourceSimulations ).get( i ).get( j ) * weights[i * _size + k] );
+        }
+    } 
+    else if ( _type == RELU )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();            
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), 0 );
+        }
+    }
+    else if ( _type == ABSOLUTE_VALUE )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j ) 
+                _simulations[i][j] = FloatUtils::abs( simulations.get( j ) );
+        }
+    }
+    else if ( _type == MAX )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            for ( unsigned j = 0; j < simulationSize; ++j )
+            {
+                _simulations[i][j] = FloatUtils::negativeInfinity();
+
+                for ( const auto &input : _neuronToActivationSources[i] )
+                {
+                    //double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) )[input._neuron][j];
+                    double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) ).get( input._neuron ).get( j );
+                    if ( value > _simulations[i][j] )
+                        _simulations[i][j] = value;
+                }
+            }
+        }
+    }
+    else if ( _type == SIGN )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::isNegative( simulations.get( j ) ) ? -1 : 1;
+        }
+    }
+    else
+    {
+        printf( "Error! Neuron type %u unsupported\n", _type );
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+    }
+
+    // Eliminated variables supersede anything else - no matter what
+    // was computed due to left-over weights, etc, their set values
+    // prevail.
+    for ( const auto &eliminated : _eliminatedNeurons )
+    {
+        for ( unsigned j = 0; j < simulationSize; ++j )
+            _simulations[eliminated.first][j] = eliminated.second;
+    }
 }
 
 void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
