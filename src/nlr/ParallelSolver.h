@@ -49,7 +49,8 @@ public:
                         std::mutex &mtx, std::atomic_bool &infeasible,
                         std::atomic_uint &tighterBoundCounter,
                         std::atomic_uint &signChanges,
-                        std::atomic_uint &cutoffs )
+                        std::atomic_uint &cutoffs,
+                        bool skipTightenLb, bool skipTightenUb )
         : _gurobi( gurobi )
         , _layer( layer )
         , _layers( layers )
@@ -65,6 +66,8 @@ public:
         , _tighterBoundCounter( tighterBoundCounter )
         , _signChanges( signChanges )
         , _cutoffs( cutoffs )
+        , _skipTightenLb ( skipTightenLb )
+        , _skipTightenUb ( skipTightenUb )
         , _lastFixedNeuron( NULL )
         {
         }
@@ -76,7 +79,8 @@ public:
                         std::mutex &mtx, std::atomic_bool &infeasible,
                         std::atomic_uint &tighterBoundCounter,
                         std::atomic_uint &signChanges,
-                        std::atomic_uint &cutoffs )
+                        std::atomic_uint &cutoffs,
+                        bool skipTightenLb, bool skipTightenUb )
         : _gurobi( gurobi )
         , _layer( layer )
         , _layers( NULL )
@@ -92,6 +96,8 @@ public:
         , _tighterBoundCounter( tighterBoundCounter )
         , _signChanges( signChanges )
         , _cutoffs( cutoffs )
+        , _skipTightenLb ( skipTightenLb )
+        , _skipTightenUb ( skipTightenUb )
         , _lastFixedNeuron( NULL )
         {
         }
@@ -138,6 +144,8 @@ public:
         std::atomic_uint &_tighterBoundCounter;
         std::atomic_uint &_signChanges;
         std::atomic_uint &_cutoffs;
+        bool _skipTightenLb;
+        bool _skipTightenUb;
         NeuronIndex *_lastFixedNeuron;
     };
 

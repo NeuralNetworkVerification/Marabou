@@ -30,6 +30,9 @@
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "Vector.h" 
+
+#include <random>
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -54,6 +57,7 @@ Engine::Engine()
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
+    , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1069,7 +1073,6 @@ void Engine::initializeNetworkLevelReasoning()
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
-
     struct timespec start = TimeUtils::sampleMicro();
 
     try
@@ -1109,6 +1112,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( preprocess )
         {
             performSymbolicBoundTightening();
+            performSimulation();
             performMILPSolverBoundedTightening();
         }
 
@@ -1819,6 +1823,33 @@ std::atomic_bool *Engine::getQuitRequested()
 List<unsigned> Engine::getInputVariables() const
 {
     return _preprocessedQuery.getInputVariables();
+}
+
+void Engine::performSimulation()
+{
+    if ( _simulationSize == 0 || !_networkLevelReasoner )
+    {
+        ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
+        return;
+    }
+
+    // outer vector is for neuron
+    // inner vector is for simulation value
+    Vector<Vector<double>> simulations;
+
+    std::mt19937 mt( GlobalConfiguration::SIMULATION_RANDOM_SEED );
+
+    for ( unsigned i = 0; i < _networkLevelReasoner->getLayer( 0 )->getSize(); ++i )
+    {
+        std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
+                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
+        Vector<double> simulationInput( _simulationSize );
+
+        for ( unsigned j = 0; j < _simulationSize; ++j )
+            simulationInput[j] = distribution( mt );
+        simulations.append( simulationInput );
+    }
+    _networkLevelReasoner->simulate( &simulations );
 }
 
 void Engine::performSymbolicBoundTightening()
