@@ -317,7 +317,19 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
     }
 }
 
-bool DisjunctionConstraint::disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const
+bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const
+{
+    if ( _cdInfeasibleCases )
+    {
+        auto loc = std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), indToPhaseStatus( ind ) );
+        if ( loc != _cdInfeasibleCases->end() )
+            return false;
+    }
+
+    return caseSplitIsFeasible( _disjuncts.get( ind ) );
+}
+
+bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const
 {
     for ( const auto &bound : disjunct.getBoundTightenings() )
     {

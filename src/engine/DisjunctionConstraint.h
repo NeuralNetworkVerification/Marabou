@@ -192,7 +192,8 @@ private:
       still possible, given the current varibale bounds
     */
     void updateFeasibleDisjuncts();
-    bool disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const;
+    bool disjunctIsFeasible( unsigned ind ) const;
+    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit & caseSplit ) const;
 
     inline PhaseStatus indToPhaseStatus( unsigned ind ) const
     {
