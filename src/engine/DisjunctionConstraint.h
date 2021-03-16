@@ -193,6 +193,19 @@ private:
     */
     void updateFeasibleDisjuncts();
     bool disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const;
+
+    inline PhaseStatus indToPhaseStatus( unsigned ind ) const
+    {
+        return static_cast<PhaseStatus>( ind + 1 );
+    }
+
+    inline unsigned phaseStatusToInd( PhaseStatus phase ) const
+    {
+        //ASSERT( phase != PHASE_NOT_FIXED );
+        return static_cast<unsigned>( phase ) - 1;
+    }
+
+
 };
 
 #endif // __DisjunctionConstraint_h__

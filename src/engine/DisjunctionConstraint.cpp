@@ -160,16 +160,16 @@ List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 List<PhaseStatus> DisjunctionConstraint::getAllCases() const
 {
     List<PhaseStatus> cases;
-    for ( unsigned i = 0; i < _disjuncts.size(); )
-        cases.append( static_cast<PhaseStatus>( ++i ) );
-
+    for ( unsigned i = 0; i < _disjuncts.size(); ++i  )
+        cases.append( indToPhaseStatus( i ) );
     return cases;
 }
 
 PiecewiseLinearCaseSplit DisjunctionConstraint::getCaseSplit( PhaseStatus phase ) const
 {
-    return _disjuncts.get( static_cast<unsigned>( phase ) - 1 );
+    return _disjuncts.get( phaseStatusToInd( phase ) );
 }
+
 bool DisjunctionConstraint::phaseFixed() const
 {
     return _feasibleDisjuncts.size() == 1;
@@ -312,7 +312,7 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
 
     for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
     {
-        if ( disjunctIsFeasible( _disjuncts[ind]) )
+        if ( disjunctIsFeasible( ind ) )
             _feasibleDisjuncts.append( ind );
     }
 }
