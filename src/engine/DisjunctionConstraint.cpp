@@ -319,12 +319,8 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
 
 bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const
 {
-    if ( _cdInfeasibleCases )
-    {
-        auto loc = std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), indToPhaseStatus( ind ) );
-        if ( loc != _cdInfeasibleCases->end() )
-            return false;
-    }
+    if ( _cdInfeasibleCases && isCaseInfeasible( indToPhaseStatus( ind ) ) )
+        return false;
 
     return caseSplitIsFeasible( _disjuncts.get( ind ) );
 }
@@ -350,10 +346,3 @@ bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit 
     return true;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
