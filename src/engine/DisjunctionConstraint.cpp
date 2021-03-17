@@ -314,6 +314,8 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
     {
         if ( disjunctIsFeasible( ind ) )
             _feasibleDisjuncts.append( ind );
+        else if ( _cdInfeasibleCases && !isCaseInfeasible( indToPhaseStatus( ind ) ) )
+            markInfeasible( indToPhaseStatus( ind ) );
     }
 }
 
