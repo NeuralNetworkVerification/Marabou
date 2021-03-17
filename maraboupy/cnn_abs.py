@@ -570,13 +570,13 @@ def genActivationMaskMajorityClassVote(intermidModel):
 
 #Policy - Most important neurons are the center of the image.
 def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons and add more in every step than the others.
-    maskShape = intermidModel.output_shape[1:]
+    maskShape = intermidModel.output_shape[1:-1]
     for thresh in reversed(range(int(min(maskShape)/2))):
         yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
 
 #Policy - Add neurons randomly.
 def genActivationMaskRandom(intermidModel, stepSize=10):
-    maskShape = intermidModel.output_shape[1:]
+    maskShape = intermidModel.output_shape[1:-1]
     mask = np.zeros(maskShape)
     indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
     masks = list()
