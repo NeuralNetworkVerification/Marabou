@@ -15,6 +15,7 @@ import json
 #from itertools import product, chain
 from maraboupy import MarabouNetworkONNX as monnx
 from tensorflow.keras import datasets, layers, models
+from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
 
 ###########################################################################
@@ -193,7 +194,7 @@ modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(mask
 #FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 #compareModels(modelOrig, modelOrigDense)
 
-mnistProp.origMConv = modelOrig
+mnistProp.origMSize = cfg_cnnSizeChoice
 mnistProp.origMDense = modelOrigDense
 printLog("Finished model building")
 
@@ -257,7 +258,12 @@ successful = None
 reachedFinal = False
 startTotal = time.time()
 
+modelOrigDenseSavedName = mnistProp.basePath + "/" + "modelOrigDense.h5"
+modelOrigDense.save(modelOrigDenseSavedName)
+
 for i, mask in enumerate(maskList):
+    tf.keras.backend.clear_session()    
+    modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
     modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
@@ -270,6 +276,7 @@ for i, mask in enumerate(maskList):
         printLog("\n\n\n ----- Timed out in mask number {} ----- \n\n\n".format(i+1))
         continue
     if sat:
+        modelOrigDense = load_model(modelOrigDenseSavedName)
         isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
         printLog("Found {} CEX in mask {}/{}.".format(i+1, len(maskList), "sporious" if isSporious else "real"))        
 
@@ -281,9 +288,10 @@ for i, mask in enumerate(maskList):
         successful = i
         break;
 else:
-    reachedFinal = True
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
+    reachedFinal = True
     startLocal = time.time()
+    modelOrigDense = load_model(modelOrigDenseSavedName)
     subResultAppend(resultsJson, runType="full")
     mnistProp.optionsObj._timeoutInSeconds = 0
     sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI, mask=cfg_maskAbstract)
