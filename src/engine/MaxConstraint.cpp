@@ -186,7 +186,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
             else
                 _elements.erase( removeVar );
 
-            if ( getMaxIndex() == removeVar )
+            if ( maxIndexSet() && getMaxIndex() == removeVar )
                 maxErased = true;
         }
     }
@@ -559,8 +559,6 @@ bool MaxConstraint::isImplication() const
 
 PiecewiseLinearCaseSplit MaxConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( isImplication() );
-
     ASSERT( phaseFixed() );
 
     PhaseStatus phase = getPhaseStatus();
