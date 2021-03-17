@@ -62,10 +62,6 @@ ContextDependentPiecewiseLinearConstraint *DisjunctionConstraint::duplicateConst
 void DisjunctionConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const DisjunctionConstraint *disjunction = dynamic_cast<const DisjunctionConstraint *>( state );
-    ASSERT( nullptr != getContext() );
-    ASSERT( nullptr != getActiveStatusCDO() );
-    ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == disjunction->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
