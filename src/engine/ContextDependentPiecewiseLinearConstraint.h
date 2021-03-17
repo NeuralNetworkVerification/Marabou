@@ -233,7 +233,17 @@ protected:
        Private method to check if a case is infeasible.
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
+
+    /*
+       Method to set PhaseStatus of the constraint. Encapsulates both context
+       dependent and context-less behavior.
+     */
     void setPhaseStatus( PhaseStatus phaseStatus );
+
+    /*
+       Method to get PhaseStatus of the constraint. Encapsulates both context
+       dependent and context-less behavior.
+     */
     PhaseStatus getPhaseStatus() const;
 };
 
