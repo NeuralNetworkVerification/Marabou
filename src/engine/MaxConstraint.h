@@ -49,7 +49,7 @@ public:
     /*
       Get the type of this constraint.
     */
-    PiecewiseLinearFunctionType getType() const;
+    PiecewiseLinearFunctionType getType() const override;
 
     /*
       Return a clone of the constraint.
@@ -59,44 +59,44 @@ public:
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const PiecewiseLinearConstraint *state );
+    void restoreState( const PiecewiseLinearConstraint *state ) override;
 
     /*
       Register/unregister the constraint with a talbeau.
     */
-    void registerAsWatcher( ITableau *tableau );
-    void unregisterAsWatcher( ITableau *tableau );
+    void registerAsWatcher( ITableau *tableau ) override;
+    void unregisterAsWatcher( ITableau *tableau ) override;
 
     /*
       This callback is invoked when a watched variable's value
       changes.
     */
-    void notifyVariableValue( unsigned variable, double value );
-    void notifyLowerBound( unsigned variable, double value );
-    void notifyUpperBound( unsigned variable, double value );
+    void notifyVariableValue( unsigned variable, double value ) override;
+    void notifyLowerBound( unsigned variable, double value ) override;
+    void notifyUpperBound( unsigned variable, double value ) override;
 
     /*
       Returns true iff the variable participates in this piecewise
       linear constraint
     */
-    bool participatingVariable( unsigned variable ) const;
+    bool participatingVariable( unsigned variable ) const override;
 
     /*
       Get the list of variables participating in this constraint.
     */
-    List<unsigned> getParticipatingVariables() const;
+    List<unsigned> getParticipatingVariables() const override;
     List<unsigned> getElements() const;
     unsigned getF() const;
 
     /*
       Returns true iff the assignment satisfies the constraint
     */
-    bool satisfied() const;
+    bool satisfied() const override;
 
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const override;
 
     /*
       Returns the list of case splits that this piecewise linear
@@ -104,14 +104,14 @@ public:
       i.e. if the list is {l1, l2, ..., ln-1, ln},
       then ~l1 /\ ~l2 /\ ... /\ ~ln-1 --> ln.
     */
-    List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+    List<PiecewiseLinearCaseSplit> getCaseSplits() const override;
 
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
     */
     PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
-    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+    PiecewiseLinearCaseSplit getValidCaseSplit() const override;
 
     /*
        Returns case split corresponding to the given phase/id
@@ -135,12 +135,12 @@ public:
     /*
       Check if the constraint's phase has been fixed.
     */
-    bool phaseFixed() const;
+    bool phaseFixed() const override;
 
     /*
       Return a list of smart fixes for violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const override;
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
@@ -148,26 +148,26 @@ public:
       called x2). constraintObsolete() returns true iff and the constraint has become obsolote
       as a result of variable eliminations.
     */
-    void eliminateVariable( unsigned variable, double fixedValue );
-    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
-    bool constraintObsolete() const;
+    void eliminateVariable( unsigned variable, double fixedValue ) override;
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) override;
+    bool constraintObsolete() const override;
 
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+    void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery );
+    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
       Returns string with shape:
       max, _f, element_1, element_2, ... , element_n
     */
-    String serializeToString() const;
+    String serializeToString() const override;
 
     /*
      * Returns a boolean value indicating if at least one input variable was eliminated (True)
