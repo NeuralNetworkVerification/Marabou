@@ -194,26 +194,26 @@ private:
        refactored PhaseStatus to store this information.
 
        Makes two assumptions:
-        - 0 is not a valid variable value, since its reserved for PHASE_NOT_FIXED
-        - total number of variables does not reach the value of MAX_PHASE_ELIMINATED
+        - 0 is not a valid variable value, since it's reserved for PHASE_NOT_FIXED
+        - the total number of variables does not reach the value of MAX_PHASE_ELIMINATED
      */
-    bool maxIndexSet() const
+    inline bool maxIndexSet() const
     {
         return getPhaseStatus() != PHASE_NOT_FIXED;
     }
 
-    void setMaxIndex( unsigned variable )
+    inline void setMaxIndex( unsigned variable )
     {
-        setPhaseStatus( static_cast<PhaseStatus>( variable ) );
+        setPhaseStatus( variableToPhase( variable ) );
     }
 
-    unsigned getMaxIndex() const
+    inline unsigned getMaxIndex() const
     {
         ASSERT( maxIndexSet() );
-        return static_cast<unsigned>( getPhaseStatus() );
+        return phaseToVariable( getPhaseStatus() );
     }
 
-    void clearMaxIndex()
+    inline void clearMaxIndex()
     {
         setPhaseStatus( PHASE_NOT_FIXED );
     }
@@ -224,6 +224,20 @@ private:
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
+
+    /*
+       Conversion functions between variables and PhaseStatus.
+     */
+
+    inline PhaseStatus variableToPhase( unsigned variable ) const
+    {
+        return static_cast<PhaseStatus>( variable );
+    }
+
+    inline unsigned phaseToVariable( PhaseStatus phase ) const
+    {
+        return static_cast<unsigned>( phase );
+    }
 
 
 };

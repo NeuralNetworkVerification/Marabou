@@ -186,7 +186,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         for ( unsigned removeVar : toRemove )
         {
             if ( _cdInfeasibleCases )
-                markInfeasible( static_cast<PhaseStatus>( variable ) );
+                markInfeasible( variableToPhase( variable ) );
             else
                 _elements.erase( removeVar );
 
@@ -227,7 +227,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     if ( _elements.exists( variable ) && _f != variable && FloatUtils::lt( value, _maxLowerBound ) )
     {
         if ( _cdInfeasibleCases )
-            markInfeasible( static_cast<PhaseStatus>( variable ) );
+            markInfeasible( variableToPhase( variable ) );
         else
             _elements.erase( variable );
     }
@@ -371,7 +371,7 @@ bool MaxConstraint::isCaseInfeasible( PhaseStatus phase ) const
 
 bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
 {
-    return isCaseInfeasible( static_cast<PhaseStatus>( variable ) );
+    return isCaseInfeasible( variableToPhase( variable ) );
 }
 
 void MaxConstraint::resetMaxIndex()
@@ -480,7 +480,7 @@ List<PhaseStatus> MaxConstraint::getAllCases() const
     if ( !_elements.exists( _f ) )
     {
         for ( unsigned element : _elements )
-            cases.append( static_cast<PhaseStatus>( element ) );
+            cases.append( variableToPhase( element ) );
 
         if ( _eliminatedVariables )
             cases.append( MAX_PHASE_ELIMINATED );
@@ -490,7 +490,7 @@ List<PhaseStatus> MaxConstraint::getAllCases() const
         // if elements includes _f, this piecewise linear constraint
         // can immediately be transformed into a conjunction of linear
         // constraints
-        cases.append( static_cast<PhaseStatus>( _f ) );
+        cases.append( variableToPhase( _f ) );
     }
 
     return cases;
@@ -600,7 +600,7 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 
 PiecewiseLinearCaseSplit MaxConstraint::getCaseSplit( PhaseStatus phase ) const
 {
-    return getSplit( static_cast<unsigned>( phase ) );
+    return getSplit( phaseToVariable( phase ) );
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
