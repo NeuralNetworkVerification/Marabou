@@ -29,7 +29,7 @@ public:
 };
 
 /*
-   Exposes protected members of AbsConstraint for testing.
+   Exposes protected members of MaxConstraint for testing.
  */
 class TestMaxConstraint : public MaxConstraint
 {
