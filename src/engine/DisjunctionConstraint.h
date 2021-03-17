@@ -110,7 +110,7 @@ public:
     /*
       Check if the constraint's phase has been fixed.
     */
-    bool phaseFixed() const;
+    bool phaseFixed() const override;
 
     /*
       If the constraint's phase has been fixed, get the implied case split.
