@@ -362,8 +362,6 @@ bool MaxConstraint::satisfied() const
     return FloatUtils::areEqual( maxValue, fValue );
 }
 
-
-
 bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
 {
     return isCaseInfeasible( variableToPhase( variable ) );
