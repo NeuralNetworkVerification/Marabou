@@ -109,8 +109,6 @@ public:
 
     /*
        Returns case split corresponding to the given phase/id
-       TODO: Update the signature in PiecewiseLinearConstraint, once the new
-       search is integrated.
      */
     PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
 
@@ -202,7 +200,7 @@ public:
 
     PhaseStatus getDirection() const;
 
-    void updateScoreBasedOnPolarity();
+    void updateScoreBasedOnPolarity() override;
 
 private:
     unsigned _b, _f;

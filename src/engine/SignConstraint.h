@@ -183,7 +183,7 @@ public:
 
   PhaseStatus getDirection() const;
 
-  void updateScoreBasedOnPolarity();
+  void updateScoreBasedOnPolarity() override;
 
 private:
     unsigned _b, _f;
