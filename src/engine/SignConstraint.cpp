@@ -71,10 +71,6 @@ ContextDependentPiecewiseLinearConstraint *SignConstraint::duplicateConstraint()
 void SignConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const SignConstraint *sign = dynamic_cast<const SignConstraint *>( state );
-    ASSERT( nullptr != getContext() );
-    ASSERT( nullptr != getActiveStatusCDO() );
-    ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == sign->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
