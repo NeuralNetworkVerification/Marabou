@@ -39,7 +39,7 @@ class mnistProp:
     numClones = 0
     numInputQueries = 0
     numCex = 0
-    origMConv = None
+    origMSize = None
     origMDense = None
     policies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote", "Random"]
     Policy = Enum("Policy"," ".join(policies))
@@ -149,7 +149,6 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
 
     for l,w in toSetWeights.items():
         clnM.get_layer(name=l).set_weights(w)
-
     score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
     print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
     print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
@@ -457,7 +456,8 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     mbouPrediction = cexPrediction.argmax()
     kerasPrediction = model.predict(np.array([cex])).argmax()
     if mbouPrediction != kerasPrediction:
-        origMConvPrediction = mnistProp.origMConv.predict(np.array([cex])).argmax()
+        origM, replaceLayer = genCnnForAbsTest(cfg_freshModelOrig=False, cnnSizeChoice=mnistProp.origMSize)
+        origMConvPrediction = origM.predict(np.array([cex])).argmax()
         origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
         print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
     plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
