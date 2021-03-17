@@ -363,11 +363,6 @@ bool MaxConstraint::satisfied() const
 }
 
 
-bool MaxConstraint::isCaseInfeasible( PhaseStatus phase ) const
-{
-    ASSERT( _cdInfeasibleCases );
-    return std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), phase ) != _cdInfeasibleCases->end();
-}
 
 bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
 {

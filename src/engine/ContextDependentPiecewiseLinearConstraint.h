@@ -229,6 +229,10 @@ protected:
      */
     void initializeDuplicatesCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
 
+    /*
+       Private method to check if a case is infeasible.
+     */
+    bool isCaseInfeasible( PhaseStatus phase ) const;
     void setPhaseStatus( PhaseStatus phaseStatus );
     PhaseStatus getPhaseStatus() const;
 };
