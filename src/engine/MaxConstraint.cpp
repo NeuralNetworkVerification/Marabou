@@ -113,10 +113,6 @@ ContextDependentPiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() 
 void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const MaxConstraint *max = dynamic_cast<const MaxConstraint *>( state );
-    ASSERT( nullptr != getContext() );
-    ASSERT( nullptr != getActiveStatusCDO() );
-    ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == max->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
@@ -466,8 +462,6 @@ List<PhaseStatus> MaxConstraint::getAllCases() const
     if ( _phaseStatus != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
-    ASSERT(	_assignment.exists( _f ) );
-
     List<PhaseStatus> cases;
 
     if ( !_elements.exists( _f ) )
@@ -493,8 +487,6 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
     if ( phaseFixed() && !_elements.exists( _f ) )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
-
-    ASSERT(	_assignment.exists( _f ) );
 
     List<PiecewiseLinearCaseSplit> splits;
 
@@ -598,7 +590,6 @@ PiecewiseLinearCaseSplit MaxConstraint::getCaseSplit( PhaseStatus phase ) const
 
 PiecewiseLinearCaseSplit MaxConstraint::getSplit( unsigned argMax ) const
 {
-    ASSERT( _assignment.exists( argMax ) );
     PiecewiseLinearCaseSplit maxPhase;
 
     if ( argMax != _f )

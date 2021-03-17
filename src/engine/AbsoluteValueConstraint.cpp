@@ -84,10 +84,6 @@ ContextDependentPiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateCon
 void AbsoluteValueConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const AbsoluteValueConstraint *abs = dynamic_cast<const AbsoluteValueConstraint *>( state );
-    ASSERT( nullptr != getContext() );
-    ASSERT( nullptr != getActiveStatusCDO() );
-    ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == abs->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;

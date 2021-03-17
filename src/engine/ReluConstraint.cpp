@@ -92,10 +92,6 @@ ContextDependentPiecewiseLinearConstraint *ReluConstraint::duplicateConstraint()
 void ReluConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const ReluConstraint *relu = dynamic_cast<const ReluConstraint *>( state );
-    ASSERT( nullptr != getContext() );
-    ASSERT( nullptr != getActiveStatusCDO() );
-    ASSERT( nullptr != getPhaseStatusCDO() );
-    ASSERT( getContext() == relu->getContext() );
 
     CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
     CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
