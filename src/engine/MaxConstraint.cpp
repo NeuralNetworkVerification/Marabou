@@ -364,7 +364,7 @@ bool MaxConstraint::satisfied() const
 
 bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
 {
-    return isCaseInfeasible( variableToPhase( variable ) );
+    return ContextDependentPiecewiseLinearConstraint::isCaseInfeasible( variableToPhase( variable ) );
 }
 
 void MaxConstraint::resetMaxIndex()
