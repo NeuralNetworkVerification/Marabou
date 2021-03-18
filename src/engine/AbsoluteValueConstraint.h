@@ -2,15 +2,25 @@
 /*! \file ReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz
+ **   Shiran Aziz, Guy Katz, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** AbsoluteValueConstraint implements the following constraint:
+ ** f = Abs( b )
+ **
+ ** It distinguishes two relevant phases for search:
+ ** ABS_PHASE_POSITIVE: b > 0
+ ** ABS_PHASE_NEGATIVE: b <=0
+ **
+ ** The constraint operates in two modes pre-processing mode, which is stores
+ ** bounds locally, and context dependent mode, which is used during the search.
+ ** Invoke initializeCDOs method enters the context dependent mode, and the
+ ** constraint object synchronizes automatically with the central context
+ ** object.
  **/
 
 #ifndef __AbsoluteValueConstraint_h__

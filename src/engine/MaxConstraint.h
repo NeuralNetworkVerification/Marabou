@@ -18,15 +18,12 @@
  ** maximum of such constraints is stored locally, and to denote this phase a
  ** special value PhaseStatus::MAX_PHASE_ELIMINATED is used.
  **
- ** MaxConstraint operates in two modes: preprocessing, which uses local bounds
- ** and values, and context-dependent mode which automatically backtracks the
- ** constraint state. A MaxConstraints object enters context-dependent mode upon
- ** invocation of MaxConstraint::initializeCDOs() and it cannot be undone.
- **
- ** Once in the context-dependent mode, MaxConstraint can be used for explicit
- ** exploration of the search space, using the markInfeasible/nextFeasibleCase
- ** methods.
-**/
+ ** The constraint operates in two modes pre-processing mode, which is stores
+ ** bounds locally, and context dependent mode, which is used during the search.
+ ** Invoke initializeCDOs method enters the context dependent mode, and the
+ ** constraint object synchronizes automatically with the central context
+ ** object.
+ **/
 
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__

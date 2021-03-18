@@ -9,8 +9,18 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** ReluConstraint implements the following constraint:
+ ** f = Max( 0, b )
+ **
+ ** It distinguishes two relevant phases for search:
+ ** RELU_PHASE_ACTIVE   : b > 0 and f > 0
+ ** RELU_PHASE_INACTIVE : b <=0 and f = 0
+ **
+ ** The constraint operates in two modes pre-processing mode, which is stores
+ ** bounds locally, and context dependent mode, which is used during the search.
+ ** Invoke initializeCDOs method enters the context dependent mode, and the
+ ** constraint object synchronizes automatically with the central context
+ ** object.
  **/
 
 #ifndef __ReluConstraint_h__

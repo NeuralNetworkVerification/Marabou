@@ -9,8 +9,18 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** SignConstraint implements the following constraint:
+ ** f = Sign( b )
+ **
+ ** It distinguishes two relevant phases for search:
+ ** SIGN_PHASE_POSITIVE: b > 0 and f = 1
+ ** SIGN_PHASE_NEGATIVE: b <=0 and f = -1
+ **
+ ** The constraint operates in two modes pre-processing mode, which is stores
+ ** bounds locally, and context dependent mode, which is used during the search.
+ ** Invoke initializeCDOs method enters the context dependent mode, and the
+ ** constraint object synchronizes automatically with the central context
+ ** object.
  **/
 
 #ifndef __SignConstraint_h__
@@ -18,11 +28,6 @@
 
 #include "Map.h"
 #include "ContextDependentPiecewiseLinearConstraint.h"
-
-/*
-  The Sign function returns +1 for any input x >=0 (including 0),
-  and -1 if x < 0
-*/
 
 class SignConstraint : public ContextDependentPiecewiseLinearConstraint
 {

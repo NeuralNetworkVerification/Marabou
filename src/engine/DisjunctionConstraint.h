@@ -9,8 +9,17 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** DisjunctionConstraint implements the following constraint:
+ ** e1 \/ e2 \/ ... \/ eM, where _elements = { e1, e2, ..., eM }
+ **
+ ** The constraint introduces identifiers for its PiecewiseLinearCaseSplit
+ ** elements.
+ **
+ ** The constraint operates in two modes pre-processing mode, which is stores
+ ** bounds locally, and context dependent mode, which is used during the search.
+ ** Invoke initializeCDOs method enters the context dependent mode, and the
+ ** constraint object synchronizes automatically with the central context
+ ** object.
  **/
 
 #ifndef __DisjunctionConstraint_h__
