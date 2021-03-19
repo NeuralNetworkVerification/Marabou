@@ -204,18 +204,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( splitJustPerformed )
             {
+                // TG: for input layer
                 do
                 {
-                    performSymbolicBoundTightening();
+                    
+                    performSymbolicBoundTightening();   // TG: not modify
                 }
-                while ( applyAllValidConstraintCaseSplits() );
+                while ( applyAllValidConstraintCaseSplits() );  // TG:
+                // TG: for output layer.
                 splitJustPerformed = false;
             }
 
             // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
+            if ( _smtCore.needToSplit() )   // TG: Call SMT Core. Case splits happen here.
             {
-                _smtCore.performSplit();
+                _smtCore.performSplit();    // TG: Call SMT Core. Case splits happen here.
                 splitJustPerformed = true;
                 continue;
             }
