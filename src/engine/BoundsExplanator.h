@@ -33,6 +33,9 @@ public:
 	*/
 	void updateVarBoundExplanation( const std::vector<double>& newBound, const  bool isUpper );
 
+	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
+	unsigned _lowerRecLevel;
+
 private:
 	unsigned _length;
 	std::vector<double> _lower;

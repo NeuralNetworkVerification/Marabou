@@ -552,7 +552,7 @@ private:
      Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
      Asserts the computed bound is epsilon close to the real one.
     */
-    bool Engine::certifyInfeasibility( const double epsilon ) const;
+    void Engine::certifyInfeasibility( const double epsilon ) const;
 
     /*
      Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds

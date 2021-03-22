@@ -315,7 +315,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                         // Certification relevant to simplex failure
                         printInfeasibilityCertificate();
                         validateAllBounds( 0.0375 );
-                        certifyInfeasibility( 0.001 );
+                        certifyInfeasibility( 0.01 );
                     }     
                 }
                 _exitCode = Engine::UNSAT;
@@ -2384,7 +2384,7 @@ void Engine::simplexBoundsUpdate()
     }
 }
 
-bool Engine::certifyInfeasibility( const double epsilon ) const
+void Engine::certifyInfeasibility( const double epsilon ) const
 {
     int var = _tableau->getInfeasibleVar();
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
@@ -2458,7 +2458,11 @@ void Engine::validateAllBounds( const double epsilon ) const
     //TODO consider applying again here
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
     {
-            ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
-            ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
+        if ( abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > 0.0001 )
+            printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
+        if ( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) > 0.0001)
+            printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+        //ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
+        //ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
     }
 }

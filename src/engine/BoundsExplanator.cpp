@@ -18,7 +18,9 @@
 SingleVarBoundsExplanator::SingleVarBoundsExplanator( const unsigned length )
 	:_length( length )
 	,_lower( length, 0 ),
-	_upper( length, 0 )
+	_upper( length, 0 ),
+	_upperRecLevel( 0 ),
+	_lowerRecLevel ( 0 )
 {
 }
 
@@ -65,7 +67,7 @@ SingleVarBoundsExplanator& BoundsExplanator::returnWholeVarExplanation( const un
 void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool isUpper )
 {
 	bool tempUpper;
-	unsigned var = row._lhs;  // The var to be updated is the lhs of the row
+	unsigned var = row._lhs, maxLevel = 0, tempLevel = 0;  // The var to be updated is the lhs of the row
 	double curCoefficient;
 	ASSERT( var < _varsNum ); 
 	std::vector<double> rowCoefficients = std::vector<double>( _rowsNum, 0 );
@@ -81,11 +83,21 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 		tempUpper = curCoefficient < 0 ? !isUpper : isUpper; // If coefficient is negative, then replace kind of bound
 		getOneBoundExplanation( tempBound, row._row[i]._var, tempUpper ); 
 		addVecTimesScalar( sum, tempBound, curCoefficient );
+		tempLevel = tempUpper? _bounds[row._row[i]._var]._upperRecLevel : _bounds[row._row[i]._var]._lowerRecLevel;
+		if (tempLevel > maxLevel)
+			maxLevel = tempLevel;
 	}
 
 	extractRowCoefficients( row, rowCoefficients ); // Update according to row coefficients
 	addVecTimesScalar( sum, rowCoefficients, 1 ); 
 	_bounds[var].updateVarBoundExplanation( sum, isUpper );
+	++maxLevel;
+	if ( isUpper )
+		_bounds[var]._upperRecLevel = maxLevel;
+	else
+		_bounds[var]._lowerRecLevel = maxLevel;
+	printf("Recursion level update: %d  of var %d\n", maxLevel, var);
+
 
 	tempBound.clear();
 	rowCoefficients.clear();
