@@ -659,7 +659,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
 {
     // First elimination does not remove number of cases, since it
     // simultaneously adds MAX_PHASE_ELIMINATED
-    if ( _eliminatedVariables )
+    if ( _eliminatedVariables && _elements.exists( var ) )
     {
         ASSERT( _numCases > 1u ); // MAX_PHASE_ELIMINATED cannot be removed
         --_numCases;
