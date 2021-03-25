@@ -210,7 +210,7 @@ void Tableau::freeMemoryIfNeeded()
 
     if (_boundsExplanator)
     {
-        _boundsExplanator->~BoundsExplanator();
+        delete _boundsExplanator;
         _boundsExplanator = NULL;
     }
 }
