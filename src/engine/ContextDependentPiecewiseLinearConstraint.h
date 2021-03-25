@@ -46,6 +46,7 @@
 #ifndef __ContextDependentPiecewiseLinearConstraint_h__
 #define __ContextDependentPiecewiseLinearConstraint_h__
 
+#include "BoundManager.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
@@ -61,7 +62,6 @@
 #include "context/context.h"
 
 class Equation;
-class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
