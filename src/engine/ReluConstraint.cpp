@@ -133,10 +133,10 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
-    _lowerBounds[variable] = bound;
+    setLowerBound( variable, bound );
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
@@ -192,10 +192,10 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    _upperBounds[variable] = bound;
+    setUpperBound( variable, bound );
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
@@ -579,19 +579,19 @@ void ReluConstraint::dump( String &output ) const
                       );
 
     output += Stringf( "b in [%s, %s], ",
-                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
-                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
+                       existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
     output += Stringf( "f in [%s, %s]",
-                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
-                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
+                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
 
     if ( _auxVarInUse )
     {
         output += Stringf( ". Aux var: %u. Range: [%s, %s]\n",
                            _aux,
-                           _lowerBounds.exists( _aux ) ? Stringf( "%lf", _lowerBounds[_aux] ).ascii() : "-inf",
-                           _upperBounds.exists( _aux ) ? Stringf( "%lf", _upperBounds[_aux] ).ascii() : "inf" );
+                           existsLowerBound( _aux ) ? Stringf( "%lf", getLowerBound( _aux ) ).ascii() : "-inf",
+                           existsUpperBound( _aux ) ? Stringf( "%lf", getUpperBound( _aux ) ).ascii() : "inf" );
     }
 }
 
@@ -672,24 +672,24 @@ bool ReluConstraint::constraintObsolete() const
 
 void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
-            _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
+    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
+            existsUpperBound( _b ) && existsUpperBound( _f ) );
 
-    ASSERT( !_auxVarInUse || ( _lowerBounds.exists( _aux ) && _upperBounds.exists( _aux ) ) );
+    ASSERT( !_auxVarInUse || ( existsLowerBound( _aux ) && existsUpperBound( _aux ) ) );
 
-    double bLowerBound = _lowerBounds[_b];
-    double fLowerBound = _lowerBounds[_f];
+    double bLowerBound = getLowerBound( _b );
+    double fLowerBound = getLowerBound( _f );
 
-    double bUpperBound = _upperBounds[_b];
-    double fUpperBound = _upperBounds[_f];
+    double bUpperBound = getUpperBound( _b );
+    double fUpperBound = getUpperBound( _f );
 
     double auxLowerBound = 0;
     double auxUpperBound = 0;
 
     if ( _auxVarInUse )
     {
-        auxLowerBound = _lowerBounds[_aux];
-        auxUpperBound = _upperBounds[_aux];
+        auxLowerBound = getLowerBound( _aux );
+        auxUpperBound = getUpperBound( _aux );
     }
 
     // Determine if we are in the active phase, inactive phase or unknown phase
@@ -809,13 +809,13 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.addEquation( equation );
 
     // Adjust the bounds for the new variable
-    ASSERT( _lowerBounds.exists( _b ) );
+    ASSERT( existsLowerBound( _b ) );
     inputQuery.setLowerBound( _aux, 0 );
 
     // Generally, aux.ub = -b.lb. However, if b.lb is positive (active
     // phase), then aux.ub needs to be 0
     double auxUpperBound =
-        _lowerBounds[_b] > 0 ? 0 : -_lowerBounds[_b];
+        getLowerBound( _b ) > 0 ? 0 : -getLowerBound( _b );
     inputQuery.setUpperBound( _aux, auxUpperBound );
 
     // We now care about the auxiliary variable, as well
@@ -873,10 +873,10 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    if ( FloatUtils::gt( _lowerBounds[_b], bValue ) || FloatUtils::lt( _upperBounds[_b], bValue ) )
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue ) || FloatUtils::lt( getUpperBound( _b ), bValue ) )
         return true;
 
-    if ( FloatUtils::gt( _lowerBounds[_f], fValue ) || FloatUtils::lt( _upperBounds[_f], fValue ) )
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) || FloatUtils::lt( getUpperBound( _f ), fValue ) )
         return true;
 
     return false;
@@ -918,8 +918,8 @@ unsigned ReluConstraint::getAux() const
 
 double ReluConstraint::computePolarity() const
 {
-    double currentLb = _lowerBounds[_b];
-    double currentUb = _upperBounds[_b];
+    double currentLb = getLowerBound( _b );
+    double currentUb = getUpperBound( _b );
     if ( currentLb >= 0 ) return 1;
     if ( currentUb <= 0 ) return -1;
     double width = currentUb - currentLb;

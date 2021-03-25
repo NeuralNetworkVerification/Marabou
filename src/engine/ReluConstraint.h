@@ -235,6 +235,16 @@ private:
     */
     bool haveOutOfBoundVariables() const;
 
+    inline bool existsLowerBound( unsigned var ) const
+    {
+      return _boundManager != nullptr || _lowerBounds.exists( var );
+    }
+
+    inline bool existsUpperBound( unsigned var ) const
+    {
+      return _boundManager != nullptr || _upperBounds.exists( var );
+    }
+
     inline double getLowerBound( unsigned var ) const
     {
       return ( _boundManager == nullptr ) ? _boundManager->getLowerBound( var ) : _lowerBounds[var];
