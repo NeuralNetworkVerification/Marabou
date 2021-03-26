@@ -238,7 +238,6 @@ private:
                static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
-
 };
 
 #endif // __MaxConstraint_h__
