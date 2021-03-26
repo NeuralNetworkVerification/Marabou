@@ -210,38 +210,6 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
-    /*
-       Bounds get/set wrappers
-     */
-    inline bool existsLowerBound( unsigned var ) const
-    {
-      return _boundManager != nullptr || _lowerBounds.exists( var );
-    }
-
-    inline bool existsUpperBound( unsigned var ) const
-    {
-      return _boundManager != nullptr || _upperBounds.exists( var );
-    }
-
-    inline double getLowerBound( unsigned var ) const
-    {
-      return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var ) : _lowerBounds[var];
-    }
-
-    inline double getUpperBound( unsigned var ) const
-    {
-      return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var ) : _upperBounds[var];
-    }
-
-    inline void setLowerBound( unsigned var, double value )
-    {
-      ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value ) : _lowerBounds[var] = value;
-    }
-
-    inline void setUpperBound( unsigned var, double value )
-    {
-      ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value ) : _upperBounds[var] = value;
-    }
 };
 
 #endif // __SignConstraint_h__
