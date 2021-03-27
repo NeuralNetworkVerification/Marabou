@@ -253,8 +253,8 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
     // Lower and upper bounds for the f variable
-    double fLB = existsLowerBound( _f ) ? _lowerBounds.get( _f ) : FloatUtils::negativeInfinity();
-    double fUB = existsUpperBound( _f ) ? _upperBounds.get( _f ) : FloatUtils::infinity();
+    double fLB = existsLowerBound( _f ) ? getLowerBound( _f ) : FloatUtils::negativeInfinity();
+    double fUB = existsUpperBound( _f ) ? getUpperBound( _f ) : FloatUtils::infinity();
 
     // Compute the maximal bounds (lower and upper) for the elements
     double maxElementLB = FloatUtils::negativeInfinity();
@@ -285,9 +285,9 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         {
             tightenings.append( Tightening( _f, maxElementUB, Tightening::UB ) );
         }
-		else
+        else
         {
-			// f_UB <= maxElementUB
+            // f_UB <= maxElementUB
             for ( const auto &element : _elements )
             {
                 if ( !existsUpperBound( element ) || FloatUtils::gt( getUpperBound( element ), fUB ) )
@@ -299,8 +299,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     // fLB cannot be smaller than maxElementLB
     if ( FloatUtils::lt( fLB, maxElementLB ) )
         tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
-
-	// f_LB >= maxElementLB & single input element
+    // f_LB >= maxElementLB & single input element
     else if ( _elements.size() == 1 )
     {
         // Special case: there is only one element. In that case, the tighter lower
