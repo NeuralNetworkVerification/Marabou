@@ -563,72 +563,150 @@ public:
 
     void test_get_entailed_tightenings()
     {
-        unsigned f = 1;
-        Set<unsigned> elements;
+        {
+            unsigned f = 1;
+            Set<unsigned> elements;
 
-        elements.insert( 2 );
-        elements.insert( 3 );
+            elements.insert( 2 );
+            elements.insert( 3 );
 
-        MaxConstraint max( f, elements );
+            MaxConstraint max( f, elements );
 
-        max.notifyLowerBound( 2, 1 );
-        max.notifyUpperBound( 2, 8 );
-        // No lower bound for 3
-        max.notifyUpperBound( 3, 6 );
+            max.notifyLowerBound( 2, 1 );
+            max.notifyUpperBound( 2, 8 );
+            // No lower bound for 3
+            max.notifyUpperBound( 3, 6 );
 
-        List<Tightening> tightenings;
-        TS_ASSERT_THROWS_NOTHING( max.getEntailedTightenings( tightenings ) );
+            List<Tightening> tightenings;
+            TS_ASSERT_THROWS_NOTHING( max.getEntailedTightenings( tightenings ) );
 
-        // expect f to be in the range [1, 8]
-        TS_ASSERT_EQUALS( tightenings.size(), 2U );
-        auto it = tightenings.begin();
+            // expect f to be in the range [1, 8]
+            TS_ASSERT_EQUALS( tightenings.size(), 2U );
+            auto it = tightenings.begin();
 
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT_EQUALS( it->_value, 8 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+            TS_ASSERT_EQUALS( it->_variable, 1U );
+            TS_ASSERT_EQUALS( it->_value, 8 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
-        ++it;
+            ++it;
 
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT_EQUALS( it->_value, 1 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+            TS_ASSERT_EQUALS( it->_variable, 1U );
+            TS_ASSERT_EQUALS( it->_value, 1 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
 
 
-        //
-        // From here, the test is going to run tests for the case that f is included in elements.
-        //
-        Set<unsigned> elements2;
-        elements2.insert( 1 );
-        elements2.insert( 2 );
-        elements2.insert( 3 );
+            //
+            // From here, the test is going to run tests for the case that f is included in elements.
+            //
+            Set<unsigned> elements2;
+            elements2.insert( 1 );
+            elements2.insert( 2 );
+            elements2.insert( 3 );
 
-        MaxConstraint max2( f, elements2 );
+            MaxConstraint max2( f, elements2 );
 
-        // No lower bound for 1
-        max2.notifyUpperBound( 1, 7 );
+            // No lower bound for 1
+            max2.notifyUpperBound( 1, 7 );
 
-        max2.notifyLowerBound( 2, 1 );
-        max2.notifyUpperBound( 2, 8 );
+            max2.notifyLowerBound( 2, 1 );
+            max2.notifyUpperBound( 2, 8 );
 
-        // No lower bound for 3
-        max2.notifyUpperBound( 3, 6 );
+            // No lower bound for 3
+            max2.notifyUpperBound( 3, 6 );
 
-        List<Tightening> tightenings2;
-        TS_ASSERT_THROWS_NOTHING( max2.getEntailedTightenings( tightenings2 ) );
+            List<Tightening> tightenings2;
+            TS_ASSERT_THROWS_NOTHING( max2.getEntailedTightenings( tightenings2 ) );
 
-        // expect f to be in the range [1, 7], x2 to be in the range [1, 7]
-        TS_ASSERT_EQUALS( tightenings2.size(), 2U );
-        it = tightenings2.begin();
+            // expect f to be in the range [1, 7], x2 to be in the range [1, 7]
+            TS_ASSERT_EQUALS( tightenings2.size(), 2U );
+            it = tightenings2.begin();
 
-        TS_ASSERT_EQUALS( it->_variable, 2U );
-        TS_ASSERT_EQUALS( it->_value, 7 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+            TS_ASSERT_EQUALS( it->_variable, 2U );
+            TS_ASSERT_EQUALS( it->_value, 7 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::UB );
 
-        ++it;
+            ++it;
 
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT_EQUALS( it->_value, 1 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+            TS_ASSERT_EQUALS( it->_variable, 1U );
+            TS_ASSERT_EQUALS( it->_value, 1 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        }
+
+        { // With Bound Manager
+            unsigned f = 1;
+            Set<unsigned> elements;
+
+            elements.insert( 2 );
+            elements.insert( 3 );
+
+            MaxConstraint max( f, elements );
+            Context context;
+            BoundManager boundManager( context );
+            boundManager.initialize( 5 );
+            max.registerBoundManager( &boundManager );
+
+            TS_ASSERT_THROWS_NOTHING( max.notifyLowerBound( 2, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( max.notifyUpperBound( 2, 8 ) );
+            // No lower bound for 3
+            TS_ASSERT_THROWS_NOTHING( max.notifyUpperBound( 3, 6 ) );
+
+            List<Tightening> tightenings;
+            TS_ASSERT_THROWS_NOTHING( max.getEntailedTightenings( tightenings ) );
+
+            // expect f to be in the range [1, 8]
+            TS_ASSERT_EQUALS( tightenings.size(), 2U );
+            auto it = tightenings.begin();
+
+            TS_ASSERT_EQUALS( it->_variable, 1U );
+            TS_ASSERT_EQUALS( it->_value, 8 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+            ++it;
+
+            TS_ASSERT_EQUALS( it->_variable, 1U );
+            TS_ASSERT_EQUALS( it->_value, 1 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+
+
+            //
+            // From here, the test is going to run tests for the case that f is included in elements.
+            //
+            Set<unsigned> elements2;
+            elements2.insert( 1 );
+            elements2.insert( 2 );
+            elements2.insert( 3 );
+
+            MaxConstraint max2( f, elements2 );
+            BoundManager boundManager2( context );
+            boundManager2.initialize( 5 );
+            max2.registerBoundManager( &boundManager2 );
+
+            // No lower bound for 1
+            max2.notifyUpperBound( 1, 7 );
+
+            max2.notifyLowerBound( 2, 1 );
+            max2.notifyUpperBound( 2, 8 );
+
+            // No lower bound for 3
+            max2.notifyUpperBound( 3, 6 );
+
+            List<Tightening> tightenings2;
+            TS_ASSERT_THROWS_NOTHING( max2.getEntailedTightenings( tightenings2 ) );
+
+            // expect f to be in the range [1, 7], x2 to be in the range [1, 7]
+            TS_ASSERT_EQUALS( tightenings2.size(), 2U );
+            it = tightenings2.begin();
+
+            TS_ASSERT_EQUALS( it->_variable, 2U );
+            TS_ASSERT_EQUALS( it->_value, 7 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+            ++it;
+
+            TS_ASSERT_EQUALS( it->_variable, 1U );
+            TS_ASSERT_EQUALS( it->_value, 1 );
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        }
     }
 
     void test_max_obsolete()
