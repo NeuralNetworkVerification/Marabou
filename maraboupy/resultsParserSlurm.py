@@ -265,7 +265,7 @@ fig.suptitle("Run Results", fontsize=20)
 plt.subplots_adjust(wspace=1)
 for resultDict, ax , sampleNum in zip(resultDicts, axes, runSampleNum): 
     ax.pie(sampleNum, labels=[l if s > 0 else "" for l,s in zip(resultLabels, sampleNum)], colors=["darkred","darkgreen","gold"], autopct=lambda pct: pctFunc(pct, sampleNum), shadow=True, startangle=90, textprops=dict(color="k"))
-    ax.set_title("{}, {} samples".format(resultDict['label'], len(resultDict)), fontdict=dict(fontsize=12))
+    ax.set_title("{}, {} samples".format(resultDict['label'], len(resultDict)-1), fontdict=dict(fontsize=12))
     ax.axis('equal')
 
     setFigSize()
