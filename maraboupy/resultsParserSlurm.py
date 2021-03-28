@@ -94,8 +94,8 @@ def plotCOIRatio(resultDict):
     marker = [markerChoice(resultDict[sample]["result"]) for sample in solved]
     fig.suptitle("{} - Variables and Equations Ratio, {} Samples".format(resultDict["label"], len(solved)))
     ax2.set_xlabel("Number of Runs")
-    ax1.set_ylabel("Eventuall Variables Ratio")
-    ax2.set_ylabel("Eventuall Equation Ratio")
+    ax1.set_ylabel("Eventual Variables Ratio")
+    ax2.set_ylabel("Eventual Equation Ratio")
     ax1.scatter(x, y1, s=70, alpha=0.3, c=c)#, marker=marker)
     ax2.scatter(x, y2, s=70, alpha=0.3, c=c)#, marker=marker)
 
@@ -167,19 +167,21 @@ for fullpath in resultsFiles:
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()
-            finalPartiallity = dict(numRuns=1 if resultDict["subResults"] else 0, vars=0, equations=0, reluConstraints=0)
+            finalPartiallity = dict(numRuns=1 if resultDict["subResults"] else -1, vars=-1, equations=-1, reluConstraints=-1)
             
         assert len(originalQueryStats) == len(finalQueryStats)
+        successfulRuntime = -1 if resultDict["Result"].upper() == "TIMEOUT" or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
         totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
         sampleIndex = resultDict["cfg_sampleIndex"]
                         
         if runTitle not in results:
             results[runTitle] = dict()
         results[runTitle][sampleIndex] = {"result" : resultDict["Result"].upper(),
-                                                          "totalRuntime" : totalRuntime,
-                                                          "originalQueryStats": originalQueryStats,
-                                                          "finalQueryStats": finalQueryStats,
-                                                          "finalPartiallity" : finalPartiallity}
+                                          "totalRuntime" : totalRuntime,
+                                          "originalQueryStats": originalQueryStats,
+                                          "finalQueryStats": finalQueryStats,
+                                          "finalPartiallity" : finalPartiallity,
+                                          "successfulRuntime":successfulRuntime}
         results[runTitle]["label"] = runTitleToLabel[runTitle]
 
 resultDicts = list(results.values())
@@ -207,24 +209,37 @@ for resultDict in resultDicts :
 samplesTotal = list(totalSet)
 samplesTotal.remove('label')
 
-runtimes   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
-runResults = [[resultDict[s]["result"]                 if s in resultDict else "MISSING" for s in samplesTotal] for resultDict in resultDicts]
+runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
+runtimesTotal   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
+numRuns   = [resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in samplesTotal]
+varsPartial      = [resultDict[sample]["finalPartiallity"]["vars"]      for sample in samplesTotal]
+equationsPartial = [resultDict[sample]["finalPartiallity"]["equations"] for sample in samplesTotal]
+
 runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in samplesTotal] for resultDict in resultDicts]
-colors = np.transpose(np.array(runColors))
-df = pd.DataFrame(np.transpose(np.array(runtimes)), columns=tableLabels, index=samplesTotal)
-table = ax.table(cellText=df.values, colLabels=df.columns, colWidths=[2.0 / len(resultDicts)] * len(resultDicts), rowLabels=df.index, loc='center', cellColours=colors)
-table.auto_set_font_size(False)
-table.set_fontsize(12)
 
-fig.canvas.draw()
+def plotResultSummery(name, tableLabels, sampleTotal, runColors, results):
+    plt.figure()
+    colors = np.transpose(np.array(runColors))
+    df = pd.DataFrame(np.transpose(np.array(results)), columns=tableLabels, index=samplesTotal)
+    table = ax.table(cellText=df.values, colLabels=df.columns, colWidths=[2.0 / len(resultDicts)] * len(resultDicts), rowLabels=df.index, loc='center', cellColours=colors)
+    table.auto_set_font_size(False)
+    table.set_fontsize(12)
+    fig.canvas.draw()
+    setFigSize()
+    plt.savefig("ResultSummary_{}.png".format(name), bbox_inches="tight", dpi=100)
+    plt.close()
 
-setFigSize()
-plt.savefig("ResultSummary.png", bbox_inches="tight", dpi=100)
-plt.close()
+plotResultSummery("totalRuntime",      tableLabels, sampleTotal, runColors, runtimesTotal)
+plotResultSummery("SuccessfulRuntime", tableLabels, sampleTotal, runColors, runtimesSuccessful)
+plotResultSummery("numRuns",           tableLabels, sampleTotal, runColors, numRuns)
+plotResultSummery("RelativeVars",      tableLabels, sampleTotal, runColors, varsPartial)
+plotResultSummery("equationsVars",     tableLabels, sampleTotal, runColors, equationsPartial)
+    
+runResults = [[resultDict[s]["result"]                 if s in resultDict else "MISSING" for s in samplesTotal] for resultDict in resultDicts]
 
 with open('ResultSummary.csv', mode='w') as f:
         wr = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        resultSubRows = [list(zip(runtime, runResult)) for runtime, runResult in zip(runtimes, runResults)] #FIXME add number of runs
+        resultSubRows = [list(zip(runtimeTotal, runtimeSuccessful, runResult, numRuns, varsP, eqP)) for runtimeTotal, runResult, runtimeSuccessful, runsP, varsP, eqP in zip(runtimesTotal, runtimesSuccessful, runResults, numRuns, varsPartial, equationsPartial)]
         resultRows = [[item for rTuple in rTuples for item in rTuple] for rTuples in zip(*resultSubRows)]
         subRowLabels = ['[sec]', 'Result']
         
