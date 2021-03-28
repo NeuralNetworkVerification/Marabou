@@ -322,7 +322,8 @@ else:
 
 if not timedOut:    
     resultsJson["SAT"] = sat
-    resultsJson["Result"] = "SAT" if sat else "UNSAT"    
+    resultsJson["Result"] = "SAT" if sat else "UNSAT"
+    resultsJson["successfulRuntime"] = resultsJson["subResults"][-1]["runtime"]
 resultsJson["totalRuntime"] = time.time() - startTotal
 dumpJson(resultsJson)    
 
