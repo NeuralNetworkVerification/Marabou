@@ -196,11 +196,6 @@ os.chdir(graphDir)
 ####################################################################################################
 
 tableLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
-plt.figure()
-fig, ax = plt.subplots(nrows=1, ncols=1)
-fig.patch.set_visible(False)
-ax.axis('off')
-ax.axis('tight')
 
 addPlus = lambda runtime: "{:.2f}".format(runtime) if runtime < TIMEOUT_VAL else (str(TIMEOUT_VAL) + "+")
 totalSet = set()
@@ -211,14 +206,18 @@ samplesTotal.remove('label')
 
 runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
 runtimesTotal   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
-numRuns   = [resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in samplesTotal]
-varsPartial      = [resultDict[sample]["finalPartiallity"]["vars"]      for sample in samplesTotal]
-equationsPartial = [resultDict[sample]["finalPartiallity"]["equations"] for sample in samplesTotal]
+numRuns          = [[resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in samplesTotal] for resultDict in resultDicts]
+varsPartial      = [[resultDict[sample]["finalPartiallity"]["vars"]      for sample in samplesTotal] for resultDict in resultDicts]
+equationsPartial = [[resultDict[sample]["finalPartiallity"]["equations"] for sample in samplesTotal] for resultDict in resultDicts]
 
 runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in samplesTotal] for resultDict in resultDicts]
 
-def plotResultSummery(name, tableLabels, sampleTotal, runColors, results):
+def plotResultSummery(name, tableLabels, samplesTotal, runColors, results):
     plt.figure()
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ax.axis('tight')
     colors = np.transpose(np.array(runColors))
     df = pd.DataFrame(np.transpose(np.array(results)), columns=tableLabels, index=samplesTotal)
     table = ax.table(cellText=df.values, colLabels=df.columns, colWidths=[2.0 / len(resultDicts)] * len(resultDicts), rowLabels=df.index, loc='center', cellColours=colors)
@@ -229,11 +228,11 @@ def plotResultSummery(name, tableLabels, sampleTotal, runColors, results):
     plt.savefig("ResultSummary_{}.png".format(name), bbox_inches="tight", dpi=100)
     plt.close()
 
-plotResultSummery("totalRuntime",      tableLabels, sampleTotal, runColors, runtimesTotal)
-plotResultSummery("SuccessfulRuntime", tableLabels, sampleTotal, runColors, runtimesSuccessful)
-plotResultSummery("numRuns",           tableLabels, sampleTotal, runColors, numRuns)
-plotResultSummery("RelativeVars",      tableLabels, sampleTotal, runColors, varsPartial)
-plotResultSummery("equationsVars",     tableLabels, sampleTotal, runColors, equationsPartial)
+plotResultSummery("totalRuntime",      tableLabels, samplesTotal, runColors, runtimesTotal)
+plotResultSummery("SuccessfulRuntime", tableLabels, samplesTotal, runColors, runtimesSuccessful)
+plotResultSummery("numRuns",           tableLabels, samplesTotal, runColors, numRuns)
+plotResultSummery("RelativeVars",      tableLabels, samplesTotal, runColors, varsPartial)
+plotResultSummery("equationsVars",     tableLabels, samplesTotal, runColors, equationsPartial)
     
 runResults = [[resultDict[s]["result"]                 if s in resultDict else "MISSING" for s in samplesTotal] for resultDict in resultDicts]
 
