@@ -258,7 +258,8 @@ successful = None
 reachedFinal = False
 startTotal = time.time()
 
-modelOrigDenseSavedName = mnistProp.basePath + "/" + "modelOrigDense.h5"
+#modelOrigDenseSavedName = mnistProp.basePath + "/" + "modelOrigDense.h5"
+modelOrigDenseSavedName = "modelOrigDense.h5"
 modelOrigDense.save(modelOrigDenseSavedName)
 
 for i, mask in enumerate(maskList):
