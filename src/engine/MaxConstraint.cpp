@@ -160,7 +160,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     if ( existsLowerBound( variable ) && !FloatUtils::gt( value, getLowerBound( variable ) ) )
         return;
 
-    _lowerBounds[variable] = value;
+    setLowerBound( variable, value );
 
     bool maxErased = false;
 
@@ -218,7 +218,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     if ( existsUpperBound( variable ) && !FloatUtils::lt( value, getUpperBound( variable ) ) )
         return;
 
-    _upperBounds[variable] = value;
+    setUpperBound( variable, value );
 
     if ( _elements.exists( variable ) && _f != variable && FloatUtils::lt( value, _maxLowerBound ) )
     {
