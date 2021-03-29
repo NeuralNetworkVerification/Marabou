@@ -381,11 +381,25 @@ bool MaxConstraint::wereVariablesEliminated() const
 List<unsigned> MaxConstraint::getParticipatingVariables() const
 {
     List<unsigned> result;
-    for ( auto element : _elements )
-        result.append( element );
 
-    if ( !_elements.exists( _f ) )
-        result.append( _f );
+    if ( _cdInfeasibleCases )
+    {
+        for ( auto element : _elements )
+          if ( !isCaseInfeasible( element ) )
+            result.append( element );
+
+        if ( !_elements.exists( _f ) && !isCaseInfeasible( _f ) )
+          result.append( _f );
+    }
+    else
+    {
+        for ( auto element : _elements )
+            result.append( element );
+
+        if ( !_elements.exists( _f ) )
+            result.append( _f );
+    }
+
     return result;
 }
 

@@ -947,6 +947,7 @@ public:
         TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
         TS_ASSERT_EQUALS( addend->_variable, f );
     }
+
     void test_max_var_elims()
     {
         unsigned f = 1;
