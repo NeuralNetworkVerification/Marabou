@@ -190,6 +190,7 @@ struct MarabouOptions {
         , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+        , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
@@ -215,6 +216,7 @@ struct MarabouOptions {
     Options::get()->setInt( Options::VERBOSITY, _verbosity );
     Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
     Options::get()->setInt( Options::CONSTRAINT_VIOLATION_THRESHOLD, _splitThreshold );
+    Options::get()->setInt( Options::NUMBER_OF_SIMULATIONS, _numSimulations );
 
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
@@ -239,6 +241,7 @@ struct MarabouOptions {
     unsigned _verbosity;
     unsigned _timeoutInSeconds;
     unsigned _splitThreshold;
+    unsigned _numSimulations;
     float _timeoutFactor;
     float _preprocessorBoundTolerance;
     float _milpSolverTimeout;
@@ -491,7 +494,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
-        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString);
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
+        .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)

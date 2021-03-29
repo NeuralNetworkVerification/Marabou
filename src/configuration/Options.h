@@ -69,6 +69,9 @@ public:
         TIMEOUT,
 
         CONSTRAINT_VIOLATION_THRESHOLD,
+
+        // The number of simulations
+        NUMBER_OF_SIMULATIONS,
     };
 
     enum FloatOptions{
