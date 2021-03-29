@@ -304,9 +304,7 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     {
         // Special case: there is only one element. In that case, the tighter lower
         // bound (in this case, f's) wins.
-        if ( !_eliminatedVariables )
-            tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
-        else if ( FloatUtils::gt( fLB, _maxValueOfEliminated ) )
+        if ( !_eliminatedVariables || FloatUtils::gt( fLB, _maxValueOfEliminated ) )
             tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
     }
 
