@@ -48,6 +48,11 @@ public:
     {
     }
 
+    virtual void assign ( unsigned size, T value )
+    {
+        _container.assign( size, value );
+    }
+
     virtual void append( T value )
     {
         _container.push_back( value );

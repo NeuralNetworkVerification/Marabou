@@ -212,10 +212,10 @@ private:
     */
     PiecewiseLinearConstraint *_plConstraintToFix;
 
-	/*
-	  Preprocessed InputQuery
-	*/
-	InputQuery _preprocessedQuery;
+    /*
+      Preprocessed InputQuery
+    */
+    InputQuery _preprocessedQuery;
 
     /*
       Pivot selection strategies.
@@ -360,6 +360,11 @@ private:
     std::unique_ptr<MILPEncoder> _milpEncoder;
 
     /*
+      Number of simulations
+    */
+    unsigned _simulationSize;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
     */
@@ -475,6 +480,12 @@ private:
       account the current state of the piecewise linear constraints.
     */
     void performSymbolicBoundTightening();
+
+    /*
+      Perform a simulation which calculates concrete values of each layer with
+      randomly generated input values.
+    */
+    void performSimulation();
 
     /*
       Check whether a timeout value has been provided and exceeded.

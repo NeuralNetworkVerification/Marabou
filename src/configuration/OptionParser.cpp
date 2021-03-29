@@ -116,6 +116,9 @@ void OptionParser::initialize()
         ( "milp-timeout",
           boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
           "Per-ReLU timeout for iterative propagation" )
+        ( "num-simulations",
+          boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
+          "Number of simulations generated per neuron" )
 #endif // ENABLE_GUROBI
 
         ;

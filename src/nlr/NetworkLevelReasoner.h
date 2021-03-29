@@ -25,6 +25,8 @@
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
+#include "Vector.h"
+
 #include <memory>
 
 namespace NLR {
@@ -71,6 +73,11 @@ public:
       Perform an evaluation of the network for a specific input.
     */
     void evaluate( double *input , double *output );
+
+    /*
+      Perform a simulation of the network for a specific input
+    */
+   void simulate( Vector<Vector<double>> *input );
 
     /*
       Bound propagation methods:
