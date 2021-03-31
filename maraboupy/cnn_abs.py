@@ -305,8 +305,68 @@ def setUnconnectedAsInputs(net):
             net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
             net.setUpperBound(v,  100000)
+    #FIXME this is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
+    '''for reluCons in net.reluList:
+        if reluCons[0] in varsWithoutIngoingEdges:
+            varsWithoutIngoingEdges.remove(reluCons[0])
+            auxVar = net.numVars
+            auxEq = MarabouUtils.Equation()
+            auxEq.scalar = 0
+            auxEq.addendList = [(1, reluCons[0]), (-1, auxVar)]
+            net.equList.append(auxEq)
+            net.numVars += 1
+            varsWithoutIngoingEdges.add(auxVar)'''
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
+    #[net.inputVars.append(np.array([v])) for v in varsWithoutIngoingEdges]
 
+def removeRedundantVariables(net, keep):
+
+    keepList = list(keep)
+    keepList.sort()
+    keepDict = {v:i for i,v in enumerate(keepList)}
+    assert keep == set(keepDict.keys())
+    tr = lambda v: keepDict[v] if v in keepDict else -1
+
+    for vin,vout in net.reluList:
+        assert (vin not in keep) == (vout not in keep)
+    for vin,vout in net.absList:
+        assert (vin not in keep) == (vout not in keep)
+    for vin,vout in net.signList:
+        assert (vin not in keep) == (vout not in keep)
+
+    newEquList = list()
+    for eq in net.equList:
+        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
+            newEq = MarabouUtils.Equation()
+            newEq.scalar = eq.scalar
+            newEq.EquationType = MarabouCore.Equation.EQ
+            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in keep]
+            if (eq.addendList[-1][1] not in keep) or len(newEq.addendList) == 1:
+                continue
+            if all([el[0] == 0 for el in eq.addendList[:-1]]):
+                continue
+            if newEq.addendList:
+                newEquList.append(newEq)
+        else:
+            newEq = MarabouUtils.Equation()
+            newEq.scalar = eq.scalar
+            newEq.EquationType = eq.EquationType
+            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
+            newEquList.append(newEq)
+    net.equList  = newEquList
+    net.maxList  = [({tr(arg) for arg in maxArgs if arg in keep}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in keep and any([arg in keep for arg in maxArgs]))]
+    net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in keep]
+    net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in keep]
+    net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in keep]
+    net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in keep}
+    net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in keep}
+    inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
+    outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
+    net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in keep])]
+    net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in keep])
+    net.numVars = len(keepList)
+    return inputVarsMapping, outputVarsMapping
+    
 def setCOIBoundes(net, init):
 
     print("len(net.equList)={}".format(len(net.equList)))
@@ -342,50 +402,7 @@ def setCOIBoundes(net, init):
 
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
 
-    reachList = list(reach)
-    reachList.sort()
-    reachDict = {v:i for i,v in enumerate(reachList)}
-    assert reach == set(reachDict.keys())
-    tr = lambda v: reachDict[v] if v in reachDict else -1
-
-    for vin,vout in net.reluList:
-        assert (vin not in reach) == (vout not in reach)
-    for vin,vout in net.absList:
-        assert (vin not in reach) == (vout not in reach)
-    for vin,vout in net.signList:
-        assert (vin not in reach) == (vout not in reach)
-
-    newEquList = list()
-    for eq in net.equList:
-        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
-            newEq = MarabouUtils.Equation()
-            newEq.scalar = eq.scalar
-            newEq.EquationType = MarabouCore.Equation.EQ
-            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in reach]
-            if (eq.addendList[-1][1] not in reach) or len(newEq.addendList) == 1:
-                continue
-            if all([el[0] == 0 for el in eq.addendList[:-1]]):
-                continue
-            if newEq.addendList:
-                newEquList.append(newEq)
-        else:
-            newEq = MarabouUtils.Equation()
-            newEq.scalar = eq.scalar
-            newEq.EquationType = eq.EquationType
-            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
-            newEquList.append(newEq)
-    net.equList  = newEquList
-    net.maxList  = [({tr(arg) for arg in maxArgs if arg in reach}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in reach and any([arg in reach for arg in maxArgs]))]
-    net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in reach]
-    net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in reach]
-    net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in reach]
-    net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in reach}
-    net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in reach}
-    inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
-    outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
-    net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in reach])]
-    net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in reach])
-    net.numVars = len(reachList)
+    inputVarsMapping, outputVarsMapping = removeRedundantVariables(net, reach)
     for eq in net.equList:
         for w,v in eq.addendList:
             if v > net.numVars:
