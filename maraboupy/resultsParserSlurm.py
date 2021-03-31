@@ -262,7 +262,7 @@ for sums, label in zip(sumRuntimes, cactusLabels):
     #print("label={}".format(label))
     #print("sums={}".format(sums))
     #print("solved={}".format(solved))        
-plt.xlabel("Runtime")
+plt.xlabel("Runtime [sec]")
 plt.ylabel("Instances solved")
 plt.legend()
 setFigSize()
