@@ -305,8 +305,8 @@ def setUnconnectedAsInputs(net):
             net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
             net.setUpperBound(v,  100000)
-    #FIXME this is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
-    '''for reluCons in net.reluList:
+    # This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
+    for reluCons in net.reluList:
         if reluCons[0] in varsWithoutIngoingEdges:
             varsWithoutIngoingEdges.remove(reluCons[0])
             auxVar = net.numVars
@@ -315,7 +315,7 @@ def setUnconnectedAsInputs(net):
             auxEq.addendList = [(1, reluCons[0]), (-1, auxVar)]
             net.equList.append(auxEq)
             net.numVars += 1
-            varsWithoutIngoingEdges.add(auxVar)'''
+            varsWithoutIngoingEdges.add(auxVar)
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
     #[net.inputVars.append(np.array([v])) for v in varsWithoutIngoingEdges]
 
@@ -336,7 +336,7 @@ def removeRedundantVariables(net, keep):
 
     newEquList = list()
     for eq in net.equList:
-        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1): #FIXME should suport other types?
+        if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1):
             newEq = MarabouUtils.Equation()
             newEq.scalar = eq.scalar
             newEq.EquationType = MarabouCore.Equation.EQ
@@ -439,15 +439,12 @@ def setBounds(model, boundDict):
                 model.setUpperBound(i,ub)
 
 def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True):
-    #runName = runName + "_" + str(mnistProps.numInputQueries)
-    #mnistProps.numInputQueries = mnistProps.numInputQueries + 1
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
     setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    if mask: #FIXME why was this failing? created a bound for a variable with index above the number of veriables number.
-        setBounds(modelOnnxMarabou, boundDict)
+    setBounds(modelOnnxMarabou, boundDict)
     originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     if coi:
         inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
@@ -456,8 +453,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         plt.savefig('COI_{}'.format(runName))
     else:
         inputVarsMapping, outputVarsMapping = None, None
-    if mask: #FIXME why was this failing? created a bound for a variable with index above the number of veriables number.
-        setUnconnectedAsInputs(modelOnnxMarabou)
+    setUnconnectedAsInputs(modelOnnxMarabou)
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
     finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
@@ -465,8 +461,6 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     timedOut = stats.hasTimedOut()
     if not sat:
         return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
-    #inputDict = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars))}
-    #outputDict = {o.item():vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))}
     cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
