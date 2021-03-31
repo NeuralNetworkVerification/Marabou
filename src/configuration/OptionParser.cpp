@@ -94,9 +94,6 @@ void OptionParser::initialize()
         ( "split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
-        ( "num-simulations",
-          boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
-          "Number of simulations generated per neuron" )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(SnC) The timeout factor" )
@@ -119,6 +116,9 @@ void OptionParser::initialize()
         ( "milp-timeout",
           boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
           "Per-ReLU timeout for iterative propagation" )
+        ( "num-simulations",
+          boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
+          "Number of simulations generated per neuron" )
 #endif // ENABLE_GUROBI
 
         ;
