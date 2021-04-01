@@ -306,6 +306,7 @@ def setUnconnectedAsInputs(net):
         if not net.upperBoundExists(v):
             net.setUpperBound(v,  100000)
     # This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
+    dontKeep = set()
     for reluCons in net.reluList:
         if reluCons[0] in varsWithoutIngoingEdges:
             varsWithoutIngoingEdges.remove(reluCons[0])
@@ -317,22 +318,34 @@ def setUnconnectedAsInputs(net):
             net.numVars += 1
             varsWithoutIngoingEdges.add(auxVar)
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
-    #[net.inputVars.append(np.array([v])) for v in varsWithoutIngoingEdges]
+    #    if reluCons[0] in varsWithoutIngoingEdges:
+    #        varsWithoutIngoingEdges.remove(reluCons[0])
+    #        dontKeep.add(reluCons[0])
+    #        varsWithoutIngoingEdges.add(reluCons[1])
+    #net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
+    #return removeRedundantVariables(net, dontKeep, keepSet=False)
+    ##[net.inputVars.append(np.array([v])) for v in varsWithoutIngoingEdges]
 
-def removeRedundantVariables(net, keep):
+def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+    if not keepSet:        
+        net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
+        net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
+        net.signList = [(vin,vout) for vin,vout in net.signList if (vin not in varSet) and (vout not in varSet)]
+        varSet = {v for v in range(net.numVars) if v not in varSet}
 
-    keepList = list(keep)
-    keepList.sort()
-    keepDict = {v:i for i,v in enumerate(keepList)}
-    assert keep == set(keepDict.keys())
-    tr = lambda v: keepDict[v] if v in keepDict else -1
+    varSetList = list(varSet)
+    varSetList.sort()
+    varSetDict = {v:i for i,v in enumerate(varSetList)}
+    assert varSet == set(varSetDict.keys())
+    tr = lambda v: varSetDict[v] if v in varSetDict else -1
 
-    for vin,vout in net.reluList:
-        assert (vin not in keep) == (vout not in keep)
-    for vin,vout in net.absList:
-        assert (vin not in keep) == (vout not in keep)
-    for vin,vout in net.signList:
-        assert (vin not in keep) == (vout not in keep)
+    if keepSet:
+        for vin,vout in net.reluList:
+            assert (vin not in varSet) == (vout not in varSet)
+        for vin,vout in net.absList:
+            assert (vin not in varSet) == (vout not in varSet)
+        for vin,vout in net.signList:
+            assert (vin not in varSet) == (vout not in varSet)
 
     newEquList = list()
     for eq in net.equList:
@@ -340,8 +353,8 @@ def removeRedundantVariables(net, keep):
             newEq = MarabouUtils.Equation()
             newEq.scalar = eq.scalar
             newEq.EquationType = MarabouCore.Equation.EQ
-            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in keep]
-            if (eq.addendList[-1][1] not in keep) or len(newEq.addendList) == 1:
+            newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in varSet]
+            if (eq.addendList[-1][1] not in varSet) or len(newEq.addendList) == 1:
                 continue
             if all([el[0] == 0 for el in eq.addendList[:-1]]):
                 continue
@@ -354,17 +367,17 @@ def removeRedundantVariables(net, keep):
             newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
             newEquList.append(newEq)
     net.equList  = newEquList
-    net.maxList  = [({tr(arg) for arg in maxArgs if arg in keep}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in keep and any([arg in keep for arg in maxArgs]))]
-    net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in keep]
-    net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in keep]
-    net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in keep]
-    net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in keep}
-    net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in keep}
+    net.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
+    net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in varSet]
+    net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in varSet]
+    net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in varSet]
+    net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in varSet}
+    net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
     inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
     outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
-    net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in keep])]
-    net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in keep])
-    net.numVars = len(keepList)
+    net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
+    net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
+    net.numVars = len(varSetList)
     return inputVarsMapping, outputVarsMapping
     
 def setCOIBoundes(net, init):
@@ -454,6 +467,7 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
     else:
         inputVarsMapping, outputVarsMapping = None, None
     setUnconnectedAsInputs(modelOnnxMarabou)
+    #inputVarsMapping2, outputVarsMapping2 =setUnconnectedAsInputs(modelOnnxMarabou)
     modelOnnxMarabou.saveQuery("IPQ_" + runName)
     finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
     vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
