@@ -48,6 +48,7 @@ class mnistProp:
     logger = None
     basePath = None
     currPath = None
+    stepSize = 10
 
     def output_model_path(m, suffix=""):
         if suffix:
@@ -557,50 +558,50 @@ def sortReverseNeuronsByActivation(intermidModel, samples):
     assert len(sortedIndReverse) == actMap.size
     return sortedIndReverse
 
-def genMaskByOrderedInd(sortedIndReverse, maskShape, stepSize=10):
+def genMaskByOrderedInd(sortedIndDecsending, maskShape, stepSize=mnistProp.stepSize):
     mask = np.zeros(maskShape)
     masks = list()
     stepSize = max(stepSize,1)
-    while len(sortedIndReverse) > 0:
-        toAdd = min(stepSize, len(sortedIndReverse))
-        for coor in sortedIndReverse[:toAdd]:
+    while len(sortedIndDecsending) > 0:
+        toAdd = min(stepSize, len(sortedIndDecsending))
+        for coor in sortedIndDecsending[:toAdd]:
             mask[tuple(coor)] = 1
-        sortedIndReverse = sortedIndReverse[toAdd:]
+        sortedIndDecsending = sortedIndDecsending[toAdd:]
         masks.append(mask.copy())
     return masks
 
-def genMaskByActivation(intermidModel, features, stepSize=10):
+def genMaskByActivation(intermidModel, features, stepSize=mnistProp.stepSize):
     sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
     return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1], stepSize=stepSize)
 
-#FIXME set stepSizes as a shared configuration.
-
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.
-def genActivationMaskAllClassRank(intermidModel, stepSize=10):
-    return genMaskByActivation(intermidModel, mnistProp.x_test, stepSize=10)
+def genActivationMaskAllClassRank(intermidModel, stepSize=mnistProp.stepSize):
+    return genMaskByActivation(intermidModel, mnistProp.x_test, stepSize=stepSize)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.
-def genActivationMaskSingleClassRank(intermidModel, prediction):
+def genActivationMaskSingleClassRank(intermidModel, prediction, stepSize=mnistProp.stepSize):
     features = [x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == prediction]
-    return genMaskByActivation(intermidModel, np.array(features), stepSize=10)
+    return genMaskByActivation(intermidModel, np.array(features), stepSize=stepSize)
 
 #Policy - calculate per class
-def genActivationMaskMajorityClassVote(intermidModel):
+def genActivationMaskMajorityClassVote(intermidModel, stepSize=mnistProp.stepSize):
     features = [[x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label] for label in range(mnistProp.num_classes)]
     actMaps = [meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
     discriminate = lambda actM : np.square(actM) #FIXME explore discriminating schemes.
     actMaps = [discriminate(actMap) for actMap in actMaps]
     sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
-    return genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], stepSize=10)
+    return genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], stepSize=stepSize)
 
 #Policy - Most important neurons are the center of the image.
-def genActivationMaskCentered(intermidModel): #FIXME starts with more neurons and add more in every step than the others.
+def genActivationMaskCentered(intermidModel, stepSize=mnistProp.stepSize):
     maskShape = intermidModel.output_shape[1:-1]
-    for thresh in reversed(range(int(min(maskShape)/2))):
-        yield genSquareMask(maskShape, [thresh for dim in maskShape if dim > (2 * thresh)], [dim - thresh for dim in maskShape if dim > (2 * thresh)])
+    indicesList = list(product(*[range(d) for d in maskShape]))
+    center = np.array([float(d) / 2 for d in maskShape])
+    indicesSortedDecsending = sorted(indicesList, key=lambda x: np.linalg.norm(np.array(x)-center))
+    return genMaskByOrderedInd(indicesSortedDecsending, maskShape, stepSize=stepSize)
 
 #Policy - Add neurons randomly.
-def genActivationMaskRandom(intermidModel, stepSize=10):
+def genActivationMaskRandom(intermidModel, stepSize=mnistProp.stepSize):
     maskShape = intermidModel.output_shape[1:-1]
     mask = np.zeros(maskShape)
     indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
