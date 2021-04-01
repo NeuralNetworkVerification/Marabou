@@ -250,6 +250,8 @@ maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMa
 if not cfg_maskAbstract:
     maskList = []
 printLog("Created {} masks".format(len(maskList)))
+#for i,mask in enumerate(maskList):
+#    print("mask,{}=\n{}".format(i,mask))
 
 printLog("Strating verification phase")
 
