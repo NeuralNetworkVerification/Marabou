@@ -49,6 +49,7 @@ class mnistProp:
     basePath = None
     currPath = None
     stepSize = 10
+    startWith = 5 * stepSize
 
     def output_model_path(m, suffix=""):
         if suffix:
@@ -562,12 +563,17 @@ def genMaskByOrderedInd(sortedIndDecsending, maskShape, stepSize=mnistProp.stepS
     mask = np.zeros(maskShape)
     masks = list()
     stepSize = max(stepSize,1)
-    while len(sortedIndDecsending) > 0:
-        toAdd = min(stepSize, len(sortedIndDecsending))
+    startWith = max(mnistProp.startWith,0)
+    first = True
+    while len(sortedIndDecsending) > 0:        
+        toAdd = min(stepSize + (startWith if first else 0), len(sortedIndDecsending))
         for coor in sortedIndDecsending[:toAdd]:
             mask[tuple(coor)] = 1
         sortedIndDecsending = sortedIndDecsending[toAdd:]
+        if np.array_equal(mask, np.ones_like(mask)):
+            break
         masks.append(mask.copy())
+        first = False
     return masks
 
 def genMaskByActivation(intermidModel, features, stepSize=mnistProp.stepSize):
@@ -603,17 +609,8 @@ def genActivationMaskCentered(intermidModel, stepSize=mnistProp.stepSize):
 #Policy - Add neurons randomly.
 def genActivationMaskRandom(intermidModel, stepSize=mnistProp.stepSize):
     maskShape = intermidModel.output_shape[1:-1]
-    mask = np.zeros(maskShape)
     indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
-    masks = list()
-    stepSize = max(stepSize,1)
-    while len(indices) > 0:
-        toAdd = min(stepSize, len(indices))
-        for coor in indices[:toAdd]:
-            mask[tuple(coor)] = 1
-        indices = indices[toAdd:]
-        masks.append(mask.copy())
-    return masks
+    return genMaskByOrderedInd(indices, maskShape, stepSize=stepSize)
 
 def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
