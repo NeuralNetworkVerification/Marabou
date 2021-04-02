@@ -133,7 +133,7 @@ endif()
 if (NOT MSVC)
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
        set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD -Qunused-arguments ) #-Wno-deprecated 
-     else
+     else()
        set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD ) #-Wno-deprecated 
     endif()
     set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
