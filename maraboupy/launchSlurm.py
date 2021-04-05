@@ -61,7 +61,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, dumpQueries
         title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
-            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy, "--dump_queries" if dumpQueries else "", "--used_dumped_queries" if useDumpedQueries else ""])
+            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy, "--dump_queries" if dumpQueries else "", "--use_dumped_queries" if useDumpedQueries else ""])
             runTitles.append(title)
             runBriefs.append("Run with abstraction policy {}.".format(policy))
 
