@@ -32,6 +32,8 @@ import matplotlib.pyplot as plt
 tf.compat.v1.enable_v2_behavior()
 
 def dumpJson(jsonDict):
+    if cfg_dumpQueries:
+        return
     with open("Results.json", "w") as f:
         json.dump(jsonDict, f, indent = 4)
 
@@ -66,6 +68,9 @@ parser = argparse.ArgumentParser(description='Run MNIST based verification schem
 parser.add_argument("--no_coi",         action="store_true",                        default=False,                  help="Don't use COI pruning")
 parser.add_argument("--no_mask",        action="store_true",                        default=False,                  help="Don't use mask abstraction")
 parser.add_argument("--no_verify",      action="store_true",                        default=False,                  help="Don't run verification process")
+parser.add_argument("--dump_queries",   action="store_true",                        default=False,                  help="Don't solve queries, just create and dump them")
+parser.add_argument("--use_dumped_queries", action="store_true",                    default=False,                  help="Use dumped queries")
+parser.add_argument("--dump_dir",       type=str,                                   default="",                     help="Location of dumped queries")
 parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small","toy"], default="small",          help="Which CNN size to use")
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
@@ -104,6 +109,9 @@ cfg_boundTightening   = args.bound_tightening
 cfg_solveWithMILP     = args.solve_with_milp
 cfg_symbolicTightening= args.symbolic
 cfg_timeoutInSeconds  = args.timeout
+cfg_dumpQueries       = args.dump_queries
+cfg_useDumpedQueries  = args.use_dumped_queries
+cfg_dumpDir           = args.dump_dir
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -123,6 +131,9 @@ resultsJson["cfg_boundTightening"]   = cfg_boundTightening
 resultsJson["cfg_solveWithMILP"]     = cfg_solveWithMILP
 resultsJson["cfg_symbolicTightening"]= cfg_symbolicTightening
 resultsJson["cfg_timeoutInSeconds"]  = cfg_timeoutInSeconds
+resultsJson["cfg_dumpQueries"]       = cfg_dumpQueries
+resultsJson["cfg_useDumpedQueries"]  = cfg_useDumpedQueries
+resultsJson["cfg_dumpDir"]           = cfg_dumpDir
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -131,6 +142,7 @@ resultsJson["subResults"] = []
 cexFromImage = False
 
 #mnistProp.runTitle = cfg_runTitle
+mnistProp.dumpDir = cfg_dumpDir
 
 optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
@@ -266,13 +278,19 @@ modelOrigDenseSavedName = "modelOrigDense.h5"
 modelOrigDense.save(modelOrigDenseSavedName)
 
 for i, mask in enumerate(maskList):
-    tf.keras.backend.clear_session()    
-    modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
-    modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+    tf.keras.backend.clear_session()
+    if not cfg_useDumpedQueries:
+        modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
+        modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+    else:
+        modelAbs = None
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
-    subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))    
-    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_mask_{}".format(i+1), coi=cfg_pruneCOI, mask=cfg_maskAbstract)
+    subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))
+    returnVal = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    if cfg_dumpQueries:
+        continue
+    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
     subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
     printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
     if timedOut:
@@ -295,10 +313,16 @@ else:
     printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
     reachedFinal = True
     startLocal = time.time()
-    modelOrigDense = load_model(modelOrigDenseSavedName)
+    if not cfg_useDumpedQueries:    
+        modelOrigDense = load_model(modelOrigDenseSavedName)
+    else:
+        modelOrigDense = None
     subResultAppend(resultsJson, runType="full")
     mnistProp.optionsObj._timeoutInSeconds = 0
-    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "runMarabouOnKeras_Full", coi=cfg_pruneCOI, mask=cfg_maskAbstract)
+    returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    if cfg_dumpQueries:
+        exit()
+    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
     assert not timedOut
     subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
     printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")

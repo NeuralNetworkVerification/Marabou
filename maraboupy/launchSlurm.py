@@ -48,7 +48,7 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
 ####################################################################################################
 ####################################################################################################
 
-def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
+def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, dumpQueries, useDumpedQueries):
 
     TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = 12, 0, 0
     
@@ -61,7 +61,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
         title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
-            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy])
+            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy, "--dump_queries", dumpQueries, "--used_dumped_queries", useDumpedQueries])
             runTitles.append(title)
             runBriefs.append("Run with abstraction policy {}.".format(policy))
 
@@ -92,12 +92,16 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
 experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                "AbsPolicies"    : experimentAbsPolicies}
 parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
-parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch", required=True)
+parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch?", required=True)
 parser.add_argument("--runs_per_type", type=int, default=50, help="Number of runs per type.")
+parser.add_argument("--dump_queries", type=bool, default=False, help="Only dump queries, don't solve.")
+parser.add_argument("--use_dumped_queries", type=bool, default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
 args = parser.parse_args()
 experiment = args.exp
 numRunsPerType = args.runs_per_type
 experimentFunc = experiments[experiment]
+dumpQueries = args.dump_queries
+useDumpedQueries = args.use_dumped_queries
 
 ####################################################################################################
 
@@ -108,11 +112,15 @@ if not os.path.exists(basePath + "logs/"):
 batchDirPath = basePath + "logs/" + batchId
 if not os.path.exists(batchDirPath):
     os.mkdir(batchDirPath)
+dumpDirPath = basePath + "logs/dumpQueries"
+if not os.path.exists(dumpDirPath):
+    os.mkdir(dumpDirPath)
+    
     
 CPUS = 8
 MEM_PER_CPU = "8G"
 #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
-commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--timeout", str(1000)]
+commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--timeout", str(1000), "--dump_dir", dumpDirPath]
     
 runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
 
