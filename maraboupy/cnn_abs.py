@@ -50,6 +50,7 @@ class mnistProp:
     currPath = None
     stepSize = 10
     startWith = 5 * stepSize
+    dumpDir = ""
 
     def output_model_path(m, suffix=""):
         if suffix:
@@ -281,7 +282,7 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
 
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)
-    else:
+    else: #FIXME not compatible with case where net is an InputQuery
         inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))}
         outputDict = {o.item():valDict[o.item()] for o in np.nditer(np.array(net.outputVars))}
         cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))]).reshape(xAdv.shape)
@@ -453,43 +454,54 @@ def setBounds(model, boundDict):
             if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
                 model.setUpperBound(i,ub)
 
-def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True):
-    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
-    modelOnnxName = mnistProp.output_model_path(model)
-    keras2onnx.save_model(modelOnnx, modelOnnxName)
-    modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
-    setBounds(modelOnnxMarabou, boundDict)
-    originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
-    if coi:
-        inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
-        plt.title('COI_{}'.format(runName))
-        plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
-        plt.savefig('COI_{}'.format(runName))
+def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
+    if not fromDumpedQuery:
+        modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
+        modelOnnxName = mnistProp.output_model_path(model)
+        keras2onnx.save_model(modelOnnx, modelOnnxName)
+        modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
+        setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+        setBounds(modelOnnxMarabou, boundDict)
+        originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
+        if coi:
+            inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
+            plt.title('COI_{}'.format(runName))
+            plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
+            plt.savefig('COI_{}'.format(runName))
+        else:
+            inputVarsMapping, outputVarsMapping = None, None
+        setUnconnectedAsInputs(modelOnnxMarabou)
+        #inputVarsMapping2, outputVarsMapping2 =setUnconnectedAsInputs(modelOnnxMarabou)
+        modelOnnxMarabou.saveQuery(mnistProp.dumpDir + "IPQ_" + runName)
+        if onlyDump:
+            return "IPQ_" + runName
+        finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
+        vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
     else:
-        inputVarsMapping, outputVarsMapping = None, None
-    setUnconnectedAsInputs(modelOnnxMarabou)
-    #inputVarsMapping2, outputVarsMapping2 =setUnconnectedAsInputs(modelOnnxMarabou)
-    modelOnnxMarabou.saveQuery("IPQ_" + runName)
-    finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
-    vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
+        ipq = Marabou.load_query(mnistProp.dumpDir + "IPQ_" + runName)
+        vals, stats = Marabou.solve_query(ipq, verbose=False, options=mnistProp.optionsObj)
     sat = len(vals) > 0
     timedOut = stats.hasTimedOut()
     if not sat:
         return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
-    cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
+    if not fromDumpedQuery:
+        cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
+    else:
+        assert coi
+        cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
-    mbouPrediction = cexPrediction.argmax()
-    kerasPrediction = model.predict(np.array([cex])).argmax()
-    if mbouPrediction != kerasPrediction:
-        origM, replaceLayer = genCnnForAbsTest(cfg_freshModelOrig=False, cnnSizeChoice=mnistProp.origMSize)
-        origMConvPrediction = origM.predict(np.array([cex])).argmax()
-        origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
-        print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
-    plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
-    plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
-    plt.savefig(fName)
+    if not fromDumpedQuery:
+        mbouPrediction = cexPrediction.argmax()
+        kerasPrediction = model.predict(np.array([cex])).argmax()
+        if mbouPrediction != kerasPrediction:
+            origM, replaceLayer = genCnnForAbsTest(cfg_freshModelOrig=False, cnnSizeChoice=mnistProp.origMSize)
+            origMConvPrediction = origM.predict(np.array([cex])).argmax()
+            origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
+            print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
+        plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
+        plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
+        plt.savefig(fName)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
     mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")
     return True, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
