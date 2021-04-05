@@ -470,6 +470,10 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
             plt.savefig('COI_{}'.format(runName))
         else:
             inputVarsMapping, outputVarsMapping = None, None
+        with open(mnistProp.dumpDir + "inputVarsMapping_" + runName, "w") as f:
+            np.save(f, inputVarsMapping)
+        with open(mnistProp.dumpDir + "outputVarsMapping_" + runName, "w") as f:
+            np.save(f, outputVarsMapping)
         setUnconnectedAsInputs(modelOnnxMarabou)
         #inputVarsMapping2, outputVarsMapping2 =setUnconnectedAsInputs(modelOnnxMarabou)
         modelOnnxMarabou.saveQuery(mnistProp.dumpDir + "IPQ_" + runName)
@@ -488,6 +492,10 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     else:
         assert coi
+        with open(mnistProp.dumpDir + "inputVarsMapping_" + runName, "r") as f:
+            inputVarsMapping = np.load(f)
+        with open(mnistProp.dumpDir + "outputVarsMapping_" + runName, "r") as f:
+            outputVarsMapping = np.load(f)
         cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
