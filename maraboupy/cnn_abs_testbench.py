@@ -252,6 +252,7 @@ if not cfg_maskAbstract:
 printLog("Created {} masks".format(len(maskList)))
 #for i,mask in enumerate(maskList):
 #    print("mask,{}=\n{}".format(i,mask))
+#exit()
 
 printLog("Strating verification phase")
 
