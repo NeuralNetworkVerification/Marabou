@@ -110,9 +110,9 @@ if not os.path.exists(batchDirPath):
     os.mkdir(batchDirPath)
     
 CPUS = 8
-MEM_PER_CPU = "4G"
-#commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02)]
-commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02)]
+MEM_PER_CPU = "8G"
+#commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
+commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--timeout", str(1000)]
     
 runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
 
