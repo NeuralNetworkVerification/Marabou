@@ -64,7 +64,7 @@ ContextDependentPiecewiseLinearConstraint *SignConstraint::duplicateConstraint()
 {
     SignConstraint *clone = new SignConstraint( _b, _f );
     *clone = *this;
-    this->initializeDuplicatesCDOs( clone );
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 

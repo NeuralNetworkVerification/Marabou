@@ -129,7 +129,7 @@ void ContextDependentPiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phas
         _phaseStatus = phaseStatus;
 }
 
-void ContextDependentPiecewiseLinearConstraint::initializeDuplicatesCDOs(
+void ContextDependentPiecewiseLinearConstraint::initializeDuplicateCDOs(
     ContextDependentPiecewiseLinearConstraint *clone ) const
 {
     if ( clone->_context != nullptr )

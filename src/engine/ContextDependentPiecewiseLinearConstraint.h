@@ -16,7 +16,7 @@
  **
  **
  ** Members are initialized using the initializeCDOs( Context context ) method.
- ** Subclasses need to call initializeDuplicatesCDOs() method in the
+ ** Subclasses need to call initializeDuplicateCDOs() method in the
  ** duplicateConstraint() method to avoid sharing context-dependent members.
  ** CDOs need not be initialized for pre-processing purposes.
  **
@@ -227,7 +227,7 @@ protected:
        Method provided to allow safe copying of the context-dependent members,
        which will be freshly initialized in a copy and with the same values.
      */
-    void initializeDuplicatesCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
+    void initializeDuplicateCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
 
     /*
        Private method to check if a case is infeasible.

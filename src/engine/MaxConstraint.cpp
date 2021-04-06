@@ -106,7 +106,7 @@ ContextDependentPiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() 
     *clone = *this;
     clone->_eliminatedVariables = _eliminatedVariables;
     clone->_maxValueOfEliminated = _maxValueOfEliminated;
-    this->initializeDuplicatesCDOs( clone );
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 

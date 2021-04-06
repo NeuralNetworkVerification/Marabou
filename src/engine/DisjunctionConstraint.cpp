@@ -55,7 +55,7 @@ ContextDependentPiecewiseLinearConstraint *DisjunctionConstraint::duplicateConst
 {
     DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );
     *clone = *this;
-    initializeDuplicatesCDOs( clone );
+    initializeDuplicateCDOs( clone );
     return clone;
 }
 

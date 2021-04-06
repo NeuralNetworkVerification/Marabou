@@ -85,7 +85,7 @@ ContextDependentPiecewiseLinearConstraint *ReluConstraint::duplicateConstraint()
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
     *clone = *this;
-    this->initializeDuplicatesCDOs( clone );
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 

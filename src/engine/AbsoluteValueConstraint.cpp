@@ -77,7 +77,7 @@ ContextDependentPiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateCon
 {
     AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );
     *clone = *this;
-    this->initializeDuplicatesCDOs( clone );
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 
