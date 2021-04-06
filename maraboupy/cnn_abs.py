@@ -17,6 +17,7 @@ import numpy as np
 import logging
 import matplotlib.pyplot as plt
 from enum import Enum
+import json
 
 from tensorflow.keras.models import load_model
 cfg_freshModelAbs = True
@@ -463,6 +464,8 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
         setBounds(modelOnnxMarabou, boundDict)
         originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
+        with open(mnistProp.dumpDir + "originalQueryStats_" + runName + ".json", "w") as f:
+            json.dump(originalQueryStats, f, indent = 4)
         if coi:
             inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
             plt.title('COI_{}'.format(runName))
@@ -470,16 +473,18 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
             plt.savefig('COI_{}'.format(runName))
         else:
             inputVarsMapping, outputVarsMapping = None, None
-        with open(mnistProp.dumpDir + "inputVarsMapping_" + runName, "w") as f:
+        with open(mnistProp.dumpDir + "inputVarsMapping_" + runName + ".npy", "wb") as f:
             np.save(f, inputVarsMapping)
-        with open(mnistProp.dumpDir + "outputVarsMapping_" + runName, "w") as f:
+        with open(mnistProp.dumpDir + "outputVarsMapping_" + runName + ".npy", "wb") as f:
             np.save(f, outputVarsMapping)
         setUnconnectedAsInputs(modelOnnxMarabou)
         #inputVarsMapping2, outputVarsMapping2 =setUnconnectedAsInputs(modelOnnxMarabou)
         modelOnnxMarabou.saveQuery(mnistProp.dumpDir + "IPQ_" + runName)
-        if onlyDump:
-            return "IPQ_" + runName
         finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
+        with open(mnistProp.dumpDir + "finalQueryStats_" + runName + ".json", "w") as f:
+            json.dump(finalQueryStats, f, indent = 4)
+        if onlyDump:
+            return "IPQ_" + runName            
         vals, stats = modelOnnxMarabou.solve(verbose=False, options=mnistProp.optionsObj)
     else:
         ipq = Marabou.load_query(mnistProp.dumpDir + "IPQ_" + runName)
@@ -492,9 +497,13 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     else:
         assert coi
-        with open(mnistProp.dumpDir + "inputVarsMapping_" + runName, "r") as f:
+        with open(mnistProp.dumpDir + "originalQueryStats_" + runName + ".json", "r") as f:
+            originalQueryStats = json.load(f)
+        with open(mnistProp.dumpDir + "finalQueryStats_" + runName + ".json", "r") as f:
+            finalQueryStats = json.load(f)
+        with open(mnistProp.dumpDir + "inputVarsMapping_" + runName + ".npy", "rb") as f:            
             inputVarsMapping = np.load(f)
-        with open(mnistProp.dumpDir + "outputVarsMapping_" + runName, "r") as f:
+        with open(mnistProp.dumpDir + "outputVarsMapping_" + runName + ".npy", "rb") as f:
             outputVarsMapping = np.load(f)
         cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
