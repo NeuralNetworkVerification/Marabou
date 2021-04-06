@@ -131,7 +131,11 @@ if(${BUILD_PYTHON})
 endif()
 
 if (NOT MSVC)
-    set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD) #-Wno-deprecated
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+       set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD -Qunused-arguments ) #-Wno-deprecated 
+     else()
+       set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD ) #-Wno-deprecated 
+    endif()
     set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
 endif()
 
