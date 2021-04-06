@@ -189,9 +189,8 @@ private:
        Functions that abstract away _maxIndex and _maxIndexSet, and use the
        refactored PhaseStatus to store this information.
 
-       Makes two assumptions:
-        - 0 is not a valid variable value, since it's reserved for PHASE_NOT_FIXED
-        - the total number of variables does not reach the value of MAX_PHASE_ELIMINATED
+       Assumes that the total number of variables does not reach the value of
+       MAX_PHASE_ELIMINATED.
      */
     inline bool maxIndexSet() const
     {
@@ -227,16 +226,15 @@ private:
 
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
-        return static_cast<PhaseStatus>( variable );
+        return static_cast<PhaseStatus>( variable + 1  );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
-        return static_cast<unsigned>( phase );
+        return static_cast<unsigned>( phase ) - 1;
     }
 
 
 };
 
 #endif // __MaxConstraint_h__
-
