@@ -226,12 +226,14 @@ private:
 
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
-        return static_cast<PhaseStatus>( variable + 1  );
+        return ( variable == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
+               static_cast<PhaseStatus>( variable + 1u  );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
-        return static_cast<unsigned>( phase ) - 1;
+        return ( phase == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
+               static_cast<unsigned>( phase ) - 1u;
     }
 
 
