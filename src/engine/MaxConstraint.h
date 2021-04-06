@@ -31,6 +31,8 @@
 #include "Map.h"
 #include "ContextDependentPiecewiseLinearConstraint.h"
 
+#define MAX_VARIABLE_TO_PHASE_OFFSET 1
+
 class MaxConstraint : public ContextDependentPiecewiseLinearConstraint
 {
 public:
@@ -227,13 +229,13 @@ private:
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
         return ( variable == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<PhaseStatus>( variable + 1u  );
+               static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET  );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
         return ( phase == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<unsigned>( phase ) - 1u;
+               static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
 
