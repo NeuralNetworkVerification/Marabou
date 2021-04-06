@@ -37,7 +37,7 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 For more information about the input formats please check the
 [wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
-**NEW** A guide to Split and Conquer mode is available in a Jupyter Notebook at [resources/SplitAndConquerGuide](resources/SplitAndConquerGuide.ipynb). It gives on overview of SnC's parameters and some rules of thumb to choose their values.
+**NEW** A guide to Split and Conquer mode is available in a Jupyter Notebook at [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb). It gives on overview of SnC's parameters and some rules of thumb to choose their values.
 
 Research
 ------------------------------------------------------------------------------
