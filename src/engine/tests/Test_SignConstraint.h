@@ -1303,7 +1303,7 @@ public:
        * 1. Check that all cases are returned by SignConstraint::getAllCases
        * 2. Check that SignConstraint::getCaseSplit( case ) returns the correct case
        */
-      void test_relu_get_cases()
+      void test_sign_get_cases()
       {
         SignConstraint sign( 4, 6 );
 
