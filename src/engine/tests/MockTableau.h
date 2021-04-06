@@ -1,3 +1,4 @@
+
 /*********************                                                        */
 /*! \file MockTableau.h
  ** \verbatim
@@ -595,6 +596,39 @@ public:
     {
         return 0;
     }
+
+    int getInfeasibleRow( TableauRow& /* row */ )
+    {
+    	return 0;
+    }
+
+    int getInfeasibleVar() const
+    {
+		return 0;
+    }
+    double computeRowBound( const TableauRow& /* row */, const bool /* isUpper */ ) const
+    {
+    	return 0;
+    }
+
+    void updateExplanation( const TableauRow& /* row */, const bool /* isUpper */ ) const
+    {
+    }
+
+    void updateExplanation( const TableauRow& /* row */, const bool /* isUpper */, unsigned /* varIndex */ ) const
+    {
+    }
+
+    void updateExplanation(const SparseUnsortedList& /* row */, const bool /* isUpper */, unsigned /* varIndex */) const
+    {
+    }
+
+    SingleVarBoundsExplanator* ExplainBound( const unsigned /* variable */ ) const
+    {
+    	return NULL;
+    }
+
+
 };
 
 #endif // __MockTableau_h__
