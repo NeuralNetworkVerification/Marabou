@@ -572,7 +572,7 @@ PiecewiseLinearCaseSplit MaxConstraint::getImpliedCaseSplit() const
         return phaseOfEliminatedIsMax;
     }
 
-    return getSplit( phase ); // Handles the special case of _f being the phase
+    return getCaseSplit( phase ); // Handles the special case of _f being the phase
 }
 
 PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
