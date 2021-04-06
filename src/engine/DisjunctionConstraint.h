@@ -214,9 +214,6 @@ private:
         //ASSERT( phase != PHASE_NOT_FIXED );
         return static_cast<unsigned>( phase ) - 1;
     }
-
-
 };
 
 #endif // __DisjunctionConstraint_h__
-
