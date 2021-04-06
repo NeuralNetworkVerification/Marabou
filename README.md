@@ -37,6 +37,8 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 For more information about the input formats please check the
 [wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
+**NEW** A guide to Split and Conquer mode is available in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb). The Jupyter Notebook gives on overview of SnC's parameters, discusses several runtime examples and a few rules of thumb to choose parameter values.
+
 Research
 ------------------------------------------------------------------------------
 More information about publications involving Marabou can be found
@@ -197,6 +199,8 @@ So to solve a problem in SNC mode with 4 initial splits and initial timeout of 5
 ```
 build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --snc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
+
+A guide to Split and Conquer is available as a Jupyter Notebook in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb).
 
 ### Use LP Relaxation
 Marabou has an option to use LP relaxation for bound tightening.
