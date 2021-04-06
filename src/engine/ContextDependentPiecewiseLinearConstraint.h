@@ -66,6 +66,8 @@ class ITableau;
 class InputQuery;
 class String;
 
+#define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
+
 class ContextDependentPiecewiseLinearConstraint : public PiecewiseLinearConstraint
 {
 public:

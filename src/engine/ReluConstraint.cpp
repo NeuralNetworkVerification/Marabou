@@ -33,7 +33,7 @@
 #endif
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : ContextDependentPiecewiseLinearConstraint( 2u )
+    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
     , _b( b )
     , _f( f )
     , _auxVarInUse( false )
