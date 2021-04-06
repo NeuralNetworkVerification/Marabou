@@ -5,4 +5,4 @@ sphinx-rtd-theme==0.5.0
 sphinx-gallery==0.7.0
 recommonmark==0.6.0
 Pygments==2.3.1
-Pillow==7.2.0
+Pillow==8.1.1
