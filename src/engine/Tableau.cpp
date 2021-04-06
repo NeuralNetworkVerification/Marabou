@@ -2627,10 +2627,10 @@ int Tableau::getInfeasibleVar() const
     return -1;
 }
 
-SingleVarBoundsExplanator& Tableau::ExplainBound( const unsigned variable ) const
+SingleVarBoundsExplanator* Tableau::ExplainBound( const unsigned variable ) const
 {
     ASSERT( GlobalConfiguration::PROOF_CERTIFICATE && variable < _n );
-    return _boundsExplanator->returnWholeVarExplanation( variable );
+    return &_boundsExplanator->returnWholeVarExplanation( variable );
 }
 
 void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) const

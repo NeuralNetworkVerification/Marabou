@@ -39,6 +39,7 @@
 #include "Statistics.h"
 
 #include <atomic>
+#include <assert.h>
 
 #ifdef _WIN32
 #undef ERROR
@@ -537,12 +538,12 @@ private:
     /*
      Prints coefficents of Simplex equations that witness UNSAT
     */
-    void Engine::printInfeasibilityCertificate();
+    void printInfeasibilityCertificate();
 
     /*
      Updates bounds after deducing Simplex unfeasibility
     */
-    void Engine::simplexBoundsUpdate();
+    void simplexBoundsUpdate();
 
     std::vector<std::vector<double>> _initialTableau;
     std::vector<double> _initialLowerBounds;
@@ -552,13 +553,13 @@ private:
      Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
      Asserts the computed bound is epsilon close to the real one.
     */
-    void Engine::certifyInfeasibility( const double epsilon ) const;
+    void certifyInfeasibility( const double epsilon ) const;
 
     /*
      Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds
      
     */
-    double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const;
+    double getExplainedBound( const unsigned var, const bool isUpper ) const;
 
 
     /*
@@ -566,7 +567,7 @@ private:
      Separately for tightenings and actual bounds
      TODO erase upon completion?
     */
-    void Engine::validateAllBounds( const double epsilon ) const;
+    void validateAllBounds( const double epsilon ) const;
 };
 
 #endif // __Engine_h__

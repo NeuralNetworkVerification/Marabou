@@ -16,11 +16,11 @@
 
 /* Functions of SingleVarBoundsExplanator */
 SingleVarBoundsExplanator::SingleVarBoundsExplanator( const unsigned length )
-	:_length( length )
-	,_lower( length, 0 ),
-	_upper( length, 0 ),
-	_upperRecLevel( 0 ),
-	_lowerRecLevel ( 0 )
+	:_upperRecLevel( 0 )
+	,_lowerRecLevel ( 0 )
+	,_length( length )
+	,_lower( length, 0 )
+	,_upper( length, 0 )
 {
 }
 
@@ -46,8 +46,8 @@ void SingleVarBoundsExplanator::updateVarBoundExplanation( const std::vector<dou
 
 /* Functions of BoundsExplanator*/
 BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsNum )
-	:_rowsNum( rowsNum )
-	,_varsNum( varsNum )
+	:_varsNum( varsNum )
+	,_rowsNum( rowsNum )
 	,_bounds( varsNum, SingleVarBoundsExplanator( rowsNum ) )
 {
 
