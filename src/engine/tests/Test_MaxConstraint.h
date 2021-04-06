@@ -3176,7 +3176,9 @@ public:
             elements.insert( i );
 
         TestMaxConstraint max( f, elements );
-
+        BoundManager bm( context );
+        bm.initialize( 7 );
+        max.registerBoundManager( &bm );
 
         // During pre-processing we eliminate some variables
         max.eliminateVariable( 5, 7 );
@@ -3201,7 +3203,8 @@ public:
         PhaseStatus phase = max.nextFeasibleCase();
         TS_ASSERT_DIFFERS( phase, MAX_PHASE_ELIMINATED );
 
-        max.markInfeasible( phase );
+        TS_ASSERT( !max.isImplication() );
+        max.notifyUpperBound( 4, 6 ); // This should eliminate variable 4;
         TS_ASSERT( max.isImplication() );
         TS_ASSERT_EQUALS( max.nextFeasibleCase(), MAX_PHASE_ELIMINATED );
 
