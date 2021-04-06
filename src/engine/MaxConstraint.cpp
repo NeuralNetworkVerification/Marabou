@@ -28,6 +28,8 @@
  ** methods.
 **/
 
+#include "MaxConstraint.h"
+
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "IConstraintBoundTightener.h"
@@ -36,7 +38,6 @@
 #include "List.h"
 #include "MStringf.h"
 #include "MarabouError.h"
-#include "MaxConstraint.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Statistics.h"
 #include <algorithm>
@@ -143,8 +144,7 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
-    if ( ( _elements.exists( _f ) || variable != _f )
-         &&
+    if ( ( _elements.exists( _f ) || variable != _f ) &&
          ( !maxIndexSet() || _assignment.get( getMaxIndex() ) < value ) )
     {
         setMaxIndex( variable );
@@ -229,7 +229,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     // If all elements have been eliminated, set the phase of the constraint.
-    if ( _elements.size() == 0)
+    if ( _elements.empty() )
         setMaxIndex( MAX_PHASE_ELIMINATED );
 
     // There is no need to recompute the max lower bound and max index here.
@@ -556,14 +556,13 @@ bool MaxConstraint::isImplication() const
     return _elements.exists( _f ) || numFeasibleCases() == 1u;
 }
 
-
 PiecewiseLinearCaseSplit MaxConstraint::getImpliedCaseSplit() const
 {
     ASSERT( phaseFixed() );
 
     PhaseStatus phase = getPhaseStatus();
 
-    ASSERT ( phase != PHASE_NOT_FIXED );
+    ASSERT( phase != PHASE_NOT_FIXED );
 
     if ( phase == MAX_PHASE_ELIMINATED )
     {
@@ -733,4 +732,3 @@ String MaxConstraint::serializeToString() const
 
     return output;
 }
-
