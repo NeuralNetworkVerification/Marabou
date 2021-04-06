@@ -1641,9 +1641,9 @@ public:
         TS_ASSERT_EQUALS( splits.size(), elements.size() );
 
         PiecewiseLinearCaseSplit split;
-        for ( auto e : elements )
+        for ( auto c : cases )
         {
-            split = max.getCaseSplit( static_cast<PhaseStatus>( e ) );
+            split = max.getCaseSplit( c );
             TS_ASSERT_DIFFERS( std::find( splits.begin(), splits.end(), split ), splits.end() );
         }
 
