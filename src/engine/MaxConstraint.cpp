@@ -582,7 +582,6 @@ PiecewiseLinearCaseSplit MaxConstraint::getValidCaseSplit() const
 
 PiecewiseLinearCaseSplit MaxConstraint::getCaseSplit( PhaseStatus phase ) const
 {
-    ASSERT( maxIndexSet() );
     return getSplit( phaseToVariable( phase ) );
 }
 
