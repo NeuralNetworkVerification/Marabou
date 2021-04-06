@@ -16,10 +16,10 @@
  ** ABS_PHASE_POSITIVE: b > 0
  ** ABS_PHASE_NEGATIVE: b <=0
  **
- ** The constraint operates in two modes pre-processing mode, which is stores
- ** bounds locally, and context dependent mode, which is used during the search.
- ** Invoke initializeCDOs method enters the context dependent mode, and the
- ** constraint object synchronizes automatically with the central context
+ ** The constraint operates in two modes: pre-processing mode, which stores
+ ** bounds locally, and context dependent mode, used during the search.
+ ** Invoking initializeCDOs meth activates the context dependent mode, and the
+ ** constraint object synchronizes its state automatically with the central context
  ** object.
  **/
 

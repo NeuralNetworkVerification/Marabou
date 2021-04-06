@@ -15,10 +15,10 @@
  ** The constraint introduces identifiers for its PiecewiseLinearCaseSplit
  ** elements.
  **
- ** The constraint operates in two modes pre-processing mode, which is stores
+ ** The constraint operates in two modes: pre-processing mode, which stores
  ** bounds locally, and context dependent mode, which is used during the search.
- ** Invoke initializeCDOs method enters the context dependent mode, and the
- ** constraint object synchronizes automatically with the central context
+ ** Invoking initializeCDOs method activates the context dependent mode, and the
+ ** constraint object synchronizes its state automatically with the central context
  ** object.
  **/
 
