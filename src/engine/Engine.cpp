@@ -2390,7 +2390,7 @@ void Engine::certifyInfeasibility( const double epsilon ) const
 
     if ( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon || abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon || computedLower <= computedUpper)
     	printf("Certification error.\n");
-    //TODO revert upon completion
+    //TODO revert upon completing
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
     //ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
 
@@ -2464,6 +2464,7 @@ void Engine::validateAllBounds( const double epsilon ) const
             printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
         if ( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) > epsilon)
             printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+        //TODO revert upon completing
         //ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
         //ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
     }
