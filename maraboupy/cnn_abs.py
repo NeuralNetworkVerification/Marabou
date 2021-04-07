@@ -491,20 +491,21 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         vals, stats = Marabou.solve_query(ipq, verbose=False, options=mnistProp.optionsObj)
     sat = len(vals) > 0
     timedOut = stats.hasTimedOut()
-    if not sat:
-        return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
-    if not fromDumpedQuery:
-        cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
-    else:
-        assert coi
+    if fromDumpedQuery:
         with open(mnistProp.dumpDir + "originalQueryStats_" + runName + ".json", "r") as f:
             originalQueryStats = json.load(f)
         with open(mnistProp.dumpDir + "finalQueryStats_" + runName + ".json", "r") as f:
             finalQueryStats = json.load(f)
         with open(mnistProp.dumpDir + "inputVarsMapping_" + runName + ".npy", "rb") as f:            
-            inputVarsMapping = np.load(f)
+            inputVarsMapping = np.load(f, allow_pickle=True)
         with open(mnistProp.dumpDir + "outputVarsMapping_" + runName + ".npy", "rb") as f:
-            outputVarsMapping = np.load(f)
+            outputVarsMapping = np.load(f, allow_pickle=True)            
+    if not sat:            
+        return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
+    if not fromDumpedQuery:
+        cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
+    else:
+        assert coi
         cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
