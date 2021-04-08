@@ -278,11 +278,11 @@ def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapp
     if useMapping:
         lBounds = getBoundsInftyBall(xAdv, inDist)[0]
 
-        inputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig,indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping))), np.nditer(lBounds))}
-        outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0 for indOrig, indCOI in enumerate(np.nditer(np.array(outputVarsMapping)))}
+        inputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig,indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_OK"])), np.nditer(lBounds))}
+        outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0 for indOrig, indCOI in enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_OK"]))}
 
-        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping)), np.nditer(lBounds))]).reshape(xAdv.shape)
-        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping))]).reshape(outputVarsMapping.shape)
+        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_OK"]), np.nditer(lBounds))]).reshape(xAdv.shape)
+        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_OK"])]).reshape(outputVarsMapping.shape)
     else: #FIXME not compatible with case where net is an InputQuery
         inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))}
         outputDict = {o.item():valDict[o.item()] for o in np.nditer(np.array(net.outputVars))}

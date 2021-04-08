@@ -278,8 +278,8 @@ modelOrigDenseSavedName = "modelOrigDense.h5"
 modelOrigDense.save(modelOrigDenseSavedName)
 
 for i, mask in enumerate(maskList):
-    tf.keras.backend.clear_session()
     if not cfg_useDumpedQueries:
+        tf.keras.backend.clear_session()
         modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
         modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
@@ -298,7 +298,8 @@ for i, mask in enumerate(maskList):
         printLog("\n\n\n ----- Timed out in mask number {} ----- \n\n\n".format(i+1))
         continue
     if sat:
-        modelOrigDense = load_model(modelOrigDenseSavedName)
+        if not cfg_useDumpedQueries:
+            modelOrigDense = load_model(modelOrigDenseSavedName)
         isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
         printLog("Found {} CEX in mask {}/{}.".format(i+1, len(maskList), "sporious" if isSporious else "real"))        
 
@@ -315,8 +316,6 @@ else:
     startLocal = time.time()
     if not cfg_useDumpedQueries:    
         modelOrigDense = load_model(modelOrigDenseSavedName)
-    else:
-        modelOrigDense = None
     subResultAppend(resultsJson, runType="full")
     mnistProp.optionsObj._timeoutInSeconds = 0
     returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
