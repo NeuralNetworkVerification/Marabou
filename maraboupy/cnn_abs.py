@@ -197,7 +197,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
                 tf.keras.Input(shape=mnistProp.input_shape),
                 layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c1"),
                 layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
-                layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c2"),
+                layers.Conv2D(num_ch, kernel_size=(2, 2), activation="relu", name="c2"),
                 layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
                 layers.Flatten(name="f1"),
                 layers.Dense(40, activation="relu", name="fc1"),
