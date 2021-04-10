@@ -120,7 +120,9 @@ if (dumpQueries or useDumpedQueries) and not os.path.exists(dumpDirPath):
 CPUS = 8
 MEM_PER_CPU = "8G"
 #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
-commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+#clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
+clusterFlags = []
+commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--timeout", str(1000), "--dump_dir", dumpDirPath]
     
 runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath, dumpQueries, useDumpedQueries)
 
