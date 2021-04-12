@@ -72,6 +72,7 @@ parser.add_argument("--dump_queries",   action="store_true",                    
 parser.add_argument("--use_dumped_queries", action="store_true",                    default=False,                  help="Use dumped queries")
 parser.add_argument("--dump_dir",       type=str,                                   default="",                     help="Location of dumped queries")
 parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
+parser.add_argument("--validation", action="store_true",                    default=False,                  help="Use the validation DNN")
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small","toy"], default="small",          help="Which CNN size to use")
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
@@ -93,7 +94,6 @@ resultsJson = dict()
     
 cfg_freshModelOrig    = args.fresh
 cfg_noVerify          = args.no_verify
-cfg_cnnSizeChoice     = args.cnn_size
 cfg_pruneCOI          = not args.no_coi
 cfg_maskAbstract      = not args.no_mask
 cfg_propDist          = args.prop_distance
@@ -112,6 +112,8 @@ cfg_timeoutInSeconds  = args.timeout
 cfg_dumpQueries       = args.dump_queries
 cfg_useDumpedQueries  = args.use_dumped_queries
 cfg_dumpDir           = args.dump_dir
+cfg_validation        = args.validation
+cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validation")
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -134,6 +136,7 @@ resultsJson["cfg_timeoutInSeconds"]  = cfg_timeoutInSeconds
 resultsJson["cfg_dumpQueries"]       = cfg_dumpQueries
 resultsJson["cfg_useDumpedQueries"]  = cfg_useDumpedQueries
 resultsJson["cfg_dumpDir"]           = cfg_dumpDir
+resultsJson["cfg_validation"]        = cfg_validation
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
