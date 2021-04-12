@@ -182,11 +182,11 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
     savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
 
     if cfg_freshModelOrig:
-        if cnnSizeChoice == "big":
+        if cnnSizeChoice in ["big", "big_validation"]:
             num_ch = 32
-        elif cnnSizeChoice == "medium":
+        elif cnnSizeChoice in ["medium", "medium_validation"]:
             num_ch = 16
-        elif cnnSizeChoice == "small":
+        elif cnnSizeChoice in ["small", "small_validation"]:
             num_ch = 1
         elif cnnSizeChoice == "toy":
             raise Exception("Toy network is not meant to be retrained")
