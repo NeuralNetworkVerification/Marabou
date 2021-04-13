@@ -243,6 +243,8 @@ if ySecond == yMax:
     
 fName = "xAdv.png"
 printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, cfg_sampleIndex, yAdv))
+plt.figure()
+plt.imshow(np.squeeze(xAdv))
 plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
 plt.savefig(fName)
 
