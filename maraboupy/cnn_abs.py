@@ -509,17 +509,19 @@ def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="ru
         cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
-    if not fromDumpedQuery:
-        mbouPrediction = cexPrediction.argmax()
+    mbouPrediction = cexPrediction.argmax()
+    if not fromDumpedQuery: #FIXME - I need everything to work in the general and dumped mode.
         kerasPrediction = model.predict(np.array([cex])).argmax()
         if mbouPrediction != kerasPrediction:
             origM, replaceLayer = genCnnForAbsTest(cfg_freshModelOrig=False, cnnSizeChoice=mnistProp.origMSize)
             origMConvPrediction = origM.predict(np.array([cex])).argmax()
             origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
             print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
-        plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
-        plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
-        plt.savefig(fName)
+    else: #FIXME should load the modelAbs and check the prediction.
+        kerasPrediction = None
+    plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
+    plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
+    plt.savefig(fName)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
     mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")
     return True, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
