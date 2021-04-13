@@ -48,7 +48,7 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
 ####################################################################################################
 ####################################################################################################
 
-def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, dumpQueries, useDumpedQueries):
+def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
 
     TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = 12, 0, 0
     
@@ -61,7 +61,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, dumpQueries
         title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
-            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy, "--dump_queries" if dumpQueries else "", "--use_dumped_queries" if useDumpedQueries else ""])
+            runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy])
             runTitles.append(title)
             runBriefs.append("Run with abstraction policy {}.".format(policy))
 
@@ -123,8 +123,12 @@ MEM_PER_CPU = "8G"
 #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
 clusterFlags = []
 commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+if dumpQueries:
+    commonFlags.append("--dump_queries")
+if useDumpedQueries:
+    commonFlags.append("--use_dumped_queries")
     
-runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath, dumpQueries, useDumpedQueries)
+runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
 
 sbatchFiles = list()
 for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
