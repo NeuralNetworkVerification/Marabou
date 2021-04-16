@@ -13,8 +13,11 @@ tf.compat.v1.enable_v2_behavior()
 ####################################################################################################
 ####################################################################################################
 
+def globalTimeOut():
+    return 4,0,0
+
 def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
-    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = 12, 0, 0
+    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
     
     runCmds = list()
     runTitles = list()
@@ -40,7 +43,7 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
                     "compareProperties": [('VanillaCfg', 'MaskCOICfg')]}
         json.dump(jsonDict, f, indent = 4)
 
-    TIME_LIMIT = "12:00:00".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
+    TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
 
     return runCmds, runTitles, runBriefs, TIME_LIMIT
 
@@ -50,7 +53,7 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
 
 def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
 
-    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = 12, 0, 0
+    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
     
     runCmds = list()
     runTitles = list()
@@ -81,7 +84,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg]}
         json.dump(jsonDict, f, indent = 4)
 
-    TIME_LIMIT = "12:00:00".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
+    TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
 
     return runCmds, runTitles, runBriefs, TIME_LIMIT
 
