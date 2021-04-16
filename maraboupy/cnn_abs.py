@@ -257,7 +257,7 @@ def inBoundsInftyBall(x, r, p, pos=True):
     ###return np.all(np.less_equal(l,p)) and np.all(np.less_equal(p,u))
     return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u))) #FIXME shouldn't allow isclose, floating point errors?
 
-def setAdversarial(net, x, inDist, yCorrect, yBad):
+def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
     inAsNP = np.array(net.inputVars[0])
     x = x.reshape(inAsNP.shape)
     xDown, xUp = getBoundsInftyBall(x, inDist)
@@ -271,7 +271,7 @@ def setAdversarial(net, x, inDist, yCorrect, yBad):
             yCorrectVar = o.item()
         if j == yBad:
             yBadVar = o.item()
-    net.addInequality([yCorrectVar, yBadVar], [1,-1], 0) # correct - bad <= 0
+    net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack) # correct - bad <= slack
     return net
 
 def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
@@ -436,12 +436,12 @@ def setCOIBoundes(net, init):
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     return inputVarsMapping, outputVarsMapping
 
-def dumpBounds(model, xAdv, inDist, yMax, ySecond):
+def dumpBounds(model, xAdv, inDist, outSlack, yMax, ySecond):
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
     modelOnnxName = mnistProp.output_model_path(model)
     keras2onnx.save_model(modelOnnx, modelOnnxName)
     modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-    setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+    setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
     return processInputQuery(modelOnnxMarabou)
 
 def processInputQuery(net):
@@ -455,13 +455,13 @@ def setBounds(model, boundDict):
             if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
                 model.setUpperBound(i,ub)
 
-def runMarabouOnKeras(model, xAdv, inDist, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
+def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
     if not fromDumpedQuery:
         modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
         modelOnnxName = mnistProp.output_model_path(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
         modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-        setAdversarial(modelOnnxMarabou, xAdv, inDist, yMax, ySecond)
+        setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
         setBounds(modelOnnxMarabou, boundDict)
         originalQueryStats = marabouNetworkStats(modelOnnxMarabou)
         with open(mnistProp.dumpDir + "originalQueryStats_" + runName + ".json", "w") as f:
@@ -559,13 +559,13 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         return (outputDictInner == outputDict) and equality,
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
-def isCEXSporious(model, x, inDist, yCorrect, yBad, cex, sporiousStrict=False):
+def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=False):
     if not inBoundsInftyBall(x, inDist, cex):
         raise Exception("CEX out of bounds")
     prediction = model.predict(np.array([cex]))
     if not sporiousStrict:
         return prediction.argmax() == yCorrect
-    return prediction[0,yBad] < prediction[0,yCorrect]
+    return prediction[0,yBad] + outSlack < prediction[0,yCorrect]
 
 def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.SingleClassRank):
     if policy == mnistProp.Policy.AllClassRank or policy == mnistProp.Policy.AllClassRank.name:

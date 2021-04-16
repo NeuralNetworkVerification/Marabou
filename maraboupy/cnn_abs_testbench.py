@@ -78,9 +78,10 @@ parser.add_argument("--run_on",         type=str, choices=["local", "cluster"], 
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
+parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
-parser.add_argument("--timeout",        type=int,                                   default=1200,                    help="Solver timeout in seconds.")
-#parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                    help="timeoutFactor in DNC mode.")
+parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Solver timeout in seconds.")
+#parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=mnistProp.policies,       default="AllClassRank",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=False,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
@@ -97,6 +98,7 @@ cfg_noVerify          = args.no_verify
 cfg_pruneCOI          = not args.no_coi
 cfg_maskAbstract      = not args.no_mask
 cfg_propDist          = args.prop_distance
+cfg_propSlack         = args.prop_slack
 cfg_runOn             = args.run_on
 cfg_runTitle          = args.run_title
 cfg_batchDir          = args.batch_id if "batch_" + args.batch_id else ""
@@ -121,6 +123,7 @@ resultsJson["cfg_cnnSizeChoice"]     = cfg_cnnSizeChoice
 resultsJson["cfg_pruneCOI"]          = cfg_pruneCOI
 resultsJson["cfg_maskAbstract"]      = cfg_maskAbstract
 resultsJson["cfg_propDist"]          = cfg_propDist
+resultsJson["cfg_propSlack"]         = cfg_propSlack
 resultsJson["cfg_runOn"]             = cfg_runOn
 resultsJson["cfg_runTitle"]          = cfg_runTitle
 resultsJson["cfg_batchDir"]          = cfg_batchDir
@@ -254,7 +257,7 @@ resultsJson["ySecondPrediction"] = int(ySecond)
 dumpJson(resultsJson)    
 
 printLog("Started dumping bounds - used for abstraction")
-dumpBounds(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond)
+dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
 printLog("Finished dumping bounds - used for abstraction")
 if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
     with open('dumpBounds.json', 'r') as boundFile:
@@ -292,7 +295,7 @@ for i, mask in enumerate(maskList):
     printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))
-    returnVal = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, yMax, ySecond, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    returnVal = runMarabouOnKeras(modelAbs, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
     sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
@@ -305,7 +308,7 @@ for i, mask in enumerate(maskList):
     if sat:
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
-        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
+        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
         printLog("Found {} CEX in mask {}/{}.".format(i+1, len(maskList), "sporious" if isSporious else "real"))        
 
         if not isSporious:
@@ -323,7 +326,7 @@ else:
         modelOrigDense = load_model(modelOrigDenseSavedName)
     subResultAppend(resultsJson, runType="full")
     mnistProp.optionsObj._timeoutInSeconds = 0
-    returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, boundDict, "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         exit()
     sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
@@ -332,7 +335,7 @@ else:
     printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
     successful = len(maskList)
     if sat:
-        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
+        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
         printLog("Found {} CEX in full network.".format("sporious" if isSporious else "real"))
         if isSporious:
             raise Exception("Sporious CEX at full network.")
