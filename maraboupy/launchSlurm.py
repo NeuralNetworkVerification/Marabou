@@ -60,7 +60,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
     runBriefs = list()
     title2Label = dict()
 
-    for policy in mnistProp.policies:
+    for policy in mnistProp.absPolicies:
         title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
@@ -76,7 +76,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
         runBriefs.append('Run with default ("vanilla") Marabou')
 
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
-        policiesCfg = ["{}Cfg".format(policy) for policy in mnistProp.policies]        
+        policiesCfg = ["{}Cfg".format(policy) for policy in mnistProp.absPolicies]
         jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
                     "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : title2Label,
@@ -130,7 +130,7 @@ MEM_PER_CPU = "8G"
 #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
 #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
 clusterFlags = []
-commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.01), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.01), "--prop_slack", str(0.2), "--timeout", str(1000), "--dump_dir", dumpDirPath]
 if dumpQueries:
     commonFlags.append("--dump_queries")
 if useDumpedQueries:

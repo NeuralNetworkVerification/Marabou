@@ -18,6 +18,7 @@ import logging
 import matplotlib.pyplot as plt
 from enum import Enum
 import json
+import random
 
 from tensorflow.keras.models import load_model
 cfg_freshModelAbs = True
@@ -42,7 +43,8 @@ class mnistProp:
     numCex = 0
     origMSize = None
     origMDense = None
-    policies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote", "Random"]
+    absPolicies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote", "Random"]
+    policies = absPolicies + ["FindMinProvable"]
     Policy = Enum("Policy"," ".join(policies))
     optionsObj = None
     runSuffix = ""
@@ -578,6 +580,8 @@ def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Polic
         return genActivationMaskCentered(intermidModel)
     elif policy == mnistProp.Policy.Random or policy == mnistProp.Policy.Random.name:
         return genActivationMaskRandom(intermidModel)
+    elif policy == mnistProp.Policy.FindMinProvable or policy == mnistProp.Policy.FindMinProvable.name:
+        return genActivationMaskFindMinProvable(intermidModel)
     raise Exception("genActivationMask - policy not implemented:{}".format(policy))
 
 def sortActMapReverse(actMap):
@@ -643,6 +647,26 @@ def genActivationMaskRandom(intermidModel, stepSize=mnistProp.stepSize):
     maskShape = intermidModel.output_shape[1:-1]
     indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
     return genMaskByOrderedInd(indices, maskShape, stepSize=stepSize)
+
+def genActivationMaskFindMinProvable(intermidModel):
+    maskShape = intermidModel.output_shape[1:-1]
+    # [(0,5)] -> UNSAT
+    # [(0,5),(0,4)] -> UNSAT
+    # [(0,5),(0,0)] -> SAT
+    # [(0,5),(0,4),(0,6)] -> SAT
+    indices = list(product(*[range(d) for d in maskShape]))
+    zeroList = [(0,5),(0,4)]
+    indices = list(set(indices) - set(zeroList))
+    masks = list()
+    mask = np.ones(maskShape)
+    for z in zeroList:
+        mask[z] = 0
+    for i in range(4):
+        randomElement = random.choice(indices)
+        mask[randomElement] = 0
+        masks.append(mask.copy())
+        mask[randomElement] = 1
+    return masks
 
 def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
