@@ -352,8 +352,10 @@ if sat:
         print("verifyMarabou={}".format(verificationResult))
         if not verificationResult[0]:
             raise Exception("Inconsistant Marabou result, marabou double check failed")
-else:
+elif not timedOut:
     printLog("UNSAT")
+else:
+    printLog("TIMED OUT")
 
 if not timedOut:    
     resultsJson["SAT"] = sat
