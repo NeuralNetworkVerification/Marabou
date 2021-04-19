@@ -88,8 +88,36 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
 
     return runCmds, runTitles, runBriefs, TIME_LIMIT
 
-def experimentMinUnsat():
-    pass #FIXME
+def experimentFindMinProvable(numRunsPerType, commonFlags, batchDirPath):
+    TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
+    
+    runCmds = list()
+    runTitles = list()
+    runBriefs = list()
+    title2Label = dict()
+
+    policy = "FindMinProvable"
+    sample = 1
+    title2Label["{}Cfg".format(policy)] = "experiment - {}".format(policy)
+    for i in range(numRunsPerType):
+        title = "{}Cfg---{}".format(policy, i)
+        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(sample), "--policy", policy, "--no_full"])
+        runTitles.append(title)
+        runBriefs.append("Run with abstraction policy {}.".format(policy))
+
+    with open(batchDirPath + "/plotSpec.json", 'w') as f:
+        policiesCfg = ["{}Cfg".format(policy)]
+        jsonDict = {"Experiment"  : "Find Maxmimal Removable Set of Neurons",
+                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "title2Label" : title2Label,
+                    "COIRatio"    : policiesCfg,
+                    "compareProperties": list()}
+        json.dump(jsonDict, f, indent = 4)
+
+    TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
+
+    return runCmds, runTitles, runBriefs, TIME_LIMIT
+
 
 ####################################################################################################
 ####################################################################################################
@@ -97,7 +125,7 @@ def experimentMinUnsat():
 
 experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                "AbsPolicies"    : experimentAbsPolicies,
-               "minUnsat"       : experimentMinUnsat}
+               "FindMinProvable": experimentFindMinProvable}
 parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
 parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch?", required=True)
 parser.add_argument("--runs_per_type", type=int, default=50, help="Number of runs per type.")
