@@ -377,7 +377,7 @@ if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionP
         else:
             agregate = np.concatenate(agregate, argWhere, axis=0)
         argWhereStr = np.array_repr(argWhere).replace('\n', '')
-        print("mask,{},zeros={}=\n{}".format(i, argwhereStr, mask))
+        print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
     agregate = np.unique(agregate, axis=0)
     with open("zerosIndicesInMask.npy".format(i+1), "wb") as f:            
         np.save(f, agregate)
