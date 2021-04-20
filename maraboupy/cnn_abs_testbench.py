@@ -77,7 +77,7 @@ parser.add_argument("--run_on",         type=str, choices=["local", "cluster"], 
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
-parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack")
+parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier, negative makes it harder.")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
 parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Solver timeout in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
@@ -309,7 +309,7 @@ for i, mask in enumerate(maskList):
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
-        printLog("Found {} CEX in mask {}/{}.".format(i+1, len(maskList), "sporious" if isSporious else "real"))
+        printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
 
         if not isSporious:
             successful = i
@@ -371,5 +371,15 @@ printLog("Log files at {}".format(currPath))
 
 if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable.name:
     for i,mask in enumerate(maskList):
-        print("mask,{},zeros={}=\n{}".format(i,np.argwhere(mask == 0),mask))
+        argWhere    = np.argwhere(mask == 0)
+        if i == 0:
+            agregate = argWhere
+        else:
+            agregate = np.concatenate(agregate, argWhere, axis=0)
+        argWhereStr = np.array_repr(argWhere).replace('\n', '')
+        print("mask,{},zeros={}=\n{}".format(i, argwhereStr, mask))
+    agregate = np.unique(agregate, axis=0)
+    with open("zerosIndicesInMask.npy".format(i+1), "wb") as f:            
+        np.save(f, agregate)
+    printLog([tuple(agregate[i]) for i in range(agregate.shape[0])])
 
