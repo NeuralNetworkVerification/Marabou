@@ -656,13 +656,16 @@ def genActivationMaskFindMinProvable(intermidModel):
     # [(0,5),(0,4),(0,6)] -> SAT
     indices = list(product(*[range(d) for d in maskShape]))
     zeroList = [(0,5),(0,4)]
+    FailedWithZeroList = [(6,3), (9,0), (8,7), (8,1), (10,7), (11,8), (3,11), (10,5), (5,11), (2,5), (2,0), (1,9), (8,9), (8,2), (8,5), (10,4), (6,9), (4,2), (11,4), (11,1), (9,2), (2,5)] #Meaning that was SAT or TimedOut during run with [(0,5),(0,4)]
     indices = list(set(indices) - set(zeroList))
     masks = list()
     mask = np.ones(maskShape)
+    chooseFrom = set(indices) - set(FailedWithZeroList)
     for z in zeroList:
         mask[z] = 0
-    for i in range(4):
-        randomElement = random.choice(indices)
+    for i in range(4) and chooseFrom:
+        randomElement = random.choice(list(chooseFrom))
+        chooseFrom.remove(randomElement)
         mask[randomElement] = 0
         masks.append(mask.copy())
         mask[randomElement] = 1

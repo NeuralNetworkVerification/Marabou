@@ -158,7 +158,7 @@ MEM_PER_CPU = "8G"
 #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
 #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
 clusterFlags = []
-commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.01), "--prop_slack", str(0.2), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.01), "--prop_slack", str(-0.2), "--timeout", str(1000), "--dump_dir", dumpDirPath]
 if dumpQueries:
     commonFlags.append("--dump_queries")
 if useDumpedQueries:
