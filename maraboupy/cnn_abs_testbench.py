@@ -375,7 +375,7 @@ if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionP
         if i == 0:
             agregate = argWhere
         else:
-            agregate = np.concatenate(agregate, argWhere, axis=0)
+            agregate = np.concatenate((agregate, argWhere), axis=0)
         argWhereStr = np.array_repr(argWhere).replace('\n', '')
         print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
     agregate = np.unique(agregate, axis=0)
