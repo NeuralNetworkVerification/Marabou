@@ -371,6 +371,8 @@ printLog("Log files at {}".format(currPath))
 
 if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable.name:
     for i,mask in enumerate(maskList):
+        if i != successful:
+            continue
         argWhere    = np.argwhere(mask == 0)
         if i == 0:
             agregate = argWhere

@@ -652,10 +652,11 @@ def genActivationMaskFindMinProvable(intermidModel):
     maskShape = intermidModel.output_shape[1:-1]
     # [(0,5)] -> UNSAT
     # [(0,5),(0,4)] -> UNSAT
+    # [(0,5),(0,4),(1,5)] -> UNSAT
     # [(0,5),(0,0)] -> SAT
     # [(0,5),(0,4),(0,6)] -> SAT
     indices = list(product(*[range(d) for d in maskShape]))
-    zeroList = [(0,5),(0,4)]
+    zeroList = [(0,5),(0,4),(1,5),(1,4)]
     FailedWithZeroList = [] #Meaning that was SAT or TimedOut during run with [(0,5),(0,4)]
     indices = list(set(indices) - set(zeroList))
     masks = list()
@@ -672,6 +673,7 @@ def genActivationMaskFindMinProvable(intermidModel):
         masks.append(mask.copy())
         mask[randomElement] = 1
     return masks
+    #return [mask]
 
 def genSquareMask(shape, lBound, uBound):
     onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
