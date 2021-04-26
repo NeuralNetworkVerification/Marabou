@@ -115,6 +115,7 @@ cfg_useDumpedQueries  = args.use_dumped_queries
 cfg_dumpDir           = args.dump_dir
 cfg_validation        = args.validation
 cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validation")
+cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -139,6 +140,7 @@ resultsJson["cfg_dumpQueries"]       = cfg_dumpQueries
 resultsJson["cfg_useDumpedQueries"]  = cfg_useDumpedQueries
 resultsJson["cfg_dumpDir"]           = cfg_dumpDir
 resultsJson["cfg_validation"]        = cfg_validation
+resultsJson["cfg_dumpBounds"]        = cfg_dumpBounds
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -149,8 +151,8 @@ cexFromImage = False
 #mnistProp.runTitle = cfg_runTitle
 mnistProp.dumpDir = cfg_dumpDir
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
-optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_solveWithMILP, tighteningStrategy=cfg_symbolicTightening)
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
+optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     mnistProp.optionsObj = optionsLocal
 else :
@@ -371,7 +373,11 @@ printLog("Log files at {}".format(currPath))
 
 if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable.name:
     for i,mask in enumerate(maskList):
-        if i != successful:
+        if i == successful:
+            argWhere    = np.argwhere(mask == 0)
+            argWhereStr = np.array_repr(argWhere).replace('\n', '')
+            print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
+        '''if i != successful:
             continue
         argWhere    = np.argwhere(mask == 0)
         if i == 0:
@@ -383,5 +389,5 @@ if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionP
     agregate = np.unique(agregate, axis=0)
     with open("zerosIndicesInMask.npy".format(i+1), "wb") as f:            
         np.save(f, agregate)
-    printLog([tuple(agregate[i]) for i in range(agregate.shape[0])])
+    printLog([tuple(agregate[i]) for i in range(agregate.shape[0])])'''
 
