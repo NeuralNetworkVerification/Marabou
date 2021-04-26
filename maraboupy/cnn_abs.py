@@ -310,11 +310,11 @@ def setUnconnectedAsInputs(net):
     for absCons in net.absList:
         varsWithIngoingEdgesOrInputs.add(absCons[1])
     varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-    for v in varsWithoutIngoingEdges:
-        if not net.lowerBoundExists(v):
-            net.setLowerBound(v, -100000)
-        if not net.upperBoundExists(v):
-            net.setUpperBound(v,  100000)
+####    for v in varsWithoutIngoingEdges: FIXNE this isn't working
+####        if not net.lowerBoundExists(v):
+####            net.setLowerBound(v, -100000)
+####        if not net.upperBoundExists(v):
+####            net.setUpperBound(v,  100000)
     # This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
     dontKeep = set()
     for reluCons in net.reluList:
