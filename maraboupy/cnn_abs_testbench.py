@@ -115,7 +115,8 @@ cfg_useDumpedQueries  = args.use_dumped_queries
 cfg_dumpDir           = args.dump_dir
 cfg_validation        = args.validation
 cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validation")
-cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
+#cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
+cfg_dumpBounds        = True
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -257,8 +258,15 @@ resultsJson["ySecondPrediction"] = int(ySecond)
 dumpJson(resultsJson)
 
 printLog("Started dumping bounds - used for abstraction")
-dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+ipq = dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
 printLog("Finished dumping bounds - used for abstraction")
+print(ipq.getNumberOfVariables())
+if ipq.getNumberOfVariables() == 0:
+    resultsJson["SAT"] = False
+    resultsJson["Result"] = "UNSAT"
+    dumpJson(resultsJson)
+    printLog("UNSAT on first LP bound tightening")
+    exit()
 if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
     with open('dumpBounds.json', 'r') as boundFile:
         boundList = json.load(boundFile)

@@ -265,11 +265,12 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
 
     Engine engine;
     int output=-1;
+    bool result;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
         options.setOptions();
-        engine.processInputQuery(inputQuery);
+        result = engine.processInputQuery(inputQuery);
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
@@ -278,6 +279,10 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
     if(output != -1)
         restoreOutputStream(output);
 
+    if((result == false) && (engine.getExitCode() == Engine::UNSAT)){
+        engine.getInputQuery()->setNumberOfVariables( 0 );
+    }
+    
     return *(engine.getInputQuery());
 }
 
