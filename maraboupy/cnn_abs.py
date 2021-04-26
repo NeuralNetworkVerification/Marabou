@@ -242,8 +242,8 @@ def getBoundsInftyBall(x, r, pos=True):
 
 def inBoundsInftyBall(x, r, p, pos=True):
     l,u = getBoundsInftyBall(x,r,pos=pos)
-    lowerBoundCond = np.less_equal(l,p)
-    upperBoundCond = np.less_equal(p,u)
+    #lowerBoundCond = np.less_equal(l,p)
+    #upperBoundCond = np.less_equal(p,u)
     #print("lowerBoundCond={}".format(lowerBoundCond))
     #print("upperBoundCond={}".format(upperBoundCond))
 #    if not np.all(lowerBoundCond):
@@ -257,7 +257,11 @@ def inBoundsInftyBall(x, r, p, pos=True):
 #        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):
 #            print("p[ind]={}, u[ind]={}".format(p[ind], u[ind]))
     ###return np.all(np.less_equal(l,p)) and np.all(np.less_equal(p,u))
-    return np.all(np.logical_or(np.less_equal(l,p), np.isclose(l,p))) and np.all(np.logical_or(np.less_equal(p,u), np.isclose(p,u))) #FIXME shouldn't allow isclose, floating point errors?
+    geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
+    leqUp = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
+    inBounds = np.logical_and(geqLow, leqUp)
+    violations = np.logical_not(inBounds)
+    return np.all(inBounds), violations #FIXME shouldn't allow isclose, floating point errors?
 
 def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
     inAsNP = np.array(net.inputVars[0])
@@ -562,8 +566,9 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
 def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=False):
-    if not inBoundsInftyBall(x, inDist, cex):
-        raise Exception("CEX out of bounds")
+    inBounds, violations =  inBoundsInftyBall(x, inDist, cex)
+    if not inBounds:
+        raise Exception("CEX out of bounds, violations={}".format(violations.nonzero()))
     prediction = model.predict(np.array([cex]))
     if not sporiousStrict:
         return prediction.argmax() == yCorrect
