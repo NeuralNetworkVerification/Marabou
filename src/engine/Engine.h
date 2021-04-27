@@ -37,6 +37,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include "ToggleBounds.h"
 
 #include <atomic>
 #include <assert.h>
@@ -538,7 +539,7 @@ private:
     /*
      Prints coefficents of Simplex equations that witness UNSAT
     */
-    void printInfeasibilityCertificate();
+    void printLinearInfeasibilityCertificate();
 
     /*
      Updates bounds after deducing Simplex unfeasibility
@@ -546,9 +547,7 @@ private:
     void simplexBoundsUpdate();
 
     std::vector<std::vector<double>> _initialTableau;
-    std::vector<double> _initialLowerBounds;
-    std::vector<double> _initialUpperBounds;
-
+    ToggleBounds _toggleBounds;
     /*
      Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
      Asserts the computed bound is epsilon close to the real one.

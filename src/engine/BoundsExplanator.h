@@ -13,8 +13,15 @@
 #ifndef __BoundsExplanator_h__
 #define __BoundsExplanator_h__
 #include "TableauRow.h"
-#include "Vector.h"
+#include "vector"
 #include "SparseUnsortedList.h"
+#include "stack"
+#include "assert.h"
+
+struct DynamicBound{
+	std::vector<double> _bound;
+	unsigned _depth;
+};
 
 /*
   A class which encapsulates the bounds explanations of a single variable 
@@ -31,15 +38,31 @@ public:
 	/*
 	  Updates the values of the bound explanation according to newBound 
 	*/
-	void updateVarBoundExplanation( const std::vector<double>& newBound, const  bool isUpper );
+	void updateVarBoundExplanation( const DynamicBound& newBound, const  bool isUpper );
+
+	/*
+	  Returns the recursion depth in which the bound is deduced.
+	 */
+	unsigned getExplanationDepth( const bool isUpper ) const;
+
+	/*
+	 Pops elements from th stacks until element to certain depth is on top
+	 Assuming depths in stack are monotonically increasing
+	 */
+	void popUntilDepth( const unsigned depth);
+
+	/*
+	 * Adds a zero vector on top of the relevant stack
+	 */
+	void imposeBound( const unsigned depth, const bool isUpper);
 
 	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
 	unsigned _lowerRecLevel;
 
 private:
 	unsigned _length;
-	std::vector<double> _lower;
-	std::vector<double> _upper;
+	std::stack<DynamicBound> _lower;
+	std::stack<DynamicBound> _upper;
 };
 
 
@@ -88,16 +111,29 @@ private:
 	/*
 	  Upon receiving a row, extract coefficients of the original tableau's equations that creates the row
 	  It is merely the coefficients of the slack variables.
-	  Assumption - the slack variables indices are alwas the last m.
+	  Assumption - the slack variables indices are always the last m.
 	*/
 	void extractRowCoefficients( const TableauRow& row, std::vector<double>& coefficients ) const;
 
 	/*
 	Upon receiving a row given as a SparseUnsortedList, extract coefficients of the original tableau's equations that creates the row
 	It is merely the coefficients of the slack variables.
-	Assumption - the slack variables indices are alwas the last m.
+	Assumption - the slack variables indices are always the last m.
 	All coefficients are divided by -ci, the coefficient of the lhs in the row, for normalization.   
 	*/
 	void extractSparseRowCoefficients( const SparseUnsortedList& row, std::vector<double>& coefficients, double ci ) const;
+
+	/*
+	 Pops elements from all explanations stacks until element to certain depth is on top
+	 Assuming depths in stack are monotonically increasing
+	 */
+	void popAllStacksUntilDepth( const unsigned depth);
+
+	/*
+	 Imposes the zero explanation on top of a relevant stack
+	 Can be called when a split is performed
+	 */
+	void imposeNewExplanation( const unsigned index, const unsigned depth, const bool isUpper);
+
 };
 #endif // __BoundsExplanator_h__
