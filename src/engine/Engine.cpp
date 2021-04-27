@@ -1568,11 +1568,14 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         {
             ENGINE_LOG( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenLowerBound( variable, bound._value );
+            _toggleBounds.toggleLower(variable, bound._value, false );
+			//TODO impose bounds
         }
         else
         {
             ENGINE_LOG( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenUpperBound( variable, bound._value );
+			_toggleBounds.toggleUpper(variable, bound._value, false );
         }
     }
 

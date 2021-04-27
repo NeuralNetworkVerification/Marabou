@@ -320,12 +320,14 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( _statistics )
         _statistics->setCurrentTableauDimension( _m, _n );
 
-    if(GlobalConfiguration::PROOF_CERTIFICATE)
+    if( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
     	if( _boundsExplanator )
 			delete _boundsExplanator;
 
 		_boundsExplanator = new BoundsExplanator(n, m);  // Reset whenever new dimensions are set.
+		if ( !_boundsExplanator )
+			throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
 	}
 
 	// Guy: the tableau dimensions can also change in addRow(). The

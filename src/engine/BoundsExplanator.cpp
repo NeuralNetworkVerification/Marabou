@@ -35,11 +35,11 @@ void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bou
 }
 
 
-void SingleVarBoundsExplanator::updateVarBoundExplanation( const DynamicBound& newBound, const bool isUpper )
+void SingleVarBoundsExplanator::updateVarBoundExplanation(const DynamicBoundExplanation& newBound, const bool isUpper )
 {
 	assert( newBound._bound.size() == _length );
 
-	DynamicBound& temp = isUpper? _upper.top() : _lower.top();
+	DynamicBoundExplanation& temp = isUpper ? _upper.top() : _lower.top();
 	if ( newBound._depth > temp._depth )
 	{
 		isUpper? _upper.push(newBound) : _lower.push(newBound);
@@ -67,7 +67,7 @@ void SingleVarBoundsExplanator::popUntilDepth( const unsigned depth)
 
 void SingleVarBoundsExplanator::imposeBound( const unsigned depth, const bool isUpper)
 {
-	std::stack<DynamicBound>& temp = isUpper? _upper : _lower;
+	std::stack<DynamicBoundExplanation>& temp = isUpper ? _upper : _lower;
 	temp.push( {std::vector<double>(_length, 0), depth });
 }
 

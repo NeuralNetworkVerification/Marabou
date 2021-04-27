@@ -18,7 +18,7 @@
 #include "stack"
 #include "assert.h"
 
-struct DynamicBound{
+struct DynamicBoundExplanation{
 	std::vector<double> _bound;
 	unsigned _depth;
 };
@@ -38,7 +38,7 @@ public:
 	/*
 	  Updates the values of the bound explanation according to newBound 
 	*/
-	void updateVarBoundExplanation( const DynamicBound& newBound, const  bool isUpper );
+	void updateVarBoundExplanation(const DynamicBoundExplanation& newBound, const  bool isUpper );
 
 	/*
 	  Returns the recursion depth in which the bound is deduced.
@@ -61,8 +61,8 @@ public:
 
 private:
 	unsigned _length;
-	std::stack<DynamicBound> _lower;
-	std::stack<DynamicBound> _upper;
+	std::stack<DynamicBoundExplanation> _lower;
+	std::stack<DynamicBoundExplanation> _upper;
 };
 
 
