@@ -310,7 +310,7 @@ def setUnconnectedAsInputs(net):
     for absCons in net.absList:
         varsWithIngoingEdgesOrInputs.add(absCons[1])
     varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-####    for v in varsWithoutIngoingEdges: FIXNE this isn't working
+####    for v in varsWithoutIngoingEdges: FIXME this isn't working
 ####        if not net.lowerBoundExists(v):
 ####            net.setLowerBound(v, -100000)
 ####        if not net.upperBoundExists(v):
@@ -456,10 +456,11 @@ def processInputQuery(net):
 def setBounds(model, boundDict):
     if boundDict:
         for i, (lb, ub) in boundDict.items():
-            if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
-                model.setLowerBound(i,lb)
-            if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
-                model.setUpperBound(i,ub)
+            if i < model.numVars:
+                if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
+                    model.setLowerBound(i,lb)
+                if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
+                    model.setUpperBound(i,ub)
 
 def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
     if not fromDumpedQuery:
@@ -511,7 +512,7 @@ def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, r
     if not fromDumpedQuery:
         cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     else:
-        assert coi
+        assert coi #FIXME sat and Full isn't working now.
         cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
@@ -661,7 +662,7 @@ def genActivationMaskFindMinProvable(intermidModel):
     # [(0,5),(0,0)] -> SAT
     # [(0,5),(0,4),(0,6)] -> SAT
     indices = list(product(*[range(d) for d in maskShape]))
-    zeroList = [(0,5),(0,4),(1,5),(1,4)]
+    zeroList = [(0,5),(0,4),(1,5),(1,4),(10,9)]
     FailedWithZeroList = [] #Meaning that was SAT or TimedOut during run with [(0,5),(0,4)]
     indices = list(set(indices) - set(zeroList))
     masks = list()
