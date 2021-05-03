@@ -145,7 +145,7 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 {
     if ( ( _elements.exists( _f ) || variable != _f ) &&
-         ( !maxIndexSet() || _assignment.get( getMaxIndex() ) < value ) )
+         ( !maxIndexSet() || !_assignment.exists( getMaxIndex() ) || _assignment.get( getMaxIndex() ) < value ) )
     {
         setMaxIndex( variable );
     }
