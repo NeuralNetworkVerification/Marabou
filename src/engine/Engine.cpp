@@ -220,9 +220,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )   // TG: Call SMT Core. Case splits happen here.
+            if ( _smtCore.needToSplit() )
             {
-                _smtCore.performSplit();    // TG: Call SMT Core. Case splits happen here.
+                _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
             }
