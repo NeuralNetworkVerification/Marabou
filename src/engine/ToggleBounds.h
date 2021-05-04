@@ -30,15 +30,21 @@ public:
 	double getLowerBound( const unsigned index ) const;
 
 	/*
-		Toggles upper bound between input and split
+		Toggles upper bound between input and split, with specification of new bound.
 	 */
 	void toggleUpper( const unsigned index, const double value, const bool isInput );
 
 
 	/*
-		Toggles lower bound between input and split
+		Toggles lower bound between input and split, with specification of new bound.
 	 */
 	void toggleLower( const unsigned index, const double value, const bool isInput );
+
+	/*
+		Toggles a bound to be in input mode.
+ 	*/
+	void revertBoundToInput( const unsigned index, const bool isUpper );
+
 
 private:
 	unsigned _length;

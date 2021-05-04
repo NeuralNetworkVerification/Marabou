@@ -567,6 +567,11 @@ private:
      TODO erase upon completion?
     */
     void validateAllBounds( const double epsilon ) const;
+
+    /*
+      Reverts all toggling of a split
+     */
+    void revertDynamicBounds( const PiecewiseLinearCaseSplit& split );
 };
 
 #endif // __Engine_h__

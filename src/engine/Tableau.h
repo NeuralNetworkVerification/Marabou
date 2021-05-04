@@ -674,8 +674,17 @@ private:
     */
     void updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned varIndex ) const;
 
+	/*
+	 Stacks a zero explanation of a bound, with specified variable, bound type and decision level
+	 */
+    void stackBoundExplanation( const unsigned index, const unsigned depth, const bool isUpper );
 
-    /*
+	/*
+		Pops all explanation in boundsExplanator with decision level >= depth
+	 */
+	void popAllBoundsExplanations( const unsigned depth );
+
+	/*
       Explanator of all bounds 
     */
     BoundsExplanator* _boundsExplanator;

@@ -311,13 +311,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 {
                     printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
-                    if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                    {
-                        // Certification relevant to simplex failure
-						printLinearInfeasibilityCertificate();
-                        validateAllBounds( 0.0375 );
-                        certifyInfeasibility( 0.01 );
-                    }     
                 }
                 _exitCode = Engine::UNSAT;
                 return false;
@@ -519,8 +512,13 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            if( GlobalConfiguration::PROOF_CERTIFICATE ) 
-                simplexBoundsUpdate();
+            if( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				simplexBoundsUpdate();
+				printLinearInfeasibilityCertificate();
+				//validateAllBounds( 0.0375 );
+				certifyInfeasibility( 0.01 );
+			}
             throw InfeasibleQueryException();
         }
     }
@@ -1556,26 +1554,33 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 
     adjustWorkMemorySize();
-
+	// In case that the split is yet to be added to the _smtCore stack. add one depth beforehand
+	unsigned isTop = _smtCore.isTopActiveSplit(split)? 0 : 1;
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
-
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
-
+		//TODO fix BUG when calling from restorePrecision, a bound can be applied twice in targetSplits
         if ( bound._type == Tightening::LB )
         {
             ENGINE_LOG( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenLowerBound( variable, bound._value );
-            _toggleBounds.toggleLower(variable, bound._value, false );
-			//TODO impose bounds
+			if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				_toggleBounds.toggleLower( variable, bound._value, false );
+				_tableau->stackBoundExplanation( variable, _smtCore.getStackDepth() + isTop, false );
+			}
         }
         else
         {
             ENGINE_LOG( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenUpperBound( variable, bound._value );
-			_toggleBounds.toggleUpper(variable, bound._value, false );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				_toggleBounds.toggleUpper( variable, bound._value, false );
+				_tableau->stackBoundExplanation( variable, _smtCore.getStackDepth() + isTop, true );
+			}
         }
     }
 
@@ -1657,7 +1662,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
-        applySplit( validSplit );
+		applySplit( validSplit );
         ++_numPlConstraintsDisabledByValidSplits;
 
         return true;
@@ -2388,9 +2393,9 @@ void Engine::certifyInfeasibility( const double epsilon ) const
 {
     int var = _tableau->getInfeasibleVar();
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
-
-    if ( abs( computedUpper - _tableau->getUpperBound( var ) ) > epsilon || abs( computedLower - _tableau->getLowerBound( var ) ) > epsilon || computedLower <= computedUpper)
-    	printf("Certification error.\n");
+	// abs( computedUpper - _tableau->getUpperBound( var ) ) > epsilon || abs( computedLower - _tableau->getLowerBound( var ) ) > epsilon ||
+    if (  computedLower <= computedUpper)
+    	printf("Certification error. %.5lf\n", epsilon);
     //TODO revert upon completing
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
     //ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
@@ -2415,7 +2420,7 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
         if ( !FloatUtils::isZero( expl[i] ) )
             allZeros = false;
     if ( allZeros )
-        return isUpper? _toggleBounds.getUpperBound(var) : _toggleBounds.getLowerBound(var);
+        return isUpper? _toggleBounds.getUpperBound( var ) : _toggleBounds.getLowerBound( var );
 
     // Create linear combination of original rows implied from explanation
     std::vector<double> explanationRowsCombination = std::vector<double>( n, 0 );
@@ -2443,9 +2448,9 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
     {
         temp = explanationRowsCombination[i];
         if ( isUpper )
-            temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getUpperBound(i) : _toggleBounds.getLowerBound(i);
+            temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getUpperBound( i ) : _toggleBounds.getLowerBound( i );
         else
-            temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getLowerBound(i) : _toggleBounds.getUpperBound(i);
+            temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getLowerBound( i ) : _toggleBounds.getUpperBound( i );
         derived_bound += temp;
     }
 
@@ -2469,4 +2474,13 @@ void Engine::validateAllBounds( const double epsilon ) const
         //ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
         //ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
     }
+}
+
+void Engine::revertDynamicBounds( const PiecewiseLinearCaseSplit& split )
+{
+	for (auto bound : split.getBoundTightenings())
+	{
+		_toggleBounds.revertBoundToInput( bound._variable, bound._type == Tightening::UB );
+	}
+	_tableau->popAllBoundsExplanations( _smtCore.getStackDepth() );
 }

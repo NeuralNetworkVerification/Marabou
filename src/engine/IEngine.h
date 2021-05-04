@@ -96,6 +96,11 @@ public:
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
 
+    /*
+      Reverts all toggling of a split
+     */
+    virtual void revertDynamicBounds( const PiecewiseLinearCaseSplit& split ) = 0;
+
 };
 
 #endif // __IEngine_h__

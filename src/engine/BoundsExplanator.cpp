@@ -57,21 +57,22 @@ unsigned SingleVarBoundsExplanator::getExplanationDepth(const bool isUpper) cons
 
 void SingleVarBoundsExplanator::popUntilDepth( const unsigned depth)
 {
-	while(_upper.top()._depth > depth)
+	while(_upper.top()._depth >= depth)
 		_upper.pop();
 
-	while(_lower.top()._depth > depth)
+	while(_lower.top()._depth >= depth)
 		_lower.pop();
 }
 
 
 void SingleVarBoundsExplanator::imposeBound( const unsigned depth, const bool isUpper)
 {
+	assert( depth > ( isUpper? _upper.top()._depth : _lower.top()._depth ) ); //Maintain decision levels in stack monotonically increasing
 	std::stack<DynamicBoundExplanation>& temp = isUpper ? _upper : _lower;
 	temp.push( {std::vector<double>(_length, 0), depth });
 }
 
-/* Functions of BoundsExplanator*/
+/* Functions of BoundsExplanator */
 BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsNum )
 	:_varsNum( varsNum )
 	,_rowsNum( rowsNum )
@@ -129,7 +130,7 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 		_bounds[var]._upperRecLevel = maxLevel;
 	else
 		_bounds[var]._lowerRecLevel = maxLevel;
-	printf("Recursion level update: %d  of var %d\n", maxLevel, var);
+	//printf("Recursion level update: %d  of var %d\n", maxLevel, var); //TODO delete
 
 
 	tempBound.clear();
@@ -246,7 +247,7 @@ void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& r
 void BoundsExplanator::popAllStacksUntilDepth( const unsigned depth)
 {
 	for (SingleVarBoundsExplanator expl : _bounds)
-		expl.popUntilDepth(depth);
+		expl.popUntilDepth( depth );
 }
 
 void BoundsExplanator::imposeNewExplanation( const unsigned index, const unsigned depth, const bool isUpper)

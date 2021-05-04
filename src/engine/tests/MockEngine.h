@@ -190,6 +190,10 @@ public:
         else
             return NULL;
     }
+
+    void revertDynamicBounds( const PiecewiseLinearCaseSplit& /**/)
+	{
+	}
 };
 
 #endif // __MockEngine_h__

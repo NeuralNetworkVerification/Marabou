@@ -325,7 +325,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     	if( _boundsExplanator )
 			delete _boundsExplanator;
 
-		_boundsExplanator = new BoundsExplanator(n, m);  // Reset whenever new dimensions are set.
+		_boundsExplanator = new BoundsExplanator(_n, _m);  // Reset whenever new dimensions are set.
 		if ( !_boundsExplanator )
 			throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
 	}
@@ -2678,6 +2678,17 @@ double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) con
     return bound;
 }
 
+
+void  Tableau::stackBoundExplanation( const unsigned index, const unsigned depth, const bool isUpper )
+{
+	_boundsExplanator->imposeNewExplanation(index, depth, isUpper);
+}
+
+
+void Tableau::popAllBoundsExplanations( const unsigned depth )
+{
+	 _boundsExplanator->popAllStacksUntilDepth(depth);
+}
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
