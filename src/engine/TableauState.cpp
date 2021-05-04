@@ -33,6 +33,7 @@ TableauState::TableauState()
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
     , _basisFactorization( NULL )
+    ,_boundsExplanator( NULL )
 {
 }
 
@@ -133,6 +134,12 @@ TableauState::~TableauState()
         delete _basisFactorization;
         _basisFactorization = NULL;
     }
+
+	if ( _boundsExplanator )
+	{
+		delete _boundsExplanator;
+		_boundsExplanator = NULL;
+	}
 }
 
 void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle )
@@ -205,6 +212,10 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m, oracle );
     if ( !_basisFactorization )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
+
+    _boundsExplanator = new BoundsExplanator( n, m );
+	if ( !_boundsExplanator )
+		throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
 }
 
 //

@@ -18,10 +18,6 @@
 #include "stack"
 #include "assert.h"
 
-struct DynamicBoundExplanation{
-	std::vector<double> _bound;
-	unsigned _depth;
-};
 
 /*
   A class which encapsulates the bounds explanations of a single variable 
@@ -38,31 +34,20 @@ public:
 	/*
 	  Updates the values of the bound explanation according to newBound 
 	*/
-	void updateVarBoundExplanation(const DynamicBoundExplanation& newBound, const  bool isUpper );
+	void updateVarBoundExplanation(const std::vector<double>& newBound, const  bool isUpper );
 
 	/*
-	  Returns the recursion depth in which the bound is deduced.
+	 * Deep copy of SingleVarBoundsExplanator
 	 */
-	unsigned getExplanationDepth( const bool isUpper ) const;
-
-	/*
-	 Pops elements from th stacks until element to certain depth is on top
-	 Assuming depths in stack are monotonically increasing
-	 */
-	void popUntilDepth( const unsigned depth);
-
-	/*
-	 * Adds a zero vector on top of the relevant stack
-	 */
-	void imposeBound( const unsigned depth, const bool isUpper);
+	SingleVarBoundsExplanator& operator=(const SingleVarBoundsExplanator& other);
 
 	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
 	unsigned _lowerRecLevel;
 
 private:
 	unsigned _length;
-	std::stack<DynamicBoundExplanation> _lower;
-	std::stack<DynamicBoundExplanation> _upper;
+	std::vector<double> _lower;
+	std::vector<double> _upper;
 };
 
 
@@ -98,18 +83,11 @@ public:
 	*/
 	void updateBoundExplanationSparse( const SparseUnsortedList& row, const bool isUpper, const unsigned var );
 
-
 	/*
-	 Pops elements from all explanations stacks until element to certain depth is on top
-	 Assuming depths in stack are monotonically increasing
+	 * Copies all elements of other BoundsExplanator
 	 */
-	void popAllStacksUntilDepth( const unsigned depth);
+	BoundsExplanator& operator=(const BoundsExplanator& other);
 
-	/*
-	 Imposes the zero explanation on top of a relevant stack
-	 Can be called when a split is performed
-	 */
-	void imposeNewExplanation( const unsigned index, const unsigned depth, const bool isUpper);
 
 private:
 	unsigned _varsNum;

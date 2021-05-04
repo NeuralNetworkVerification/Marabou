@@ -178,9 +178,6 @@ bool SmtCore::popSplit()
         _statistics->incNumVisitedTreeStates();
     }
 
-	if ( GlobalConfiguration::PROOF_CERTIFICATE )
-		_engine->revertDynamicBounds( _stack.back()->_activeSplit );
-
     // Remove any entries that have no alternatives
     String error;
     while ( _stack.back()->_alternativeSplits.empty() )
@@ -194,7 +191,6 @@ bool SmtCore::popSplit()
 
         delete _stack.back()->_engineState;
         delete _stack.back();
-        _stack.popBack();
         _stack.popBack();
 
         if ( _stack.empty() )
@@ -455,18 +451,4 @@ bool SmtCore::pickSplitPLConstraint()
     if ( _needToSplit )
         _constraintForSplitting = _engine->pickSplitPLConstraint();
     return _constraintForSplitting != NULL;
-}
-
-bool SmtCore::isTopActiveSplit ( const PiecewiseLinearCaseSplit &split )
-{
-	if ( _stack.empty() )
-		return false;
-	if ( split == _stack.back()->_activeSplit )
-		return true;
-
-	for (auto impSplit : _stack.back()->_impliedValidSplits)
-		if (impSplit == split)
-			return true;
-
-	return false;
 }

@@ -208,7 +208,7 @@ void Tableau::freeMemoryIfNeeded()
         _workN = NULL;
     }
 
-    if (_boundsExplanator)
+    if ( _boundsExplanator )
     {
         delete _boundsExplanator;
         _boundsExplanator = NULL;
@@ -1648,6 +1648,10 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store the merged variables
     state._mergedVariables = _mergedVariables;
+
+    // Store bounds explanations
+    if ( GlobalConfiguration::PROOF_CERTIFICATE )
+		state._boundsExplanator->operator=(*_boundsExplanator) ;
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1690,8 +1694,13 @@ void Tableau::restoreState( const TableauState &state )
     // Restore the _boundsValid indicator
     _boundsValid = state._boundsValid;
 
-    // Restore the merged varaibles
+    // Restore the merged variables
     _mergedVariables = state._mergedVariables;
+
+    // Restore bounds explanations
+    if( GlobalConfiguration::PROOF_CERTIFICATE )
+		*_boundsExplanator = *state._boundsExplanator;
+
 
     computeAssignment();
     _costFunctionManager->initialize();
@@ -2678,17 +2687,6 @@ double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) con
     return bound;
 }
 
-
-void  Tableau::stackBoundExplanation( const unsigned index, const unsigned depth, const bool isUpper )
-{
-	_boundsExplanator->imposeNewExplanation(index, depth, isUpper);
-}
-
-
-void Tableau::popAllBoundsExplanations( const unsigned depth )
-{
-	 _boundsExplanator->popAllStacksUntilDepth(depth);
-}
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

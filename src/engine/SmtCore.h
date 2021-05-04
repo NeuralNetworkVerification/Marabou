@@ -132,11 +132,6 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
-    /*
-      Return true iff the split is the active split of the top stack entry.
-     */
-    bool isTopActiveSplit ( const PiecewiseLinearCaseSplit &split );
-
 private:
     /*
       Valid splits that were implied by level 0 of the stack.

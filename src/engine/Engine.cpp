@@ -1554,8 +1554,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     }
 
     adjustWorkMemorySize();
-	// In case that the split is yet to be added to the _smtCore stack. add one depth beforehand
-	unsigned isTop = _smtCore.isTopActiveSplit(split)? 0 : 1;
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
     for ( auto &bound : bounds )
@@ -1567,20 +1565,15 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             ENGINE_LOG( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenLowerBound( variable, bound._value );
 			if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			{
 				_toggleBounds.toggleLower( variable, bound._value, false );
-				_tableau->stackBoundExplanation( variable, _smtCore.getStackDepth() + isTop, false );
-			}
         }
         else
         {
             ENGINE_LOG( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenUpperBound( variable, bound._value );
 			if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			{
 				_toggleBounds.toggleUpper( variable, bound._value, false );
-				_tableau->stackBoundExplanation( variable, _smtCore.getStackDepth() + isTop, true );
-			}
+
         }
     }
 
@@ -2346,21 +2339,23 @@ void Engine::printLinearInfeasibilityCertificate()
 
     printf( "Found a variable with infeasible bounds: x%d\n", var );
     unsigned m = _tableau->getM();
-    SingleVarBoundsExplanator certificate = *_tableau->ExplainBound( var );
+    SingleVarBoundsExplanator* certificate = new SingleVarBoundsExplanator( m );
+    *certificate = *_tableau->ExplainBound( var );
     std::vector<double> expl = std::vector<double>( m, 0 ); 
-    certificate.getVarBoundExplanation( expl, true );
+    certificate->getVarBoundExplanation( expl, true );
 
     printf( "Upper bound explanation:\n[" );
     for ( unsigned i = 0; i < m; ++i )
         printf( "%.2lf ,", expl[i] );
     printf( "]\n" );
 
-    certificate.getVarBoundExplanation( expl, false );
+    certificate->getVarBoundExplanation( expl, false );
     printf( "Lower bound explanation:\n[" );
     for ( unsigned i = 0; i < m; ++i )
         printf( "%.2lf ,", expl[i] );
     printf( "]\n" );
     expl.clear();
+	delete certificate;
 }
 
 void Engine::simplexBoundsUpdate()
@@ -2407,12 +2402,14 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 {
     unsigned n = _tableau->getN(), m = _tableau->getM();
     double derived_bound = 0, scalar = 0, c = 0, temp = 0;
-    SingleVarBoundsExplanator certificate = *_tableau->ExplainBound( var );
+
+	SingleVarBoundsExplanator* certificate = new SingleVarBoundsExplanator( m );
+	*certificate = *_tableau->ExplainBound( var );
 
     // Retrieve bound explanation
     std::vector<double> expl = std::vector<double>( m, 0 );
-    certificate.getVarBoundExplanation( expl, isUpper );
-
+    certificate->getVarBoundExplanation( expl, isUpper );
+	delete certificate;
  
     // If explanation is all zeros, return original bound
     bool allZeros = true;
@@ -2474,13 +2471,4 @@ void Engine::validateAllBounds( const double epsilon ) const
         //ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
         //ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
     }
-}
-
-void Engine::revertDynamicBounds( const PiecewiseLinearCaseSplit& split )
-{
-	for (auto bound : split.getBoundTightenings())
-	{
-		_toggleBounds.revertBoundToInput( bound._variable, bound._type == Tightening::UB );
-	}
-	_tableau->popAllBoundsExplanations( _smtCore.getStackDepth() );
 }

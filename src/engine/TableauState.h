@@ -119,6 +119,11 @@ public:
       extracting a solution for x, we should read the value of y.
      */
     Map<unsigned, unsigned> _mergedVariables;
+
+    /*
+     * Explanator for all bounds
+     */
+    BoundsExplanator *_boundsExplanator;
 };
 
 #endif // __TableauState_h__

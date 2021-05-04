@@ -189,8 +189,7 @@ public:
     virtual void updateExplanation( const TableauRow& row, const bool isUpper ) const = 0;
     virtual void updateExplanation( const TableauRow& row, const bool isUpper, unsigned varIndex ) const = 0;
     virtual void updateExplanation(const SparseUnsortedList& row, const bool isUpper, unsigned varIndex) const = 0;
-    virtual void stackBoundExplanation( const unsigned index, const unsigned depth, const bool isUpper ) = 0;
-	virtual void popAllBoundsExplanations( const unsigned depth ) = 0;
+
 
    
 };
