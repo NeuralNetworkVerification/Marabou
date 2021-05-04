@@ -40,6 +40,7 @@ public:
     ~MILPFormulator();
 
     void optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigned, Layer *> &layers, unsigned targetIndex );
     void optimizeBoundsWithIncrementalMILPEncoding( const Map<unsigned, Layer *> &layers );
 
     /*

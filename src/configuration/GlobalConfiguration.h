@@ -223,6 +223,7 @@ public:
     */
     static const unsigned GUROBI_NUMBER_OF_THREADS;
     static const bool GUROBI_LOGGING;
+    static const bool LP_TIGHTENING_AFTER_SPLIT;
 #endif // ENABLE_GUROBI
 
     /*

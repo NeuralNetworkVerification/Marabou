@@ -49,6 +49,7 @@ public:
       constructed from scratch
     */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers, unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
 
     /*

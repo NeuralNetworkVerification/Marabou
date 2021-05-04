@@ -202,16 +202,20 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 applyAllValidConstraintCaseSplits();
             }
 
+            // If true, enter a new subproblem
             if ( splitJustPerformed )
             {
-                // TG: for input layer
+                // Tighten bounds of a first hidden layer with MILP solver
+                performMILPSolverBoundedTighteningForFirstOrOut( true );
                 do
                 {
-                    
-                    performSymbolicBoundTightening();   // TG: not modify
+                    performSymbolicBoundTightening();
                 }
-                while ( applyAllValidConstraintCaseSplits() );  // TG:
-                // TG: for output layer.
+                while ( applyAllValidConstraintCaseSplits() );
+
+                // Tighten bounds of an output layer with MILP solver
+                performMILPSolverBoundedTighteningForFirstOrOut( false );
+
                 splitJustPerformed = false;
             }
 
@@ -1178,6 +1182,56 @@ void Engine::performMILPSolverBoundedTightening()
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
             _networkLevelReasoner->iterativePropagation();
             break;
+        case MILPSolverBoundTighteningType::NONE:
+            return;
+        }
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
+}
+
+void Engine::performMILPSolverBoundedTighteningForFirstOrOut( bool firstLayer )
+{
+    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() && GlobalConfiguration::LP_TIGHTENING_AFTER_SPLIT )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+
+        switch ( Options::get()->getMILPSolverBoundTighteningType() )
+        {
+        case MILPSolverBoundTighteningType::LP_RELAXATION:
+        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
+            if ( firstLayer )
+            {
+                _networkLevelReasoner->lpRelaxation( 1 );
+            }
+            else
+            {
+                _networkLevelReasoner->lpRelaxation( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+            }
+            break;
+
+        case MILPSolverBoundTighteningType::MILP_ENCODING:
+        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
+            if ( firstLayer )
+            {
+                _networkLevelReasoner->MILPTigheningForOneLayer( 1 );
+            }
+            else
+            {
+                _networkLevelReasoner->MILPTigheningForOneLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+            }
+            break;
+
+        case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:
             return;
         }
