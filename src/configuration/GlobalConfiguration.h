@@ -217,11 +217,7 @@ public:
     */
     static const unsigned DNC_DEPTH_THRESHOLD;
 
-    /*Toggle bound tightening on or off
-    */
-    static const bool BOUND_TIGHTENING;
-
-    /*Provide proof certificate
+    /* Provide proof certificate
     */
     static const bool PROOF_CERTIFICATE;
 

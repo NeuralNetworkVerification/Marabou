@@ -95,6 +95,7 @@ public:
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
+
 };
 
 #endif // __IEngine_h__

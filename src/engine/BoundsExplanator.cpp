@@ -168,14 +168,14 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 
 void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& row, const bool isUpper, const unsigned var )
 {
-	ASSERT( var < _varsNum );
+	assert( var < _varsNum );
 	bool tempUpper;
 	double curCoefficient, ci = 0;
 	for ( const auto& entry : row )
 		if ( entry._index == var )
 			ci = entry._value;
 
-	ASSERT( ci );
+	assert( ci );
 
 	std::vector<double> rowCoefficients = std::vector<double>( _rowsNum, 0 );
 	std::vector<double> sum = std::vector<double>( _rowsNum, 0 );

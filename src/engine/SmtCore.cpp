@@ -197,7 +197,6 @@ bool SmtCore::popSplit()
             return false;
     }
 
-
     if ( checkSkewFromDebuggingSolution() )
     {
         // Pops should not occur from a compliant stack!

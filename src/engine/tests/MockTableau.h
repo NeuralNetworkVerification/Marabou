@@ -627,14 +627,6 @@ public:
     {
     	return NULL;
     }
-
-	void stackBoundExplanation( const unsigned /*index*/, const unsigned /*depth*/, const bool /*isUpper*/ )
-	{
-	}
-
-	void popAllBoundsExplanations( const unsigned /*depth*/ )
-	{
-	}
 };
 
 #endif // __MockTableau_h__
