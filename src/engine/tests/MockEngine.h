@@ -191,6 +191,10 @@ public:
             return NULL;
     }
 
+	void revertOriginalBounds( const PiecewiseLinearCaseSplit& /*split*/ )
+	{
+
+	}
 };
 
 #endif // __MockEngine_h__

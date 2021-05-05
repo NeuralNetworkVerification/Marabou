@@ -568,6 +568,10 @@ private:
     */
     void validateAllBounds( const double epsilon ) const;
 
+    /*
+     * Reverts all bounds in split to be as input bounds again
+     */
+	void revertOriginalBounds( const PiecewiseLinearCaseSplit& split );
 };
 
 #endif // __Engine_h__

@@ -1,4 +1,3 @@
-
 /*********************                                                        */
 /*! \file MockTableau.h
  ** \verbatim

@@ -95,7 +95,10 @@ public:
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
-
+    /*
+     * Reverts original bounds imposed by a split
+     */
+	virtual void revertOriginalBounds( const PiecewiseLinearCaseSplit& split ) = 0;
 };
 
 #endif // __IEngine_h__

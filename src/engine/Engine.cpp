@@ -2341,13 +2341,13 @@ void Engine::printLinearInfeasibilityCertificate()
 
     printf( "Upper bound explanation:\n[" );
     for ( unsigned i = 0; i < m; ++i )
-        printf( "%.2lf ,", expl[i] );
+        printf( "%.3lf ,", expl[i] );
     printf( "]\n" );
 
     certificate->getVarBoundExplanation( expl, false );
     printf( "Lower bound explanation:\n[" );
     for ( unsigned i = 0; i < m; ++i )
-        printf( "%.2lf ,", expl[i] );
+        printf( "%.3lf ,", expl[i] );
     printf( "]\n" );
     expl.clear();
 	delete certificate;
@@ -2385,7 +2385,7 @@ void Engine::certifyInfeasibility( const double epsilon ) const
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
 	// abs( computedUpper - _tableau->getUpperBound( var ) ) > epsilon || abs( computedLower - _tableau->getLowerBound( var ) ) > epsilon ||
     if (  computedLower <= computedUpper)
-    	printf("Certification error. %.5lf\n", epsilon);
+    	printf("Certification error. %.5lf, %.5lf\n", computedUpper - computedLower ,epsilon);
     //TODO revert upon completing
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
     //ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
@@ -2435,7 +2435,7 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
     explanationRowsCombination[var] = 0;
     scalar /= -c;
 
-    // Set the  bound derived from the linear combination, using original bounds.
+    // Set the bound derived from the linear combination, using original bounds.
     for ( unsigned i = 0; i < n; ++i )
     {
         temp = explanationRowsCombination[i];
@@ -2466,4 +2466,11 @@ void Engine::validateAllBounds( const double epsilon ) const
         //ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
         //ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
     }
+}
+
+
+void Engine::revertOriginalBounds( const PiecewiseLinearCaseSplit& split )
+{
+	for (auto bound : split.getBoundTightenings())
+		_toggleBounds.revertBoundToInput( bound._variable, bound._type == Tightening::UB );
 }

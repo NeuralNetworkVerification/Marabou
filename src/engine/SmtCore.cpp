@@ -178,6 +178,9 @@ bool SmtCore::popSplit()
         _statistics->incNumVisitedTreeStates();
     }
 
+	if ( GlobalConfiguration::PROOF_CERTIFICATE )
+		_engine->revertOriginalBounds( _stack.back()->_activeSplit );
+
     // Remove any entries that have no alternatives
     String error;
     while ( _stack.back()->_alternativeSplits.empty() )
