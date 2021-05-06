@@ -310,13 +310,16 @@ def setUnconnectedAsInputs(net):
     for absCons in net.absList:
         varsWithIngoingEdgesOrInputs.add(absCons[1])
     varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-####    for v in varsWithoutIngoingEdges: FIXME this isn't working
-####        if not net.lowerBoundExists(v):
+    print("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
+    for v in varsWithoutIngoingEdges: #FIXME this isn't working
+        if not net.lowerBoundExists(v):
+            print("inaccessible w/o lower bounds: {}".format(v))
 ####            net.setLowerBound(v, -100000)
-####        if not net.upperBoundExists(v):
+        if not net.upperBoundExists(v):
+            print("inaccessible w/o upper bounds: {}".format(v))            
 ####            net.setUpperBound(v,  100000)
-    # This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
-    dontKeep = set()
+    '''# This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
+    #dontKeep = set()
     for reluCons in net.reluList:
         if reluCons[0] in varsWithoutIngoingEdges:
             varsWithoutIngoingEdges.remove(reluCons[0])
@@ -326,7 +329,7 @@ def setUnconnectedAsInputs(net):
             auxEq.addendList = [(1, reluCons[0]), (-1, auxVar)]
             net.equList.append(auxEq)
             net.numVars += 1
-            varsWithoutIngoingEdges.add(auxVar)
+            varsWithoutIngoingEdges.add(auxVar)'''
     net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
     #    if reluCons[0] in varsWithoutIngoingEdges:
     #        varsWithoutIngoingEdges.remove(reluCons[0])
@@ -348,7 +351,8 @@ def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remov
     varSetDict = {v:i for i,v in enumerate(varSetList)}
     assert varSet == set(varSetDict.keys())
     tr = lambda v: varSetDict[v] if v in varSetDict else -1
-
+    varsMapping = {v : tr(v) for v in range(net.numVars)}
+    
     if keepSet:
         for vin,vout in net.reluList:
             assert (vin not in varSet) == (vout not in varSet)
@@ -388,7 +392,7 @@ def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remov
     net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
     net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
     net.numVars = len(varSetList)
-    return inputVarsMapping, outputVarsMapping
+    return inputVarsMapping, outputVarsMapping, varsMapping
     
 def setCOIBoundes(net, init):
 
@@ -425,7 +429,7 @@ def setCOIBoundes(net, init):
 
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
 
-    inputVarsMapping, outputVarsMapping = removeRedundantVariables(net, reach)
+    inputVarsMapping, outputVarsMapping, varsMapping = removeRedundantVariables(net, reach)
     for eq in net.equList:
         for w,v in eq.addendList:
             if v > net.numVars:
@@ -440,7 +444,7 @@ def setCOIBoundes(net, init):
     print("len(net.inputVars)={}".format(len(net.inputVars)))
     print("len(net.outputVars)={}".format(len(net.outputVars)))
     print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
-    return inputVarsMapping, outputVarsMapping
+    return inputVarsMapping, outputVarsMapping, varsMapping
 
 def dumpBounds(model, xAdv, inDist, outSlack, yMax, ySecond):
     modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=(1 if mnistProp.logger.level==logging.DEBUG else 0))
@@ -456,7 +460,7 @@ def processInputQuery(net):
 def setBounds(model, boundDict):
     if boundDict:
         for i, (lb, ub) in boundDict.items():
-            if i < model.numVars:
+            if i < model.numVars: #FIXME This might mean that there is disalignment between the queries' definition of variables                
                 if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
                     model.setLowerBound(i,lb)
                 if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
@@ -474,16 +478,18 @@ def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, r
         with open(mnistProp.dumpDir + "originalQueryStats_" + runName + ".json", "w") as f:
             json.dump(originalQueryStats, f, indent = 4)
         if coi:
-            inputVarsMapping, outputVarsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
+            inputVarsMapping, outputVarsMapping, varsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
             plt.title('COI_{}'.format(runName))
             plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
             plt.savefig('COI_{}'.format(runName))
         else:
-            inputVarsMapping, outputVarsMapping = None, None
+            inputVarsMapping, outputVarsMapping, varsMapping = None, None, None
         with open(mnistProp.dumpDir + "inputVarsMapping_" + runName + ".npy", "wb") as f:
             np.save(f, inputVarsMapping)
         with open(mnistProp.dumpDir + "outputVarsMapping_" + runName + ".npy", "wb") as f:
             np.save(f, outputVarsMapping)
+        with open(mnistProp.dumpDir + "varsMapping_" + runName + ".json", "w") as f:
+            json.dump(varsMapping, f, indent=4)
         setUnconnectedAsInputs(modelOnnxMarabou)
         #inputVarsMapping2, outputVarsMapping2 =setUnconnectedAsInputs(modelOnnxMarabou)
         modelOnnxMarabou.saveQuery(mnistProp.dumpDir + "IPQ_" + runName)
@@ -506,7 +512,9 @@ def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, r
         with open(mnistProp.dumpDir + "inputVarsMapping_" + runName + ".npy", "rb") as f:            
             inputVarsMapping = np.load(f, allow_pickle=True)
         with open(mnistProp.dumpDir + "outputVarsMapping_" + runName + ".npy", "rb") as f:
-            outputVarsMapping = np.load(f, allow_pickle=True)            
+            outputVarsMapping = np.load(f, allow_pickle=True)
+        with open(mnistProp.dumpDir + "varsMapping_" + runName + ".json", "r") as f:
+            varsMapping = json.load(f)            
     if not sat:            
         return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
     if not fromDumpedQuery:

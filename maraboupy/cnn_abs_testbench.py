@@ -201,10 +201,12 @@ dumpJson(resultsJson)
 ####               |_|                                                     ####
 ###############################################################################
 
+replaceLayerName = "c2"
+
 ## Build initial model.
 
 printLog("Started model building")
-modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
+modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
 if maskShape[0] == None:
     maskShape = maskShape[1:]
@@ -274,7 +276,7 @@ if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
 else:
     boundDict = None
 
-maskList = list(genActivationMask(intermidModel(modelOrigDense, "c2"), xAdv, yMax, policy=cfg_abstractionPolicy))
+maskList = list(genActivationMask(intermidModel(modelOrigDense, replaceLayerName), xAdv, yMax, policy=cfg_abstractionPolicy))
 if not cfg_maskAbstract:
     maskList = []
 printLog("Created {} masks".format(len(maskList)))
@@ -298,7 +300,7 @@ modelOrigDense.save(modelOrigDenseSavedName)
 for i, mask in enumerate(maskList):
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
-        modelOrig, replaceLayerName = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
+        modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
         modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
         modelAbs = None
