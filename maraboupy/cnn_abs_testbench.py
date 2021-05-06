@@ -88,6 +88,7 @@ parser.add_argument("--double_check"   ,action="store_true",                    
 parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-inc", "milp", "milp-inc", "iter-prop", "none"], default="none", help="Which bound tightening technique to use.")
 parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "none"], default="deeppoly",              help="Which bound tightening technique to use.")
 parser.add_argument("--solve_with_milp",action="store_true",                        default=False,                  help="Use MILP solver instead of regular engine.")
+parser.add_argument("--abs_layer",      type=str, default="c2",              help="Which layer should be abstracted.")
 args = parser.parse_args()
 
 resultsJson = dict()
@@ -117,6 +118,7 @@ cfg_validation        = args.validation
 cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validation")
 #cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
 cfg_dumpBounds        = True
+cfg_absLayer          = args.abs_layer
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -201,7 +203,7 @@ dumpJson(resultsJson)
 ####               |_|                                                     ####
 ###############################################################################
 
-replaceLayerName = "c2"
+replaceLayerName = cfg_absLayer
 
 ## Build initial model.
 
