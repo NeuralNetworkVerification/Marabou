@@ -197,7 +197,7 @@ public:
     */
 
     // The number of accumualted eta matrices, after which the basis will be refactorized
-	static const unsigned REFACTORIZATION_THRESHOLD;
+    static const unsigned REFACTORIZATION_THRESHOLD;
 
     // The kind of basis factorization algorithm in use
     enum BasisFactorizationType {
@@ -223,9 +223,13 @@ public:
     */
     static const unsigned GUROBI_NUMBER_OF_THREADS;
     static const bool GUROBI_LOGGING;
-    static const bool LP_TIGHTENING_AFTER_SPLIT;
 #endif // ENABLE_GUROBI
 
+    /* 
+      If true, perform LP tightening after case splits
+    */
+    static const bool LP_TIGHTENING_AFTER_SPLIT;
+  
     /*
       Logging options
     */
