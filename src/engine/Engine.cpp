@@ -1119,6 +1119,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         {
             _networkLevelReasoner->dumpBounds();
+            _networkLevelReasoner->dumpTopology();
             _tableau->dumpAssignment();
         }
 
