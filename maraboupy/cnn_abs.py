@@ -232,8 +232,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         print("(Original) Test loss:", score[0])
         print("(Original) Test accuracy:", score[1])
 
-    rplcLayerName = "c2"
-    return origM, rplcLayerName
+    return origM
 
 def getBoundsInftyBall(x, r, pos=True):
     if pos:
