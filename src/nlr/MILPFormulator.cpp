@@ -414,7 +414,6 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
             threads[solverToIndex[freeSolver]] = boost::thread
                 ( tightenSingleVariableBoundsWithMILPEncoding, argument );
     }
-    //}
 
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
