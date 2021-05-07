@@ -214,7 +214,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 while ( applyAllValidConstraintCaseSplits() );
 
                 // Tighten bounds of an output layer with MILP solver
-                performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+                if ( _networkLevelReasoner )    // to avoid failing of system test.
+                    performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
 
                 splitJustPerformed = false;
             }
