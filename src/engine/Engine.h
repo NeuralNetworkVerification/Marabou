@@ -522,9 +522,9 @@ private:
     void performMILPSolverBoundedTightening();
 
     /*
-      Call MILP bound tightening for either first hidden or output layer.
+      Call MILP bound tightening for a single layer.
     */    
-    void performMILPSolverBoundedTighteningForFirstOrOut( bool firstLayer );
+    void performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex );
 
     /*
       Update the preferred direction to perform fixes and the preferred order

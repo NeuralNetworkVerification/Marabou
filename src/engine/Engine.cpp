@@ -206,7 +206,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( splitJustPerformed )
             {
                 // Tighten bounds of a first hidden layer with MILP solver
-                performMILPSolverBoundedTighteningForFirstOrOut( true );
+                performMILPSolverBoundedTighteningForSingleLayer( 1 );
                 do
                 {
                     performSymbolicBoundTightening();
@@ -214,7 +214,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 while ( applyAllValidConstraintCaseSplits() );
 
                 // Tighten bounds of an output layer with MILP solver
-                performMILPSolverBoundedTighteningForFirstOrOut( false );
+                performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
 
                 splitJustPerformed = false;
             }
@@ -1199,7 +1199,7 @@ void Engine::performMILPSolverBoundedTightening()
     }
 }
 
-void Engine::performMILPSolverBoundedTighteningForFirstOrOut( bool firstLayer )
+void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() && GlobalConfiguration::LP_TIGHTENING_AFTER_SPLIT )
     {
@@ -1209,26 +1209,12 @@ void Engine::performMILPSolverBoundedTighteningForFirstOrOut( bool firstLayer )
         {
         case MILPSolverBoundTighteningType::LP_RELAXATION:
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
-            if ( firstLayer )
-            {
-                _networkLevelReasoner->lpRelaxation( 1 );
-            }
-            else
-            {
-                _networkLevelReasoner->lpRelaxation( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
-            }
+            _networkLevelReasoner->lpRelaxation( targetIndex );
             break;
 
         case MILPSolverBoundTighteningType::MILP_ENCODING:
         case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
-            if ( firstLayer )
-            {
-                _networkLevelReasoner->MILPTigheningForOneLayer( 1 );
-            }
-            else
-            {
-                _networkLevelReasoner->MILPTigheningForOneLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
-            }
+            _networkLevelReasoner->MILPTigheningForOneLayer( targetIndex );
             break;
 
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
