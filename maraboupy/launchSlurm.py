@@ -61,7 +61,8 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
     title2Label = dict()
 
     for policy in mnistProp.absPolicies:
-        title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
+        #title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
+        title2Label["{}Cfg".format(policy)] = "{}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
             runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--policy", policy])
@@ -132,12 +133,14 @@ parser.add_argument("--runs_per_type", type=int, default=50, help="Number of run
 parser.add_argument("--dump_queries", action="store_true", default=False, help="Only dump queries, don't solve.")
 parser.add_argument("--use_dumped_queries", action="store_true", default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
 parser.add_argument("--sample", type=int, default=0, help="For part of experiments, specific sample choice")
+parser.add_argument("--dump_suffix", type=str, default="", help="Suffix at ending the dumpQueries directory", required=False)
 args = parser.parse_args()
 experiment = args.exp
 numRunsPerType = args.runs_per_type
 experimentFunc = experiments[experiment]
 dumpQueries = args.dump_queries
 useDumpedQueries = args.use_dumped_queries
+dumpSuffix = args.dump_suffix
 
 ####################################################################################################
 
@@ -148,7 +151,7 @@ if not os.path.exists(basePath + "logs/"):
 batchDirPath = basePath + "logs/" + batchId
 if not os.path.exists(batchDirPath):
     os.mkdir(batchDirPath)
-dumpDirPath = basePath + "logs/dumpQueries/"
+dumpDirPath = basePath + "logs/dumpQueries{}/".format(("_" + dumpSuffix) if dumpSuffix else "")
 if (dumpQueries or useDumpedQueries) and not os.path.exists(dumpDirPath):
     os.mkdir(dumpDirPath)
     
@@ -158,7 +161,8 @@ MEM_PER_CPU = "8G"
 #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
 #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
 clusterFlags = []
-commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.01), "--prop_slack", str(-0.2), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+#commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.05), "--prop_slack", str(0), "--timeout", str(1000), "--dump_dir", dumpDirPath]
 if dumpQueries:
     commonFlags.append("--dump_queries")
 if useDumpedQueries:
@@ -176,7 +180,7 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
 
     sbatchCode = list()
     sbatchCode.append("#!/bin/bash")
-    sbatchCode.append("#SBATCH --job-name=cnnAbsTB_{}_{}".format(batchId, title))
+    sbatchCode.append("#SBATCH --job-name={}_{}".format(experiment, title))
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
     sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, title))

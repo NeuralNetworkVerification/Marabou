@@ -278,7 +278,8 @@ if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
 else:
     boundDict = None
 
-maskList = list(genActivationMask(intermidModel(modelOrigDense, replaceLayerName), xAdv, yMax, policy=cfg_abstractionPolicy))
+maskList = list(genActivationMask(intermidModel(modelOrigDense, replaceLayerName), xAdv, yMax, policy=cfg_abstractionPolicy, boundDict=boundDict
+))
 if not cfg_maskAbstract:
     maskList = []
 printLog("Created {} masks".format(len(maskList)))

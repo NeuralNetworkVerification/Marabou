@@ -43,7 +43,7 @@ class mnistProp:
     numCex = 0
     origMSize = None
     origMDense = None
-    absPolicies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote", "Random"]
+    absPolicies = ["Centered", "AllClassRank", "SingleClassRank", "MajorityClassVote", "Random"]#, "BoundInterval"] FIXME add this
     policies = absPolicies + ["FindMinProvable"]
     Policy = Enum("Policy"," ".join(policies))
     optionsObj = None
@@ -282,7 +282,13 @@ def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
 def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
     if useMapping:
         lBounds = getBoundsInftyBall(xAdv, inDist)[0]
-
+        fail = False
+        for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
+            if not indCOI.item():
+                print("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
+                fail = True
+        if fail:
+            print("inputVarsMapping={}".format(inputVarsMapping))
         inputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig,indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])), np.nditer(lBounds))}
         outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0 for indOrig, indCOI in enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
 
@@ -312,10 +318,10 @@ def setUnconnectedAsInputs(net):
     print("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
     for v in varsWithoutIngoingEdges: #FIXME this isn't working
         if not net.lowerBoundExists(v):
-            print("inaccessible w/o lower bounds: {}".format(v))
+            raise Exception("inaccessible w/o lower bounds: {}".format(v))
 ####            net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
-            print("inaccessible w/o upper bounds: {}".format(v))            
+            raise Exception("inaccessible w/o upper bounds: {}".format(v))            
 ####            net.setUpperBound(v,  100000)
     '''# This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
     #dontKeep = set()
@@ -582,7 +588,7 @@ def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStric
         return prediction.argmax() == yCorrect
     return prediction[0,yBad] + outSlack < prediction[0,yCorrect]
 
-def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.SingleClassRank):
+def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Policy.SingleClassRank, boundDict=None):
     if policy == mnistProp.Policy.AllClassRank or policy == mnistProp.Policy.AllClassRank.name:
         return genActivationMaskAllClassRank(intermidModel)
     elif policy == mnistProp.Policy.SingleClassRank or policy == mnistProp.Policy.SingleClassRank.name:
