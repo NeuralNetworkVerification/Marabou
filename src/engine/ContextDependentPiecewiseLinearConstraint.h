@@ -105,12 +105,8 @@ public:
     */
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
 
-    /*
-      Check if the constraint's phase has been fixed.
-    */
-    virtual bool phaseFixed() const = 0;
 
-        /*
+    /*
       Register a bound manager. If a bound manager is registered,
       this piecewise linear constraint will inform the tightener whenever
       it discovers a tighter (entailed) bound.
