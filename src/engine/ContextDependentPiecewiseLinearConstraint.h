@@ -82,8 +82,8 @@ public:
     /*
       Turn the constraint on/off.
     */
-    void setActiveConstraint( bool active );
-    bool isActive() const;
+    void setActiveConstraint( bool active ) override;
+    bool isActive() const override;
 
     /*
        Returns a list of all cases of this constraint and is used by the
