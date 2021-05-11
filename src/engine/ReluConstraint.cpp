@@ -12,7 +12,10 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "ReluConstraint.h"
+
 #include "ConstraintBoundTightener.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -21,7 +24,6 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "ReluConstraint.h"
 #include "MarabouError.h"
 #include "Statistics.h"
 #include "TableauRow.h"
@@ -31,7 +33,8 @@
 #endif
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
     , _f( f )
     , _auxVarInUse( false )
     , _direction( PHASE_NOT_FIXED )
@@ -78,17 +81,25 @@ PiecewiseLinearFunctionType ReluConstraint::getType() const
     return PiecewiseLinearFunctionType::RELU;
 }
 
-PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
     *clone = *this;
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const ReluConstraint *relu = dynamic_cast<const ReluConstraint *>( state );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *relu;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
@@ -475,6 +486,37 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     return splits;
 }
 
+List<PhaseStatus> ReluConstraint::getAllCases() const
+{
+    if ( _direction == RELU_PHASE_INACTIVE )
+        return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
+
+    if ( _direction == RELU_PHASE_ACTIVE )
+        return { RELU_PHASE_ACTIVE, RELU_PHASE_INACTIVE };
+
+    // If we have existing knowledge about the assignment, use it to
+    // influence the order of splits
+    if ( _assignment.exists( _f ) )
+    {
+        if ( FloatUtils::isPositive( _assignment[_f] ) )
+            return { RELU_PHASE_ACTIVE, RELU_PHASE_INACTIVE };
+        else
+            return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
+    }
+    else
+        return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    if ( phase == RELU_PHASE_INACTIVE )
+        return getInactiveSplit();
+    else if ( phase == RELU_PHASE_ACTIVE )
+        return getActiveSplit();
+    else
+        throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
+}
+
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
 {
     // Inactive phase: b <= 0, f = 0
@@ -513,7 +555,7 @@ bool ReluConstraint::phaseFixed() const
     return _phaseStatus != PHASE_NOT_FIXED;
 }
 
-PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
+PiecewiseLinearCaseSplit ReluConstraint::getImpliedCaseSplit() const
 {
     ASSERT( _phaseStatus != PHASE_NOT_FIXED );
 
@@ -521,6 +563,11 @@ PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
         return getActiveSplit();
 
     return getInactiveSplit();
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
+{
+    return getImpliedCaseSplit();
 }
 
 void ReluConstraint::dump( String &output ) const
@@ -895,10 +942,3 @@ void ReluConstraint::updateScoreBasedOnPolarity()
     _score = std::abs( computePolarity() );
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

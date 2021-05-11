@@ -129,7 +129,7 @@ void ContextDependentPiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phas
         _phaseStatus = phaseStatus;
 }
 
-void ContextDependentPiecewiseLinearConstraint::initializeDuplicatesCDOs(
+void ContextDependentPiecewiseLinearConstraint::initializeDuplicateCDOs(
     ContextDependentPiecewiseLinearConstraint *clone ) const
 {
     if ( clone->_context != nullptr )
@@ -180,10 +180,9 @@ PhaseStatus ContextDependentPiecewiseLinearConstraint::nextFeasibleCase()
     return CONSTRAINT_INFEASIBLE;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+bool ContextDependentPiecewiseLinearConstraint::isCaseInfeasible( PhaseStatus phase ) const
+{
+    ASSERT( _cdInfeasibleCases );
+    return std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), phase ) != _cdInfeasibleCases->end();
+}
+

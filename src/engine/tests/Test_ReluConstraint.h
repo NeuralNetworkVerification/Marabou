@@ -22,6 +22,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 #include "MarabouError.h"
+#include "context/context.h"
 
 #include <string.h>
 
@@ -30,6 +31,21 @@ class MockForReluConstraint
 {
 public:
 };
+
+/*
+   Exposes protected members of ReluConstraint for testing.
+ */
+class TestReluConstraint : public ReluConstraint
+{
+public:
+    TestReluConstraint(unsigned b, unsigned f)
+        : ReluConstraint( b, f )
+    {}
+
+    using ReluConstraint::getPhaseStatus;
+};
+
+using namespace CVC4::context;
 
 class ReluConstraintTestSuite : public CxxTest::TestSuite
 {
@@ -1223,6 +1239,148 @@ public:
             TS_ASSERT_EQUALS( itFix->_value, 0 );
         }
     }
+
+    /*
+      Test Case functionality of ReluConstraint
+      1. Check that all cases are returned by ReluConstraint::getAllCases()
+      2. Check that ReluConstraint::getCaseSplit( case ) returns the correct case
+     */
+    void test_relu_get_cases()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        ReluConstraint relu( b, f );
+
+        List<PhaseStatus> cases = relu.getAllCases();
+
+        TS_ASSERT_EQUALS( cases.size(), 2u );
+        TS_ASSERT_EQUALS( cases.front(), RELU_PHASE_INACTIVE );
+        TS_ASSERT_EQUALS( cases.back(), RELU_PHASE_ACTIVE );
+
+        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 2u );
+        TS_ASSERT_EQUALS( splits.front(), relu.getCaseSplit( RELU_PHASE_INACTIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.back(), relu.getCaseSplit( RELU_PHASE_ACTIVE ) ) ;
+    }
+
+    /*
+      Test context-dependent ReLU state behavior.
+     */
+    void test_relu_context_dependent_state()
+    {
+        Context context;
+        unsigned b = 1;
+        unsigned f = 4;
+
+        TestReluConstraint relu( b, f );
+
+        relu.initializeCDOs( &context );
+
+
+
+        TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
+
+        context.push();
+
+        relu.notifyLowerBound( f, 1 );
+        TS_ASSERT_EQUALS( relu.getPhaseStatus(), RELU_PHASE_ACTIVE );
+
+        context.pop();
+        TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
+
+        context.push();
+        relu.notifyUpperBound( b, -1 );
+        TS_ASSERT_EQUALS( relu.getPhaseStatus(), RELU_PHASE_INACTIVE );
+
+        context.pop();
+        TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
+    }
+
+    /*
+      Test correct initialization of context-dependent data structures.
+     */
+    void test_initialization_of_CDOs()
+    {
+        Context context;
+        ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
+
+        TS_ASSERT_EQUALS(relu1->getContext(), static_cast<Context*>( static_cast<Context*>( nullptr ) ) );
+
+        TS_ASSERT_EQUALS( relu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_EQUALS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( relu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_THROWS_NOTHING( relu1->initializeCDOs( &context ) );
+        TS_ASSERT_EQUALS( relu1->getContext(), &context );
+        TS_ASSERT_DIFFERS( relu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( relu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+
+        bool active = false;
+        TS_ASSERT_THROWS_NOTHING( active = relu1->isActive() );
+        TS_ASSERT_EQUALS( active, true );
+
+        bool phaseFixed = true;
+        TS_ASSERT_THROWS_NOTHING( phaseFixed = relu1->phaseFixed() );
+        TS_ASSERT_EQUALS( phaseFixed, PHASE_NOT_FIXED );
+        TS_ASSERT_EQUALS( relu1->numFeasibleCases(), 2u );
+        TS_ASSERT( relu1->isFeasible() );
+        TS_ASSERT( !relu1->isImplication() );
+
+        TS_ASSERT_THROWS_NOTHING( delete relu1 );
+    }
+
+    /*
+      Test context-dependent storage of search state information via
+      isFeasible/markInfeasible methods.
+     */
+    void test_lazy_backtracking_of_CDOs()
+    {
+        Context context;
+        ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
+        TS_ASSERT_THROWS_NOTHING( relu1->initializeCDOs( &context ) );
+
+        // L0 - Feasible, not an implication
+        PhaseStatus phase1 = PHASE_NOT_FIXED;
+        TS_ASSERT_THROWS_NOTHING( phase1 = relu1->nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase1, relu1->nextFeasibleCase() );
+        TS_ASSERT( relu1->isFeasible() );
+        TS_ASSERT( !relu1->isImplication() );
+
+
+        // L1 - Feasible, an implication, nextFeasibleCase returns a new case
+        TS_ASSERT_THROWS_NOTHING( context.push() );
+        TS_ASSERT_THROWS_NOTHING( relu1->markInfeasible( phase1 ) );
+        TS_ASSERT( relu1->isFeasible() );
+        TS_ASSERT( relu1->isImplication() );
+
+        PhaseStatus phase2 = PHASE_NOT_FIXED;
+        TS_ASSERT_THROWS_NOTHING( phase2 = relu1->nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase2, relu1->nextFeasibleCase() );
+        TS_ASSERT_DIFFERS( phase2, phase1 );
+
+        // L2 - Infeasible, not an implication, nextCase returns CONSTRAINT_INFEASIBLE
+        TS_ASSERT_THROWS_NOTHING( context.push() );
+        TS_ASSERT_THROWS_NOTHING( relu1->markInfeasible( phase2 ) );
+        TS_ASSERT( !relu1->isFeasible() );
+        TS_ASSERT( !relu1->isImplication() );
+        TS_ASSERT_EQUALS( relu1->nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
+
+        // L1 again - Feasible, an implication, nextFeasibleCase returns same values as phase2
+        TS_ASSERT_THROWS_NOTHING( context.pop() );
+        TS_ASSERT( relu1->isFeasible() );
+        TS_ASSERT( relu1->isImplication() );
+        TS_ASSERT_EQUALS( phase2, relu1->nextFeasibleCase() );
+
+        // L0 again - Feasible, not an implication, nextFeasibleCase returns same value as phase1
+        TS_ASSERT_THROWS_NOTHING( context.pop() );
+        TS_ASSERT( relu1->isFeasible() );
+        TS_ASSERT( !relu1->isImplication() );
+        TS_ASSERT_EQUALS( phase1, relu1->nextFeasibleCase() );
+
+        TS_ASSERT_THROWS_NOTHING( delete relu1 );
+    }
+
 };
 
 //
@@ -1232,3 +1390,4 @@ public:
 // c-basic-offset: 4
 // End:
 //
+
