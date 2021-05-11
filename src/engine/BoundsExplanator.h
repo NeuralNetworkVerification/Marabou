@@ -37,9 +37,16 @@ public:
 	void updateVarBoundExplanation(const std::vector<double>& newBound, const  bool isUpper );
 
 	/*
+	 * Updates all coefficients to be in *= alpha
+	 */
+	void multiplyAllCoefficients( const double alpha, const bool isUpper );
+
+	/*
 	 * Deep copy of SingleVarBoundsExplanator
 	 */
 	SingleVarBoundsExplanator& operator=(const SingleVarBoundsExplanator& other);
+
+
 
 	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
 	unsigned _lowerRecLevel;
@@ -87,6 +94,11 @@ public:
 	 * Copies all elements of other BoundsExplanator
 	 */
 	BoundsExplanator& operator=(const BoundsExplanator& other);
+
+	/*
+	* Multiplies the explanation vector of a var by scalar alpha
+	*/
+	void multiplyExplanationCoefficients( const unsigned var, const double alpha, const bool isUpper );
 
 
 private:

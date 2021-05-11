@@ -49,11 +49,18 @@ void SingleVarBoundsExplanator::updateVarBoundExplanation(const std::vector<doub
 {
 	assert( newBound.size() == _length );
 	std::vector<double>& temp = isUpper ? _upper : _lower;
-	//for (unsigned i =0; i< _length; ++i)
-		//temp[i] = FloatUtils::isZero( newBound[i] ) ? 0 : newBound[i];
-	std::copy(newBound.begin(), newBound.end(), temp.begin());
+	for (unsigned i =0; i< _length; ++i)
+		temp[i] = FloatUtils::isZero( newBound[i] ) ? 0 : newBound[i];
+	//std::copy(newBound.begin(), newBound.end(), temp.begin());
 }
 
+
+void SingleVarBoundsExplanator::multiplyAllCoefficients( const double alpha, const bool isUpper)
+{
+	std::vector<double>& temp = isUpper ? _upper : _lower;
+	for ( unsigned i = 0; i < _length; ++i )
+		temp[i] *= alpha;
+}
 
 /* Functions of BoundsExplanator */
 BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsNum )
@@ -117,7 +124,7 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	}
 
 	extractRowCoefficients( row, rowCoefficients ); // Update according to row coefficients
-	addVecTimesScalar( sum, rowCoefficients, 1 ); 
+	addVecTimesScalar( sum, rowCoefficients, 1 );
 	_bounds[var].updateVarBoundExplanation( sum, isUpper );
 	++maxLevel;
 	if ( isUpper )
@@ -125,8 +132,6 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	else
 		_bounds[var]._lowerRecLevel = maxLevel;
 	//printf("Recursion level update: %d  of var %d\n", maxLevel, var); //TODO delete
-
-
 	tempBound.clear();
 	rowCoefficients.clear();
 	sum.clear();
@@ -152,13 +157,13 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 
 	for ( unsigned i = 0; i < row._size; ++i )
 	{
-	
-		if( row[i] ) // Updates of zero coefficients are unnecessary 
-			{
-				equiv._row[i]._coefficient = - row[i] * coeff; 
-				equiv._row[i]._var = row._row[i]._var;
-			}
+		if ( row[i] ) // Updates of zero coefficients are unnecessary
+		{
+			equiv._row[i]._coefficient = - row[i] * coeff;
+			equiv._row[i]._var = row._row[i]._var;
+		}
 	}
+
 	// Since the original var is the new lhs, the new var should be replaced with original lhs 
 	equiv._row[varIndex]._coefficient = coeff;
 	equiv._row[varIndex]._var = row._lhs;
@@ -200,6 +205,12 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 	tempBound.clear();
 	rowCoefficients.clear();
 	sum.clear();
+}
+
+
+void BoundsExplanator::multiplyExplanationCoefficients( const unsigned var, const double alpha, const bool isUpper )
+{
+	_bounds[var].multiplyAllCoefficients( alpha, isUpper );
 }
 
 

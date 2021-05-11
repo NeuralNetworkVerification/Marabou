@@ -2687,6 +2687,11 @@ double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) con
     return bound;
 }
 
+void Tableau::multiplyExplanationCoefficients (const unsigned var, const double alpha, const bool isUpper)
+{
+	_boundsExplanator->multiplyExplanationCoefficients( var, alpha, isUpper );
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "
