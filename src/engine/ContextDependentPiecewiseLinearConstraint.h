@@ -16,7 +16,7 @@
  **
  **
  ** Members are initialized using the initializeCDOs( Context context ) method.
- ** Subclasses need to call initializeDuplicatesCDOs() method in the
+ ** Subclasses need to call initializeDuplicateCDOs() method in the
  ** duplicateConstraint() method to avoid sharing context-dependent members.
  ** CDOs need not be initialized for pre-processing purposes.
  **
@@ -66,6 +66,8 @@ class ITableau;
 class InputQuery;
 class String;
 
+#define TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT 2u
+
 class ContextDependentPiecewiseLinearConstraint : public PiecewiseLinearConstraint
 {
 public:
@@ -92,16 +94,11 @@ public:
     virtual List<PhaseStatus> getAllCases() const = 0;
 
     /*
-     * Returns case split corresponding to the given phase/id
+       Returns case split corresponding to the given phase/id
        TODO: Update the signature in PiecewiseLinearConstraint, once the new
        search is integrated.
      */
     virtual PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus caseId ) const = 0;
-
-    /*
-      Check if the constraint's phase has been fixed.
-    */
-    virtual bool phaseFixed() const = 0;
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
@@ -109,6 +106,11 @@ public:
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
 
     /*
+      Check if the constraint's phase has been fixed.
+    */
+    virtual bool phaseFixed() const = 0;
+
+        /*
       Register a bound manager. If a bound manager is registered,
       this piecewise linear constraint will inform the tightener whenever
       it discovers a tighter (entailed) bound.
@@ -192,7 +194,7 @@ public:
     /*
        Returns true if there is only one feasible case remaining.
      */
-    bool isImplication() const
+    virtual bool isImplication() const
     {
         return numFeasibleCases() == 1u;
     }
@@ -227,18 +229,25 @@ protected:
        Method provided to allow safe copying of the context-dependent members,
        which will be freshly initialized in a copy and with the same values.
      */
-    void initializeDuplicatesCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
+    void initializeDuplicateCDOs( ContextDependentPiecewiseLinearConstraint *clone ) const;
 
+    /*
+       Private method to check if a case is infeasible.
+     */
+    bool isCaseInfeasible( PhaseStatus phase ) const;
+
+    /*
+       Method to set PhaseStatus of the constraint. Encapsulates both context
+       dependent and context-less behavior.
+     */
     void setPhaseStatus( PhaseStatus phaseStatus );
+
+    /*
+       Method to get PhaseStatus of the constraint. Encapsulates both context
+       dependent and context-less behavior.
+     */
     PhaseStatus getPhaseStatus() const;
 };
 
 #endif // __ContextDependentPiecewiseLinearConstraint_h__
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

@@ -35,7 +35,7 @@ public:
     }
 
     Vector<T>( const Vector<T> &rhs) = default;
-    
+
     Vector<T>( const std::initializer_list<T> &initializerList ) : _container( initializerList )
     {
     }
@@ -45,6 +45,11 @@ public:
     }
 
     Vector<T>( unsigned size, T value ) : _container( size, value )
+    {
+    }
+
+    template<class InputIt>
+    Vector<T>( InputIt begin, InputIt end) : _container( begin, end )
     {
     }
 
@@ -139,6 +144,16 @@ public:
     iterator end()
     {
         return _container.end();
+    }
+
+    const_iterator begin() const
+    {
+        return _container.begin();
+    }
+
+    const_iterator end() const
+    {
+        return _container.cend();
     }
 
     void erase( iterator &it )

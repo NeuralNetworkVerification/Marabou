@@ -25,6 +25,21 @@ class MockForDisjunctionConstraint
 public:
 };
 
+/*
+   Exposes protected members of DisjunctionConstraint for testing.
+ */
+class TestDisjunctionConstraint : public DisjunctionConstraint
+{
+public:
+    TestDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> elements  )
+        : DisjunctionConstraint( elements )
+    {}
+
+    using DisjunctionConstraint::getPhaseStatus;
+};
+
+using namespace CVC4::context;
+
 class DisjunctionConstraintTestSuite : public CxxTest::TestSuite
 {
 public:
@@ -226,12 +241,147 @@ public:
             TS_ASSERT_EQUALS( validSplit, *cs1 );
         }
     }
+
+    void test_initialization_of_CDOs()
+    {
+        Context context;
+
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+
+        DisjunctionConstraint disjunction( caseSplits );
+
+        TS_ASSERT_EQUALS( disjunction.getContext(), static_cast<Context*>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_THROWS_NOTHING( disjunction.initializeCDOs( &context ) );
+        TS_ASSERT_EQUALS( disjunction.getContext(), &context );
+        TS_ASSERT_DIFFERS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+
+        bool active = false;
+        TS_ASSERT_THROWS_NOTHING( active = disjunction.isActive() );
+        TS_ASSERT_EQUALS( active, true );
+
+        bool phaseFixed = true;
+        TS_ASSERT_THROWS_NOTHING( phaseFixed = disjunction.phaseFixed() );
+        TS_ASSERT_EQUALS( phaseFixed, PHASE_NOT_FIXED );
+        TS_ASSERT_EQUALS( disjunction.numFeasibleCases(), 3u );
+    }
+
+    /*
+     * Test Case functionality of DisjunctionConstraint
+     * 1. Check that all cases are returned by DisjunctionConstraint::getAllCases
+     * 2. Check that DisjunctionConstraint::getCaseSplit( case ) returns the correct case
+     */
+    void test_disjunction_get_cases()
+    {
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        DisjunctionConstraint disjunction( caseSplits );
+
+        List<PhaseStatus> cases = disjunction.getAllCases();
+
+        TS_ASSERT_EQUALS( cases.size(), caseSplits.size() );
+
+        List<PiecewiseLinearCaseSplit> splits = disjunction.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), caseSplits.size() );
+
+        for ( auto split : caseSplits )
+        {
+            TS_ASSERT_DIFFERS( std::find( splits.begin(), splits.end(), split ), splits.end() );
+        }
+    }
+
+    /*
+      Test Disjunction's context-dependent state behavior.
+     */
+    void test_disjunction_context_dependent_state()
+    {
+        Context context;
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        TestDisjunctionConstraint dc( caseSplits );
+
+
+        dc.initializeCDOs( &context );
+        context.push();
+
+        dc.notifyLowerBound( 0, -10 );
+        dc.notifyUpperBound( 0, 10 );
+        dc.notifyLowerBound( 1, -10 );
+        dc.notifyUpperBound( 1, 10 );
+        dc.notifyLowerBound( 2, -10 );
+        dc.notifyUpperBound( 2, 10 );
+
+
+        context.push();
+
+        // L0 - Feasible, not an implication
+        PhaseStatus phase1 = PHASE_NOT_FIXED;
+        TS_ASSERT_THROWS_NOTHING( phase1 = dc.nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase1, dc.nextFeasibleCase() );
+        TS_ASSERT( dc.isFeasible() );
+        TS_ASSERT( !dc.isImplication() );
+
+
+        // L1 - Feasible, nextFeasibleCase returns a new case
+        TS_ASSERT_THROWS_NOTHING( context.push() );
+        TS_ASSERT_THROWS_NOTHING( dc.markInfeasible( phase1 ) );
+        TS_ASSERT( dc.isFeasible() );
+        TS_ASSERT( !dc.isImplication() );
+
+        PhaseStatus phase2 = PHASE_NOT_FIXED;
+        TS_ASSERT_THROWS_NOTHING( phase2 = dc.nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase2, dc.nextFeasibleCase() );
+        TS_ASSERT_DIFFERS( phase2, phase1 );
+
+        TS_ASSERT_THROWS_NOTHING( dc.markInfeasible( phase2 ) );
+        TS_ASSERT( dc.isFeasible() );
+        TS_ASSERT( dc.isImplication() );
+
+        PhaseStatus phase3 = PHASE_NOT_FIXED;
+        TS_ASSERT_THROWS_NOTHING( phase3 = dc.nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase3, dc.nextFeasibleCase() );
+        TS_ASSERT_DIFFERS( phase3, phase1 );
+        TS_ASSERT_DIFFERS( phase3, phase2 );
+
+        // L2 - Infeasible, nextCase returns CONSTRAINT_INFEASIBLE
+        TS_ASSERT_THROWS_NOTHING( context.push() );
+        TS_ASSERT_THROWS_NOTHING( dc.markInfeasible( phase3 ) );
+        TS_ASSERT( !dc.isFeasible() );
+        TS_ASSERT( !dc.isImplication() );
+        TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
+
+        // L1 again - Feasible, an implication, nextFeasibleCase returns same values as phase3
+        TS_ASSERT_THROWS_NOTHING( context.pop() );
+        TS_ASSERT( dc.isFeasible() );
+        TS_ASSERT( dc.isImplication() );
+        TS_ASSERT_EQUALS( phase3, dc.nextFeasibleCase() );
+
+        // L0 again - Feasible, not an implication, nextFeasibleCase returns same value as phase1
+        TS_ASSERT_THROWS_NOTHING( context.pop() );
+        TS_ASSERT( dc.isFeasible() );
+        TS_ASSERT( !dc.isImplication() );
+        TS_ASSERT_EQUALS( phase1, dc.nextFeasibleCase() );
+
+        // Test Bound to Cases propagation
+        dc.notifyLowerBound( 0, -1 );
+        TS_ASSERT( !dc.isImplication() );
+
+        dc.notifyLowerBound( 0, 2 );
+        TS_ASSERT( !dc.isImplication() );
+
+        dc.notifyLowerBound( 0, 6 );
+        TS_ASSERT( dc.isImplication() );
+
+        PiecewiseLinearCaseSplit validSplit = dc.getImpliedCaseSplit();
+        TS_ASSERT_EQUALS( validSplit, *cs3 );
+
+        dc.markInfeasible( dc.getPhaseStatus() );
+        TS_ASSERT( !dc.isFeasible() );
+        TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
+
+    }
+
 };
 
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//

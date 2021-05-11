@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file ReluConstraint.cpp
+/*! \file AbsoluteValueConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz
+ **   Shiran Aziz, Guy Katz, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,6 +13,7 @@
  **/
 
 #include "AbsoluteValueConstraint.h"
+
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -24,7 +25,8 @@
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
     , _f( f )
     , _auxVarsInUse( false )
     , _haveEliminatedVariables( false )
@@ -71,17 +73,25 @@ PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
     return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;
 }
 
-PiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
 {
     AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );
     *clone = *this;
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 
 void AbsoluteValueConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const AbsoluteValueConstraint *abs = dynamic_cast<const AbsoluteValueConstraint *>( state );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *abs;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void AbsoluteValueConstraint::registerAsWatcher( ITableau *tableau )
@@ -329,6 +339,21 @@ List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
     return splits;
 }
 
+List<PhaseStatus> AbsoluteValueConstraint::getAllCases() const
+{
+    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE};
+}
+
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    if ( phase == ABS_PHASE_NEGATIVE )
+        return getNegativeSplit();
+    else if ( phase == ABS_PHASE_POSITIVE )
+        return getPositiveSplit();
+    else
+        throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
+}
+
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getNegativeSplit() const
 {
     // Negative phase: b <= 0, b + f = 0
@@ -378,7 +403,7 @@ bool AbsoluteValueConstraint::phaseFixed() const
     return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
 }
 
-PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getImpliedCaseSplit() const
 {
     ASSERT( _phaseStatus != PHASE_NOT_FIXED );
 
@@ -386,6 +411,11 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
         return getPositiveSplit();
 
     return getNegativeSplit();
+}
+
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
+{
+    return getImpliedCaseSplit();
 }
 
 void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fixedValue */ )
@@ -724,10 +754,3 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
