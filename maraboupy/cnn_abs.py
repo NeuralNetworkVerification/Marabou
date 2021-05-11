@@ -66,6 +66,10 @@ class mnistProp:
                 f.write("{},{}\n".format(i,x))
 
 
+def printLog(s):
+    mnistProp.logger.info(s)
+    print(s)
+                
 def marabouNetworkStats(net):
     return {"numVars" : net.numVars,
             "numEquations" : len(net.equList),
@@ -156,29 +160,24 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
     for l,w in toSetWeights.items():
         clnM.get_layer(name=l).set_weights(w)
     score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-    print("(Clone, neurons masked:{}%) Test loss:".format(100*(1 - np.average(mask))), score[0])
-    print("(Clone, neurons masked:{}%) Test accuracy:".format(100*(1 - np.average(mask))), score[1])
+    printLog("(Clone, neurons masked:{}%) Test loss:{}".format(100*(1 - np.average(mask)), score[0]))
+    printLog("(Clone, neurons masked:{}%) Test accuracy:{}".format(100*(1 - np.average(mask)), score[1]))
 
     if np.all(np.equal(mask, np.ones_like(mask))):
         if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
             #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-            print("Prediction aligned")
+            printLog("Prediction aligned")
         else:
-            print("Prediction not aligned")
+            printLog("Prediction not aligned")
 
     return clnM
 
 def myLoss(labels, logits):
     return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
-def printLog(s):
-    mnistProp.logger.info(s)
-    print(s)
-
-
 def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small"):
 
-    print("Starting model building")
+    printLog("Starting model building")
     #https://keras.io/examples/vision/mnist_convnet/
 
     savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
@@ -219,8 +218,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         origM.fit(mnistProp.x_train, mnistProp.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
 
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print("(Original) Test loss:", score[0])
-        print("(Original) Test accuracy:", score[1])
+        printLog("(Original) Test loss:{}".format(score[0]))
+        printLog("(Original) Test accuracy:{]".format(score[1]))
 
         origM.save(mnistProp.basePath + "/" + savedModelOrig)
 
@@ -229,8 +228,8 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
         #origM = load_model(mnistProp.basePath + "/" + savedModelOrig)
         origM.summary()
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-        print("(Original) Test loss:", score[0])
-        print("(Original) Test accuracy:", score[1])
+        printLog("(Original) Test loss:".format(score[0]))
+        printLog("(Original) Test accuracy:".format(score[1]))
 
     return origM
 
@@ -241,21 +240,6 @@ def getBoundsInftyBall(x, r, pos=True):
 
 def inBoundsInftyBall(x, r, p, pos=True):
     l,u = getBoundsInftyBall(x,r,pos=pos)
-    #lowerBoundCond = np.less_equal(l,p)
-    #upperBoundCond = np.less_equal(p,u)
-    #print("lowerBoundCond={}".format(lowerBoundCond))
-    #print("upperBoundCond={}".format(upperBoundCond))
-#    if not np.all(lowerBoundCond):
-#        print("np.where(np.less(p,l)={}".format(np.where(np.less(p,l))))
-#        xa, ya, za = np.where(np.less(p,l))
-#        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):
-#            print("l[ind]={}, p[ind]={}".format(l[ind], p[ind]))
-#    if not np.all(upperBoundCond):
-#        print("np.where(np.less(u,p)={}".format(np.where(np.less(u,p))))
-#        xa, ya, za = np.where(np.less(u,p))
-#        for ind in zip(np.nditer(xa), np.nditer(ya), np.nditer(za)):
-#            print("p[ind]={}, u[ind]={}".format(p[ind], u[ind]))
-    ###return np.all(np.less_equal(l,p)) and np.all(np.less_equal(p,u))
     geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
     leqUp = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
     inBounds = np.logical_and(geqLow, leqUp)
@@ -279,26 +263,26 @@ def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
     net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack) # correct - bad <= slack
     return net
 
-def cexToImage(net, valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
+def cexToImage(valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
     if useMapping:
         lBounds = getBoundsInftyBall(xAdv, inDist)[0]
         fail = False
         for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
-            if not indCOI.item():
-                print("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
+            if indCOI.item() is None:
+                printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
                 fail = True
         if fail:
-            print("inputVarsMapping={}".format(inputVarsMapping))
-        inputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig,indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])), np.nditer(lBounds))}
-        outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0 for indOrig, indCOI in enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
+            printLog("inputVarsMapping={}".format(inputVarsMapping))
+        inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
+        outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0    for (indOrig, indCOI)      in     enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
 
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
-    else: #FIXME not compatible with case where net is an InputQuery
-        inputDict = {i.item():valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))}
-        outputDict = {o.item():valDict[o.item()] for o in np.nditer(np.array(net.outputVars))}
-        cex = np.array([valDict[i.item()] for i in np.nditer(np.array(net.inputVars[0]))]).reshape(xAdv.shape)
-        cexPrediction = np.array([valDict[o.item()] for o in np.nditer(np.array(net.outputVars))])
+    else:
+        inputDict = {i.item():valDict[i.item()] for i in np.nditer(inputVarsMapping)}
+        outputDict = {o.item():valDict[o.item()] for o in np.nditer(outputVarsMapping)}
+        cex = np.array([valDict[i.item()] for i in np.nditer(inputVarsMapping)]).reshape(xAdv.shape)
+        cexPrediction = np.array([valDict[o.item()] for o in np.nditer(outputVarsMapping)])
     return cex, cexPrediction, inputDict, outputDict
 
 def setUnconnectedAsInputs(net):
@@ -315,14 +299,12 @@ def setUnconnectedAsInputs(net):
     for absCons in net.absList:
         varsWithIngoingEdgesOrInputs.add(absCons[1])
     varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-    print("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
-    for v in varsWithoutIngoingEdges: #FIXME this isn't working
+    printLog("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
+    for v in varsWithoutIngoingEdges:
         if not net.lowerBoundExists(v):
             raise Exception("inaccessible w/o lower bounds: {}".format(v))
-####            net.setLowerBound(v, -100000)
         if not net.upperBoundExists(v):
-            raise Exception("inaccessible w/o upper bounds: {}".format(v))            
-####            net.setUpperBound(v,  100000)
+            raise Exception("inaccessible w/o upper bounds: {}".format(v))
     '''# This is to make deeppoly work. Setting aux=b when b is in an input entreing a relu.
     #dontKeep = set()
     for reluCons in net.reluList:
@@ -397,19 +379,21 @@ def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remov
     net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
     net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
     net.numVars = len(varSetList)
+    if inputVarsMapping is None or outputVarsMapping is None: #FIXME I made this change now to test inputVarsMapping==None
+        raise Exception("None input/output varsMapping")
     return inputVarsMapping, outputVarsMapping, varsMapping
     
 def setCOIBoundes(net, init):
 
-    print("len(net.equList)={}".format(len(net.equList)))
-    print("len(net.maxList)={}".format(len(net.maxList)))
-    print("len(net.reluList)={}".format(len(net.reluList)))
-    print("len(net.absList)={}".format(len(net.absList)))
-    print("len(net.signList)={}".format(len(net.signList)))
-    print("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
-    print("len(net.upperBounds)={}".format(len(net.upperBounds)))
-    print("len(net.inputVars)={}".format(len(net.inputVars)))
-    print("len(net.outputVars)={}".format(len(net.outputVars)))
+    printLog("len(net.equList)={}".format(len(net.equList)))
+    printLog("len(net.maxList)={}".format(len(net.maxList)))
+    printLog("len(net.reluList)={}".format(len(net.reluList)))
+    printLog("len(net.absList)={}".format(len(net.absList)))
+    printLog("len(net.signList)={}".format(len(net.signList)))
+    printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
+    printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
+    printLog("len(net.inputVars)={}".format(len(net.inputVars)))
+    printLog("len(net.outputVars)={}".format(len(net.outputVars)))
 
     reach = set(init)
     lastLen = 0
@@ -421,7 +405,7 @@ def setCOIBoundes(net, init):
                 [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
             elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                 [reach.add(v) for w,v in eq.addendList]
-                print("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
+                printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
         for maxArgs, maxOut in net.maxList:
             if maxOut in reachPrev:
                 [reach.add(arg) for arg in maxArgs]
@@ -432,23 +416,23 @@ def setCOIBoundes(net, init):
             raise Exception("Not implemented")
     unreach = set([v for v in range(net.numVars) if v not in reach])
 
-    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+    printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
 
     inputVarsMapping, outputVarsMapping, varsMapping = removeRedundantVariables(net, reach)
     for eq in net.equList:
         for w,v in eq.addendList:
             if v > net.numVars:
-                print("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
-    print("len(net.equList)={}".format(len(net.equList)))
-    print("len(net.maxList)={}".format(len(net.maxList)))
-    print("len(net.reluList)={}".format(len(net.reluList)))
-    print("len(net.absList)={}".format(len(net.absList)))
-    print("len(net.signList)={}".format(len(net.signList)))
-    print("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
-    print("len(net.upperBounds)={}".format(len(net.upperBounds)))
-    print("len(net.inputVars)={}".format(len(net.inputVars)))
-    print("len(net.outputVars)={}".format(len(net.outputVars)))
-    print("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+                printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
+    printLog("len(net.equList)={}".format(len(net.equList)))
+    printLog("len(net.maxList)={}".format(len(net.maxList)))
+    printLog("len(net.reluList)={}".format(len(net.reluList)))
+    printLog("len(net.absList)={}".format(len(net.absList)))
+    printLog("len(net.signList)={}".format(len(net.signList)))
+    printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
+    printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
+    printLog("len(net.inputVars)={}".format(len(net.inputVars)))
+    printLog("len(net.outputVars)={}".format(len(net.outputVars)))
+    printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     return inputVarsMapping, outputVarsMapping, varsMapping
 
 def dumpBounds(model, xAdv, inDist, outSlack, yMax, ySecond):
@@ -488,7 +472,9 @@ def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, r
             plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
             plt.savefig('COI_{}'.format(runName))
         else:
-            inputVarsMapping, outputVarsMapping, varsMapping = None, None, None
+            inputVarsMapping = modelOnnxMarabou.inputVars[0]
+            outputVarsMapping = modelOnnxMarabou.outputVars
+            varsMapping = {v : v for v in range(modelOnnxMarabou.numVars)}
         with open(mnistProp.dumpDir + "inputVarsMapping_" + runName + ".npy", "wb") as f:
             np.save(f, inputVarsMapping)
         with open(mnistProp.dumpDir + "outputVarsMapping_" + runName + ".npy", "wb") as f:
@@ -522,26 +508,25 @@ def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, r
             varsMapping = json.load(f)            
     if not sat:            
         return False, timedOut, np.array([]), np.array([]), dict(), dict(), originalQueryStats, finalQueryStats
-    if not fromDumpedQuery:
-        cex, cexPrediction, inputDict, outputDict = cexToImage(modelOnnxMarabou, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
-    else:
-        assert coi #FIXME sat and Full isn't working now.
-        cex, cexPrediction, inputDict, outputDict = cexToImage(ipq, vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
+    cex, cexPrediction, inputDict, outputDict = cexToImage(vals, xAdv, inDist, inputVarsMapping, outputVarsMapping, useMapping=coi)
     fName = "Cex_{}.png".format(runName)
     mnistProp.numCex += 1
     mbouPrediction = cexPrediction.argmax()
-    if not fromDumpedQuery: #FIXME - I need everything to work in the general and dumped mode.
+    if not fromDumpedQuery:
         kerasPrediction = model.predict(np.array([cex])).argmax()
         if mbouPrediction != kerasPrediction:
-            origM, replaceLayer = genCnnForAbsTest(cfg_freshModelOrig=False, cnnSizeChoice=mnistProp.origMSize)
-            origMConvPrediction = origM.predict(np.array([cex])).argmax()
+            origM                = genCnnForAbsTest(cfg_freshModelOrig=False, cnnSizeChoice=mnistProp.origMSize)
+            origMConvPrediction  = origM.predict(np.array([cex])).argmax()
             origMDensePrediction = mnistProp.origMDense.predict(np.array([cex])).argmax()
+            #raise Exception("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction)) #This exception might fail if CEX is sporious.
             print("Marabou and keras doesn't predict the same class. mbouPrediction ={}, kerasPrediction={}, origMConvPrediction={}, origMDensePrediction={}".format(mbouPrediction, kerasPrediction, origMConvPrediction, origMDensePrediction))
     else: #FIXME should load the modelAbs and check the prediction.
         kerasPrediction = None
     plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}, modelPredictsCEX={}'.format(yMax, ySecond, mbouPrediction, kerasPrediction))
     plt.imshow(cex.reshape(xAdv.shape[:-1]), cmap='Greys')
     plt.savefig(fName)
+    with open(fName.replace("png","npy"), "wb") as f:
+        np.save(f, cex)
     mnistProp.printDictToFile(inputDict, "DICT_runMarabouOnKeras_InputDict")
     mnistProp.printDictToFile(outputDict, "DICT_runMarabouOnKeras_OutputDict")
     return True, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats
@@ -567,8 +552,8 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
     modelOnnxMarabou.saveQuery(runName)
     if fromImage:
         predictionMbou = np.array([vals[o.item()] for o in np.nditer(np.array(modelOnnxMarabou.outputVars))])
-        print("predictionMbou={}".format(predictionMbou))
-        print("xPrediction={}".format(xPrediction))
+        printLog("predictionMbou={}".format(predictionMbou))
+        printLog("xPrediction={}".format(xPrediction))
         return xPrediction.argmax() == predictionMbou.argmax(), np.all(xPrediction == predictionMbou), predictionMbou
     else:
         inputDictInner = {i.item():vals[i.item()] for i in np.nditer(np.array(modelOnnxMarabou.inputVars[0]))}
@@ -648,7 +633,7 @@ def genActivationMaskSingleClassRank(intermidModel, prediction, stepSize=mnistPr
 def genActivationMaskMajorityClassVote(intermidModel, stepSize=mnistProp.stepSize):
     features = [[x for x,y in zip(mnistProp.x_test, mnistProp.y_test) if y == label] for label in range(mnistProp.num_classes)]
     actMaps = [meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
-    discriminate = lambda actM : np.square(actM) #FIXME explore discriminating schemes.
+    discriminate = lambda actM : np.square(actM) #TODO explore discriminating schemes.
     actMaps = [discriminate(actMap) for actMap in actMaps]
     sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
     return genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], stepSize=stepSize)
@@ -753,7 +738,7 @@ def printAvgDomain(model, from_label=False): #from_label or from_prediction
 
 #https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
 def compareModels(origM, absM):
-    print("compareModels - Starting evaluation of differances between models.")
+    printLog("compareModels - Starting evaluation of differances between models.")
     layersOrig = [l.name for l in origM.layers]
     layersAbs  = [l.name for l in absM.layers if ("rplc" not in l.name or "rplcOut" in l.name)]
     log = []
@@ -765,14 +750,14 @@ def compareModels(origM, absM):
     #print(absM.input)
     equal_full   = np.all(np.equal  (origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
     isclose_full = np.all(np.isclose(origM.predict(mnistProp.x_test), absM.predict(mnistProp.x_test)))
-    print("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
+    printLog("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
     for lo, la in zip(layersOrig, layersAbs):
         mid_origM = intermidModel(origM, lo)
         mid_absM  = intermidModel(absM , la)
-        print("compare {} to {}".format(lo, la))
+        printLog("compare {} to {}".format(lo, la))
         w_equal = (len(origM.get_layer(name=lo).get_weights()) == len(absM.get_layer(name=la).get_weights())) and all([np.all(np.equal(wo,wa)) for wo,wa in zip(origM.get_layer(name=lo).get_weights(), absM.get_layer(name=la).get_weights())])
         equal   = np.all(np.equal  (mid_origM.predict(mnistProp.x_test), mid_absM.predict(mnistProp.x_test)))
         isclose = np.all(np.isclose(mid_origM.predict(mnistProp.x_test), mid_absM.predict(mnistProp.x_test)))
         log.append(equal)
-        print("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
+        printLog("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
     return log
