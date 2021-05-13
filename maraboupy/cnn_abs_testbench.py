@@ -77,7 +77,7 @@ parser.add_argument("--run_on",         type=str, choices=["local", "cluster"], 
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.1,                    help="Distance checked for adversarial robustness (L1 metric)")
-parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier, negative makes it harder.")
+parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier to satisfy, negative makes it harder.")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
 parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Solver timeout in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
@@ -89,6 +89,8 @@ parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-i
 parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "none"], default="deeppoly",              help="Which bound tightening technique to use.")
 parser.add_argument("--solve_with_milp",action="store_true",                        default=False,                  help="Use MILP solver instead of regular engine.")
 parser.add_argument("--abs_layer",      type=str, default="c2",              help="Which layer should be abstracted.")
+parser.add_argument("--arg",  type=str, default="", help="Push custom string argument.")
+parser.add_argument("--no_dumpBounds",action="store_true",                        default=False,                  help="Disable initial bound tightening.")
 args = parser.parse_args()
 
 resultsJson = dict()
@@ -117,8 +119,9 @@ cfg_dumpDir           = args.dump_dir
 cfg_validation        = args.validation
 cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validation")
 #cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
-cfg_dumpBounds        = True
+cfg_dumpBounds        = not args.no_dumpBounds
 cfg_absLayer          = args.abs_layer
+cfg_extraArg          = args.arg
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -144,6 +147,7 @@ resultsJson["cfg_useDumpedQueries"]  = cfg_useDumpedQueries
 resultsJson["cfg_dumpDir"]           = cfg_dumpDir
 resultsJson["cfg_validation"]        = cfg_validation
 resultsJson["cfg_dumpBounds"]        = cfg_dumpBounds
+resultsJson["cfg_extraArg"]          = cfg_extraArg
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -261,17 +265,19 @@ resultsJson["yMaxPrediction"] = int(yMax)
 resultsJson["ySecondPrediction"] = int(ySecond)
 dumpJson(resultsJson)
 
-printLog("Started dumping bounds - used for abstraction")
-ipq = dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
-printLog("Finished dumping bounds - used for abstraction")
-print(ipq.getNumberOfVariables())
-if ipq.getNumberOfVariables() == 0:
-    resultsJson["SAT"] = False
-    resultsJson["Result"] = "UNSAT"
-    dumpJson(resultsJson)
-    printLog("UNSAT on first LP bound tightening")
-    exit()
-if os.path.isfile(os.getcwd() + "/dumpBounds.json"):
+
+if cfg_dumpBounds:
+    printLog("Started dumping bounds - used for abstraction")
+    ipq = dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+    printLog("Finished dumping bounds - used for abstraction")
+    print(ipq.getNumberOfVariables())
+    if ipq.getNumberOfVariables() == 0:
+        resultsJson["SAT"] = False
+        resultsJson["Result"] = "UNSAT"
+        dumpJson(resultsJson)
+        printLog("UNSAT on first LP bound tightening")
+        exit()
+if os.path.isfile(os.getcwd() + "/dumpBounds.json") and cfg_dumpBounds:
     with open('dumpBounds.json', 'r') as boundFile:
         boundList = json.load(boundFile)
         boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
@@ -285,6 +291,13 @@ if not cfg_maskAbstract:
 printLog("Created {} masks".format(len(maskList)))
 #for i,mask in enumerate(maskList):
 #    print("mask,{}=\n{}".format(i,mask))
+#exit()
+
+#with open(mnistProp.basePath + "/" + cfg_extraArg, "rb") as f:             DEBUG SPORIOUS CEX
+#    cex = np.load(f, allow_pickle=True)
+#print(modelOrigDense.predict(np.array([cex])))
+#print(modelOrigDense.predict(np.array([cex])).argmax())
+#print(isCEXSporious(modelOrigDense, xAdv, 0.05, 0, yMax, ySecond, cex, sporiousStrict=True))
 #exit()
 
 printLog("Strating verification phase")
@@ -343,6 +356,7 @@ else:
         subResultAppend(resultsJson, runType="full")
         mnistProp.optionsObj._timeoutInSeconds = 0
         returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+        #returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, cfg_runTitle, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries) #FIXME this is for Alex's queries - naming wise.
         if cfg_dumpQueries:
             exit()
         sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
