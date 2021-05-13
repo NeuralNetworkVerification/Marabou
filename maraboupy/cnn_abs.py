@@ -67,7 +67,8 @@ class mnistProp:
 
 
 def printLog(s):
-    mnistProp.logger.info(s)
+    if mnistProp.logger:
+        mnistProp.logger.info(s)
     print(s)
                 
 def marabouNetworkStats(net):
