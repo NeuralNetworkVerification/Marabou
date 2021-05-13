@@ -246,7 +246,7 @@ def inBoundsInftyBall(x, r, p, pos=True):
     violations = np.logical_not(inBounds)
     return np.all(inBounds), violations #FIXME shouldn't allow isclose, floating point errors?
 
-def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
+def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, floatingPointErrorGap=0.03):
     inAsNP = np.array(net.inputVars[0])
     x = x.reshape(inAsNP.shape)
     xDown, xUp = getBoundsInftyBall(x, inDist)
@@ -260,7 +260,7 @@ def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
             yCorrectVar = o.item()
         if j == yBad:
             yBadVar = o.item()
-    net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack) # correct - bad <= slack
+    net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGap) # correct + floatingPointErrorGap <= bad + slack
     return net
 
 def cexToImage(valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
