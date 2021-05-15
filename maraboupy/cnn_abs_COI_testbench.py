@@ -21,41 +21,74 @@ import matplotlib.pyplot as plt
 tf.compat.v1.enable_v2_behavior()
 
 optionsLocal   = Marabou.createOptions(snc=False, verbosity=2, solveWithMILP=False, timeoutInSeconds=100, milpTightening="lp", dumpBounds=True, tighteningStrategy="sbt")
-inputShape = (10,10,1)
 
-modelOrig = tf.keras.Sequential(
-    [
-        tf.keras.Input(shape=inputShape),
-        layers.Conv2D(1, kernel_size=(3, 3), activation="relu", name="c1"),
-        layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
-        layers.Flatten(name="f1"),
-        layers.Dense(4, activation="relu", name="fc1"),
-        layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
-    ],
-    name="modelCOI"
-)
+def asONNX(model):
+    modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
+    modelOnnxName = mnistProp.output_model_path(model)
+    keras2onnx.save_model(modelOnnx, modelOnnxName)
+    modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
+    return modelOnnxMarabou
+    
 
-modelOrig.summary()
-#modelOrigDense = cloneAndMaskConvModel(modelOrig, "mp1", np.ones((4,4)))        
+def trainedModel():
+    inputShape = (5,5,1)
+    
+    modelOrig = tf.keras.Sequential(
+        [
+            tf.keras.Input(shape=inputShape),
+            layers.Conv2D(1, kernel_size=(2, 2), activation="relu", name="c1"),
+            layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
+            layers.Flatten(name="f1"),
+            layers.Dense(2, activation="relu", name="fc1"),
+            layers.Dense(4, activation=None, name="sm1"),
+        ],
+        name="modelCOI"
+    )
+    modelOrig.build(input_shape=inputShape)
+    modelOrig.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+    
+    modelOrig.summary()
+    xAdv = np.random.random(inputShape)
+    
+    return modelOrig, xAdv
+    #modelOrigDense = cloneAndMaskConvModel(modelOrig, "mp1", np.ones((4,4)))
+
+def handCraftedModel():    
+    inputShape = (4,4,1)
+    numInputs = np.prod(np.array(inputShape))
+    numOutputs = 4
+    model = MarabouNetwork()
+    inputs = [model.getNewVariable() for i in range((numInputs))]
+    outputs = np.array([model.getNewVariable() for i in range((numOutputs))])
+
+    firstLayer = [model.getNewVariable() for i in range(9)]
+    
+    
+    xAdv = np.random.random(inputShape)
+    return model, xAdv
+
+modelTF, xAdv = trainedModel()
+modelTFDense = cloneAndMaskConvModel(modelTF, "mp1", np.ones((4,4)))
+model      = asONNX(modelTF)
+modelDense = asONNX(modelTFDense)
+#model, xAdv = handCraftedModel()
+#exit()
+
 #boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 
-model = modelOrig
-
-xAdv = np.random.random(inputShape)
 inDist = 0.05
 yMax = 3
 ySecond = 2
 outSlack = 0
 
-modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
-modelOnnxName = mnistProp.output_model_path(model)
-keras2onnx.save_model(modelOnnx, modelOnnxName)
-modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
-#setBounds(modelOnnxMarabou, boundDict)
-setUnconnectedAsInputs(modelOnnxMarabou)
-modelOnnxMarabou.saveQuery("COITestbench")
-ipq = modelOnnxMarabou.getMarabouQuery()
+setAdversarial(model, xAdv, inDist, outSlack, yMax, ySecond)
+setAdversarial(modelDense, xAdv, inDist, outSlack, yMax, ySecond)
+#setBounds(model, boundDict)
+setUnconnectedAsInputs(model)
+setUnconnectedAsInputs(modelDense)
+model.saveQuery("COITestbench")
+modelDense.saveQuery("COITestbenchDense")
+ipq = model.getMarabouQuery()
 vals, stats = Marabou.solve_query(ipq, verbose=False, options=optionsLocal)
 sat = len(vals) > 0
 timedOut = stats.hasTimedOut()

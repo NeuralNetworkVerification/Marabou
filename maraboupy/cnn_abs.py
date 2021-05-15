@@ -234,23 +234,28 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
 
     return origM
 
-def getBoundsInftyBall(x, r, pos=True):
+def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0):
+    if r > floatingPointErrorGap and floatingPointErrorGap > 0:
+        r -= floatingPointErrorGap
     if pos:
         return np.maximum(x - r,np.zeros(x.shape)), x + r
     return x - r, x + r
 
 def inBoundsInftyBall(x, r, p, pos=True):
+    assert p.shape == x.shape
     l,u = getBoundsInftyBall(x,r,pos=pos)
     geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
     leqUp = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
     inBounds = np.logical_and(geqLow, leqUp)
     violations = np.logical_not(inBounds)
+    assert violations.shape == x.shape
     return np.all(inBounds), violations #FIXME shouldn't allow isclose, floating point errors?
 
-def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, floatingPointErrorGap=0.03):
+def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
     inAsNP = np.array(net.inputVars[0])
     x = x.reshape(inAsNP.shape)
-    xDown, xUp = getBoundsInftyBall(x, inDist)
+    xDown, xUp = getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.002)
+    floatingPointErrorGapOutput = 0.03
     for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
         net.lowerBounds.pop(i.item(), None)
         net.upperBounds.pop(i.item(), None)
@@ -261,7 +266,7 @@ def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, floatingPointErrorG
             yCorrectVar = o.item()
         if j == yBad:
             yBadVar = o.item()
-    net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGap) # correct + floatingPointErrorGap <= bad + slack
+    net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
     return net
 
 def cexToImage(valDict, xAdv, inDist, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
@@ -565,10 +570,10 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
         return (outputDictInner == outputDict) and equality,
 
 #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
-def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=False):
+def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=True):
     inBounds, violations =  inBoundsInftyBall(x, inDist, cex)
     if not inBounds:
-        raise Exception("CEX out of bounds, violations={}".format(violations.nonzero()))
+        raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), (cex-x)[np.transpose(violations.nonzero())]))
     prediction = model.predict(np.array([cex]))
     if not sporiousStrict:
         return prediction.argmax() == yCorrect

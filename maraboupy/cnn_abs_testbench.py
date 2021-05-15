@@ -259,6 +259,9 @@ plt.figure()
 plt.imshow(np.squeeze(xAdv))
 plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
 plt.savefig(fName)
+with open(fName.replace("png","npy"), "wb") as f:
+    np.save(f, xAdv)
+
 
 resultsJson["yDataset"] = int(yAdv.item())
 resultsJson["yMaxPrediction"] = int(yMax)
@@ -293,8 +296,30 @@ printLog("Created {} masks".format(len(maskList)))
 #    print("mask,{}=\n{}".format(i,mask))
 #exit()
 
-#with open(mnistProp.basePath + "/" + cfg_extraArg, "rb") as f:             DEBUG SPORIOUS CEX
-#    cex = np.load(f, allow_pickle=True)
+#sample8 = True
+#sample38 = False
+#
+#if sample38:
+#    with open("/cs/labs/guykatz/matanos/Marabou/maraboupy/logs/slurm_AbsPolicies_14-05-21___16-43-32/RandomCfg---38/Cex_sample_38,policy_Random,mask_0.npy", "rb") as f:
+#        cex38 = np.load(f, allow_pickle=True)    
+#    xAdv38 = mnistProp.x_test[38]
+#    print("xAdv38 = {}".format(xAdv38.squeeze()))
+#    print("cex38 = {}".format(cex38.squeeze()))
+#    print("cex38 -xAdv38 = {}".format((cex38 - xAdv38).squeeze()))    
+#
+#if sample8:
+#    with open("/cs/labs/guykatz/matanos/Marabou/maraboupy/logs/slurm_AbsPolicies_14-05-21___16-43-32/MajorityClassVoteCfg---8/Cex_sample_8,policy_MajorityClassVote,mask_3.npy", "rb") as f:
+#        cex8 = np.load(f, allow_pickle=True)
+#    xAdv8 = mnistProp.x_test[8]
+#    print("cex8 = {}".format(cex8.squeeze()))
+#    print("xAdv8 = {}".format(xAdv8.squeeze()))
+#    print("cex8 -xAdv8 = {}".format((cex8 - xAdv8).squeeze()))
+#    print("isCEXSporious={}".format(isCEXSporious(None, xAdv8, cfg_propDist, 0, None, None, cex8)))
+#print("inDist = {}".format(cfg_propDist))
+#exit()
+
+#with open(mnistProp.basePath + "/" + cfg_extraArg, "rb") as f:             #DEBUG SPORIOUS CEX
+    #cex = np.load(f, allow_pickle=True)
 #print(modelOrigDense.predict(np.array([cex])))
 #print(modelOrigDense.predict(np.array([cex])).argmax())
 #print(isCEXSporious(modelOrigDense, xAdv, 0.05, 0, yMax, ySecond, cex, sporiousStrict=True))
