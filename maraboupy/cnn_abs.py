@@ -84,6 +84,7 @@ def marabouNetworkStats(net):
             "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
             "numOutputVars" : net.outputVars.size}
 
+#FIXME should work on MaxPool layers too
 #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
 def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=mnistProp.cfg_dis_w):
     #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer
@@ -117,14 +118,14 @@ def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, stride
 
     return replaceW, replaceB
 
-def cloneAndMaskConvModel(origM, rplcLayerName, mask):
+def cloneAndMaskConvModel(origM, rplcLayerName, mask, inputShape=mnistProp.input_shape, evaluate=True):
     rplcIn = origM.get_layer(name=rplcLayerName).input_shape
     rplcOut = origM.get_layer(name=rplcLayerName).output_shape
     origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
     origB = origM.get_layer(name=rplcLayerName).get_weights()[1]
     strides = origM.get_layer(name=rplcLayerName).strides
     clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-    clnLayers = [tf.keras.Input(shape=mnistProp.input_shape, name="input_clnM")]
+    clnLayers = [tf.keras.Input(shape=inputShape, name="input_clnM")]
     toSetWeights = {}
     lSuffix = "_clnM_{}_{}".format(mnistProp.runSuffix, mnistProp.numClones)
     for l in origM.layers:
@@ -160,16 +161,18 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask):
 
     for l,w in toSetWeights.items():
         clnM.get_layer(name=l).set_weights(w)
-    score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
-    printLog("(Clone, neurons masked:{}%) Test loss:{}".format(100*(1 - np.average(mask)), score[0]))
-    printLog("(Clone, neurons masked:{}%) Test accuracy:{}".format(100*(1 - np.average(mask)), score[1]))
 
-    if np.all(np.equal(mask, np.ones_like(mask))):
-        if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-            #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
-            printLog("Prediction aligned")
-        else:
-            printLog("Prediction not aligned")
+    if evaluate:
+        score = clnM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
+        printLog("(Clone, neurons masked:{}%) Test loss:{}".format(100*(1 - np.average(mask)), score[0]))
+        printLog("(Clone, neurons masked:{}%) Test accuracy:{}".format(100*(1 - np.average(mask)), score[1]))
+
+        if np.all(np.equal(mask, np.ones_like(mask))):
+            if np.all(np.isclose(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+                #if np.all(np.equal(clnM.predict(mnistProp.x_test), origM.predict(mnistProp.x_test))):
+                printLog("Prediction aligned")
+            else:
+                printLog("Prediction not aligned")
 
     return clnM
 
@@ -398,20 +401,20 @@ def setCOIBoundes(net, init):
     printLog("len(net.signList)={}".format(len(net.signList)))
     printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
     printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
-    printLog("len(net.inputVars)={}".format(len(net.inputVars)))
-    printLog("len(net.outputVars)={}".format(len(net.outputVars)))
+    printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
+    printLog("net.outputVars.size={}".format(net.outputVars.size))
 
     reach = set(init)
     lastLen = 0
     while len(reach) > lastLen:
         lastLen = len(reach)
         reachPrev = reach.copy()
-        for eq in net.equList:
+        for eqi, eq in enumerate(net.equList):
             if (eq.addendList[-1][1] in reachPrev) and (eq.addendList[-1][0] == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
                 [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
             elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                 [reach.add(v) for w,v in eq.addendList]
-                printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
+                printLog("eqi={}, eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eqi, eq.addendList, eq.scalar, eq.EquationType))
         for maxArgs, maxOut in net.maxList:
             if maxOut in reachPrev:
                 [reach.add(arg) for arg in maxArgs]
@@ -436,8 +439,8 @@ def setCOIBoundes(net, init):
     printLog("len(net.signList)={}".format(len(net.signList)))
     printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
     printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
-    printLog("len(net.inputVars)={}".format(len(net.inputVars)))
-    printLog("len(net.outputVars)={}".format(len(net.outputVars)))
+    printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
+    printLog("net.outputVars.size={}".format(net.outputVars.size))
     printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     return inputVarsMapping, outputVarsMapping, varsMapping
 
@@ -573,7 +576,7 @@ def verifyMarabou(model, xAdv, xPrediction, inputDict, outputDict, runName="veri
 def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=True):
     inBounds, violations =  inBoundsInftyBall(x, inDist, cex)
     if not inBounds:
-        raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), (cex-x)[np.transpose(violations.nonzero())]))
+        raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-x)[violations.nonzero()]))
     prediction = model.predict(np.array([cex]))
     if not sporiousStrict:
         return prediction.argmax() == yCorrect
