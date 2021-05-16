@@ -48,7 +48,8 @@ def trainedModel():
     modelOrig.compile(optimizer=mnistProp.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     
     modelOrig.summary()
-    xAdv = np.random.random(inputShape)
+    #xAdv = np.random.random(inputShape) Shows some bug
+    xAdv = np.array(range(25)).reshape(inputShape)
     
     return modelOrig, xAdv
     #modelOrigDense = cloneAndMaskConvModel(modelOrig, "mp1", np.ones((4,4)))
@@ -68,27 +69,34 @@ def handCraftedModel():
     return model, xAdv
 
 modelTF, xAdv = trainedModel()
-modelTFDense = cloneAndMaskConvModel(modelTF, "mp1", np.ones((4,4)))
+mask = np.ones((4,4))
+mask[tuple(np.transpose([(0,0),(0,1),(0,2),(0,3)]))] = 0
+#mask[tuple(np.transpose([(0,0),(0,1),(1,0),(1,1)]))] = 0
+print("mask={}".format(mask))
+modelTFDense = cloneAndMaskConvModel(modelTF, "c1", mask,inputShape=(5,5,1), evaluate=False)
 model      = asONNX(modelTF)
 modelDense = asONNX(modelTFDense)
 #model, xAdv = handCraftedModel()
 #exit()
-
-#boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 
 inDist = 0.05
 yMax = 3
 ySecond = 2
 outSlack = 0
 
-setAdversarial(model, xAdv, inDist, outSlack, yMax, ySecond)
+#boundDict = {v : (l,u) if model.}
+#boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
+
+modelDense.saveQuery("COITestbench_Dense_Not_Proccessed")
+
 setAdversarial(modelDense, xAdv, inDist, outSlack, yMax, ySecond)
+inputVarsMapping, outputVarsMapping, varsMapping = setCOIBoundes(modelDense, modelDense.outputVars.flatten().tolist())
 #setBounds(model, boundDict)
-setUnconnectedAsInputs(model)
-setUnconnectedAsInputs(modelDense)
-model.saveQuery("COITestbench")
-modelDense.saveQuery("COITestbenchDense")
-ipq = model.getMarabouQuery()
+#setUnconnectedAsInputs(modelDense)
+
+modelDense.saveQuery("COITestbench_Dense_Proccessed")
+
+ipq = modelDense.getMarabouQuery()
 vals, stats = Marabou.solve_query(ipq, verbose=False, options=optionsLocal)
 sat = len(vals) > 0
 timedOut = stats.hasTimedOut()
