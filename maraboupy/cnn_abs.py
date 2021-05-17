@@ -244,11 +244,15 @@ def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0):
         return np.maximum(x - r,np.zeros(x.shape)), x + r
     return x - r, x + r
 
-def inBoundsInftyBall(x, r, p, pos=True):
+def inBoundsInftyBall(x, r, p, pos=True, allowClose=True):
     assert p.shape == x.shape
     l,u = getBoundsInftyBall(x,r,pos=pos)
-    geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
-    leqUp = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
+    if allowClose:
+        geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
+        leqUp  = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
+    else:
+        geqLow = np.less_equal(l,p)
+        leqUp  = np.less_equal(p,u)
     inBounds = np.logical_and(geqLow, leqUp)
     violations = np.logical_not(inBounds)
     assert violations.shape == x.shape
@@ -257,7 +261,7 @@ def inBoundsInftyBall(x, r, p, pos=True):
 def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
     inAsNP = np.array(net.inputVars[0])
     x = x.reshape(inAsNP.shape)
-    xDown, xUp = getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.002)
+    xDown, xUp = getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025)
     floatingPointErrorGapOutput = 0.03
     for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
         net.lowerBounds.pop(i.item(), None)
@@ -394,6 +398,7 @@ def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remov
     
 def setCOIBoundes(net, init):
 
+    printLog("net.numVars={}".format(net.numVars))    
     printLog("len(net.equList)={}".format(len(net.equList)))
     printLog("len(net.maxList)={}".format(len(net.maxList)))
     printLog("len(net.reluList)={}".format(len(net.reluList)))
@@ -432,6 +437,7 @@ def setCOIBoundes(net, init):
         for w,v in eq.addendList:
             if v > net.numVars:
                 printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
+    printLog("net.numVars={}".format(net.numVars))
     printLog("len(net.equList)={}".format(len(net.equList)))
     printLog("len(net.maxList)={}".format(len(net.maxList)))
     printLog("len(net.reluList)={}".format(len(net.reluList)))
@@ -456,12 +462,17 @@ def processInputQuery(net):
     return MarabouCore.preprocess(net.getMarabouQuery(), mnistProp.optionsObj)
 
 def setBounds(model, boundDict):
+    #print("model.lowerBounds={}".format(model.lowerBounds))
+    #print("model.upperBounds={}".format(model.upperBounds))    
     if boundDict:
         for i, (lb, ub) in boundDict.items():
-            if i < model.numVars: #FIXME This might mean that there is disalignment between the queries' definition of variables                
-                if (not i in model.lowerBounds) or (model.lowerBounds[i] < lb):
+            if i < model.numVars: #FIXME This might mean that there is disalignment between the queries' definition of variables
+                #print("Im trying to put {} bounds".format(i))
+                #print("{} in model.lowerBounds : {}".format(i, i in model.lowerBounds))
+                #print("{} in model.upperBounds : {}".format(i, i in model.upperBounds))                  
+                if (i not in model.lowerBounds) or (model.lowerBounds[i] < lb):
                     model.setLowerBound(i,lb)
-                if (not i in model.upperBounds) or (ub < model.upperBounds[i]):
+                if (i not in model.upperBounds) or (ub < model.upperBounds[i]):
                     model.setUpperBound(i,ub)
 
 def runMarabouOnKeras(model, xAdv, inDist, outSlack, yMax, ySecond, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
