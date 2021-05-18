@@ -261,7 +261,8 @@ sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in run
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
 for sums, label in zip(sumRuntimes, cactusLabels):
     solved = list(range(1,len(sums)+1))
-    plt.step([0] + sums, [0] + solved, label=label, where="post")
+    p = plt.step([0] + sums, [0] + solved, label=label, where="post")
+    plt.scatter(sums[-1], solved[-1], s=70, marker="o", alpha=0.3, c=p[0].get_color())
     #print("label={}".format(label))
     #print("sums={}".format(sums))
     #print("solved={}".format(solved))        
