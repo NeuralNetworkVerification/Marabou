@@ -87,12 +87,65 @@ outSlack = 0
 #boundDict = {v : (l,u) if model.}
 #boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 
-modelDense.saveQuery("COITestbench_Dense_Not_Proccessed")
+onlyOld = False
+if onlyOld:
+    ipq0 = Marabou.load_query("COITestbench_Dense_Not_Proccessed_working")
+    vals, stats = Marabou.solve_query(ipq0, verbose=True, options=optionsLocal)
+    print("ipq0 ok")
+    ipq2 = Marabou.load_query("COITestbench_Dense_Not_Proccessed_not_working")
+    vals, stats = Marabou.solve_query(ipq2, verbose=True, options=optionsLocal)
+    print("ipq2 ok")
+    ipq1 = Marabou.load_query("COITestbench_Dense_Proccessed_working")
+    vals, stats = Marabou.solve_query(ipq1, verbose=True, options=optionsLocal)
+    print("ipq1 ok")    
+    ipq3 = Marabou.load_query("COITestbench_Dense_Proccessed_not_working")
+    vals, stats = Marabou.solve_query(ipq3, verbose=True, options=optionsLocal)
+    print("ipq3 not ok")    
+    exit()
 
+modelDense.saveQuery("COITestbench_Dense_Not_Proccessed")
+print("\nFinished init\n")
+print("modelDense.numVars={}".format(modelDense.numVars))
+ipq = modelDense.getMarabouQuery()
+vals, stats = Marabou.solve_query(ipq, verbose=False, options=optionsLocal)
+sat = len(vals) > 0
+timedOut = stats.hasTimedOut()
+unsat = not timedOut and not sat
+print("Before COI processing")
+print("SAT = {}".format(sat))
+print("UNSAT = {}".format(unsat))
+print("TIMEDOUT = {}".format(timedOut))
+
+print("modelDense.numVars={}".format(modelDense.numVars))
 setAdversarial(modelDense, xAdv, inDist, outSlack, yMax, ySecond)
+modelDense.saveQuery("COITestbench_Dense_After_setAdversarial")
+print("\nFinished SetAdversarial\n")
+
+#print("set(modelDense.lowerBounds.keys())={}".format(set(modelDense.lowerBounds.keys())))
+#print("set(modelDense.upperBounds.keys())={}".format(set(modelDense.upperBounds.keys())))
+print("modelDense.numVars={}".format(modelDense.numVars))
+sharedKeys = set(modelDense.lowerBounds.keys()) & set(modelDense.upperBounds.keys())
+boundDict = {k : (modelDense.lowerBounds[k],modelDense.upperBounds[k]) for k in sharedKeys}
+for v in range(modelDense.numVars):
+    if v not in boundDict:
+        boundDict[v] = (- 10000 - v, 10000 + v)
+print("boundDict={}".format(boundDict))
+setBounds(modelDense, boundDict)
+modelDense.saveQuery("COITestbench_Dense_After_setBounds")
+
+print("\nFinished setBounds\n")
+
 inputVarsMapping, outputVarsMapping, varsMapping = setCOIBoundes(modelDense, modelDense.outputVars.flatten().tolist())
-#setBounds(model, boundDict)
-#setUnconnectedAsInputs(modelDense)
+modelDense.saveQuery("COITestbench_Dense_After_setCOIBounds")
+
+print("\nFinished setCOIBounds\n")
+
+#print("modelDense.lowerBounds.keys()={}".format(sorted(list(modelDense.lowerBounds.keys()))))
+#print("modelDense.upperBounds.keys()={}".format(sorted(list(modelDense.upperBounds.keys()))))
+
+setUnconnectedAsInputs(modelDense)
+
+print("\nFinished setUnconnectedAsInputs\n")
 
 modelDense.saveQuery("COITestbench_Dense_Proccessed")
 
@@ -101,6 +154,7 @@ vals, stats = Marabou.solve_query(ipq, verbose=False, options=optionsLocal)
 sat = len(vals) > 0
 timedOut = stats.hasTimedOut()
 unsat = not timedOut and not sat
+print("After COI processing")
 print("SAT = {}".format(sat))
 print("UNSAT = {}".format(unsat))
 print("TIMEDOUT = {}".format(timedOut))

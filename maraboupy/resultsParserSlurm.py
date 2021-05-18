@@ -186,7 +186,10 @@ for fullpath in resultsFiles:
 
 resultDicts = list(results.values())
 
-graphDir = os.getcwd() + "/__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
+basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
+if not os.path.exists(basePath + "graphs/"):
+    os.mkdir(basePath + "graphs/")
+graphDir = basePath + "graphs/" + "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 if not os.path.exists(graphDir):
     os.mkdir(graphDir)
 os.chdir(graphDir)
