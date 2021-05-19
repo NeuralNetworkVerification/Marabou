@@ -90,7 +90,8 @@ parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "n
 parser.add_argument("--solve_with_milp",action="store_true",                        default=False,                  help="Use MILP solver instead of regular engine.")
 parser.add_argument("--abs_layer",      type=str, default="c2",              help="Which layer should be abstracted.")
 parser.add_argument("--arg",  type=str, default="", help="Push custom string argument.")
-parser.add_argument("--no_dumpBounds",action="store_true",                        default=False,                  help="Disable initial bound tightening.")
+parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
+parser.add_argument("--ipq_name_is_run_name",action="store_true",                   default=False,                  help="Name IPQ's and other dumped files exactly as runTitle.")
 args = parser.parse_args()
 
 resultsJson = dict()
@@ -122,6 +123,7 @@ cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validat
 cfg_dumpBounds        = not args.no_dumpBounds
 cfg_absLayer          = args.abs_layer
 cfg_extraArg          = args.arg
+cfg_ipqNameIsRunName  = args.ipq_name_is_run_name
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -148,6 +150,7 @@ resultsJson["cfg_dumpDir"]           = cfg_dumpDir
 resultsJson["cfg_validation"]        = cfg_validation
 resultsJson["cfg_dumpBounds"]        = cfg_dumpBounds
 resultsJson["cfg_extraArg"]          = cfg_extraArg
+resultsJson["cfg_ipqNameIsRunName"]  = cfg_ipqNameIsRunName
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -380,8 +383,8 @@ else:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         subResultAppend(resultsJson, runType="full")
         mnistProp.optionsObj._timeoutInSeconds = 0
-        returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
-        #returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, cfg_runTitle, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries) #FIXME this is for Alex's queries - naming wise.
+        runName = "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy) if not cfg_ipqNameIsRunName else cfg_runTitle
+        returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
         if cfg_dumpQueries:
             exit()
         sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
