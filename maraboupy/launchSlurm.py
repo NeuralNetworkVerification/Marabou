@@ -129,7 +129,7 @@ experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                "FindMinProvable": experimentFindMinProvable}
 parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
 parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch?", required=True)
-parser.add_argument("--runs_per_type", type=int, default=50, help="Number of runs per type.")
+parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
 parser.add_argument("--dump_queries", action="store_true", default=False, help="Only dump queries, don't solve.")
 parser.add_argument("--use_dumped_queries", action="store_true", default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
 parser.add_argument("--sample", type=int, default=0, help="For part of experiments, specific sample choice")
