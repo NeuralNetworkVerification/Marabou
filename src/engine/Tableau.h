@@ -675,6 +675,11 @@ private:
     void updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned varIndex ) const;
 
     /*
+     * Resets a bound explanation
+     */
+	void resetExplanation ( const unsigned var, const bool isUpper );
+
+    /*
      * Multiplies the explanation vector of a var by scalar alpha
      */
 	void multiplyExplanationCoefficients (const unsigned var, const double alpha, const bool isUpper);

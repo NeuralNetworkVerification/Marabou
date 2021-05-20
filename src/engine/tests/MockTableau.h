@@ -626,6 +626,14 @@ public:
     {
     	return NULL;
     }
+
+	virtual void resetExplanation ( const unsigned /* var */, const bool /* isUpper */ )
+	{
+	}
+
+	void multiplyExplanationCoefficients ( const unsigned /* var */, const double /* alpha */, const bool /* isUpper */ )
+	{
+	}
 };
 
 #endif // __MockTableau_h__

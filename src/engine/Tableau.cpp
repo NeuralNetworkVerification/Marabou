@@ -1841,6 +1841,13 @@ unsigned Tableau::addEquation( const Equation &equation )
     _denseA[(auxVariable * _m) + _m - 1] = 1;
     _A->addLastRow( _workN );
 
+    if (GlobalConfiguration::PROOF_CERTIFICATE) //TODO consider deleting
+	{
+		updateExplanation( *_sparseRowsOfA[_m - 1], true, auxVariable );
+		updateExplanation( *_sparseRowsOfA[_m - 1], false, auxVariable );
+	}
+
+
     // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
 
@@ -2113,8 +2120,13 @@ void Tableau::addRow()
         _statistics->setCurrentTableauDimension( _m, _n );
     }
 
-    if (GlobalConfiguration::PROOF_CERTIFICATE)
-        _boundsExplanator = new BoundsExplanator(_n, _m); //TODO erase after registration as resizeWatcher
+    if ( GlobalConfiguration::PROOF_CERTIFICATE ) // TODO consider deleting
+	{
+		for ( SingleVarBoundsExplanator& explanation : _boundsExplanator->getExplanations() )
+			explanation.addZeroEntry(); //TODO review
+		_boundsExplanator->addZeroExplanation();
+	}
+
 }
 
 void Tableau::registerToWatchVariable( VariableWatcher *watcher, unsigned variable )
@@ -2687,7 +2699,14 @@ double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) con
     return bound;
 }
 
-void Tableau::multiplyExplanationCoefficients (const unsigned var, const double alpha, const bool isUpper)
+
+void Tableau::resetExplanation( const unsigned var, const bool isUpper )
+{
+	_boundsExplanator->resetExplanation( var, isUpper );
+}
+
+
+void Tableau::multiplyExplanationCoefficients ( const unsigned var, const double alpha, const bool isUpper )
 {
 	_boundsExplanator->multiplyExplanationCoefficients( var, alpha, isUpper );
 }

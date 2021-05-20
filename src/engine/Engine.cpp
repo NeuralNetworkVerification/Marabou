@@ -56,7 +56,8 @@ Engine::Engine()
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
     , _initialTableau {}
-    , _toggleBounds( 0 )
+    , _groundUpperBounds {}
+    , _groundLowerBounds {}
     , _UNSATCertificate( NULL )
     , _UNSATCertificateCurrentPointer( NULL )
 {
@@ -783,12 +784,12 @@ double *Engine::createConstraintMatrix()
 	{
         unsigned count = 0;
 
-        _toggleBounds = ToggleBounds( n );
-
+		_groundUpperBounds = std::vector<double>( n );
+		_groundLowerBounds = std::vector<double>( n );
         for ( unsigned i = 0; i < n; ++i )
         {
-            _toggleBounds.toggleLower( i, _preprocessedQuery.getLowerBound( i ), true );
-			_toggleBounds.toggleUpper( i, _preprocessedQuery.getUpperBound( i ), true );
+			_groundUpperBounds[i] = _preprocessedQuery.getUpperBound( i );
+			_groundLowerBounds[i] = _preprocessedQuery.getLowerBound( i );
         }
 
         // Set vector of initial rows
@@ -1212,10 +1213,29 @@ void Engine::performMILPSolverBoundedTightening()
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _tableau->tightenLowerBound( tightening._variable, tightening._value );
-
+			{
+				_tableau->tightenLowerBound( tightening._variable, tightening._value );
+				if ( GlobalConfiguration::PROOF_CERTIFICATE )
+				{
+					if ( _tableau->getLowerBound( tightening._variable ) <= tightening._value )
+					{
+						_tableau->resetExplanation( tightening._variable, false );
+						_groundLowerBounds[tightening._variable] = tightening._value;
+					}
+				}
+			}
             else if ( tightening._type == Tightening::UB )
-                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+			{
+				_tableau->tightenUpperBound( tightening._variable, tightening._value );
+				if ( GlobalConfiguration::PROOF_CERTIFICATE )
+				{
+					if ( _tableau->getUpperBound( tightening._variable ) >= tightening._value )
+					{
+						_tableau->resetExplanation( tightening._variable, true );
+						_groundUpperBounds[tightening._variable] = tightening._value;
+					}
+				}
+			}
         }
     }
 }
@@ -1323,6 +1343,14 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
+	state._groundLowerBounds = std::vector<double> (_tableau->getN(), 0);
+	state._groundUpperBounds = std::vector<double> (_tableau->getN(), 0);
+
+	if ( GlobalConfiguration::PROOF_CERTIFICATE )
+	{
+    	std::copy( _groundUpperBounds.begin(), _groundUpperBounds.end(), state._groundUpperBounds.begin() );
+		std::copy( _groundLowerBounds.begin(), _groundLowerBounds.end(), state._groundLowerBounds.begin() );
+	}
 }
 
 void Engine::restoreState( const EngineState &state )
@@ -1345,6 +1373,12 @@ void Engine::restoreState( const EngineState &state )
     }
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
+
+	if ( GlobalConfiguration::PROOF_CERTIFICATE )
+	{
+		std::copy( state._groundUpperBounds.begin(), state._groundUpperBounds.end(), _groundUpperBounds.begin() );
+		std::copy( state._groundLowerBounds.begin(), state._groundLowerBounds.end(), _groundLowerBounds.begin() );
+	}
 
     // Make sure the data structures are initialized to the correct size
     _rowBoundTightener->setDimensions();
@@ -1461,7 +1495,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 {
     ENGINE_LOG( "" );
     ENGINE_LOG( "Applying a split. " );
-
     DEBUG( _tableau->verifyInvariants() );
 
     List<Tightening> bounds = split.getBoundTightenings();
@@ -1564,19 +1597,29 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         {
             ENGINE_LOG( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenLowerBound( variable, bound._value );
-			if ( GlobalConfiguration::PROOF_CERTIFICATE )
-				_toggleBounds.toggleLower( variable, bound._value, false );
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+            	if (_tableau->getLowerBound( variable ) <= bound._value)
+				{
+					_tableau->resetExplanation( variable, false );
+					_groundLowerBounds[variable] = bound._value;
+				}
+			}
         }
         else
         {
             ENGINE_LOG( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             _tableau->tightenUpperBound( variable, bound._value );
 			if ( GlobalConfiguration::PROOF_CERTIFICATE )
-				_toggleBounds.toggleUpper( variable, bound._value, false );
-
+			{
+				if (_tableau->getUpperBound( variable ) >= bound._value)
+				{
+					_tableau->resetExplanation(variable, true);
+					_groundUpperBounds[variable] = bound._value;
+				}
+			}
         }
     }
-
     DEBUG( _tableau->verifyInvariants() );
     ENGINE_LOG( "Done with split\n" );
 }
@@ -1606,9 +1649,29 @@ void Engine::applyAllConstraintTightenings()
         _statistics.incNumBoundsProposedByPlConstraints();
 
         if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
+		{
+			_tableau->tightenLowerBound( tightening._variable, tightening._value );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				if (_tableau->getLowerBound( tightening._variable ) <= tightening._value)
+				{
+					_tableau->resetExplanation(tightening._variable, false);
+					_groundLowerBounds[tightening._variable] = tightening._value;
+				}
+			}
+		}
         else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
+		{
+			_tableau->tightenUpperBound( tightening._variable, tightening._value );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				if (_tableau->getUpperBound( tightening._variable ) >= tightening._value)
+				{
+					_tableau->resetExplanation(tightening._variable, true);
+					_groundUpperBounds[tightening._variable] = tightening._value;
+				}
+			}
+		}
     }
 }
 
@@ -2403,14 +2466,16 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
     // Retrieve bound explanation
     std::vector<double> expl = std::vector<double>( m, 0 );
     certificate->getVarBoundExplanation( expl, isUpper );
- 
+	delete certificate;
+
+
     // If explanation is all zeros, return original bound
     bool allZeros = true;
     for( unsigned i = 0; i < expl.size(); ++i )
         if ( !FloatUtils::isZero( expl[i] ) )
             allZeros = false;
     if ( allZeros )
-        return isUpper? _toggleBounds.getUpperBound( var ) : _toggleBounds.getLowerBound( var );
+        return isUpper? _groundUpperBounds[var] : _groundLowerBounds[var];
 
     // Create linear combination of original rows implied from explanation
     std::vector<double> explanationRowsCombination = std::vector<double>( n, 0 );
@@ -2441,17 +2506,18 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 		if ( !FloatUtils::isZero( temp ) )
 		{
 			if ( isUpper )
-				temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getUpperBound( i ) : _toggleBounds.getLowerBound( i );
+				temp *= explanationRowsCombination[i] > 0 ? _groundUpperBounds[i] : _groundLowerBounds[i];
 			else
-				temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getLowerBound( i ) : _toggleBounds.getUpperBound( i );
-           derived_bound += temp;
+				temp *= explanationRowsCombination[i] > 0 ? _groundLowerBounds[i] : _groundUpperBounds[i];
+
+			if ( !FloatUtils::isZero( abs(temp) ) )
+           		derived_bound += temp;
 		}
     }
 
-    derived_bound += scalar;
+	derived_bound += scalar;
     explanationRowsCombination.clear();
     expl.clear();
-	delete certificate;
     return derived_bound;
 }
 
@@ -2520,8 +2586,3 @@ void Engine::validateAllBounds( const double epsilon ) const
 }
 
 
-void Engine::revertOriginalBounds( const PiecewiseLinearCaseSplit& split )
-{
-	for (auto bound : split.getBoundTightenings())
-		_toggleBounds.revertBoundToInput( bound._variable, bound._type == Tightening::UB );
-}

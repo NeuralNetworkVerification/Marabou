@@ -46,7 +46,10 @@ public:
 	 */
 	SingleVarBoundsExplanator& operator=(const SingleVarBoundsExplanator& other);
 
-
+	/*
+	 * Adds a zero entry for an explanation
+	 */
+	void addZeroEntry();
 
 	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
 	unsigned _lowerRecLevel;
@@ -100,6 +103,20 @@ public:
 	*/
 	void multiplyExplanationCoefficients( const unsigned var, const double alpha, const bool isUpper );
 
+	/*
+	 * Get the explanations vector
+	 */
+	std::vector<SingleVarBoundsExplanator>& getExplanations();
+
+	/*
+	 * Adds a zero explanation at the end
+	 */
+	void addZeroExplanation();
+
+	/*
+	 * Resets an explanation
+	 */
+	void resetExplanation (const unsigned var, const bool isUpper);
 
 private:
 	unsigned _varsNum;

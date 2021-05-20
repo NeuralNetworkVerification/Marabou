@@ -37,7 +37,6 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
-#include "ToggleBounds.h"
 #include "UNSATCertificate.h"
 
 #include <atomic>
@@ -548,8 +547,9 @@ private:
     void simplexBoundsUpdate();
 
     std::vector<std::vector<double>> _initialTableau;
-    ToggleBounds _toggleBounds;
-	CertificateNode* _UNSATCertificate;
+    std::vector<double> _groundUpperBounds;
+    std::vector<double> _groundLowerBounds;
+    CertificateNode* _UNSATCertificate;
 	CertificateNode* _UNSATCertificateCurrentPointer;
     /*
      Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
@@ -579,11 +579,6 @@ private:
      TODO erase upon completion?
     */
     void validateAllBounds( const double epsilon ) const;
-
-    /*
-     * Reverts all bounds in split to be as input bounds again
-     */
-	void revertOriginalBounds( const PiecewiseLinearCaseSplit& split );
 };
 
 #endif // __Engine_h__

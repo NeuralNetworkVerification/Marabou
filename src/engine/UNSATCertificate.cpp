@@ -59,9 +59,3 @@ bool CertificateNode::sanityCheck ( CertificateNode* root )
 	return true;
 }
 
-
-bool CertificateNode::certifyTree( CertificateNode* root )
-{
-	//TODO complete
-	return true;
-}

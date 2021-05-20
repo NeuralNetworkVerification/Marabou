@@ -62,6 +62,13 @@ void SingleVarBoundsExplanator::multiplyAllCoefficients( const double alpha, con
 		temp[i] *= alpha;
 }
 
+void SingleVarBoundsExplanator::addZeroEntry()
+{
+	_length += 1;
+	_upper.push_back( 0 );
+	_lower.push_back( 0 );
+}
+
 /* Functions of BoundsExplanator */
 BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsNum )
 	:_varsNum( varsNum )
@@ -246,4 +253,21 @@ void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& r
 	for ( const auto& entry : row )
 		if ( entry._index >= _varsNum - _rowsNum )
 				coefficients[entry._index - _varsNum + _rowsNum] = entry._value / -ci;
+}
+
+std::vector<SingleVarBoundsExplanator>& BoundsExplanator::getExplanations()
+{
+	return _bounds;
+}
+
+void BoundsExplanator::addZeroExplanation()
+{
+	_rowsNum += 1;
+	_varsNum += 1;
+	_bounds.push_back( SingleVarBoundsExplanator( _rowsNum ) );
+}
+
+void BoundsExplanator::resetExplanation (const unsigned var, const bool isUpper)
+{
+	_bounds[var].updateVarBoundExplanation( std::vector<double>(_rowsNum, 0), isUpper);
 }
