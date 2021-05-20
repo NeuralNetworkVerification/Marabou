@@ -218,6 +218,9 @@ void BoundsExplanator::addVecTimesScalar( std::vector<double>& sum, const std::v
 {
 	assert( sum.size() == _rowsNum && input.size() == _rowsNum );
 
+	if (FloatUtils::isZero( scalar) )
+		return;
+
 	for ( unsigned i = 0; i < _rowsNum; ++i )
 		sum[i] += scalar * input[i];
 }

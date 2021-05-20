@@ -2444,7 +2444,7 @@ double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 				temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getUpperBound( i ) : _toggleBounds.getLowerBound( i );
 			else
 				temp *= explanationRowsCombination[i] > 0 ? _toggleBounds.getLowerBound( i ) : _toggleBounds.getUpperBound( i );
-			derived_bound += temp;
+           derived_bound += temp;
 		}
     }
 
@@ -2487,12 +2487,16 @@ void Engine::normalizeExplanations()
 		if ( upper && !FloatUtils::isZero( upper - 1 ) )
 		{
 			upper = 1 / upper;
+            if (FloatUtils::isZero( upper ) )
+                upper = 0;
 			_tableau->multiplyExplanationCoefficients( var, upper, true );
 		}
 
 		if ( lower && !FloatUtils::isZero( lower - 1 ) )
 		{
 			lower = 1 / lower;
+            if ( FloatUtils::isZero( lower ) )
+                lower = 0;
 			_tableau->multiplyExplanationCoefficients( var, lower, false );
 		}
 	}

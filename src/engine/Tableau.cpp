@@ -1651,7 +1651,7 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store bounds explanations
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
-		state._boundsExplanator->operator=(*_boundsExplanator) ;
+		*state._boundsExplanator = *_boundsExplanator;
 }
 
 void Tableau::restoreState( const TableauState &state )
