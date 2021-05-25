@@ -171,13 +171,13 @@ for root, dirs, files in os.walk(os.getcwd()):
 
 
 if cntTrace > 0:
-    print("\n\n ******** Found trace {} times!".format(cntTrace))
+    print("\n\n ******** Found 'trace' {} times!".format(cntTrace))
 if cntAssert > 0:
-    print("\n\n ******** Found assert {} times!".format(cntAssert))
+    print("\n\n ******** Found 'assert' {} times!".format(cntAssert))
 if cntViolation > 0:
-    print("\n\n ******** Found violation {} times!".format(cntViolation))
+    print("\n\n ******** Found 'violation' {} times!".format(cntViolation))
 if cntKill > 0:
-    print("\n\n ******** Found kill {} times!".format(cntKill))
+    print("\n\n ******** Found 'kill' {} times!".format(cntKill))
 
 parser = argparse.ArgumentParser(description='Query log files')
 parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch")

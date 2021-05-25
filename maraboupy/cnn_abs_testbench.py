@@ -71,7 +71,7 @@ parser.add_argument("--dump_queries",   action="store_true",                    
 parser.add_argument("--use_dumped_queries", action="store_true",                    default=False,                  help="Use dumped queries")
 parser.add_argument("--dump_dir",       type=str,                                   default="",                     help="Location of dumped queries")
 parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
-parser.add_argument("--validation", action="store_true",                    default=False,                  help="Use the validation DNN")
+parser.add_argument("--validation",     type=str,                                   default="",                     help="Use validation DNN")
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small","toy"], default="small",          help="Which CNN size to use")
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
@@ -118,7 +118,7 @@ cfg_dumpQueries       = args.dump_queries
 cfg_useDumpedQueries  = args.use_dumped_queries
 cfg_dumpDir           = args.dump_dir
 cfg_validation        = args.validation
-cfg_cnnSizeChoice     = args.cnn_size + ("" if not cfg_validation else "_validation")
+cfg_cnnSizeChoice     = args.cnn_size
 #cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
 cfg_dumpBounds        = not args.no_dumpBounds
 cfg_absLayer          = args.abs_layer
@@ -215,7 +215,7 @@ replaceLayerName = cfg_absLayer
 ## Build initial model.
 
 printLog("Started model building")
-modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
+modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
 if maskShape[0] == None:
     maskShape = maskShape[1:]
