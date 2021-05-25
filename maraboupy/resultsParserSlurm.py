@@ -7,6 +7,7 @@ import numpy as np
 import json
 import csv
 import pandas as pd
+import re
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 
@@ -41,14 +42,19 @@ def setFigSize(w=12, h=9):
     figure = plt.gcf()
     figure.set_size_inches(w, h)
 
-def plotCompareProperties(xDict, yDict):
+def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True, lastFig=True, ax=plt):
     xLabel = xDict['label']
     yLabel = yDict['label']
-    plt.figure()
+    if singleFig:
+        plt.figure()
     LOGSCALE = True
     if LOGSCALE:
-        plt.xscale('log')
-        plt.yscale('log')
+        if singleFig:
+            ax.xscale('log')
+            ax.yscale('log')
+        else:
+            ax.set_xscale('log')
+            ax.set_yscale('log')
 
     intersectSet = set(resultDicts[0].keys())
     for resultDict in resultDicts :
@@ -58,28 +64,52 @@ def plotCompareProperties(xDict, yDict):
     
     x = [xDict[sample]["totalRuntime"] for sample in mutual]
     y = [yDict[sample]["totalRuntime"] for sample in mutual]
+    c = []
+    for sample in mutual:
+        xResult = xDict[sample]["result"].upper()
+        yResult = yDict[sample]["result"].upper()
+        assert not (xResult == "SAT"   and yResult == "UNSAT")
+        assert not (xResult == "UNSAT" and yResult == "SAT"  )
+        if (xResult == yResult) or (yResult == "TIMEOUT"):
+            c.append(cellColor(xResult))
+        else:
+            assert (yResult != "TIMEOUT") and (xResult == "TIMEOUT")
+            c.append(cellColor(yResult))
+            
     xyCountSame = countSame(x,y)
-    plt.scatter(x, y, s=70, marker="x", alpha=0.3)
+    ax.scatter(x, y, s=70, c=c, marker=marker, alpha=0.3)
     for count, coor in countSame(x,y):
         if count > 1:
-            plt.annotate(count, coor)
-    bottom = 1 if LOGSCALE else 0
-    top = TIMEOUT_VAL
-    axisTop = 2 * TIMEOUT_VAL if LOGSCALE else TIMEOUT_VAL + 100
-    plt.plot([bottom, top], [bottom, top], 'r:')
-    plt.plot([bottom, top], [top   , top], 'r:')
-    plt.plot([top,    top], [bottom, top], 'r:')
-    plt.title("{} vs. {}, {} samples".format(yLabel, xLabel, len(mutual)))
-    plt.xlabel(xLabel + ' [sec]')
-    plt.ylabel(yLabel + ' [sec]')
-    plt.xlim([bottom, axisTop])
-    plt.ylim([bottom, axisTop])
+            ax.annotate(count, coor)
+    if newFig:
+        bottom = 1 if LOGSCALE else 0
+        top = TIMEOUT_VAL
+        axisTop = 2 * TIMEOUT_VAL if LOGSCALE else TIMEOUT_VAL + 100
+        ax.plot([bottom, top], [bottom, top], 'r:')
+        ax.plot([bottom, top], [top   , top], 'r:')
+        ax.plot([top,    top], [bottom, top], 'r:')
+        if singleFig:
+            plt.title("Total Runtime: {} vs. {}, {} samples".format(yLabel, xLabel, len(mutual)))        
+            plt.xlabel(xLabel + ' [sec]')
+            plt.ylabel(yLabel + ' [sec]')
+            plt.xlim([bottom, axisTop])
+            plt.ylim([bottom, axisTop])
+        else:
+            ax.set_xlim([bottom, axisTop])
+            ax.set_ylim([bottom, axisTop])
 
-    setFigSize()
-    noWhiteXLabel = xLabel.replace(' ','')
-    noWhiteYLabel = yLabel.replace(' ','')
-    plt.savefig("CompareProperties-{}_vs_{}.png".format(noWhiteXLabel, noWhiteYLabel), dpi=100)
-    plt.close()
+    if lastFig:
+        setFigSize()
+        if singleFig:
+            noWhiteXLabel = xLabel.replace(' ','')
+            noWhiteYLabel = yLabel.replace(' ','')
+            plt.savefig("CompareProperties-{}_vs_{}.png".format(noWhiteXLabel, noWhiteYLabel), dpi=100)            
+        else:
+            ax.set_title("Total Runtime: All vs. Vanilla")
+            ax.set_xlabel('Vanilla [sec]')
+            ax.set_ylabel('Others [sec]')            
+            ax.figure.savefig("CompareProperties-All_vs_Vanilla.png", dpi=100)        
+        plt.close()
 
 def plotCOIRatio(resultDict):
     plt.figure()
@@ -114,15 +144,45 @@ def plotCOIRatio(resultDict):
 ####################################################################################################    
     
 resultsFiles = list()
+cntTrace = 0
+cntAssert = 0
+cntViolation = 0
+cntKill = 0
 for root, dirs, files in os.walk(os.getcwd()):
     for f in files:
+        fullpath = root + "/" + f        
         if str(f) == "Results.json":
-            fullpath = root + "/" + f
-            resultsFiles.append(fullpath)
+            resultsFiles.append(fullpath)            
+        if str(f).endswith(".out") or str(f).endswith(".log"):
+            with open(fullpath, "r") as fRead:
+                for line in fRead:
+                    if "trace" in line.lower():
+                        print("Found string 'trace' in {}, line is:\n{}".format(fullpath, line))
+                        cntTrace += 1
+                    if "assert" in line.lower():
+                        print("Found string 'assert' in {}, line is:\n{}".format(fullpath, line))
+                        cntAssert += 1                        
+                    if "violation" in line.lower():
+                        print("Found string 'violation' in {}, line is:\n{}".format(fullpath, line))
+                        cntViolation += 1                        
+                    if "kill" in line.lower():
+                        print("Found string 'kill' in {}, line is:\n{}".format(fullpath, line))
+                        cntKill += 1
+
+
+if cntTrace > 0:
+    print("\n\n ******** Found trace {} times!".format(cntTrace))
+if cntAssert > 0:
+    print("\n\n ******** Found assert {} times!".format(cntAssert))
+if cntViolation > 0:
+    print("\n\n ******** Found violation {} times!".format(cntViolation))
+if cntKill > 0:
+    print("\n\n ******** Found kill {} times!".format(cntKill))
 
 parser = argparse.ArgumentParser(description='Query log files')
-parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch")            
+parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch")
 args = parser.parse_args()
+
 
 ####################################################################################################
 ####################################################################################################
@@ -260,8 +320,9 @@ runtimesSolved = [[resultDict[s]["totalRuntime"] for s in samplesTotal if (s in 
 sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesSolved]
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
 for sums, label in zip(sumRuntimes, cactusLabels):
-    solved = list(range(1,len(sums)+1))
-    p = plt.step([0] + sums, [0] + solved, label=label, where="post")
+    solved = [0] + list(range(1,len(sums)+1))
+    sums = [0] + sums
+    p = plt.step(sums, solved, label=label, where="post")
     plt.scatter(sums[-1], solved[-1], s=70, marker="o", alpha=0.3, c=p[0].get_color())
     #print("label={}".format(label))
     #print("sums={}".format(sums))
@@ -300,6 +361,13 @@ plt.close()
 
 for (x,y) in comparePropertiesPairs:
     plotCompareProperties(results[x], results[y])
+    
+vanillaKey = [x for x in results.keys() if x.lower().startswith("vanilla")][0]
+randomKey = [x for x in results.keys() if x.lower().startswith("random")][0]
+otherKeys = [key for key in results.keys() if (key != vanillaKey) and (key != randomKey)]
+fig, ax = plt.subplots(1)
+for i, otherPolicy in enumerate(otherKeys):
+    plotCompareProperties(results[vanillaKey], results[otherPolicy], newFig=(i==0), singleFig=False, lastFig=(i==len(otherKeys)-1), ax=ax)
 
 for k in COIRatioKeys:
     plotCOIRatio(results[k])
