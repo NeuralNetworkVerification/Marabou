@@ -134,6 +134,8 @@ parser.add_argument("--dump_queries", action="store_true", default=False, help="
 parser.add_argument("--use_dumped_queries", action="store_true", default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
 parser.add_argument("--sample", type=int, default=0, help="For part of experiments, specific sample choice")
 parser.add_argument("--dump_suffix", type=str, default="", help="Suffix at ending the dumpQueries directory", required=False)
+parser.add_argument("--validation", type=str, default="", help="Use validation net", required=False)
+parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
 args = parser.parse_args()
 experiment = args.exp
 numRunsPerType = args.runs_per_type
@@ -141,6 +143,8 @@ experimentFunc = experiments[experiment]
 dumpQueries = args.dump_queries
 useDumpedQueries = args.use_dumped_queries
 dumpSuffix = args.dump_suffix
+validation = args.validation
+cnn_size = args.cnn_size
 
 ####################################################################################################
 
@@ -163,6 +167,10 @@ MEM_PER_CPU = "8G"
 clusterFlags = []
 #commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
 commonFlags = clusterFlags + ["--batch_id", batchId, "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.03), "--prop_slack", str(0), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+if cnn_size:
+    commonFlags += ["--cnn_size", cnn_size]
+if validation:
+    commonFlags += ["--validation", validation]
 if dumpQueries:
     commonFlags.append("--dump_queries")
 if useDumpedQueries:

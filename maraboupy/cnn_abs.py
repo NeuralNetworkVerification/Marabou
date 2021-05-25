@@ -179,25 +179,15 @@ def cloneAndMaskConvModel(origM, rplcLayerName, mask, inputShape=mnistProp.input
 def myLoss(labels, logits):
     return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
-def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small"):
-
-    printLog("Starting model building")
-    #https://keras.io/examples/vision/mnist_convnet/
-
-    savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
-
-    if cfg_freshModelOrig:
-        if cnnSizeChoice in ["big", "big_validation"]:
-            num_ch = 32
-        elif cnnSizeChoice in ["medium", "medium_validation"]:
-            num_ch = 16
-        elif cnnSizeChoice in ["small", "small_validation"]:
-            num_ch = 1
-        elif cnnSizeChoice == "toy":
-            raise Exception("Toy network is not meant to be retrained")
-        else:
-            raise Exception("cnnSizeChoice {} not supported".format(cnnSizeChoice))
-        origM = tf.keras.Sequential(
+def genValidationModel(validation):
+    if "base" in validation: 
+        if validation == "mnist_base_4":
+            num_ch = 4
+        elif validation == "mnist_base_2":
+            num_ch = 2
+        elif validation == "mnist_base_1":
+            num_ch = 2
+        return  tf.keras.Sequential(
             [
                 tf.keras.Input(shape=mnistProp.input_shape),
                 layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c1"),
@@ -210,6 +200,46 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
             ],
             name="origModel_" + cnnSizeChoice
         )
+
+def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small", validation=None):
+
+    printLog("Starting model building")
+    #https://keras.io/examples/vision/mnist_convnet/
+
+    if not validation:
+        savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
+    else:
+        savedModelOrig = savedModelOrig.replace(".h5", "_" + "validation_" + validation + ".h5")
+
+    noModel = not os.path.exists(mnistProp.basePath + "/" + savedModelOrig)
+
+    if cfg_freshModelOrig or noModel:
+        if not validation:
+            if cnnSizeChoice in ["big"]:
+                num_ch = 32
+            elif cnnSizeChoice in ["medium"]:
+                num_ch = 16
+            elif cnnSizeChoice in ["small"]:
+                num_ch = 1
+            elif cnnSizeChoice == "toy":
+                raise Exception("Toy network is not meant to be retrained")
+            else:
+                raise Exception("cnnSizeChoice {} not supported".format(cnnSizeChoice))
+            origM = tf.keras.Sequential(
+                [
+                    tf.keras.Input(shape=mnistProp.input_shape),
+                    layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c1"),
+                    layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
+                    layers.Conv2D(num_ch, kernel_size=(2, 2), activation="relu", name="c2"),
+                    layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
+                    layers.Flatten(name="f1"),
+                    layers.Dense(40, activation="relu", name="fc1"),
+                    layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
+                ],
+                name="origModel_" + cnnSizeChoice
+            )
+        else:
+            origM = genValidationModel(validation)
 
         batch_size = 128
         epochs = 15
