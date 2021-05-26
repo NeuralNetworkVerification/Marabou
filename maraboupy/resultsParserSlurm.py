@@ -196,7 +196,7 @@ if os.path.isfile(os.getcwd() + "/plotSpec.json"):
         runTitleToLabel = plotSpec["title2Label"]
         TIMEOUT_VAL = plotSpec["TIMEOUT_VAL"]
         commonRunCommand = plotSpec["commonRunCommand"]
-        runCommand = plotSpec["runCommand"]
+        runCommands = plotSpec["runCommands"]
 else:
     comparePropertiesPairs = [('VanillaCfg', 'MaskCOICfg')]
     COIRatioKeys = ['MaskCOICfg']
@@ -377,6 +377,7 @@ for k in COIRatioKeys:
 with open("commonRunCommand", mode='w') as f:
     f.write("python3 cnn_abs_testbench.py " + commonRunCommand)
 
-with open("runCommand", mode='w') as f:
-    f.write("python3 cnn_abs_testbench.py " + runCommand)
+with open("runCommands", mode='w') as f:
+    for cmd in runCommands:
+        f.write("python3 cnn_abs_testbench.py " + cmds)
 
