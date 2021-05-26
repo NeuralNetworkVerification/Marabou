@@ -187,6 +187,8 @@ def genValidationModel(validation):
             num_ch = 2
         elif validation == "mnist_base_1":
             num_ch = 2
+        else:
+            raise Exception("Validation net {} not supported".format(validation))
         return  tf.keras.Sequential(
             [
                 tf.keras.Input(shape=mnistProp.input_shape),
@@ -198,7 +200,31 @@ def genValidationModel(validation):
                 layers.Dense(40, activation="relu", name="fc1"),
                 layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
             ],
-            name="origModel_" + cnnSizeChoice
+            name="origModel_" + validation
+        )
+    if "long" in validation:
+        if validation == "mnist_long_4":
+            num_ch = 4
+        elif validation == "mnist_long_2":
+            num_ch = 2
+        elif validation == "mnist_long_1":
+            num_ch = 2
+        else:
+            raise Exception("Validation net {} not supported".format(validation))
+        return  tf.keras.Sequential(
+            [
+                tf.keras.Input(shape=mnistProp.input_shape),
+                layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c0"),
+                layers.MaxPooling2D(pool_size=(2, 2), name="mp0"),
+                layers.Conv2D(num_ch, kernel_size=(2, 2), activation="relu", name="c1"),
+                layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
+                layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c2"),
+                layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
+                layers.Flatten(name="f1"),
+                layers.Dense(40, activation="relu", name="fc1"),
+                layers.Dense(mnistProp.num_classes, activation=None, name="sm1"),
+            ],
+            name="origModel_" + validation
         )
 
 def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small", validation=None):
@@ -253,7 +279,7 @@ def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=mnistProp.cfg_fresh, s
 
         score = origM.evaluate(mnistProp.x_test, mnistProp.y_test, verbose=0)
         printLog("(Original) Test loss:{}".format(score[0]))
-        printLog("(Original) Test accuracy:{]".format(score[1]))
+        printLog("(Original) Test accuracy:{}".format(score[1]))
 
         origM.save(mnistProp.basePath + "/" + savedModelOrig)
 
