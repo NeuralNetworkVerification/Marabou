@@ -84,7 +84,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
                     "commonRunCommand" : " ".join(commonFlags),
-                    "runCommand"  : " ".join(runCmds)}
+                    "runCommands"  : [" ".join(cmd) for cmd in runCmds]}
         json.dump(jsonDict, f, indent = 4)
 
     TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
@@ -132,7 +132,7 @@ experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                "AbsPolicies"    : experimentAbsPolicies,
                "FindMinProvable": experimentFindMinProvable}
 parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
-parser.add_argument("--exp", type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=True)
+parser.add_argument("--exp", type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
 parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
 parser.add_argument("--dump_queries", action="store_true", default=False, help="Only dump queries, don't solve.")
 parser.add_argument("--use_dumped_queries", action="store_true", default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
@@ -150,9 +150,11 @@ dumpSuffix = args.dump_suffix
 validation = args.validation
 cnn_size = args.cnn_size
 
+assert (not validation) or (not cnn_size)
+
 ####################################################################################################
 
-batchId = "slurm_" + experiment + "_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
+batchId = "_".join(filter(None, ["slurm", datetime.now().strftime("%d-%m-%y___%H-%M-%S"), experiment, cnn_size, validation]))
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
 if not os.path.exists(basePath + "logs/"):
     os.mkdir(basePath + "logs/")
