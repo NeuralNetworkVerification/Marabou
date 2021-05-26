@@ -195,6 +195,8 @@ if os.path.isfile(os.getcwd() + "/plotSpec.json"):
         COIRatioKeys  = plotSpec["COIRatio"] 
         runTitleToLabel = plotSpec["title2Label"]
         TIMEOUT_VAL = plotSpec["TIMEOUT_VAL"]
+        commonRunCommand = plotSpec["commonRunCommand"]
+        runCommand = plotSpec["runCommand"]
 else:
     comparePropertiesPairs = [('VanillaCfg', 'MaskCOICfg')]
     COIRatioKeys = ['MaskCOICfg']
@@ -372,4 +374,9 @@ for i, otherPolicy in enumerate(otherKeys):
 for k in COIRatioKeys:
     plotCOIRatio(results[k])
 
+with open("commonRunCommand", mode='w') as f:
+    f.write("python3 cnn_abs_testbench.py " + commonRunCommand)
+
+with open("runCommand", mode='w') as f:
+    f.write("python3 cnn_abs_testbench.py " + runCommand)
 
