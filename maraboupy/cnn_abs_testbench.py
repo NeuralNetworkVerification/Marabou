@@ -328,7 +328,7 @@ printLog("Created {} masks".format(len(maskList)))
 #print(isCEXSporious(modelOrigDense, xAdv, 0.05, 0, yMax, ySecond, cex, sporiousStrict=True))
 #exit()
 
-printLog("Strating verification phase")
+printLog("Starting verification phase")
 
 reachedFull = False
 successful = None
@@ -344,7 +344,7 @@ modelOrigDense.save(modelOrigDenseSavedName)
 for i, mask in enumerate(maskList):
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
-        modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice)
+        modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
         modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
         modelAbs = None
