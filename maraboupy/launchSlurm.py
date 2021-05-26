@@ -82,7 +82,9 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
                     "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : title2Label,
                     "COIRatio"    : policiesCfg,
-                    "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg]}
+                    "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
+                    "commonRunCommand" : " ".join(commonFlags),
+                    "runCommand"  : " ".join(runCmds)}
         json.dump(jsonDict, f, indent = 4)
 
     TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
