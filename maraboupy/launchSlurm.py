@@ -124,17 +124,19 @@ def experimentFindMinProvable(numRunsPerType, commonFlags, batchDirPath):
 ####################################################################################################
 ####################################################################################################
 
+validationNets = ["mnist_{}_{}".format(layers, i) for i in [1, 2, 4] for layers in ["base", "long"]]
+
 experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                "AbsPolicies"    : experimentAbsPolicies,
                "FindMinProvable": experimentFindMinProvable}
 parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
-parser.add_argument("--exp", type=str, choices=list(experiments.keys()), help="Which experiment to launch?", required=True)
+parser.add_argument("--exp", type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=True)
 parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
 parser.add_argument("--dump_queries", action="store_true", default=False, help="Only dump queries, don't solve.")
 parser.add_argument("--use_dumped_queries", action="store_true", default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
 parser.add_argument("--sample", type=int, default=0, help="For part of experiments, specific sample choice")
 parser.add_argument("--dump_suffix", type=str, default="", help="Suffix at ending the dumpQueries directory", required=False)
-parser.add_argument("--validation", type=str, default="", help="Use validation net", required=False)
+parser.add_argument("--validation", type=str, choices=validationNets, default="", help="Use validation net", required=False)
 parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
 args = parser.parse_args()
 experiment = args.exp
