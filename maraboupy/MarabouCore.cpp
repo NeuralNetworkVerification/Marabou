@@ -488,15 +488,15 @@ PYBIND11_MODULE(MarabouCore, m) {
         .value("Disjunction", PiecewiseLinearFunctionType::DISJUNCTION)
         .export_values();
     py::class_<Equation> eq(m, "Equation");
-    eq.def(py::init());
-    eq.def(py::init<Equation::EquationType>());
-    eq.def("addAddend", &Equation::addAddend);
-    eq.def("setScalar", &Equation::setScalar);
     py::enum_<Equation::EquationType>(eq, "EquationType")
         .value("EQ", Equation::EquationType::EQ)
         .value("GE", Equation::EquationType::GE)
         .value("LE", Equation::EquationType::LE)
         .export_values();
+    eq.def(py::init());
+    eq.def(py::init<Equation::EquationType>());
+    eq.def("addAddend", &Equation::addAddend);
+    eq.def("setScalar", &Equation::setScalar);
     py::class_<Statistics>(m, "Statistics")
         .def("getMaxStackDepth", &Statistics::getMaxStackDepth)
         .def("getNumPops", &Statistics::getNumPops)
