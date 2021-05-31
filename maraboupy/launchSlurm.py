@@ -154,7 +154,8 @@ assert (not validation) or (not cnn_size)
 
 ####################################################################################################
 
-batchId = "_".join(filter(None, ["slurm", datetime.now().strftime("%d-%m-%y___%H-%M-%S"), experiment, cnn_size, validation]))
+timestamp = datetime.now()
+batchId = "_".join(filter(None, ["slurm", timestamp.strftime("%d-%m-%y"), experiment, cnn_size, validation, timestamp.strftime("%H-%M-%S")]))
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
 if not os.path.exists(basePath + "logs/"):
     os.mkdir(basePath + "logs/")
