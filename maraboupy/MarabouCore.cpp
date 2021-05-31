@@ -354,6 +354,27 @@ InputQuery loadQuery(std::string filename){
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
+    py::class_<MarabouOptions>(m, "Options")
+        .def(py::init())
+        .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
+        .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
+        .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
+        .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
+        .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
+        .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
+        .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
+        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout)
+        .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
+        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
+        .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
+        .def_readwrite("_dumpBounds", &MarabouOptions::_dumpBounds)
+        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
+        .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
+        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
+        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
+        .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations);
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
@@ -460,27 +481,6 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("markInputVariable", &InputQuery::markInputVariable)
         .def("markOutputVariable", &InputQuery::markOutputVariable)
         .def("outputVariableByIndex", &InputQuery::outputVariableByIndex);
-    py::class_<MarabouOptions>(m, "Options")
-        .def(py::init())
-        .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
-        .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
-        .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
-        .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
-        .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
-        .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
-        .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
-        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout)
-        .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
-        .def_readwrite("_snc", &MarabouOptions::_snc)
-        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
-        .def_readwrite("_dumpBounds", &MarabouOptions::_dumpBounds)
-        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
-        .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
-        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
-        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
-        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
-        .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
