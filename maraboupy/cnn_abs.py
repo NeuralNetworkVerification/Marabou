@@ -515,6 +515,7 @@ def dumpBounds(model, xAdv, inDist, outSlack, yMax, ySecond):
     return processInputQuery(modelOnnxMarabou)
 
 def processInputQuery(net):
+    net.saveQuery("processInputQuery")
     return MarabouCore.preprocess(net.getMarabouQuery(), mnistProp.optionsObj)
 
 def setBounds(model, boundDict):

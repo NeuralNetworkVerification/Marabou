@@ -14,7 +14,7 @@ tf.compat.v1.enable_v2_behavior()
 ####################################################################################################
 
 def globalTimeOut():
-    return 4,0,0
+    return 2,0,0
 
 def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
     TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()

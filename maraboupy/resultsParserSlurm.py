@@ -248,6 +248,7 @@ for fullpath in resultsFiles:
 
 resultDicts = list(results.values())
 
+origDir = os.getcwd()
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
 if not os.path.exists(basePath + "graphs/"):
     os.mkdir(basePath + "graphs/")
@@ -374,10 +375,13 @@ for i, otherPolicy in enumerate(otherKeys):
 for k in COIRatioKeys:
     plotCOIRatio(results[k])
 
+with open("originalPath", mode='w') as f:
+    f.write(origDir)
+
 with open("commonRunCommand", mode='w') as f:
     f.write("python3 cnn_abs_testbench.py " + commonRunCommand)
 
 with open("runCommands", mode='w') as f:
     for cmd in runCommands:
-        f.write("python3 cnn_abs_testbench.py " + cmds)
+        f.write("python3 cnn_abs_testbench.py " + cmd)
 
