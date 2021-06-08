@@ -16,6 +16,7 @@
 #ifndef __NetworkLevelReasoner_h__
 #define __NetworkLevelReasoner_h__
 
+#include "DeepPolyAnalysis.h"
 #include "ITableau.h"
 #include "Layer.h"
 #include "LayerOwner.h"
@@ -24,6 +25,9 @@
 #include "NeuronIndex.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Tightening.h"
+#include "Vector.h"
+
+#include <memory>
 
 namespace NLR {
 
@@ -71,6 +75,11 @@ public:
     void evaluate( double *input , double *output );
 
     /*
+      Perform a simulation of the network for a specific input
+    */
+   void simulate( Vector<Vector<double>> *input );
+
+    /*
       Bound propagation methods:
 
         - obtainCurrentBounds: make the NLR obtain the current bounds
@@ -106,8 +115,10 @@ public:
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
+    void deepPolyPropagation();
     void lpRelaxationPropagation();
     void MILPPropagation();
+    void iterativePropagation();
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
@@ -152,12 +163,27 @@ public:
     */
     void mergeConsecutiveWSLayers();
 
+    /*
+      Print the bounds of variables layer by layer
+    */
+    void dumpBounds();
+
+    /*
+      Get the size of the widest layer
+    */
+    unsigned getMaxLayerSize() const;
+
+    const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
     // Tightenings discovered by the various layers
     List<Tightening> _boundTightenings;
+
+
+    std::unique_ptr<DeepPolyAnalysis> _deepPolyAnalysis;
 
     void freeMemoryIfNeeded();
 
@@ -169,6 +195,7 @@ private:
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );
 
     bool suitableForMerging( unsigned secondLayerIndex );
     void mergeWSLayers( unsigned secondLayerIndex );

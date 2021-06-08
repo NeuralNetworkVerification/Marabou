@@ -2,32 +2,36 @@
 /*! \file ReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz
+ **   Shiran Aziz, Guy Katz, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** AbsoluteValueConstraint implements the following constraint:
+ ** f = Abs( b )
+ **
+ ** It distinguishes two relevant phases for search:
+ ** ABS_PHASE_POSITIVE: b > 0
+ ** ABS_PHASE_NEGATIVE: b <=0
+ **
+ ** The constraint operates in two modes: pre-processing mode, which stores
+ ** bounds locally, and context dependent mode, used during the search.
+ ** Invoking initializeCDOs meth activates the context dependent mode, and the
+ ** constraint object synchronizes its state automatically with the central context
+ ** object.
  **/
 
 #ifndef __AbsoluteValueConstraint_h__
 #define __AbsoluteValueConstraint_h__
 
-#include "PiecewiseLinearConstraint.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 
-class AbsoluteValueConstraint : public PiecewiseLinearConstraint
+class AbsoluteValueConstraint : public ContextDependentPiecewiseLinearConstraint
 {
 
 public:
-    enum PhaseStatus {
-        PHASE_NOT_FIXED = 0,
-        PHASE_POSITIVE = 1,
-        PHASE_NEGATIVE = 2,
-    };
-
     /*
       The f variable is the absolute value of the b variable:
       f = | b |
@@ -38,58 +42,58 @@ public:
     /*
       Get the type of this constraint.
     */
-    PiecewiseLinearFunctionType getType() const;
+    PiecewiseLinearFunctionType getType() const override;
 
     /*
       Return a clone of the constraint.
     */
-    PiecewiseLinearConstraint *duplicateConstraint() const;
+    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const PiecewiseLinearConstraint *state );
+    void restoreState( const PiecewiseLinearConstraint *state ) override;
 
     /*
       Register/unregister the constraint with a talbeau.
      */
-    void registerAsWatcher( ITableau *tableau);
-    void unregisterAsWatcher( ITableau *tableau);
+    void registerAsWatcher( ITableau *tableau) override;
+    void unregisterAsWatcher( ITableau *tableau) override;
 
     /*
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value );
-    void notifyLowerBound( unsigned variable, double bound );
-    void notifyUpperBound( unsigned variable, double bound );
+    void notifyVariableValue( unsigned variable, double value ) override;
+    void notifyLowerBound( unsigned variable, double bound ) override;
+    void notifyUpperBound( unsigned variable, double bound ) override;
 
     /*
        Returns true iff the variable participates in this piecewise
        linear constraint.
      */
-    bool participatingVariable( unsigned variable ) const;
+    bool participatingVariable( unsigned variable ) const override;
 
     /*
       Get the list of variables participating in this constraint.
     */
-    List<unsigned> getParticipatingVariables() const;
+    List<unsigned> getParticipatingVariables() const override;
 
     /*
       Returns true iff the assignment satisfies the constraint
     */
-    bool satisfied() const;
+    bool satisfied() const override;
 
     /*
       Returns a list of possible fixes for the violated constraint.
     */
-    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const;
+    List<PiecewiseLinearConstraint::Fix> getPossibleFixes() const override;
 
     /*
       Return a list of smart fixes for violated constraint.
       Currently not implemented, just calls getPossibleFixes().
     */
-    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const;
+    List<PiecewiseLinearConstraint::Fix> getSmartFixes( ITableau *tableau ) const override;
 
     /*
       Returns the list of case splits that this piecewise linear
@@ -98,18 +102,35 @@ public:
       y = |x| <-->
          ( x <= 0 /\ y = -x ) \/ ( x >= 0 /\ y = x )
     */
-    List<PiecewiseLinearCaseSplit> getCaseSplits() const;
+    List<PiecewiseLinearCaseSplit> getCaseSplits() const override;
 
     /*
-      Check whether the constraint's phase has been fixed.
+      If the constraint's phase has been fixed, get the (valid) case split.
     */
-    void fixPhaseIfNeeded();
-    bool phaseFixed() const;
+    PiecewiseLinearCaseSplit getValidCaseSplit() const override;
+
+    /*
+       Returns a list of all cases - { ABS_POSITIVE, ABS_NEGATIVE }
+       The order of returned cases affects the search, and this method is where related
+       heuristics should be implemented.
+     */
+    List<PhaseStatus> getAllCases() const override;
+
+    /*
+       Returns case split corresponding to the given phase/id
+     */
+    PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
 
     /*
      * If the constraint's phase has been fixed, get the (valid) case split.
      */
-    PiecewiseLinearCaseSplit getValidCaseSplit() const;
+    PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
+
+    /*
+      Check whether the constraint's phase has been fixed.
+     */
+    void fixPhaseIfNeeded();
+    bool phaseFixed() const override;
 
     /*
       Preprocessing related functions, to inform that a variable has
@@ -118,30 +139,30 @@ public:
       x2). constraintObsolete() returns true iff and the constraint
       has become obsolote as a result of variable eliminations.
      */
-    void eliminateVariable( unsigned variable, double fixedValue );
-    void updateVariableIndex( unsigned oldIndex, unsigned newIndex );
-    bool constraintObsolete() const;
+    void eliminateVariable( unsigned variable, double fixedValue ) override;
+    void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) override;
+    bool constraintObsolete() const override;
 
     /*
       Get the tightenings entailed by the constraint.
     */
-    void getEntailedTightenings( List<Tightening> &tightenings ) const;
+    void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
       Dump the current state of the constraint.
     */
-    void dump( String &output ) const;
+    void dump( String &output ) const override;
 
     /*
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery );
+    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
       Returns string with shape: absoluteValue,_f,_b
      */
-    String serializeToString() const;
+    String serializeToString() const override;
 
     inline unsigned getB() const { return _b; };
 
@@ -164,13 +185,6 @@ private:
     */
     bool _haveEliminatedVariables;
 
-    /*
-      The phase status of this constraint: positive, negative, or not
-      yet fixed.
-    */
-    PhaseStatus _phaseStatus;
-    void setPhaseStatus( PhaseStatus phaseStatus );
-
     static String phaseToString( PhaseStatus phase );
 
     /*
@@ -182,10 +196,3 @@ private:
 
 #endif // __AbsoluteValueConstraint_h__
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

@@ -17,13 +17,16 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "IterativePropagator.h"
 #include "LPFormulator.h"
 #include "MILPFormulator.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MatrixMultiplication.h"
+#include "MaxConstraint.h"
 #include "NLRError.h"
 #include "NetworkLevelReasoner.h"
+#include "Options.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
 #include <cstring>
@@ -32,6 +35,7 @@ namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
     : _tableau( NULL )
+    , _deepPolyAnalysis( nullptr )
 {
 }
 
@@ -110,6 +114,13 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
+void NetworkLevelReasoner::simulate( Vector<Vector<double>> *input )
+{
+    _layerIndexToLayer[0]->setSimulations( input );
+    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
+        _layerIndexToLayer[i]->computeSimulations();
+}
+
 void NetworkLevelReasoner::setNeuronVariable( NeuronIndex index, unsigned variable )
 {
     _layerIndexToLayer[index._layer]->setNeuronVariable( index._neuron, variable );
@@ -132,16 +143,24 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
         _layerIndexToLayer[i]->computeSymbolicBounds();
 }
 
+void NetworkLevelReasoner::deepPolyPropagation()
+{
+    if ( _deepPolyAnalysis == nullptr )
+        _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>
+            ( new DeepPolyAnalysis( this ) );
+    _deepPolyAnalysis->run();
+}
+
 void NetworkLevelReasoner::lpRelaxationPropagation()
 {
     LPFormulator lpFormulator( this );
     lpFormulator.setCutoff( 0 );
 
-    if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
-         GlobalConfiguration::LP_RELAXATION )
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::LP_RELAXATION )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
-    else if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
-              GlobalConfiguration::LP_RELAXATION_INCREMENTAL )
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL )
         lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 
@@ -150,12 +169,19 @@ void NetworkLevelReasoner::MILPPropagation()
     MILPFormulator milpFormulator( this );
     milpFormulator.setCutoff( 0 );
 
-    if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
-         GlobalConfiguration::MILP_ENCODING )
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::MILP_ENCODING )
         milpFormulator.optimizeBoundsWithMILPEncoding( _layerIndexToLayer );
-    else if ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE ==
-              GlobalConfiguration::MILP_ENCODING_INCREMENTAL )
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL )
         milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
+}
+
+void NetworkLevelReasoner::iterativePropagation()
+{
+    IterativePropagator iterativePropagator( this );
+    iterativePropagator.setCutoff( 0 );
+    iterativePropagator.optimizeBoundsWithIterativePropagation( _layerIndexToLayer );
 }
 
 void NetworkLevelReasoner::intervalArithmeticBoundPropagation()
@@ -223,8 +249,13 @@ void NetworkLevelReasoner::dumpTopology() const
 {
     printf( "Number of layers: %u. Sizes:\n", _layerIndexToLayer.size() );
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
-        printf( "\tLayer %u: %u \t[%s]\n", i, _layerIndexToLayer[i]->getSize(), Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
-
+    {
+        printf( "\tLayer %u: %u \t[%s]", i, _layerIndexToLayer[i]->getSize(), Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
+        printf("\tSource layers:");
+        for ( const auto &sourceLayer : _layerIndexToLayer[i]->getSourceLayers() )
+            printf(" %u", sourceLayer.first );
+        printf("\n");
+    }
     for ( const auto &layer : _layerIndexToLayer )
         layer.second->dump();
 }
@@ -332,6 +363,10 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
         generateInputQueryForAbsoluteValueLayer( inputQuery, layer );
         break;
 
+    case Layer::MAX:
+        generateInputQueryForMaxLayer( inputQuery, layer );
+        break;
+
     default:
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported", layer.getLayerType() ).ascii() );
@@ -369,6 +404,23 @@ void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
         AbsoluteValueConstraint *absoluteValue = new AbsoluteValueConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addPiecewiseLinearConstraint( absoluteValue );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        Set<unsigned> elements;
+        for ( const auto &source : layer.getActivationSources( i ) )
+        {
+            const Layer *sourceLayer = _layerIndexToLayer[source._layer];
+            elements.insert( sourceLayer->neuronToVariable( source._neuron ) );
+        }
+
+        MaxConstraint *max = new MaxConstraint( layer.neuronToVariable( i ),
+                                                elements );
+        inputQuery.addPiecewiseLinearConstraint( max );
     }
 }
 
@@ -512,7 +564,7 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
     // Adjust the indices of all layers starting from secondLayerIndex
     // and higher
     for ( unsigned i = secondLayerIndex; i <= lastLayerIndex; ++i )
-        reduceLayerIndex( i, firstLayerIndex );
+        reduceLayerIndex( i, secondLayerIndex );
 }
 
 double *NetworkLevelReasoner::multiplyWeights( const double *firstMatrix,
@@ -541,6 +593,32 @@ void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex
     // Update the mapping in the NLR
     _layerIndexToLayer[layer - 1] = _layerIndexToLayer[layer];
     _layerIndexToLayer.erase( layer );
+}
+
+void NetworkLevelReasoner::dumpBounds()
+{
+    obtainCurrentBounds();
+
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->dumpBounds();
+}
+
+unsigned NetworkLevelReasoner::getMaxLayerSize() const
+{
+    unsigned maxSize = 0;
+    for ( const auto &layer : _layerIndexToLayer )
+    {
+        unsigned currentSize = layer.second->getSize();
+        if ( currentSize > maxSize )
+            maxSize = currentSize;
+    }
+    ASSERT( maxSize > 0 );
+    return maxSize;
+}
+
+const Map<unsigned, Layer *> &NetworkLevelReasoner::getLayerIndexToLayer() const
+{
+    return _layerIndexToLayer;
 }
 
 } // namespace NLR

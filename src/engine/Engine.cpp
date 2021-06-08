@@ -16,6 +16,7 @@
 
 #include "AutoConstraintMatrixAnalyzer.h"
 #include "Debug.h"
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "EngineState.h"
 #include "InfeasibleQueryException.h"
@@ -23,11 +24,15 @@
 #include "MStringf.h"
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
+#include "NLRError.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "Vector.h" 
+
+#include <random>
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -47,6 +52,12 @@ Engine::Engine()
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
+    , _splittingStrategy( Options::get()->getDivideStrategy() )
+    , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
+    , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
+    , _gurobi( nullptr )
+    , _milpEncoder( nullptr )
+    , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -91,6 +102,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
+
+    if ( _solveWithMILP )
+        return solveWithMILPEncoding( timeoutInSeconds );
 
     updateDirections();
     storeInitialEngineState();
@@ -1059,7 +1073,6 @@ void Engine::initializeNetworkLevelReasoning()
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
-
     struct timespec start = TimeUtils::sampleMicro();
 
     try
@@ -1097,7 +1110,22 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         if ( preprocess )
+        {
+            performSymbolicBoundTightening();
+            performSimulation();
             performMILPSolverBoundedTightening();
+        }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
+
+        if ( _splittingStrategy == DivideStrategy::Auto )
+        {
+            _splittingStrategy =
+                ( _preprocessedQuery.getInputVariables().size() <
+                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
+                DivideStrategy::LargestInterval : DivideStrategy::ReLUViolation;
+        }
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
@@ -1133,21 +1161,23 @@ void Engine::performMILPSolverBoundedTightening()
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
-        switch ( GlobalConfiguration::MILP_SOLVER_BOUND_TIGHTENING_TYPE )
+        switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
-        case GlobalConfiguration::LP_RELAXATION:
-        case GlobalConfiguration::LP_RELAXATION_INCREMENTAL:
+        case MILPSolverBoundTighteningType::LP_RELAXATION:
+        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
             _networkLevelReasoner->lpRelaxationPropagation();
             break;
 
-        case GlobalConfiguration::MILP_ENCODING:
-        case GlobalConfiguration::MILP_ENCODING_INCREMENTAL:
+        case MILPSolverBoundTighteningType::MILP_ENCODING:
+        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
             _networkLevelReasoner->MILPPropagation();
             break;
-        case GlobalConfiguration::NONE:
+        case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
+            _networkLevelReasoner->iterativePropagation();
+            break;
+        case MILPSolverBoundTighteningType::NONE:
             return;
         }
-
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
 
@@ -1164,6 +1194,12 @@ void Engine::performMILPSolverBoundedTightening()
 
 void Engine::extractSolution( InputQuery &inputQuery )
 {
+    if ( _solveWithMILP )
+    {
+        extractSolutionFromGurobi( inputQuery );
+        return;
+    }
+
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )
@@ -1789,9 +1825,36 @@ List<unsigned> Engine::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
+void Engine::performSimulation()
+{
+    if ( _simulationSize == 0 || !_networkLevelReasoner )
+    {
+        ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
+        return;
+    }
+
+    // outer vector is for neuron
+    // inner vector is for simulation value
+    Vector<Vector<double>> simulations;
+
+    std::mt19937 mt( GlobalConfiguration::SIMULATION_RANDOM_SEED );
+
+    for ( unsigned i = 0; i < _networkLevelReasoner->getLayer( 0 )->getSize(); ++i )
+    {
+        std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
+                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
+        Vector<double> simulationInput( _simulationSize );
+
+        for ( unsigned j = 0; j < _simulationSize; ++j )
+            simulationInput[j] = distribution( mt );
+        simulations.append( simulationInput );
+    }
+    _networkLevelReasoner->simulate( &simulations );
+}
+
 void Engine::performSymbolicBoundTightening()
 {
-    if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
+    if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) )
         return;
 
@@ -1803,7 +1866,12 @@ void Engine::performSymbolicBoundTightening()
     _networkLevelReasoner->obtainCurrentBounds();
 
     // Step 2: perform SBT
-    _networkLevelReasoner->symbolicBoundPropagation();
+    if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+        _networkLevelReasoner->symbolicBoundPropagation();
+    else if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::DEEP_POLY )
+        _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
@@ -1813,14 +1881,14 @@ void Engine::performSymbolicBoundTightening()
     {
 
         if ( tightening._type == Tightening::LB &&
-             FloatUtils::gt ( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+             FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
         {
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
         }
 
         if ( tightening._type == Tightening::UB &&
-             FloatUtils::lt ( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+             FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
         {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
@@ -2031,20 +2099,65 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
     return NULL;
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strategy )
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
+{
+    // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
+    ENGINE_LOG( Stringf( "Using LargestInterval heuristics..." ).ascii() );
+
+    unsigned inputVariableWithLargestInterval = 0;
+    double largestIntervalSoFar = 0;
+    for ( const auto &variable : _preprocessedQuery.getInputVariables() )
+    {
+        double interval = _tableau->getUpperBound( variable ) -
+            _tableau->getLowerBound( variable );
+        if ( interval > largestIntervalSoFar )
+        {
+            inputVariableWithLargestInterval = variable;
+            largestIntervalSoFar = interval;
+        }
+    }
+
+    if ( largestIntervalSoFar == 0 )
+        return NULL;
+    else
+    {
+        double mid = ( _tableau->getLowerBound( inputVariableWithLargestInterval )
+                       + _tableau->getUpperBound( inputVariableWithLargestInterval )
+                       ) / 2;
+        PiecewiseLinearCaseSplit s1;
+        s1.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                             mid, Tightening::UB ) );
+        PiecewiseLinearCaseSplit s2;
+        s2.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
+                                             mid, Tightening::LB ) );
+
+        List<PiecewiseLinearCaseSplit> splits;
+        splits.append( s1 );
+        splits.append( s2 );
+        _disjunctionForSplitting = std::unique_ptr<DisjunctionConstraint>
+            ( new DisjunctionConstraint( splits ) );
+        return _disjunctionForSplitting.get();
+    }
+}
+
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( strategy == DivideStrategy::Polarity )
+    if ( _splittingStrategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
-    else if ( strategy == DivideStrategy::EarliestReLU )
+    else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-
-    ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
+    else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
+              _smtCore.getStackDepth() %
+              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+        // Conduct interval splitting periodically.
+        candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Unable to pick using the current strategy..." :
-                           "Picked..." ) ).ascii() );
+                           "Picked..." :
+                           "Unable to pick using the current strategy..." ) ).ascii() );
+
     return candidatePLConstraint;
 }
 
@@ -2058,8 +2171,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
 
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Unable to pick using the current strategy..." :
-                           "Picked..." ) ).ascii() );
+                           "Picked..." :
+                           "Unable to pick using the current strategy..." ) ).ascii() );
     return candidatePLConstraint;
 }
 
@@ -2123,4 +2236,95 @@ bool Engine::restoreSmtState( SmtState & smtState )
 void Engine::storeSmtState( SmtState & smtState )
 {
     _smtCore.storeSmtState( smtState );
+}
+
+bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
+{
+    try
+    {
+        // Apply bound tightening before handing to Gurobi
+        if ( _tableau->basisMatrixAvailable() )
+        {
+	    explicitBasisBoundTightening();
+	    applyAllBoundTightenings();
+	    applyAllValidConstraintCaseSplits();
+	}
+	do
+	{
+	    performSymbolicBoundTightening();
+	}
+	while ( applyAllValidConstraintCaseSplits() );
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        _exitCode = Engine::UNSAT;
+        return false;
+    }
+    
+    ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
+    _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
+    _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
+    _milpEncoder->encodeInputQuery( *_gurobi, _preprocessedQuery );
+    ENGINE_LOG( "Query encoded in Gurobi...\n" );
+
+    double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
+                                : timeoutInSeconds );
+    ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
+    _gurobi->setTimeLimit( timeoutForGurobi );
+
+    _gurobi->solve();
+
+    if ( _gurobi->haveFeasibleSolution() )
+    {
+        _exitCode = IEngine::SAT;
+        return true;
+    }
+    else if ( _gurobi->infeasbile() )
+        _exitCode = IEngine::UNSAT;
+    else if ( _gurobi->timeout() )
+        _exitCode = IEngine::TIMEOUT;
+    else
+        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+    return false;
+}
+
+void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
+{
+    ASSERT( _gurobi != nullptr );
+    Map<String, double> assignment;
+    double costOrObjective;
+    _gurobi->extractSolution( assignment, costOrObjective );
+
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+    {
+        if ( _preprocessingEnabled )
+        {
+            // Has the variable been merged into another?
+            unsigned variable = i;
+            while ( _preprocessor.variableIsMerged( variable ) )
+                variable = _preprocessor.getMergedIndex( variable );
+
+            // Fixed variables are easy: return the value they've been fixed to.
+            if ( _preprocessor.variableIsFixed( variable ) )
+            {
+                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                continue;
+            }
+
+            // We know which variable to look for, but it may have been assigned
+            // a new index, due to variable elimination
+            variable = _preprocessor.getNewIndex( variable );
+
+            // Finally, set the assigned value
+            String variableName = _milpEncoder->getVariableNameFromVariable( variable );
+            inputQuery.setSolutionValue( i, assignment[variableName] );
+        }
+        else
+        {
+            String variableName = _milpEncoder->getVariableNameFromVariable( i );
+            inputQuery.setSolutionValue( i, assignment[variableName] );
+        }
+    }
 }

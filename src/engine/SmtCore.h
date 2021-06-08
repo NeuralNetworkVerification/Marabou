@@ -23,6 +23,8 @@
 #include "SmtStackEntry.h"
 #include "Statistics.h"
 
+#include <memory>
+
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
 
 class EngineState;

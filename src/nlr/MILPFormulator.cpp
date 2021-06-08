@@ -20,7 +20,11 @@
 #include "MILPFormulator.h"
 #include "MStringf.h"
 #include "NLRError.h"
+#include "Options.h"
 #include "TimeUtils.h"
+#include "Vector.h"
+
+#include <boost/thread.hpp>
 
 namespace NLR {
 
@@ -46,8 +50,6 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
     _cutoffs = 0;
 
     GurobiWrapper gurobi;
-
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
 
     double currentLb;
     double currentUb;
@@ -88,10 +90,10 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             currentLb = layer->getLb( j );
             currentUb = layer->getUb( j );
 
-            if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
+            if ( _cutoffInUse && ( currentLb >= _cutoffValue || currentUb <= _cutoffValue ) )
             {
                 if ( layerRequiresMILP )
-                    addNeuronToModel( gurobi, layer, j );
+                    addNeuronToModel( gurobi, layer, j, _layerOwner );
                 continue;
             }
 
@@ -105,7 +107,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
             {
                 if ( layerRequiresMILP )
-                    addNeuronToModel( gurobi, layer, j );
+                    addNeuronToModel( gurobi, layer, j, _layerOwner );
                 continue;
             }
 
@@ -113,7 +115,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( tightenLowerBound( gurobi, layer, j, variable, currentLb ) )
             {
                 if ( layerRequiresMILP )
-                    addNeuronToModel( gurobi, layer, j );
+                    addNeuronToModel( gurobi, layer, j, _layerOwner );
                 continue;
             }
 
@@ -123,7 +125,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
             if ( !layerRequiresMILP )
                 continue;
 
-            addNeuronToModel( gurobi, layer, j );
+            addNeuronToModel( gurobi, layer, j, _layerOwner );
 
             // Maximize, using just the exact MILP encoding
             if ( tightenUpperBound( gurobi, layer, j, variable, currentUb ) )
@@ -144,25 +146,153 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding( const Map<unsign
 
 void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers )
 {
-    GurobiWrapper gurobi;
-    gurobi.setTimeLimit( GlobalConfiguration::MILPSolverTimeoutValueInSeconds );
+    unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
-    _tighterBoundCounter = 0;
-    _signChanges = 0;
-    _cutoffs = 0;
+    // Time to wait if no idle worker is availble
+    boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
 
-    double newLb;
-    double newUb;
+    Map<GurobiWrapper *, unsigned> solverToIndex;
+    // Create a queue of free workers
+    // When a worker is working, it is popped off the queue, when it is done, it
+    // is added back to the queue.
+    SolverQueue freeSolvers( numberOfWorkers );
+    for ( unsigned i = 0; i < numberOfWorkers; ++i )
+    {
+        GurobiWrapper *gurobi = new GurobiWrapper();
+        solverToIndex[gurobi] = i;
+        enqueueSolver( freeSolvers, gurobi );
+    }
+
+    boost::thread *threads = new boost::thread[numberOfWorkers];
+    std::mutex mtx;
+    std::atomic_bool infeasible( false );
+
     double currentLb;
     double currentUb;
 
+    std::atomic_uint tighterBoundCounter( 0 );
+    std::atomic_uint signChanges( 0 );
+    std::atomic_uint cutoffs( 0 );
+
     struct timespec gurobiStart = TimeUtils::sampleMicro();
+
+    bool skipTightenLb = false; // If true, skip lower bound tightening
+    bool skipTightenUb = false; // If true, skip upper bound tightening
 
     for ( const auto &currentLayer : layers )
     {
         Layer *layer = currentLayer.second;
-        unsigned layerIndex = layer->getLayerIndex();
 
+        // declare simulations as local var to avoid a problem which can happen due to multi thread process.
+        const Vector<Vector<double>> *simulations = _layerOwner->getLayer( currentLayer.first )->getSimulations();
+
+        for ( unsigned i = 0; i < layer->getSize(); ++i )
+        {
+            if ( layer->neuronEliminated( i ) )
+                continue;
+
+            currentLb = layer->getLb( i );
+            currentUb = layer->getUb( i );
+
+            if ( _cutoffInUse && ( currentLb >= _cutoffValue || currentUb <= _cutoffValue ) )
+                continue;
+            skipTightenLb = false;
+            skipTightenUb = false;
+
+            // Loop for simulation
+            for ( const auto &simValue : (*simulations).get( i ) )
+            {
+                if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to call tightning upper bound.
+                    skipTightenUb = true;
+
+                if ( _cutoffInUse && simValue < _cutoffValue ) // If x_sim < 0 < x_upper, do not try to call tightning lower bound.
+                    skipTightenLb = true;
+
+                if ( skipTightenUb && skipTightenLb )
+                    break;
+            }
+
+            // If no tightning is needed, continue
+            if ( skipTightenUb && skipTightenLb )
+            {
+                log( Stringf( "Skip tightening lower and upper bounds for layer %d index %u",
+                                   currentLayer.first, i ).ascii() );
+                continue;
+            }
+            else if ( skipTightenUb )
+            {
+                log( Stringf( "Skip tightening upper bound for layer %u index %u",
+                                   currentLayer.first, i ).ascii() );
+            }
+            else if ( skipTightenLb )
+            {
+                log( Stringf( "Skip tightening lower bound for layer %u index %u",
+                                   currentLayer.first, i ).ascii() );
+            }
+
+            if ( infeasible )
+            {
+                // infeasibility is derived, interupt all active threads
+                for ( unsigned i = 0; i < numberOfWorkers; ++i )
+                {
+                    threads[i].interrupt();
+                    threads[i].join();
+                }
+                clearSolverQueue( freeSolvers );
+                throw InfeasibleQueryException();
+            }
+
+            // Wait until there is an idle solver
+            GurobiWrapper *freeSolver;
+            while ( !freeSolvers.pop( freeSolver ) )
+                boost::this_thread::sleep_for( waitTime );
+
+            freeSolver->resetModel();
+
+            mtx.lock();
+            _lpFormulator.createLPRelaxation( layers, *freeSolver, layer->getLayerIndex() );
+            mtx.unlock();
+
+            // spawn a thread to tighten the bounds for the current variable
+            ThreadArgument argument( freeSolver, layer, &layers,
+                                     i, currentLb, currentUb,
+                                     _cutoffInUse, _cutoffValue,
+                                     _layerOwner, std::ref( freeSolvers ),
+                                     std::ref( mtx ), std::ref( infeasible ),
+                                     std::ref( tighterBoundCounter ),
+                                     std::ref( signChanges ),
+                                     std::ref( cutoffs ),
+                                     skipTightenLb,
+                                     skipTightenUb );
+
+            if ( numberOfWorkers == 1 )
+                tightenSingleVariableBoundsWithMILPEncoding( argument );
+            else
+                threads[solverToIndex[freeSolver]] = boost::thread
+                    ( tightenSingleVariableBoundsWithMILPEncoding, argument );
+        }
+    }
+
+    for ( unsigned i = 0; i < numberOfWorkers; ++i )
+    {
+        threads[i].join();
+    }
+
+    struct timespec gurobiEnd = TimeUtils::sampleMicro();
+
+    log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
+                  tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ) );
+    log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
+    clearSolverQueue( freeSolvers );
+
+    if ( infeasible )
+        throw InfeasibleQueryException();
+}
+
+void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument &argument )
+{
+    try
+    {
         /*
           The optimiziation is performed layer by layer, and for each
           individual neuron. It has 4 steps:
@@ -177,63 +307,177 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
           or a lower obund that is non-negative (this is aimed at
           ReLUs, as their phase would become fixed in these cases)
         */
-        for ( unsigned i = 0; i < layer->getSize(); ++i )
+
+        GurobiWrapper *gurobi = argument._gurobi;
+        Layer *layer = argument._layer;
+        const Map<unsigned, Layer *> &layers = *( argument._layers );
+        unsigned index = argument._index;
+        double currentLb = argument._currentLb;
+        double currentUb = argument._currentUb;
+        bool cutoffInUse = argument._cutoffInUse;
+        double cutoffValue = argument._cutoffValue;
+        LayerOwner *layerOwner = argument._layerOwner;
+        SolverQueue &freeSolvers = argument._freeSolvers;
+        std::mutex &mtx = argument._mtx;
+        std::atomic_bool &infeasible = argument._infeasible;
+        std::atomic_uint &tighterBoundCounter = argument._tighterBoundCounter;
+        std::atomic_uint &signChanges = argument._signChanges;
+        std::atomic_uint &cutoffs = argument._cutoffs;
+        bool skipTightenLb = argument._skipTightenLb;
+        bool skipTightenUb = argument._skipTightenUb;
+
+        // LP Relaxation
+        log( Stringf( "Tightening bounds for layer %u index %u",
+                                   layer->getLayerIndex(), index ).ascii() );
+
+        unsigned variable = layer->neuronToVariable( index );
+        Stringf variableName( "x%u", variable );
+
+        if ( !skipTightenLb )
         {
-            if ( layer->neuronEliminated( i ) )
-                continue;
+            log( Stringf( "Computing lowerbound..." ).ascii() );
+            double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                            cutoffValue, &infeasible );
+            log( Stringf( "Lowerbound computed: %f", lb ).ascii() );
 
-            currentLb = layer->getLb( i );
-            currentUb = layer->getUb( i );
-
-            if ( _cutoffInUse && ( currentLb > _cutoffValue || currentUb < _cutoffValue ) )
-                continue;
-
-            unsigned variable = layer->neuronToVariable( i );
-            Stringf variableName( "x%u", variable );
-
-            // LP relaxation, lower bound
-            newLb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MIN, variableName, layerIndex );
-            storeLbIfNeeded( layer, i, variable, newLb );
-            if ( _cutoffInUse && newLb > _cutoffValue )
+            // Store the new bound if it is tighter
+            if ( lb > currentLb )
             {
-                ++_cutoffs;
-                continue;
-            }
+                if ( FloatUtils::isNegative( currentLb ) &&
+                    !FloatUtils::isNegative( lb ) )
+                    ++signChanges;
 
-            // LP relaxation, upper bound
-            newUb = _lpFormulator.solveLPRelaxation( gurobi, layers, LPFormulator::MAX, variableName, layerIndex );
-            storeUbIfNeeded( layer, i, variable, newUb );
-            if ( _cutoffInUse && newUb < _cutoffValue )
-            {
-                ++_cutoffs;
-                continue;
-            }
+                mtx.lock();
+                layer->setLb( index, lb );
+                layerOwner->receiveTighterBound( Tightening( variable,
+                                                            lb,
+                                                            Tightening::LB ) );
+                mtx.unlock();
+                ++tighterBoundCounter;
 
-            // MILP encoding, lower bound
-            newLb = solveMILPEncoding( gurobi, layers, MinOrMax::MIN, variableName, layerIndex );
-            storeLbIfNeeded( layer, i, variable, newLb );
-            if ( _cutoffInUse && newLb > _cutoffValue )
-            {
-                ++_cutoffs;
-                continue;
-            }
-
-            // MILP encoding, upper bound
-            newUb = solveMILPEncoding( gurobi, layers, MinOrMax::MAX, variableName, layerIndex );
-            storeUbIfNeeded( layer, i, variable, newUb );
-            if ( _cutoffInUse && newUb < _cutoffValue )
-            {
-                ++_cutoffs;
-                continue;
+                if ( cutoffInUse && lb > cutoffValue )
+                {
+                    ++cutoffs;
+                    enqueueSolver( freeSolvers, gurobi );
+                    return;
+                }
             }
         }
+
+        if ( !skipTightenUb )
+        {
+            log( Stringf( "Computing upperbound..." ).ascii() );
+            gurobi->reset();
+            double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
+                                            cutoffValue, &infeasible );
+            log( Stringf( "Upperbound computed %f", ub ).ascii() );
+
+            // Store the new bound if it is tighter
+            if ( ub < currentUb )
+            {
+                if ( FloatUtils::isPositive( currentUb ) &&
+                    !FloatUtils::isPositive( ub ) )
+                    ++signChanges;
+
+                mtx.lock();
+                layer->setUb( index, ub );
+                layerOwner->receiveTighterBound( Tightening( variable,
+                                                            ub,
+                                                            Tightening::UB ) );
+                mtx.unlock();
+
+                ++tighterBoundCounter;
+
+                if ( cutoffInUse && ub < cutoffValue )
+                {
+                    ++cutoffs;
+                    enqueueSolver( freeSolvers, gurobi );
+                    return;
+                }
+            }
+        }
+
+        gurobi->reset();
+        // Exact encoding
+        // Now, add the MILP constraints
+        unsigned lastLayer = layer->getLayerIndex();
+        for ( const auto &layer : layers )
+        {
+            if ( layer.second->getLayerIndex() > lastLayer )
+                continue;
+
+            addLayerToModel( *gurobi, layer.second, layerOwner );
+        }
+
+        if ( !skipTightenLb )
+        {
+            log( Stringf( "Computing lowerbound..." ).ascii() );
+            double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
+                                    cutoffValue, &infeasible );
+            log( Stringf( "Lowerbound computed: %f", lb ).ascii() );
+
+            // Store the new bound if it is tighter
+            if ( lb > currentLb )
+            {
+                if ( FloatUtils::isNegative( currentLb ) &&
+                    !FloatUtils::isNegative( lb ) )
+                    ++signChanges;
+
+                mtx.lock();
+                layer->setLb( index, lb );
+                layerOwner->receiveTighterBound( Tightening( variable,
+                                                            lb,
+                                                            Tightening::LB ) );
+                mtx.unlock();
+                ++tighterBoundCounter;
+
+                if ( cutoffInUse && lb > cutoffValue )
+                {
+                    ++cutoffs;
+                    enqueueSolver( freeSolvers, gurobi );
+                    return;
+                }
+            }
+        }
+
+        if ( !skipTightenUb )
+        {
+            log( Stringf( "Tightening bounds for layer %u index %u",
+                                    layer->getLayerIndex(), index ).ascii() );
+
+            log( Stringf( "Computing upperbound..." ).ascii() );
+            gurobi->reset();
+            double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
+                                    cutoffValue, &infeasible );
+            log( Stringf( "Upperbound computed %f", ub ).ascii() );
+
+            // Store the new bound if it is tighter
+            if ( ub < currentUb )
+            {
+                if ( FloatUtils::isPositive( currentUb ) &&
+                    !FloatUtils::isPositive( ub ) )
+                    ++signChanges;
+
+                mtx.lock();
+                layer->setUb( index, ub );
+                layerOwner->receiveTighterBound( Tightening( variable,
+                                                            ub,
+                                                            Tightening::UB ) );
+                mtx.unlock();
+
+                ++tighterBoundCounter;
+
+                if ( cutoffInUse && ub < cutoffValue )
+                    ++cutoffs;
+            }
+        }
+
+        enqueueSolver( freeSolvers, gurobi );
     }
-
-    struct timespec gurobiEnd = TimeUtils::sampleMicro();
-
-    log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                  _tighterBoundCounter, _signChanges, _cutoffs ) );
-    log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
+    catch ( boost::thread_interrupted& )
+    {
+        enqueueSolver( argument._freeSolvers, argument._gurobi );
+    }
 }
 
 void MILPFormulator::createMILPEncoding( const Map<unsigned, Layer *> &layers,
@@ -249,11 +493,12 @@ void MILPFormulator::createMILPEncoding( const Map<unsigned, Layer *> &layers,
         if ( layer.second->getLayerIndex() > lastLayer )
             continue;
 
-        addLayerToModel( gurobi, layer.second );
+        addLayerToModel( gurobi, layer.second, _layerOwner );
     }
 }
 
-void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
+void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                      LayerOwner *layerOwner )
 {
     switch ( layer->getLayerType() )
     {
@@ -262,7 +507,7 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer 
             break;
 
         case Layer::RELU:
-            addReluLayerToMILPFormulation( gurobi, layer );
+            addReluLayerToMILPFormulation( gurobi, layer, layerOwner );
             break;
 
         default:
@@ -271,7 +516,8 @@ void MILPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer 
     }
 }
 
-void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer, unsigned neuron )
+void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer,
+                                       unsigned neuron, LayerOwner *layerOwner )
 {
     if ( layer->getLayerType() != Layer::RELU )
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED, "MILPFormulator" );
@@ -282,7 +528,7 @@ void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer
     unsigned targetVariable = layer->neuronToVariable( neuron );
 
     List<NeuronIndex> sources = layer->getActivationSources( neuron );
-    const Layer *sourceLayer = _layerOwner->getLayer( sources.begin()->_layer );
+    const Layer *sourceLayer = layerOwner->getLayer( sources.begin()->_layer );
     unsigned sourceNeuron = sources.begin()->_neuron;
     unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
 
@@ -327,24 +573,19 @@ void MILPFormulator::addNeuronToModel( GurobiWrapper &gurobi, const Layer *layer
 }
 
 void MILPFormulator::addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
-                                                    const Layer *layer )
+                                                    const Layer *layer,
+                                                    LayerOwner *layerOwner )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
-        addNeuronToModel( gurobi, layer, i );
+        addNeuronToModel( gurobi, layer, i, layerOwner );
     }
 }
 
-double MILPFormulator::solveMILPEncoding( GurobiWrapper &gurobi,
-                                          const Map<unsigned, Layer *> &layers,
-                                          MinOrMax minOrMax,
-                                          String variableName,
-                                          unsigned lastLayer )
+double MILPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
+                                           MinOrMax minOrMax, String variableName,
+                                           double cutoffValue, std::atomic_bool *infeasible )
 {
-    gurobi.resetModel();
-
-    createMILPEncoding( layers, gurobi, lastLayer );
-
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, variableName ) );
 
@@ -356,10 +597,18 @@ double MILPFormulator::solveMILPEncoding( GurobiWrapper &gurobi,
     gurobi.solve();
 
     if ( gurobi.infeasbile() )
-        throw InfeasibleQueryException();
+    {
+        if ( infeasible )
+        {
+            *infeasible = true;
+            return FloatUtils::infinity();
+        }
+        else
+            throw InfeasibleQueryException();
+    }
 
     if ( gurobi.cutoffOccurred() )
-        return _cutoffValue;
+        return cutoffValue;
 
     if ( gurobi.optimal() )
     {
@@ -472,7 +721,7 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
 
         currentUb = newUb;
 
-        if ( _cutoffInUse && newUb < _cutoffValue )
+        if ( _cutoffInUse && newUb <= _cutoffValue )
         {
             ++_cutoffs;
             return true;
@@ -536,7 +785,7 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
 
         currentLb = newLb;
 
-        if ( _cutoffInUse && newLb > _cutoffValue )
+        if ( _cutoffInUse && newLb >= _cutoffValue )
         {
             ++_cutoffs;
             return true;

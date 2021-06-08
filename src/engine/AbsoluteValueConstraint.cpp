@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file ReluConstraint.cpp
+/*! \file AbsoluteValueConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz
+ **   Shiran Aziz, Guy Katz, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,6 +13,7 @@
  **/
 
 #include "AbsoluteValueConstraint.h"
+
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -24,12 +25,12 @@
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
     , _f( f )
     , _auxVarsInUse( false )
     , _haveEliminatedVariables( false )
 {
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
@@ -65,8 +66,6 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
 
         _auxVarsInUse = true;
     }
-
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
@@ -74,17 +73,25 @@ PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
     return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;
 }
 
-PiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
 {
     AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );
     *clone = *this;
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 
 void AbsoluteValueConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const AbsoluteValueConstraint *abs = dynamic_cast<const AbsoluteValueConstraint *>( state );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *abs;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void AbsoluteValueConstraint::registerAsWatcher( ITableau *tableau )
@@ -210,52 +217,49 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
             if ( -bound > _lowerBounds[_b] )
                 _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
 
-            if ( _auxVarsInUse && _lowerBounds.exists( _b ) )
+            if ( _auxVarsInUse )
             {
-                // And also the upper bounds of both aux variables
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _posAux, bound - _lowerBounds[_b] );
+                if ( _lowerBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _posAux, bound - _lowerBounds[_b] );
+                }
 
-                _constraintBoundTightener->
-                    registerTighterUpperBound( _negAux, bound + _lowerBounds[_b] );
+                if ( _upperBounds.exists( _b ) )
+                {
+                    _constraintBoundTightener->
+                        registerTighterUpperBound( _negAux, bound + _upperBounds[_b] );
+                }
             }
         }
         else if ( _auxVarsInUse )
         {
             if ( variable == _posAux )
             {
-                // posAux.ub = f.ub - b.lb, and so this tightening can cause:
-                //    1. f.ub = b.lb + posAux.ub
-                //    2. b.lb = f.ub - posAux.ub
-
-                if ( _lowerBounds.exists( _b ) )
+                if ( _upperBounds.exists( _b ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterUpperBound( _f, _lowerBounds[_b] + bound );
+                        registerTighterUpperBound( _f, _upperBounds[_b] + bound );
                 }
 
-                if ( _upperBounds.exists( _f ) )
+                if ( _lowerBounds.exists( _f ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterLowerBound( _b, _upperBounds[_f] - bound );
+                        registerTighterLowerBound( _b, _lowerBounds[_f] - bound );
                 }
             }
             else if ( variable == _negAux )
             {
-                // negAux.ub = f.ub + b.ub, and so this tightening can cause:
-                //    1. f.ub = negAux.ub - b.ub
-                //    2. b.ub = negAux.ub - f.ub
-
-                if ( _upperBounds.exists( _b ) )
+                if ( _lowerBounds.exists( _b ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterUpperBound( _f, bound - _upperBounds[_b] );
+                        registerTighterUpperBound( _f, bound - _lowerBounds[_b] );
                 }
 
-                if ( _upperBounds.exists( _f ) )
+                if ( _lowerBounds.exists( _f ) )
                 {
                     _constraintBoundTightener->
-                        registerTighterUpperBound( _b, bound - _upperBounds[_f] );
+                        registerTighterUpperBound( _b, bound - _lowerBounds[_f] );
                 }
             }
         }
@@ -335,6 +339,21 @@ List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
     return splits;
 }
 
+List<PhaseStatus> AbsoluteValueConstraint::getAllCases() const
+{
+    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE};
+}
+
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    if ( phase == ABS_PHASE_NEGATIVE )
+        return getNegativeSplit();
+    else if ( phase == ABS_PHASE_POSITIVE )
+        return getPositiveSplit();
+    else
+        throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
+}
+
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getNegativeSplit() const
 {
     // Negative phase: b <= 0, b + f = 0
@@ -384,14 +403,19 @@ bool AbsoluteValueConstraint::phaseFixed() const
     return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
 }
 
-PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getImpliedCaseSplit() const
 {
-    ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
+    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
 
-    if ( _phaseStatus == PhaseStatus::PHASE_POSITIVE )
+    if ( _phaseStatus == ABS_PHASE_POSITIVE )
         return getPositiveSplit();
 
     return getNegativeSplit();
+}
+
+PiecewiseLinearCaseSplit AbsoluteValueConstraint::getValidCaseSplit() const
+{
+    return getImpliedCaseSplit();
 }
 
 void AbsoluteValueConstraint::eliminateVariable( unsigned variable, double /* fixedValue */ )
@@ -650,14 +674,14 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     // Option 1: b's range is strictly positive
     if ( _lowerBounds.exists( _b ) && _lowerBounds[_b] >= 0 )
     {
-        setPhaseStatus( PHASE_POSITIVE );
+        setPhaseStatus( ABS_PHASE_POSITIVE );
         return;
     }
 
     // Option 2: b's range is strictly negative:
     if ( _upperBounds.exists( _b ) && _upperBounds[_b] <= 0 )
     {
-        setPhaseStatus( PHASE_NEGATIVE );
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
         return;
     }
 
@@ -668,7 +692,7 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     // range
     if ( _upperBounds.exists( _b ) && _lowerBounds[_f] > _upperBounds[_b] )
     {
-        setPhaseStatus( PHASE_NEGATIVE );
+        setPhaseStatus( ABS_PHASE_NEGATIVE );
         return;
     }
 
@@ -676,41 +700,37 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     // range, in absolute value
     if ( _lowerBounds.exists( _b ) && _lowerBounds[_f] > -_lowerBounds[_b] )
     {
-        setPhaseStatus( PHASE_POSITIVE );
+        setPhaseStatus( ABS_PHASE_POSITIVE );
         return;
     }
 
     if ( _auxVarsInUse )
     {
         // Option 5: posAux has become zero, phase is positive
-        if ( _upperBounds.exists( _posAux )
-             && FloatUtils::isZero( _upperBounds[_posAux] ) )
+        if ( _upperBounds.exists( _posAux ) && FloatUtils::isZero( _upperBounds[_posAux] ) )
         {
-            setPhaseStatus( PHASE_POSITIVE );
+            setPhaseStatus( ABS_PHASE_POSITIVE );
             return;
         }
 
         // Option 6: posAux can never be zero, phase is negative
-        if ( _lowerBounds.exists( _posAux )
-             && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
+        if ( _lowerBounds.exists( _posAux ) && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
         {
-            setPhaseStatus( PHASE_NEGATIVE );
+            setPhaseStatus( ABS_PHASE_NEGATIVE );
             return;
         }
 
         // Option 7: negAux has become zero, phase is negative
-        if ( _upperBounds.exists( _negAux )
-             && FloatUtils::isZero( _upperBounds[_negAux] ) )
+        if ( _upperBounds.exists( _negAux ) && FloatUtils::isZero( _upperBounds[_negAux] ) )
         {
-            setPhaseStatus( PHASE_NEGATIVE );
+            setPhaseStatus( ABS_PHASE_NEGATIVE );
             return;
         }
 
         // Option 8: negAux can never be zero, phase is positive
-        if ( _lowerBounds.exists( _negAux )
-             && FloatUtils::isPositive( _lowerBounds[_negAux] ) )
+        if ( _lowerBounds.exists( _negAux ) && FloatUtils::isPositive( _lowerBounds[_negAux] ) )
         {
-            setPhaseStatus( PHASE_POSITIVE );
+            setPhaseStatus( ABS_PHASE_POSITIVE );
             return;
         }
     }
@@ -723,26 +743,14 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
     case PHASE_NOT_FIXED:
         return "PHASE_NOT_FIXED";
 
-    case PHASE_POSITIVE:
-        return "PHASE_POSITIVE";
+    case ABS_PHASE_POSITIVE:
+        return "ABS_PHASE_POSITIVE";
 
-    case PHASE_NEGATIVE:
-        return "PHASE_NEGATIVE";
+    case ABS_PHASE_NEGATIVE:
+        return "ABS_PHASE_NEGATIVE";
 
     default:
         return "UNKNOWN";
     }
 };
 
-void AbsoluteValueConstraint::setPhaseStatus( PhaseStatus phaseStatus )
-{
-    _phaseStatus = phaseStatus;
-}
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

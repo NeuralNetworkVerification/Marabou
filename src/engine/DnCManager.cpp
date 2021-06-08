@@ -115,9 +115,10 @@ void DnCManager::solve()
     };
 
     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-    unsigned long long timeoutInMicroSeconds = timeoutInSeconds * MICROSECONDS_IN_SECOND;
-    struct timespec startTime = TimeUtils::sampleMicro();
+    unsigned long long timeoutInMicroSeconds = (unsigned long long)timeoutInSeconds * (unsigned long long)MICROSECONDS_IN_SECOND;
+    DNC_MANAGER_LOG( Stringf( "timeout in micro seconds: %llu", timeoutInMicroSeconds ).ascii());
 
+    struct timespec startTime = TimeUtils::sampleMicro();
 
     unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
@@ -404,11 +405,3 @@ void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
     _timeoutReached = TimeUtils::timePassed( startTime, now ) >=
         timeoutInMicroSeconds;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

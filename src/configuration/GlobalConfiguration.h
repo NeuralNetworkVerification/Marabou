@@ -66,7 +66,7 @@ public:
     static const bool USE_HARRIS_RATIO_TEST;
 
     // Toggle query-preprocessing on/off.
-	static const bool PREPROCESS_INPUT_QUERY;
+    static const bool PREPROCESS_INPUT_QUERY;
 
     // Assuming the preprocessor is on, toggle whether or not it will attempt to perform variable
     // elimination.
@@ -116,6 +116,9 @@ public:
 
     static const DivideStrategy SPLITTING_HEURISTICS;
 
+    // The frequency to use interval splitting when largest interval splitting strategy is in use.
+    static const unsigned INTERVAL_SPLITTING_FREQUENCY;
+
     // When automatically deciding which splitting strategy to use, we use relu-splitting if
     // the number of inputs is larger than this number.
     static const unsigned INTERVAL_SPLITTING_THRESHOLD;
@@ -129,6 +132,9 @@ public:
 
     // If the cost function error exceeds this threshold, it is recomputed
     static const double COST_FUNCTION_ERROR_THRESHOLD;
+
+    // Random seed for generating simulation values.
+    static const unsigned SIMULATION_RANDOM_SEED;
 
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
@@ -168,33 +174,8 @@ public:
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     /*
-      MILP solver bound tighening options
-    */
-    enum MILPSolverBoundTighteningType {
-        // Only encode pure linear constraints in the underlying
-        // solver, in a way that over-approximates the query
-        LP_RELAXATION = 0,
-        LP_RELAXATION_INCREMENTAL = 1,
-        // Encode linear and integer constraints in the underlying
-        // solver, in a way that completely captures the query but is
-        // more expensive to solve
-        MILP_ENCODING = 2,
-        MILP_ENCODING_INCREMENTAL = 3,
-        // Option to have no MILP bound tightening performed
-        NONE = 4,
-    };
-
-    static const MILPSolverBoundTighteningType MILP_SOLVER_BOUND_TIGHTENING_TYPE;
-
-    // The timeout value for an individual query of the MILP solver
-    static const unsigned MILPSolverTimeoutValueInSeconds;
-
-    /*
       Symbolic bound tightening options
     */
-
-    // Whether symbolic bound tightening should be used or not
-    static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
 
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
@@ -241,6 +222,7 @@ public:
       The number of threads Gurobi spawns
     */
     static const unsigned GUROBI_NUMBER_OF_THREADS;
+    static const bool GUROBI_LOGGING;
 #endif // ENABLE_GUROBI
 
     /*

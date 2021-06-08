@@ -117,34 +117,57 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 
     return [vals, stats]
 
-def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
-                  timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, dnc=False,
-                  sncSplittingStrategy="auto" ):
+def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=2,
+                  timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
+                  splittingStrategy="auto", sncSplittingStrategy="auto",
+                  restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
+                  preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
+                  tighteningStrategy="deeppoly", milpTightening="lp", milpSolverTimeout=0,
+                  numSimulations=10):
     """Create an options object for how Marabou should solve the query
 
     Args:
-        numWorkers (int, optional): Number of workers to use in DNC mode, defaults to 4
-        initialTimeout (int, optional): Initial timeout in seconds for DNC mode before dividing, defaults to 5
-        initialDivides (int, optional): Number of time sto perform the initial partitioning.
-            This creates 2^(initialDivides) sub-problems for DNC mode, defaults to 0
-        onlineDivides (int, optional): Number of times to perform the online partitioning when a sub-query
-            time out. This creates 2^(onlineDivides) sub-problems for DNC mode, defaults to 2
+        numWorkers (int, optional): Number of workers to use in Split-and-Conquer(SnC) mode, defaults to 4
+        initialTimeout (int, optional): Initial timeout in seconds for SnC mode before dividing, defaults to 5
+        initialSplits (int, optional): Number of time sto perform the initial partitioning.
+            This creates 2^(initialSplits) sub-problems for SnC mode, defaults to 0
+        onlineSplits (int, optional): Number of times to perform the online partitioning when a sub-query
+            time out. This creates 2^(onlineSplits) sub-problems for SnC mode, defaults to 2
         timeoutInSeconds (int, optional): Timeout duration for Marabouin seconds, defaults to 0
-        timeoutFactor (float, optional): Timeout factor for DNC mode, defaults to 1.5
+        timeoutFactor (float, optional): Timeout factor for SnC mode, defaults to 1.5
         verbosity (int, optional): Verbosity level for Marabou, defaults to 2
-        dnc (bool, optional): If DNC mode should be used, defaults to False
-        sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the DNC mode (auto/largest-interval/polarity).
+        snc (bool, optional): If SnC mode should be used, defaults to False
+        splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu)
+        sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the SnC mode (auto/largest-interval/polarity).
+        restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode, defaults to False
+        solveWithMILP ( bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
+        preprocessorBoundTolerance ( float, optional): epsilon value for preprocess bound tightening . Defaults to 10^-10.
+        dumpBounds (bool, optional): Print out the bounds of each neuron after preprocessing. defaults to False
+        tighteningStrategy (string, optional): The abstract-interpretation-based bound tightening techniques used during the search (deeppoly/sbt/none). default to deeppoly.
+        milpTightening (string, optional): The (mi)lp-based bound tightening techniques used to preprocess the query (milp-inc/lp-inc/milp/lp/none). default to lp.
+        milpSolverTimeout (float, optional): Timeout duration for MILP
+        numSimulations (int, optional): Number of simulations generated per neuron, defaults to 10
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
     options = Options()
     options._numWorkers = numWorkers
     options._initialTimeout = initialTimeout
-    options._initialDivides = initialDivides
-    options._onlineDivides = onlineDivides
+    options._initialDivides = initialSplits
+    options._onlineDivides = onlineSplits
     options._timeoutInSeconds = timeoutInSeconds
     options._timeoutFactor = timeoutFactor
     options._verbosity = verbosity
-    options._dnc = dnc
+    options._snc = snc
+    options._splittingStrategy = splittingStrategy
     options._sncSplittingStrategy = sncSplittingStrategy
+    options._restoreTreeStates = restoreTreeStates
+    options._splitThreshold = splitThreshold
+    options._solveWithMILP = solveWithMILP
+    options._preprocessorBoundTolerance = preprocessorBoundTolerance
+    options._dumpBounds = dumpBounds
+    options._tighteningStrategy = tighteningStrategy
+    options._milpTightening = milpTightening
+    options._milpSolverTimeout = milpSolverTimeout
+    options._numSimulations = numSimulations
     return options

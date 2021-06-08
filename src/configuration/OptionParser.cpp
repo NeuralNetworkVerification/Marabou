@@ -42,12 +42,15 @@ void OptionParser::initialize()
         ( "pl-aux-eq",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
           "PL constraints generate auxiliary equations" )
-        ( "dnc",
+        ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the divide-and-conquer solving mode" )
+          "Use the split-and-conquer solving mode: largest-interval/polarity/auto. default: auto" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
-          "Restore tree states in dnc mode" )
+          "Restore tree states in SnC mode" )
+        ( "dump-bounds",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
+          "Dump the bounds after preprocessing" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )
@@ -65,38 +68,58 @@ void OptionParser::initialize()
           "Query dump file" )
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
-          "(DNC) Number of workers" )
+          "(SnC) Number of workers" )
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
-          "The splitting strategy" )
+          "(SnC) The splitting strategy" )
+        ( "tightening-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SYMBOLIC_BOUND_TIGHTENING_TYPE]) ),
+          "type of bound tightening technique to use: sbt/deeppoly/none. default: deeppoly" )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) ),
-          "(DNC) Number of times to initially bisect the input region" )
+          "(SnC) Number of times to initially bisect the input region" )
         ( "initial-timeout",
           boost::program_options::value<int>( &((*_intOptions)[Options::INITIAL_TIMEOUT]) ),
-          "(DNC) The initial timeout" )
+          "(SnC) The initial timeout" )
         ( "num-online-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_ONLINE_DIVIDES]) ),
-          "(DNC) Number of times to further bisect a sub-region when a timeout occurs" )
+          "(SnC) Number of times to further bisect a sub-region when a timeout occurs" )
         ( "timeout",
           boost::program_options::value<int>( &((*_intOptions)[Options::TIMEOUT]) ),
           "Global timeout" )
         ( "verbosity",
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
-          "Verbosity of engine::solve(). 0: does not print anything (for DnC), 1: print"
+          "Verbosity of engine::solve(). 0: does not print anything (for SnC), 1: print"
           "out statistics in the beginning and end, 2: print out statistics during solving." )
         ( "split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
-          "(DNC) The timeout factor" )
+          "(SnC) The timeout factor" )
         ( "help",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
           "Prints the help message")
         ( "version",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::VERSION]) ),
           "Prints the version number")
+         ( "preprocessor-bound-tolerance",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) ),
+          "epsilon for preprocessor bound tightening comparisons" )
+#ifdef ENABLE_GUROBI
+        ( "milp",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
+          "Use a MILP solver to solve the input query" )
+        ( "milp-tightening",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ),
+          "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none. default: lp" )
+        ( "milp-timeout",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
+          "Per-ReLU timeout for iterative propagation" )
+        ( "num-simulations",
+          boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
+          "Number of simulations generated per neuron" )
+#endif // ENABLE_GUROBI
 
         ;
 
@@ -124,6 +147,11 @@ int OptionParser::extractIntValue( const String &option )
     ASSERT( valueExists( option ) );
     return _variableMap[option.ascii()].as<int>();
 }
+
+void OptionParser::printHelpMessage() const
+{
+    std::cerr << _optionDescription << std::endl;
+};
 
 //
 // Local Variables:

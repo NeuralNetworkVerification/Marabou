@@ -50,7 +50,7 @@ public:
 
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
-	List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
+    List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
     /*
       Methods for handling input and output variables
@@ -163,6 +163,9 @@ private:
     bool constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
+    bool constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
+                            Map<unsigned, unsigned> &handledVariableToLayer,
+                            unsigned newLayerIndex );
 
 public:
     /*
@@ -183,11 +186,3 @@ public:
 };
 
 #endif // __InputQuery_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

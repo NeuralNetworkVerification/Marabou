@@ -390,6 +390,14 @@ public:
     void setBasicAssignmentStatus( ITableau::BasicAssignmentStatus status );
 
     /*
+      Callbacks for the BoundManager to update assignment of a non-basic
+      variable or status of a basic variable after a lower/upper bound is
+      updated.
+    */
+    void updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value );
+    void updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value );
+
+    /*
       True if the basic variable is out of bounds
     */
     bool basicOutOfBounds( unsigned basic ) const;
