@@ -2328,3 +2328,13 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
         }
     }
 }
+
+bool Engine::preprocessingEnabled() const
+{
+    return _preprocessingEnabled;
+}
+
+const Preprocessor *Engine::getPreprocessor()
+{
+    return &_preprocessor;
+}
