@@ -88,6 +88,12 @@ public:
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 
     /*
+      Preprocessor access.
+    */
+    bool preprocessingEnabled() const;
+    const Preprocessor *getPreprocessor();
+
+    /*
       A request from the user to terminate
     */
     void quitSignal();

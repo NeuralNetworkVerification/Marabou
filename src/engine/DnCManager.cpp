@@ -269,11 +269,38 @@ void DnCManager::getSolution( std::map<int, double> &ret,
     InputQuery *solvedInputQuery = _engineWithSATAssignment->getInputQuery();
     _engineWithSATAssignment->extractSolution( *( solvedInputQuery ) );
 
+    double value;
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
-        double value = solvedInputQuery->getSolutionValue( i );
-        inputQuery.setSolutionValue( i, value );
-        ret[i] = value;
+        if ( _baseEngine->preprocessingEnabled() )
+        {
+            const Preprocessor *basePreprocessor = _baseEngine->getPreprocessor();
+
+            unsigned variable = i;
+            while ( basePreprocessor->variableIsMerged( variable ) )
+                variable = basePreprocessor->getMergedIndex( variable );
+
+            if ( basePreprocessor->variableIsFixed( variable ) )
+            {
+                value = basePreprocessor->getFixedValue( variable );
+                inputQuery.setSolutionValue( i, value );
+                inputQuery.setLowerBound( i, value );
+                inputQuery.setUpperBound( i, value );
+                ret[i] = value;
+                continue;
+            }
+
+            variable = basePreprocessor->getNewIndex( variable );
+            value = solvedInputQuery->getSolutionValue( variable );
+            inputQuery.setSolutionValue( i, value );
+            ret[i] = value;
+        }
+        else
+        {
+            double value = solvedInputQuery->getSolutionValue( i );
+            inputQuery.setSolutionValue( i, value );
+            ret[i] = value;
+        }
     }
 
     return;
