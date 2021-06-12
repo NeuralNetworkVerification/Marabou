@@ -186,7 +186,7 @@ def genValidationModel(validation):
         elif validation == "mnist_base_2":
             num_ch = 2
         elif validation == "mnist_base_1":
-            num_ch = 2
+            num_ch = 1
         else:
             raise Exception("Validation net {} not supported".format(validation))
         return  tf.keras.Sequential(
@@ -208,7 +208,7 @@ def genValidationModel(validation):
         elif validation == "mnist_long_2":
             num_ch = 2
         elif validation == "mnist_long_1":
-            num_ch = 2
+            num_ch = 1
         else:
             raise Exception("Validation net {} not supported".format(validation))
         return  tf.keras.Sequential(
