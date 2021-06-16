@@ -18,6 +18,8 @@
 #include "MString.h"
 #include <cstdio>
 
+const double GlobalConfiguration::LEAKY_RELU_SLOPE = 0.1;
+
 // Use the polarity metrics to decide which branch to take first in a case split
 // and how to repair a ReLU constraint.
 const bool GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS = true;
