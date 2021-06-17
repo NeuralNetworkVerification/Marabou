@@ -13,6 +13,7 @@
 
  **/
 
+#include "GlobalConfiguration.h"
 #include "Layer.h"
 #include "Options.h"
 #include "SymbolicBoundTighteningType.h"
@@ -154,6 +155,18 @@ void Layer::computeAssignment()
             double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
 
             _assignment[i] = FloatUtils::max( inputValue, 0 );
+        }
+    }
+
+    else if ( _type == LEAKY_RELU )
+    {
+        double slope = GlobalConfiguration::LEAKY_RELU_SLOPE;
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = FloatUtils::max( inputValue, slope * inputValue );
         }
     }
 
@@ -402,7 +415,7 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
+    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -410,7 +423,7 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
     _neuronToActivationSources[targetNeuron].append( NeuronIndex( sourceLayer, sourceNeuron ) );
 
     DEBUG({
-            if ( _type == RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
+            if ( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
 }
@@ -1698,6 +1711,10 @@ String Layer::typeToString( Type type )
         return "RELU";
         break;
 
+    case LEAKY_RELU:
+        return "LEAKY_RELU";
+        break;
+
     case ABSOLUTE_VALUE:
         return "ABSOLUTE_VALUE";
         break;
@@ -1764,6 +1781,7 @@ void Layer::dump() const
         break;
 
     case RELU:
+    case LEAKY_RELU:
     case ABSOLUTE_VALUE:
     case MAX:
     case SIGN:
