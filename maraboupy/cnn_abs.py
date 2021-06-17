@@ -663,6 +663,8 @@ def genActivationMask(intermidModel, example, prediction, policy=mnistProp.Polic
         return genActivationMaskRandom(intermidModel)
     elif policy == mnistProp.Policy.FindMinProvable or policy == mnistProp.Policy.FindMinProvable.name:
         return genActivationMaskFindMinProvable(intermidModel)
+    elif policy == "Vanilla":
+        return []
     raise Exception("genActivationMask - policy not implemented:{}".format(policy))
 
 def sortActMapReverse(actMap):
