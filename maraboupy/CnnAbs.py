@@ -92,6 +92,7 @@ class PolicyBase:
 class PolicyCentered(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.Centered        
         super().__init__(ds)
             
     def genActivationMask(self, intermidModel):
@@ -105,6 +106,7 @@ class PolicyCentered(PolicyBase):
 class PolicyAllClassRank(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.AllClassRank        
         super().__init__(ds)
     
     def genActivationMask(self, intermidModel):
@@ -114,6 +116,7 @@ class PolicyAllClassRank(PolicyBase):
 class PolicySingleClassRank(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.SingleClassRank
         super().__init__(ds)
             
     def genActivationMask(self, intermidModel, prediction):
@@ -124,6 +127,7 @@ class PolicySingleClassRank(PolicyBase):
 class PolicyMajorityClassVote(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.MajorityClassVote        
         super().__init__(ds)
             
     def genActivationMask(self, intermidModel):
@@ -138,6 +142,7 @@ class PolicyMajorityClassVote(PolicyBase):
 class PolicyRandom(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.Random        
         super().__init__(ds)
             
     def genActivationMask(self, intermidModel):
@@ -148,14 +153,16 @@ class PolicyRandom(PolicyBase):
 class PolicyVanilla(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.Vanilla        
         super().__init__(ds)
         
     def genActivationMask(self, intermidModel):
-        raise NotImplementedError
+        return []
     
 class PolicyFindMinProvable(PolicyBase):
     
     def __init__(self, ds):
+        self.policy = Policy.FindMinProvable
         super().__init__(ds)
         
     def genActivationMask(self, intermidModel):
@@ -180,13 +187,13 @@ class PolicyFindMinProvable(PolicyBase):
         return masks
 
 class Policy(Enum):
-    Centered          = PolicyCentered
-    AllClassRank      = PolicyAllClassRank
-    SingleClassRank   = PolicySingleClassRank
-    MajorityClassVote = PolicyMajorityClassVote
-    Random            = PolicyRandom
-    Vanilla           = PolicyVanilla
-    FindMinProvable   = PolicyFindMinProvable
+    Centered          = 0
+    AllClassRank      = 1
+    SingleClassRank   = 2
+    MajorityClassVote = 3
+    Random            = 4
+    Vanilla           = 5
+    FindMinProvable   = 6
 
     @staticmethod
     def absPolicies():
@@ -194,21 +201,31 @@ class Policy(Enum):
 
     @staticmethod
     def solvingPolicies():
-        return Policy.absPolicies + [Policy.Vanilla]
+        return Policy.absPolicies() + [Policy.Vanilla]
 
     @staticmethod
     def asString():
-        return [policy.name for policy in solvingPolicies]
+        return [policy.name for policy in Policy.solvingPolicies()]
 
     @staticmethod
-    def fromString(s):
-        for policy in Policy:
-            if policy.name.lower() == s:
-                return policy
-
-    @staticmethod        
-    def create(policy, ds):
-        return policy.value(ds)
+    def fromString(s, ds):
+        s = s.lower()
+        if   s == Policy.Centered.name.lower():
+            return PolicyCentered(ds)
+        elif s == Policy.AllClassRank.name.lower():
+            return PolicyAllClassRank(ds)
+        elif s == Policy.SingleClassRank.name.lower():
+            return PolicySingleClassRank(ds)
+        elif s == Policy.MajorityClassVote.name.lower():
+            return PolicyMajorityClassVote(ds)
+        elif s == Policy.Random.name.lower():
+            return PolicyRandom(ds)
+        elif s == Policy.Vanilla.name.lower():
+            return PolicyVanilla(ds)
+        elif s == Policy.FindMinProvable.name.lower():
+            return PolicyFindMinProvable(ds)
+        else:
+            raise NotImplementedError                        
 
 class AdversarialProperty:
 
@@ -260,11 +277,11 @@ class resultObj:
         self.inputDict = inputDict
         self.outputDict = outputDict        
 
-class dataSet:
+class DataSet:
 
     def __init__(self, ds='mnist'):
         if ds.lower() == 'mnist':
-            setMnist()
+            self.setMnist()
         else:
             raise NotImplementedError
         
@@ -276,59 +293,59 @@ class dataSet:
         self.x_train = np.expand_dims(self.x_train, -1)
         self.x_test = np.expand_dims(self.x_test, -1)
         self.featureShape=(1,28,28)
-        
+        self.loss='sparse_categorical_crossentropy'
+        self.optimizer='adam'
+        self.metrics=['accuracy']        
     
 class CnnAbs:
 
-    def __init__(self, dataSet='mnist', dumpDir='', optionsObj=None):
-        if logger == None:
-            setLogger()
-        self.ds = dataSet('mnist')        
-        self.loss='sparse_categorical_crossentropy'
-        self.optimizer='adam'
-        self.metrics=['accuracy']
+    logger = None
+    
+    def __init__(self, ds='mnist', dumpDir='', optionsObj=None):
+        if CnnAbs.logger == None:
+            CnnAbs.setLogger()
+        self.ds = DataSet(ds)
         self.dumpDir = dumpDir
         self.optionsObj = optionsObj
-        self.modelUtils = ModelUtils(self.ds, self.optionsObj)        
+        self.modelUtils = ModelUtils(self.ds, self.optionsObj)
 
-    def genAdvMbouNet(model, prop, boundDict, runName, coi, mask):
-        modelOnnxMarabou = tf2MbouOnnx(model)
-        setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
-        setBounds(modelOnnxMarabou, boundDict)
-        originalQueryStats = dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)
+    def genAdvMbouNet(self, model, prop, boundDict, runName, coi, mask):
+        modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
+        InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
+        InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
+        originalQueryStats = CnnAbs.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName, self.dumpDir)
         if coi:
-            inputVarsMapping, outputVarsMapping, varsMapping = setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
-            dumpCoi(inputVarsMapping, runName)
+            inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
+            CnnAbs.dumpCoi(inputVarsMapping, runName)
         else:
             inputVarsMapping = modelOnnxMarabou.inputVars[0]
             outputVarsMapping = modelOnnxMarabou.outputVars
             varsMapping = {v : v for v in range(modelOnnxMarabou.numVars)}
-        dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName, dumpDir)
-        dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName, dumpDir)
-        dumpJson(varsMapping, "varsMapping_" + runName, dumpDir)
-        setUnconnectedAsInputs(modelOnnxMarabou)        
-        modelOnnxMarabou.saveQuery(dumpDir + "IPQ_" + runName)
-        finalQueryStats = marabouNetworkStats(modelOnnxMarabou)
-        dumpJson(finalQueryStats, "finalQueryStats_" + runName, dumpDir)
+        CnnAbs.dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName, self.dumpDir)
+        CnnAbs.dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName, self.dumpDir)
+        CnnAbs.dumpJson(varsMapping, "varsMapping_" + runName, self.dumpDir)
+        InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)        
+        modelOnnxMarabou.saveQuery(self.dumpDir + "IPQ_" + runName)
+        finalQueryStats = CnnAbs.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName, self.dumpDir)
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping
     
     def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
         if not fromDumpedQuery:
-            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping = genAdvMbouNet(model, prop, boundDict, runName, coi, mask)
+            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping = self.genAdvMbouNet(model, prop, boundDict, runName, coi, mask)
             ipq = mbouNet.getMarabouQuery()
             if onlyDump:
                 return "IPQ_" + runName            
         else:
-            ipq = Marabou.load_query(dumpDir + "IPQ_" + runName)
+            ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
         vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
         if fromDumpedQuery:
-            originalQueryStats = loadJson("originalQueryStats_" + runName)
-            finalQueryStats = loadJson("finalQueryStats_" + runName)
-            inputVarsMapping = loadNpArray("inputVarsMapping_" + runName)
-            outputVarsMapping = loadNpArray("outputVarsMapping_" + runName)
-            varsMapping = loadJson("varsMapping_" + runName)            
+            originalQueryStats = CnnAbs.loadJson("originalQueryStats_" + runName)
+            finalQueryStats = CnnAbs.loadJson("finalQueryStats_" + runName)
+            inputVarsMapping = CnnAbs.loadNpArray("inputVarsMapping_" + runName)
+            outputVarsMapping = CnnAbs.loadNpArray("outputVarsMapping_" + runName)
+            varsMapping = CnnAbs.loadJson("varsMapping_" + runName)            
         if not sat:
             if timesOut:
                 result = resultObj("timeout")
@@ -337,9 +354,9 @@ class CnnAbs:
             result.setStats(originalQueryStats, finalQueryStats)                
             return result
         cex, cexPrediction, inputDict, outputDict = cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
-        dumpCex(cex, cexPrediction, prop, runName)
-        dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict", dumpDir)
-        dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict", dumpDir)
+        CnnAbs.dumpCex(cex, cexPrediction, prop, runName, self.dumpDir)
+        CnnAbs.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict", self.dumpDir)
+        CnnAbs.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict", self.dumpDir)
         result = resultObj("sat")
         result.setCex(cex, cexPrediction, inputDict, outputDict)
         result.setStats(originalQueryStats, finalQueryStats)
@@ -347,22 +364,22 @@ class CnnAbs:
 
     def setLogger():
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = "cnnAbsTB.log", filemode = "w")
-        logger = logging.getLogger('cnnAbsTB_{}'.format(cfg_runTitle))
-        logger.setLevel(logging.INFO)
-        fh = logging.FileHandler('cnnAbsTB_{}.log'.format(cfg_runTitle))
+        CnnAbs.logger = logging.getLogger('cnnAbsTB')
+        CnnAbs.logger.setLevel(logging.INFO)
+        fh = logging.FileHandler('cnnAbsTB.log')
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        logger.addHandler(fh)
+        CnnAbs.logger.addHandler(fh)
         ch = logging.StreamHandler()
         ch.setLevel(logging.ERROR)
         ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        logger.addHandler(ch)
+        CnnAbs.logger.addHandler(ch)
 
         logging.getLogger('matplotlib.font_manager').disabled = True
 
     def printLog(s):
-        if logger:
-            logger.info(s)
+        if CnnAbs.logger:
+            CnnAbs.logger.info(s)
         print(s)
 
     @staticmethod        
@@ -371,9 +388,9 @@ class CnnAbs:
             np.save(f, npArray)      
 
     @staticmethod            
-    def dumpQueryStats(mbouNet, name):
-        queryStats = marabouNetworkStats(modelOnnxMarabou)
-        dumpJson(queryStats, name, dumpDir)
+    def dumpQueryStats(mbouNet, name, dumpDir):
+        queryStats = ModelUtils.marabouNetworkStats(mbouNet)
+        CnnAbs.dumpJson(queryStats, name, dumpDir)
         return queryStats
 
     @staticmethod    
@@ -382,12 +399,12 @@ class CnnAbs:
             json.dump(data, f, indent = 4)
 
     @staticmethod            
-    def dumpCex(cex, cexPrediction, prop, runName):
+    def dumpCex(cex, cexPrediction, prop, runName, dumpDir):
         mbouPrediction = cexPrediction.argmax()
         plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}'.format(prop.yMax, prop.ySecond, mbouPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")
-        dumpNpArray(cex, "Cex_{}".format(runName), dumpDir)
+        CnnAbs.dumpNpArray(cex, "Cex_{}".format(runName), dumpDir)
 
     @staticmethod        
     def dumpCoi(inputVarsMapping, runName):
@@ -403,29 +420,28 @@ class CnnAbs:
     @staticmethod        
     def loadNpArray(name, dumpDir):
         with open(dumpDir + name + ".npy", "rb") as f:            
-            return np.load(f, allow_pickle=True)
-        
-    @staticmethod
-    def myLoss(labels, logits):
-        return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
+            return np.load(f, allow_pickle=True)        
 
 #################################################################################################################
 #################################################################################################################
 #################################################################################################################
 #################################################################################################################
 #################################################################################################################
+
+def myLoss(labels, logits):
+    return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
 class ModelUtils:
     
     numClones = 0
 
-    def __init__(self, ds, optionsObj=None):
+    def __init__(self, ds, optionsObj):
         self.ds = ds
         self.optionsObj = optionsObj
 
     @classmethod
-    def incNumClones():
-        numClones += 1
+    def incNumClones(cls):
+        cls.numClones += 1
 
     @staticmethod
     def outputModelPath(m, suffix=""):
@@ -448,22 +464,22 @@ class ModelUtils:
         
     #https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
     def compareModels(origM, absM):
-        printLog("compareModels - Starting evaluation of differances between models.")
+        CnnAbs.printLog("compareModels - Starting evaluation of differances between models.")
         layersOrig = [l.name for l in origM.layers]
         layersAbs  = [l.name for l in absM.layers if ("rplc" not in l.name or "rplcOut" in l.name)]
         log = []
         equal_full   = np.all(np.equal  (origM.predict(self.ds.x_test), absM.predict(self.ds.x_test)))
         isclose_full = np.all(np.isclose(origM.predict(self.ds.x_test), absM.predict(self.ds.x_test)))
-        printLog("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
+        CnnAbs.printLog("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
         for lo, la in zip(layersOrig, layersAbs):
             mid_origM = intermidModel(origM, lo)
             mid_absM  = intermidModel(absM , la)
-            printLog("compare {} to {}".format(lo, la))
+            CnnAbs.printLog("compare {} to {}".format(lo, la))
             w_equal = (len(origM.get_layer(name=lo).get_weights()) == len(absM.get_layer(name=la).get_weights())) and all([np.all(np.equal(wo,wa)) for wo,wa in zip(origM.get_layer(name=lo).get_weights(), absM.get_layer(name=la).get_weights())])
             equal   = np.all(np.equal  (mid_origM.predict(self.ds.x_test), mid_absM.predict(self.ds.x_test)))
             isclose = np.all(np.isclose(mid_origM.predict(self.ds.x_test), mid_absM.predict(self.ds.x_test)))
             log.append(equal)
-            printLog("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
+            CnnAbs.printLog("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
         return log
     
     def dumpBounds(self, model, xAdv, inDist, outSlack, yMax, ySecond):
@@ -471,8 +487,8 @@ class ModelUtils:
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
         modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-        setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
-        return processInputQuery(modelOnnxMarabou)
+        InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
+        return self.processInputQuery(modelOnnxMarabou)
     
     def processInputQuery(self, net):
         net.saveQuery("processInputQuery")
@@ -512,16 +528,17 @@ class ModelUtils:
     
         return replaceW, replaceB
     
-    def cloneAndMaskConvModel(self, origM, rplcLayerName, mask, inputShape=self.ds.input_shape, evaluate=True):
+    def cloneAndMaskConvModel(self, origM, rplcLayerName, mask, evaluate=True):
+        inputShape = self.ds.input_shape
         rplcIn = origM.get_layer(name=rplcLayerName).input_shape
         rplcOut = origM.get_layer(name=rplcLayerName).output_shape
         origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
         origB = origM.get_layer(name=rplcLayerName).get_weights()[1]
         strides = origM.get_layer(name=rplcLayerName).strides
-        clnW, clnB = maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
+        clnW, clnB = ModelUtils.maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
         clnLayers = [tf.keras.Input(shape=inputShape, name="input_clnM")]
         toSetWeights = {}
-        lSuffix = "_clnM_{}".format(numClones)
+        lSuffix = "_clnM_{}".format(ModelUtils.numClones)
         for l in origM.layers:
             if l.name == rplcLayerName:
                 clnLayers.append(layers.Flatten(name=(rplcLayerName + "_f_rplc" + lSuffix)))
@@ -545,9 +562,9 @@ class ModelUtils:
                 clnLayers.append(newL)
         clnM = tf.keras.Sequential(
             clnLayers,
-            name=("AbsModel_{}".format(numClones))
+            name=("AbsModel_{}".format(ModelUtils.numClones))
         )
-        incNumClones()
+        ModelUtils.incNumClones()
     
         clnM.build(input_shape=self.ds.featureShape)
         clnM.compile(loss=self.ds.loss, optimizer=self.ds.optimizer, metrics=self.ds.metrics)
@@ -558,19 +575,19 @@ class ModelUtils:
     
         if evaluate:
             score = clnM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            printLog("(Clone, neurons masked:{}%) Test loss:{}".format(100*(1 - np.average(mask)), score[0]))
-            printLog("(Clone, neurons masked:{}%) Test accuracy:{}".format(100*(1 - np.average(mask)), score[1]))
+            CnnAbs.printLog("(Clone, neurons masked:{}%) Test loss:{}".format(100*(1 - np.average(mask)), score[0]))
+            CnnAbs.printLog("(Clone, neurons masked:{}%) Test accuracy:{}".format(100*(1 - np.average(mask)), score[1]))
     
             if np.all(np.equal(mask, np.ones_like(mask))):
                 if np.all(np.isclose(clnM.predict(self.ds.x_test), origM.predict(self.ds.x_test))):
                     #if np.all(np.equal(clnM.predict(self.ds.x_test), origM.predict(self.ds.x_test))):
-                    printLog("Prediction aligned")
+                    CnnAbs.printLog("Prediction aligned")
                 else:
-                    printLog("Prediction not aligned")
+                    CnnAbs.printLog("Prediction not aligned")
     
         return clnM
     
-    def genValidationModel(validation):
+    def genValidationModel(self, validation):
         if "base" in validation: 
             if validation == "mnist_base_4":
                 num_ch = 4
@@ -618,9 +635,9 @@ class ModelUtils:
                 name="origModel_" + validation
             )
     
-    def genCnnForAbsTest(cfg_limitCh=True, cfg_freshModelOrig=False, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small", validation=None):
+    def genCnnForAbsTest(self, cfg_limitCh=True, cfg_freshModelOrig=False, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small", validation=None):
     
-        printLog("Starting model building")
+        CnnAbs.printLog("Starting model building")
         #https://keras.io/examples/vision/mnist_convnet/
     
         if not validation:
@@ -670,8 +687,8 @@ class ModelUtils:
             origM.fit(self.ds.x_train, self.ds.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
     
             score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            printLog("(Original) Test loss:{}".format(score[0]))
-            printLog("(Original) Test accuracy:{}".format(score[1]))
+            CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
+            CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
     
             origM.save(basePath + "/" + savedModelOrig)
     
@@ -680,21 +697,21 @@ class ModelUtils:
             #origM = load_model(basePath + "/" + savedModelOrig)
             origM.summary()
             score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            printLog("(Original) Test loss:".format(score[0]))
-            printLog("(Original) Test accuracy:".format(score[1]))
+            CnnAbs.printLog("(Original) Test loss:".format(score[0]))
+            CnnAbs.printLog("(Original) Test accuracy:".format(score[1]))
     
         return origM
     
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
         if useMapping:
-            lBounds = getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
+            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
             fail = False
             for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
                 if indCOI.item() is None:
-                    printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
+                    CnnAbs.printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
                     fail = True
             if fail:
-                printLog("inputVarsMapping={}".format(inputVarsMapping))
+                CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))
             inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
             outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0    for (indOrig, indCOI)      in     enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
     
@@ -717,6 +734,7 @@ class ModelUtils:
             return prediction.argmax() == yCorrect
         return prediction[0,yBad] + outSlack < prediction[0,yCorrect]
 
+    @staticmethod
     def marabouNetworkStats(net):
         return {"numVars" : net.numVars,
                 "numEquations" : len(net.equList),
@@ -755,7 +773,7 @@ class InputQueryUtils:
         for absCons in net.absList:
             varsWithIngoingEdgesOrInputs.add(absCons[1])
         varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-        printLog("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
+        CnnAbs.printLog("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
         for v in varsWithoutIngoingEdges:
             if not net.lowerBoundExists(v):
                 raise Exception("inaccessible w/o lower bounds: {}".format(v))
@@ -824,16 +842,16 @@ class InputQueryUtils:
     @staticmethod
     def setCOIBoundes(net, init):
     
-        printLog("net.numVars={}".format(net.numVars))    
-        printLog("len(net.equList)={}".format(len(net.equList)))
-        printLog("len(net.maxList)={}".format(len(net.maxList)))
-        printLog("len(net.reluList)={}".format(len(net.reluList)))
-        printLog("len(net.absList)={}".format(len(net.absList)))
-        printLog("len(net.signList)={}".format(len(net.signList)))
-        printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
-        printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
-        printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
-        printLog("net.outputVars.size={}".format(net.outputVars.size))
+        CnnAbs.printLog("net.numVars={}".format(net.numVars))    
+        CnnAbs.printLog("len(net.equList)={}".format(len(net.equList)))
+        CnnAbs.printLog("len(net.maxList)={}".format(len(net.maxList)))
+        CnnAbs.printLog("len(net.reluList)={}".format(len(net.reluList)))
+        CnnAbs.printLog("len(net.absList)={}".format(len(net.absList)))
+        CnnAbs.printLog("len(net.signList)={}".format(len(net.signList)))
+        CnnAbs.printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
+        CnnAbs.printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
+        CnnAbs.printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
+        CnnAbs.printLog("net.outputVars.size={}".format(net.outputVars.size))
     
         reach = set(init)
         lastLen = 0
@@ -845,7 +863,7 @@ class InputQueryUtils:
                     [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
                 elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                     [reach.add(v) for w,v in eq.addendList]
-                    printLog("eqi={}, eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eqi, eq.addendList, eq.scalar, eq.EquationType))
+                    CnnAbs.printLog("eqi={}, eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eqi, eq.addendList, eq.scalar, eq.EquationType))
             for maxArgs, maxOut in net.maxList:
                 if maxOut in reachPrev:
                     [reach.add(arg) for arg in maxArgs]
@@ -856,24 +874,24 @@ class InputQueryUtils:
                 raise Exception("Not implemented")
         unreach = set([v for v in range(net.numVars) if v not in reach])
     
-        printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+        CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     
-        inputVarsMapping, outputVarsMapping, varsMapping = removeRedundantVariables(net, reach)
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeRedundantVariables(net, reach)
         for eq in net.equList:
             for w,v in eq.addendList:
                 if v > net.numVars:
-                    printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
-        printLog("net.numVars={}".format(net.numVars))
-        printLog("len(net.equList)={}".format(len(net.equList)))
-        printLog("len(net.maxList)={}".format(len(net.maxList)))
-        printLog("len(net.reluList)={}".format(len(net.reluList)))
-        printLog("len(net.absList)={}".format(len(net.absList)))
-        printLog("len(net.signList)={}".format(len(net.signList)))
-        printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
-        printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
-        printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
-        printLog("net.outputVars.size={}".format(net.outputVars.size))
-        printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+                    CnnAbs.printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
+        CnnAbs.printLog("net.numVars={}".format(net.numVars))
+        CnnAbs.printLog("len(net.equList)={}".format(len(net.equList)))
+        CnnAbs.printLog("len(net.maxList)={}".format(len(net.maxList)))
+        CnnAbs.printLog("len(net.reluList)={}".format(len(net.reluList)))
+        CnnAbs.printLog("len(net.absList)={}".format(len(net.absList)))
+        CnnAbs.printLog("len(net.signList)={}".format(len(net.signList)))
+        CnnAbs.printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
+        CnnAbs.printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
+        CnnAbs.printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
+        CnnAbs.printLog("net.outputVars.size={}".format(net.outputVars.size))
+        CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
         return inputVarsMapping, outputVarsMapping, varsMapping
 
     @staticmethod
@@ -897,7 +915,7 @@ class InputQueryUtils:
     @staticmethod    
     def inBoundsInftyBall(x, r, p, pos=True, allowClose=True):
         assert p.shape == x.shape
-        l,u = getBoundsInftyBall(x,r,pos=pos)
+        l,u = InputQueryUtils.getBoundsInftyBall(x,r,pos=pos)
         if allowClose:
             geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
             leqUp  = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
@@ -913,7 +931,7 @@ class InputQueryUtils:
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
         inAsNP = np.array(net.inputVars[0])
         x = x.reshape(inAsNP.shape)
-        xDown, xUp = getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025)
+        xDown, xUp = InputQueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025)
         floatingPointErrorGapOutput = 0.03
         for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
             net.lowerBounds.pop(i.item(), None)
