@@ -166,7 +166,8 @@ if cfg_runOn == "local":
 else :
     optionsObj = optionsCluster
 
-cnnAbsModule = cnnAbs(dumpDir=cfg_dumpDir, optionsObj=optionsObj)
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj)
+policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
 
 basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
 currPath = basePath + "/logs"
@@ -199,20 +200,20 @@ replaceLayerName = cfg_absLayer
 
 ## Build initial model.
 
-printLog("Started model building")
-modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
+CnnAbs.printLog("Started model building")
+modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
 if maskShape[0] == None:
     maskShape = maskShape[1:]
 
-modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
+modelOrigDense = cnnAbs.modelUtils.cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
 #FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 #compareModels(modelOrig, modelOrigDense)
 
-printLog("Finished model building")
+CnnAbs.printLog("Finished model building")
 
 if cfg_noVerify:
-    printLog("Skipping verification phase")
+    CnnAbs.printLog("Skipping verification phase")
     exit(0)
 
 #############################################################################################
@@ -228,7 +229,7 @@ if cfg_noVerify:
 ## Choose adversarial example
 ds = DataSet("mnist")
 
-printLog("Choosing adversarial example")
+CnnAbs.printLog("Choosing adversarial example")
 
 xAdv = ds.x_test[cfg_sampleIndex]
 yAdv = ds.y_test[cfg_sampleIndex]
@@ -241,7 +242,7 @@ if ySecond == yMax:
     ySecond = 0 if yMax > 0 else 1
 
 fName = "xAdv.png"
-printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, cfg_sampleIndex, yAdv))
+CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, cfg_sampleIndex, yAdv))
 plt.figure()
 plt.imshow(np.squeeze(xAdv))
 plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
@@ -257,15 +258,15 @@ dumpResultsJson(resultsJson)
 
 
 if cfg_dumpBounds:
-    printLog("Started dumping bounds - used for abstraction")
-    ipq = dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
-    printLog("Finished dumping bounds - used for abstraction")
+    CnnAbs.printLog("Started dumping bounds - used for abstraction")
+    ipq = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+    CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
     if ipq.getNumberOfVariables() == 0:
         resultsJson["SAT"] = False
         resultsJson["Result"] = "UNSAT"
         dumpResultsJson(resultsJson)
-        printLog("UNSAT on first LP bound tightening")
+        CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()
 if os.path.isfile(os.getcwd() + "/dumpBounds.json") and cfg_dumpBounds:
     with open('dumpBounds.json', 'r') as boundFile:
@@ -274,16 +275,18 @@ if os.path.isfile(os.getcwd() + "/dumpBounds.json") and cfg_dumpBounds:
 else:
     boundDict = None
 
-maskList = list(genActivationMask(intermidModel(modelOrigDense, replaceLayerName), xAdv, yMax, policy=cfg_abstractionPolicy, boundDict=boundDict
-))
-if not cfg_maskAbstract:
-    maskList = []
-printLog("Created {} masks".format(len(maskList)))
+if policy.policy is Policy.SingleClassRank:    
+    maskList = list(policy.genActivationMask(ModelUtils.intermidModel(modelOrigDense, replaceLayerName), yMax))
+else:
+    maskList = list(policy.genActivationMask(ModelUtils.intermidModel(modelOrigDense, replaceLayerName)))
+#if not cfg_maskAbstract:
+#    maskList = []
+CnnAbs.printLog("Created {} masks".format(len(maskList)))
 #for i,mask in enumerate(maskList):
 #    print("mask,{}=\n{}".format(i,mask))
 #exit()
 
-printLog("Starting verification phase")
+CnnAbs.printLog("Starting verification phase")
 
 reachedFull = False
 successful = None
@@ -294,83 +297,83 @@ timedOut = None
 
 modelOrigDenseSavedName = "modelOrigDense.h5"
 modelOrigDense.save(modelOrigDenseSavedName)
+prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
 for i, mask in enumerate(maskList):
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
-        modelOrig = genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
+        modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
         modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
         modelAbs = None
-    printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
+    CnnAbs.printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))
-    prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
-    returnVal = runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    returnVal = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
     sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
     subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
-    printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
+    CnnAbs.printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
     if timedOut:
         assert not sat
-        printLog("\n\n\n ----- Timed out in mask number {} ----- \n\n\n".format(i+1))
+        CnnAbs.printLog("\n\n\n ----- Timed out in mask number {} ----- \n\n\n".format(i+1))
         continue
     if sat:
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
-        printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
+        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
 
         if not isSporious:
             successful = i
             break;
     else:
-        printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
+        CnnAbs.printLog("Found UNSAT in mask number {} out of {}".format(i+1, len(maskList)))
         successful = i
         break;
 else:
     if cfg_runFull:
-        printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
+        CnnAbs.printLog("\n\n\n ----- Start Solving Full ----- \n\n\n")
         reachedFinal = True
         startLocal = time.time()
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         subResultAppend(resultsJson, runType="full")
-        cnnAbsModule.optionsObj._timeoutInSeconds = 0
+        cnnAbs.optionsObj._timeoutInSeconds = 0
         runName = "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy) if not cfg_ipqNameIsRunName else cfg_runTitle
-        returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+        returnVal = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
         if cfg_dumpQueries:
             exit()
         sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
         assert not timedOut
         subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
-        printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
+        CnnAbs.printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
         successful = len(maskList)
         if sat:
             isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
-            printLog("Found {} CEX in full network.".format("sporious" if isSporious else "real"))
+            CnnAbs.printLog("Found {} CEX in full network.".format("sporious" if isSporious else "real"))
             if isSporious:
                 raise Exception("Sporious CEX at full network.")
         else:
-            printLog("Found UNSAT in full network")
+            CnnAbs.printLog("Found UNSAT in full network")
 
 if successful:
-    printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else printLog("successful=Full")
-printLog("ReachedFinal={}".format(reachedFinal))
+    CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
+CnnAbs.printLog("ReachedFinal={}".format(reachedFinal))
 
 if sat is not None and timedOut is not None:
     if sat:
-        printLog("SAT")
+        CnnAbs.printLog("SAT")
         if cfg_doubleCheck:
             verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou", fromImage=cexFromImage)
             print("verifyMarabou={}".format(verificationResult))
             if not verificationResult[0]:
                 raise Exception("Inconsistant Marabou result, marabou double check failed")
     elif not timedOut:
-        printLog("UNSAT")
+        CnnAbs.printLog("UNSAT")
     else:
-        printLog("TIMED OUT")
+        CnnAbs.printLog("TIMED OUT")
 
     if not timedOut:
         resultsJson["SAT"] = sat
@@ -379,9 +382,9 @@ if sat is not None and timedOut is not None:
     resultsJson["totalRuntime"] = time.time() - startTotal
     dumpResultsJson(resultsJson)
 
-printLog("Log files at {}".format(currPath))
+CnnAbs.printLog("Log files at {}".format(currPath))
 
-if Policy.fromString(cfg_abstractionPolicy) is Policy.FindMinProvable:
+if policy is Policy.FindMinProvable:
     for i,mask in enumerate(maskList):
         if i == successful:
             argWhere    = np.argwhere(mask == 0)
