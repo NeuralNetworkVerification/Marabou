@@ -5,7 +5,8 @@ import numpy as np
 import keras2onnx
 import onnx
 import onnxruntime
-from cnn_abs import *
+from CnnAbs import *
+#from cnn_abs import *
 import logging
 import time
 import argparse
@@ -31,7 +32,7 @@ import matplotlib.pyplot as plt
 
 tf.compat.v1.enable_v2_behavior()
 
-def dumpJson(jsonDict):
+def dumpResultsJson(jsonDict):
     if cfg_dumpQueries:
         return
     with open("Results.json", "w") as f:
@@ -47,7 +48,7 @@ def subResultAppend(resultsJson, runType=None, index=None, numMasks=None, runtim
                                       "finalQueryStats" : finalQueryStats,
                                       "SAT" : sat,
                                       "timedOut" : timedOut})
-    dumpJson(resultsJson)
+    dumpResultsJson(resultsJson)
 
 def subResultUpdate(resultsJson, runType=None, index=None, numMasks=None, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
     resultsJson["subResults"][-1] = {"type": runType,
@@ -59,7 +60,7 @@ def subResultUpdate(resultsJson, runType=None, index=None, numMasks=None, runtim
                                      "finalQueryStats" : finalQueryStats,
                                      "SAT" : sat,
                                      "timedOut" : timedOut}
-    dumpJson(resultsJson)
+    dumpResultsJson(resultsJson)
 
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
@@ -82,7 +83,7 @@ parser.add_argument("--num_cpu",        type=int,                               
 parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Solver timeout in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
-parser.add_argument("--policy",         type=str, choices=mnistProp.policies + ["Vanilla"],       default="Vanilla",         help="Which abstraction policy to use")
+parser.add_argument("--policy",         type=str, choices=Policy.asString(),       default="Vanilla",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=True,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
 parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
 parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-inc", "milp", "milp-inc", "iter-prop", "none"], default="none", help="Which bound tightening technique to use.")
@@ -158,18 +159,17 @@ resultsJson["subResults"] = []
 
 cexFromImage = False
 
-#mnistProp.runTitle = cfg_runTitle
-mnistProp.dumpDir = cfg_dumpDir
-
 optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
-    mnistProp.optionsObj = optionsLocal
+    optionsObj = optionsLocal
 else :
-    mnistProp.optionsObj = optionsCluster
+    optionsObj = optionsCluster
 
-mnistProp.basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
-currPath = mnistProp.basePath + "/logs"
+cnnAbsModule = cnnAbs(dumpDir=cfg_dumpDir, optionsObj=optionsObj)
+
+basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
+currPath = basePath + "/logs"
 if not os.path.exists(currPath):
     os.mkdir(currPath)
 if cfg_batchDir:
@@ -181,9 +181,8 @@ if cfg_runTitle:
     if not os.path.exists(currPath):
         os.mkdir(currPath)        
 os.chdir(currPath)
-mnistProp.currPath = currPath
 
-dumpJson(resultsJson)
+dumpResultsJson(resultsJson)
 
 ###############################################################################
 #### ______                                ___  ___          _      _      ####
@@ -210,8 +209,6 @@ modelOrigDense = cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(mask
 #FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 #compareModels(modelOrig, modelOrigDense)
 
-mnistProp.origMSize = cfg_cnnSizeChoice
-mnistProp.origMDense = modelOrigDense
 printLog("Finished model building")
 
 if cfg_noVerify:
@@ -229,11 +226,12 @@ if cfg_noVerify:
 #############################################################################################
 
 ## Choose adversarial example
+ds = DataSet("mnist")
 
 printLog("Choosing adversarial example")
 
-xAdv = mnistProp.x_test[cfg_sampleIndex]
-yAdv = mnistProp.y_test[cfg_sampleIndex]
+xAdv = ds.x_test[cfg_sampleIndex]
+yAdv = ds.y_test[cfg_sampleIndex]
 yPredict = modelOrigDense.predict(np.array([xAdv]))
 yMax = yPredict.argmax()
 yPredictNoMax = np.copy(yPredict)
@@ -255,7 +253,7 @@ with open(fName.replace("png","npy"), "wb") as f:
 resultsJson["yDataset"] = int(yAdv.item())
 resultsJson["yMaxPrediction"] = int(yMax)
 resultsJson["ySecondPrediction"] = int(ySecond)
-dumpJson(resultsJson)
+dumpResultsJson(resultsJson)
 
 
 if cfg_dumpBounds:
@@ -266,7 +264,7 @@ if cfg_dumpBounds:
     if ipq.getNumberOfVariables() == 0:
         resultsJson["SAT"] = False
         resultsJson["Result"] = "UNSAT"
-        dumpJson(resultsJson)
+        dumpResultsJson(resultsJson)
         printLog("UNSAT on first LP bound tightening")
         exit()
 if os.path.isfile(os.getcwd() + "/dumpBounds.json") and cfg_dumpBounds:
@@ -285,35 +283,6 @@ printLog("Created {} masks".format(len(maskList)))
 #    print("mask,{}=\n{}".format(i,mask))
 #exit()
 
-#sample8 = True
-#sample38 = False
-#
-#if sample38:
-#    with open("/cs/labs/guykatz/matanos/Marabou/maraboupy/logs/slurm_AbsPolicies_14-05-21___16-43-32/RandomCfg---38/Cex_sample_38,policy_Random,mask_0.npy", "rb") as f:
-#        cex38 = np.load(f, allow_pickle=True)    
-#    xAdv38 = mnistProp.x_test[38]
-#    print("xAdv38 = {}".format(xAdv38.squeeze()))
-#    print("cex38 = {}".format(cex38.squeeze()))
-#    print("cex38 -xAdv38 = {}".format((cex38 - xAdv38).squeeze()))    
-#
-#if sample8:
-#    with open("/cs/labs/guykatz/matanos/Marabou/maraboupy/logs/slurm_AbsPolicies_14-05-21___16-43-32/MajorityClassVoteCfg---8/Cex_sample_8,policy_MajorityClassVote,mask_3.npy", "rb") as f:
-#        cex8 = np.load(f, allow_pickle=True)
-#    xAdv8 = mnistProp.x_test[8]
-#    print("cex8 = {}".format(cex8.squeeze()))
-#    print("xAdv8 = {}".format(xAdv8.squeeze()))
-#    print("cex8 -xAdv8 = {}".format((cex8 - xAdv8).squeeze()))
-#    print("isCEXSporious={}".format(isCEXSporious(None, xAdv8, cfg_propDist, 0, None, None, cex8)))
-#print("inDist = {}".format(cfg_propDist))
-#exit()
-
-#with open(mnistProp.basePath + "/" + cfg_extraArg, "rb") as f:             #DEBUG SPORIOUS CEX
-    #cex = np.load(f, allow_pickle=True)
-#print(modelOrigDense.predict(np.array([cex])))
-#print(modelOrigDense.predict(np.array([cex])).argmax())
-#print(isCEXSporious(modelOrigDense, xAdv, 0.05, 0, yMax, ySecond, cex, sporiousStrict=True))
-#exit()
-
 printLog("Starting verification phase")
 
 reachedFull = False
@@ -323,7 +292,6 @@ startTotal = time.time()
 sat = None
 timedOut = None
 
-#modelOrigDenseSavedName = mnistProp.basePath + "/" + "modelOrigDense.h5"
 modelOrigDenseSavedName = "modelOrigDense.h5"
 modelOrigDense.save(modelOrigDenseSavedName)
 
@@ -369,7 +337,7 @@ else:
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         subResultAppend(resultsJson, runType="full")
-        mnistProp.optionsObj._timeoutInSeconds = 0
+        cnnAbsModule.optionsObj._timeoutInSeconds = 0
         runName = "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy) if not cfg_ipqNameIsRunName else cfg_runTitle
         returnVal = runMarabouOnKeras(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
         if cfg_dumpQueries:
@@ -409,27 +377,13 @@ if sat is not None and timedOut is not None:
         resultsJson["Result"] = "SAT" if sat else "UNSAT"
         resultsJson["successfulRuntime"] = resultsJson["subResults"][-1]["runtime"]
     resultsJson["totalRuntime"] = time.time() - startTotal
-    dumpJson(resultsJson)
+    dumpResultsJson(resultsJson)
 
 printLog("Log files at {}".format(currPath))
 
-if cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable or cfg_abstractionPolicy == mnistProp.Policy.FindMinProvable.name:
+if Policy.fromString(cfg_abstractionPolicy) is Policy.FindMinProvable:
     for i,mask in enumerate(maskList):
         if i == successful:
             argWhere    = np.argwhere(mask == 0)
             argWhereStr = np.array_repr(argWhere).replace('\n', '')
             print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
-        '''if i != successful:
-            continue
-        argWhere    = np.argwhere(mask == 0)
-        if i == 0:
-            agregate = argWhere
-        else:
-            agregate = np.concatenate((agregate, argWhere), axis=0)
-        argWhereStr = np.array_repr(argWhere).replace('\n', '')
-        print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
-    agregate = np.unique(agregate, axis=0)
-    with open("zerosIndicesInMask.npy".format(i+1), "wb") as f:            
-        np.save(f, agregate)
-    printLog([tuple(agregate[i]) for i in range(agregate.shape[0])])'''
-
