@@ -279,8 +279,8 @@ if policy.policy is Policy.SingleClassRank:
     maskList = list(policy.genActivationMask(ModelUtils.intermidModel(modelOrigDense, replaceLayerName), yMax))
 else:
     maskList = list(policy.genActivationMask(ModelUtils.intermidModel(modelOrigDense, replaceLayerName)))
-#if not cfg_maskAbstract:
-#    maskList = []
+if not cfg_maskAbstract: #FIXME
+    maskList = []
 CnnAbs.printLog("Created {} masks".format(len(maskList)))
 #for i,mask in enumerate(maskList):
 #    print("mask,{}=\n{}".format(i,mask))
@@ -292,8 +292,6 @@ reachedFull = False
 successful = None
 reachedFinal = False
 startTotal = time.time()
-sat = None
-timedOut = None
 
 modelOrigDenseSavedName = "modelOrigDense.h5"
 modelOrigDense.save(modelOrigDenseSavedName)
@@ -303,26 +301,26 @@ for i, mask in enumerate(maskList):
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
         modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
-        modelAbs = cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
+        modelAbs = cnnAbs.modelUtils.cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
         modelAbs = None
     CnnAbs.printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))
-    returnVal = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
-    sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
-    subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
+    
+    subResultUpdate(resultsJson, runType="mask", index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=resultObj.originalQueryStats, finalQueryStats=resultObj.finalQueryStats, sat=resultObj.sat(), timedOut=resultObj.timedOut())
     CnnAbs.printLog("\n\n\n ----- Finished Solving mask number {} ----- \n\n\n".format(i+1))
-    if timedOut:
-        assert not sat
+    if resultObj.timedOut():
+        assert not resultObj.sat()
         CnnAbs.printLog("\n\n\n ----- Timed out in mask number {} ----- \n\n\n".format(i+1))
         continue
-    if sat:
+    if resultObj.sat():
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
-        isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
+        isSporious = cnnAbs.modelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
 
         if not isSporious:
@@ -342,16 +340,15 @@ else:
         subResultAppend(resultsJson, runType="full")
         cnnAbs.optionsObj._timeoutInSeconds = 0
         runName = "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy) if not cfg_ipqNameIsRunName else cfg_runTitle
-        returnVal = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+        resultObj = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
         if cfg_dumpQueries:
             exit()
-        sat, timedOut, cex, cexPrediction, inputDict, outputDict, originalQueryStats, finalQueryStats = returnVal
-        assert not timedOut
-        subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=sat, timedOut=timedOut)
+        assert not resultObj.timedOut()
+        subResultUpdate(resultsJson, runType="full", runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=resultObj.originalQueryStats, finalQueryStats=resultObj.finalQueryStats, sat=resultObj.sat(), timedOut=resultObj.timedOut())
         CnnAbs.printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
         successful = len(maskList)
-        if sat:
-            isSporious = isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, cex, sporiousStrict=cfg_sporiousStrict)
+        if resultObj.sat():
+            isSporious = cnnAbs.modelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
             CnnAbs.printLog("Found {} CEX in full network.".format("sporious" if isSporious else "real"))
             if isSporious:
                 raise Exception("Sporious CEX at full network.")
@@ -362,22 +359,22 @@ if successful:
     CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
 CnnAbs.printLog("ReachedFinal={}".format(reachedFinal))
 
-if sat is not None and timedOut is not None:
-    if sat:
+if resultObj.sat() is not None and resultObj.timedOut() is not None:
+    if resultObj.sat():
         CnnAbs.printLog("SAT")
-        if cfg_doubleCheck:
-            verificationResult = verifyMarabou(modelOrigDense, cex, cexPrediction, inputDict, outputDict, "verifyMarabou", fromImage=cexFromImage)
-            print("verifyMarabou={}".format(verificationResult))
-            if not verificationResult[0]:
-                raise Exception("Inconsistant Marabou result, marabou double check failed")
-    elif not timedOut:
+#        if cfg_doubleCheck:
+#            verificationResult = verifyMarabou(modelOrigDense, resultObj.cex, resultObj.cexPrediction, resultObj.inputDict, resultObj.outputDict, "verifyMarabou", fromImage=cexFromImage)
+#            print("verifyMarabou={}".format(verificationResult))
+#            if not verificationResult[0]:
+#                raise Exception("Inconsistant Marabou result, marabou double check failed")
+    elif not resultObj.timedOut():
         CnnAbs.printLog("UNSAT")
     else:
         CnnAbs.printLog("TIMED OUT")
 
-    if not timedOut:
-        resultsJson["SAT"] = sat
-        resultsJson["Result"] = "SAT" if sat else "UNSAT"
+    if not resultObj.timedOut():
+        resultsJson["SAT"] = resultObj.sat()
+        resultsJson["Result"] = "SAT" if resultObj.sat() else "UNSAT"
         resultsJson["successfulRuntime"] = resultsJson["subResults"][-1]["runtime"]
     resultsJson["totalRuntime"] = time.time() - startTotal
     dumpResultsJson(resultsJson)

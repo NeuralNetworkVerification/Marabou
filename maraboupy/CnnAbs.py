@@ -47,8 +47,8 @@ class PolicyBase:
         return act        
     
     def genMaskByActivation(self, intermidModel, features):
-        sortedIndReverse = sortReverseNeuronsByActivation(intermidModel, features)
-        return genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1])
+        sortedIndReverse = PolicyBase.sortReverseNeuronsByActivation(intermidModel, features)
+        return self.genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1])
 
     def sortActMapReverse(actMap):
         sorted = list(np.array(list(product(*[range(d) for d in actMap.shape])))[actMap.flatten().argsort()])
@@ -56,8 +56,8 @@ class PolicyBase:
         return sorted
     
     def sortReverseNeuronsByActivation(intermidModel, samples):
-        actMap = meanActivation(intermidModel.predict(samples))
-        sortedIndReverse = sortActMapReverse(actMap)
+        actMap = PolicyBase.meanActivation(intermidModel.predict(samples))
+        sortedIndReverse = PolicyBase.sortActMapReverse(actMap)
         assert len(sortedIndReverse) == actMap.size
         return sortedIndReverse
     
@@ -100,7 +100,7 @@ class PolicyCentered(PolicyBase):
         indicesList = list(product(*[range(d) for d in maskShape]))
         center = np.array([float(d) / 2 for d in maskShape])
         indicesSortedDecsending = sorted(indicesList, key=lambda x: np.linalg.norm(np.array(x)-center))
-        return genMaskByOrderedInd(indicesSortedDecsending, maskShape)
+        return self.genMaskByOrderedInd(indicesSortedDecsending, maskShape)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllClassRank(PolicyBase):
@@ -110,7 +110,7 @@ class PolicyAllClassRank(PolicyBase):
         super().__init__(ds)
     
     def genActivationMask(self, intermidModel):
-        return genMaskByActivation(intermidModel, self.ds.x_test)
+        return self.genMaskByActivation(intermidModel, self.ds.x_test)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -121,7 +121,7 @@ class PolicySingleClassRank(PolicyBase):
             
     def genActivationMask(self, intermidModel, prediction):
         features = [x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == prediction]
-        return genMaskByActivation(intermidModel, np.array(features))
+        return self.genMaskByActivation(intermidModel, np.array(features))
     
 #Policy - calculate per class    
 class PolicyMajorityClassVote(PolicyBase):
@@ -136,7 +136,7 @@ class PolicyMajorityClassVote(PolicyBase):
         discriminate = lambda actM : np.square(actM) #TODO explore discriminating schemes.
         actMaps = [discriminate(actMap) for actMap in actMaps]
         sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
-        return genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1])
+        return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1])
 
 #Policy - Add neurons randomly.    
 class PolicyRandom(PolicyBase):
@@ -148,7 +148,7 @@ class PolicyRandom(PolicyBase):
     def genActivationMask(self, intermidModel):
         maskShape = intermidModel.output_shape[1:-1]
         indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
-        return genMaskByOrderedInd(indices, maskShape)
+        return self.genMaskByOrderedInd(indices, maskShape)
     
 class PolicyVanilla(PolicyBase):
     
@@ -254,7 +254,7 @@ class Result(Enum):
         else:
             raise NotImplementedError            
         
-class resultObj:
+class ResultObj:
     
     def __init__(self, result):
         self.originalQueryStats = None
@@ -263,10 +263,17 @@ class resultObj:
         self.cexPrediction = np.array([])
         self.inputDict = dict()
         self.outputDict = dict()
-        self.sat = False
-        self.timedOut = False
         self.result = Result.str2Result(result)
 
+    def timedOut(self):
+        return self.result is Result.TIMEOUT
+
+    def sat(self):
+        return self.result is Result.SAT
+    
+    def unsat(self):
+        return self.result is Result.UNSAT
+    
     def setStats(self, orig, final):
         self.originalQueryStats = orig
         self.finalQueryStats = final
@@ -348,16 +355,16 @@ class CnnAbs:
             varsMapping = CnnAbs.loadJson("varsMapping_" + runName)            
         if not sat:
             if timesOut:
-                result = resultObj("timeout")
+                result = ResultObj("timeout")
             else:
-                result = resultObj("unsat")
+                result = ResultObj("unsat")
             result.setStats(originalQueryStats, finalQueryStats)                
             return result
         cex, cexPrediction, inputDict, outputDict = cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
         CnnAbs.dumpCex(cex, cexPrediction, prop, runName, self.dumpDir)
         CnnAbs.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict", self.dumpDir)
         CnnAbs.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict", self.dumpDir)
-        result = resultObj("sat")
+        result = ResultObj("sat")
         result.setCex(cex, cexPrediction, inputDict, outputDict)
         result.setStats(originalQueryStats, finalQueryStats)
         return result
