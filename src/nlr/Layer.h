@@ -124,6 +124,9 @@ public:
     double *getLbs() const;
     double *getUbs() const;
 
+    void setAlpha( double alpha ) { _alpha = alpha; }
+    double getAlpha() const { return _alpha; }
+
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
@@ -186,6 +189,9 @@ private:
     double *_symbolicUbOfLb;
     double *_symbolicLbOfUb;
     double *_symbolicUbOfUb;
+
+    // Alpha parameter for leaky relus
+    double _alpha = 0;
 
     void allocateMemory();
     void freeMemoryIfNeeded();

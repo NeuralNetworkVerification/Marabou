@@ -180,6 +180,7 @@ public:
     */
     unsigned getB() const;
     unsigned getF() const;
+    double getSlope() const;
 
     bool supportPolarity() const override;
 

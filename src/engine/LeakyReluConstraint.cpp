@@ -40,6 +40,8 @@ LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
+    if ( _slope <= 0 )
+        throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
 }
 
 LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f, double slope )
@@ -50,6 +52,8 @@ LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f, double slope )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
+    if ( _slope <= 0 )
+        throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
 }
 
 LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
@@ -70,6 +74,8 @@ LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
     _b = atoi( var->ascii() );
     ++var;
     _slope = atof( var->ascii() );
+    if ( _slope <= 0 )
+        throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
 
     _direction = PHASE_NOT_FIXED;
 }
@@ -537,6 +543,11 @@ unsigned LeakyReluConstraint::getB() const
 unsigned LeakyReluConstraint::getF() const
 {
     return _f;
+}
+
+double LeakyReluConstraint::getSlope() const
+{
+    return _slope;
 }
 
 bool LeakyReluConstraint::supportPolarity() const

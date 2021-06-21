@@ -17,6 +17,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "LeakyReluConstraint.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
@@ -895,13 +896,14 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints =
         getPiecewiseLinearConstraints();
 
+    double alpha = 0;
     for ( const auto &plc : plConstraints )
     {
         // Only consider ReLUs
         if ( plc->getType() != LEAKY_RELU )
             continue;
 
-        const ReluConstraint *relu = (const ReluConstraint *)plc;
+        const LeakyReluConstraint *relu = (const LeakyReluConstraint *)plc;
 
         // Has the b variable been handled?
         unsigned b = relu->getB();
@@ -916,6 +918,9 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
         // B has been handled, f hasn't. Add f
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
+        ASSERT( relu->getSlope() > 0 );
+        ASSERT( alpha == 0 || alpha == relu->getSlope() );
+        alpha = relu->getSlope();
     }
 
     // No neurons found for the new layer
@@ -928,6 +933,7 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     nlr->addLayer( newLayerIndex, NLR::Layer::LEAKY_RELU, newNeurons.size() );
 
     NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    layer->setAlpha( alpha );
     for ( const auto &newNeuron : newNeurons )
     {
         handledVariableToLayer[newNeuron._variable] = newLayerIndex;
