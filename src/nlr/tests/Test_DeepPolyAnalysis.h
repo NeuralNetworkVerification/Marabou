@@ -939,4 +939,103 @@ public:
             TS_ASSERT( bounds.exists( bound ) );
     }
 
+    void test_deeppoly_leaky_relus_fixed_input1()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateLeakyReLUNetwork( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, -1 );
+        tableau.setLowerBound( 1, 1 );
+        tableau.setUpperBound( 1, 1 );
+
+        // Invoke Deeppoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        /*
+          Input ranges:
+
+          x0: [-1, -1]
+          x1: [1, 1]
+
+          Layer 1:
+
+          x2: [0, 0]
+          x3: [-2, -2]
+
+          Layer 2:
+
+          x4: [0, 0]
+          x5: [-0.4, -0.4]
+
+          Layer 3:
+
+          x6: [-0.4, -0.4]
+          x7: [0.4, 0.4]
+
+          Layer 4:
+
+          x8: [-0.08, -0.08]
+          x9: [0.4, 0.4]
+
+          Layer 5:
+
+          x10: [1.32, 1.32]
+          x11: [0.4, 0.4]
+
+        */
+
+        List<Tightening> expectedBounds({
+                Tightening( 2, 0, Tightening::LB ),
+                Tightening( 2, 0, Tightening::UB ),
+                Tightening( 3, -2, Tightening::LB ),
+                Tightening( 3, -2, Tightening::UB ),
+
+                Tightening( 4, 0, Tightening::LB ),
+                Tightening( 4, 0, Tightening::UB ),
+                Tightening( 5, -0.4, Tightening::LB ),
+                Tightening( 5, -0.4, Tightening::UB ),
+
+                Tightening( 6, -0.4, Tightening::LB ),
+                Tightening( 6, -0.4, Tightening::UB ),
+                Tightening( 7, 0.4, Tightening::LB ),
+                Tightening( 7, 0.4, Tightening::UB ),
+
+                Tightening( 8, -0.08, Tightening::LB ),
+                Tightening( 8, -0.08, Tightening::UB ),
+                Tightening( 9, 0.4, Tightening::LB ),
+                Tightening( 9, 0.4, Tightening::UB ),
+
+                Tightening( 10, 1.32, Tightening::LB ),
+                Tightening( 10, 1.32, Tightening::UB ),
+                Tightening( 11, 0.4, Tightening::LB ),
+                Tightening( 11, 0.4, Tightening::UB )
+
+                    });
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : expectedBounds )
+        {
+            TS_ASSERT( existsBounds( bounds, bound ) );
+        }
+    }
+
+    bool existsBounds( const List<Tightening> &bounds, Tightening bound )
+    {
+        for ( const auto &b : bounds )
+        {
+            if ( b._type == bound._type && b._variable == bound._variable )
+            {
+                if ( FloatUtils::areEqual( b._value, bound._value ) )
+                    return true;
+            }
+        }
+        return false;
+    }
 };
