@@ -30,9 +30,11 @@ from tensorflow.keras.models import load_model
 class PolicyBase:
 
     def __init__(self, ds):
+        self.policy = None
         self.stepSize = 10
         self.startWith = 50
         self.ds = DataSet(ds)
+        self.coi = True
     
     def meanActivation(features, seperateCh=False, model=None):
         if len(features.shape) == 2:
@@ -44,8 +46,8 @@ class PolicyBase:
             act = [act[:,:,i] for i in range(act.shape[2])]
         else:
             act = np.max(act, axis=2)
-        return act        
-    
+        return act
+
     def genMaskByActivation(self, intermidModel, features):
         sortedIndReverse = PolicyBase.sortReverseNeuronsByActivation(intermidModel, features)
         return self.genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1])
@@ -67,7 +69,7 @@ class PolicyBase:
         stepSize = max(self.stepSize,1)
         startWith = max(self.startWith,0)
         first = True
-        while len(sortedIndDecsending) > 0:        
+        while len(sortedIndDecsending) > 0:
             toAdd = min(stepSize + (startWith if first else 0), len(sortedIndDecsending))
             for coor in sortedIndDecsending[:toAdd]:
                 mask[tuple(coor)] = 1
@@ -83,7 +85,7 @@ class PolicyBase:
         mask = np.zeros(shape)
         for ind in onesInd:
             mask[ind] = 1
-        return mask    
+        return mask
     
     def genActivationMask(intermidModel):
         raise NotImplementedError
@@ -92,9 +94,9 @@ class PolicyBase:
 class PolicyCentered(PolicyBase):
     
     def __init__(self, ds):
-        self.policy = Policy.Centered        
         super().__init__(ds)
-            
+        self.policy = Policy.Centered
+
     def genActivationMask(self, intermidModel):
         maskShape = intermidModel.output_shape[1:-1]
         indicesList = list(product(*[range(d) for d in maskShape]))
@@ -106,9 +108,9 @@ class PolicyCentered(PolicyBase):
 class PolicyAllClassRank(PolicyBase):
     
     def __init__(self, ds):
-        self.policy = Policy.AllClassRank        
         super().__init__(ds)
-    
+        self.policy = Policy.AllClassRank
+
     def genActivationMask(self, intermidModel):
         return self.genMaskByActivation(intermidModel, self.ds.x_test)
 
@@ -116,35 +118,35 @@ class PolicyAllClassRank(PolicyBase):
 class PolicySingleClassRank(PolicyBase):
     
     def __init__(self, ds):
-        self.policy = Policy.SingleClassRank
         super().__init__(ds)
+        self.policy = Policy.SingleClassRank
             
     def genActivationMask(self, intermidModel, prediction):
         features = [x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == prediction]
         return self.genMaskByActivation(intermidModel, np.array(features))
     
-#Policy - calculate per class    
+#Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
     
     def __init__(self, ds):
-        self.policy = Policy.MajorityClassVote        
-        super().__init__(ds)
+        super().__init__(ds)  
+        self.policy = Policy.MajorityClassVote  
             
     def genActivationMask(self, intermidModel):
         features = [[x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == label] for label in range(self.ds.num_classes)]
-        actMaps = [meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
+        actMaps = [PolicyBase.meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
         discriminate = lambda actM : np.square(actM) #TODO explore discriminating schemes.
         actMaps = [discriminate(actMap) for actMap in actMaps]
-        sortedIndReverseDiscriminated = sortActMapReverse(sum(actMaps))
+        sortedIndReverseDiscriminated = PolicyBase.sortActMapReverse(sum(actMaps))
         return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1])
 
-#Policy - Add neurons randomly.    
+#Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
     
     def __init__(self, ds):
-        self.policy = Policy.Random        
-        super().__init__(ds)
-            
+        super().__init__(ds)  
+        self.policy = Policy.Random  
+
     def genActivationMask(self, intermidModel):
         maskShape = intermidModel.output_shape[1:-1]
         indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
@@ -153,8 +155,9 @@ class PolicyRandom(PolicyBase):
 class PolicyVanilla(PolicyBase):
     
     def __init__(self, ds):
-        self.policy = Policy.Vanilla        
         super().__init__(ds)
+        self.policy = Policy.Vanilla
+        self.coi = False
         
     def genActivationMask(self, intermidModel):
         return []
@@ -162,8 +165,8 @@ class PolicyVanilla(PolicyBase):
 class PolicyFindMinProvable(PolicyBase):
     
     def __init__(self, ds):
+        super().__init__(ds) 
         self.policy = Policy.FindMinProvable
-        super().__init__(ds)
         
     def genActivationMask(self, intermidModel):
         maskShape = intermidModel.output_shape[1:-1]
@@ -225,7 +228,7 @@ class Policy(Enum):
         elif s == Policy.FindMinProvable.name.lower():
             return PolicyFindMinProvable(ds)
         else:
-            raise NotImplementedError                        
+            raise NotImplementedError
 
 class AdversarialProperty:
 
@@ -316,29 +319,29 @@ class CnnAbs:
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
 
-    def genAdvMbouNet(self, model, prop, boundDict, runName, coi, mask):
+    def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
         modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
         InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
         InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
-        originalQueryStats = CnnAbs.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName, self.dumpDir)
+        originalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)
         if coi:
             inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
-            CnnAbs.dumpCoi(inputVarsMapping, runName)
+            self.dumpCoi(inputVarsMapping, runName)
         else:
             inputVarsMapping = modelOnnxMarabou.inputVars[0]
             outputVarsMapping = modelOnnxMarabou.outputVars
             varsMapping = {v : v for v in range(modelOnnxMarabou.numVars)}
-        CnnAbs.dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName, self.dumpDir)
-        CnnAbs.dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName, self.dumpDir)
-        CnnAbs.dumpJson(varsMapping, "varsMapping_" + runName, self.dumpDir)
+        self.dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName)
+        self.dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName)
+        self.dumpJson(varsMapping, "varsMapping_" + runName)
         InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)        
         modelOnnxMarabou.saveQuery(self.dumpDir + "IPQ_" + runName)
-        finalQueryStats = CnnAbs.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName, self.dumpDir)
+        finalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName)
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping
     
-    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, mask=True, onlyDump=False, fromDumpedQuery=False):
+    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False):
         if not fromDumpedQuery:
-            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping = self.genAdvMbouNet(model, prop, boundDict, runName, coi, mask)
+            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping = self.genAdvMbouNet(model, prop, boundDict, runName, coi)
             ipq = mbouNet.getMarabouQuery()
             if onlyDump:
                 return "IPQ_" + runName            
@@ -348,22 +351,22 @@ class CnnAbs:
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
         if fromDumpedQuery:
-            originalQueryStats = CnnAbs.loadJson("originalQueryStats_" + runName)
-            finalQueryStats = CnnAbs.loadJson("finalQueryStats_" + runName)
-            inputVarsMapping = CnnAbs.loadNpArray("inputVarsMapping_" + runName)
-            outputVarsMapping = CnnAbs.loadNpArray("outputVarsMapping_" + runName)
-            varsMapping = CnnAbs.loadJson("varsMapping_" + runName)            
+            originalQueryStats = self.loadJson("originalQueryStats_" + runName)
+            finalQueryStats = self.loadJson("finalQueryStats_" + runName)
+            inputVarsMapping = self.loadNpArray("inputVarsMapping_" + runName)
+            outputVarsMapping = self.loadNpArray("outputVarsMapping_" + runName)
+            varsMapping = self.loadJson("varsMapping_" + runName)            
         if not sat:
-            if timesOut:
+            if timedOut:
                 result = ResultObj("timeout")
             else:
                 result = ResultObj("unsat")
             result.setStats(originalQueryStats, finalQueryStats)                
             return result
-        cex, cexPrediction, inputDict, outputDict = cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
-        CnnAbs.dumpCex(cex, cexPrediction, prop, runName, self.dumpDir)
-        CnnAbs.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict", self.dumpDir)
-        CnnAbs.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict", self.dumpDir)
+        cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
+        self.dumpCex(cex, cexPrediction, prop, runName)
+        self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
+        self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
         result = ResultObj("sat")
         result.setCex(cex, cexPrediction, inputDict, outputDict)
         result.setStats(originalQueryStats, finalQueryStats)
@@ -389,29 +392,25 @@ class CnnAbs:
             CnnAbs.logger.info(s)
         print(s)
 
-    @staticmethod        
-    def dumpNpArray(npArray, name, dumpDir):
-        with open(dumpDir + name + ".npy", "wb") as f:
+    def dumpNpArray(self, npArray, name):
+        with open(self.dumpDir + name + ".npy", "wb") as f:
             np.save(f, npArray)      
 
-    @staticmethod            
-    def dumpQueryStats(mbouNet, name, dumpDir):
+    def dumpQueryStats(self, mbouNet, name):
         queryStats = ModelUtils.marabouNetworkStats(mbouNet)
-        CnnAbs.dumpJson(queryStats, name, dumpDir)
+        self.dumpJson(queryStats, name)
         return queryStats
 
-    @staticmethod    
-    def dumpJson(data, name, dumpDir):
-        with open(dumpDir + name + ".json", "w") as f:
+    def dumpJson(self, data, name):
+        with open(self.dumpDir + name + ".json", "w") as f:
             json.dump(data, f, indent = 4)
 
-    @staticmethod            
-    def dumpCex(cex, cexPrediction, prop, runName, dumpDir):
+    def dumpCex(self, cex, cexPrediction, prop, runName):
         mbouPrediction = cexPrediction.argmax()
         plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}'.format(prop.yMax, prop.ySecond, mbouPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")
-        CnnAbs.dumpNpArray(cex, "Cex_{}".format(runName), dumpDir)
+        self.dumpNpArray(cex, "Cex_{}".format(runName))
 
     @staticmethod        
     def dumpCoi(inputVarsMapping, runName):
@@ -419,14 +418,12 @@ class CnnAbs:
         plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
         plt.savefig('COI_{}'.format(runName))
 
-    @staticmethod        
-    def loadJson(name, dumpDir):
-        with open(dumpDir + name + ".json", "r") as f:
+    def loadJson(self, name):
+        with open(self.dumpDir + name + ".json", "r") as f:
             return json.load(f)
 
-    @staticmethod        
-    def loadNpArray(name, dumpDir):
-        with open(dumpDir + name + ".npy", "rb") as f:            
+    def loadNpArray(self, name):
+        with open(self.dumpDir + name + ".npy", "rb") as f:            
             return np.load(f, allow_pickle=True)        
 
 #################################################################################################################
@@ -708,7 +705,8 @@ class ModelUtils:
             CnnAbs.printLog("(Original) Test accuracy:".format(score[1]))
     
         return origM
-    
+
+    @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
         if useMapping:
             lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
@@ -719,7 +717,7 @@ class ModelUtils:
                     fail = True
             if fail:
                 CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))
-            inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
+            inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd.item() for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
             outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0    for (indOrig, indCOI)      in     enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
     
             cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
@@ -730,10 +728,11 @@ class ModelUtils:
             cex = np.array([valDict[i.item()] for i in np.nditer(inputVarsMapping)]).reshape(prop.xAdv.shape)
             cexPrediction = np.array([valDict[o.item()] for o in np.nditer(outputVarsMapping)])
         return cex, cexPrediction, inputDict, outputDict        
-        
+
+    @staticmethod
     #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
     def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=True):
-        inBounds, violations =  inBoundsInftyBall(x, inDist, cex)
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(x, inDist, cex)
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-x)[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))

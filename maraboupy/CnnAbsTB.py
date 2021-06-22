@@ -307,7 +307,7 @@ for i, mask in enumerate(maskList):
     CnnAbs.printLog("\n\n\n ----- Start Solving mask number {} ----- \n\n\n {} \n\n\n".format(i+1, mask))
     startLocal = time.time()
     subResultAppend(resultsJson, runType="mask", index=i+1, numMasks=len(maskList))
-    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump = cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i), coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
     
@@ -320,7 +320,7 @@ for i, mask in enumerate(maskList):
     if resultObj.sat():
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
-        isSporious = cnnAbs.modelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+        isSporious = ModelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
 
         if not isSporious:
@@ -340,7 +340,7 @@ else:
         subResultAppend(resultsJson, runType="full")
         cnnAbs.optionsObj._timeoutInSeconds = 0
         runName = "sample_{},policy_{},mask_-1,Full".format(cfg_sampleIndex, cfg_abstractionPolicy) if not cfg_ipqNameIsRunName else cfg_runTitle
-        resultObj = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName, coi=cfg_pruneCOI, mask=cfg_maskAbstract, onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+        resultObj = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
         if cfg_dumpQueries:
             exit()
         assert not resultObj.timedOut()
@@ -348,7 +348,7 @@ else:
         CnnAbs.printLog("\n\n\n ----- Finished Solving Full ----- \n\n\n")
         successful = len(maskList)
         if resultObj.sat():
-            isSporious = cnnAbs.modelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+            isSporious = ModelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
             CnnAbs.printLog("Found {} CEX in full network.".format("sporious" if isSporious else "real"))
             if isSporious:
                 raise Exception("Sporious CEX at full network.")
