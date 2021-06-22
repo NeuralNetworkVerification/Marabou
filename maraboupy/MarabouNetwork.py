@@ -233,7 +233,7 @@ class MarabouNetwork:
 
         for r in self.leakyReluList:
             assert r[1] < self.numVars and r[0] < self.numVars
-            assert([r[2] > 0 and r[2] < 1)
+            assert(r[2] > 0 and r[2] < 1)
             MarabouCore.addLeakyReluConstraint(ipq, r[0], r[1], r[2])
 
         for m in self.maxList:
