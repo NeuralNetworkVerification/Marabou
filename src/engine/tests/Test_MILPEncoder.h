@@ -15,6 +15,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "GlobalConfiguration.h"
 #include "MILPEncoder.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
@@ -367,6 +368,96 @@ public:
         TS_ASSERT( true );
 #endif // ENABLE_GUROBI
 	}
+
+
+    void test_eoncode_leaky_relu_constraint()
+    {
+#ifdef ENABLE_GUROBI
+
+        //
+        // x2 = leaky_relu(x0)
+        // x3 = leaky_relu(x1)
+        // x4 = x2 + x3
+        // x4 = slope * -1 + 1
+
+        GurobiWrapper gurobi1;
+
+        InputQuery inputQuery1 = InputQuery();
+        inputQuery1.setNumberOfVariables( 5 );
+
+        MockTableau tableau1 = MockTableau();
+        tableau1.setDimensions( 1, 5 );
+
+        // -1 <= x0 <= 1
+        inputQuery1.setLowerBound( 0, -1 );
+        inputQuery1.setUpperBound( 0, 1 );
+        tableau1.setLowerBound( 0, -1 );
+        tableau1.setUpperBound( 0, 1 );
+
+        // -2 <= x1 <= -1
+        inputQuery1.setLowerBound( 1, -2 );
+        inputQuery1.setUpperBound( 1, -1 );
+        tableau1.setLowerBound( 1, -2 );
+        tableau1.setUpperBound( 1, -1 );
+
+        //-1 <= x2 <= 1
+        inputQuery1.setLowerBound( 2, -1 );
+        inputQuery1.setUpperBound( 2, 1 );
+        tableau1.setLowerBound( 2, -1 );
+        tableau1.setUpperBound( 2, 1 );
+
+        // -2 <= x3 <= 0
+        inputQuery1.setLowerBound( 3, -2 );
+        inputQuery1.setUpperBound( 3, 0 );
+        tableau1.setLowerBound( 3, -2 );
+        tableau1.setUpperBound( 3, 0 );
+
+        // -3 <= x4 <= 1
+        inputQuery1.setLowerBound( 4, -3 );
+        inputQuery1.setUpperBound( 4, 1 );
+        tableau1.setLowerBound( 4, -3 );
+        tableau1.setUpperBound( 4, 1 );
+
+        Equation eq;
+        eq.addAddend(1, 2);
+        eq.addAddend(1, 3);
+        eq.addAddend(-1, 4);
+        inputQuery1.addEquation( eq );
+
+        LeakyReluConstraint *relu1 = new LeakyReluConstraint( 0, 2 );
+        LeakyReluConstraint *relu2 = new LeakyReluConstraint( 1, 3 );
+        inputQuery1.addPiecewiseLinearConstraint( relu1 );
+        inputQuery1.addPiecewiseLinearConstraint( relu2 );
+
+        MILPEncoder milp1( tableau1 );
+        TS_ASSERT_THROWS_NOTHING( milp1.encodeInputQuery( gurobi1, inputQuery1 ) );
+        TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
+        TS_ASSERT( gurobi1.haveFeasibleSolution() );
+
+        InputQuery inputQuery2 = inputQuery1;
+
+        double slope = GlobalConfiguration::LEAKY_RELU_SLOPE;
+        Equation eq1;
+        eq1.addAddend(1, 4);
+        eq1.setScalar(slope * -1 + 1);
+        inputQuery2.addEquation( eq1 );
+
+        GurobiWrapper gurobi2;
+        MILPEncoder milp2( tableau1 );
+        TS_ASSERT_THROWS_NOTHING( milp2.encodeInputQuery( gurobi2, inputQuery2 ) );
+        TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
+        TS_ASSERT( gurobi2.haveFeasibleSolution() );
+        Map<String, double> values;
+        double dontcare;
+        TS_ASSERT_THROWS_NOTHING( gurobi2.extractSolution(values, dontcare ) );
+        TS_ASSERT( FloatUtils::areEqual( values[Stringf("x%u", 0)], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( values[Stringf("x%u", 1)], -1 ) );
+
+#else
+        TS_ASSERT( true );
+#endif // ENABLE_GUROBI
+    }
+
 };
 
 //

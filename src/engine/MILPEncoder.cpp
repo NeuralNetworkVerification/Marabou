@@ -49,6 +49,9 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
         case PiecewiseLinearFunctionType::RELU:
             encodeReLUConstraint( gurobi, (ReluConstraint *)plConstraint );
             break;
+        case PiecewiseLinearFunctionType::LEAKY_RELU:
+            encodeLeakyReLUConstraint( gurobi, (LeakyReluConstraint *)plConstraint );
+            break;
         case PiecewiseLinearFunctionType::MAX:
             encodeMaxConstraint( gurobi, (MaxConstraint *)plConstraint );
             break;
@@ -91,7 +94,7 @@ void MILPEncoder::encodeEquation( GurobiWrapper &gurobi, const Equation &equatio
     }
 }
 
-void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu)
+void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu )
 {
 
     if ( !relu->isActive() || relu->phaseFixed() )
@@ -125,6 +128,49 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *r
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
     terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", _binVarIndex++ ) ) );
     gurobi.addLeqConstraint( terms, 0 );
+}
+
+void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *relu )
+{
+
+    if ( !relu->isActive() || relu->phaseFixed() )
+    {
+        return;
+    }
+    unsigned sourceVariable = relu->getB();
+    unsigned targetVariable = relu->getF();
+    double slope = relu->getSlope();
+    double sourceLb = _tableau.getLowerBound( sourceVariable );
+    double sourceUb = _tableau.getUpperBound( sourceVariable );
+
+    if ( sourceLb >= 0 )
+    {
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+        gurobi.addEqConstraint( terms, 0 );
+    }
+    else if ( sourceUb <= 0 )
+    {
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -slope, Stringf( "x%u", sourceVariable ) ) );
+        gurobi.addEqConstraint( terms, 0 );
+    }
+    else
+    {
+        double xPts[3];
+        double yPts[3];
+        xPts[0] = sourceLb;
+        yPts[0] = slope * sourceLb;
+        xPts[1] = 0;
+        yPts[1] = 0;
+        xPts[2] = sourceUb;
+        yPts[2] = sourceUb;
+        gurobi.addPiecewiseLinearConstraint( Stringf( "x%u", sourceVariable ),
+                                             Stringf( "x%u", targetVariable ),
+                                             3, xPts, yPts );
+    }
 }
 
 void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max )

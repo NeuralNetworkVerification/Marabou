@@ -40,7 +40,7 @@ LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
-    if ( _slope <= 0 )
+    if ( _slope <= 0 || _slope > 1 )
         throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
 }
 
