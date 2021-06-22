@@ -378,10 +378,10 @@ for k in COIRatioKeys:
 with open("originalPath", mode='w') as f:
     f.write(origDir)
 
-with open("commonRunCommand", mode='w') as f:
+with open("commonRunCommand.log", mode='w') as f:
     f.write("python3 cnn_abs_testbench.py " + commonRunCommand)
 
-with open("runCommands", mode='w') as f:
+with open("runCommands.log", mode='w') as f:
     for cmd in runCommands:
         f.write("python3 cnn_abs_testbench.py " + cmd)
 
