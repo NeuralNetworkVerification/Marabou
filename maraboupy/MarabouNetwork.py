@@ -26,6 +26,7 @@ class MarabouNetwork:
         numVars (int): Total number of variables to represent network
         equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
         reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
+        leakyReluList (list of tuples): List of leaky relu constraint tuples, where each tuple contains the backward and forward variables, and the slope
         maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
         absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
         signList (list of tuples): List of sign constraint tuples, where each tuple conatins the input variable and the output variable
@@ -45,6 +46,7 @@ class MarabouNetwork:
         self.numVars = 0
         self.equList = []
         self.reluList = []
+        self.leakyReluList = []
         self.maxList = []
         self.absList = []
         self.signList = []
@@ -99,6 +101,16 @@ class MarabouNetwork:
             v2 (int): Variable representing output of Relu
         """
         self.reluList += [(v1, v2)]
+
+    def addLeakyRelu(self, v1, v2, slope):
+        """Function to add a new Leaky Relu constraint
+
+        Args:
+            v1 (int): Variable representing input of Leaky Relu
+            v2 (int): Variable representing output of Leaky Relu
+            slope (float): Shope of the Leaky ReLU
+        """
+        self.leakyReluList += [(v1, v2, slope)]
 
     def addMaxConstraint(self, elements, v):
         """Function to add a new Max constraint
@@ -218,6 +230,11 @@ class MarabouNetwork:
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
+
+        for r in self.leakyReluList:
+            assert r[1] < self.numVars and r[0] < self.numVars
+            assert([r[2] > 0 and r[2] < 1)
+            MarabouCore.addLeakyReluConstraint(ipq, r[0], r[1], r[2])
 
         for m in self.maxList:
             assert m[1] < self.numVars
