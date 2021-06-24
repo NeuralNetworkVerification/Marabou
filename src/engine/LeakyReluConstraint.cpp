@@ -399,7 +399,10 @@ void LeakyReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIn
     if ( oldIndex == _b )
         _b = newIndex;
     else
+    {
+        ASSERT( oldIndex == _f );
         _f = newIndex;
+    }
 }
 
 void LeakyReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
@@ -460,12 +463,14 @@ void LeakyReluConstraint::getEntailedTightenings( List<Tightening> &tightenings 
               !FloatUtils::isPositive( fUpperBound ) )
     {
         // Inactive case
-        tightenings.append( Tightening( _b, fLowerBound / _slope, Tightening::LB ) );
-        tightenings.append( Tightening( _f, _slope * bLowerBound, Tightening::LB ) );
+        if ( FloatUtils::isFinite( fLowerBound ) )
+             tightenings.append( Tightening( _b, fLowerBound / _slope, Tightening::LB ) );
+        if ( FloatUtils::isFinite( bLowerBound ) )
+             tightenings.append( Tightening( _f, _slope * bLowerBound, Tightening::LB ) );
 
-        if ( !FloatUtils::isPositive( fUpperBound ) )
+        if ( FloatUtils::isFinite( fUpperBound ) && !FloatUtils::isPositive( fUpperBound ) )
             tightenings.append( Tightening( _b, fUpperBound / _slope, Tightening::UB ) );
-        if ( !FloatUtils::isPositive( bUpperBound ) )
+        if ( FloatUtils::isFinite( bUpperBound ) && !FloatUtils::isPositive( bUpperBound ) )
             tightenings.append( Tightening( _f, _slope * bUpperBound, Tightening::UB ) );
 
         tightenings.append( Tightening( _f, 0, Tightening::UB ) );
@@ -479,8 +484,10 @@ void LeakyReluConstraint::getEntailedTightenings( List<Tightening> &tightenings 
         tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
         tightenings.append( Tightening( _f, bUpperBound, Tightening::UB ) );
 
-        tightenings.append( Tightening( _b, fLowerBound / _slope, Tightening::LB ) );
-        tightenings.append( Tightening( _f, _slope * bLowerBound, Tightening::LB ) );
+        if ( FloatUtils::isFinite( fLowerBound ) )
+            tightenings.append( Tightening( _b, fLowerBound / _slope, Tightening::LB ) );
+        if ( FloatUtils::isFinite( bLowerBound ) )
+            tightenings.append( Tightening( _f, _slope * bLowerBound, Tightening::LB ) );
     }
 }
 
