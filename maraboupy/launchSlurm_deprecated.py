@@ -217,7 +217,7 @@ for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
     sbatchCode.append("### Description of this specific run is : {}".format(brief))
     sbatchCode.append("")
     sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
-    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/cnn_abs_testbench.py {}".format(" ".join(cmd)))
+    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/cnn_abs_testbench_deprecated.py {}".format(" ".join(cmd)))
     sbatchCode.append("")
     sbatchCode.append("date")
 
