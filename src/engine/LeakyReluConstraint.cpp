@@ -406,13 +406,7 @@ void LeakyReluConstraint::eliminateVariable( __attribute__((unused)) unsigned va
                                         __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
-
     DEBUG({
-            if ( variable == _f )
-            {
-                ASSERT( FloatUtils::gte( fixedValue, 0.0 ) );
-            }
-
             if ( variable == _f || variable == _b )
             {
                 if ( FloatUtils::gt( fixedValue, 0 ) )
