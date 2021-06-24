@@ -215,9 +215,10 @@ class MarabouNetwork:
                 i+=1
 
         i = 0
-        for outputVar in self.outputVars.flatten():
-            ipq.markOutputVariable(outputVar, i)
-            i+=1
+        for outputVarArray in self.outputVars:
+            for outputVar in outputVarArray.flatten():
+                ipq.markOutputVariable(outputVar, i)
+                i+=1
 
         for e in self.equList:
             eq = MarabouCore.Equation(e.EquationType)
