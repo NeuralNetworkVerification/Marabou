@@ -526,7 +526,7 @@ bool LeakyReluConstraint::haveOutOfBoundVariables() const
 
 String LeakyReluConstraint::serializeToString() const
 {
-    return Stringf( "leaky_relu,%u,%u", _f, _b, _slope );
+    return Stringf( "leaky_relu,%u,%u,%f", _f, _b, _slope );
 }
 
 unsigned LeakyReluConstraint::getB() const

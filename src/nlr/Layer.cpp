@@ -160,7 +160,7 @@ void Layer::computeAssignment()
 
     else if ( _type == LEAKY_RELU )
     {
-        double slope = GlobalConfiguration::LEAKY_RELU_SLOPE;
+        double slope = _alpha;
         for ( unsigned i = 0; i < _size; ++i )
         {
             NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -256,6 +256,17 @@ void Layer::computeSimulations()
             const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
             for ( unsigned j = 0; j < simulationSize; ++j )
                 _simulations[i][j] = FloatUtils::max( simulations.get( j ), 0 );
+        }
+    }
+    else if ( _type == LEAKY_RELU )
+    {
+        double slope = _alpha;
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), slope * simulations.get( j ) );
         }
     }
     else if ( _type == ABSOLUTE_VALUE )
@@ -1533,6 +1544,7 @@ Layer::Layer( const Layer *other )
     _type = other->_type;
     _size = other->_size;
     _layerOwner = other->_layerOwner;
+    _alpha = other->_alpha;
 
     allocateMemory();
 
