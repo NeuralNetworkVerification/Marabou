@@ -203,15 +203,15 @@ class Policy(Enum):
 
     @staticmethod
     def absPolicies():
-        return [Policy.Centered, Policy.AllClassRank, Policy.SingleClassRank, Policy.MajorityClassVote, Policy.Random]
+        return [Policy.Centered.name, Policy.AllClassRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name]
 
     @staticmethod
     def solvingPolicies():
-        return Policy.absPolicies() + [Policy.Vanilla]
+        return Policy.absPolicies() + [Policy.Vanilla.name]
 
-    @staticmethod
-    def asString():
-        return [policy.name for policy in Policy.solvingPolicies()]
+#    @staticmethod
+#    def asString():
+#        return [policy.name for policy in Policy.solvingPolicies()]
 
     @staticmethod
     def fromString(s, ds):
@@ -318,9 +318,11 @@ class CnnAbs:
         if CnnAbs.logger == None:
             CnnAbs.setLogger()
         self.ds = DataSet(ds)
-        self.dumpDir = dumpDir
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
+        self.dumpDir = dumpDir        
+        if dumpDir and not os.path.exists(dumpDir):
+            os.mkdir(dumpDir)
 
     def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
         modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)

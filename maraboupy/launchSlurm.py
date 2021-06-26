@@ -6,7 +6,7 @@ from datetime import datetime
 import json
 import itertools
 import argparse
-from cnn_abs import *
+from CnnAbs import *
 tf.compat.v1.enable_v2_behavior()
 
 ####################################################################################################
@@ -60,7 +60,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
     runBriefs = list()
     title2Label = dict()
 
-    for policy in mnistProp.absPolicies:
+    for policy in Policy.solvingPolicies():
         #title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
         title2Label["{}Cfg".format(policy)] = "{}".format(policy)
         for i in range(numRunsPerType):
@@ -69,15 +69,15 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
             runTitles.append(title)
             runBriefs.append("Run with abstraction policy {}.".format(policy))
 
-    title2Label["VanillaCfg"] = 'Vanilla Marabou'
-    for i in range(numRunsPerType):
-        title = "VanillaCfg---{}".format(i)
-        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
-        runTitles.append(title)
-        runBriefs.append('Run with default ("vanilla") Marabou')
+#    title2Label["VanillaCfg"] = 'Vanilla Marabou'
+#    for i in range(numRunsPerType):
+#        title = "VanillaCfg---{}".format(i)
+#        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
+#        runTitles.append(title)
+#        runBriefs.append('Run with default ("vanilla") Marabou')
 
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
-        policiesCfg = ["{}Cfg".format(policy) for policy in mnistProp.absPolicies]
+        policiesCfg = ["{}Cfg".format(policy) for policy in Policy.absPolicies()]
         jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
                     "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : title2Label,
@@ -121,6 +121,49 @@ def experimentFindMinProvable(numRunsPerType, commonFlags, batchDirPath):
 
     return runCmds, runTitles, runBriefs, TIME_LIMIT
 
+def runSingleRun(cmd, title, brief, basePath, batchDirPath, TIME_LIMIT, CPUS, MEM_PER_CPU):
+    
+    runDirPath = batchDirPath + "/" + title
+    if not os.path.exists(runDirPath):
+        os.mkdir(runDirPath)
+    os.chdir(runDirPath)
+
+    sbatchCode = list()
+    sbatchCode.append("#!/bin/bash")
+    sbatchCode.append("#SBATCH --job-name={}".format(title))
+    sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
+    sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
+    sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, title))
+    sbatchCode.append("#SBATCH --partition=long")
+    sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
+    sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
+    sbatchCode.append("#SBATCH -C avx2")
+    #sbatchCode.append("#SBATCH --reservation 5781")    
+    sbatchCode.append("")
+    sbatchCode.append("pwd; hostname; date")
+    sbatchCode.append("")
+    sbatchCode.append("csh /cs/labs/guykatz/matanos/py_env/bin/activate.csh")
+    sbatchCode.append("export PYTHONPATH=$PYTHONPATH:/cs/labs/guykatz/matanos/Marabou")
+    sbatchCode.append("export GUROBI_HOME=/cs/labs/guykatz/matanos/gurobi911/linux64")
+    sbatchCode.append("export PATH=$PATH:${GUROBI_HOME}/bin")
+    sbatchCode.append("export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib")
+    sbatchCode.append("export GRB_LICENSE_FILE=/cs/share/etc/license/gurobi/gurobi.lic")
+    sbatchCode.append("")
+    sbatchCode.append("### Description of this specific run is : {}".format(brief))
+    sbatchCode.append("")
+    sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
+    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB.py {}".format(" ".join(cmd)))
+    sbatchCode.append("")
+    sbatchCode.append("date")
+
+    sbatchFile = runDirPath + "/" + "cnnAbsRun-{}.sbatch".format(title)
+    with open(sbatchFile, "w") as f:
+        for line in sbatchCode:
+            f.write(line + "\n")
+
+    os.chdir(basePath)            
+    print("Running : {}".format(" ".join(["sbatch", sbatchFile])))
+    subprocess.run(["sbatch", sbatchFile]) 
 
 ####################################################################################################
 ####################################################################################################
@@ -187,47 +230,5 @@ runCmds, runTitles, runBriefs, TIME_LIMIT = experimentFunc(numRunsPerType, commo
 
 sbatchFiles = list()
 for cmd, title, brief in zip(runCmds, runTitles, runBriefs):
+    runSingleRun(cmd, title, brief, basePath, batchDirPath, TIME_LIMIT, CPUS, MEM_PER_CPU)
 
-    runDirPath = batchDirPath + "/" + title
-    if not os.path.exists(runDirPath):
-        os.mkdir(runDirPath)
-    os.chdir(runDirPath)
-
-    sbatchCode = list()
-    sbatchCode.append("#!/bin/bash")
-    sbatchCode.append("#SBATCH --job-name={}_{}".format(experiment, title))
-    sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
-    sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
-    sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, title))
-    sbatchCode.append("#SBATCH --partition=long")
-    sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
-    sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
-    sbatchCode.append("#SBATCH -C avx2")
-    #sbatchCode.append("#SBATCH --reservation 5781")    
-    sbatchCode.append("")
-    sbatchCode.append("pwd; hostname; date")
-    sbatchCode.append("")
-    sbatchCode.append("csh /cs/labs/guykatz/matanos/py_env/bin/activate.csh")
-    sbatchCode.append("export PYTHONPATH=$PYTHONPATH:/cs/labs/guykatz/matanos/Marabou")
-    sbatchCode.append("export GUROBI_HOME=/cs/labs/guykatz/matanos/gurobi911/linux64")
-    sbatchCode.append("export PATH=$PATH:${GUROBI_HOME}/bin")
-    sbatchCode.append("export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib")
-    sbatchCode.append("export GRB_LICENSE_FILE=/cs/share/etc/license/gurobi/gurobi.lic")
-    sbatchCode.append("")
-    sbatchCode.append("### Description of this specific run is : {}".format(brief))
-    sbatchCode.append("")
-    sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
-    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB.py {}".format(" ".join(cmd)))
-    sbatchCode.append("")
-    sbatchCode.append("date")
-
-    sbatchFiles.append(runDirPath + "/" + "cnnAbsRun-{}.sbatch".format(title))
-    with open(sbatchFiles[-1], "w") as f:
-        for line in sbatchCode:
-            f.write(line + "\n")
-
-os.chdir(basePath)
-
-for f in sbatchFiles:
-    print("Running : {}".format(" ".join(["sbatch", f])))
-    subprocess.run(["sbatch", f])
