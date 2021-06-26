@@ -81,7 +81,7 @@ parser.add_argument("--num_cpu",        type=int,                               
 parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Solver timeout in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
-parser.add_argument("--policy",         type=str, choices=Policy.asString(),       default="Vanilla",         help="Which abstraction policy to use")
+parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",         help="Which abstraction policy to use")
 parser.add_argument("--sporious_strict",action="store_true",                        default=True,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
 parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
 parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-inc", "milp", "milp-inc", "iter-prop", "none"], default="lp", help="Which bound tightening technique to use.")
@@ -90,6 +90,10 @@ parser.add_argument("--solve_with_milp",action="store_true",                    
 parser.add_argument("--abs_layer",      type=str, default="c2",              help="Which layer should be abstracted.")
 parser.add_argument("--arg",  type=str, default="", help="Push custom string argument.")
 parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
+parser.add_argument("--mask_index",      type=int,                                  default=-1,                     help="Choose specific mask to run.")
+parser.add_argument("--slurm_seq"      ,action="store_true",                        default=False,                  help="Run next mask if this one fails.")
+parser.add_argument("--result_file",     type=str,                                  default=defaultBatchId,         help="Path to relevant Result.json file")
+
 args = parser.parse_args()
 
 resultsJson = dict()
@@ -121,6 +125,9 @@ cfg_cnnSizeChoice     = args.cnn_size
 cfg_dumpBounds        = not args.no_dumpBounds
 cfg_absLayer          = args.abs_layer
 cfg_extraArg          = args.arg
+cfg_maskIndex         = args.mask_index
+cfg_slurmSeq          = args.slurm_seq
+cfg_resultFile        = args.result_file
 
 resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
 resultsJson["cfg_noVerify"]          = cfg_noVerify
@@ -147,6 +154,9 @@ resultsJson["cfg_dumpDir"]           = cfg_dumpDir
 resultsJson["cfg_validation"]        = cfg_validation
 resultsJson["cfg_dumpBounds"]        = cfg_dumpBounds
 resultsJson["cfg_extraArg"]          = cfg_extraArg
+resultsJson["cfg_maskIndex"]         = cfg_maskIndex
+resultsJson["cfg_slurmSeq"]          = cfg_slurmSeq
+resultsJson["cfg_resultFile"]        = cfg_resultFile
 
 resultsJson["SAT"] = None
 resultsJson["Result"] = "TIMEOUT"
@@ -280,6 +290,8 @@ if not cfg_maskAbstract:
         maskList = []
 CnnAbs.printLog("Created {} masks".format(len(maskList)))
 resultsJson["numMasks"] = len(maskList)
+if cfg_maskIndex != -1:
+    CnnAbs.printLog("Using only mask {}".format(cfg_maskIndex))    
 dumpResultsJson(resultsJson)
 #for i,mask in enumerate(maskList):
 #    print("mask,{}=\n{}".format(i,mask))
@@ -295,6 +307,8 @@ modelOrigDense.save(modelOrigDenseSavedName)
 prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
 for i, mask in enumerate(maskList):
+    if cfg_maskIndex != -1 and i != cfg_maskIndex:
+        continue
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
         modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
@@ -305,7 +319,7 @@ for i, mask in enumerate(maskList):
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
     subResultAppend(resultsJson, index=i+1, numMasks=len(maskList))
-    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i+ len(maskList)), coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList)), coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue    
     subResultUpdate(resultsJson, index=i+1, numMasks=len(maskList), runtime=time.time() - startLocal, runtimeTotal=time.time() - startTotal, originalQueryStats=resultObj.originalQueryStats, finalQueryStats=resultObj.finalQueryStats, sat=resultObj.sat(), timedOut=resultObj.timedOut())
@@ -352,9 +366,10 @@ dumpResultsJson(resultsJson)
 
 CnnAbs.printLog("Log files at {}".format(currPath))
 
-if policy is Policy.FindMinProvable:
-    for i,mask in enumerate(maskList):
-        if i == successful:
-            argWhere    = np.argwhere(mask == 0)
-            argWhereStr = np.array_repr(argWhere).replace('\n', '')
-            print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
+#if policy is Policy.FindMinProvable:
+#    for i,mask in enumerate(maskList):
+#        if i == successful:
+#            argWhere    = np.argwhere(mask == 0)
+#            argWhereStr = np.array_repr(argWhere).replace('\n', '')
+#            print("mask,{},zeros={}=\n{}".format(i, argWhereStr, mask))
+
