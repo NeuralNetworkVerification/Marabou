@@ -48,9 +48,9 @@ class PolicyBase:
             act = np.max(act, axis=2)
         return act
 
-    def genMaskByActivation(self, intermidModel, features):
+    def genMaskByActivation(self, intermidModel, features, includeFull=True):
         sortedIndReverse = PolicyBase.sortReverseNeuronsByActivation(intermidModel, features)
-        return self.genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1])
+        return self.genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1], includeFull=includeFull)
 
     def sortActMapReverse(actMap):
         sorted = list(np.array(list(product(*[range(d) for d in actMap.shape])))[actMap.flatten().argsort()])
@@ -63,7 +63,7 @@ class PolicyBase:
         assert len(sortedIndReverse) == actMap.size
         return sortedIndReverse
     
-    def genMaskByOrderedInd(self, sortedIndDecsending, maskShape):
+    def genMaskByOrderedInd(self, sortedIndDecsending, maskShape, includeFull=True):
         mask = np.zeros(maskShape)
         masks = list()
         stepSize = max(self.stepSize,1)
@@ -74,7 +74,7 @@ class PolicyBase:
             for coor in sortedIndDecsending[:toAdd]:
                 mask[tuple(coor)] = 1
             sortedIndDecsending = sortedIndDecsending[toAdd:]
-            if np.array_equal(mask, np.ones_like(mask)):
+            if np.array_equal(mask, np.ones_like(mask)) and not includeFull:
                 break
             masks.append(mask.copy())
             first = False
@@ -87,7 +87,7 @@ class PolicyBase:
             mask[ind] = 1
         return mask
     
-    def genActivationMask(intermidModel):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         raise NotImplementedError
 
 #Policy - Most important neurons are the center of the image.
@@ -97,12 +97,12 @@ class PolicyCentered(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.Centered
 
-    def genActivationMask(self, intermidModel):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         maskShape = intermidModel.output_shape[1:-1]
         indicesList = list(product(*[range(d) for d in maskShape]))
         center = np.array([float(d) / 2 for d in maskShape])
         indicesSortedDecsending = sorted(indicesList, key=lambda x: np.linalg.norm(np.array(x)-center))
-        return self.genMaskByOrderedInd(indicesSortedDecsending, maskShape)
+        return self.genMaskByOrderedInd(indicesSortedDecsending, maskShape, includeFull=includeFull)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllClassRank(PolicyBase):
@@ -111,8 +111,8 @@ class PolicyAllClassRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.AllClassRank
 
-    def genActivationMask(self, intermidModel):
-        return self.genMaskByActivation(intermidModel, self.ds.x_test)
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
+        return self.genMaskByActivation(intermidModel, self.ds.x_test, includeFull=includeFull)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -121,9 +121,9 @@ class PolicySingleClassRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.SingleClassRank
             
-    def genActivationMask(self, intermidModel, prediction):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         features = [x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == prediction]
-        return self.genMaskByActivation(intermidModel, np.array(features))
+        return self.genMaskByActivation(intermidModel, np.array(features), includeFull=includeFull)
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
@@ -132,13 +132,13 @@ class PolicyMajorityClassVote(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.MajorityClassVote  
             
-    def genActivationMask(self, intermidModel):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         features = [[x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == label] for label in range(self.ds.num_classes)]
         actMaps = [PolicyBase.meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
         discriminate = lambda actM : np.square(actM) #TODO explore discriminating schemes.
         actMaps = [discriminate(actMap) for actMap in actMaps]
         sortedIndReverseDiscriminated = PolicyBase.sortActMapReverse(sum(actMaps))
-        return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1])
+        return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], includeFull=includeFull)
 
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
@@ -147,10 +147,10 @@ class PolicyRandom(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.Random  
 
-    def genActivationMask(self, intermidModel):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         maskShape = intermidModel.output_shape[1:-1]
         indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
-        return self.genMaskByOrderedInd(indices, maskShape)
+        return self.genMaskByOrderedInd(indices, maskShape, includeFull=includeFull)
     
 class PolicyVanilla(PolicyBase):
     
@@ -159,7 +159,10 @@ class PolicyVanilla(PolicyBase):
         self.policy = Policy.Vanilla
         self.coi = False
         
-    def genActivationMask(self, intermidModel):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
+        maskShape = intermidModel.output_shape[1:-1]
+        if includeFull:
+            return [np.ones(maskShape)]
         return []
     
 class PolicyFindMinProvable(PolicyBase):
@@ -168,7 +171,7 @@ class PolicyFindMinProvable(PolicyBase):
         super().__init__(ds) 
         self.policy = Policy.FindMinProvable
         
-    def genActivationMask(self, intermidModel):
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         maskShape = intermidModel.output_shape[1:-1]
         indices = list(product(*[range(d) for d in maskShape]))
         zeroList = [(0,5),(0,4),(1,5),(1,4),(10,9)]
@@ -340,6 +343,7 @@ class CnnAbs:
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping
     
     def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False):
+        CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
         if not fromDumpedQuery:
             mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping = self.genAdvMbouNet(model, prop, boundDict, runName, coi)
             ipq = mbouNet.getMarabouQuery()
@@ -348,6 +352,7 @@ class CnnAbs:
         else:
             ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
         vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
+        CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
         if fromDumpedQuery:
@@ -359,8 +364,10 @@ class CnnAbs:
         if not sat:
             if timedOut:
                 result = ResultObj("timeout")
+                CnnAbs.printLog("\n\n\n ----- Timed out in {} ----- \n\n\n".format(runName))
             else:
                 result = ResultObj("unsat")
+                CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
             result.setStats(originalQueryStats, finalQueryStats)                
             return result
         cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
@@ -370,6 +377,7 @@ class CnnAbs:
         result = ResultObj("sat")
         result.setCex(cex, cexPrediction, inputDict, outputDict)
         result.setStats(originalQueryStats, finalQueryStats)
+        CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
         return result
 
     def setLogger():
@@ -387,6 +395,7 @@ class CnnAbs:
 
         logging.getLogger('matplotlib.font_manager').disabled = True
 
+    @staticmethod
     def printLog(s):
         if CnnAbs.logger:
             CnnAbs.logger.info(s)
@@ -841,7 +850,7 @@ class InputQueryUtils:
         net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
-        if inputVarsMapping is None or outputVarsMapping is None: #FIXME I made this change now to test inputVarsMapping==None
+        if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
             raise Exception("None input/output varsMapping")
         return inputVarsMapping, outputVarsMapping, varsMapping
 
@@ -904,7 +913,7 @@ class InputQueryUtils:
     def setBounds(model, boundDict):
         if boundDict:
             for i, (lb, ub) in boundDict.items():
-                if i < model.numVars: #FIXME This might mean that there is disalignment between the queries' definition of variables
+                if i < model.numVars: #This might mean that there is disalignment between the queries' definition of variables
                     if (i not in model.lowerBounds) or (model.lowerBounds[i] < lb):
                         model.setLowerBound(i,lb)
                     if (i not in model.upperBounds) or (ub < model.upperBounds[i]):
