@@ -2,7 +2,7 @@
 /*! \file SignConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Amir
+ **   Guy Amir, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -11,6 +11,8 @@
  **
  ** [[ Add lengthier description here ]]
  **/
+
+#include "SignConstraint.h"
 
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
@@ -27,7 +29,8 @@
 #endif
 
 SignConstraint::SignConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
     , _f( f )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
@@ -57,17 +60,25 @@ PiecewiseLinearFunctionType SignConstraint::getType() const
     return PiecewiseLinearFunctionType::SIGN;
 }
 
-PiecewiseLinearConstraint *SignConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *SignConstraint::duplicateConstraint() const
 {
     SignConstraint *clone = new SignConstraint( _b, _f );
     *clone = *this;
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 
 void SignConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const SignConstraint *sign = dynamic_cast<const SignConstraint *>( state );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *sign;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void SignConstraint::registerAsWatcher( ITableau *tableau )
@@ -153,6 +164,40 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
     return splits;
 }
 
+List<PhaseStatus> SignConstraint::getAllCases() const
+{
+    if ( _phaseStatus != PHASE_NOT_FIXED )
+        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+
+    if ( _direction == SIGN_PHASE_NEGATIVE )
+      return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
+
+    if ( _direction == SIGN_PHASE_POSITIVE )
+      return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
+
+    // If we have existing knowledge about the assignment, use it to
+    // influence the order of splits
+    if ( _assignment.exists( _f ) )
+    {
+        if ( FloatUtils::isPositive( _assignment[_f] ) )
+          return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
+        else
+          return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
+    }
+
+    return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
+}
+
+PiecewiseLinearCaseSplit SignConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+  if ( phase == SIGN_PHASE_NEGATIVE )
+      return getNegativeSplit();
+  else if ( phase == SIGN_PHASE_POSITIVE )
+      return getPositiveSplit();
+  else
+      throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
+}
+
 PiecewiseLinearCaseSplit SignConstraint::getNegativeSplit() const
 {
     // Negative phase: b < 0, f = -1
@@ -176,7 +221,7 @@ bool SignConstraint::phaseFixed() const
     return _phaseStatus != PHASE_NOT_FIXED;
 }
 
-PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
+PiecewiseLinearCaseSplit SignConstraint::getImpliedCaseSplit() const
 {
     ASSERT( _phaseStatus != PHASE_NOT_FIXED );
 
@@ -184,6 +229,11 @@ PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
         return getPositiveSplit();
 
     return getNegativeSplit();
+}
+
+PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
+{
+  return getImpliedCaseSplit();
 }
 
 bool SignConstraint::constraintObsolete() const
@@ -348,11 +398,6 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
         tightenings.append( Tightening( _b, 0, Tightening::UB ) );
         tightenings.append( Tightening( _f, -1, Tightening::UB ) );
     }
-}
-
-void SignConstraint::setPhaseStatus( PhaseStatus phaseStatus )
-{
-    _phaseStatus = phaseStatus;
 }
 
 void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
