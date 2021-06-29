@@ -21,7 +21,7 @@ from enum import Enum, auto
 import json
 import random
 from tensorflow.keras.models import load_model
-from launchSlurm import *
+from launchSlurm_WIP import *
 
 #################################################################################################################
 #################################################################################################################
@@ -316,7 +316,7 @@ class CnnAbs:
 
     logger = None
     basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
-    resultFile = 'Results.json'
+    resultsFile = 'Results'
     
     def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex=''):
         if CnnAbs.logger == None:
@@ -329,8 +329,8 @@ class CnnAbs:
             os.mkdir(dumpDir)
         self.logDir = logDir
         os.makedirs(self.logDir, exist_ok=True)
-        os.chdir(self.logDir)        
-        if os.path.exists(CnnAbs.resultsFile):
+        os.chdir(self.logDir)
+        if os.path.exists(self.logDir + "/" + CnnAbs.resultsFile):
             self.resultsJson = self.loadJson(CnnAbs.resultsFile, loadDir=self.logDir)
         else:
             self.resultsJson = dict(subResults=[])
@@ -352,8 +352,8 @@ class CnnAbs:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
             commonFlags.append("--use_dumped_queries")
-        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", self.maskIndex+1, "--slurm_seq"]
-        runSingleRun(cmd, runTitle, CnnAbs.basePath, "/".join(CnnAbs.basePath, "logs", batchId), str(self.maskIndex+1))
+        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq"]
+        runSingleRun(cmd, runTitle, CnnAbs.basePath, "/".join(filter(None, [CnnAbs.basePath, "logs", batchId])), str(self.maskIndex+1))
         
         
     def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
@@ -453,7 +453,7 @@ class CnnAbs:
     def dumpJson(self, data, name, saveDir=''):
         if not saveDir:
             saveDir = self.dumpDir
-        with open(saveDir + name + ".json", "w") as f:
+        with open(saveDir + "/" + name + ".json", "w") as f:
             json.dump(data, f, indent = 4)
 
     def dumpCex(self, cex, cexPrediction, prop, runName):

@@ -5,7 +5,7 @@ import numpy as np
 import keras2onnx
 import onnx
 import onnxruntime
-from CnnAbs import *
+from CnnAbs_WIP import *
 #from cnn_abs import *
 import logging
 import time
@@ -99,13 +99,14 @@ cfg_extraArg          = args.arg
 cfg_maskIndex         = args.mask_index
 cfg_slurmSeq          = args.slurm_seq
 
-cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter([CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries)
 optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     optionsObj = optionsLocal
 else :
     optionsObj = optionsCluster
+
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries)    
 
 policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
 
@@ -297,13 +298,15 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
+assert successful or resultObj.timedOut()
+
 if not cfg_dumpQueries:    
     if successful:
         CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
-        if not resultObj.timedOut():
-	    cnnAbs.resultsJson["SAT"] = resultObj.sat()
-	    cnnAbs.resultsJson["Result"] = resultObj.result.name
-	    cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
+    if not resultObj.timedOut():
+        cnnAbs.resultsJson["SAT"] = resultObj.sat()
+        cnnAbs.resultsJson["Result"] = resultObj.result.name
+        cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
     cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal
     cnnAbs.dumpResultsJson()
 
@@ -313,7 +316,7 @@ if not cfg_dumpQueries:
 #            print("verifyMarabou={}".format(verificationResult))
 #            if not verificationResult[0]:
 #                raise Exception("Inconsistant Marabou result, marabou double check failed")    
-    CnnAbs.printLog("Log files at {}".format(currPath))
+    CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
 
-if cfg_slurmSeq and (dumpQueries or not successful):
+if cfg_slurmSeq and (cfg_dumpQueries or not successful):
     cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy)

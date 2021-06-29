@@ -1,4 +1,3 @@
-
 import os
 import sys
 import subprocess
@@ -6,12 +5,20 @@ from datetime import datetime
 import json
 import itertools
 import argparse
-from CnnAbs import *
-tf.compat.v1.enable_v2_behavior()
+#from CnnAbs_WIP import *
+#tf.compat.v1.enable_v2_behavior()
 
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
+
+#FIXME should be the same as CnnAbs
+
+def absPolicies():
+    return ['Centered', 'AllClassRank', 'SingleClassRank', 'MajorityClassVote', 'Random']
+    
+def solvingPolicies():
+    return absPolicies() + ['Vanilla']
 
 def globalTimeOut():
     return 2,0,0
@@ -53,8 +60,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
     runTitles = list()
     title2Label = dict()
 
-    for policy in Policy.solvingPolicies():
-        #title2Label["{}Cfg".format(policy)] = "Abstraction Policy - {}".format(policy)
+    for policy in solvingPolicies():
         title2Label["{}Cfg".format(policy)] = "{}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
@@ -68,7 +74,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
 #        runTitles.append(title)
 
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
-        policiesCfg = ["{}Cfg".format(policy) for policy in Policy.absPolicies()]
+        policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
         jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
                     "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : title2Label,
@@ -120,7 +126,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
     sbatchCode.append("#SBATCH --job-name={}".format(title))
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
-    sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}.out".format(runDirPath, title + maskIndex))
+    sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}{}.out".format(runDirPath, title, ("_" + maskIndex) if maskIndex else ""))
     sbatchCode.append("#SBATCH --partition=long")
     sbatchCode.append("#SBATCH --signal=B:SIGUSR1@300")
     sbatchCode.append("#SBATCH --time={}".format(TIME_LIMIT))
@@ -138,11 +144,11 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
     sbatchCode.append("")
     sbatchCode.append("")
     sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
-    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB.py {}".format(" ".join(cmd)))
+    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB_WIP.py {}".format(" ".join(cmd)))
     sbatchCode.append("")
     sbatchCode.append("date")
 
-    sbatchFile = runDirPath + "/" + "cnnAbsRun-{}.sbatch".format(title)
+    sbatchFile = runDirPath + "/" + "cnnAbsRun-{}{}.sbatch".format(title, ("_" + maskIndex) if maskIndex else "")
     with open(sbatchFile, "w") as f:
         for line in sbatchCode:
             f.write(line + "\n")
@@ -155,7 +161,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 ####################################################################################################
 ####################################################################################################
 
-if __name__ == "__main__":
+def main():    
 
     validationNets = ["mnist_{}_{}".format(layers, i) for i in [1, 2, 4] for layers in ["base", "long"]]
     
@@ -220,3 +226,7 @@ if __name__ == "__main__":
     sbatchFiles = list()
     for cmd, title in zip(runCmds, runTitles):
         runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=(str(0) if slurm_seq else ""))
+
+        
+if __name__ == "__main__":
+    main()    
