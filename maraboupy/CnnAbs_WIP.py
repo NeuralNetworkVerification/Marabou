@@ -330,7 +330,7 @@ class CnnAbs:
         self.logDir = logDir
         os.makedirs(self.logDir, exist_ok=True)
         os.chdir(self.logDir)
-        if os.path.exists(self.logDir + "/" + CnnAbs.resultsFile):
+        if os.path.exists(self.logDir + "/" + CnnAbs.resultsFile + ".json"):
             self.resultsJson = self.loadJson(CnnAbs.resultsFile, loadDir=self.logDir)
         else:
             self.resultsJson = dict(subResults=[])
@@ -441,9 +441,15 @@ class CnnAbs:
             CnnAbs.logger.info(s)
         print(s)
 
-    def dumpNpArray(self, npArray, name):
-        with open(self.dumpDir + name + ".npy", "wb") as f:
-            np.save(f, npArray)      
+    def dumpNpArray(self, npArray, name, saveDir=''):
+        if not saveDir:
+            saveDir = self.dumpDir
+        if not name.endswith(".npy"):
+            name += ".npy"
+        if not saveDir.endswith("/"):
+            saveDir += "/"
+        with open(saveDir + name, "wb") as f:
+            np.save(f, npArray)
 
     def dumpQueryStats(self, mbouNet, name):
         queryStats = ModelUtils.marabouNetworkStats(mbouNet)
@@ -453,7 +459,11 @@ class CnnAbs:
     def dumpJson(self, data, name, saveDir=''):
         if not saveDir:
             saveDir = self.dumpDir
-        with open(saveDir + "/" + name + ".json", "w") as f:
+        if not name.endswith(".json"):
+            name += ".json"
+        if not saveDir.endswith("/"):
+            saveDir += "/"
+        with open(saveDir + name, "w") as f:
             json.dump(data, f, indent = 4)
 
     def dumpCex(self, cex, cexPrediction, prop, runName):
@@ -463,7 +473,7 @@ class CnnAbs:
         plt.savefig("Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName))
 
-    @staticmethod        
+    @staticmethod
     def dumpCoi(inputVarsMapping, runName):
         plt.title('COI_{}'.format(runName))
         plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
@@ -472,13 +482,21 @@ class CnnAbs:
     def loadJson(self, name, loadDir=''):
         if not loadDir:
             loadDir = self.dumpDir
-        with open(loadDir + name + ".json", "r") as f:
+        if not name.endswith(".json"):
+            name += ".json"
+        if not loadDir.endswith("/"):
+            loadDir += "/"
+        with open(loadDir + name, "r") as f:
             return json.load(f)
 
     def loadNpArray(self, name, loadDir=''):
         if not loadDir:
-            loadDir = self.dumpDir        
-        with open(self.dumpDir + name + ".npy", "rb") as f:            
+            loadDir = self.dumpDir
+        if not name.endswith(".npy"):
+            name += ".npy"
+        if not loadDir.endswith("/"):
+            loadDir += "/"
+        with open(loadDir + name, "rb") as f:
             return np.load(f, allow_pickle=True)
 
     def dumpResultsJson(self):
