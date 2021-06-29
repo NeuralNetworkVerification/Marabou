@@ -117,7 +117,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 
     return [vals, stats]
 
-def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivides=2,
+def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=2,
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
                   splittingStrategy="auto", sncSplittingStrategy="auto",
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
@@ -129,10 +129,10 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     Args:
         numWorkers (int, optional): Number of workers to use in Split-and-Conquer(SnC) mode, defaults to 4
         initialTimeout (int, optional): Initial timeout in seconds for SnC mode before dividing, defaults to 5
-        initialDivides (int, optional): Number of time sto perform the initial partitioning.
-            This creates 2^(initialDivides) sub-problems for SnC mode, defaults to 0
-        onlineDivides (int, optional): Number of times to perform the online partitioning when a sub-query
-            time out. This creates 2^(onlineDivides) sub-problems for SnC mode, defaults to 2
+        initialSplits (int, optional): Number of time sto perform the initial partitioning.
+            This creates 2^(initialSplits) sub-problems for SnC mode, defaults to 0
+        onlineSplits (int, optional): Number of times to perform the online partitioning when a sub-query
+            time out. This creates 2^(onlineSplits) sub-problems for SnC mode, defaults to 2
         timeoutInSeconds (int, optional): Timeout duration for Marabouin seconds, defaults to 0
         timeoutFactor (float, optional): Timeout factor for SnC mode, defaults to 1.5
         verbosity (int, optional): Verbosity level for Marabou, defaults to 2
@@ -153,8 +153,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialDivides=0, onlineDivide
     options = Options()
     options._numWorkers = numWorkers
     options._initialTimeout = initialTimeout
-    options._initialDivides = initialDivides
-    options._onlineDivides = onlineDivides
+    options._initialDivides = initialSplits
+    options._onlineDivides = onlineSplits
     options._timeoutInSeconds = timeoutInSeconds
     options._timeoutFactor = timeoutFactor
     options._verbosity = verbosity

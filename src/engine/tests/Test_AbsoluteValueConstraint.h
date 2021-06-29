@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file Test_ReluConstraint.h
+/*! \file Test_AbsoluteValueConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz
+ **   Shiran Aziz, Aleksandar Zeljic, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -28,6 +28,21 @@ class MockForAbsoluteValueConstraint : public MockErrno
 {
 public:
 };
+
+/*
+   Exposes protected members of AbsConstraint for testing.
+ */
+class TestAbsConstraint : public AbsoluteValueConstraint
+{
+public:
+    TestAbsConstraint(unsigned b, unsigned f)
+        : AbsoluteValueConstraint( b, f )
+    {}
+
+    using AbsoluteValueConstraint::getPhaseStatus;
+};
+
+using namespace CVC4::context;
 
 class AbsoluteValueConstraintTestSuite : public CxxTest::TestSuite
 {
@@ -1139,6 +1154,85 @@ public:
                           Tightening( b, 0, Tightening::LB ) );
         TS_ASSERT_EQUALS( *validSplit.getBoundTightenings().rbegin(),
                           Tightening( posAux, 0, Tightening::UB ) );
+    }
+
+    void test_initialization_of_CDOs()
+    {
+        Context context;
+        AbsoluteValueConstraint *abs1 = new AbsoluteValueConstraint( 4, 6 );
+
+        TS_ASSERT_EQUALS( abs1->getContext(), static_cast<Context*>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_THROWS_NOTHING( abs1->initializeCDOs( &context ) );
+        TS_ASSERT_EQUALS( abs1->getContext(), &context );
+        TS_ASSERT_DIFFERS( abs1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( abs1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( abs1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+
+        bool active = false;
+        TS_ASSERT_THROWS_NOTHING( active = abs1->isActive() );
+        TS_ASSERT_EQUALS( active, true );
+
+        bool phaseFixed = true;
+        TS_ASSERT_THROWS_NOTHING( phaseFixed = abs1->phaseFixed() );
+        TS_ASSERT_EQUALS( phaseFixed, PHASE_NOT_FIXED );
+        TS_ASSERT_EQUALS( abs1->numFeasibleCases(), 2u );
+
+
+        TS_ASSERT_THROWS_NOTHING( delete abs1 );
+    }
+
+    /*
+     * Test Case functionality of AbsoluteValueConstraint
+     * 1. Check that all cases are returned by AbsoluteValueConstraint::getAllCases
+     * 2. Check that AbsoluteValueConstraint::getCaseSplit( case ) returns the correct case
+     */
+    void test_abs_get_cases()
+    {
+        AbsoluteValueConstraint abs( 4, 6 );
+
+        List<PhaseStatus> cases = abs.getAllCases();
+
+        TS_ASSERT_EQUALS( cases.size(), 2u );
+        TS_ASSERT_EQUALS( cases.front(), ABS_PHASE_NEGATIVE );
+        TS_ASSERT_EQUALS( cases.back(), ABS_PHASE_POSITIVE );
+
+        List<PiecewiseLinearCaseSplit> splits = abs.getCaseSplits();
+        TS_ASSERT_EQUALS( splits.size(), 2u );
+        TS_ASSERT_EQUALS( splits.front(), abs.getCaseSplit( ABS_PHASE_NEGATIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.back(), abs.getCaseSplit( ABS_PHASE_POSITIVE ) ) ;
+    }
+
+    /*
+      Test context-dependent Abs state behavior.
+     */
+    void test_abs_context_dependent_state()
+    {
+        Context context;
+        unsigned b = 1;
+        unsigned f = 4;
+
+        TestAbsConstraint abs( b, f );
+
+        abs.initializeCDOs( &context );
+
+        TS_ASSERT_EQUALS( abs.getPhaseStatus(), PHASE_NOT_FIXED );
+
+        context.push();
+        abs.notifyUpperBound( b, -1 );
+        TS_ASSERT_EQUALS( abs.getPhaseStatus(), ABS_PHASE_NEGATIVE );
+
+        context.pop();
+        TS_ASSERT_EQUALS( abs.getPhaseStatus(), PHASE_NOT_FIXED );
+        context.push();
+
+        abs.notifyLowerBound( b, 1 );
+        TS_ASSERT_EQUALS( abs.getPhaseStatus(), ABS_PHASE_POSITIVE );
+
+        context.pop();
+        TS_ASSERT_EQUALS( abs.getPhaseStatus(), PHASE_NOT_FIXED );
     }
 };
 

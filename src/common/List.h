@@ -39,6 +39,16 @@ public:
     {
     }
 
+    List<T>( unsigned size, T value ) : _container( size, value )
+    {
+    }
+
+    template <class InputIt>
+    List<T>( InputIt begin, InputIt end )
+        : _container( begin, end )
+    {
+    }
+
     void append( const List<T> &other )
     {
         for ( const auto &element : other )
