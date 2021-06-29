@@ -57,7 +57,8 @@ Engine::Engine()
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
-    , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
+    , _simulationSize( 0 )
+      //, _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
