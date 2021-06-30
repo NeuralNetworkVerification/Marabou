@@ -64,6 +64,7 @@ parser.add_argument("--arg",  type=str, default="", help="Push custom string arg
 parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
 parser.add_argument("--mask_index",      type=int,                                  default=-1,                     help="Choose specific mask to run.")
 parser.add_argument("--slurm_seq"      ,action="store_true",                        default=False,                  help="Run next mask if this one fails.")
+parser.add_argument("--rerun_sporious" ,action="store_true",                        default=False,                  help="When recieved sporious SAT, run again CEX to find a satisfying assignment.") 
 
 args = parser.parse_args()
 
@@ -98,6 +99,7 @@ cfg_absLayer          = args.abs_layer
 cfg_extraArg          = args.arg
 cfg_maskIndex         = args.mask_index
 cfg_slurmSeq          = args.slurm_seq
+cfg_rerunSporious     = args.rerun_sporious
 
 optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
@@ -110,7 +112,7 @@ cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="
 
 policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
 
-mi = lambda s: s if not cfg_slurmSeq else (s + "-" + cfg_maskIndex)
+mi = lambda s: s if not cfg_slurmSeq else (s + "-" + str(cfg_maskIndex))
 
 cnnAbs.resultsJson[mi("cfg_freshModelOrig")]    = cfg_freshModelOrig
 cnnAbs.resultsJson[mi("cfg_noVerify")]          = cfg_noVerify
@@ -139,6 +141,7 @@ cnnAbs.resultsJson[mi("cfg_dumpBounds")]        = cfg_dumpBounds
 cnnAbs.resultsJson[mi("cfg_extraArg")]          = cfg_extraArg
 cnnAbs.resultsJson[mi("cfg_maskIndex")]         = cfg_maskIndex
 cnnAbs.resultsJson[mi("cfg_slurmSeq")]          = cfg_slurmSeq
+cnnAbs.resultsJson[mi("cfg_rerunSporious")]     = cfg_rerunSporious
 
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "TIMEOUT"
@@ -275,7 +278,8 @@ for i, mask in enumerate(maskList):
 
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
-    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList)), coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
+    runName = "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList))
+    resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
     if resultObj.timedOut():
@@ -284,7 +288,7 @@ for i, mask in enumerate(maskList):
     if resultObj.sat():
         if not cfg_useDumpedQueries: #FIXME should be if true
             modelOrigDense = load_model(modelOrigDenseSavedName)
-        isSporious = ModelUtils.isCEXSporious(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+        isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
 
         if not isSporious:
@@ -292,6 +296,20 @@ for i, mask in enumerate(maskList):
             break;
         elif i+1 == len(maskList):
             raise Exception("Sporious CEX at full network.")
+        elif cfg_rerunSporious:
+            boundDictCopy = boundDict.copy()
+            for var,value in resultObj.vals.items():
+                mapping = resultObj.varsMapping[var]
+                if mapping != -1:
+                    boundDictCopy[mapping] = (value, value)
+            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
+            if resultObjRerunSporious.sat():
+                resultObj = resultObjRerunSporious
+                successful = i
+                CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
+            else:
+                CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
+
     elif resultObj.unsat():
         CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i+1, len(maskList)))        
         successful = i

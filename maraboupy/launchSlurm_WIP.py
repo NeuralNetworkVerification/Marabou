@@ -201,7 +201,11 @@ def main():
     batchDirPath = basePath + "logs/" + batchId
     if not os.path.exists(batchDirPath):
         os.mkdir(batchDirPath)
-    dumpDirPath = basePath + "logs/dumpQueries{}/".format(("_" + dumpSuffix) if dumpSuffix else "")
+    if not dumpSuffix.startswith("dumpQueries"):
+        dumpDir = "dumpQueries" + (("_" + dumpSuffix) if dumpSuffix else "")
+    else:
+        dumpDir = dumpSuffix
+    dumpDirPath = basePath + "logs/{}/".format(dumpDir)
     if (dumpQueries or useDumpedQueries) and not os.path.exists(dumpDirPath):
         os.mkdir(dumpDirPath)
         

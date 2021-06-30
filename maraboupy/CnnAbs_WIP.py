@@ -236,7 +236,6 @@ class Policy(Enum):
             raise NotImplementedError
 
 class AdversarialProperty:
-
     def __init__(self, xAdv, yMax, ySecond, inDist, outSlack):
         self.xAdv = xAdv
         self.yMax = yMax
@@ -290,7 +289,7 @@ class ResultObj:
         self.cex = cex
         self.cexPrediction = cexPrediction
         self.inputDict = inputDict
-        self.outputDict = outputDict        
+        self.outputDict = outputDict
 
 class DataSet:
 
@@ -376,8 +375,9 @@ class CnnAbs:
         finalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName)
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping
     
-    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False):
-        self.subResultAppend()
+    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False):
+        if not rerun:
+            self.subResultAppend()
         startLocal = time.time()
         
         CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
@@ -414,9 +414,11 @@ class CnnAbs:
         result = ResultObj("sat")
         result.setCex(cex, cexPrediction, inputDict, outputDict)
         result.setStats(originalQueryStats, finalQueryStats) #FIXME since writing is now within function, not really need to return.
+        result.vals = vals
+        result.varsMapping = varsMapping
         CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
 
-        self.subResultUpdate(runtime=time.time() - startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut())
+        self.subResultUpdate(runtime=time.time() - startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
         
         return result
 
@@ -514,15 +516,19 @@ class CnnAbs:
                                                "timedOut" : timedOut})
         self.dumpResultsJson()
 
-    def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
-        self.resultsJson["subResults"][-1] = {"index" : self.maskIndex+1,
-                                              "outOf" : self.numMasks,
-                                              "runtime" : runtime,
-                                              "runtimeTotal":runtimeTotal,
-                                              "originalQueryStats" : originalQueryStats,
-                                              "finalQueryStats" : finalQueryStats,
-                                              "SAT" : sat,
-                                              "timedOut" : timedOut}
+    def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None, rerun=False):
+        if rerun:
+            self.resultsJson["subResults"][-1]["runtime"] += runtime
+        else:
+            self.resultsJson["subResults"][-1] = {"index" : self.maskIndex+1,
+                                                  "outOf" : self.numMasks,
+                                                  "runtime" : runtime,
+                                                  "runtimeTotal":runtimeTotal,
+                                                  "originalQueryStats" : originalQueryStats,
+                                                  "finalQueryStats" : finalQueryStats,
+                                                  "SAT" : sat,
+                                                  "timedOut" : timedOut}
+            
         self.dumpResultsJson()
         
 
@@ -809,7 +815,7 @@ class ModelUtils:
     @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
         if useMapping:
-            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
+            lBound s = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
             fail = False
             for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
                 if indCOI.item() is None:
@@ -831,14 +837,16 @@ class ModelUtils:
 
     @staticmethod
     #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
-    def isCEXSporious(model, x, inDist, outSlack, yCorrect, yBad, cex, sporiousStrict=True):
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(x, inDist, cex)
+    def isCEXSporious(model, prop, cex, sporiousStrict=True):
+        yCorrect = prop.yMax
+        yBad = prop.ySecond
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex)
         if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-x)[violations.nonzero()]))
+            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
         if not sporiousStrict:
             return prediction.argmax() == yCorrect
-        return prediction[0,yBad] + outSlack < prediction[0,yCorrect]
+        return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
 
     @staticmethod
     def marabouNetworkStats(net):
@@ -961,12 +969,16 @@ class InputQueryUtils:
     
         reach = set(init)
         lastLen = 0
+        #border = set()
         while len(reach) > lastLen:
             lastLen = len(reach)
             reachPrev = reach.copy()
             for eqi, eq in enumerate(net.equList):
-                if (eq.addendList[-1][1] in reachPrev) and (eq.addendList[-1][0] == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
+                tw, tv = eq.addendList[-1]
+                if (tv in reachPrev) and (tw == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
                     [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
+          #          if [v for w,v in eq.addendList[:-1] if w == 0]:
+          #              border.add(tv)
                 elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                     [reach.add(v) for w,v in eq.addendList]
                     CnnAbs.printLog("eqi={}, eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eqi, eq.addendList, eq.scalar, eq.EquationType))
@@ -979,6 +991,7 @@ class InputQueryUtils:
             if len(net.disjunctionList) > 0:
                 raise Exception("Not implemented")
         unreach = set([v for v in range(net.numVars) if v not in reach])
+        #complement = unreach + border #FIXME is this used?
     
         CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     
