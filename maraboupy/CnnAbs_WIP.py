@@ -323,13 +323,20 @@ class CnnAbs:
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
-        self.dumpDir = dumpDir        
-        if dumpDir and not os.path.exists(dumpDir):
-            os.mkdir(dumpDir)
         self.logDir = logDir
+        if not self.logDir.endswith("/"):
+            self.logDir += "/"
         os.makedirs(self.logDir, exist_ok=True)
         os.chdir(self.logDir)
-        if os.path.exists(self.logDir + "/" + CnnAbs.resultsFile + ".json"):
+        if dumpDir:            
+            self.dumpDir = dumpDir
+            if not self.dumpDir.endswith("/"):
+                self.dumpDir += "/"            
+            if self.dumpDir and not os.path.exists(self.dumpDir):
+                os.mkdir(self.dumpDir)
+        else:
+            self.dumpDir = self.logDir    
+        if os.path.exists(self.logDir + CnnAbs.resultsFile + ".json"):
             self.resultsJson = self.loadJson(CnnAbs.resultsFile, loadDir=self.logDir)
         else:
             self.resultsJson = dict(subResults=[])
@@ -363,6 +370,7 @@ class CnnAbs:
         if coi:
             inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
             self.dumpCoi(inputVarsMapping, runName)
+            InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)        
         else:
             inputVarsMapping = modelOnnxMarabou.inputVars[0]
             outputVarsMapping = modelOnnxMarabou.outputVars
@@ -370,7 +378,6 @@ class CnnAbs:
         self.dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName)
         self.dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName)
         self.dumpJson(varsMapping, "varsMapping_" + runName)
-        InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)        
         modelOnnxMarabou.saveQuery(self.dumpDir + "IPQ_" + runName)
         finalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName)
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping
@@ -388,7 +395,7 @@ class CnnAbs:
                 return "IPQ_" + runName            
         else:
             ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
-        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
+        vals, stats = Marabou.solve_query(ipq, verbose=rerun, options=self.optionsObj) #FIXME verbosity should be False
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -461,10 +468,10 @@ class CnnAbs:
     def dumpJson(self, data, name, saveDir=''):
         if not saveDir:
             saveDir = self.dumpDir
+        if saveDir and not saveDir.endswith("/"):
+            saveDir += "/"            
         if not name.endswith(".json"):
             name += ".json"
-        if not saveDir.endswith("/"):
-            saveDir += "/"
         with open(saveDir + name, "w") as f:
             json.dump(data, f, indent = 4)
 
@@ -815,7 +822,7 @@ class ModelUtils:
     @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
         if useMapping:
-            lBound s = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
+            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
             fail = False
             for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
                 if indCOI.item() is None:
@@ -1016,7 +1023,7 @@ class InputQueryUtils:
     @staticmethod
     def setBounds(model, boundDict):
         if boundDict:
-            for i, (lb, ub) in boundDict.items():
+            for i, (lb, ub) in boundDict.items():                
                 if i < model.numVars: #This might mean that there is disalignment between the queries' definition of variables
                     if (i not in model.lowerBounds) or (model.lowerBounds[i] < lb):
                         model.setLowerBound(i,lb)
