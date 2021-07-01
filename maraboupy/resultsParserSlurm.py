@@ -318,9 +318,9 @@ with open('ResultSummary.csv', mode='w') as f:
 
 cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
 plt.figure()
-runtimesSolved = [[resultDict[s]["totalRuntime"] for s in samplesTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
-[result.sort() for result in runtimesSolved]
-sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesSolved]
+runtimesTotalSolved = [[resultDict[s]["totalRuntime"] for s in samplesTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
+[result.sort() for result in runtimesTotalSolved]
+sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesTotalSolved]
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
 for sums, label in zip(sumRuntimes, cactusLabels):
     solved = [0] + list(range(1,len(sums)+1))
@@ -330,11 +330,36 @@ for sums, label in zip(sumRuntimes, cactusLabels):
     #print("label={}".format(label))
     #print("sums={}".format(sums))
     #print("solved={}".format(solved))        
-plt.xlabel("Runtime [sec]")
+plt.xlabel("Total Runtime [sec]")
 plt.ylabel("Instances solved")
 plt.legend()
 setFigSize()
-plt.savefig("Cactus.png", bbox_inches="tight", dpi=100)
+plt.savefig("CactusTotal.png", bbox_inches="tight", dpi=100)
+plt.close()
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+
+cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
+plt.figure()
+runtimesSuccessfulSolved = [[resultDict[s]["successfulRuntime"] for s in samplesTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
+[result.sort() for result in runtimesSuccessfulSolved]
+sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesSuccessfulSolved]
+#[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
+for sums, label in zip(sumRuntimes, cactusLabels):
+    solved = [0] + list(range(1,len(sums)+1))
+    sums = [0] + sums
+    p = plt.step(sums, solved, label=label, where="post")
+    plt.scatter(sums[-1], solved[-1], s=70, marker="o", alpha=0.3, c=p[0].get_color())
+    #print("label={}".format(label))
+    #print("sums={}".format(sums))
+    #print("solved={}".format(solved))        
+plt.xlabel("Successful Runtime [sec]")
+plt.ylabel("Instances solved")
+plt.legend()
+setFigSize()
+plt.savefig("CactusSuccessful.png", bbox_inches="tight", dpi=100)
 plt.close()
             
 ####################################################################################################
