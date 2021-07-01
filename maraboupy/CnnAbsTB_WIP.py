@@ -230,9 +230,8 @@ if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()
-if os.path.isfile(os.getcwd() + "/dumpBounds.json") and cfg_dumpBounds:
-    with open('dumpBounds.json', 'r') as boundFile:
-        boundList = json.load(boundFile)
+if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBounds.json"):
+        boundList = cnnAbs.loadJson("dumpBounds")
         boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 else:
     boundDict = None
@@ -302,6 +301,7 @@ for i, mask in enumerate(maskList):
                 mapping = resultObj.varsMapping[var]
                 if mapping != -1:
                     boundDictCopy[mapping] = (value, value)
+                #print(boundDictCopy) #FIXME remove
             resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
             if resultObjRerunSporious.sat():
                 resultObj = resultObjRerunSporious
