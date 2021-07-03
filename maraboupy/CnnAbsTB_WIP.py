@@ -297,10 +297,8 @@ for i, mask in enumerate(maskList):
             raise Exception("Sporious CEX at full network.")
         elif cfg_rerunSporious:
             boundDictCopy = boundDict.copy()
-            for var,value in resultObj.vals.items():
-                mapping = resultObj.varsMapping[var]
-                if mapping != -1:
-                    boundDictCopy[mapping] = (value, value)
+            for var,value in resultObj.vals.items():                
+                boundDictCopy[resultObj.varsMapping[var]] = (value, value)
                 #print(boundDictCopy) #FIXME remove
             resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
             if resultObjRerunSporious.sat():

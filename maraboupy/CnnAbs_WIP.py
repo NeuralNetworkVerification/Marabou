@@ -915,7 +915,8 @@ class InputQueryUtils:
         varSetDict = {v:i for i,v in enumerate(varSetList)}
         assert varSet == set(varSetDict.keys())
         tr = lambda v: varSetDict[v] if v in varSetDict else -1
-        varsMapping = {v : tr(v) for v in range(net.numVars)}
+        #varsMapping = {v : tr(v) for v in range(net.numVars)} FIXME should be the inverse
+        varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
         
         if keepSet:
             for vin,vout in net.reluList:
@@ -951,8 +952,8 @@ class InputQueryUtils:
         net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in varSet]
         net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in varSet}
         net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
-        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
-        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
+        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape) #FIXME move to dict instead of NP array.
+        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape) #FIXME move to dict instead of NP array.
         net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
