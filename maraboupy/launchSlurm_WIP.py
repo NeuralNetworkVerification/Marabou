@@ -123,7 +123,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 
     sbatchCode = list()
     sbatchCode.append("#!/bin/bash")
-    sbatchCode.append("#SBATCH --job-name={}".format(title))
+    sbatchCode.append("#SBATCH --job-name={}".format(("Seq" if maskIndex else "") + title))
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
     sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}{}.out".format(runDirPath, title, ("_" + maskIndex) if maskIndex else ""))
@@ -178,6 +178,7 @@ def main():
     parser.add_argument("--validation", type=str, choices=validationNets, default="", help="Use validation net", required=False)
     parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
     parser.add_argument("--slurm_seq", action="store_true",                        default=False,                  help="Run next mask if this one fails.")
+    parser.add_argument("--rerun_sporious", action="store_true",                        default=False,                  help="Rerun Sporious CEX.")
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
@@ -188,6 +189,7 @@ def main():
     validation = args.validation
     cnn_size = args.cnn_size
     slurm_seq = args.slurm_seq
+    rerun_sporious = args.rerun_sporious
     
     assert (not validation) or (not cnn_size)
     
@@ -223,7 +225,10 @@ def main():
     if useDumpedQueries:
         commonFlags.append("--use_dumped_queries")
     if slurm_seq:
-        commonFlags += ["--slurm_seq", "--mask_index", str(0)] 
+        commonFlags += ["--slurm_seq", "--mask_index", str(0)]
+    if rerun_sporious:
+        commonFlags.append("--rerun_sporious")
+        
         
     runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
     
