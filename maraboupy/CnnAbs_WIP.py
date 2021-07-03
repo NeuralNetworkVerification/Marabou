@@ -404,7 +404,7 @@ class CnnAbs:
             finalQueryStats = self.loadJson("finalQueryStats_" + runName)
             inputVarsMapping = self.loadNpArray("inputVarsMapping_" + runName)
             outputVarsMapping = self.loadNpArray("outputVarsMapping_" + runName)
-            varsMapping = self.loadJson("varsMapping_" + runName)            
+            varsMapping = {int(k) : v for k,v in self.loadJson("varsMapping_" + runName).items()}
         if not sat:
             if timedOut:
                 result = ResultObj("timeout")
@@ -413,17 +413,17 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
             result.setStats(originalQueryStats, finalQueryStats)                
-            return result
-        cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
-        self.dumpCex(cex, cexPrediction, prop, runName)
-        self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
-        self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
-        result = ResultObj("sat")
-        result.setCex(cex, cexPrediction, inputDict, outputDict)
+        else:
+            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
+            self.dumpCex(cex, cexPrediction, prop, runName)
+            self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
+            self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
+            result = ResultObj("sat")
+            result.setCex(cex, cexPrediction, inputDict, outputDict)
+            result.vals = vals
+            result.varsMapping = varsMapping
+            CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
         result.setStats(originalQueryStats, finalQueryStats) #FIXME since writing is now within function, not really need to return.
-        result.vals = vals
-        result.varsMapping = varsMapping
-        CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
 
         self.subResultUpdate(runtime=time.time() - startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
         

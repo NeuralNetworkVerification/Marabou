@@ -231,7 +231,7 @@ if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
         CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()
 if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBounds.json"):
-        boundList = cnnAbs.loadJson("dumpBounds")
+        boundList = cnnAbs.loadJson("dumpBounds", loadDir=cnnAbs.logDir)
         boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 else:
     boundDict = None
@@ -317,16 +317,17 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
-assert successful or resultObj.timedOut()
-
+if cfg_slurmSeq and (cfg_dumpQueries or (successful is not None)):
+    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy)
+    
 if not cfg_dumpQueries:    
     if successful:
         CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
-    if not resultObj.timedOut():
+        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal        
+    #if not resultObj.timedOut(): FIXME should this be printed in slurm_seq when continues to another run?
         cnnAbs.resultsJson["SAT"] = resultObj.sat()
         cnnAbs.resultsJson["Result"] = resultObj.result.name
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
-    cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal
     cnnAbs.dumpResultsJson()
 
     CnnAbs.printLog(resultObj.result.name)
@@ -334,8 +335,6 @@ if not cfg_dumpQueries:
 #            verificationResult = verifyMarabou(modelOrigDense, resultObj.cex, resultObj.cexPrediction, resultObj.inputDict, resultObj.outputDict, "verifyMarabou", fromImage=False)
 #            print("verifyMarabou={}".format(verificationResult))
 #            if not verificationResult[0]:
-#                raise Exception("Inconsistant Marabou result, marabou double check failed")    
-    CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
+#                raise Exception("Inconsistant Marabou result, marabou double check failed")
 
-if cfg_slurmSeq and (cfg_dumpQueries or not successful):
-    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy)
+CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
