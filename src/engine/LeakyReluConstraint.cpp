@@ -2,7 +2,7 @@
 /*! \file LeakyReluConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Parth Shah, Derek Huang
+ **   Andrew Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
