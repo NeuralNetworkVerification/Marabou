@@ -142,7 +142,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         setPhaseStatus( RELU_PHASE_ACTIVE );
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
-    else if ( variable == _aux && FloatUtils::isPositive( bound ) )
+    else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
     if ( isActive() && _constraintBoundTightener )
@@ -941,4 +941,3 @@ void ReluConstraint::updateScoreBasedOnPolarity()
 {
     _score = std::abs( computePolarity() );
 }
-
