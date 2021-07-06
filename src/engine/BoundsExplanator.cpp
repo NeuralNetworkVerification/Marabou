@@ -138,7 +138,6 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 		_bounds[var]._upperRecLevel = maxLevel;
 	else
 		_bounds[var]._lowerRecLevel = maxLevel;
-	//printf("Recursion level update: %d  of var %d\n", maxLevel, var); //TODO delete
 	tempBound.clear();
 	rowCoefficients.clear();
 	sum.clear();
@@ -196,13 +195,13 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 	for ( const auto& entry : row )
 	{
 		curCoefficient = entry._value;
-		if ( !FloatUtils::isZero( curCoefficient ) || entry._index == var ) // If coefficient is zero then nothing to add to the sum, also skip var
+		if ( FloatUtils::isZero( curCoefficient ) || entry._index == var ) // If coefficient is zero then nothing to add to the sum, also skip var
 			continue;
 
 		tempUpper = curCoefficient < 0 ? !isUpper : isUpper; // If coefficient is negative, then replace kind of bound
 
 		getOneBoundExplanation( tempBound, entry._index, tempUpper );
-		addVecTimesScalar( sum, tempBound, curCoefficient / -ci );
+		addVecTimesScalar( sum, tempBound, curCoefficient / ci );
 	}
 
 	extractSparseRowCoefficients( row, rowCoefficients, ci ); // Update according to row coefficients
@@ -252,7 +251,7 @@ void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& r
 	//The coefficients of the row m highest-indices vars are the coefficients of slack variables
 	for ( const auto& entry : row )
 		if ( entry._index >= _varsNum - _rowsNum )
-				coefficients[entry._index - _varsNum + _rowsNum] = entry._value / -ci;
+				coefficients[entry._index - _varsNum + _rowsNum] = entry._value / ci;
 }
 
 std::vector<SingleVarBoundsExplanator>& BoundsExplanator::getExplanations()

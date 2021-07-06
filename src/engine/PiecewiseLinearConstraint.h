@@ -252,6 +252,8 @@ public:
         return _upperBounds[i];
     }
 
+	virtual void registerTighteningEquation( const unsigned n, const unsigned counterpart ) const = 0;
+
 protected:
     bool _constraintActive;
 	Map<unsigned, double> _assignment;

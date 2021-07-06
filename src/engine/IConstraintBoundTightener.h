@@ -62,6 +62,8 @@ public:
       Get the tightenings previously registered by the constraints
     */
     virtual void getConstraintTightenings( List<Tightening> &tightenings ) const = 0;
+
+	virtual unsigned registerIndicatingRow( TableauRow* row, unsigned var ) = 0;
 };
 
 #endif // __IConstraintBoundTightener_h__

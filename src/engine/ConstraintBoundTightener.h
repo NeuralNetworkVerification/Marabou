@@ -63,6 +63,14 @@ public:
     */
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
+
+	/*
+	  This method can be used by clients to tell the bound tightener
+	  about a tighter bound, using a TableauRow to explain the bound derivation
+	*/
+	unsigned registerIndicatingRow( TableauRow* row, unsigned var );
+
+
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -88,6 +96,8 @@ private:
       Free internal work memory.
     */
     void freeMemoryIfNeeded();
+
+    std::vector<TableauRow*> _boundsIndications;
 };
 
 #endif // __ConstraintBoundTightener_h__

@@ -485,3 +485,9 @@ bool SignConstraint::supportPolarity() const
 {
   return true;
 }
+
+void SignConstraint::registerTighteningEquation( const unsigned n, const unsigned counterpart ) const
+{
+	//TODO complete
+	printf( "%d, %d\n", n, counterpart );
+}

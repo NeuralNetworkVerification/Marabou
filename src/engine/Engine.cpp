@@ -252,14 +252,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
                         printf( "\nEngine::solve: sat assignment found\n" );
                         _statistics.print();
                     }
-                    _exitCode = Engine::SAT;
+					_exitCode = Engine::SAT;
                     return true;
                 }
 
                 // We have violated piecewise-linear constraints.
                 performConstraintFixingStep();
 
-                // Finally, take this opporunity to tighten any bounds
+                // Finally, take this opportunity to tighten any bounds
                 // and perform any valid case splits.
                 tightenBoundsOnConstraintMatrix();
                 applyAllBoundTightenings();
@@ -518,7 +518,7 @@ void Engine::performSimplexStep()
 			{
 				simplexBoundsUpdate();
 				printLinearInfeasibilityCertificate();
-				validateAllBounds( 0.0375 );
+				validateAllBounds( 0.001 );
 				certifyInfeasibility( 0.01 );
 			}
             throw InfeasibleQueryException();
@@ -1077,9 +1077,15 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     _rowBoundTightener->setDimensions();
     _constraintBoundTightener->setDimensions();
 
+    unsigned counterpart;
     // Register the constraint bound tightener to all the PL constraints
     for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
-        plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
+	{
+    	//Assuming aux variable is always last in participating variables list
+    	counterpart = find_aux_counterpart( plConstraint->getParticipatingVariables().back() );
+    	plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
+		plConstraint->registerTighteningEquation( n, counterpart );
+	}
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
@@ -1343,11 +1349,11 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
-	state._groundLowerBounds = std::vector<double> (_tableau->getN(), 0);
-	state._groundUpperBounds = std::vector<double> (_tableau->getN(), 0);
 
 	if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
+		state._groundLowerBounds = std::vector<double> (_tableau->getN(), 0);
+		state._groundUpperBounds = std::vector<double> (_tableau->getN(), 0);
     	std::copy( _groundUpperBounds.begin(), _groundUpperBounds.end(), state._groundUpperBounds.begin() );
 		std::copy( _groundLowerBounds.begin(), _groundLowerBounds.end(), state._groundLowerBounds.begin() );
 	}
@@ -1652,25 +1658,13 @@ void Engine::applyAllConstraintTightenings()
 		{
 			_tableau->tightenLowerBound( tightening._variable, tightening._value );
 			if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			{
-				if (_tableau->getLowerBound( tightening._variable ) <= tightening._value)
-				{
-					_tableau->resetExplanation(tightening._variable, false);
-					_groundLowerBounds[tightening._variable] = tightening._value;
-				}
-			}
+				_groundLowerBounds[tightening._variable] = tightening._value;
 		}
         else
 		{
 			_tableau->tightenUpperBound( tightening._variable, tightening._value );
 			if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			{
-				if (_tableau->getUpperBound( tightening._variable ) >= tightening._value)
-				{
-					_tableau->resetExplanation(tightening._variable, true);
-					_groundUpperBounds[tightening._variable] = tightening._value;
-				}
-			}
+				_groundUpperBounds[tightening._variable] = tightening._value;
 		}
     }
 }
@@ -2572,13 +2566,12 @@ void Engine::normalizeExplanations()
 void Engine::validateAllBounds( const double epsilon ) const
 {
     //Assuming all tightening were applied
-    //TODO consider applying again here
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
     {
         if ( abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > epsilon )
             printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
         if ( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) > epsilon)
-            printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+        	printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
         //TODO revert upon completing
         //ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
         //ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon ); 
@@ -2586,3 +2579,24 @@ void Engine::validateAllBounds( const double epsilon ) const
 }
 
 
+unsigned Engine::find_aux_counterpart( const unsigned aux ) const
+{
+	//TODO improve beyond naive algorithm
+	unsigned m = _tableau->getM(), n = _tableau->getN();
+	unsigned j = aux + 1;
+	std::vector<double> initialRow = std::vector<double>( n );
+
+	for (unsigned i = 0; i < m; ++i)
+	{
+		initialRow = _initialTableau[i];
+		if ( initialRow[aux] )
+			break;
+	}
+
+	for ( ; j < n; ++j)
+	{
+		if ( initialRow[j] )
+			break;
+	}
+	return j;
+}

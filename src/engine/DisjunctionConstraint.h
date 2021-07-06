@@ -140,6 +140,8 @@ public:
     */
     String serializeToString() const;
 
+	void registerTighteningEquation( const unsigned n, const unsigned counterpart) const;
+
 private:
     /*
       The disjuncts that form this PL constraint

@@ -81,6 +81,11 @@ public:
         tightenings = _tightenings;
         _tightenings.clear();
     }
+
+	unsigned registerIndicatingRow( TableauRow* /*row */, unsigned /* var */)
+	{
+		return 0;
+	}
 };
 
 #endif // __MockConstraintBoundTightener_h__

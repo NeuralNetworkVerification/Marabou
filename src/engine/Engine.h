@@ -579,6 +579,8 @@ private:
      TODO erase upon completion?
     */
     void validateAllBounds( const double epsilon ) const;
+
+	unsigned find_aux_counterpart( const unsigned aux ) const;
 };
 
 #endif // __Engine_h__

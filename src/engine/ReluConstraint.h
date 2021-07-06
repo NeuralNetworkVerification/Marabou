@@ -193,6 +193,8 @@ public:
 
     void updateScoreBasedOnPolarity();
 
+	void registerTighteningEquation( const unsigned n, const unsigned counterpart) const;
+
 private:
     unsigned _b, _f;
     PhaseStatus _phaseStatus;

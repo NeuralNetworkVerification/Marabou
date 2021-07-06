@@ -25,6 +25,7 @@ ConstraintBoundTightener::ConstraintBoundTightener( const ITableau &tableau )
     , _tightenedLower( NULL )
     , _tightenedUpper( NULL )
     , _statistics( NULL )
+    , _boundsIndications( 0 )
 {
 }
 
@@ -49,9 +50,19 @@ void ConstraintBoundTightener::setDimensions()
 
     _tightenedUpper = new bool[_n];
     if ( !_tightenedUpper )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedUpper" );
+		throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedUpper" );
 
-    resetBounds();
+	for (auto & _boundsIndication : _boundsIndications)
+	{
+		if ( _boundsIndication  )
+		{
+			delete _boundsIndication;
+			_boundsIndication = NULL;
+		}
+	}
+
+	_boundsIndications.resize( _n );
+	resetBounds();
 }
 
 void ConstraintBoundTightener::resetBounds()
@@ -96,6 +107,17 @@ void ConstraintBoundTightener::freeMemoryIfNeeded()
         delete[] _tightenedUpper;
         _tightenedUpper = NULL;
     }
+
+	for (unsigned i = 0 ; i < _boundsIndications.size(); ++i)
+	{
+		if ( _boundsIndications[i] )
+		{
+			delete _boundsIndications[i];
+			_boundsIndications[i] = NULL;
+		}
+	}
+
+	_boundsIndications.clear();
 }
 
 void ConstraintBoundTightener::setStatistics( Statistics *statistics )
@@ -132,6 +154,9 @@ void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, dou
     {
         _lowerBounds[variable] = bound;
         _tightenedLower[variable] = true;
+
+       // if ( GlobalConfiguration::PROOF_CERTIFICATE && _boundsIndications[variable] )
+       //	_tableau.updateExplanation( *_boundsIndications[variable], false );
     }
 }
 
@@ -141,6 +166,9 @@ void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, dou
     {
         _upperBounds[variable] = bound;
         _tightenedUpper[variable] = true;
+
+		//if ( GlobalConfiguration::PROOF_CERTIFICATE && _boundsIndications[variable] )
+		//	_tableau.updateExplanation( *_boundsIndications[variable], true );
     }
 }
 
@@ -154,6 +182,12 @@ void ConstraintBoundTightener::getConstraintTightenings( List<Tightening> &tight
         if ( _tightenedUpper[i] )
             tightenings.append( Tightening( i, _upperBounds[i], Tightening::UB ) );
     }
+}
+
+unsigned ConstraintBoundTightener::registerIndicatingRow( TableauRow* row, unsigned var )
+{
+	_boundsIndications[var] = row;
+	return 1;
 }
 
 //

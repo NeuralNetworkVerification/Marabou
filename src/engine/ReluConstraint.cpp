@@ -24,7 +24,6 @@
 #include "ReluConstraint.h"
 #include "MarabouError.h"
 #include "Statistics.h"
-#include "TableauRow.h"
 
 #ifdef _WIN32
 #define __attribute__(x)
@@ -906,6 +905,58 @@ ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
 void ReluConstraint::updateScoreBasedOnPolarity()
 {
     _score = std::abs( computePolarity() );
+}
+
+void ReluConstraint::registerTighteningEquation( const unsigned n, const unsigned counterpart) const
+{
+	TableauRow* fIndicatingRow = new TableauRow ( n );
+	// f = b + aux + counterpart (added as an additional aux variable of tableau after adding aux)
+	fIndicatingRow->_lhs = _f;
+
+	fIndicatingRow->_row[0]._var = _b;
+	fIndicatingRow->_row[0]._coefficient = 1;
+
+	fIndicatingRow->_row[1]._var = _aux;
+	fIndicatingRow->_row[1]._coefficient = 1;
+
+	fIndicatingRow->_row[2]._var = counterpart;
+	fIndicatingRow->_row[2]._coefficient = 1;
+
+	TableauRow* bIndicatingRow = new TableauRow ( n );
+	// b = f - aux
+	bIndicatingRow->_lhs = _b;
+
+	bIndicatingRow->_row[0]._var = _f;
+	bIndicatingRow->_row[0]._coefficient = 1;
+
+	bIndicatingRow->_row[1]._var = _aux;
+	bIndicatingRow->_row[1]._coefficient = -1;
+
+	bIndicatingRow->_row[2]._var = counterpart ;
+	bIndicatingRow->_row[2]._coefficient = -1;
+
+
+	TableauRow* aIndicatingRow = new TableauRow ( n );
+	// aux = f - b
+	aIndicatingRow->_lhs = _aux;
+
+	aIndicatingRow->_row[0]._var = _f;
+	aIndicatingRow->_row[0]._coefficient = 1;
+
+	aIndicatingRow->_row[1]._var = _b;
+	aIndicatingRow->_row[1]._coefficient = -1;
+
+	aIndicatingRow->_row[2]._var = counterpart ;
+	aIndicatingRow->_row[2]._coefficient = -1;
+
+	if ( !_constraintBoundTightener->registerIndicatingRow( fIndicatingRow, _f ) )
+		delete fIndicatingRow;
+
+	if ( !_constraintBoundTightener->registerIndicatingRow( bIndicatingRow, _b ) )
+		delete bIndicatingRow;
+
+	if ( !_constraintBoundTightener->registerIndicatingRow( aIndicatingRow, _aux ) )
+		delete aIndicatingRow;
 }
 
 //
