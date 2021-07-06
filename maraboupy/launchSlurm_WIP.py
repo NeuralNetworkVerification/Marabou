@@ -123,7 +123,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 
     sbatchCode = list()
     sbatchCode.append("#!/bin/bash")
-    sbatchCode.append("#SBATCH --job-name={}".format(("Seq" if maskIndex else "") + title))
+    sbatchCode.append("#SBATCH --job-name={}".format(("Seq" + maskIndex if maskIndex else "") + title))
     sbatchCode.append("#SBATCH --cpus-per-task={}".format(CPUS))
     sbatchCode.append("#SBATCH --mem-per-cpu={}".format(MEM_PER_CPU))
     sbatchCode.append("#SBATCH --output={}/cnnAbsTB_{}{}.out".format(runDirPath, title, ("_" + maskIndex) if maskIndex else ""))
