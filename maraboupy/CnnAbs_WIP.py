@@ -364,13 +364,14 @@ class CnnAbs:
         
     def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
         modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
+        inputs = list({i for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
         InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
         InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
         originalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)
         if coi:
             inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
             self.dumpCoi(inputVarsMapping, runName)
-            InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)        
+            InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)
         else:
             inputVarsMapping = modelOnnxMarabou.inputVars[0]
             outputVarsMapping = modelOnnxMarabou.outputVars
@@ -378,18 +379,28 @@ class CnnAbs:
         self.dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName)
         self.dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName)
         self.dumpJson(varsMapping, "varsMapping_" + runName)
+        self.dumpJson(inputs, "inputs_" + runName)
         modelOnnxMarabou.saveQuery(self.dumpDir + "IPQ_" + runName)
         finalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName)
-        return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping
+        return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs
     
-    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False):
+    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False, rerunResultObj=None):
+        
         if not rerun:
             self.subResultAppend()
+        else:
+            boundDictCopy = boundDict.copy()
+            freeInputs = True
+            for var,value in rerunResultObj.vals.items():
+                varOrig = rerunResultObj.varsMapping[var]
+                if not (freeInputs and varOrig in rerunResultObj.inputs):
+                    boundDictCopy[varOrig] = (value, value)
+            boundDict = boundDictCopy
         startLocal = time.time()
         
         CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
         if not fromDumpedQuery:
-            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping = self.genAdvMbouNet(model, prop, boundDict, runName, coi)
+            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs = self.genAdvMbouNet(model, prop, boundDict, runName, coi)
             ipq = mbouNet.getMarabouQuery()
             if onlyDump:
                 return "IPQ_" + runName            
@@ -405,6 +416,7 @@ class CnnAbs:
             inputVarsMapping = self.loadNpArray("inputVarsMapping_" + runName)
             outputVarsMapping = self.loadNpArray("outputVarsMapping_" + runName)
             varsMapping = {int(k) : v for k,v in self.loadJson("varsMapping_" + runName).items()}
+            inputs = self.loadJson("inputs_" + runName)
         if not sat:
             if timedOut:
                 result = ResultObj("timeout")
@@ -419,6 +431,7 @@ class CnnAbs:
             self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction, inputDict, outputDict)
+            result.inputs = inputs
             result.vals = vals
             result.varsMapping = varsMapping
             CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
