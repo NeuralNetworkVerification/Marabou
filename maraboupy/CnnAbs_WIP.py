@@ -364,7 +364,7 @@ class CnnAbs:
         
     def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
         modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
-        inputs = list({i for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
+        inputs = list({i.item() for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
         InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
         InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
         originalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)

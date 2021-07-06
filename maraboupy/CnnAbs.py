@@ -391,7 +391,7 @@ class CnnAbs:
             self.subResultAppend()
         else:
             boundDictCopy = boundDict.copy()
-            freeInputs = True
+            freeInputs = False
             for var,value in rerunResultObj.vals.items():
                 varOrig = rerunResultObj.varsMapping[var]
                 if not (freeInputs and varOrig in rerunResultObj.inputs):
