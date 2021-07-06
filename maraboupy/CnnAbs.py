@@ -64,22 +64,50 @@ class PolicyBase:
         sortedIndReverse = PolicyBase.sortActMapReverse(actMap)
         assert len(sortedIndReverse) == actMap.size
         return sortedIndReverse
+
+    @staticmethod
+    def linearStep(n, stepSize=10, startWith=50):
+        stepSize = max(stepSize,1)
+        startWith = max(startWith,0)
+        size = n
+        yield startWith
+        size -= startWith
+        while size > 0:
+            toAdd = min(size, stepSize)
+            yield toAdd
+            size -= toAdd
+
+
+    @staticmethod
+    def geometricStep(n, initStepSize=10, startWith=30, factor=2):
+        stepSize = max(initStepSize,1)
+        startWith = max(startWith,0)
+        size = n
+        yield startWith
+        size -= startWith
+        i = 0
+        while size > 0:
+            toAdd = min(size, initStepSize * (factor ** i))
+            yield toAdd
+            size -= toAdd
+            i += 1
+
+    @classmethod
+    def steps(cls, n):
+        #return cls.linearStep(n)
+        return cls.geometricStep(n)
     
     def genMaskByOrderedInd(self, sortedIndDecsending, maskShape, includeFull=True):
         mask = np.zeros(maskShape)
         masks = list()
-        stepSize = max(self.stepSize,1)
-        startWith = max(self.startWith,0)
-        first = True
-        while len(sortedIndDecsending) > 0:
-            toAdd = min(stepSize + (startWith if first else 0), len(sortedIndDecsending))
+        n = len(sortedIndDecsending)
+        for toAdd in self.steps(n):
             for coor in sortedIndDecsending[:toAdd]:
                 mask[tuple(coor)] = 1
             sortedIndDecsending = sortedIndDecsending[toAdd:]
             if np.array_equal(mask, np.ones_like(mask)) and not includeFull:
                 break
             masks.append(mask.copy())
-            first = False
         return masks
 
     def genSquareMask(shape, lBound, uBound):
@@ -333,7 +361,6 @@ class CnnAbs:
             if not self.dumpDir.endswith("/"):
                 self.dumpDir += "/"            
             if self.dumpDir and not os.path.exists(self.dumpDir):
-                print(self.dumpDir) #FIXME remove
                 os.mkdir(self.dumpDir)
         else:
             self.dumpDir = self.logDir    
