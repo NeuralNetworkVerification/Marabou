@@ -300,7 +300,7 @@ for i, mask in enumerate(maskList):
             #for var,value in resultObj.vals.items():                
             #    boundDictCopy[resultObj.varsMapping[var]] = (value, value)
             #resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
-            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
+            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunResultObj=resultObj) #FIXME would probably log unwanted results to Results.json, such as additional runs.
             if resultObjRerunSporious.sat():
                 resultObj = resultObjRerunSporious
                 successful = i
