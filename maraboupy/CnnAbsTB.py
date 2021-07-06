@@ -296,10 +296,11 @@ for i, mask in enumerate(maskList):
         elif i+1 == len(maskList):
             raise Exception("Sporious CEX at full network.")
         elif cfg_rerunSporious:
-            boundDictCopy = boundDict.copy()
-            for var,value in resultObj.vals.items():                
-                boundDictCopy[resultObj.varsMapping[var]] = (value, value)
-            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
+            #boundDictCopy = boundDict.copy()
+            #for var,value in resultObj.vals.items():                
+            #    boundDictCopy[resultObj.varsMapping[var]] = (value, value)
+            #resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
+            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
             if resultObjRerunSporious.sat():
                 resultObj = resultObjRerunSporious
                 successful = i
@@ -319,7 +320,7 @@ if cfg_slurmSeq and (cfg_dumpQueries or resultObj.timedOut()):
     cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy)
     
 if not cfg_dumpQueries:    
-    if not resultObj.timedOut():
+    if not resultObj.timedOut() and (successful is not None):
         CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
         cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal        
     #if not resultObj.timedOut(): FIXME should this be printed in slurm_seq when continues to another run?
