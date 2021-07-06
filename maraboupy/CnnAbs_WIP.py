@@ -79,7 +79,7 @@ class PolicyBase:
 
 
     @staticmethod
-    def GeometricStep(n, initStepSize=10, startWith=50, factor=2):
+    def geometricStep(n, initStepSize=10, startWith=30, factor=2):
         stepSize = max(initStepSize,1)
         startWith = max(startWith,0)
         size = n
@@ -94,7 +94,8 @@ class PolicyBase:
 
     @classmethod
     def steps(cls, n):
-        cls.linearStep(n)
+        #return cls.linearStep(n)
+        return cls.geometricStep(n)
     
     def genMaskByOrderedInd(self, sortedIndDecsending, maskShape, includeFull=True):
         mask = np.zeros(maskShape)
@@ -417,7 +418,7 @@ class CnnAbs:
             self.subResultAppend()
         else:
             boundDictCopy = boundDict.copy()
-            freeInputs = True
+            freeInputs = False
             for var,value in rerunResultObj.vals.items():
                 varOrig = rerunResultObj.varsMapping[var]
                 if not (freeInputs and varOrig in rerunResultObj.inputs):
