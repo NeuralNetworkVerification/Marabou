@@ -412,7 +412,6 @@ class CnnAbs:
             else:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
-            result.setStats(originalQueryStats, finalQueryStats)                
         else:
             cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
             self.dumpCex(cex, cexPrediction, prop, runName)
