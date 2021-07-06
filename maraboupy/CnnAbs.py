@@ -21,7 +21,7 @@ from enum import Enum, auto
 import json
 import random
 from tensorflow.keras.models import load_model
-from launchSlurm_WIP import *
+from launchSlurm import *
 
 #################################################################################################################
 #################################################################################################################

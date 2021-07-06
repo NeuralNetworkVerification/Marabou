@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 import itertools
 import argparse
-#from CnnAbs_WIP import *
+#from CnnAbs import *
 #tf.compat.v1.enable_v2_behavior()
 
 ####################################################################################################
@@ -144,7 +144,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
     sbatchCode.append("")
     sbatchCode.append("")
     sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
-    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB_WIP.py {}".format(" ".join(cmd)))
+    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB.py {}".format(" ".join(cmd)))
     sbatchCode.append("")
     sbatchCode.append("date")
 
