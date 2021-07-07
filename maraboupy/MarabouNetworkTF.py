@@ -879,8 +879,9 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.upperBounds = newUpperBounds
 
         # Assign output variables to the new array
-        self.outputVars = newOutVars.reshape(self.outputShape)
-        self.varMap[self.outputOp] = self.outputVars 
+        for op, variables in self.varMap.items():
+            self.varMap[op] = np.vectorize(self.reassignVariable, excluded=[1,2,3])(variables, numInVars, outVars, newOutVars)
+        self.outputVars = self.varMap[self.outputOp]
         
     def makeEquations(self, op):
         """Function to generate equations corresponding to given operation

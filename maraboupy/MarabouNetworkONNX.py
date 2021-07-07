@@ -829,7 +829,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 self.shapeMap.pop(nodeName)
                 
     def reassignVariable(self, var, numInVars, outVars, newOutVars):
-        """Reassign output variable so that output variables follow input variables
+        """Reassign variable so that output variables follow input variables
 
         This function computes what the given variable should be when the output variables are 
         moved to come after the input variables.
@@ -895,7 +895,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.upperBounds = newUpperBounds
 
         # Assign output variables to the new array
-        self.varMap[self.outputName] = newOutVars.reshape(self.shapeMap[self.outputName])
+        for nodeName, variables in self.varMap.items():
+            self.varMap[nodeName] = np.vectorize(self.reassignVariable, excluded=[1,2,3])(variables, numInVars, outVars, newOutVars)
         self.outputVars = self.varMap[self.outputName] 
     
     def evaluateWithoutMarabou(self, inputValues):
