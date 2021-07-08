@@ -148,9 +148,6 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
 {
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
-    // Time to wait if no idle worker is availble
-    boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
-
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
@@ -167,110 +164,28 @@ void MILPFormulator::optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
-    double currentLb;
-    double currentUb;
-
     std::atomic_uint tighterBoundCounter( 0 );
     std::atomic_uint signChanges( 0 );
     std::atomic_uint cutoffs( 0 );
 
     struct timespec gurobiStart = TimeUtils::sampleMicro();
 
-    bool skipTightenLb = false; // If true, skip lower bound tightening
-    bool skipTightenUb = false; // If true, skip upper bound tightening
-
     for ( const auto &currentLayer : layers )
     {
         Layer *layer = currentLayer.second;
 
-        // declare simulations as local var to avoid a problem which can happen due to multi thread process.
-        const Vector<Vector<double>> *simulations = _layerOwner->getLayer( currentLayer.first )->getSimulations();
+        OptArgs args( layer, layers,
+                        currentLayer.first, layer->getLayerIndex(),
+                        std::ref( solverToIndex ),
+                        std::ref( freeSolvers ),
+                        std::ref( mtx ), std::ref( infeasible ),
+                        std::ref( tighterBoundCounter ),
+                        std::ref( signChanges ),
+                        std::ref( cutoffs ),
+                        threads );
 
-        for ( unsigned i = 0; i < layer->getSize(); ++i )
-        {
-            if ( layer->neuronEliminated( i ) )
-                continue;
-
-            currentLb = layer->getLb( i );
-            currentUb = layer->getUb( i );
-
-            if ( _cutoffInUse && ( currentLb >= _cutoffValue || currentUb <= _cutoffValue ) )
-                continue;
-            skipTightenLb = false;
-            skipTightenUb = false;
-
-            // Loop for simulation
-            for ( const auto &simValue : (*simulations).get( i ) )
-            {
-                if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to call tightning upper bound.
-                    skipTightenUb = true;
-
-                if ( _cutoffInUse && simValue < _cutoffValue ) // If x_sim < 0 < x_upper, do not try to call tightning lower bound.
-                    skipTightenLb = true;
-
-                if ( skipTightenUb && skipTightenLb )
-                    break;
-            }
-
-            // If no tightning is needed, continue
-            if ( skipTightenUb && skipTightenLb )
-            {
-                log( Stringf( "Skip tightening lower and upper bounds for layer %d index %u",
-                                   currentLayer.first, i ).ascii() );
-                continue;
-            }
-            else if ( skipTightenUb )
-            {
-                log( Stringf( "Skip tightening upper bound for layer %u index %u",
-                                   currentLayer.first, i ).ascii() );
-            }
-            else if ( skipTightenLb )
-            {
-                log( Stringf( "Skip tightening lower bound for layer %u index %u",
-                                   currentLayer.first, i ).ascii() );
-            }
-
-            if ( infeasible )
-            {
-                // infeasibility is derived, interupt all active threads
-                for ( unsigned i = 0; i < numberOfWorkers; ++i )
-                {
-                    threads[i].interrupt();
-                    threads[i].join();
-                }
-                clearSolverQueue( freeSolvers );
-                throw InfeasibleQueryException();
-            }
-
-            // Wait until there is an idle solver
-            GurobiWrapper *freeSolver;
-            while ( !freeSolvers.pop( freeSolver ) )
-                boost::this_thread::sleep_for( waitTime );
-
-            freeSolver->resetModel();
-
-            mtx.lock();
-            _lpFormulator.createLPRelaxation( layers, *freeSolver, layer->getLayerIndex() );
-            mtx.unlock();
-
-            // spawn a thread to tighten the bounds for the current variable
-            ThreadArgument argument( freeSolver, layer, &layers,
-                                     i, currentLb, currentUb,
-                                     _cutoffInUse, _cutoffValue,
-                                     _layerOwner, std::ref( freeSolvers ),
-                                     std::ref( mtx ), std::ref( infeasible ),
-                                     std::ref( tighterBoundCounter ),
-                                     std::ref( signChanges ),
-                                     std::ref( cutoffs ),
-                                     skipTightenLb,
-                                     skipTightenUb );
-
-            if ( numberOfWorkers == 1 )
-                tightenSingleVariableBoundsWithMILPEncoding( argument );
-            else
-                threads[solverToIndex[freeSolver]] = boost::thread
-                    ( tightenSingleVariableBoundsWithMILPEncoding, argument );
-        }
+        // optimize every neuron of layer
+        optimizeBoundsOfNeuronsWithMILPEncoding( args );
     }
 
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
@@ -293,9 +208,6 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
 {
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
-    // Time to wait if no idle worker is availble
-    boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
-
     Map<GurobiWrapper *, unsigned> solverToIndex;
     // Create a queue of free workers
     // When a worker is working, it is popped off the queue, when it is done, it
@@ -312,19 +224,69 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
     std::mutex mtx;
     std::atomic_bool infeasible( false );
 
-    double currentLb;
-    double currentUb;
-
     std::atomic_uint tighterBoundCounter( 0 );
     std::atomic_uint signChanges( 0 );
     std::atomic_uint cutoffs( 0 );
 
     struct timespec gurobiStart = TimeUtils::sampleMicro();
 
+    Layer *layer = layers[targetIndex];
+
+    OptArgs args( layer, layers,
+                    targetIndex, layers.size() - 1,
+                    std::ref( solverToIndex ),
+                    std::ref( freeSolvers ),
+                    std::ref( mtx ), std::ref( infeasible ),
+                    std::ref( tighterBoundCounter ),
+                    std::ref( signChanges ),
+                    std::ref( cutoffs ),
+                    threads );
+
+    // optimize every neuron of layer
+    optimizeBoundsOfNeuronsWithMILPEncoding( args );
+
+    for ( unsigned i = 0; i < numberOfWorkers; ++i )
+    {
+        threads[i].join();
+    }
+
+    struct timespec gurobiEnd = TimeUtils::sampleMicro();
+
+    log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
+                  tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ) );
+    log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
+    clearSolverQueue( freeSolvers );
+
+    if ( infeasible )
+        throw InfeasibleQueryException();
+}
+
+void MILPFormulator::optimizeBoundsOfNeuronsWithMILPEncoding( OptArgs &args )
+{
+    unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
+
+    // Time to wait if no idle worker is availble
+    boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
+    
+    Layer *layer = args._layer;
+    const Map<unsigned, Layer *> &layers = args._layers;
+    unsigned targetIndex = args._targetIndex;
+    unsigned lastIndexOfRelaxation = args._lastIndexOfRelaxation;
+
+    Map<GurobiWrapper *, unsigned> solverToIndex = args._solverToIndex;
+    SolverQueue &freeSolvers = args._freeSolvers;
+    std::mutex &mtx = args._mtx;
+    std::atomic_bool &infeasible = args._infeasible;
+    std::atomic_uint &tighterBoundCounter = args._tighterBoundCounter;
+    std::atomic_uint &signChanges = args._signChanges;
+    std::atomic_uint &cutoffs = args._cutoffs;
+    boost::thread *threads = args._threads;
+
+    double currentLb;
+    double currentUb;
+
     bool skipTightenLb = false; // If true, skip lower bound tightening
     bool skipTightenUb = false; // If true, skip upper bound tightening
-
-    Layer *layer = layers[targetIndex];
 
     // declare simulations as local var to avoid a problem which can happen due to multi thread process.
     const Vector<Vector<double>> *simulations = _layerOwner->getLayer( targetIndex )->getSimulations();
@@ -339,6 +301,7 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
 
         if ( _cutoffInUse && ( currentLb >= _cutoffValue || currentUb <= _cutoffValue ) )
             continue;
+
         skipTightenLb = false;
         skipTightenUb = false;
 
@@ -393,7 +356,7 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
         freeSolver->resetModel();
 
         mtx.lock();
-        _lpFormulator.createLPRelaxation( layers, *freeSolver, layers.size() - 1 );
+        _lpFormulator.createLPRelaxation( layers, *freeSolver, lastIndexOfRelaxation );
         mtx.unlock();
 
         // spawn a thread to tighten the bounds for the current variable
@@ -405,7 +368,7 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
                                     std::ref( tighterBoundCounter ),
                                     std::ref( signChanges ),
                                     std::ref( cutoffs ),
-                                    skipTightenLb,
+                                    skipTightenLb, 
                                     skipTightenUb );
 
         if ( numberOfWorkers == 1 )
@@ -414,21 +377,6 @@ void MILPFormulator::optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigne
             threads[solverToIndex[freeSolver]] = boost::thread
                 ( tightenSingleVariableBoundsWithMILPEncoding, argument );
     }
-
-    for ( unsigned i = 0; i < numberOfWorkers; ++i )
-    {
-        threads[i].join();
-    }
-
-    struct timespec gurobiEnd = TimeUtils::sampleMicro();
-
-    log( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                  tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ) );
-    log( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ) );
-    clearSolverQueue( freeSolvers );
-
-    if ( infeasible )
-        throw InfeasibleQueryException();
 }
 
 void MILPFormulator::tightenSingleVariableBoundsWithMILPEncoding( ThreadArgument &argument )

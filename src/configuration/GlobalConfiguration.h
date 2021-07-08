@@ -225,11 +225,6 @@ public:
     static const bool GUROBI_LOGGING;
 #endif // ENABLE_GUROBI
 
-    /* 
-      If true, perform LP tightening after case splits
-    */
-    static const bool LP_TIGHTENING_AFTER_SPLIT;
-  
     /*
       Logging options
     */

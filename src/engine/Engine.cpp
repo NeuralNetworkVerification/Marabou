@@ -1202,21 +1202,23 @@ void Engine::performMILPSolverBoundedTightening()
 
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
-    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() && GlobalConfiguration::LP_TIGHTENING_AFTER_SPLIT )
+    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() && !Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
         switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
         case MILPSolverBoundTighteningType::LP_RELAXATION:
-        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
-            _networkLevelReasoner->lpRelaxation( targetIndex );
+            _networkLevelReasoner->LPTigheningForOneLayer( targetIndex );
             break;
+        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
+            return;
 
         case MILPSolverBoundTighteningType::MILP_ENCODING:
-        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
             _networkLevelReasoner->MILPTigheningForOneLayer( targetIndex );
             break;
+        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
+            return;
 
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:

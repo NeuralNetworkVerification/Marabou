@@ -19,11 +19,13 @@
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "ParallelSolver.h"
+#include "Map.h"
 #include <climits>
 
 #include <atomic>
 #include <boost/lockfree/queue.hpp>
 #include <boost/chrono.hpp>
+#include <boost/thread.hpp>
 #include <mutex>
 
 namespace NLR {
@@ -82,6 +84,49 @@ private:
     bool _cutoffInUse;
     double _cutoffValue;
 
+    /*
+      Argument for optimizeBoundsOfNeuronsWithLpRlaxation
+    */
+    struct OptArgs{
+
+        OptArgs( Layer *layer, const Map<unsigned, Layer *> &layers, 
+                        unsigned targetIndex, unsigned lastIndexOfRelaxation,
+                        Map<GurobiWrapper *, unsigned> &solverToIndex,
+                        SolverQueue &freeSolvers,
+                        std::mutex &mtx, std::atomic_bool &infeasible,
+                        std::atomic_uint &tighterBoundCounter,
+                        std::atomic_uint &signChanges,
+                        std::atomic_uint &cutoffs,
+                        boost::thread *threads)
+        : _layer( layer )
+        , _layers( layers )
+        , _lastIndexOfRelaxation( lastIndexOfRelaxation )
+        , _solverToIndex( solverToIndex )
+        , _targetIndex ( targetIndex )
+        , _freeSolvers( freeSolvers )
+        , _mtx( mtx )
+        , _infeasible( infeasible )
+        , _tighterBoundCounter( tighterBoundCounter )
+        , _signChanges( signChanges )
+        , _cutoffs( cutoffs )
+        , _threads( threads )
+        {
+        }
+
+        Layer *_layer;
+        const Map<unsigned, Layer *> &_layers;
+        unsigned _lastIndexOfRelaxation;
+        Map<GurobiWrapper *, unsigned> &_solverToIndex;
+        unsigned _targetIndex;
+        SolverQueue &_freeSolvers;
+        std::mutex &_mtx;
+        std::atomic_bool &_infeasible;
+        std::atomic_uint &_tighterBoundCounter;
+        std::atomic_uint &_signChanges;
+        std::atomic_uint &_cutoffs;
+        boost::thread *_threads;
+    };
+
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
                                       const Layer *layer );
 
@@ -96,6 +141,8 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
+
+    void optimizeBoundsOfNeuronsWithLpRlaxation( OptArgs &args );
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints

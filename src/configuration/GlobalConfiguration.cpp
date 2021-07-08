@@ -92,8 +92,6 @@ const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
 const bool GlobalConfiguration::GUROBI_LOGGING = false;
 #endif // ENABLE_GUROBI
 
-const bool GlobalConfiguration::LP_TIGHTENING_AFTER_SPLIT = true;
-
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
 const bool GlobalConfiguration::ENGINE_LOGGING = false;
