@@ -217,7 +217,19 @@ for fullpath in resultsFiles:
         if "cfg_runTitle" in resultDict:
             runTitle = resultDict["cfg_runTitle"].split("---")[0]
         else:
-            runTitle = resultDict["cfg_runSuffix"].split("---")[0]
+            r = re.compile("cfg_runTitle.*")
+            matches = list(filter(r.match, resultDict.keys()))
+            if matches:
+                runTitle = resultDict[matches[0]].split("---")[0]
+            elif "cfg_runSuffix" in resultDict:
+                runTitle = resultDict["cfg_runSuffix"].split("---")[0]
+            else:
+                r = re.compile("cfg_runSuffix.*")
+                matches = list(filter(r.match, resultDict.keys()))
+                if matches:
+                    runTitle = resultDict[matches[0]].split("---")[0]
+                else:
+                    raise Exception("No runtitle matches")
         if resultDict["subResults"] and resultDict["subResults"][-1]["originalQueryStats"] and resultDict["subResults"][-1]["finalQueryStats"]:
             originalQueryStats = resultDict["subResults"][-1]["originalQueryStats"]
             finalQueryStats = resultDict["subResults"][-1]["finalQueryStats"]
@@ -234,7 +246,12 @@ for fullpath in resultsFiles:
         assert len(originalQueryStats) == len(finalQueryStats)
         successfulRuntime = -1 if resultDict["Result"].upper() == "TIMEOUT" or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
         totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
-        sampleIndex = resultDict["cfg_sampleIndex"]
+        if "cfg_sampleIndex" in resultDict:
+            sampleIndex = resultDict["cfg_sampleIndex"]
+        else:
+            r = re.compile("cfg_sampleIndex.*")
+            matches = list(filter(r.match, resultDict.keys()))
+            sampleIndex = resultDict[matches[0]]
                         
         if runTitle not in results:
             results[runTitle] = dict()
