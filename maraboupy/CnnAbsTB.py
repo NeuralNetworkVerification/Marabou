@@ -316,13 +316,18 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
-if cfg_slurmSeq and (cfg_dumpQueries or resultObj.timedOut()):
+success = not resultObj.timedOut() and (successful is not None)
+if cfg_slurmSeq and (cfg_dumpQueries or not success):
+    cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
+    cnnAbs.dumpResultsJson()
+    CnnAbs.printLog("Launching next mask")
     cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy)
     
 if not cfg_dumpQueries:    
-    if not resultObj.timedOut() and (successful is not None):
+    if success:
         CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
-        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal        
+        accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
+        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime
     #if not resultObj.timedOut(): FIXME should this be printed in slurm_seq when continues to another run?
         cnnAbs.resultsJson["SAT"] = resultObj.sat()
         cnnAbs.resultsJson["Result"] = resultObj.result.name
