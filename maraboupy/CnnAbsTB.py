@@ -316,7 +316,10 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
-success = not resultObj.timedOut() and (successful is not None)
+if not cfg_dumpQueries:
+    success = not resultObj.timedOut() and (successful is not None)
+else:
+    success = False
 if cfg_slurmSeq and (cfg_dumpQueries or not success):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
