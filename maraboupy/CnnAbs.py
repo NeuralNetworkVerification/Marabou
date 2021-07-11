@@ -431,7 +431,7 @@ class CnnAbs:
             mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs = self.genAdvMbouNet(model, prop, boundDict, runName, coi)
             ipq = mbouNet.getMarabouQuery()
             if onlyDump:
-                return "IPQ_" + runName            
+                return None
         else:
             ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
         vals, stats = Marabou.solve_query(ipq, verbose=rerun, options=self.optionsObj) #FIXME verbosity should be False
