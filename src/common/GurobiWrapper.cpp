@@ -185,6 +185,30 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
     }
 }
 
+void GurobiWrapper::addPiecewiseLinearConstraint( String sourceVariable,
+                                                  String targetVariable,
+                                                  unsigned numPoints,
+                                                  const double *xPts,
+                                                  const double *yPts )
+{
+    try
+    {
+        _model->addGenConstrPWL( *_nameToVariable[sourceVariable],
+                                 *_nameToVariable[targetVariable],
+                                 numPoints,
+                                 xPts,
+                                 yPts );
+    }
+    catch (GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
+}
+
+
 void GurobiWrapper::setCost( const List<Term> &terms )
 {
     try

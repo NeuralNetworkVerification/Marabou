@@ -23,6 +23,8 @@ class GlobalConfiguration
 public:
     static void print();
 
+    static const double LEAKY_RELU_SLOPE;
+
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;
 
     // The default epsilon used for comparing doubles

@@ -19,6 +19,7 @@
 #include "Equation.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
+#include "LeakyReluConstraint.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
@@ -205,6 +206,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         if ( coType == "relu" )
         {
             constraint = new ReluConstraint( serializeConstraint );
+        }
+        else if ( coType == "leaky_relu" )
+        {
+            constraint = new LeakyReluConstraint( serializeConstraint );
         }
         else if ( coType == "max" )
         {

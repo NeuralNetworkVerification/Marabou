@@ -71,6 +71,12 @@ public:
     // Add a new EQ constraint, e.g. 3x + 4y = -5
     void addEqConstraint( const List<Term> &terms, double scalar );
 
+    // Add a piece-wise linear constraint
+    void addPiecewiseLinearConstraint( String sourceVariable,
+                                       String targetVariable,
+                                       unsigned numPoints,
+                                       const double *xPts, const double *yPts );
+
     // A cost function to minimize, or an objective function to maximize
     void setCost( const List<Term> &terms );
     void setObjective( const List<Term> &terms );
@@ -162,6 +168,11 @@ public:
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
+    void addPiecewiseLinearConstraint( String,
+                                       String,
+                                       unsigned,
+                                       const double *, const double * ) {}
+
     void setCost( const List<Term> & ) {}
     void setObjective( const List<Term> & ) {}
     void setCutoff( double ) {};

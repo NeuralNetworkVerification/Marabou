@@ -13,6 +13,7 @@
 
  **/
 
+#include "GlobalConfiguration.h"
 #include "Layer.h"
 #include "Options.h"
 #include "SymbolicBoundTighteningType.h"
@@ -157,6 +158,18 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == LEAKY_RELU )
+    {
+        double slope = _alpha;
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = FloatUtils::max( inputValue, slope * inputValue );
+        }
+    }
+
     else if ( _type == ABSOLUTE_VALUE )
     {
         for ( unsigned i = 0; i < _size; ++i )
@@ -243,6 +256,17 @@ void Layer::computeSimulations()
             const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
             for ( unsigned j = 0; j < simulationSize; ++j )
                 _simulations[i][j] = FloatUtils::max( simulations.get( j ), 0 );
+        }
+    }
+    else if ( _type == LEAKY_RELU )
+    {
+        double slope = _alpha;
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), slope * simulations.get( j ) );
         }
     }
     else if ( _type == ABSOLUTE_VALUE )
@@ -402,7 +426,7 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
+    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -410,7 +434,7 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
     _neuronToActivationSources[targetNeuron].append( NeuronIndex( sourceLayer, sourceNeuron ) );
 
     DEBUG({
-            if ( _type == RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
+            if ( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
 }
@@ -1520,6 +1544,7 @@ Layer::Layer( const Layer *other )
     _type = other->_type;
     _size = other->_size;
     _layerOwner = other->_layerOwner;
+    _alpha = other->_alpha;
 
     allocateMemory();
 
@@ -1698,6 +1723,10 @@ String Layer::typeToString( Type type )
         return "RELU";
         break;
 
+    case LEAKY_RELU:
+        return "LEAKY_RELU";
+        break;
+
     case ABSOLUTE_VALUE:
         return "ABSOLUTE_VALUE";
         break;
@@ -1764,6 +1793,7 @@ void Layer::dump() const
         break;
 
     case RELU:
+    case LEAKY_RELU:
     case ABSOLUTE_VALUE:
     case MAX:
     case SIGN:
