@@ -220,10 +220,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 continue;
             }
 
-            if ( !_tableau->allBoundsValid() )
+            if ( !_tableau->allBoundsValid() )  // TG: ここでチェック
             {
                 // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();
+                throw InfeasibleQueryException();   // TG: これが投げられる
             }
 
             if ( allVarsWithinBounds() )
@@ -1111,7 +1111,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( preprocess )
         {
-            performSymbolicBoundTightening();
+            performSymbolicBoundTightening();   // TG: ここでチェック。ただ、この後の InfeasibleQueryException を catch するまでのコートで、 allBoundsValid を呼び出すところがないかも。。なければ、呼ばないのと、solve を呼んでしまうから要確認。Preprocessor::processEquations()　で確認できるてるかなー？、、
             performSimulation();
             performMILPSolverBoundedTightening();
         }
@@ -1130,7 +1130,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
-    catch ( const InfeasibleQueryException & )
+    catch ( const InfeasibleQueryException & )  // TG: ここでキャッチして UNSAT を返すのね
     {
         ENGINE_LOG( "processInputQuery done\n" );
 

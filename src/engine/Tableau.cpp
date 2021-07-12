@@ -1754,7 +1754,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     if ( _statistics )
         _statistics->incNumTightenedBounds();
 
-    setLowerBound( variable, value );
+    setLowerBound( variable, value );   // TG: update bound
 
     updateVariableToComplyWithLowerBoundUpdate( variable, value );
 }
