@@ -25,7 +25,6 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "NLRError.h"
-#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
@@ -58,6 +57,9 @@ Engine::Engine()
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
     , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
+    , _isGurobyEnabled( Options::get()->gurobiEnabled() )
+    , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+    , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -1202,20 +1204,21 @@ void Engine::performMILPSolverBoundedTightening()
 
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
-    if ( _networkLevelReasoner && Options::get()->gurobiEnabled() && !Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+    if ( _networkLevelReasoner && _isGurobyEnabled && !_isSkipLpTighteningAfterSplit
+            && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
         switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
         case MILPSolverBoundTighteningType::LP_RELAXATION:
-            _networkLevelReasoner->LPTigheningForOneLayer( targetIndex );
+            _networkLevelReasoner->LPTighteningForOneLayer( targetIndex );
             break;
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
             return;
 
         case MILPSolverBoundTighteningType::MILP_ENCODING:
-            _networkLevelReasoner->MILPTigheningForOneLayer( targetIndex );
+            _networkLevelReasoner->MILPTighteningForOneLayer( targetIndex );
             break;
         case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
             return;

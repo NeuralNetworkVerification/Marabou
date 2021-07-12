@@ -117,9 +117,9 @@ public:
     void symbolicBoundPropagation();
     void deepPolyPropagation();
     void lpRelaxationPropagation();
-    void LPTigheningForOneLayer( unsigned targetIndex );
+    void LPTighteningForOneLayer( unsigned targetIndex );
     void MILPPropagation();
-    void MILPTigheningForOneLayer( unsigned targetIndex );
+    void MILPTighteningForOneLayer( unsigned targetIndex );
     void iterativePropagation();
 
     void receiveTighterBound( Tightening tightening );

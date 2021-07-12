@@ -25,17 +25,18 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
-#include "SnCDivideStrategy.h"
 #include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
 #include "MILPEncoder.h"
+#include "Options.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
 #include "SmtCore.h"
+#include "SnCDivideStrategy.h"
 #include "Statistics.h"
 #include "SymbolicBoundTighteningType.h"
 
@@ -366,9 +367,14 @@ private:
     std::unique_ptr<MILPEncoder> _milpEncoder;
 
     /*
-      Number of simulations
+      Stored options
+      Do this since Options object is not thread safe and 
+      there is a chance that multiple Engine object be accessing the Options object.
     */
     unsigned _simulationSize;
+    bool _isGurobyEnabled;
+    bool _isSkipLpTighteningAfterSplit;
+    MILPSolverBoundTighteningType _milpSolverBoundTighteningType;
 
     /*
       Perform a simplex step: compute the cost function, pick the

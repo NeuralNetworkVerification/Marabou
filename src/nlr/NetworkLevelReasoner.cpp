@@ -164,7 +164,7 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
         lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 
-void NetworkLevelReasoner::LPTigheningForOneLayer( unsigned targetIndex )
+void NetworkLevelReasoner::LPTighteningForOneLayer( unsigned targetIndex )
 {
     LPFormulator lpFormulator( this );
     lpFormulator.setCutoff( 0 );
@@ -189,7 +189,7 @@ void NetworkLevelReasoner::MILPPropagation()
         milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
 }
 
-void NetworkLevelReasoner::MILPTigheningForOneLayer( unsigned targetIndex )
+void NetworkLevelReasoner::MILPTighteningForOneLayer( unsigned targetIndex )
 {
     MILPFormulator milpFormulator( this );
     milpFormulator.setCutoff( 0 );
