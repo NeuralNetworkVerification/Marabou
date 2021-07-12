@@ -249,34 +249,37 @@ protected:
      */
     inline bool existsLowerBound( unsigned var ) const
     {
-      return _boundManager != nullptr || _lowerBounds.exists( var );
+        return _boundManager != nullptr || _lowerBounds.exists( var );
     }
 
     inline bool existsUpperBound( unsigned var ) const
     {
-      return _boundManager != nullptr || _upperBounds.exists( var );
+        return _boundManager != nullptr || _upperBounds.exists( var );
     }
 
     inline double getLowerBound( unsigned var ) const override
     {
-      return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var ) : _lowerBounds[var];
+        return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
+                                            : _lowerBounds[var];
     }
 
     inline double getUpperBound( unsigned var ) const override
     {
-      return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var ) : _upperBounds[var];
+        return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
+                                            : _upperBounds[var];
     }
 
     inline void setLowerBound( unsigned var, double value )
     {
-      ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value ) : _lowerBounds[var] = value;
+        ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
+                                     : _lowerBounds[var] = value;
     }
 
     inline void setUpperBound( unsigned var, double value )
     {
-      ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value ) : _upperBounds[var] = value;
+        ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
+                                     : _upperBounds[var] = value;
     }
 };
 
 #endif // __ContextDependentPiecewiseLinearConstraint_h__
-
