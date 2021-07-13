@@ -294,7 +294,6 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
                 for ( const auto &element : _elements )
                 {
                     if ( !existsUpperBound( element ) || FloatUtils::gt( getUpperBound( element ), fUB ) )
-                         FloatUtils::gt( getUpperBound( element ), fUB ) )
                         tightenings.append( Tightening( element, fUB, Tightening::UB ) );
                 }
             }

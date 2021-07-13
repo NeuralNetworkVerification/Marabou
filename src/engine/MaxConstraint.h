@@ -28,8 +28,8 @@
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
-#include "Map.h"
 #include "ContextDependentPiecewiseLinearConstraint.h"
+#include "Map.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
 
@@ -174,7 +174,6 @@ public:
     bool wereVariablesEliminated() const;
 
 
-
     bool isImplication() const override;
 
 private:
@@ -228,16 +227,17 @@ private:
 
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
-        return ( variable == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET  );
+        return ( variable == MAX_PHASE_ELIMINATED )
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
-        return ( phase == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+        return ( phase == MAX_PHASE_ELIMINATED )
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
-
 };
 
 #endif // __MaxConstraint_h__
