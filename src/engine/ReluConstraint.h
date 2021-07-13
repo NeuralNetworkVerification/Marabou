@@ -30,6 +30,7 @@
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+
 #include <cmath>
 
 class ReluConstraint : public ContextDependentPiecewiseLinearConstraint
@@ -234,8 +235,6 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
-
 };
 
 #endif // __ReluConstraint_h__
-
