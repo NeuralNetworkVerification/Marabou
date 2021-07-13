@@ -124,19 +124,19 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
     if ( _phaseStatus != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
-    List <PiecewiseLinearCaseSplit> splits;
+    List<PiecewiseLinearCaseSplit> splits;
 
     if ( _direction == SIGN_PHASE_NEGATIVE )
     {
-      splits.append( getNegativeSplit() );
-      splits.append( getPositiveSplit() );
-      return splits;
+        splits.append( getNegativeSplit() );
+        splits.append( getPositiveSplit() );
+        return splits;
     }
     if ( _direction == SIGN_PHASE_POSITIVE )
     {
-      splits.append( getPositiveSplit() );
-      splits.append( getNegativeSplit() );
-      return splits;
+        splits.append( getPositiveSplit() );
+        splits.append( getNegativeSplit() );
+        return splits;
     }
 
     // If we have existing knowledge about the assignment, use it to
@@ -170,19 +170,19 @@ List<PhaseStatus> SignConstraint::getAllCases() const
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     if ( _direction == SIGN_PHASE_NEGATIVE )
-      return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
+        return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
 
     if ( _direction == SIGN_PHASE_POSITIVE )
-      return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
+        return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
     if ( _assignment.exists( _f ) )
     {
         if ( FloatUtils::isPositive( _assignment[_f] ) )
-          return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
+            return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
         else
-          return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
+            return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
     }
 
     return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
@@ -190,12 +190,12 @@ List<PhaseStatus> SignConstraint::getAllCases() const
 
 PiecewiseLinearCaseSplit SignConstraint::getCaseSplit( PhaseStatus phase ) const
 {
-  if ( phase == SIGN_PHASE_NEGATIVE )
-      return getNegativeSplit();
-  else if ( phase == SIGN_PHASE_POSITIVE )
-      return getPositiveSplit();
-  else
-      throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
+    if ( phase == SIGN_PHASE_NEGATIVE )
+        return getNegativeSplit();
+    else if ( phase == SIGN_PHASE_POSITIVE )
+        return getPositiveSplit();
+    else
+        throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
 }
 
 PiecewiseLinearCaseSplit SignConstraint::getNegativeSplit() const
@@ -233,7 +233,7 @@ PiecewiseLinearCaseSplit SignConstraint::getImpliedCaseSplit() const
 
 PiecewiseLinearCaseSplit SignConstraint::getValidCaseSplit() const
 {
-  return getImpliedCaseSplit();
+    return getImpliedCaseSplit();
 }
 
 bool SignConstraint::constraintObsolete() const
@@ -265,17 +265,17 @@ String SignConstraint::phaseToString( PhaseStatus phase )
 {
     switch ( phase )
     {
-        case PHASE_NOT_FIXED:
-            return "PHASE_NOT_FIXED";
+    case PHASE_NOT_FIXED:
+        return "PHASE_NOT_FIXED";
 
-        case SIGN_PHASE_POSITIVE:
-            return "SIGN_PHASE_POSITIVE";
+    case SIGN_PHASE_POSITIVE:
+        return "SIGN_PHASE_POSITIVE";
 
-        case SIGN_PHASE_NEGATIVE:
-            return "SIGN_PHASE_NEGATIVE";
+    case SIGN_PHASE_NEGATIVE:
+        return "SIGN_PHASE_NEGATIVE";
 
-        default:
-            return "UNKNOWN";
+    default:
+        return "UNKNOWN";
     }
 };
 
@@ -402,7 +402,7 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
 void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    ASSERT( oldIndex == _b || oldIndex == _f  );
+    ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_boundManager );
     ASSERT( !_assignment.exists( newIndex ) &&
             !_lowerBounds.exists( newIndex ) &&
@@ -499,13 +499,13 @@ void SignConstraint::dump( String &output ) const
 
 double SignConstraint::computePolarity() const
 {
-  double currentLb = getLowerBound( _b );
-  double currentUb = getUpperBound( _b );
-  if ( !FloatUtils::isNegative( currentLb ) ) return 1;
-  if ( FloatUtils::isNegative( currentUb ) ) return -1;
-  double width = currentUb - currentLb;
-  double sum = currentUb + currentLb;
-  return sum / width;
+    double currentLb = getLowerBound( _b );
+    double currentUb = getUpperBound( _b );
+    if ( !FloatUtils::isNegative( currentLb ) ) return 1;
+    if ( FloatUtils::isNegative( currentUb ) ) return -1;
+    double width = currentUb - currentLb;
+    double sum = currentUb + currentLb;
+    return sum / width;
 }
 
 void SignConstraint::updateDirection()
@@ -516,15 +516,15 @@ void SignConstraint::updateDirection()
 
 PhaseStatus SignConstraint::getDirection() const
 {
-  return _direction;
+    return _direction;
 }
 
 void SignConstraint::updateScoreBasedOnPolarity()
 {
-  _score = std::abs( computePolarity() );
+    _score = std::abs( computePolarity() );
 }
 
 bool SignConstraint::supportPolarity() const
 {
-  return true;
+    return true;
 }
