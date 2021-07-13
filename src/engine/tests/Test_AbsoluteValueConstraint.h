@@ -35,7 +35,7 @@ public:
 class TestAbsConstraint : public AbsoluteValueConstraint
 {
 public:
-    TestAbsConstraint(unsigned b, unsigned f)
+    TestAbsConstraint( unsigned b, unsigned f )
         : AbsoluteValueConstraint( b, f )
     {}
 
@@ -133,7 +133,7 @@ public:
         ++it;
         TS_ASSERT_EQUALS( *it, f );
 
-        TS_ASSERT_EQUALS( abs.getParticipatingVariables(), List<unsigned>( {1,4} ) );
+        TS_ASSERT_EQUALS( abs.getParticipatingVariables(), List<unsigned>( { 1, 4 } ) );
 
         TS_ASSERT( abs.participatingVariable( b ) );
         TS_ASSERT( abs.participatingVariable( f ) );
@@ -495,7 +495,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyUpperBound( b, 7 );
@@ -546,7 +546,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyUpperBound( b, 7 );
@@ -595,7 +595,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
 
             abs.notifyUpperBound( b, 6 );
             abs.notifyUpperBound( f, 5 );
@@ -618,7 +618,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
 
             abs.notifyUpperBound( b, 6 );
             abs.notifyUpperBound( f, 5 );
@@ -651,15 +651,14 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( f, 0, Tightening::LB ),
 
-                                              Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 10, Tightening::UB ),
-                                              Tightening( f, 5, Tightening::LB ),
-                                              Tightening( f, 10, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 0, Tightening::LB ),
+                                          Tightening( b, 10, Tightening::UB ),
+                                          Tightening( f, 5, Tightening::LB ),
+                                          Tightening( f, 10, Tightening::UB ),
+                                      } ) );
         }
 
         {   // With Bound Manager
@@ -684,15 +683,14 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( f, 0, Tightening::LB ),
 
-                                              Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 10, Tightening::UB ),
-                                              Tightening( f, 5, Tightening::LB ),
-                                              Tightening( f, 10, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 0, Tightening::LB ),
+                                          Tightening( b, 10, Tightening::UB ),
+                                          Tightening( f, 5, Tightening::LB ),
+                                          Tightening( f, 10, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -703,7 +701,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -6 );
@@ -715,12 +713,11 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 6, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 6, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -729,12 +726,11 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 6, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 6, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -743,16 +739,15 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 6, Tightening::UB ),
-                                              Tightening( b, -2, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 6, Tightening::UB ),
+                                          Tightening( b, -2, Tightening::UB ),
+                                      } ) );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -762,7 +757,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -6 );
@@ -774,12 +769,11 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 6, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 6, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -788,12 +782,11 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 6, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 6, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -802,13 +795,12 @@ public:
             abs.getEntailedTightenings( entailedTightenings );
 
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 6, Tightening::UB ),
-                                              Tightening( b, -2, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 6, Tightening::UB ),
+                                          Tightening( b, -2, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -819,7 +811,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -5 );
@@ -830,12 +822,11 @@ public:
             // -5 < x_b < 10 ,3 < x_f < 7
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -7, Tightening::LB ),
-                                              Tightening( b, 7, Tightening::UB ),
-                                              Tightening( f, 10, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 7, Tightening::UB ),
+                                          Tightening( f, 10, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -844,13 +835,12 @@ public:
 
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -7, Tightening::LB ),
-                                              Tightening( b, 7, Tightening::UB ),
-                                              Tightening( f, 10, Tightening::UB ),
-                                              Tightening( b, 6, Tightening::LB ),
-                                              }) );
+                                          Tightening( b, 7, Tightening::UB ),
+                                          Tightening( f, 10, Tightening::UB ),
+                                          Tightening( b, 6, Tightening::LB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -862,17 +852,16 @@ public:
 
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -7, Tightening::LB ),
-                                              Tightening( b, 7, Tightening::UB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              Tightening( b, 6, Tightening::LB ),
-                                              Tightening( b, -6, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 7, Tightening::UB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                          Tightening( b, 6, Tightening::LB ),
+                                          Tightening( b, -6, Tightening::UB ),
+                                      } ) );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -882,7 +871,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -5 );
@@ -893,12 +882,11 @@ public:
             // -5 < x_b < 10 ,3 < x_f < 7
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -7, Tightening::LB ),
-                                              Tightening( b, 7, Tightening::UB ),
-                                              Tightening( f, 10, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 7, Tightening::UB ),
+                                          Tightening( f, 10, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -907,13 +895,12 @@ public:
 
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -7, Tightening::LB ),
-                                              Tightening( b, 7, Tightening::UB ),
-                                              Tightening( f, 10, Tightening::UB ),
-                                              Tightening( b, 6, Tightening::LB ),
-                                              }) );
+                                          Tightening( b, 7, Tightening::UB ),
+                                          Tightening( f, 10, Tightening::UB ),
+                                          Tightening( b, 6, Tightening::LB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -925,14 +912,13 @@ public:
 
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -7, Tightening::LB ),
-                                              Tightening( b, 7, Tightening::UB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              Tightening( b, 6, Tightening::LB ),
-                                              Tightening( b, -6, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 7, Tightening::UB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                          Tightening( b, 6, Tightening::LB ),
+                                          Tightening( b, -6, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -942,8 +928,8 @@ public:
             unsigned b = 1;
             unsigned f = 4;
 
-            AbsoluteValueConstraint abs(b, f);
-            List <Tightening> entailedTightenings;
+            AbsoluteValueConstraint abs( b, f );
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -1 );
@@ -954,27 +940,26 @@ public:
             // -1 < x_b < 1 ,2 < x_f < 4
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 1, Tightening::UB ),
-                                              Tightening( b, 2, Tightening::LB ),
-                                              Tightening( b, -2, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 1, Tightening::UB ),
+                                          Tightening( b, 2, Tightening::LB ),
+                                          Tightening( b, -2, Tightening::UB ),
+                                      } ) );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
-            AbsoluteValueConstraint abs(b, f);
+            AbsoluteValueConstraint abs( b, f );
             Context context;
             BoundManager boundManager( context );
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -1 );
@@ -985,14 +970,13 @@ public:
             // -1 < x_b < 1 ,2 < x_f < 4
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -4, Tightening::LB ),
-                                              Tightening( b, 4, Tightening::UB ),
-                                              Tightening( f, 1, Tightening::UB ),
-                                              Tightening( b, 2, Tightening::LB ),
-                                              Tightening( b, -2, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 4, Tightening::UB ),
+                                          Tightening( f, 1, Tightening::UB ),
+                                          Tightening( b, 2, Tightening::LB ),
+                                          Tightening( b, -2, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -1003,7 +987,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -7 );
@@ -1014,12 +998,11 @@ public:
             // -7 < x_b < 7 ,0 < x_f < 6
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -6, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 7, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 7, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1028,25 +1011,23 @@ public:
             abs.notifyUpperBound( b, 5 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -6, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 7, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 7, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
             // 0 < x_b < 5 ,0 < x_f < 6
             abs.notifyLowerBound( b, 0 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 0, Tightening::LB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 0, Tightening::LB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1055,19 +1036,19 @@ public:
             abs.notifyLowerBound( b, 3 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 3, Tightening::LB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              }) );
-        }{
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 3, Tightening::LB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                      } ) );
+        }
+        {
             unsigned b = 1;
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -7 );
@@ -1078,12 +1059,11 @@ public:
             // -7 < x_b < 7 ,0 < x_f < 6
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -6, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 7, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 7, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1092,25 +1072,23 @@ public:
             abs.notifyUpperBound( b, 5 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -6, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 7, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 7, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
             // 0 < x_b < 5 ,0 < x_f < 6
             abs.notifyLowerBound( b, 0 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 0, Tightening::LB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 0, Tightening::LB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1119,15 +1097,14 @@ public:
             abs.notifyLowerBound( b, 3 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 3, Tightening::LB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 3, Tightening::LB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                      } ) );
         }
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -1137,7 +1114,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -7 );
@@ -1148,12 +1125,11 @@ public:
             // -7 < x_b < 7 ,0 < x_f < 6
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -6, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 7, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 7, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1162,25 +1138,23 @@ public:
             abs.notifyUpperBound( b, 5 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -6, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 7, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 7, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
             // 0 < x_b < 5 ,0 < x_f < 6
             abs.notifyLowerBound( b, 0 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 0, Tightening::LB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 0, Tightening::LB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1189,13 +1163,12 @@ public:
             abs.notifyLowerBound( b, 3 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, 0, Tightening::LB ),
-                                              Tightening( b, 6, Tightening::UB ),
-                                              Tightening( f, 3, Tightening::LB ),
-                                              Tightening( f, 5, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 6, Tightening::UB ),
+                                          Tightening( f, 3, Tightening::LB ),
+                                          Tightening( f, 5, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -1206,7 +1179,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -20 );
@@ -1217,13 +1190,12 @@ public:
             // -20 < x_b < -2 ,0 < x_f < 15
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, 0, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 20, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 0, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 20, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1232,13 +1204,12 @@ public:
             abs.notifyLowerBound( f, 7 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, -7, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 20, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -7, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 20, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -1246,13 +1217,12 @@ public:
             abs.notifyLowerBound( b, -12 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, -7, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 12, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -7, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 12, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -1260,13 +1230,12 @@ public:
             abs.notifyUpperBound( b, -8 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, -7, Tightening::UB ),
-                                              Tightening( f, 8, Tightening::LB ),
-                                              Tightening( f, 12, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -7, Tightening::UB ),
+                                          Tightening( f, 8, Tightening::LB ),
+                                          Tightening( f, 12, Tightening::UB ),
+                                      } ) );
         }
         {   // With Bound Manager
             unsigned b = 1;
@@ -1278,7 +1247,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -20 );
@@ -1289,13 +1258,12 @@ public:
             // -20 < x_b < -2 ,0 < x_f < 15
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, 0, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 20, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, 0, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 20, Tightening::UB ),
+                                      } ) );
 
 
             entailedTightenings.clear();
@@ -1304,13 +1272,12 @@ public:
             abs.notifyLowerBound( f, 7 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, -7, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 20, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -7, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 20, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -1318,13 +1285,12 @@ public:
             abs.notifyLowerBound( b, -12 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, -7, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 12, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -7, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 12, Tightening::UB ),
+                                      } ) );
 
             entailedTightenings.clear();
 
@@ -1332,13 +1298,12 @@ public:
             abs.notifyUpperBound( b, -8 );
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -15, Tightening::LB ),
-                                              Tightening( b, -7, Tightening::UB ),
-                                              Tightening( f, 8, Tightening::LB ),
-                                              Tightening( f, 12, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -7, Tightening::UB ),
+                                          Tightening( f, 8, Tightening::LB ),
+                                          Tightening( f, 12, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -1349,7 +1314,7 @@ public:
             unsigned f = 4;
 
             AbsoluteValueConstraint abs( b, f );
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -20 );
@@ -1360,13 +1325,12 @@ public:
             // -20 < x_b < -2 ,25 < x_f < 30
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -30, Tightening::LB ),
-                                              Tightening( b, -25, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 20, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -25, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 20, Tightening::UB ),
+                                      } ) );
         }
 
         {   // With Bound Manager
@@ -1379,7 +1343,7 @@ public:
             boundManager.initialize( 5 );
             abs.registerBoundManager( &boundManager );
 
-            List <Tightening> entailedTightenings;
+            List<Tightening> entailedTightenings;
             List<Tightening>::iterator it;
 
             abs.notifyLowerBound( b, -20 );
@@ -1390,13 +1354,12 @@ public:
             // -20 < x_b < -2 ,25 < x_f < 30
             abs.getEntailedTightenings( entailedTightenings );
             assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>
-                                      ({
+                                      List<Tightening>( {
                                           Tightening( b, -30, Tightening::LB ),
-                                              Tightening( b, -25, Tightening::UB ),
-                                              Tightening( f, 2, Tightening::LB ),
-                                              Tightening( f, 20, Tightening::UB ),
-                                              }) );
+                                          Tightening( b, -25, Tightening::UB ),
+                                          Tightening( f, 2, Tightening::LB ),
+                                          Tightening( f, 20, Tightening::UB ),
+                                      } ) );
         }
     }
 
@@ -1660,7 +1623,7 @@ public:
         List<Tightening>::iterator it;
         it = entailedTightenings.begin();
 
-        TS_ASSERT_EQUALS( entailedTightenings.size(),4U );
+        TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, fLower );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
@@ -1674,7 +1637,7 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         it++;
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, bUpper);
+        TS_ASSERT_EQUALS( it->_value, bUpper );
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 
@@ -1737,22 +1700,21 @@ public:
             List<Tightening> tightenings;
             TS_ASSERT_THROWS_NOTHING( abs.getEntailedTightenings( tightenings ) );
 
-            List<Tightening> expectedTightenings =
-                {
-                 // B var, from f bounds
-                 Tightening( b, -7, Tightening::LB ),
-                 Tightening( b, 7, Tightening::UB ),
+            List<Tightening> expectedTightenings = {
+                // B var, from f bounds
+                Tightening( b, -7, Tightening::LB ),
+                Tightening( b, 7, Tightening::UB ),
 
-                 // F var, from b bounds
-                 Tightening( f, 7, Tightening::UB ),
+                // F var, from b bounds
+                Tightening( f, 7, Tightening::UB ),
 
-                 // Aux vars
-                 Tightening( posAux, 0, Tightening::LB ),
-                 Tightening( negAux, 0, Tightening::LB ),
+                // Aux vars
+                Tightening( posAux, 0, Tightening::LB ),
+                Tightening( negAux, 0, Tightening::LB ),
 
-                 Tightening( posAux, 12, Tightening::UB ),
-                 Tightening( negAux, 14, Tightening::UB ),
-                };
+                Tightening( posAux, 12, Tightening::UB ),
+                Tightening( negAux, 14, Tightening::UB ),
+            };
 
             TS_ASSERT_EQUALS( expectedTightenings.size(), tightenings.size() );
 
@@ -1812,22 +1774,21 @@ public:
             List<Tightening> tightenings;
             TS_ASSERT_THROWS_NOTHING( abs.getEntailedTightenings( tightenings ) );
 
-            List<Tightening> expectedTightenings =
-                {
-                 // B var, from f bounds
-                 Tightening( b, -7, Tightening::LB ),
-                 Tightening( b, 7, Tightening::UB ),
+            List<Tightening> expectedTightenings = {
+                // B var, from f bounds
+                Tightening( b, -7, Tightening::LB ),
+                Tightening( b, 7, Tightening::UB ),
 
-                 // F var, from b bounds
-                 Tightening( f, 7, Tightening::UB ),
+                // F var, from b bounds
+                Tightening( f, 7, Tightening::UB ),
 
-                 // Aux vars
-                 Tightening( posAux, 0, Tightening::LB ),
-                 Tightening( negAux, 0, Tightening::LB ),
+                // Aux vars
+                Tightening( posAux, 0, Tightening::LB ),
+                Tightening( negAux, 0, Tightening::LB ),
 
-                 Tightening( posAux, 12, Tightening::UB ),
-                 Tightening( negAux, 14, Tightening::UB ),
-                };
+                Tightening( posAux, 12, Tightening::UB ),
+                Tightening( negAux, 14, Tightening::UB ),
+            };
 
             TS_ASSERT_EQUALS( expectedTightenings.size(), tightenings.size() );
 
@@ -1899,8 +1860,8 @@ public:
 
         List<PiecewiseLinearCaseSplit> splits = abs.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2u );
-        TS_ASSERT_EQUALS( splits.front(), abs.getCaseSplit( ABS_PHASE_NEGATIVE ) ) ;
-        TS_ASSERT_EQUALS( splits.back(), abs.getCaseSplit( ABS_PHASE_POSITIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.front(), abs.getCaseSplit( ABS_PHASE_NEGATIVE ) );
+        TS_ASSERT_EQUALS( splits.back(), abs.getCaseSplit( ABS_PHASE_POSITIVE ) );
     }
 
     /*
