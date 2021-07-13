@@ -31,7 +31,7 @@ public:
 class TestDisjunctionConstraint : public DisjunctionConstraint
 {
 public:
-    TestDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> elements  )
+    TestDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> elements )
         : DisjunctionConstraint( elements )
     {}
 
@@ -499,8 +499,5 @@ public:
         dc.markInfeasible( dc.getPhaseStatus() );
         TS_ASSERT( !dc.isFeasible() );
         TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
-
     }
-
 };
-
