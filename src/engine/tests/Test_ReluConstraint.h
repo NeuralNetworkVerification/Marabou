@@ -16,12 +16,12 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "MarabouError.h"
 #include "MockConstraintBoundTightener.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
-#include "MarabouError.h"
 #include "context/context.h"
 
 #include <string.h>
@@ -52,7 +52,7 @@ class ReluConstraintTestSuite : public CxxTest::TestSuite
 public:
     MockForReluConstraint *mock;
     Context ctx;
-    BoundManager* bm;
+    BoundManager *bm;
 
     void setUp()
     {
@@ -433,9 +433,9 @@ public:
 
         relu.notifyUpperBound( 4, -1.0 );
         TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
-                                  const MarabouError &e,
-                                  e.getCode(),
-                                  MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                                 const MarabouError &e,
+                                 e.getCode(),
+                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
     }
@@ -1092,7 +1092,7 @@ public:
             TS_ASSERT( tightenings.empty() );
         }
 
-        {   // As above, but with registered BoundManager
+        { // As above, but with registered BoundManager
             ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
 
             relu.notifyLowerBound( b, -20 );
@@ -1309,7 +1309,6 @@ public:
             ++itFix;
             TS_ASSERT_EQUALS( itFix->_variable, b );
             TS_ASSERT_EQUALS( itFix->_value, 1 );
-
         }
         // b in [-2, 3], polarity should be 0.2, the direction should be RELU_PHASE_ACTIVE,
         // the active case should be the first element of the returned list by
@@ -1363,8 +1362,8 @@ public:
 
         List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2u );
-        TS_ASSERT_EQUALS( splits.front(), relu.getCaseSplit( RELU_PHASE_INACTIVE ) ) ;
-        TS_ASSERT_EQUALS( splits.back(), relu.getCaseSplit( RELU_PHASE_ACTIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.front(), relu.getCaseSplit( RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_EQUALS( splits.back(), relu.getCaseSplit( RELU_PHASE_ACTIVE ) );
     }
 
     /*
@@ -1379,7 +1378,6 @@ public:
         TestReluConstraint relu( b, f );
 
         relu.initializeCDOs( &context );
-
 
 
         TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
@@ -1484,4 +1482,3 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete relu1 );
     }
 };
-
