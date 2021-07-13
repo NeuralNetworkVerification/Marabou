@@ -23,8 +23,8 @@
 #include "ITableau.h"
 #include "InputQuery.h"
 #include "MStringf.h"
-#include "PiecewiseLinearCaseSplit.h"
 #include "MarabouError.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -393,7 +393,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
 
         if ( !FloatUtils::areEqual( bDeltaToFDelta, 1.0 ) )
         {
-            double activeFixDelta = ( bValue - fValue )  / ( bDeltaToFDelta - 1 );
+            double activeFixDelta = ( bValue - fValue ) / ( bDeltaToFDelta - 1 );
             double activeFix = bValue + activeFixDelta;
             fixes.append( PiecewiseLinearConstraint::Fix( _b, activeFix ) );
         }
@@ -406,7 +406,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
         */
         if ( !FloatUtils::areEqual( fDeltaToBDelta, 1.0 ) )
         {
-            double activeFixDelta = ( fValue - bValue )  / ( fDeltaToBDelta - 1 );
+            double activeFixDelta = ( fValue - bValue ) / ( fDeltaToBDelta - 1 );
             double activeFix = fValue + activeFixDelta;
             fixes.append( PiecewiseLinearConstraint::Fix( _f, activeFix ) );
         }
