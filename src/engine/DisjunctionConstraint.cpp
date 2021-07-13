@@ -12,8 +12,9 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "Debug.h"
 #include "DisjunctionConstraint.h"
+
+#include "Debug.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Statistics.h"
@@ -23,7 +24,7 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
     , _disjuncts( disjuncts.begin(), disjuncts.end() )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
-    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
 
     extractParticipatingVariables();
@@ -34,7 +35,7 @@ DisjunctionConstraint::DisjunctionConstraint( const Vector<PiecewiseLinearCaseSp
     , _disjuncts( disjuncts )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
-    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
 
     extractParticipatingVariables();
@@ -94,7 +95,7 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( existsLowerBound(  variable  ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
     setLowerBound( variable, bound );
@@ -107,7 +108,7 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( existsUpperBound(  variable  ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
     setUpperBound( variable, bound );
@@ -156,7 +157,7 @@ List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 List<PhaseStatus> DisjunctionConstraint::getAllCases() const
 {
     List<PhaseStatus> cases;
-    for ( unsigned i = 0; i < _disjuncts.size(); ++i  )
+    for ( unsigned i = 0; i < _disjuncts.size(); ++i )
         cases.append( indToPhaseStatus( i ) );
     return cases;
 }
@@ -329,13 +330,13 @@ bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit 
     {
         if ( bound._type == Tightening::LB )
         {
-            if ( existsUpperBound(  bound._variable  ) &&
+            if ( existsUpperBound( bound._variable ) &&
                  getUpperBound( bound._variable ) < bound._value )
                 return false;
         }
         else
         {
-            if ( existsLowerBound(  bound._variable  ) &&
+            if ( existsLowerBound( bound._variable ) &&
                  getLowerBound( bound._variable ) > bound._value )
                 return false;
         }
@@ -343,4 +344,3 @@ bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit 
 
     return true;
 }
-
