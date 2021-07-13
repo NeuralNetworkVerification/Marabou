@@ -32,7 +32,7 @@ public:
 };
 
 /*
-   Exposes protected members of AbsConstraint for testing.
+   Exposes protected members of SignConstraint for testing.
  */
 class TestSignConstraint : public SignConstraint
 {
@@ -152,7 +152,7 @@ public:
 
         sign.notifyVariableValue( newB, -0.1 );
 
-        TS_ASSERT( sign.satisfied());
+        TS_ASSERT( sign.satisfied() );
     }
 
     void test_sign_fixes()
@@ -192,7 +192,7 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 1 );
 
-        sign.notifyVariableValue( b, -2);
+        sign.notifyVariableValue( b, -2 );
         sign.notifyVariableValue( f, 1 );
 
         fixes = sign.getPossibleFixes();
@@ -733,7 +733,7 @@ public:
 
             // negative phase - because of f
             TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB) )  );
+            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
             TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
             TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
             TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
@@ -821,7 +821,7 @@ public:
             SignConstraint sign( b, f );
             Context context;
             BoundManager boundManager( context );
-            boundManager.initialize( 500  );
+            boundManager.initialize( 500 );
             sign.registerBoundManager( &boundManager );
 
             MockConstraintBoundTightener tightener;
@@ -878,7 +878,7 @@ public:
 
             // negative phase - because of f
             TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB) )  );
+            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
             TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
             TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
             TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
@@ -951,7 +951,7 @@ public:
             TS_ASSERT( entailedTightenings2.exists( Tightening( f2, -1, Tightening::LB ) ) );
 
             entailedTightenings2.clear();
-            //context.pop(); Incremental test case, no pop
+            // context.pop(); Incremental test case, no pop
             context.push();
 
             // new case
@@ -967,10 +967,9 @@ public:
             entailedTightenings2.clear();
             context.pop();
         }
-
     }
-      SignConstraint prepareSign( unsigned b, unsigned f, IConstraintBoundTightener *tightener )
-      {
+    SignConstraint prepareSign( unsigned b, unsigned f, IConstraintBoundTightener *tightener )
+    {
         SignConstraint sign( b, f );
 
         sign.registerConstraintBoundTightener( tightener );
@@ -986,25 +985,25 @@ public:
         sign.registerConstraintBoundTightener( tightener );
 
         return sign;
-      }
+    }
 
-      void test_notify_bounds()
-      {
-          {
-              unsigned b = 1;
-              unsigned f = 4;
+    void test_notify_bounds()
+    {
+        {
+            unsigned b = 1;
+            unsigned f = 4;
 
-              MockConstraintBoundTightener tightener;
-              List<Tightening> tightenings;
+            MockConstraintBoundTightener tightener;
+            List<Tightening> tightenings;
 
-              tightener.getConstraintTightenings( tightenings );
+            tightener.getConstraintTightenings( tightenings );
 
-              SignConstraint sign = prepareSign( b, f, &tightener );
+            SignConstraint sign = prepareSign( b, f, &tightener );
 
-              sign.notifyLowerBound( b, -5 );
-              sign.notifyUpperBound( b, 5 );
+            sign.notifyLowerBound( b, -5 );
+            sign.notifyUpperBound( b, 5 );
 
-              {
+            {
                 sign.notifyLowerBound( b, -5 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
@@ -1037,78 +1036,78 @@ public:
                 sign.notifyLowerBound( b, -2 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
-              }
+            }
 
-              {
+            {
                 // Tighter lower bound for b/f that is positive
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyLowerBound( b, 1 );
                 tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS( tightenings.size(), 1U);
+                TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
 
                 sign.notifyUpperBound( f, -0.5 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-              }
+            }
 
-              {
+            {
                 // Tighter upper bound 0 for f
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyUpperBound( f, 0 );
                 tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS(tightenings.size(), 2U);
+                TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-              }
+            }
 
-              {
+            {
                 // upper bound 0 for b is inconclusive - because for 0 its +1, for <0 its '-1'
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyUpperBound( b, 0 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
-              }
+            }
 
-              {
+            {
                 // lower bound 0 for b is '+1'
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyLowerBound( b, 0 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-              }
+            }
 
-              {
+            {
                 // Tighter negative upper bound for b
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyUpperBound( f, 0.5 );
                 tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS(tightenings.size(), 2U);
+                TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-              }
-          }
+            }
+        }
 
-          {   // With Bound Manager
-              unsigned b = 1;
-              unsigned f = 4;
+        { // With Bound Manager
+            unsigned b = 1;
+            unsigned f = 4;
 
-              MockConstraintBoundTightener tightener;
-              List<Tightening> tightenings;
+            MockConstraintBoundTightener tightener;
+            List<Tightening> tightenings;
 
-              tightener.getConstraintTightenings( tightenings );
+            tightener.getConstraintTightenings( tightenings );
 
-              SignConstraint sign = prepareSign( b, f, &tightener );
-              Context context;
-              BoundManager boundManager( context );
-              boundManager.initialize( 5 );
-              sign.registerBoundManager( &boundManager );
+            SignConstraint sign = prepareSign( b, f, &tightener );
+            Context context;
+            BoundManager boundManager( context );
+            boundManager.initialize( 5 );
+            sign.registerBoundManager( &boundManager );
 
-              sign.notifyLowerBound( b, -5 );
-              sign.notifyUpperBound( b, 5 );
+            sign.notifyLowerBound( b, -5 );
+            sign.notifyUpperBound( b, 5 );
 
-              {
+            {
                 sign.notifyLowerBound( b, -5 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
@@ -1141,62 +1140,62 @@ public:
                 sign.notifyLowerBound( b, -2 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
-              }
+            }
 
-              {
+            {
                 // Tighter lower bound for b/f that is positive
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyLowerBound( b, 1 );
                 tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS( tightenings.size(), 1U);
+                TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
 
                 sign.notifyUpperBound( f, -0.5 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-              }
+            }
 
-              {
+            {
                 // Tighter upper bound 0 for f
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyUpperBound( f, 0 );
                 tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS(tightenings.size(), 2U);
+                TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-              }
+            }
 
-              {
+            {
                 // upper bound 0 for b is inconclusive - because for 0 its +1, for <0 its '-1'
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyUpperBound( b, 0 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
-              }
+            }
 
-              {
+            {
                 // lower bound 0 for b is '+1'
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyLowerBound( b, 0 );
                 tightener.getConstraintTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-              }
+            }
 
-              {
+            {
                 // Tighter negative upper bound for b
                 SignConstraint sign = prepareSign( b, f, &tightener );
                 sign.notifyUpperBound( f, 0.5 );
                 tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS(tightenings.size(), 2U);
+                TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-              }
-          }
-      }
+            }
+        }
+    }
 
-      void test_serialize_and_unserialize()
-      {
+    void test_serialize_and_unserialize()
+    {
         unsigned b = 42;
         unsigned f = 7;
 
@@ -1209,69 +1208,69 @@ public:
 
         TS_ASSERT_EQUALS( originalSign.serializeToString(),
                           recoveredSign.serializeToString() );
-      }
+    }
 
-      void test_polarity()
-      {
+    void test_polarity()
+    {
         unsigned b = 1;
         unsigned f = 4;
 
         // b in [1, 2], polarity should be 1, and direction should be SIGN_PHASE_POSITIVE
         {
-          SignConstraint sign( b, f );
-          sign.notifyLowerBound( b, 1 );
-          sign.notifyUpperBound( b, 2 );
-          TS_ASSERT( sign.computePolarity() == 1 );
+            SignConstraint sign( b, f );
+            sign.notifyLowerBound( b, 1 );
+            sign.notifyUpperBound( b, 2 );
+            TS_ASSERT( sign.computePolarity() == 1 );
 
-          sign.updateDirection();
-          TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
+            sign.updateDirection();
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
         }
         // b in [-2, 0], polarity should be -1, and direction should be SIGN_PHASE_NEGATIVE
         {
-          SignConstraint sign( b, f );
-          sign.notifyLowerBound( b, -2 );
-          sign.notifyUpperBound( b, 0 );
-          TS_ASSERT( sign.computePolarity() == -1 );
+            SignConstraint sign( b, f );
+            sign.notifyLowerBound( b, -2 );
+            sign.notifyUpperBound( b, 0 );
+            TS_ASSERT( sign.computePolarity() == -1 );
 
-          sign.updateDirection();
-          TS_ASSERT( sign.getDirection() == SIGN_PHASE_NEGATIVE );
+            sign.updateDirection();
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_NEGATIVE );
         }
         // b in [-2, 2], polarity should be 0, the direction should be SIGN_PHASE_NEGATIVE,
         // the inactive case should be the first element of the returned list by
         // the getCaseSplits()
         {
-          SignConstraint sign( b, f );
-          sign.notifyLowerBound( b, -2 );
-          sign.notifyUpperBound( b, 2 );
-          TS_ASSERT( sign.computePolarity() == 0 );
+            SignConstraint sign( b, f );
+            sign.notifyLowerBound( b, -2 );
+            sign.notifyUpperBound( b, 2 );
+            TS_ASSERT( sign.computePolarity() == 0 );
 
-          sign.updateDirection();
-          TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
+            sign.updateDirection();
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
 
-          auto splits = sign.getCaseSplits();
-          auto it = splits.begin();
-          TS_ASSERT( isPositiveSplit( b, f, it ) );
+            auto splits = sign.getCaseSplits();
+            auto it = splits.begin();
+            TS_ASSERT( isPositiveSplit( b, f, it ) );
         }
         // b in [-2, 3], polarity should be 0.2, the direction should be SIGN_PHASE_POSITIVE,
         // the active case should be the first element of the returned list by
         // the getCaseSplits()
         {
-          SignConstraint sign( b, f );
-          sign.notifyLowerBound( b, -2 );
-          sign.notifyUpperBound( b, 3 );
-          TS_ASSERT( sign.computePolarity() == 0.2 );
+            SignConstraint sign( b, f );
+            sign.notifyLowerBound( b, -2 );
+            sign.notifyUpperBound( b, 3 );
+            TS_ASSERT( sign.computePolarity() == 0.2 );
 
-          sign.updateDirection();
-          TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
+            sign.updateDirection();
+            TS_ASSERT( sign.getDirection() == SIGN_PHASE_POSITIVE );
 
-          auto splits = sign.getCaseSplits();
-          auto it = splits.begin();
-          TS_ASSERT( isPositiveSplit( b, f, it ) );
+            auto splits = sign.getCaseSplits();
+            auto it = splits.begin();
+            TS_ASSERT( isPositiveSplit( b, f, it ) );
         }
-      }
+    }
 
-      void test_initialization_of_CDOs()
-      {
+    void test_initialization_of_CDOs()
+    {
         Context context;
         SignConstraint *sign1 = new SignConstraint( 4, 6 );
 
@@ -1296,15 +1295,15 @@ public:
 
 
         TS_ASSERT_THROWS_NOTHING( delete sign1 );
-      }
+    }
 
-      /*
-       * Test Case functionality of SignConstraint
-       * 1. Check that all cases are returned by SignConstraint::getAllCases
-       * 2. Check that SignConstraint::getCaseSplit( case ) returns the correct case
-       */
-      void test_sign_get_cases()
-      {
+    /*
+     * Test Case functionality of SignConstraint
+     * 1. Check that all cases are returned by SignConstraint::getAllCases
+     * 2. Check that SignConstraint::getCaseSplit( case ) returns the correct case
+     */
+    void test_sign_get_cases()
+    {
         SignConstraint sign( 4, 6 );
 
         List<PhaseStatus> cases = sign.getAllCases();
@@ -1315,15 +1314,15 @@ public:
 
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2u );
-        TS_ASSERT_EQUALS( splits.front(), sign.getCaseSplit( SIGN_PHASE_NEGATIVE ) ) ;
-        TS_ASSERT_EQUALS( splits.back(), sign.getCaseSplit( SIGN_PHASE_POSITIVE ) ) ;
-      }
+        TS_ASSERT_EQUALS( splits.front(), sign.getCaseSplit( SIGN_PHASE_NEGATIVE ) );
+        TS_ASSERT_EQUALS( splits.back(), sign.getCaseSplit( SIGN_PHASE_POSITIVE ) );
+    }
 
-      /*
-        Test context-dependent Sign state behavior.
-      */
-      void test_sign_context_dependent_state()
-      {
+    /*
+      Test context-dependent Sign state behavior.
+    */
+    void test_sign_context_dependent_state()
+    {
         Context context;
         unsigned b = 1;
         unsigned f = 4;
@@ -1347,5 +1346,5 @@ public:
 
         context.pop();
         TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED );
-      }
+    }
 };
