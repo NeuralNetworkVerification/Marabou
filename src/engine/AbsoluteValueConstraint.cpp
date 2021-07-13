@@ -341,7 +341,7 @@ List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 
 List<PhaseStatus> AbsoluteValueConstraint::getAllCases() const
 {
-    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE};
+    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE };
 }
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getCaseSplit( PhaseStatus phase ) const
@@ -557,9 +557,9 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     else if ( bLowerBound < 0 && bUpperBound >= 0 && FloatUtils::isZero( fLowerBound ) )
     {
         // Phase undetermined, b can be either positive or negative, f can be 0
-        tightenings.append( Tightening( _b, -fUpperBound , Tightening::LB ) );
+        tightenings.append( Tightening( _b, -fUpperBound, Tightening::LB ) );
         tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
-        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound , bUpperBound ), Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound, bUpperBound ), Tightening::UB ) );
 
         if ( _auxVarsInUse )
         {
@@ -753,4 +753,3 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
         return "UNKNOWN";
     }
 };
-
