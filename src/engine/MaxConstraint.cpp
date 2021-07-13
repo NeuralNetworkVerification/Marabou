@@ -26,7 +26,7 @@
  ** Once in the context-dependent mode, MaxConstraint can be used for explicit
  ** exploration of the search space, using the markInfeasible/nextFeasibleCase
  ** methods.
-**/
+ **/
 
 #include "MaxConstraint.h"
 
@@ -40,6 +40,7 @@
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Statistics.h"
+
 #include <algorithm>
 
 #ifdef _WIN32
@@ -48,14 +49,14 @@
 #endif
 
 MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
-  : ContextDependentPiecewiseLinearConstraint( elements.size() )
-  , _f( f )
-	, _elements( elements )
-	, _initialElements( elements )
-	, _maxLowerBound( FloatUtils::negativeInfinity() )
-	, _obsolete( false )
-	, _eliminatedVariables( false )
-	, _maxValueOfEliminated( FloatUtils::negativeInfinity() )
+    : ContextDependentPiecewiseLinearConstraint( elements.size() )
+    , _f( f )
+    , _elements( elements )
+    , _initialElements( elements )
+    , _maxLowerBound( FloatUtils::negativeInfinity() )
+    , _obsolete( false )
+    , _eliminatedVariables( false )
+    , _maxValueOfEliminated( FloatUtils::negativeInfinity() )
 {
 }
 
@@ -73,7 +74,7 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     ++valuesIter;
 
     Set<unsigned> elements;
-    for ( ; *valuesIter != "e" ; ++valuesIter )
+    for ( ; *valuesIter != "e"; ++valuesIter )
         elements.insert( atoi( valuesIter->ascii() ) );
 
     // Save flag and values indicating eliminated variables
@@ -265,12 +266,12 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         for ( const auto &element : _elements )
         {
             if ( existsLowerBound( element ) )
-              maxElementLB = FloatUtils::max( getLowerBound( element ), maxElementLB );
+                maxElementLB = FloatUtils::max( getLowerBound( element ), maxElementLB );
 
             if ( !existsUpperBound( element ) )
-              maxElementUB = FloatUtils::infinity();
+                maxElementUB = FloatUtils::infinity();
             else
-              maxElementUB = FloatUtils::max( getUpperBound( element ), maxElementUB );
+                maxElementUB = FloatUtils::max( getUpperBound( element ), maxElementUB );
         }
 
         // Treat the maxValueEliminated as an element
@@ -288,26 +289,27 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
                 tightenings.append( Tightening( _f, maxElementUB, Tightening::UB ) );
             }
             else
-             {
+            {
                 // f_UB <= maxElementUB
                 for ( const auto &element : _elements )
                 {
                     if ( !existsUpperBound( element ) || FloatUtils::gt( getUpperBound( element ), fUB ) )
-                      tightenings.append( Tightening( element, fUB, Tightening::UB ) );
+                         FloatUtils::gt( getUpperBound( element ), fUB ) )
+                        tightenings.append( Tightening( element, fUB, Tightening::UB ) );
                 }
             }
         }
 
         // fLB cannot be smaller than maxElementLB
         if ( FloatUtils::lt( fLB, maxElementLB ) )
-          tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+            tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
         // f_LB >= maxElementLB & single input element
         else if ( _elements.size() == 1 )
         {
             // Special case: there is only one element. In that case, the tighter lower
             // bound (in this case, f's) wins.
             if ( !_eliminatedVariables || FloatUtils::gt( fLB, _maxValueOfEliminated ) )
-              tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
+                tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
         }
 
         // TODO: can we derive additional bounds?
@@ -323,8 +325,8 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
         for ( const auto &element : _elements )
         {
-              maxElementLB = FloatUtils::max( getLowerBound( element ), maxElementLB );
-              maxElementUB = FloatUtils::max( getUpperBound( element ), maxElementUB );
+            maxElementLB = FloatUtils::max( getLowerBound( element ), maxElementLB );
+            maxElementUB = FloatUtils::max( getUpperBound( element ), maxElementUB );
         }
 
         // Treat the maxValueEliminated as an element
@@ -347,25 +349,25 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
                 for ( const auto &element : _elements )
                 {
                     if ( FloatUtils::gt( getUpperBound( element ), fUB ) )
-                      tightenings.append( Tightening( element, fUB, Tightening::UB ) );
+                        tightenings.append( Tightening( element, fUB, Tightening::UB ) );
                 }
             }
         }
 
         // fLB cannot be smaller than maxElementLB
         if ( FloatUtils::lt( fLB, maxElementLB ) )
-          tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+            tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
         // f_LB >= maxElementLB & single input element
         else if ( _elements.size() == 1 )
-          {
+        {
             // Special case: there is only one element. In that case, the tighter lower
             // bound (in this case, f's) wins.
             if ( !_eliminatedVariables || FloatUtils::gt( fLB, _maxValueOfEliminated ) )
-              tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
-          }
+                tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
+        }
 
         // TODO: can we derive additional bounds?
-      }
+    }
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -385,11 +387,11 @@ List<unsigned> MaxConstraint::getParticipatingVariables() const
     if ( _cdInfeasibleCases )
     {
         for ( auto element : _elements )
-          if ( !isCaseInfeasible( element ) )
-            result.append( element );
+            if ( !isCaseInfeasible( element ) )
+                result.append( element );
 
         if ( !_elements.exists( _f ) && !isCaseInfeasible( _f ) )
-          result.append( _f );
+            result.append( _f );
     }
     else
     {
