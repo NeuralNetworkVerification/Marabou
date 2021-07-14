@@ -12,24 +12,27 @@
  ** MaxConstraint implements the following constraint:
  ** _f = Max( e1, e2, ..., eM), where _elements = { e1, e2, ..., eM}
  **
- ** The constraint will refer to elements as its phases, by wrapping the
- ** variable identifiers as PhaseStatus enumeration. Additionally, during
- ** preprocessing one or more phases may be eliminated from the constraint. A
- ** maximum of such constraints is stored locally, and to denote this phase a
- ** special value PhaseStatus::MAX_PHASE_ELIMINATED is used.
+ ** MaxConstraint refers to elements as its phases, by wrapping the variable
+ ** identifiers as PhaseStatus enumeration. It allows elimination of elements
+ ** during preprocessing. Eliminated elements are abstracted in an aggregate
+ ** local member _maxValueOfEliminated, and its phase is a reserved value
+ ** PhaseStatus::MAX_PHASE_ELIMINATED.
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** MaxConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
-#include "Map.h"
 #include "ContextDependentPiecewiseLinearConstraint.h"
+#include "Map.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
 
@@ -174,7 +177,6 @@ public:
     bool wereVariablesEliminated() const;
 
 
-
     bool isImplication() const override;
 
 private:
@@ -228,17 +230,17 @@ private:
 
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
-        return ( variable == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET  );
+        return ( variable == MAX_PHASE_ELIMINATED )
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
-        return ( phase == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+        return ( phase == MAX_PHASE_ELIMINATED )
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
-
-
 };
 
 #endif // __MaxConstraint_h__

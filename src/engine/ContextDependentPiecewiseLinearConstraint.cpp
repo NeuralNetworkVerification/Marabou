@@ -9,7 +9,7 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** A context dependent implementation of ContextDependentPiecewiseLinearConstraint class
+ ** See the description of the class in ContextDependentPiecewiseLinearConstraint.h.
  **/
 
 #include "ContextDependentPiecewiseLinearConstraint.h"

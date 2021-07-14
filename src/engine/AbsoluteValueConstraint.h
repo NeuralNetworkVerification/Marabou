@@ -10,17 +10,21 @@
  ** directory for licensing information.\endverbatim
  **
  ** AbsoluteValueConstraint implements the following constraint:
- ** f = Abs( b )
+ ** f = Abs( b ) =     ( b > 0 -> f =  b )
+ **                 /\ ( b <=0 -> f = -b )
  **
  ** It distinguishes two relevant phases for search:
  ** ABS_PHASE_POSITIVE: b > 0
  ** ABS_PHASE_NEGATIVE: b <=0
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, used during the search.
- ** Invoking initializeCDOs meth activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
+ ** Invoking initializeCDOs method activates the context dependent mode, and the
+ ** AbsoluteValueConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __AbsoluteValueConstraint_h__

@@ -10,17 +10,21 @@
  ** directory for licensing information.\endverbatim
  **
  ** SignConstraint implements the following constraint:
- ** f = Sign( b )
+ ** f = Sign( b ) =    ( b > 0 -> f =  1 )
+ **                 /\ ( b <=0 -> f = -1 )
  **
  ** It distinguishes two relevant phases for search:
- ** SIGN_PHASE_POSITIVE: b > 0 and f = 1
+ ** SIGN_PHASE_POSITIVE: b > 0 and f =  1
  ** SIGN_PHASE_NEGATIVE: b <=0 and f = -1
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** SignConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __SignConstraint_h__
