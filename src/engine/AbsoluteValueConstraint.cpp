@@ -9,7 +9,7 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** See the description of the class in AbsoluteValueConstraint.h.
  **/
 
 #include "AbsoluteValueConstraint.h"

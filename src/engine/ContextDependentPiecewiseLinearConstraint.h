@@ -245,36 +245,62 @@ protected:
     PhaseStatus getPhaseStatus() const;
 
     /*
-       Bounds get/set wrappers
+       BOUND WRAPPER METHODS
+
+       All wrapper methods use the following semantics:
+       If BoundManager is initialized use BoundManager, otherwise use local bound arrays.
      */
+
+    /*
+       Checks whether lower bound value exists.
+
+       If BoundManager is in use, returns true since it initializes bounds for all variables.
+    */
     inline bool existsLowerBound( unsigned var ) const
     {
         return _boundManager != nullptr || _lowerBounds.exists( var );
     }
 
+    /*
+       Checks whether upper bound value exists.
+
+       If BoundManager is in use, returns true since it initializes bounds for all variables.
+    */
     inline bool existsUpperBound( unsigned var ) const
     {
         return _boundManager != nullptr || _upperBounds.exists( var );
     }
 
+    /*
+       Method obtains lower bound of *var*.
+     */
     inline double getLowerBound( unsigned var ) const override
     {
         return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
                                             : _lowerBounds[var];
     }
 
+    /*
+       Method obtains upper bound of *var*.
+     */
     inline double getUpperBound( unsigned var ) const override
     {
         return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
                                             : _upperBounds[var];
     }
 
+    /*
+       Method sets the lower bound of *var* to *value*.
+     */
     inline void setLowerBound( unsigned var, double value )
     {
         ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
                                      : _lowerBounds[var] = value;
     }
 
+    /*
+       Method sets the upper bound of *var* to *value*.
+     */
     inline void setUpperBound( unsigned var, double value )
     {
         ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
