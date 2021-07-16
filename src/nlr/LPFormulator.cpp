@@ -276,18 +276,19 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     {
         Layer *layer = currentLayer.second;
 
-        OptArgs args( layer, layers,
-                        currentLayer.first, layer->getLayerIndex(),
-                        std::ref( solverToIndex ),
+        ThreadArgument argument( layer, &layers,
                         std::ref( freeSolvers ),
                         std::ref( mtx ), std::ref( infeasible ),
                         std::ref( tighterBoundCounter ),
                         std::ref( signChanges ),
                         std::ref( cutoffs ),
-                        threads );
+                        layer->getLayerIndex(),
+                        currentLayer.first,
+                        threads,
+                        &solverToIndex );
 
         // optimize every neuron of layer
-        optimizeBoundsOfNeuronsWithLpRlaxation( args );
+        optimizeBoundsOfNeuronsWithLpRlaxation( argument );
     }
 
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
@@ -340,18 +341,19 @@ void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned,
 
     Layer *layer = layers[targetIndex];
 
-    OptArgs args( layer, layers,
-                    targetIndex, layers.size() - 1,
-                    std::ref( solverToIndex ),
+    ThreadArgument argument( layer, &layers,
                     std::ref( freeSolvers ),
                     std::ref( mtx ), std::ref( infeasible ),
                     std::ref( tighterBoundCounter ),
                     std::ref( signChanges ),
                     std::ref( cutoffs ),
-                    threads );
+                    layers.size() - 1,
+                    targetIndex,
+                    threads,
+                    &solverToIndex );
 
     // optimize every neuron of layer
-    optimizeBoundsOfNeuronsWithLpRlaxation( args );
+    optimizeBoundsOfNeuronsWithLpRlaxation( argument );
 
     for ( unsigned i = 0; i < numberOfWorkers; ++i )
     {
@@ -370,7 +372,7 @@ void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned,
         throw InfeasibleQueryException();
 }
 
-void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( OptArgs &args )
+void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args )
 {
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
@@ -378,11 +380,11 @@ void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( OptArgs &args )
     boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
     
     Layer *layer = args._layer;
-    const Map<unsigned, Layer *> &layers = args._layers;
+    const Map<unsigned, Layer *> layers = *args._layers;
     unsigned targetIndex = args._targetIndex;
     unsigned lastIndexOfRelaxation = args._lastIndexOfRelaxation;
 
-    Map<GurobiWrapper *, unsigned> solverToIndex = args._solverToIndex;
+    const Map<GurobiWrapper *, unsigned> solverToIndex = *args._solverToIndex;
     SolverQueue &freeSolvers = args._freeSolvers;
     std::mutex &mtx = args._mtx;
     std::atomic_bool &infeasible = args._infeasible;
