@@ -19,11 +19,13 @@
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
 #include "ParallelSolver.h"
+#include "Map.h"
 #include <climits>
 
 #include <atomic>
 #include <boost/lockfree/queue.hpp>
 #include <boost/chrono.hpp>
+#include <boost/thread.hpp>
 #include <mutex>
 
 namespace NLR {
@@ -49,6 +51,7 @@ public:
       constructed from scratch
     */
     void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers, unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
 
     /*
@@ -95,6 +98,8 @@ private:
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
                                             const Layer *layer );
+
+    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args );
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints

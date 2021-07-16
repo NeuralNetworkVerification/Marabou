@@ -119,6 +119,9 @@ void OptionParser::initialize()
         ( "num-simulations",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
           "Number of simulations generated per neuron" )
+        ( "skip-lp-tightening-after-split",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::SKIP_LP_TIGHTENING_AFTER_SPLIT]) ),
+          "Whether to skip a LP tightening after a case split" )
 #endif // ENABLE_GUROBI
 
         ;

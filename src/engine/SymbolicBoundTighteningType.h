@@ -17,7 +17,7 @@
 #define __SymbolicBoundTighteningType_h__
 
 /*
-  MILP solver bound tighening options
+  MILP solver bound tightening options
 */
 enum class SymbolicBoundTighteningType
 {

@@ -40,6 +40,7 @@ public:
     ~MILPFormulator();
 
     void optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigned, Layer *> &layers, unsigned targetIndex );
     void optimizeBoundsWithIncrementalMILPEncoding( const Map<unsigned, Layer *> &layers );
 
     /*
@@ -107,6 +108,8 @@ private:
     bool layerRequiresMILPEncoding( const Layer *layer );
 
     static void log( const String &message );
+
+    void optimizeBoundsOfNeuronsWithMILPEncoding( ThreadArgument &args );
 
     /*
       Tighten the upper- and lower- bound of a varaible with MILP encoding

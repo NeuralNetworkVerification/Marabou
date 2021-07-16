@@ -17,7 +17,7 @@
 #define __MILPSolverBoundTighteningType_h__
 
 /*
-  MILP solver bound tighening options
+  MILP solver bound tightening options
 */
 enum class MILPSolverBoundTighteningType
 {
