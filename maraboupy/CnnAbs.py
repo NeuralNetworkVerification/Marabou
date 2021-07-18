@@ -412,16 +412,17 @@ class CnnAbs:
         finalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName)
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs
     
-    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False, rerunResultObj=None):
+    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False, rerunObj=None):
         
         if not rerun:
             self.subResultAppend()
         else:
             boundDictCopy = boundDict.copy()
-            freeInputs = False
-            for var,value in rerunResultObj.vals.items():
-                varOrig = rerunResultObj.varsMapping[var]
-                if not (freeInputs and varOrig in rerunResultObj.inputs):
+            freeInputs = True #FIXME work on this
+            for var,value in rerunObj.vals.items():
+                varOrig = rerunObj.varsMapping[var]
+            #if not (freeInputs and varOrig in rerunObj.inputs):
+            if not (freeInputs and varOrig in rerunObj.preAbsVars):
                     boundDictCopy[varOrig] = (value, value)
             boundDict = boundDictCopy
         startLocal = time.time()
@@ -434,7 +435,7 @@ class CnnAbs:
                 return None
         else:
             ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
-        vals, stats = Marabou.solve_query(ipq, verbose=rerun, options=self.optionsObj) #FIXME verbosity should be False
+        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj) #FIXME verbosity should be False
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -454,7 +455,7 @@ class CnnAbs:
                 CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
         else:
             cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
-            self.dumpCex(cex, cexPrediction, prop, runName)
+            self.dumpCex(cex, cexPrediction, prop, runName, model)
             self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
             self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
             result = ResultObj("sat")
@@ -463,7 +464,7 @@ class CnnAbs:
             result.vals = vals
             result.varsMapping = varsMapping
             CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
-        result.setStats(originalQueryStats, finalQueryStats) #FIXME since writing is now within function, not really need to return.
+        result.setStats(originalQueryStats, finalQueryStats)
 
         self.subResultUpdate(runtime=time.time() - startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
         
@@ -515,9 +516,14 @@ class CnnAbs:
         with open(saveDir + name, "w") as f:
             json.dump(data, f, indent = 4)
 
-    def dumpCex(self, cex, cexPrediction, prop, runName):
+    def dumpCex(self, cex, cexPrediction, prop, runName, model):
+        if model is not None:
+            modelPrediction = model.predict(np.array([cex])).argmax()
+        else:
+            modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
-        plt.title('CEX, yMax={}, ySecond={}, MarabouPredictsCEX={}'.format(prop.yMax, prop.ySecond, mbouPrediction))
+        assert prop.ySecond == mbouPrediction
+        plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName))
@@ -802,7 +808,7 @@ class ModelUtils:
         else:
             savedModelOrig = savedModelOrig.replace(".h5", "_" + "validation_" + validation + ".h5")
 
-        basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy" #FIXME ugly
+        basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
         noModel = not os.path.exists(basePath + "/" + savedModelOrig)
     
         if cfg_freshModelOrig or noModel:
@@ -943,6 +949,52 @@ class InputQueryUtils:
         net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
 
     @staticmethod        
+    def divideToLayers(net):
+        layerMappingReverse = dict()
+        layer = set(net.outputVars.flatten().tolist())
+        layerNum = 0
+        lastMapped = 0
+        nextLayerWas0 = False
+        layerType = list()
+        while len(layerMappingReverse) < net.numVars:
+            nextLayer = set()
+            for var in layer:
+                assert var not in layerMappingReverse
+                layerMappingReverse[var] = layerNum
+            layerType.insert(0, set())
+            for eq in net.equList:
+                if (eq.addendList[-1][1] in layer) and (eq.EquationType == MarabouCore.Equation.EQ):
+                    [nextLayer.add(el[1]) for el in eq.addendList[:-1] if el[0] != 0]
+                    layerType[0].add("Linear")
+                    #[print("Adding eq {}".format(el[1])) for el in eq.addendList[:-1] if el[0] != 0]                    
+            for maxArgs, maxOut in net.maxList:
+                if maxOut in layer:
+                    [nextLayer.add(arg) for arg in maxArgs]
+                    layerType[0].add("Max")
+                    #[print("Adding max {}".format(arg)) for arg in maxArgs]
+            [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in net.reluList if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in net.absList  if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in net.signList if vout in layer]
+            if not layerType[0]:
+                layerType[0].add("Input")
+            #[print("Adding relu {}".format(vin)) for vin,vout in net.reluList if vout in layer]
+            #[print("Adding abs {}".format(vin)) for vin,vout in net.absList  if vout in layer]
+            #[print("Adding sign {}".format(vin)) for vin,vout in net.signList if vout in layer]            
+            layer = nextLayer
+            assert not nextLayerWas0
+            nextLayerWas0 = len(nextLayer) == 0
+            #print(len(layerMappingReverse))
+            layerNum += 1
+        layerMapping = dict()
+        #print("layerlNum={}".format(layerNum))
+        for v,l in layerMappingReverse.items():
+            layerMapping[v] = layerNum - l - 1
+        assert all([i in layerMapping for i in net.inputVars[0].flatten().tolist()])
+        layerList = [set() for i in range(layerNum)]
+        [layerList[l].add(var) for var,l in layerMapping.items()]
+        return layerList, layerType
+
+    @staticmethod        
     def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
         if not keepSet:        
             net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
@@ -955,7 +1007,6 @@ class InputQueryUtils:
         varSetDict = {v:i for i,v in enumerate(varSetList)}
         assert varSet == set(varSetDict.keys())
         tr = lambda v: varSetDict[v] if v in varSetDict else -1
-        #varsMapping = {v : tr(v) for v in range(net.numVars)} FIXME should be the inverse
         varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
         
         if keepSet:
@@ -1039,7 +1090,6 @@ class InputQueryUtils:
             if len(net.disjunctionList) > 0:
                 raise Exception("Not implemented")
         unreach = set([v for v in range(net.numVars) if v not in reach])
-        #complement = unreach + border #FIXME is this used?
     
         CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     
