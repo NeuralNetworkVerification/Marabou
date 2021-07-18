@@ -79,7 +79,7 @@ class PolicyBase:
 
 
     @staticmethod
-    def geometricStep(n, initStepSize=10, startWith=30, factor=2):
+    def geometricStep(n, initStepSize=10, startWith=0, factor=2):
         stepSize = max(initStepSize,1)
         startWith = max(startWith,0)
         size = n
@@ -926,8 +926,8 @@ class ModelUtils:
 class InputQueryUtils:
 
     @staticmethod
-    def setUnconnectedAsInputs(net):
-        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr)])
+    def setUnconnectedAsInputs(net):        
+        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
         for eq in net.equList:
             if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
                 varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
@@ -1131,6 +1131,9 @@ class InputQueryUtils:
 
     @staticmethod    
     def inBoundsInftyBall(x, r, p, pos=True, allowClose=True):
+        if p.shape != x.shape:
+            print("p.shape={}".format(p.shape))
+            print("x.shape={}".format(x.shape))
         assert p.shape == x.shape
         l,u = InputQueryUtils.getBoundsInftyBall(x,r,pos=pos)
         if allowClose:

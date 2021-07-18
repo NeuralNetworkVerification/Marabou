@@ -1131,6 +1131,9 @@ class InputQueryUtils:
 
     @staticmethod    
     def inBoundsInftyBall(x, r, p, pos=True, allowClose=True):
+        if p.shape != x.shape:
+            print("p.shape={}".format(p.shape))
+            print("x.shape={}".format(x.shape))
         assert p.shape == x.shape
         l,u = InputQueryUtils.getBoundsInftyBall(x,r,pos=pos)
         if allowClose:
