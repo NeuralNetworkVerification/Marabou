@@ -18,6 +18,8 @@
 
 #include "ITableau.h"
 #include "Tightening.h"
+#include "IEngine.h"
+#include "Equation.h"
 
 class IConstraintBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
@@ -58,12 +60,29 @@ public:
     virtual void registerTighterLowerBound( unsigned variable, double bound ) = 0;
     virtual void registerTighterUpperBound( unsigned variable, double bound ) = 0;
 
+	/*
+	 As previous methods, but has the option to tell the CBT to add an equation to th tableau.
+	The resulting row will be used for explaining the bound tightening.
+    */
+	virtual void registerTighterLowerBound( unsigned variable, double bound, const Equation& additionalEq ) = 0;
+	virtual void registerTighterUpperBound( unsigned variable, double bound, const Equation& additionalEq ) = 0;
+
+	/*
+ 	As previous methods, but with additional Tableau row for explaining the bound tightening.
+	*/
+	virtual void registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& row ) = 0;
+	virtual void registerTighterUpperBound( unsigned variable, double bound, const SparseUnsortedList& row ) = 0;
+
     /*
       Get the tightenings previously registered by the constraints
     */
     virtual void getConstraintTightenings( List<Tightening> &tightenings ) const = 0;
 
-	virtual unsigned registerIndicatingRow( TableauRow* row, unsigned var ) = 0;
+	virtual std::list<double> getUGBUpdates() const = 0;
+	virtual std::list<double> getLGBUpdates() const = 0;
+	virtual std::list<std::vector<double>> getTableauUpdates() const = 0;
+	virtual void clearEngineUpdates() = 0;
+	virtual void replaceEquationAndAdd( unsigned var, const Equation& eq) = 0;
 };
 
 #endif // __IConstraintBoundTightener_h__

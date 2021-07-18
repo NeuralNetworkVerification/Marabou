@@ -35,12 +35,16 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _auxVarInUse( false )
     , _direction( PhaseStatus::PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
+    , _addedFixedAuxEq( false )
+    , _addedFixedFEq( false )
 {
     setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
+    , _addedFixedAuxEq( false )
+    , _addedFixedFEq( false )
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -128,6 +132,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         return;
 
     _lowerBounds[variable] = bound;
+	SparseUnsortedList tighteningRow = createTighteningRow();
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
@@ -141,32 +146,42 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // A positive lower bound is always propagated between f and b
         if ( ( variable == _f || variable == _b ) && bound > 0 )
         {
-            unsigned partner = ( variable == _f ) ? _b : _f;
-            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-
             // If we're in the active phase, aux should be 0
-            if ( _auxVarInUse )
-                _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
+			if ( _auxVarInUse && !_addedFixedAuxEq )
+				addEqualZeroEqAndUpdate( _aux );
+
+            unsigned partner = ( variable == _f ) ? _b : _f;
+            _constraintBoundTightener->registerTighterLowerBound( partner, bound, tighteningRow );
         }
 
         // If b is non-negative, we're in the active phase
         else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
+			if ( _auxVarInUse && !_addedFixedAuxEq )
+				addEqualZeroEqAndUpdate( _aux );
         }
 
         // A positive lower bound for aux means we're inactive: f is 0, b is non-positive
         // When inactive, b = -aux
         else if ( _auxVarInUse && variable == _aux && bound > 0 )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _b, -bound );
-            _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
+            if ( !_addedFixedFEq )
+            	addEqualZeroEqAndUpdate( _f );
+
+            _constraintBoundTightener->registerTighterUpperBound( _b, -bound, tighteningRow );
         }
 
         // A negative lower bound for b could tighten aux's upper bound
         else if ( _auxVarInUse && variable == _b && bound < 0 )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
+        	if ( GlobalConfiguration :: PROOF_CERTIFICATE )
+			{
+				// TODO relaxed for now - should be ok on any case
+				if ( _phaseStatus == PHASE_INACTIVE )
+					_constraintBoundTightener->registerTighterUpperBound( _aux, -bound, tighteningRow );
+			}
+        	else
+				_constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
         }
 
         // Also, if for some reason we only know a negative lower bound for f,
@@ -187,6 +202,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         return;
 
     _upperBounds[variable] = bound;
+	SparseUnsortedList tighteningRow = createTighteningRow();
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
@@ -198,31 +214,61 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     {
         if ( variable == _f )
         {
+			// TODO relaxed for now - should be ok on any case
             // Any bound that we learned of f should be propagated to b
-            _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				if ( _phaseStatus == PHASE_ACTIVE )
+					_constraintBoundTightener->registerTighterUpperBound( _b, bound, tighteningRow );
+			}
+            else
+				_constraintBoundTightener->registerTighterUpperBound( _b, bound );
+
         }
         else if ( variable == _b )
         {
             if ( !FloatUtils::isPositive( bound ) )
             {
                 // If b has a non-positive upper bound, f's upper bound is 0
-                _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
+				if ( !_addedFixedFEq )
+					addEqualZeroEqAndUpdate( _f );
 
                 if ( _auxVarInUse )
                 {
-                    // Aux's range is minus the range of b
-                    _constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
+                	if ( GlobalConfiguration::PROOF_CERTIFICATE )
+					{
+						// Aux's range is minus the range of b
+						if ( _phaseStatus != PHASE_ACTIVE)
+							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
+						else if ( FloatUtils::isNegative( bound )  && _addedFixedAuxEq )
+							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
+					}
+                	else
+						_constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
                 }
             }
             else
             {
+				// TODO relaxed for now - should be ok on any case
                 // b has a positive upper bound, propagate to f
-                _constraintBoundTightener->registerTighterUpperBound( _f, bound );
+				if ( GlobalConfiguration::PROOF_CERTIFICATE )
+				{
+					if ( _phaseStatus == PHASE_ACTIVE )
+                		_constraintBoundTightener->registerTighterUpperBound( _f, bound, tighteningRow );
+				}
+				else
+					_constraintBoundTightener->registerTighterUpperBound( _f, bound );
             }
         }
         else if ( _auxVarInUse && variable == _aux )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			{
+				if ( _phaseStatus != PHASE_ACTIVE )
+					_constraintBoundTightener->registerTighterLowerBound( _b, -bound, tighteningRow );
+			}
+			else
+				_constraintBoundTightener->registerTighterLowerBound( _b, -bound );
         }
     }
 }
@@ -907,56 +953,33 @@ void ReluConstraint::updateScoreBasedOnPolarity()
     _score = std::abs( computePolarity() );
 }
 
-void ReluConstraint::registerTighteningEquation( const unsigned n, const unsigned counterpart) const
+void ReluConstraint::addEqualZeroEqAndUpdate( unsigned var )
 {
-	TableauRow* fIndicatingRow = new TableauRow ( n );
-	// f = b + aux + counterpart (added as an additional aux variable of tableau after adding aux)
-	fIndicatingRow->_lhs = _f;
+	Equation varIsZero;
+	varIsZero.addAddend( 1, var );
+	_constraintBoundTightener->registerTighterUpperBound( var, 0, varIsZero );
+	_constraintBoundTightener->registerTighterLowerBound( var, 0, varIsZero );
 
-	fIndicatingRow->_row[0]._var = _b;
-	fIndicatingRow->_row[0]._coefficient = 1;
+	if ( var == _aux)
+		_addedFixedAuxEq = true;
+	else if ( var == _f)
+		_addedFixedFEq = true;
+}
 
-	fIndicatingRow->_row[1]._var = _aux;
-	fIndicatingRow->_row[1]._coefficient = 1;
+SparseUnsortedList ReluConstraint::createTighteningRow() const
+{
+	//TODO consider making an object field (without invalid memory frees)
+	if ( !_auxVarInUse || !_constraintBoundTightener || !_tableauAuxVar )
+		return SparseUnsortedList( 0 );
 
-	fIndicatingRow->_row[2]._var = counterpart;
-	fIndicatingRow->_row[2]._coefficient = 1;
+	SparseUnsortedList tighteningRow ( 4 );
+	// f = b + aux + counterpart (an additional aux variable of tableau)
+	tighteningRow.append( _f, -1 );
+	tighteningRow.append( _b, 1 );
+	tighteningRow.append( _aux, 1 );
+	tighteningRow.append( _tableauAuxVar, 1 );
 
-	TableauRow* bIndicatingRow = new TableauRow ( n );
-	// b = f - aux
-	bIndicatingRow->_lhs = _b;
-
-	bIndicatingRow->_row[0]._var = _f;
-	bIndicatingRow->_row[0]._coefficient = 1;
-
-	bIndicatingRow->_row[1]._var = _aux;
-	bIndicatingRow->_row[1]._coefficient = -1;
-
-	bIndicatingRow->_row[2]._var = counterpart ;
-	bIndicatingRow->_row[2]._coefficient = -1;
-
-
-	TableauRow* aIndicatingRow = new TableauRow ( n );
-	// aux = f - b
-	aIndicatingRow->_lhs = _aux;
-
-	aIndicatingRow->_row[0]._var = _f;
-	aIndicatingRow->_row[0]._coefficient = 1;
-
-	aIndicatingRow->_row[1]._var = _b;
-	aIndicatingRow->_row[1]._coefficient = -1;
-
-	aIndicatingRow->_row[2]._var = counterpart ;
-	aIndicatingRow->_row[2]._coefficient = -1;
-
-	if ( !_constraintBoundTightener->registerIndicatingRow( fIndicatingRow, _f ) )
-		delete fIndicatingRow;
-
-	if ( !_constraintBoundTightener->registerIndicatingRow( bIndicatingRow, _b ) )
-		delete bIndicatingRow;
-
-	if ( !_constraintBoundTightener->registerIndicatingRow( aIndicatingRow, _aux ) )
-		delete aIndicatingRow;
+	return tighteningRow;
 }
 
 //

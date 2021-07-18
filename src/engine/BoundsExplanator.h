@@ -32,6 +32,11 @@ public:
 	void getVarBoundExplanation( std::vector<double>& bound, const  bool isUpper ) const;
 
 	/*
+	 * returns the length of the explanation
+	 */
+	unsigned getLength() const;
+
+	/*
 	  Updates the values of the bound explanation according to newBound 
 	*/
 	void updateVarBoundExplanation(const std::vector<double>& newBound, const  bool isUpper );
@@ -47,9 +52,9 @@ public:
 	SingleVarBoundsExplanator& operator=(const SingleVarBoundsExplanator& other);
 
 	/*
-	 * Adds a zero entry for an explanation
+	 * Adds an entry for an explanation with given coefficient
 	 */
-	void addZeroEntry();
+	void addEntry( double coefficient );
 
 	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
 	unsigned _lowerRecLevel;
@@ -117,6 +122,11 @@ public:
 	 * Resets an explanation
 	 */
 	void resetExplanation (const unsigned var, const bool isUpper);
+
+	/*
+	 * Artificially updates an explanation, without using the recursive rule
+	 */
+	void injectExplanation(unsigned var, SingleVarBoundsExplanator& expl);
 
 private:
 	unsigned _varsNum;

@@ -17,6 +17,7 @@
 
 #include "MockTableau.h"
 #include "ConstraintBoundTightener.h"
+#include "MockEngine.h"
 
 class MockForConstraintBoundTightener
 {
@@ -28,22 +29,27 @@ class ConstraintBoundTightenerTestSuite : public CxxTest::TestSuite
 public:
     MockForConstraintBoundTightener *mock;
     MockTableau *tableau;
+	MockEngine *engine;
 
-    void setUp()
+
+	void setUp()
     {
         TS_ASSERT( mock = new MockForConstraintBoundTightener );
         TS_ASSERT( tableau = new MockTableau );
-    }
+		TS_ASSERT( engine = new MockEngine );
+
+	}
 
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete tableau );
         TS_ASSERT_THROWS_NOTHING( delete mock );
-    }
+		TS_ASSERT_THROWS_NOTHING( delete engine );
+	}
 
     void test_bounds_tightened()
     {
-        ConstraintBoundTightener tightener( *tableau );
+        ConstraintBoundTightener tightener( *tableau, *engine );
 
         tableau->setDimensions( 2, 5 );
 

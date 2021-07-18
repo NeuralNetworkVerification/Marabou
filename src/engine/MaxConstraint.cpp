@@ -523,12 +523,6 @@ String MaxConstraint::serializeToString() const
     return output;
 }
 
-void MaxConstraint::registerTighteningEquation( const unsigned  n, const unsigned counterpart) const
-{
-	//TODO complete
-	printf( "%d, %d\n", n, counterpart );
-
-}
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

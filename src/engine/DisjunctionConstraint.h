@@ -140,7 +140,6 @@ public:
     */
     String serializeToString() const;
 
-	void registerTighteningEquation( const unsigned n, const unsigned counterpart) const;
 
 private:
     /*

@@ -37,12 +37,14 @@ public:
 	bool wasCreated;
 	bool wasDiscarded;
     const ITableau *lastTableau;
+    const IEngine *_engine;
 
-	void mockConstructor( const ITableau &tableau )
+	void mockConstructor( const ITableau &tableau, const IEngine &engine )
 	{
 		TS_ASSERT( !wasCreated );
 		wasCreated = true;
         lastTableau = &tableau;
+        _engine = &engine;
 	}
 
 	void mockDestructor()
@@ -76,16 +78,49 @@ public:
         _tightenings.append( Tightening( variable, bound, Tightening::UB ) );
     }
 
+	void registerTighterLowerBound( unsigned variable, double bound, const Equation& /* additionalEq */ )
+	{
+		_tightenings.append( Tightening( variable, bound, Tightening::LB ) );
+	}
+
+	void registerTighterUpperBound( unsigned variable, double bound, const Equation& /* additionalEq */ )
+	{
+		_tightenings.append( Tightening( variable, bound, Tightening::UB ) );
+	}
+
+	void registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& /* row */ )
+	{
+		_tightenings.append( Tightening( variable, bound, Tightening::LB ) );
+	}
+
+	void registerTighterUpperBound( unsigned variable, double bound, const SparseUnsortedList& /* row */ )
+	{
+		_tightenings.append( Tightening( variable, bound, Tightening::UB ) );
+	}
+
     void getConstraintTightenings( List<Tightening> &tightenings ) const
     {
         tightenings = _tightenings;
         _tightenings.clear();
     }
 
-	unsigned registerIndicatingRow( TableauRow* /*row */, unsigned /* var */)
+	std::list<double> getUGBUpdates() const
 	{
-		return 0;
+    	return std::list<double>();
 	}
+
+	std::list<double> getLGBUpdates() const
+	{
+		return std::list<double>();
+	}
+
+	std::list<std::vector<double>> getTableauUpdates() const
+	{
+		return std::list<std::vector<double>>();
+	}
+
+	void clearEngineUpdates(){}
+	void replaceEquationAndAdd( unsigned /* var */, const Equation& /* eq */){}
 };
 
 #endif // __MockConstraintBoundTightener_h__

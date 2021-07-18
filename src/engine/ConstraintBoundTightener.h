@@ -21,7 +21,7 @@
 class ConstraintBoundTightener : public IConstraintBoundTightener
 {
 public:
-    ConstraintBoundTightener( const ITableau &tableau );
+    ConstraintBoundTightener( ITableau &tableau, IEngine &engine );
     ~ConstraintBoundTightener();
 
     /*
@@ -58,21 +58,38 @@ public:
     void registerTighterLowerBound( unsigned variable, double bound );
     void registerTighterUpperBound( unsigned variable, double bound );
 
+	/*
+	 As previous methods, but has the option to tell the CBT to add an equation to the tableau.
+	 The resulting row will be used for explaining the bound tightening.
+	*/
+	void registerTighterLowerBound( unsigned variable, double bound, const Equation& additionalEq );
+	void registerTighterUpperBound( unsigned variable, double bound, const Equation& additionalEq );
+
+	/*
+ 	As previous methods, but with additional Tableau row for explaining the bound tightening.
+	*/
+	void registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& row );
+	void registerTighterUpperBound( unsigned variable, double bound, const SparseUnsortedList& row );
+
     /*
       Get the tightenings previously registered by the constraints
     */
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
 
+	std::list<double> getUGBUpdates() const;
+	std::list<double> getLGBUpdates() const;
+	std::list<std::vector<double>> getTableauUpdates() const;
+	void clearEngineUpdates();
+
 	/*
-	  This method can be used by clients to tell the bound tightener
-	  about a tighter bound, using a TableauRow to explain the bound derivation
-	*/
-	unsigned registerIndicatingRow( TableauRow* row, unsigned var );
+	 * Replaces the indicating row by equation which is added to the Tableau
+	 */
+	void replaceEquationAndAdd( unsigned var, const Equation& eq);
 
 
 private:
-    const ITableau &_tableau;
+    ITableau &_tableau;
     unsigned _n;
     unsigned _m;
 
@@ -97,7 +114,11 @@ private:
     */
     void freeMemoryIfNeeded();
 
-    std::vector<TableauRow*> _boundsIndications;
+    std::list<double> _lowerGBUpdates;
+	std::list<double> _upperGBUpdates;
+	std::list<std::vector<double>> _initialTableauUpdates;
+
+	IEngine &_engine; // TODO Consider design
 };
 
 #endif // __ConstraintBoundTightener_h__

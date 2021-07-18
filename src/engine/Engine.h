@@ -573,14 +573,17 @@ private:
      */
     void normalizeExplanations();
 
+	/*
+	 Validates that explanations epsilon close to real bounds of a given var
+	 Separately for tightenings and actual bounds
+	*/
+	void validateBounds( unsigned var ,const double epsilon ) const;
     /*
      Validates that all explanations epsilon close to real bounds
      Separately for tightenings and actual bounds
-     TODO erase upon completion?
     */
     void validateAllBounds( const double epsilon ) const;
 
-	unsigned find_aux_counterpart( const unsigned aux ) const;
 };
 
 #endif // __Engine_h__

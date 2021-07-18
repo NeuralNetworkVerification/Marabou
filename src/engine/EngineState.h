@@ -41,6 +41,7 @@ public:
 
     std::vector<double> _groundUpperBounds;
 	std::vector<double> _groundLowerBounds;
+	std::vector<std::vector<double>> _initialTableau;
 
     /*
       A unique ID allocated to every state that is stored, for

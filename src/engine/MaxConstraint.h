@@ -131,7 +131,6 @@ class MaxConstraint : public PiecewiseLinearConstraint
     */
     String serializeToString() const;
 
-    void registerTighteningEquation( const unsigned n, const unsigned counterpart) const;
 
  private:
     unsigned _f;

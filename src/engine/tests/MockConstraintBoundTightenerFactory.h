@@ -34,9 +34,9 @@ public:
 		}
 	}
 
-	IConstraintBoundTightener *createConstraintBoundTightener( const ITableau &tableau )
+	IConstraintBoundTightener *createConstraintBoundTightener( ITableau &tableau, IEngine &engine )
 	{
-		mockConstraintBoundTightener.mockConstructor( tableau );
+		mockConstraintBoundTightener.mockConstructor( tableau, engine );
 		return &mockConstraintBoundTightener;
 	}
 

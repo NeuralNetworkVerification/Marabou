@@ -20,19 +20,20 @@
 
 class IConstraintBoundTightener;
 class ITableau;
+class IEngine;
 
 namespace T
 {
-	IConstraintBoundTightener *createConstraintBoundTightener( const ITableau &tableau );
+	IConstraintBoundTightener *createConstraintBoundTightener( ITableau &tableau, IEngine &engine );
 	void discardConstraintBoundTightener( IConstraintBoundTightener *constraintBoundTightener );
 }
 
 CXXTEST_SUPPLY( createConstraintBoundTightener,
 				IConstraintBoundTightener *,
 				createConstraintBoundTightener,
-				( const ITableau &tableau ),
+				( ITableau &tableau, IEngine &engine ),
 				T::createConstraintBoundTightener,
-				( tableau ) );
+				( tableau, engine ) );
 
 CXXTEST_SUPPLY_VOID( discardConstraintBoundTightener,
 					 discardConstraintBoundTightener,

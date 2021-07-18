@@ -45,6 +45,11 @@ void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bou
 }
 
 
+unsigned SingleVarBoundsExplanator::getLength() const
+{
+	return _length;
+}
+
 void SingleVarBoundsExplanator::updateVarBoundExplanation(const std::vector<double>& newBound, const bool isUpper )
 {
 	assert( newBound.size() == _length );
@@ -62,11 +67,11 @@ void SingleVarBoundsExplanator::multiplyAllCoefficients( const double alpha, con
 		temp[i] *= alpha;
 }
 
-void SingleVarBoundsExplanator::addZeroEntry()
+void SingleVarBoundsExplanator::addEntry( double coefficient )
 {
 	_length += 1;
-	_upper.push_back( 0 );
-	_lower.push_back( 0 );
+	_upper.push_back( coefficient );
+	_lower.push_back( coefficient );
 }
 
 /* Functions of BoundsExplanator */
@@ -104,6 +109,9 @@ SingleVarBoundsExplanator& BoundsExplanator::returnWholeVarExplanation( const un
 
 void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool isUpper )
 {
+	if ( !row._size )
+		return;
+
 	bool tempUpper;
 	unsigned var = row._lhs, maxLevel = 0, tempLevel,  tempVar;  // The var to be updated is the lhs of the row
 	double curCoefficient;
@@ -143,16 +151,28 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	sum.clear();
 }
 
-void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned varIndex )
+void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool isUpper, const unsigned var)
 {
-	unsigned var = row._row[varIndex]._var;
+	if ( !row._size )
+		return;
+
 	assert ( var < _varsNum );
 	if ( var == row._lhs )
 	{
 		updateBoundExplanation( row, isUpper );
 		return;
 	}
-			
+
+	// Find index of variable
+	int varIndex = -1;
+	for ( unsigned i = 0; i < row._size; ++i )
+		if ( row._row[i]._var == var )
+		{
+			varIndex = (int) i;
+			break;
+		}
+
+	assert ( varIndex >= 0 );
 	double ci = row[varIndex]; 
 	assert ( ci );  // Coefficient of var cannot be zero.
 	double coeff = 1 / ci;
@@ -179,12 +199,18 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 
 void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& row, const bool isUpper, const unsigned var )
 {
+	if ( row.empty() )
+		return;
+
 	assert( var < _varsNum );
 	bool tempUpper;
 	double curCoefficient, ci = 0;
 	for ( const auto& entry : row )
 		if ( entry._index == var )
+		{
 			ci = entry._value;
+			break;
+		}
 
 	assert( ci );
 
@@ -198,13 +224,13 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 		if ( FloatUtils::isZero( curCoefficient ) || entry._index == var ) // If coefficient is zero then nothing to add to the sum, also skip var
 			continue;
 
-		tempUpper = curCoefficient < 0 ? !isUpper : isUpper; // If coefficient is negative, then replace kind of bound
+		tempUpper = (curCoefficient * ci < 0) == isUpper; // If coefficient of lhs and var are different, use same bound
 
 		getOneBoundExplanation( tempBound, entry._index, tempUpper );
-		addVecTimesScalar( sum, tempBound, curCoefficient / ci );
+		addVecTimesScalar( sum, tempBound, curCoefficient / -ci );
 	}
 
-	extractSparseRowCoefficients( row, rowCoefficients, ci ); // Update according to row coefficients
+	extractSparseRowCoefficients( row, rowCoefficients, -ci ); // Update according to row coefficients
 	addVecTimesScalar( sum, rowCoefficients, 1 );
 	_bounds[var].updateVarBoundExplanation( sum, isUpper );
 
@@ -269,4 +295,10 @@ void BoundsExplanator::addZeroExplanation()
 void BoundsExplanator::resetExplanation (const unsigned var, const bool isUpper)
 {
 	_bounds[var].updateVarBoundExplanation( std::vector<double>(_rowsNum, 0), isUpper);
+}
+
+void BoundsExplanator::injectExplanation(unsigned var, SingleVarBoundsExplanator& expl)
+{
+	assert( expl.getLength() == _bounds[var].getLength() );
+	_bounds[var] = expl;
 }

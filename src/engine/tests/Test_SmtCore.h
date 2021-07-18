@@ -153,7 +153,7 @@ public:
             return "";
         }
 
-		 void registerTighteningEquation( const unsigned /*n*/, const unsigned /*counterpart*/ ) const
+		 void initTighteningRow( const unsigned /*counterpart*/ )
 		 {
 		 }
     };

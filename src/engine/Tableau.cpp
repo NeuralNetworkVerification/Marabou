@@ -1841,14 +1841,7 @@ unsigned Tableau::addEquation( const Equation &equation )
     _denseA[(auxVariable * _m) + _m - 1] = 1;
     _A->addLastRow( _workN );
 
-    if (GlobalConfiguration::PROOF_CERTIFICATE) //TODO consider deleting
-	{
-		updateExplanation( *_sparseRowsOfA[_m - 1], true, auxVariable );
-		updateExplanation( *_sparseRowsOfA[_m - 1], false, auxVariable );
-	}
-
-
-    // Invalidate the cost function, so that it is recomputed in the next iteration.
+     // Invalidate the cost function, so that it is recomputed in the next iteration.
     _costFunctionManager->invalidateCostFunction();
 
     // All variables except the new one have finite bounds. Use this to compute
@@ -2120,10 +2113,10 @@ void Tableau::addRow()
         _statistics->setCurrentTableauDimension( _m, _n );
     }
 
-    if ( GlobalConfiguration::PROOF_CERTIFICATE ) // TODO consider deleting
+    if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
 		for ( SingleVarBoundsExplanator& explanation : _boundsExplanator->getExplanations() )
-			explanation.addZeroEntry(); //TODO review
+			explanation.addEntry(0);
 		_boundsExplanator->addZeroExplanation();
 	}
 
@@ -2643,7 +2636,7 @@ int Tableau::getInfeasibleRow( TableauRow& row )
         {
             Tableau::getTableauRow( i, &row );
             if ( ( computeRowBound( row, true ) < _lowerBounds[row._lhs] || computeRowBound( row, false ) > _upperBounds[row._lhs] ) )
-                return i;
+                return (int) i;
         }
     }
     return -1;
@@ -2652,7 +2645,7 @@ int Tableau::getInfeasibleRow( TableauRow& row )
 int Tableau::getInfeasibleVar() const
 {
     for (unsigned i = 0; i < _n; ++i)
-        if (_lowerBounds[i] > _upperBounds[i])
+        if ( _lowerBounds[i] > _upperBounds[i] )
             return i;  
     return -1;
 }
@@ -2669,10 +2662,10 @@ void Tableau::updateExplanation( const TableauRow& row, const bool isUpper ) con
         _boundsExplanator->updateBoundExplanation( row, isUpper );
 }
 
-void Tableau::updateExplanation( const TableauRow& row, const bool isUpper, unsigned varIndex ) const
+void Tableau::updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const
 {
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
-        _boundsExplanator->updateBoundExplanation( row, isUpper, varIndex );
+        _boundsExplanator->updateBoundExplanation( row, isUpper, var );
 }
 
 void Tableau::updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned var ) const
@@ -2691,11 +2684,12 @@ double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) con
         if( FloatUtils::isZero( row[i] ) )
             continue;
 
-        multiplier = (isUpper && row[i] > 0) || (!isUpper && row[i] < 0)? _upperBounds[var] : _lowerBounds[var];
+        multiplier = (isUpper && FloatUtils::isPositive( row[i] ) ) || (!isUpper && FloatUtils::isNegative( row[i] ) )? _upperBounds[var] : _lowerBounds[var];
         multiplier *= row[i];
         bound += multiplier;
     }
 
+	bound += row._scalar;
     return bound;
 }
 
@@ -2709,6 +2703,11 @@ void Tableau::resetExplanation( const unsigned var, const bool isUpper )
 void Tableau::multiplyExplanationCoefficients ( const unsigned var, const double alpha, const bool isUpper )
 {
 	_boundsExplanator->multiplyExplanationCoefficients( var, alpha, isUpper );
+}
+
+void Tableau::injectExplanation(unsigned var, SingleVarBoundsExplanator& expl)
+{
+	_boundsExplanator->injectExplanation( var, expl );
 }
 
 //

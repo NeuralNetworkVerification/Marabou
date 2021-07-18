@@ -147,7 +147,6 @@ public:
 
     inline unsigned getF() const { return _f; };
 
-    void registerTighteningEquation( const unsigned n, const unsigned counterpart ) const;
 private:
     /*
       The variables that make up this constraint; _f = | _b |.

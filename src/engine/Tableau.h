@@ -672,7 +672,7 @@ private:
     /*
      Update a bound explanation of a specific var in a row, when it is given as a SparseUnsortedList.
     */
-    void updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned varIndex ) const;
+    void updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned var) const;
 
     /*
      * Resets a bound explanation
@@ -683,6 +683,11 @@ private:
      * Multiplies the explanation vector of a var by scalar alpha
      */
 	void multiplyExplanationCoefficients (const unsigned var, const double alpha, const bool isUpper);
+
+	/*
+ 	* Artificially updates an explanation, without using the recursive rule
+ 	*/
+	void injectExplanation(unsigned var, SingleVarBoundsExplanator& expl);
 
 	/*
       Explanator of all bounds 

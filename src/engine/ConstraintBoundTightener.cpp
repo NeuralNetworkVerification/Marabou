@@ -18,14 +18,14 @@
 #include "MarabouError.h"
 #include "Statistics.h"
 
-ConstraintBoundTightener::ConstraintBoundTightener( const ITableau &tableau )
+ConstraintBoundTightener::ConstraintBoundTightener( ITableau &tableau, IEngine &engine )
     : _tableau( tableau )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
     , _tightenedLower( NULL )
     , _tightenedUpper( NULL )
     , _statistics( NULL )
-    , _boundsIndications( 0 )
+    , _engine (engine)
 {
 }
 
@@ -52,16 +52,6 @@ void ConstraintBoundTightener::setDimensions()
     if ( !_tightenedUpper )
 		throw MarabouError( MarabouError::ALLOCATION_FAILED, "ConstraintBoundTightener::tightenedUpper" );
 
-	for (auto & _boundsIndication : _boundsIndications)
-	{
-		if ( _boundsIndication  )
-		{
-			delete _boundsIndication;
-			_boundsIndication = NULL;
-		}
-	}
-
-	_boundsIndications.resize( _n );
 	resetBounds();
 }
 
@@ -107,17 +97,6 @@ void ConstraintBoundTightener::freeMemoryIfNeeded()
         delete[] _tightenedUpper;
         _tightenedUpper = NULL;
     }
-
-	for (unsigned i = 0 ; i < _boundsIndications.size(); ++i)
-	{
-		if ( _boundsIndications[i] )
-		{
-			delete _boundsIndications[i];
-			_boundsIndications[i] = NULL;
-		}
-	}
-
-	_boundsIndications.clear();
 }
 
 void ConstraintBoundTightener::setStatistics( Statistics *statistics )
@@ -154,9 +133,6 @@ void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, dou
     {
         _lowerBounds[variable] = bound;
         _tightenedLower[variable] = true;
-
-       // if ( GlobalConfiguration::PROOF_CERTIFICATE && _boundsIndications[variable] )
-       //	_tableau.updateExplanation( *_boundsIndications[variable], false );
     }
 }
 
@@ -166,13 +142,54 @@ void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, dou
     {
         _upperBounds[variable] = bound;
         _tightenedUpper[variable] = true;
-
-		//if ( GlobalConfiguration::PROOF_CERTIFICATE && _boundsIndications[variable] )
-		//	_tableau.updateExplanation( *_boundsIndications[variable], true );
     }
 }
 
-void ConstraintBoundTightener::getConstraintTightenings( List<Tightening> &tightenings ) const
+void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound, const Equation& additionalEq )
+{
+	if ( bound > _lowerBounds[variable] )
+	{
+		if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			replaceEquationAndAdd( variable, additionalEq );
+
+		registerTighterLowerBound( variable, bound );
+	}
+}
+
+void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, double bound, const Equation& additionalEq )
+{
+	if ( bound < _upperBounds[variable] )
+	{
+		if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			replaceEquationAndAdd( variable, additionalEq );
+
+		registerTighterUpperBound( variable, bound );
+	}
+}
+
+void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& row )
+{
+	if ( bound > _lowerBounds[variable] )
+	{
+		if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			_tableau.updateExplanation(row, false, variable );
+
+		registerTighterLowerBound( variable, bound );
+	}
+}
+
+void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, double bound, const SparseUnsortedList& row )
+{
+	if ( bound < _upperBounds[variable] )
+	{
+		if ( GlobalConfiguration::PROOF_CERTIFICATE )
+			_tableau.updateExplanation(row, true, variable );
+
+		registerTighterUpperBound( variable, bound );
+	}
+}
+
+void ConstraintBoundTightener::ConstraintBoundTightener::getConstraintTightenings( List<Tightening> &tightenings ) const
 {
     for ( unsigned i = 0; i < _n; ++i )
     {
@@ -184,10 +201,63 @@ void ConstraintBoundTightener::getConstraintTightenings( List<Tightening> &tight
     }
 }
 
-unsigned ConstraintBoundTightener::registerIndicatingRow( TableauRow* row, unsigned var )
+std::list<double> ConstraintBoundTightener::getUGBUpdates() const
 {
-	_boundsIndications[var] = row;
-	return 1;
+	return _upperGBUpdates;
+}
+
+std::list<double> ConstraintBoundTightener::getLGBUpdates() const
+{
+	return _lowerGBUpdates;
+}
+
+std::list<std::vector<double>> ConstraintBoundTightener::getTableauUpdates() const
+{
+	return _initialTableauUpdates;
+}
+
+void ConstraintBoundTightener::clearEngineUpdates()
+{
+	_lowerGBUpdates.clear();
+	_upperGBUpdates.clear();
+	_initialTableauUpdates.clear();
+}
+
+void ConstraintBoundTightener::replaceEquationAndAdd( unsigned var, const Equation& eq )
+{
+	_engine.applyAllConstraintTightenings(); // TODO consider design. Needed since adding rows deletes all info
+
+	// Assuming equation is EQ type
+	unsigned newAux = _tableau.addEquation( eq ), n = _tableau.getN(), m = _tableau.getM();
+
+	// Register engine updates
+	std::vector<double> newITRow ( n + 1, 0 );
+	for (auto addend : eq._addends )
+		newITRow[addend._variable] = addend._coefficient;
+	newITRow[newAux] = 1;
+	newITRow[n] = eq._scalar;
+
+	// Make all previous updates of same length
+	for (auto &row : _initialTableauUpdates)
+	{
+		row.insert(row.end() - 1, 0);
+		assert( row.size() == newITRow.size() );
+	}
+
+	_initialTableauUpdates.push_back( newITRow );
+
+
+	// Enforcing the new aux var to be zero
+	_lowerGBUpdates.push_back( 0 );
+	_upperGBUpdates.push_back( 0 );
+	_tableau.setLowerBound( newAux, 0 );
+	_tableau.setUpperBound( newAux, 0 );
+
+	// Injects the new explanation - the last row
+	// No need for a tightening row, and avoid possible bug of adding a basic variable as non-basic
+	SingleVarBoundsExplanator expl ( m - 1 );
+	expl.addEntry( 1 );
+	_tableau.injectExplanation(var, expl);
 }
 
 //

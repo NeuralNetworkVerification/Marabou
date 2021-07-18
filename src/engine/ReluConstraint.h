@@ -193,7 +193,6 @@ public:
 
     void updateScoreBasedOnPolarity();
 
-	void registerTighteningEquation( const unsigned n, const unsigned counterpart) const;
 
 private:
     unsigned _b, _f;
@@ -223,6 +222,13 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    bool _addedFixedAuxEq;
+    bool _addedFixedFEq;
+
+    void addEqualZeroEqAndUpdate( unsigned var );
+
+    SparseUnsortedList createTighteningRow() const;
 };
 
 #endif // __ReluConstraint_h__

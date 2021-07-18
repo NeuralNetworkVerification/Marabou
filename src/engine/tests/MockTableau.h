@@ -634,6 +634,10 @@ public:
 	void multiplyExplanationCoefficients ( const unsigned /* var */, const double /* alpha */, const bool /* isUpper */ )
 	{
 	}
+
+	void injectExplanation( unsigned /* var */, SingleVarBoundsExplanator& /* expl */)
+	{
+	}
 };
 
 #endif // __MockTableau_h__

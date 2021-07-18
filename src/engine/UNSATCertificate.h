@@ -17,6 +17,18 @@
 
 #include "PiecewiseLinearConstraint.h"
 #include "BoundsExplanator.h"
+#include "Tightening.h"
+
+// Contains an explanation for a row addition during a run (i.e from ReLU phase-fixing)
+struct NewRowExplanation
+{
+	unsigned var;
+	SingleVarBoundsExplanator& explanation;
+	Tightening::BoundType type;
+	PiecewiseLinearConstraint& constraint;
+};
+
+
 class CertificateNode
 {
 public:
@@ -65,9 +77,9 @@ private:
 	std::list<CertificateNode*> _children;
 	SingleVarBoundsExplanator* _leafCertificate;
 	CertificateNode* _parent;
+	std::list<NewRowExplanation> _newRowsExplanations;
 
 };
-
 
 
 #endif //__UNSATCertificate_h__

@@ -455,7 +455,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             _lowerBounds[xi] = lowerBound;
             _tightenedLower[xi] = true;
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                _tableau.updateExplanation( row, false, i );
+                _tableau.updateExplanation( row, false, xi );
             ++result;
         }
 
@@ -464,7 +464,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             _upperBounds[xi] = upperBound;
             _tightenedUpper[xi] = true;
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
-                _tableau.updateExplanation( row, true, i );
+                _tableau.updateExplanation( row, true, xi );
             ++result;
         }
 

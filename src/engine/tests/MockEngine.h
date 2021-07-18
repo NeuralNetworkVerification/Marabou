@@ -191,6 +191,10 @@ public:
             return NULL;
     }
 
+	void applyAllConstraintTightenings()
+	{
+	}
+
 };
 
 #endif // __MockEngine_h__
