@@ -517,7 +517,10 @@ class CnnAbs:
             json.dump(data, f, indent = 4)
 
     def dumpCex(self, cex, cexPrediction, prop, runName, model):
-        modelPrediction = model.predict(np.array([cex])).argmax()
+        if model is not None:
+            modelPrediction = model.predict(np.array([cex])).argmax()
+        else:
+            modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
         assert prop.ySecond == mbouPrediction
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
