@@ -208,7 +208,7 @@ fName = "xAdv.png"
 CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, cfg_sampleIndex, yAdv))
 plt.figure()
 plt.imshow(np.squeeze(xAdv))
-plt.title('Example %d. Label: %d' % (cfg_sampleIndex, yAdv))
+plt.title('Example {}. Real Label: {}, modelOrigDense Predicts {}'.format(cfg_sampleIndex, yAdv, yMax))
 plt.savefig(fName)
 with open(fName.replace("png","npy"), "wb") as f:
     np.save(f, xAdv)
@@ -296,11 +296,12 @@ for i, mask in enumerate(maskList):
         elif i+1 == len(maskList):
             raise Exception("Sporious CEX at full network.")
         elif cfg_rerunSporious:
-            #boundDictCopy = boundDict.copy()
-            #for var,value in resultObj.vals.items():                
-            #    boundDictCopy[resultObj.varsMapping[var]] = (value, value)
-            #resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDictCopy, runName + "_rerunSporious", coi=False, rerun=True) #FIXME would probably log unwanted results to Results.json, such as additional runs.
-            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunResultObj=resultObj) #FIXME would probably log unwanted results to Results.json, such as additional runs.
+            mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
+            layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
+            layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
+            resultObj.preAbsVars = {var for i in range(layerI) for var in layersDiv[i]}
+            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunObj=resultObj)
+            assert not ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
             if resultObjRerunSporious.sat():
                 resultObj = resultObjRerunSporious
                 successful = i
@@ -331,7 +332,6 @@ if not cfg_dumpQueries:
         CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
         accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
         cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
-    #if not resultObj.timedOut(): FIXME should this be printed in slurm_seq when continues to another run?
         cnnAbs.resultsJson["SAT"] = resultObj.sat()
         cnnAbs.resultsJson["Result"] = resultObj.result.name
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
