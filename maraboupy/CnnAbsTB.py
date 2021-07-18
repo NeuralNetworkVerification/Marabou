@@ -301,8 +301,8 @@ for i, mask in enumerate(maskList):
             layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
             resultObj.preAbsVars = {var for i in range(layerI) for var in layersDiv[i]}
             resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunObj=resultObj)
-            assert not ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
             if resultObjRerunSporious.sat():
+                assert not ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
                 resultObj = resultObjRerunSporious
                 successful = i
                 CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
