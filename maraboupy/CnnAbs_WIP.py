@@ -572,6 +572,9 @@ class CnnAbs:
     def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None, rerun=False):
         if rerun:
             self.resultsJson["subResults"][-1]["runtime"] += runtime
+            self.resultsJson["subResults"][-1]["doneRerun"] = True
+            self.resultsJson["subResults"][-1]["rerunSAT"] = sat
+            self.resultsJson["subResults"][-1]["rerunTimedOut"] = timedOut
         else:
             self.resultsJson["subResults"][-1] = {"index" : self.maskIndex+1,
                                                   "outOf" : self.numMasks,
@@ -580,7 +583,8 @@ class CnnAbs:
                                                   "originalQueryStats" : originalQueryStats,
                                                   "finalQueryStats" : finalQueryStats,
                                                   "SAT" : sat,
-                                                  "timedOut" : timedOut}
+                                                  "timedOut" : timedOut,
+                                                  "doneRerun" : False}
             
         self.dumpResultsJson()
         
