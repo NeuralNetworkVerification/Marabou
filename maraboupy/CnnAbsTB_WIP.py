@@ -247,6 +247,7 @@ if not cfg_maskAbstract:
         maskList = []
 CnnAbs.printLog("Created {} masks".format(len(maskList)))
 cnnAbs.resultsJson["numMasks"] = len(maskList)
+cnnAbs.resultsJson["masks"] = ["non_zero={},{}=\n{}".format(i,np.count_nonzero(mask), mask) for i,mask in enumerate(maskList)]
 if cfg_maskIndex != -1:
     CnnAbs.printLog("Using only mask {}".format(cfg_maskIndex))    
 cnnAbs.dumpResultsJson()
@@ -335,6 +336,7 @@ if not cfg_dumpQueries:
         cnnAbs.resultsJson["SAT"] = resultObj.sat()
         cnnAbs.resultsJson["Result"] = resultObj.result.name
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
+        cnnAbs.resultsJson["successfulRun"] = successful
     cnnAbs.dumpResultsJson()
 
     CnnAbs.printLog(resultObj.result.name)
