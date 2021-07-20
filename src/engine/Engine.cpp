@@ -325,43 +325,65 @@ bool Engine::solve( unsigned timeoutInSeconds )
     }
 }
 
-bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
-    Map<unsigned, bool> is_pos, Map<unsigned, bool> is_inc,
-    Map<unsigned, unsigned> post_var_indices, unsigned timeoutInSeconds )
+bool isActiveSplit(PiecewiseLinearCaseSplit split)
+{
+    // check if active or not
+    // is_active = there is at least one LB in _bounds
+    // because there are tw cases in Relu split:
+    // active: b>=0 (LB), f-b<=0 (UB)
+    // inactive b<=0 (UB), f-b<=0 (UB)
+    for (auto bound : split.getBoundTightenings())
+    {
+        if (bound._type == Tightening::BoundType::LB)
+        {
+            return true;
+        }
+    }
+    return false;
+};
+
+/*
+bool Engine::solve(
+    List<Map<unsigned, bool>> gammaUnsat,
+    Map<unsigned, Pair<unsigned, unsigned>> gammaAbs,
+    Map<unsigned, bool> is_pos,
+    Map<unsigned, bool> is_inc,
+    Map<unsigned, unsigned> post_var_indices,
+    unsigned timeoutInSeconds)
 {
     SignalHandler::getInstance()->initialize();
-    SignalHandler::getInstance()->registerClient( this );
+    SignalHandler::getInstance()->registerClient(this);
 
-    if ( _solveWithMILP )
-        return solveWithMILPEncoding( timeoutInSeconds );
+    if (_solveWithMILP)
+        return solveWithMILPEncoding(timeoutInSeconds);
 
     updateDirections();
     storeInitialEngineState();
 
     mainLoopStatistics();
-    if ( _verbosity > 0 )
+    if (_verbosity > 0)
     {
-        printf( "\nEngine::solve: Initial statistics\n" );
+        printf("\nEngine::solve: Initial statistics\n");
         _statistics.print();
-        printf( "\n---\n" );
+        printf("\n---\n");
     }
 
     applyAllValidConstraintCaseSplits();
 
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    while ( true )
+    while (true)
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
-        _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        _statistics.addTimeMainLoop(TimeUtils::timePassed(mainLoopStart, mainLoopEnd));
         mainLoopStart = mainLoopEnd;
 
-        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
+        if (shouldExitDueToTimeout(timeoutInSeconds))
         {
-            if ( _verbosity > 0 )
+            if (_verbosity > 0)
             {
-                printf( "\n\nEngine: quitting due to timeout...\n\n" );
-                printf( "Final statistics:\n" );
+                printf("\n\nEngine: quitting due to timeout...\n\n");
+                printf("Final statistics:\n");
                 _statistics.print();
             }
 
@@ -370,12 +392,12 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
             return false;
         }
 
-        if ( _quitRequested )
+        if (_quitRequested)
         {
-            if ( _verbosity > 0 )
+            if (_verbosity > 0)
             {
-                printf( "\n\nEngine: quitting due to external request...\n\n" );
-                printf( "Final statistics:\n" );
+                printf("\n\nEngine: quitting due to external request...\n\n");
+                printf("Final statistics:\n");
                 _statistics.print();
             }
 
@@ -385,27 +407,28 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
 
         try
         {
-            DEBUG( _tableau->verifyInvariants() );
+            DEBUG(_tableau->verifyInvariants());
 
             mainLoopStatistics();
-            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
-                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            if (_verbosity > 1 && _statistics.getNumMainLoopIterations() %
+                                          GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY ==
+                                      0)
                 _statistics.print();
 
             // Check whether progress has been made recently
             checkOverallProgress();
 
             // If the basis has become malformed, we need to restore it
-            if ( basisRestorationNeeded() )
+            if (basisRestorationNeeded())
             {
-                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+                if (_basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED)
                 {
-                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                    performPrecisionRestoration(PrecisionRestorer::RESTORE_BASICS);
                     _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
                 }
                 else
                 {
-                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+                    performPrecisionRestoration(PrecisionRestorer::DO_NOT_RESTORE_BASICS);
                     _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
                 }
 
@@ -418,22 +441,22 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
             _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
             // Possible restoration due to preceision degradation
-            if ( shouldCheckDegradation() && highDegradation() )
+            if (shouldCheckDegradation() && highDegradation())
             {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                performPrecisionRestoration(PrecisionRestorer::RESTORE_BASICS);
                 continue;
             }
 
-            if ( _tableau->basisMatrixAvailable() )
+            if (_tableau->basisMatrixAvailable())
             {
                 explicitBasisBoundTightening();
                 applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
             }
 
-            if ( splitJustPerformed )
+            if (splitJustPerformed)
             {
-                // use GammaUnsat + Gamma_A to prune redundant splits
+                // use GammaUnsat + gammaAbs to prune redundant splits
                 // if last split is of n1 and n1 is refined from abstract node n
                 // and n is (pos-inc & active) or (neg-dec & inactive)
                 // and n is active in some sequence in GammaUnsat (assuming that
@@ -443,47 +466,124 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
                 // the second (unequal to n1's) option (inactive/active)
                 unsigned last_index = _smtCore.getLastSplit()->getBoundTightenings().front()._variable;
 
-                // find if last_index is part of an abstraction step in Gamma_A
-                for ( auto abstract_step : Gamma_A )  // TODO: send gamma_A in the query
+                auto const isVariableActive = [this](unsigned var) { !FloatUtils::lte(0, this->_tableau->getLowerBound(var)); };
+                constexpr bool ACTIVE = true;
+                constexpr bool INACTIVE = false;
+                auto const getSplitVariable = [](PiecewiseLinearCaseSplit split) -> std::pair<unsigned, bool>
                 {
-                    // abstract_step maps abstract_index to refine indices pair
-                    unsigned abstract_index = abstract_step.first;
+                    for (auto const &bound : split.getBoundTightenings())
+                    {
+                        if(bound._type == Tightening::LB)
+                        {
+                            return {bound._variable, ACTIVE};
+                        }
+                        if (bound._type == Tightening::UB)
+                        {
+                            return {bound._variable, INACTIVE};
+                        }
+                    }
+                };
+
+                // condition 0: check if there is a decided node in the split seq, that is refined node of some abstract node
+
+                // check condition 0: is there a decided node in the split seq, that is refined node of some abstract node
+                bool condition0_holds = false;
+                List<PiecewiseLinearCaseSplit> all_splits;
+                _smtCore.allSplitsSoFar(all_splits);
+                for (auto abstract_step : gammaAbs) // TODO: send GammaAbs in the query
+                {
                     unsigned refined_1_index = abstract_step.second.first();
                     unsigned refined_2_index = abstract_step.second.second();
+                    for (auto const &split : all_splits)
+                    {
+                        auto const splitVar = getSplitVariable(split);
+                        if (splitVar.first == refined_1_index || splitVar.first == refined_2_index)
+                        {
+                            condition0_holds = true;
+                        }
+                    }
+                }
 
-                    // 1. is abstract node in UNSAT sequence? if so,
-                    // 2. is abstract is inc+active or dec+inactive? if so,
-                    // 3. is abstract node has equal activation to last_index?
-                    bool is_last_active = !FloatUtils::lte( 0, _tableau->getLowerBound(last_index) );
-                    bool is_abstract_active = !FloatUtils::lte( 0, _tableau->getLowerBound(abstract_index) );
-                    bool is_unsat_seq = false;
-                    for ( auto unsat_seq : _statistics.getGammaUnsatSplitSequences() ) {
-                        // each element in seq is (var_index, Map<unsigned, PiecewiseLinearCaseSplit>)
-                        for ( auto node_activation : unsat_seq ) {
-                            // the next condition checks 1
-                            if ( node_activation.first == abstract_index ) {
-                                List<Tightening> bounds = node_activation.second.getBoundTightenings();
-                                // check if active or not
-                                // is_active = there is at least one LB in _bounds
-                                // because there are tw cases in Relu split:
-                                // active: b>=0 (LB), f-b<=0 (UB)
-                                // inactive b<=0 (UB), f-b<=0 (UB)
-                                bool is_active = false;
-                                for (auto bound : bounds) {
-                                    if (bound._type == Tightening::BoundType::LB ) {
-                                        is_active = true;
+                // condition 1: it is the same split sequence (order-invariant)
+                bool condition1_holds= true;
+                for (auto const &unsat_seq : gammaUnsat)
+                {
+                    for (auto pair : unsat_seq)
+                    {
+                        unsigned var = pair.first;
+                        for(const auto & abstracted : gammaAbs)
+                        {
+                            if(var == abstracted.first)
+                            {
+
+                            }
+                        }
+                        bool is_active = pair.second;
+                        bool is_in_current_seq_and_same_activation = false;
+                        for (auto const &split : all_splits)
+                        {
+                            unsigned split_var; bool split_activation;
+                            std::tie(split_var, split_activation) = getSplitVariable(split);
+                            if (var == split_var && is_active == split_activation)
+                            {
+                                is_in_current_seq_and_same_activation = true;
+                                break;
+                            }
+                        }
+                        if(!is_in_current_seq_and_same_activation)
+                        {
+                            condition1_holds = false;
+                        }
+                    }
+
+                }
+
+
+                    // find if last_index is part of an abstraction step in gammaAbs
+                    for ( auto abstract_step : gammaAbs )  // TODO: send GammaAbs in the query
+                    {
+                        // abstract_step maps abstract_index to refine indices pair
+                        unsigned abstract_index = abstract_step.first;
+                        unsigned refined_1_index = abstract_step.second.first();
+                        unsigned refined_2_index = abstract_step.second.second();
+
+                        // check one of the refined is the last node 
+                        if(! (refined_1_index == last_index || refined_2_index == last_index))
+                        {
+                            break;
+                        }
+
+                        bool is_refine1_active = !FloatUtils::lte( 0, _tableau->getLowerBound(refined_1_index) );
+                        bool is_refine2_active = !FloatUtils::lte( 0, _tableau->getLowerBound(refined_2_index) );
+                        // 1. is abstract node in UNSAT sequence? if so,
+                        // 2. is abstract is inc+active or dec+inactive? if so,
+                        // 3. is abstract node has equal activation to last_index?
+                        bool is_unsat_seq = false;
+
+                        // check 1. is abstract node in UNSAT sequence? if so,
+                        bool is_abstract_active = false;
+                        for ( auto unsat_seq : gammaUnsat ) {
+                            // each element in seq is (var_index, Map<unsigned, PiecewiseLinearCaseSplit>)
+                            for ( auto node_activation : unsat_seq ) {
+                                // the next condition checks 1
+                                if ( node_activation.first == abstract_index ) {
+                                    is_abstract_active = node_activation.second;
+                                }
+                            }
+                        }
+
+                        bool is_last_active = !FloatUtils::lte( 0, _tableau->getLowerBound(last_index) );
+                                   // the next condition checks 2
+                                    if (is_last_active != is_abstract_active)
+                                    {
+                                        break; // can't learn from abstract case
                                     }
-                                }
-
-                                // the next condition checks 2
-                                if ( is_active != is_abstract_active ) {
-                                    break;  // can't learn from abstract case
-                                }
-                                // the next condition checks 3
-                                if ( is_active == is_last_active ) {
-                                    is_unsat_seq = true;
-                                    break;
-                                }  // else, can't learn to refinement case
+                                    // the next condition checks 3
+                                    if (is_active == is_last_active)
+                                    {
+                                        is_unsat_seq = true;
+                                        break;
+                                    } // else, can't learn to refinement case
                             }  // else, can't learn from random node
                         }
                         // stop if found one unsat sequence with abstract node
@@ -657,23 +757,57 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
                     _statistics.print();
                 }
                 _exitCode = Engine::UNSAT;
-                Map<unsigned, PiecewiseLinearCaseSplit>* new_unsat_seq;
-                new_unsat_seq = new Map<unsigned, PiecewiseLinearCaseSplit>;
-                for (auto split : _smtCore.getStack().back()->_pastSplits) {
-                    new_unsat_seq->insert(new_unsat_seq->size(), split);
+                Map<unsigned, bool> new_unsat_seq;
+                auto is_active_relu = [](PiecewiseLinearCaseSplit split) -> std::pair<unsigned, bool>
+                {
+                    // check if active or not
+                    // is_active = there is at least one LB in _bounds
+                    // because there are tw cases in Relu split:
+                    // active: b>=0 (LB), f-b<=0 (UB)
+                    // inactive b<=0 (UB), f-b<=0 (UB)
+                    for (auto bound : split.getBoundTightenings())
+                    {
+                        if (bound._type == Tightening::BoundType::LB)
+                        {
+                            return {bound._variable,true};
+                        }
+                    }
+                    // return false;
+                };
+
+                //                new_unsat_seq = new Map<unsigned, PiecewiseLinearCaseSplit>;
+                for (auto split : _smtCore.getStack().back()->_pastSplits)
+                {
+                    bool const is_active = is_active_relu(split);
+                    for (const auto &bound : split.getBoundTightenings())
+                    {
+                        if (bound._type == Tightening::BoundType::LB && bound._value > 0)
+                        {
+                            new_unsat_seq.insert(bound._variable, true);
+                        }
+                    }
                 }
-                _statistics.getGammaUnsatSplitSequences().append(*new_unsat_seq);
-                return false;
+                _statistics.appendGammaUnsatSplitSequence(new_unsat_seq);
+               return false;
             }
             else
             {
                 // add current splits sequence to UNSAT context list
-                Map<unsigned, PiecewiseLinearCaseSplit>* new_unsat_seq;
-                new_unsat_seq = new Map<unsigned, PiecewiseLinearCaseSplit>;
+                // Map<unsigned, PiecewiseLinearCaseSplit> new_unsat_seq;
+                Map<unsigned, bool> new_unsat_seq;
+//                new_unsat_seq = new Map<unsigned, PiecewiseLinearCaseSplit>;
                 for (auto split : _smtCore.getStack().back()->_pastSplits) {
-                    new_unsat_seq->insert(new_unsat_seq->size(), split);
+                    for (const auto &bound : split.getBoundTightenings())
+                    {
+                        if (bound._type == Tightening::BoundType::LB
+                        && bound._value > 0)
+                        {
+                            new_unsat_seq.insert(bound._variable, true);
+                        }
+                    }
+
                 }
-                _statistics.getGammaUnsatSplitSequences().append(*new_unsat_seq);
+                _statistics.appendGammaUnsatSplitSequence(new_unsat_seq);
                 splitJustPerformed = true;
             }
 
@@ -686,6 +820,7 @@ bool Engine::solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A,
         }
     }
 }
+*/
 
 void Engine::mainLoopStatistics()
 {

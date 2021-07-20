@@ -99,6 +99,19 @@ public:
         GAMMA = 0
     };
 
+    enum VarIndexToPosOption {
+        VAR_INDEX_TO_POS = 0
+    };
+
+    enum VarIndexToIncOption {
+        VAR_INDEX_TO_INC = 0
+    };
+
+    enum PostVarIndicesOption {
+        POST_VAR_INDICES = 0
+    };
+
+
     /*
       The singleton instance
     */
@@ -122,10 +135,14 @@ public:
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
     Map<unsigned, Pair<unsigned, unsigned>> getGammaAbstract( unsigned option ) const;
-    List<Map<unsigned, PiecewiseLinearCaseSplit>> getGamma( unsigned option ) const;
+    List<Map<unsigned, bool>> getGamma( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
+    Map<unsigned, bool> getVarIndexToPos( unsigned option ) const;
+    Map<unsigned, bool> getVarIndexToInc( unsigned option ) const;
+    Map<unsigned, unsigned> getPostVarIndices( unsigned option ) const;
+
 
     /*
       Retrieve the value of the various options, by type
@@ -135,9 +152,12 @@ public:
     void setFloat( unsigned option, float );
     void setString( unsigned option, std::string );
     void setGammaAbstract( unsigned option,
-                           Map< unsigned, Pair<unsigned, unsigned> > values );
+                           Map<unsigned, Pair<unsigned, unsigned>> values );
     void setGamma( unsigned option,
-                   List<Map<unsigned, PiecewiseLinearCaseSplit>> values );
+                   List<Map<unsigned, bool>> values );
+    void setVarIndexToPos( unsigned option, Map<unsigned, bool> values );
+    void setVarIndexToInc( unsigned option, Map<unsigned, bool> values );
+    void setPostVarIndices( unsigned option, Map<unsigned, unsigned> values );
 
 
     /*
@@ -173,8 +193,11 @@ private:
     Map<unsigned, int> _intOptions;
     Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
-    Map<unsigned, List<Map<unsigned, PiecewiseLinearCaseSplit>>*> _gammaOption;
-    Map<unsigned, Map<unsigned, Pair<unsigned, unsigned>>*> _gammaAbstractOption;
+    Map<unsigned, List<Map<unsigned, bool>>> _gammaOption;
+    Map<unsigned, Map<unsigned, Pair<unsigned, unsigned>>> _gammaAbstractOption;
+    Map<unsigned, Map<unsigned, bool>> _varIndexToPosOption;
+    Map<unsigned, Map<unsigned, bool>> _varIndexToIncOption;
+    Map<unsigned, Map<unsigned, unsigned>> _postVarIndicesOption;
 };
 
 #endif // __Options_h__

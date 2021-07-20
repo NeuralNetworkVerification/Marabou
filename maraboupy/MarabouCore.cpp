@@ -30,12 +30,15 @@
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
-#include "InputQuery.h"
-#include "MarabouError.h"
 #include "InputParserError.h"
-#include "MString.h"
+#include "InputQuery.h"
+#include "List.h"
+#include "Map.h"
+#include "MarabouError.h"
 #include "MaxConstraint.h"
+#include "MString.h"
 #include "Options.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
 #include "QueryLoader.h"
@@ -51,6 +54,9 @@
 #endif
 
 namespace py = pybind11;
+
+typedef Map<unsigned, bool> GammaMap;
+typedef List<GammaMap> GammaList;
 
 int redirectOutputToFile(std::string outputFilePath){
     // Redirect standard output to a file
@@ -193,6 +199,9 @@ struct MarabouOptions {
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _gamma_abstract( Options::get()->getGammaAbstract( Options::GAMMA_ABSTRACT ) )
         , _gamma( Options::get()->getGamma( Options::GAMMA ) )
+        , _var_index_to_pos( Options::get()->getVarIndexToPos( Options::VAR_INDEX_TO_POS ) )
+        , _var_index_to_inc( Options::get()->getVarIndexToInc( Options::VAR_INDEX_TO_INC ) )
+        , _post_var_indices( Options::get()->getPostVarIndices( Options::POST_VAR_INDICES ) )
         , _splittingStrategyString( Options::get()->getString( Options::SPLITTING_STRATEGY ).ascii() )
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
     {};
@@ -223,6 +232,9 @@ struct MarabouOptions {
 
     // map options
     Options::get()->setGammaAbstract( Options::GAMMA_ABSTRACT, _gamma_abstract );
+    Options::get()->setVarIndexToPos( Options::VAR_INDEX_TO_POS, _var_index_to_pos );
+    Options::get()->setVarIndexToInc( Options::VAR_INDEX_TO_INC, _var_index_to_inc );
+    Options::get()->setPostVarIndices( Options::POST_VAR_INDICES, _post_var_indices );
 
     // list options
     Options::get()->setGamma( Options::GAMMA, _gamma );
@@ -245,7 +257,10 @@ struct MarabouOptions {
     std::string _splittingStrategyString;
     std::string _sncSplittingStrategyString;
     Map< unsigned, Pair<unsigned, unsigned> > _gamma_abstract;
-    List<Map<unsigned, PiecewiseLinearCaseSplit>> _gamma;
+    List<Map<unsigned, bool>> _gamma;
+    Map<unsigned, bool> _var_index_to_pos;
+    Map<unsigned, bool> _var_index_to_inc;
+    Map<unsigned, unsigned> _post_var_indices;
 };
 
 /* The default parameters here are just for readability, you should specify
@@ -293,7 +308,22 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
         } else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+            bool is_solved = false;
+            auto gamma_abstract = Options::get()->getGammaAbstract( Options::GAMMA_ABSTRACT );
+            auto gamma = Options::get()->getGamma( Options::GAMMA );
+            auto var_index_to_pos = Options::get()->getVarIndexToPos( Options::VAR_INDEX_TO_POS );
+            auto var_index_to_inc = Options::get()->getVarIndexToInc( Options::VAR_INDEX_TO_INC );
+            auto post_var_indices = Options::get()->getPostVarIndices( Options::POST_VAR_INDICES );
+            if (gamma_abstract.empty()){
+                is_solved = engine.solve(timeoutInSeconds);
+            } else {
+                is_solved = engine.solve(timeoutInSeconds);
+                // is_solved = engine.solve(
+                //     gamma, gamma_abstract, var_index_to_pos, var_index_to_inc,
+                //     post_var_indices, timeoutInSeconds
+                // );
+            }
+            if(!is_solved) return std::make_pair(ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
                 engine.extractSolution(inputQuery);
@@ -318,6 +348,21 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
 InputQuery loadQuery(std::string filename){
     return QueryLoader::loadQuery(String(filename));
 }
+
+//template<typename T>
+//void declare_List(py::module &m, std::string &typestr) {
+//    using Class = List<T>;
+////    std::string pyclass_name = std::string("List") + typestr;
+//    std::string pyclass_name = typestr;
+//    py::class_<Class>(m, pyclass_name.c_str(), py::buffer_protocol(), py::dynamic_attr())
+//    .def(py::init())
+//    .def("append", static_cast<void (Class::*) (const &Class)>(&Class::append)
+//    .def("append", static_cast<void (Class::*) (const &T)>(&Class::append)
+//    .def("appendHead", &Class::appendHead)
+//    .def("size", &Class::size)
+//    .def("empty", &Class::empty)
+//    .def("exists", &Class::exists);
+//}
 
 // Code necessary to generate Python library
 // Describes which classes and functions are exposed to API
@@ -465,5 +510,97 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getNumMainLoopIterations", &Statistics::getNumMainLoopIterations)
         .def("getTimeSimplexStepsMicro", &Statistics::getTimeSimplexStepsMicro)
         .def("getNumConstraintFixingSteps", &Statistics::getNumConstraintFixingSteps)
-        .def("hasTimedOut", &Statistics::hasTimedOut);
+        .def("hasTimedOut", &Statistics::hasTimedOut)
+        .def("getGammaUnsatSplitSequences", &Statistics::getGammaUnsatSplitSequences);
+    py::class_<PiecewiseLinearCaseSplit>(m, "PiecewiseLinearCaseSplit")
+        .def(py::init())
+        .def("getBoundTightenings", &PiecewiseLinearCaseSplit::getBoundTightenings)
+        .def("getEquations", &PiecewiseLinearCaseSplit::getEquations);
+    py::class_<Map<unsigned, Pair<unsigned, unsigned>>>(m, "GammaAbstract")
+        .def(py::init())
+        .def("items", [](Map<unsigned, Pair<unsigned, unsigned>> &map) { return py::make_iterator(map.begin(), map.end()); },
+                py::keep_alive<0, 1>())
+        .def("__iter__", [](List<Map<unsigned, PiecewiseLinearCaseSplit>> &g) { return py::make_iterator(g.begin1(), g.end1()); },
+                         py::keep_alive<0, 1>() /* Essential: keep object alive while iterator exists */)
+        .def("insert", &Map<unsigned, Pair<unsigned, unsigned>>::insert)
+        .def("keys", &Map<unsigned, Pair<unsigned, unsigned>>::keys)
+        .def("values", &Map<unsigned, Pair<unsigned, unsigned>>::values)
+        .def("get", &Map<unsigned, Pair<unsigned, unsigned>>::get)
+        .def("size", &Map<unsigned, Pair<unsigned, unsigned>>::size)
+        .def("empty", &Map<unsigned, Pair<unsigned, unsigned>>::empty);
+    py::class_<List<Map<unsigned int, bool>>::iterator>(m, "GammaListIterator");
+//        .def("next", static_cast<List<Map<unsigned int, bool> >::iterator (List<Map<unsigned int, bool> >::*)()>(&List<Map<unsigned, bool>>::iterator::operator++), "next");
+//        .def("next", &List<Map<unsigned int, bool>>::iterator::operator++);
+    py::class_<List<Map<unsigned, bool>>>(m, "Gamma")
+        .def(py::init())
+// WORK       .def("append", static_cast<void (List<Map<unsigned, bool>::*) (const List<Map<unsigned, bool>)>(&List<Map<unsigned, bool>::append)
+// WORK       .def("append", static_cast<void (List<Map<unsigned, bool>::*) (const Map<unsigned, bool>)>(&List<Map<unsigned, bool>>::append)
+// NOT WORK       .def("back", static_cast<void (List<Map<unsigned, bool>>::*)( const Map<unsigned, bool> &)>(&List<Map<unsigned, bool>>::back), "back1")
+// NOT WORK       .def("back", static_cast<void (List<Map<unsigned, bool>>::*)(const List<Map<unsigned, bool>> &)>(&List<Map<unsigned, bool>>::back), "back2")
+// NOT WORK       .def("begin", static_cast<void (List<Map<unsigned, bool>>::*)(List::iterator)>(&List<Map<unsigned, bool>>::begin), "begin iterator")
+// NOT WORK       .def("begin", static_cast<void (List<Map<unsigned, bool>>::*)(List::const_iterator)>(&List<Map<unsigned, bool>>::begin), "begin const_iterator")
+        .def("append", static_cast<void (List<Map<unsigned, bool>>::*)( const Map<unsigned, bool> &)>(&List<Map<unsigned, bool>>::append), "append gamma list to gamma list (i.e. extend)")
+        .def("append", static_cast<void (List<Map<unsigned, bool>>::*)(const List<Map<unsigned, bool>> &)>(&List<Map<unsigned, bool>>::append), "append value to gamma list")
+        .def("append1", &List<Map<unsigned, bool>>::append1)
+        .def("append2", &List<Map<unsigned, bool>>::append2)
+        .def("appendHead", &List<Map<unsigned, bool>>::appendHead)
+        .def("__iter__", [](List<Map<unsigned, bool>> &g) { return py::make_iterator(g.begin1(), g.end1()); },
+                         py::keep_alive<0, 1>() /* Essential: keep object alive while iterator exists */)
+        .def("begin1", static_cast<List<Map<unsigned int, bool> >::iterator (List<Map<unsigned int, bool> >::*)()>(&List<Map<unsigned, bool>>::begin1), "begin1 iterator")
+//        .def("begin1", &List<Map<unsigned, bool>>::begin1)
+        .def("begin2", &List<Map<unsigned, bool>>::begin2)
+        .def("rbegin1", &List<Map<unsigned, bool>>::rbegin1)
+        .def("rbegin2", &List<Map<unsigned, bool>>::rbegin2)
+        .def("end1", &List<Map<unsigned, bool>>::end1)
+        .def("end2", &List<Map<unsigned, bool>>::end2)
+        .def("rend1", &List<Map<unsigned, bool>>::rend1)
+        .def("rend2", &List<Map<unsigned, bool>>::rend2)
+        .def("erase1", &List<Map<unsigned, bool>>::erase1)
+        .def("erase2", &List<Map<unsigned, bool>>::erase2)
+        .def("clear", &List<Map<unsigned, bool>>::clear)
+        .def("size", &List<Map<unsigned, bool>>::size)
+        .def("empty", &List<Map<unsigned, bool>>::empty)
+        .def("exists", &List<Map<unsigned, bool>>::exists)
+        .def("front1", &List<Map<unsigned, bool>>::front1)
+        .def("front2", &List<Map<unsigned, bool>>::front2)
+        .def("back1", &List<Map<unsigned, bool>>::back1)
+        .def("back2", &List<Map<unsigned, bool>>::back2)
+        .def("popBack", &List<Map<unsigned, bool>>::popBack)
+        .def("is_equal", &List<Map<unsigned, bool>>::operator==)
+        .def("is_differ", &List<Map<unsigned, bool>>::operator!=);
+    py::class_<List<Tightening>>(m, "ListTightening")
+        .def(py::init())
+// WORK       .def("append", static_cast<void (List<Map<unsigned, bool>::*) (const List<Map<unsigned, bool>)>(&List<Map<unsigned, bool>::append)
+// WORK       .def("append", static_cast<void (List<Map<unsigned, bool>::*) (const Map<unsigned, bool>)>(&List<Map<unsigned, bool>>::append)
+// NOT WORK       .def("back", static_cast<void (List<Map<unsigned, bool>>::*)( const Map<unsigned, bool> &)>(&List<Map<unsigned, bool>>::back), "back1")
+// NOT WORK       .def("back", static_cast<void (List<Map<unsigned, bool>>::*)(const List<Map<unsigned, bool>> &)>(&List<Map<unsigned, bool>>::back), "back2")
+// NOT WORK       .def("begin", static_cast<void (List<Map<unsigned, bool>>::*)(List::iterator)>(&List<Map<unsigned, bool>>::begin), "begin iterator")
+// NOT WORK       .def("begin", static_cast<void (List<Map<unsigned, bool>>::*)(List::const_iterator)>(&List<Map<unsigned, bool>>::begin), "begin const_iterator")
+        .def("append1", &List<Tightening>::append1)
+        .def("append2", &List<Tightening>::append2)
+        .def("appendHead", &List<Tightening>::appendHead)
+        .def("begin1", &List<Tightening>::begin1)
+        .def("begin2", &List<Tightening>::begin2)
+        .def("rbegin1", &List<Tightening>::rbegin1)
+        .def("rbegin2", &List<Tightening>::rbegin2)
+        .def("end1", &List<Tightening>::end1)
+        .def("end2", &List<Tightening>::end2)
+        .def("rend1", &List<Tightening>::rend1)
+        .def("rend2", &List<Tightening>::rend2)
+        .def("erase1", &List<Tightening>::erase1)
+        .def("erase2", &List<Tightening>::erase2)
+        .def("clear", &List<Tightening>::clear)
+        .def("size", &List<Tightening>::size)
+        .def("empty", &List<Tightening>::empty)
+        .def("exists", &List<Tightening>::exists)
+        .def("front1", &List<Tightening>::front1)
+        .def("front2", &List<Tightening>::front2)
+        .def("back1", &List<Tightening>::back1)
+        .def("back2", &List<Tightening>::back2)
+        .def("popBack", &List<Tightening>::popBack)
+        .def("is_equal", &List<Tightening>::operator==)
+        .def("is_differ", &List<Tightening>::operator!=);
+    py::class_<Pair<unsigned, unsigned>>(m, "Pair")
+        .def(py::init());
+//    declare_List<GammaMap>(m, "Gamma");
 }

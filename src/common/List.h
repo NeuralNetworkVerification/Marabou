@@ -15,6 +15,7 @@
 
 #ifndef __List_h__
 #define __List_h__
+#include <iostream>
 
 #include "CommonError.h"
 
@@ -45,7 +46,18 @@ public:
             _container.push_back( element );
     }
 
+    void append1( const List<T> &other )
+    {
+        for ( const auto &element : other )
+            _container.push_back( element );
+    }
+
     void append( const T &value )
+    {
+        _container.push_back( value );
+    }
+
+    void append2( const T &value )
     {
         _container.push_back( value );
     }
@@ -60,7 +72,17 @@ public:
         return _container.begin();
     }
 
+    iterator begin1()
+    {
+        return _container.begin();
+    }
+
     const_iterator begin() const
+    {
+        return _container.begin();
+    }
+
+    const_iterator begin2() const
     {
         return _container.begin();
     }
@@ -70,7 +92,17 @@ public:
         return _container.rbegin();
     }
 
+    reverse_iterator rbegin1()
+    {
+        return _container.rbegin();
+    }
+
     const_reverse_iterator rbegin() const
+    {
+        return _container.rbegin();
+    }
+
+    const_reverse_iterator rbegin2() const
     {
         return _container.rbegin();
     }
@@ -80,7 +112,17 @@ public:
         return _container.end();
     }
 
+    iterator end1()
+    {
+        return _container.end();
+    }
+
     const_iterator end() const
+    {
+        return _container.end();
+    }
+
+    const_iterator end2() const
     {
         return _container.end();
     }
@@ -90,7 +132,17 @@ public:
         return _container.rend();
     }
 
+    reverse_iterator rend1()
+    {
+        return _container.rend();
+    }
+
     const_reverse_iterator rend() const
+    {
+        return _container.rend();
+    }
+
+    const_reverse_iterator rend2() const
     {
         return _container.rend();
     }
@@ -100,7 +152,24 @@ public:
         return _container.erase( it );
     }
 
+    iterator erase1( iterator it )
+    {
+        return _container.erase( it );
+    }
+
     void erase( const T &value )
+    {
+        for ( iterator it = begin(); it != end(); ++it )
+        {
+            if ( *it == value )
+            {
+                erase( it );
+                return;
+            }
+        }
+    }
+
+    void erase2( const T &value )
     {
         for ( iterator it = begin(); it != end(); ++it )
         {
@@ -143,7 +212,17 @@ public:
         return _container.front();
     }
 
+    T &front1()
+    {
+        return _container.front();
+    }
+
     const T &front() const
+    {
+        return _container.front();
+    }
+
+    const T &front2() const
     {
         return _container.front();
     }
@@ -153,7 +232,17 @@ public:
         return _container.back();
     }
 
+    T &back1()
+    {
+        return _container.back();
+    }
+
     const T &back() const
+    {
+        return _container.back();
+    }
+
+    const T &back2() const
     {
         return _container.back();
     }

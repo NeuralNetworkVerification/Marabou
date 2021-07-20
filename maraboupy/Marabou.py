@@ -163,6 +163,7 @@ def createOptions(
     options._splitThreshold = splitThreshold
     options._solveWithMILP = solveWithMILP
     options._preprocessorBoundTolerance = preprocessorBoundTolerance
-    options._gamma_abstract = gamma_abstract
-    options._gamma = gamma
+    print(f"gamma_abstract={gamma_abstract}")
+    # options._gamma_abstract = gamma_abstract
+    # options._gamma = gamma
     return options

@@ -609,9 +609,14 @@ unsigned Statistics::getNumVisitedTreeStates() const
     return _numVisitedTreeStates;
 }
 
-List<Map<unsigned, PiecewiseLinearCaseSplit>> Statistics::getGammaUnsatSplitSequences() const
+List<Map<unsigned, bool>> Statistics::getGammaUnsatSplitSequences() const
 {
     return _gammaUnsatSplitSequences;
+}
+
+void Statistics::appendGammaUnsatSplitSequence(Map<unsigned, bool> new_unsat_seq)
+{
+    _gammaUnsatSplitSequences.append(new_unsat_seq);
 }
 
 unsigned Statistics::getNumSplits() const

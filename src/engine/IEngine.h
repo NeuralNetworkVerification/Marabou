@@ -73,7 +73,7 @@ public:
     /*
       Solve the encoded query.
     */
-    virtual bool solve( Map< unsigned, Pair<unsigned, unsigned> > Gamma_A, Map<unsigned, bool> is_pos, Map<unsigned, bool> is_inc, Map<unsigned, unsigned> post_var_indices, unsigned timeoutInSeconds = 0 ) = 0;
+    // virtual bool solve( List<Map<unsigned, bool>> gammaUnsat, Map< unsigned, Pair<unsigned, unsigned> > gammaAbs, Map<unsigned, bool> is_pos, Map<unsigned, bool> is_inc, Map<unsigned, unsigned> post_var_indices, unsigned timeoutInSeconds = 0 ) = 0;
     virtual bool solve( unsigned timeoutInSeconds ) = 0;
 
     /*

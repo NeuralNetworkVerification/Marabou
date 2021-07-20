@@ -11,6 +11,8 @@ TAGS
 /src/basis_factorization/tests/cxxtest_Test_ForrestTomlinFactorization.cxx
 /src/basis_factorization/tests/cxxtest_Test_PermutationMatrix.cxx
 *.DS_Store
+*tools/pybind11-2.3.0_py36/
+*.vscode/
 *-checkpoint.ipynb
 *.so
 *.pyc
