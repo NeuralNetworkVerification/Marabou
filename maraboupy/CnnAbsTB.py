@@ -247,11 +247,12 @@ if not cfg_maskAbstract:
         maskList = []
 CnnAbs.printLog("Created {} masks".format(len(maskList)))
 cnnAbs.resultsJson["numMasks"] = len(maskList)
+cnnAbs.resultsJson["masks"] = ["non_zero={},{}=\n{}".format(i,np.count_nonzero(mask), mask) for i,mask in enumerate(maskList)]
 if cfg_maskIndex != -1:
     CnnAbs.printLog("Using only mask {}".format(cfg_maskIndex))    
 cnnAbs.dumpResultsJson()
 #for i,mask in enumerate(maskList):
-#    print("mask,{}=\n{}".format(i,mask))
+#    print("mask, non_zero={},{}=\n{}".format(i,np.count_nonzero(mask), mask))
 #exit()
 
 CnnAbs.printLog("Starting verification phase")
@@ -276,7 +277,7 @@ for i, mask in enumerate(maskList):
         modelAbs = None    
 
     if i+1 == len(maskList):
-        cnnAbs.optionsObj._timeoutInSeconds = 0
+        cnnAbs.optionsObj._timeoutInSeconds = 0 #FIXME change to >0 value. prevent kill events - ensure gracefull exit by giving real timeout.
     runName = "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList))
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
@@ -335,6 +336,7 @@ if not cfg_dumpQueries:
         cnnAbs.resultsJson["SAT"] = resultObj.sat()
         cnnAbs.resultsJson["Result"] = resultObj.result.name
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
+        cnnAbs.resultsJson["successfulRun"] = successful
     cnnAbs.dumpResultsJson()
 
     CnnAbs.printLog(resultObj.result.name)

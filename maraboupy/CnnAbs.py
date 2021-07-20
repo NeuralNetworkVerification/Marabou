@@ -79,7 +79,7 @@ class PolicyBase:
 
 
     @staticmethod
-    def geometricStep(n, initStepSize=10, startWith=30, factor=2):
+    def geometricStep(n, initStepSize=10, startWith=0, factor=2):
         stepSize = max(initStepSize,1)
         startWith = max(startWith,0)
         size = n
@@ -571,7 +571,13 @@ class CnnAbs:
 
     def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None, rerun=False):
         if rerun:
+            self.resultsJson["subResults"][-1]["runtimeInitialRun"] = self.resultsJson["subResults"][-1]["runtime"]
             self.resultsJson["subResults"][-1]["runtime"] += runtime
+            self.resultsJson["subResults"][-1]["runtimeRerun"] = runtime
+            self.resultsJson["subResults"][-1]["runtimeTotal"] = runtimeTotal
+            self.resultsJson["subResults"][-1]["doneRerun"] = True
+            self.resultsJson["subResults"][-1]["rerunSAT"] = sat
+            self.resultsJson["subResults"][-1]["rerunTimedOut"] = timedOut
         else:
             self.resultsJson["subResults"][-1] = {"index" : self.maskIndex+1,
                                                   "outOf" : self.numMasks,
@@ -580,7 +586,8 @@ class CnnAbs:
                                                   "originalQueryStats" : originalQueryStats,
                                                   "finalQueryStats" : finalQueryStats,
                                                   "SAT" : sat,
-                                                  "timedOut" : timedOut}
+                                                  "timedOut" : timedOut,
+                                                  "doneRerun" : False}
             
         self.dumpResultsJson()
         
@@ -926,8 +933,8 @@ class ModelUtils:
 class InputQueryUtils:
 
     @staticmethod
-    def setUnconnectedAsInputs(net):
-        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr)])
+    def setUnconnectedAsInputs(net):        
+        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
         for eq in net.equList:
             if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
                 varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
