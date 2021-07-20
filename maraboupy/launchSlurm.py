@@ -177,8 +177,8 @@ def main():
     parser.add_argument("--dump_suffix", type=str, default="", help="Suffix at ending the dumpQueries directory", required=False)
     parser.add_argument("--validation", type=str, choices=validationNets, default="", help="Use validation net", required=False)
     parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
-    parser.add_argument("--slurm_seq", action="store_true",                        default=False,                  help="Run next mask if this one fails.")
-    parser.add_argument("--rerun_sporious", action="store_true",                        default=False,                  help="Rerun Sporious CEX.")
+    parser.add_argument("--slurm_seq", action="store_true",                        default=True,                  help="Run next mask if this one fails.")
+    parser.add_argument("--rerun_sporious", action="store_true",                        default=True,                  help="Rerun Sporious CEX.")
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
