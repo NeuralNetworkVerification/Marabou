@@ -1095,7 +1095,6 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     }
 
     _tableau->initializeTableau( initialBasis );
-
     _costFunctionManager->initialize();
     _tableau->registerCostFunctionManager( _costFunctionManager );
     _activeEntryStrategy->initialize( _tableau );
@@ -1352,14 +1351,14 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
 
 	if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
-		state._groundLowerBounds = std::vector<double> (_tableau->getN(), 0);
-		state._groundUpperBounds = std::vector<double> (_tableau->getN(), 0);
+		state._groundLowerBounds = std::vector<double> ( _tableau->getN(), 0 );
+		state._groundUpperBounds = std::vector<double> ( _tableau->getN(), 0 );
     	std::copy( _groundUpperBounds.begin(), _groundUpperBounds.end(), state._groundUpperBounds.begin() );
 		std::copy( _groundLowerBounds.begin(), _groundLowerBounds.end(), state._groundLowerBounds.begin() );
 
 		state._initialTableau = std::vector<std::vector<double>> ( _tableau->getM(), std::vector<double> ( _tableau->getN() + 1, 0 ) );
 		ASSERT( _initialTableau.size() == state._initialTableau.size() );
-		assert( _initialTableau[0].size() == state._initialTableau[0].size() );
+		ASSERT( _initialTableau[0].size() == state._initialTableau[0].size() );
 		std::copy( _initialTableau.begin(), _initialTableau.end(), state._initialTableau.begin() );
 	}
 }
@@ -1619,6 +1618,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 			{
             	if ( FloatUtils::lte( _tableau->getLowerBound( variable ), bound._value) )
 				{
+					// printf( "set lbu of %d from %f to %f\n", variable, _groundLowerBounds[variable], bound._value ); TODO delete
 					_tableau->resetExplanation( variable, false );
 					_groundLowerBounds[variable] = bound._value;
 				}
@@ -1632,7 +1632,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 			{
 				if ( FloatUtils::gte( _tableau->getUpperBound( variable ), bound._value ) )
 				{
-					_tableau->resetExplanation(variable, true);
+					// printf("set gbu of %d from %f to %f\n", variable, _groundUpperBounds[variable], bound._value ); TODO delete
+					_tableau->resetExplanation( variable, true );
 					_groundUpperBounds[variable] = bound._value;
 				}
 			}
@@ -1676,12 +1677,13 @@ void Engine::applyAllConstraintTightenings()
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
 		unsigned diffSize =  _constraintBoundTightener->getTableauUpdates().size();
-		for ( auto &initialRow : _initialTableau ) // Keeps scalar at last place
-			initialRow.insert( initialRow.end() - 1, diffSize, 0);
+		if ( diffSize )
+			for ( auto &initialRow : _initialTableau ) // Keeps scalar at last place
+				initialRow.insert( initialRow.end() - 1, diffSize, 0);
 
 		for (  auto& row : _constraintBoundTightener->getTableauUpdates() )
 		{
-			assert( row.size() == _initialTableau[0].size() );
+			ASSERT( row.size() == _initialTableau[0].size() );
 			_initialTableau.push_back(row);
 		}
 
@@ -1690,6 +1692,11 @@ void Engine::applyAllConstraintTightenings()
 
 		for ( auto bound : _constraintBoundTightener->getUGBUpdates() )
 			_groundUpperBounds.push_back(bound);
+
+
+		ASSERT( _groundLowerBounds.size() == _initialTableau[0].size() - 1 );
+		ASSERT( _groundLowerBounds.size() == _initialTableau.back().size() - 1 );
+		ASSERT( _groundLowerBounds.size() == _groundUpperBounds.size() );
 
 		_constraintBoundTightener->clearEngineUpdates();
 
@@ -2487,68 +2494,8 @@ void Engine::certifyInfeasibility( const double epsilon ) const
 
 double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 {
-    unsigned n = _tableau->getN(), m = _tableau->getM();
-    double derived_bound = 0, scalar = 0, c = 0, temp = 0;
-
-	SingleVarBoundsExplanator* certificate = new SingleVarBoundsExplanator( m );
-	*certificate = *_tableau->ExplainBound( var );
-
-    // Retrieve bound explanation
-    std::vector<double> expl = std::vector<double>( m, 0 );
-    certificate->getVarBoundExplanation( expl, isUpper );
-	delete certificate;
-
-
-    // If explanation is all zeros, return original bound
-    bool allZeros = true;
-    for( unsigned i = 0; i < expl.size(); ++i )
-        if ( !FloatUtils::isZero( expl[i] ) )
-            allZeros = false;
-    if ( allZeros )
-        return isUpper? _groundUpperBounds[var] : _groundLowerBounds[var];
-
-     // Create linear combination of original rows implied from explanation
-    std::vector<double> explanationRowsCombination = std::vector<double>( n, 0 );
-
-    for ( unsigned i = 0; i < m; ++i )
-    {
-        for ( unsigned j = 0; j < n; ++j )
-            explanationRowsCombination[j] += _initialTableau[i][j] * expl[i];
-
-        scalar += _initialTableau[i][n] * expl[i];
-    }
-
-    // Isolate var in the linear combination - compute its coefficient and divide by -c.
-    // Then erase the coefficient of var
-    c = explanationRowsCombination[var];
-
-    ASSERT( c );
-
-	for ( unsigned i = 0; i < n; ++i )
-		explanationRowsCombination[i] /= -c;
-     explanationRowsCombination[var] = 0;
-    scalar /= -c;
-
-    // Set the bound derived from the linear combination, using original bounds.
-    for ( unsigned i = 0; i < n; ++i )
-    {
-        temp = explanationRowsCombination[i];
-		if ( !FloatUtils::isZero( temp ) )
-		{
-			if ( isUpper )
-				temp *= explanationRowsCombination[i] > 0 ? _groundUpperBounds[i] : _groundLowerBounds[i];
-			else
-				temp *= explanationRowsCombination[i] > 0 ? _groundLowerBounds[i] : _groundUpperBounds[i];
-
-			if ( !FloatUtils::isZero( abs(temp) ) )
-           		derived_bound += temp;
-		}
-    }
-
-	derived_bound += scalar;
-    explanationRowsCombination.clear();
-    expl.clear();
-    return derived_bound;
+	SingleVarBoundsExplanator* certificate = _tableau->ExplainBound( var );;
+	return UNSATCertificateUtils::computeBound( var, isUpper, *certificate, _initialTableau, _groundUpperBounds, _groundLowerBounds);
 }
 
 
@@ -2599,20 +2546,31 @@ void Engine::normalizeExplanations()
 }
 
 
-void Engine::validateBounds( unsigned var ,const double epsilon ) const
+bool Engine::validateBounds( unsigned var ,const double epsilon ) const
 {
-	if ( abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > epsilon )
+	if (  abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > epsilon )
+	{
 		printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
+		return false;
+	}
 	if ( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) > epsilon)
+	{
 		printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+		return false;
+	}
+	return true;
 	//TODO revert upon completing
 	//ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
 	//ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon );
 }
 
-void Engine::validateAllBounds( const double epsilon ) const
+bool Engine::validateAllBounds( const double epsilon ) const
 {
+	bool res = true;
     //Assuming all tightening were applied
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
-       validateBounds(var, epsilon);
+       if ( !validateBounds( var, epsilon ) )
+       		res = false;
+
+    return res;
 }

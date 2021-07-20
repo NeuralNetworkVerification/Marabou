@@ -59,13 +59,6 @@ public:
     void registerTighterUpperBound( unsigned variable, double bound );
 
 	/*
-	 As previous methods, but has the option to tell the CBT to add an equation to the tableau.
-	 The resulting row will be used for explaining the bound tightening.
-	*/
-	void registerTighterLowerBound( unsigned variable, double bound, const Equation& additionalEq );
-	void registerTighterUpperBound( unsigned variable, double bound, const Equation& additionalEq );
-
-	/*
  	As previous methods, but with additional Tableau row for explaining the bound tightening.
 	*/
 	void registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& row );

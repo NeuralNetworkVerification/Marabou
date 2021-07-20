@@ -576,13 +576,15 @@ private:
 	/*
 	 Validates that explanations epsilon close to real bounds of a given var
 	 Separately for tightenings and actual bounds
+	 Returns true iff both bounds are epsilon close to their explanations
 	*/
-	void validateBounds( unsigned var ,const double epsilon ) const;
+	bool validateBounds( unsigned var ,const double epsilon ) const;
     /*
      Validates that all explanations epsilon close to real bounds
      Separately for tightenings and actual bounds
+     Returns true iff all bounds are epsilon-close to theier explanations
     */
-    void validateAllBounds( const double epsilon ) const;
+    bool validateAllBounds( const double epsilon ) const;
 
 };
 

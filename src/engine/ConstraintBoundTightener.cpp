@@ -145,34 +145,12 @@ void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, dou
     }
 }
 
-void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound, const Equation& additionalEq )
-{
-	if ( bound > _lowerBounds[variable] )
-	{
-		if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			replaceEquationAndAdd( variable, additionalEq );
-
-		registerTighterLowerBound( variable, bound );
-	}
-}
-
-void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, double bound, const Equation& additionalEq )
-{
-	if ( bound < _upperBounds[variable] )
-	{
-		if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			replaceEquationAndAdd( variable, additionalEq );
-
-		registerTighterUpperBound( variable, bound );
-	}
-}
-
 void ConstraintBoundTightener::registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& row )
 {
 	if ( bound > _lowerBounds[variable] )
 	{
 		if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			_tableau.updateExplanation(row, false, variable );
+			_tableau.updateExplanation( row, false, variable );
 
 		registerTighterLowerBound( variable, bound );
 	}
@@ -183,7 +161,7 @@ void ConstraintBoundTightener::registerTighterUpperBound( unsigned variable, dou
 	if ( bound < _upperBounds[variable] )
 	{
 		if ( GlobalConfiguration::PROOF_CERTIFICATE )
-			_tableau.updateExplanation(row, true, variable );
+			_tableau.updateExplanation( row, true, variable );
 
 		registerTighterUpperBound( variable, bound );
 	}
@@ -250,8 +228,14 @@ void ConstraintBoundTightener::replaceEquationAndAdd( unsigned var, const Equati
 	// Enforcing the new aux var to be zero
 	_lowerGBUpdates.push_back( 0 );
 	_upperGBUpdates.push_back( 0 );
-	_tableau.setLowerBound( newAux, 0 );
-	_tableau.setUpperBound( newAux, 0 );
+
+	registerTighterUpperBound( newAux, 0 );
+	registerTighterLowerBound( newAux, 0 );
+
+	// Assuming equation is of type var = scalar
+	// For generalization, can possibly compute bound imposed by row
+	registerTighterUpperBound( var, eq._scalar );
+	registerTighterLowerBound( var, eq._scalar );
 
 	// Injects the new explanation - the last row
 	// No need for a tightening row, and avoid possible bug of adding a basic variable as non-basic

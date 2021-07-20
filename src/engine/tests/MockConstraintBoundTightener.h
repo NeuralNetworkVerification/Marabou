@@ -78,16 +78,6 @@ public:
         _tightenings.append( Tightening( variable, bound, Tightening::UB ) );
     }
 
-	void registerTighterLowerBound( unsigned variable, double bound, const Equation& /* additionalEq */ )
-	{
-		_tightenings.append( Tightening( variable, bound, Tightening::LB ) );
-	}
-
-	void registerTighterUpperBound( unsigned variable, double bound, const Equation& /* additionalEq */ )
-	{
-		_tightenings.append( Tightening( variable, bound, Tightening::UB ) );
-	}
-
 	void registerTighterLowerBound( unsigned variable, double bound, const SparseUnsortedList& /* row */ )
 	{
 		_tightenings.append( Tightening( variable, bound, Tightening::LB ) );
@@ -120,7 +110,11 @@ public:
 	}
 
 	void clearEngineUpdates(){}
-	void replaceEquationAndAdd( unsigned /* var */, const Equation& /* eq */){}
+	void replaceEquationAndAdd( unsigned  var , const Equation&  eq )
+	{
+    	registerTighterUpperBound( var, eq._scalar );
+		registerTighterLowerBound( var, eq._scalar );
+    }
 };
 
 #endif // __MockConstraintBoundTightener_h__
