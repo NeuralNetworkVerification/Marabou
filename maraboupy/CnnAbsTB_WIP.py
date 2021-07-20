@@ -277,7 +277,7 @@ for i, mask in enumerate(maskList):
         modelAbs = None    
 
     if i+1 == len(maskList):
-        cnnAbs.optionsObj._timeoutInSeconds = 0
+        cnnAbs.optionsObj._timeoutInSeconds = 0 #FIXME change to >0 value. prevent kill events - ensure gracefull exit by giving real timeout.
     runName = "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList))
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:

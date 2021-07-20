@@ -571,7 +571,10 @@ class CnnAbs:
 
     def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None, rerun=False):
         if rerun:
+            self.resultsJson["subResults"][-1]["runtimeInitialRun"] = self.resultsJson["subResults"][-1]["runtime"]
             self.resultsJson["subResults"][-1]["runtime"] += runtime
+            self.resultsJson["subResults"][-1]["runtimeRerun"] = runtime
+            self.resultsJson["subResults"][-1]["runtimeTotal"] = runtimeTotal
             self.resultsJson["subResults"][-1]["doneRerun"] = True
             self.resultsJson["subResults"][-1]["rerunSAT"] = sat
             self.resultsJson["subResults"][-1]["rerunTimedOut"] = timedOut
