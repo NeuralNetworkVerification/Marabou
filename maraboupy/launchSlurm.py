@@ -161,7 +161,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 ####################################################################################################
 ####################################################################################################
 
-def main():    
+def main():
 
     validationNets = ["mnist_{}_{}".format(layers, i) for i in [1, 2, 4] for layers in ["base", "long"]]
     
@@ -210,12 +210,15 @@ def main():
     dumpDirPath = basePath + "logs/{}/".format(dumpDir)
     if (dumpQueries or useDumpedQueries) and not os.path.exists(dumpDirPath):
         os.mkdir(dumpDirPath)
+
+    with open(batchDirPath + "/runCmd.sh", 'w') as f:
+        f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
     #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
     #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
     clusterFlags = []
     #commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
-    commonFlags = clusterFlags + ["--batch_id", batchId, "--prop_distance", str(0.03), "--dump_dir", dumpDirPath]
+    commonFlags = clusterFlags + ["--batch_id", batchId, "--prop_distance", str(0.02), "--dump_dir", dumpDirPath]
     if cnn_size:
         commonFlags += ["--cnn_size", cnn_size]
     if validation:
