@@ -2635,7 +2635,7 @@ int Tableau::getInfeasibleRow( TableauRow& row )
         if ( basicOutOfBounds( i )  )
         {
             Tableau::getTableauRow( i, &row );
-            if ( ( computeRowBound( row, true ) < _lowerBounds[row._lhs] || computeRowBound( row, false ) > _upperBounds[row._lhs] ) )
+            if ( ( FloatUtils::lt( computeRowBound( row, true ), _lowerBounds[row._lhs] ) || FloatUtils::gt( computeRowBound( row, false ), _upperBounds[row._lhs] ) ) )
                 return (int) i;
         }
     }

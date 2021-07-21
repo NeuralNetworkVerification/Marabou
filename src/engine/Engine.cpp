@@ -517,6 +517,7 @@ void Engine::performSimplexStep()
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
             if( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
+                applyAllBoundTightenings();
 				simplexBoundsUpdate();
 				printLinearInfeasibilityCertificate();
 				validateAllBounds( 0.001 );
@@ -1702,7 +1703,7 @@ void Engine::applyAllConstraintTightenings()
 
 		for ( const auto &tightening : entailedTightenings ) //TODO delete
 			validateBounds(tightening._variable, 0.1);
-	}
+    }
 }
 
 void Engine::applyAllBoundTightenings()
@@ -2447,7 +2448,6 @@ void Engine::printLinearInfeasibilityCertificate()
 
 void Engine::simplexBoundsUpdate()
 {
-    applyAllBoundTightenings();
 	// Failure of a simplex step implies infeasible bounds imposed by the row
     TableauRow boundUpdateRow = TableauRow( _tableau->getN() );
     // If an infeasible basic is lower than its lower bound, then it cannot be increased.

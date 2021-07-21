@@ -248,9 +248,9 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 						// Aux's range is minus the range of b
 						if ( _phaseStatus != PHASE_ACTIVE)
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
-						else if ( FloatUtils::isNegative( bound )  && _addedFixedAuxEq )
+                        else if ( FloatUtils::isNegative( bound )  && _addedFixedAuxEq )
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
-					}
+                    }
                 	else
 						_constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
                 }
