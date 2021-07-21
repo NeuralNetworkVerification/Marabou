@@ -100,6 +100,13 @@ PiecewiseLinearCaseSplit* SmtCore::getLastSplit()
     return _lastSplit;
 }
 
+void SmtCore::performRequiredSplits()
+{
+    for (auto requiredSplit : _requiredSplits) {
+        performSplit(requiredSplit);
+    }
+}
+
 void SmtCore::performSplit()
 {
     ASSERT( _needToSplit );
@@ -254,6 +261,18 @@ bool SmtCore::popSplit()
     checkSkewFromDebuggingSolution();
 
     return true;
+}
+
+void SmtCore::isThereRequiredSplits)
+{
+    return _requiredSplits != NULL;    
+}
+
+void SmtCore::handleRequiredSplits(Map<PiecewiseLinearCaseSplit, unsigned> requiredSplits)
+{
+    Map<PiecewiseLinearCaseSplit, unsigned> unsplittedReuiredSplits = filterAlreadySplitted(requiredSplits)
+    // _requiredSplits should be field of type list, if not empty should perform all splits
+    _requiredSplits = unsplittedReuiredSplits;    
 }
 
 void SmtCore::resetReportedViolations()

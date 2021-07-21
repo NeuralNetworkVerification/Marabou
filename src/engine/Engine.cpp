@@ -342,6 +342,326 @@ bool isActiveSplit(PiecewiseLinearCaseSplit split)
     return false;
 };
 
+bool Engine::solve_with_rr( unsigned timeoutInSeconds )
+{
+    SignalHandler::getInstance()->initialize();
+    SignalHandler::getInstance()->registerClient( this );
+
+    updateDirections();
+    storeInitialEngineState();
+
+    mainLoopStatistics();
+    if ( _verbosity > 0 )
+    {
+        printf( "\nEngine::solve: Initial statistics\n" );
+        _statistics.print();
+        printf( "\n---\n" );
+    }
+
+    applyAllValidConstraintCaseSplits();
+
+    bool splitJustPerformed = true;
+    struct timespec mainLoopStart = TimeUtils::sampleMicro();
+    while ( true )
+    {
+        struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+        _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+        mainLoopStart = mainLoopEnd;
+
+        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to timeout...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
+
+            _exitCode = Engine::TIMEOUT;
+            _statistics.timeout();
+            return false;
+        }
+
+        if ( _quitRequested )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\n\nEngine: quitting due to external request...\n\n" );
+                printf( "Final statistics:\n" );
+                _statistics.print();
+            }
+
+            _exitCode = Engine::QUIT_REQUESTED;
+            return false;
+        }
+
+        try
+        {
+            DEBUG( _tableau->verifyInvariants() );
+
+            mainLoopStatistics();
+            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
+                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+                _statistics.print();
+
+            // Check whether progress has been made recently
+            checkOverallProgress();
+
+            // If the basis has become malformed, we need to restore it
+            if ( basisRestorationNeeded() )
+            {
+                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+                {
+                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                    _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+                }
+                else
+                {
+                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+                    _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+                }
+
+                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
+                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+                continue;
+            }
+
+            // Restoration is not required
+            _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+
+            // Possible restoration due to preceision degradation
+            if ( shouldCheckDegradation() && highDegradation() )
+            {
+                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                continue;
+            }
+
+            if ( _tableau->basisMatrixAvailable() )
+            {
+                explicitBasisBoundTightening();
+                applyAllBoundTightenings();
+                applyAllValidConstraintCaseSplits();
+            }
+
+            if ( splitJustPerformed )
+            {
+                // get current splits + Gamma's clauses and derive required splits 
+                List<Map<PiecewiseLinearCaseSplit, unsigned>> clauses = getGammaCluases(gamma);
+                Map<PiecewiseLinearCaseSplit, unsigned> currentSplits = getCurrentSplits();
+                Map<PiecewiseLinearCaseSplit, unsigned> requiredSplits = deriveRequiredSplits(currentSplits, clauses);
+                // notify _smtCore about the new required splits
+                _smtCore.handleRequiredSplits(requiredSplits);
+                
+                do
+                {
+                    performSymbolicBoundTightening();
+                }
+                while ( applyAllValidConstraintCaseSplits() );
+                splitJustPerformed = false;
+            }
+
+            // Perform any SmtCore-initiated case splits
+            if ( _smtCore.needToSplit())
+            {
+                _smtCore.performSplit();
+                splitJustPerformed = true;
+                continue;
+            }
+
+            if ( _smtCore.isThereRequiredSplits())
+            {
+                _smtCore.performReuiredSplits();
+                splitJustPerformed = true;
+                continue;
+            }
+
+            if ( !_tableau->allBoundsValid() )
+            {
+                // Some variable bounds are invalid, so the query is unsat
+                throw InfeasibleQueryException();
+            }
+
+            if ( allVarsWithinBounds() )
+            {
+                // The linear portion of the problem has been solved.
+                // Check the status of the PL constraints
+                collectViolatedPlConstraints();
+
+                // If all constraints are satisfied, we are possibly done
+                if ( allPlConstraintsHold() )
+                {
+                    if ( _tableau->getBasicAssignmentStatus() !=
+                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                    {
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "Before declaring sat, recomputing...\n" );
+                        }
+                        // Make sure that the assignment is precise before declaring success
+                        _tableau->computeAssignment();
+                        continue;
+                    }
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: sat assignment found\n" );
+                        _statistics.print();
+                    }
+                    _exitCode = Engine::SAT;
+                    return true;
+                }
+
+                // We have violated piecewise-linear constraints.
+                performConstraintFixingStep();
+
+                // Finally, take this opporunity to tighten any bounds
+                // and perform any valid case splits.
+                tightenBoundsOnConstraintMatrix();
+                applyAllBoundTightenings();
+                // For debugging purposes
+                checkBoundCompliancyWithDebugSolution();
+
+                while ( applyAllValidConstraintCaseSplits() )
+                    performSymbolicBoundTightening();
+
+                continue;
+            }
+
+            // We have out-of-bounds variables.
+            performSimplexStep();
+            continue;
+        }
+        catch ( const MalformedBasisException & )
+        {
+            // Debug
+            printf( "MalformedBasisException caught!\n" );
+            //
+
+            if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
+            {
+                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
+                {
+                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
+                    _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+                }
+                else
+                {
+                    _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+                }
+            }
+            else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
+                _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+            else
+            {
+                printf( "Engine: Cannot restore tableau!\n" );
+                _exitCode = Engine::ERROR;
+                return false;
+            }
+        }
+        catch ( const InfeasibleQueryException & )
+        {
+            //add unsat split sequence to Gamma
+            gamma.append(getCurrentSplits())
+            // The current query is unsat, and we need to pop.
+            // If we're at level 0, the whole query is unsat.
+            if ( !_smtCore.popSplit() )
+            {
+                if ( _verbosity > 0 )
+                {
+                    printf( "\nEngine::solve: unsat query\n" );
+                    _statistics.print();
+                }
+                _exitCode = Engine::UNSAT;
+                return false;
+            }
+            else
+            {
+                splitJustPerformed = true;
+            }
+
+        }
+        catch ( ... )
+        {
+            _exitCode = Engine::ERROR;
+            printf( "Engine: Unknown error!\n" );
+            return false;
+        }
+    }
+}
+
+Map<PiecewiseLinearCaseSplit, unsigned> deriveRequiredSplits(currentSplits, unsatClauses){
+    // derives all required splits
+    // a required split is derived if it is part of any unsat clause and all other parts
+    // in the clause are mapped the same as they are mapped in currentSplits (the current mapping)
+    // for example, if (notation is: active=1, inactive=0)
+    // clauses = [{c1:1, c2:1}, {c1:1, c3:0}, {c2:0,c3:0}] and
+    // currentSplits = {c1:1}
+    // then 2 splits: {c2:0, c3:1} are derived from the 2 first clauses
+    // (and no split is derived from the 3'rd clause)
+    
+    // implementation:
+    // iterate the current splits, and for each one, assign all satisfied splits in any clause
+    // if at last there are clauses with one remaining split, a required split with the oppose
+    // activation will be added to the result
+    // TBD: use watch literals
+    
+    Map<PiecewiseLinearCaseSplit, unsigned> derived;
+    // list of mappings (for each clause) 
+    // from index in clause to bool if the split in this index in clause is satisfied
+    List<Map<PiecewiseLinearCaseSplit, bool>> satisfiedSplits;
+    for ( auto currentSplit : currentSplits ) {
+        for ( auto clause_index, clause : unsatClauses ) {
+            for ( auto split_index, split : clause ) {
+                // if split is satisfied, assign it in satisfiedSplits
+                bool isSameSplit = split.getVariable() == currentSplit.getVariable();
+                bool isSameActivation = isActiveSplit(split) == isActiveSplit(currentSplit);
+                if ( isSameSplit && isSameActivation ) {
+                    satisfiedSplits[clause_index][split_index] = true;
+                }
+            }
+        }
+    }
+    // for all clauses with exactly one unsatisfied split, derive oppose activation to this split
+    for ( auto clause_index, clause : satisfiedSplits ) {
+        unsigned int unsatisfiedCounter = 0;
+        unsatisfiedSplitIndex = -1;
+        for ( auto split_index, isSplitSatisfied : clause ) {
+            if ( !isSplitSatisfied ) {
+                unsatisfiedCounter += 1;
+                if (unsatisfiedCounter > 1 ) {
+                    break;
+                }
+            }
+            else {
+                unsatisfiedSplitIndex = split_index;
+            }
+        }
+        if (unsatisfiedcounter == 1) {
+            derivedSplit = unsatClauses[clause_index][unsatisfiedSplitIndex];
+            // should assign active if unsat is imactive and vice versa
+            unsigned int opposeActivation = -1 if isActiveSplit(derivedSplit) else 1;
+            derived.add(key=split, value=opposeActivation)
+        } 
+    }
+    return derived;
+}
+
+bool isActiveSplit(PiecewiseLinearCaseSplit split)
+{
+    // check if active or not
+    // is_active = there is at least one LB in _bounds
+    // because there are tw cases in Relu split:
+    // active: b>=0 (LB), f-b<=0 (UB)
+    // inactive b<=0 (UB), f-b<=0 (UB)
+    for (auto bound : split.getBoundTightenings())
+    {
+        if (bound._type == Tightening::BoundType::LB)
+        {
+            return true;
+        }
+    }
+    return false;
+};
+
 /*
 bool Engine::solve(
     List<Map<unsigned, bool>> gammaUnsat,
