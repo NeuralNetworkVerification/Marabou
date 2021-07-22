@@ -22,6 +22,7 @@
 #include "Stack.h"
 #include "SmtStackEntry.h"
 #include "Statistics.h"
+#include "ISmtListener.h"
 
 #include <memory>
 
@@ -78,7 +79,7 @@ public:
       splitting. Update bounds, add equations and update the stack.
     */
     void performSplit();
-
+   
     /*
       Pop an old split from the stack, and perform a new split as
       needed. Return true if successful, false if the stack is empty.
@@ -142,7 +143,22 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
 
+
+    /* 
+      Smt subscription related functions
+    */
+   bool subscribe(std::shared_ptr<ISmtListener> const& subscriber);
+   void unsubscribe(std::shared_ptr<ISmtListener> const& subscriber);
+
+
 private:
+ 
+    /*
+      Perform the split according to the constraint marked for
+      splitting. Update bounds, add equations and update the stack.
+    */
+    void doSplitLogic(List<PiecewiseLinearCaseSplit> const& splits);
+
     /*
       Valid splits that were implied by level 0 of the stack.
     */
@@ -190,6 +206,8 @@ private:
       Split when some relu has been violated for this many times
     */
     unsigned _constraintViolationThreshold;
+
+    List<std::shared_ptr<ISmtListener>> _subscribers;
 };
 
 #endif // __SmtCore_h__

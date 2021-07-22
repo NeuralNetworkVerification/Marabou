@@ -23,6 +23,7 @@
 #include "PropertyParser.h"
 #include "MarabouError.h"
 #include "QueryLoader.h"
+#include "ResidualReasoner.h"
 
 #ifdef _WIN32
 #undef ERROR

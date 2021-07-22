@@ -40,6 +40,7 @@ Engine::Engine()
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
     , _work( NULL )
+    , _reasoner( std::make_shared<ResidualReasoner>() )
     , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
@@ -66,6 +67,8 @@ Engine::Engine()
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
+
+    _smtCore.subscribe(_reasoner);
 }
 
 Engine::~Engine()
@@ -300,6 +303,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
+            printf("FOUND !!!!!!!!!!!\n");
             if ( !_smtCore.popSplit() )
             {
                 if ( _verbosity > 0 )
@@ -325,6 +329,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     }
 }
 
+/*
 bool isActiveSplit(PiecewiseLinearCaseSplit split)
 {
     // check if active or not
@@ -587,7 +592,6 @@ bool Engine::solve_with_rr( unsigned timeoutInSeconds )
         }
     }
 }
-
 Map<PiecewiseLinearCaseSplit, unsigned> deriveRequiredSplits(currentSplits, unsatClauses){
     // derives all required splits
     // a required split is derived if it is part of any unsat clause and all other parts
@@ -661,6 +665,8 @@ bool isActiveSplit(PiecewiseLinearCaseSplit split)
     }
     return false;
 };
+
+*/
 
 /*
 bool Engine::solve(

@@ -37,6 +37,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "Statistics.h"
+#include "ResidualReasoner.h"
 
 #include <atomic>
 
@@ -264,6 +265,11 @@ private:
       Work memory (of size m)
     */
     double *_work;
+
+    /*
+      Residual Reasoner
+    */
+    std::shared_ptr<ResidualReasoner> _reasoner;
 
     /*
       Restoration status.
