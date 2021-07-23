@@ -50,7 +50,8 @@ parser.add_argument("--batch_id",       type=str,                               
 parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier to satisfy, negative makes it harder.")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
-parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Solver timeout in seconds.")
+parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Single solver timeout in seconds.")
+parser.add_argument("--gtimeout",       type=int,                                   default=7200,                   help="Global timeout for all solving in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",         help="Which abstraction policy to use")
@@ -100,6 +101,7 @@ cfg_extraArg          = args.arg
 cfg_maskIndex         = args.mask_index
 cfg_slurmSeq          = args.slurm_seq
 cfg_rerunSporious     = args.rerun_sporious
+cfg_gtimeout          = args.gtimeout
 
 optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
@@ -108,7 +110,9 @@ if cfg_runOn == "local":
 else :
     optionsObj = optionsCluster
 
-cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries)    
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout)
+
+startPrepare = time.time()
 
 policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
 
@@ -142,6 +146,7 @@ cnnAbs.resultsJson[mi("cfg_extraArg")]          = cfg_extraArg
 cnnAbs.resultsJson[mi("cfg_maskIndex")]         = cfg_maskIndex
 cnnAbs.resultsJson[mi("cfg_slurmSeq")]          = cfg_slurmSeq
 cnnAbs.resultsJson[mi("cfg_rerunSporious")]     = cfg_rerunSporious
+cnnAbs.resultsJson[mi("cfg_gtimeout")]          = cfg_gtimeout
 
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "TIMEOUT"
@@ -170,7 +175,7 @@ if maskShape[0] == None:
     maskShape = maskShape[1:]
 
 modelOrigDense = cnnAbs.modelUtils.cloneAndMaskConvModel(modelOrig, replaceLayerName, np.ones(maskShape))
-#FIXME - created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
+#Created modelOrigDense to compensate on possible translation error when densifing. This way the abstractions are assured to be abstraction of this model.
 #compareModels(modelOrig, modelOrigDense)
 
 CnnAbs.printLog("Finished model building")
@@ -218,6 +223,9 @@ cnnAbs.resultsJson["yDataset"] = int(yAdv.item())
 cnnAbs.resultsJson["yMaxPrediction"] = int(yMax)
 cnnAbs.resultsJson["ySecondPrediction"] = int(ySecond)
 cnnAbs.dumpResultsJson()
+
+endPrepare = time.time()
+cnnAbs.defGtimeout(endPrepare - startPrepare)
 
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     CnnAbs.printLog("Started dumping bounds - used for abstraction")
@@ -286,7 +294,7 @@ for i, mask in enumerate(maskList):
         assert i+1 != len(maskList)
         continue
     if resultObj.sat():
-        if not cfg_useDumpedQueries: #FIXME should be if true
+        if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))

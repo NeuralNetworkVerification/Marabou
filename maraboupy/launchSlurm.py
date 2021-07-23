@@ -12,8 +12,6 @@ import argparse
 ####################################################################################################
 ####################################################################################################
 
-#FIXME should be the same as CnnAbs
-
 def absPolicies():
     return ['Centered', 'AllClassRank', 'SingleClassRank', 'MajorityClassVote', 'Random']
     
@@ -21,7 +19,7 @@ def solvingPolicies():
     return absPolicies() + ['Vanilla']
 
 def globalTimeOut():
-    return 2,0,0
+    return 3,0,0
 
 TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
 TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)

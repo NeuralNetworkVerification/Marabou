@@ -165,7 +165,7 @@ class PolicyMajorityClassVote(PolicyBase):
     def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         features = [[x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == label] for label in range(self.ds.num_classes)]
         actMaps = [PolicyBase.meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
-        discriminate = lambda actM : np.square(actM) #TODO explore discriminating schemes.
+        discriminate = lambda actM : np.square(actM)
         actMaps = [discriminate(actMap) for actMap in actMaps]
         sortedIndReverseDiscriminated = PolicyBase.sortActMapReverse(sum(actMaps))
         return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], includeFull=includeFull)
@@ -345,7 +345,7 @@ class CnnAbs:
     basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
     resultsFile = 'Results'
     
-    def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex=''):
+    def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200):
         if CnnAbs.logger == None:
             CnnAbs.setLogger(suffix=maskIndex)
         self.ds = DataSet(ds)
@@ -373,6 +373,7 @@ class CnnAbs:
         self.startTotal = time.time()
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries
+        self.gtimeout = gtimeout
 
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None):
         if self.maskIndex+1 == self.numMasks:
@@ -386,7 +387,7 @@ class CnnAbs:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
             commonFlags.append("--use_dumped_queries")
-        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq"]
+        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq", "--gtimeout", int(self.gtimeout)]
         runSingleRun(cmd, runTitle, CnnAbs.basePath, "/".join(filter(None, [CnnAbs.basePath, "logs", batchId])), str(self.maskIndex+1))
         
         
@@ -418,7 +419,7 @@ class CnnAbs:
             self.subResultAppend()
         else:
             boundDictCopy = boundDict.copy()
-            freeInputs = True #FIXME work on this
+            freeInputs = True
             for var,value in rerunObj.vals.items():
                 varOrig = rerunObj.varsMapping[var]
             #if not (freeInputs and varOrig in rerunObj.inputs):
@@ -435,7 +436,11 @@ class CnnAbs:
                 return None
         else:
             ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
-        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj) #FIXME verbosity should be False
+        if self.optionsObj._timeoutInSeconds <= 0:
+            self.optionsObj._timeoutInSeconds = self.gtimeout
+        else:
+            self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
+        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -466,8 +471,9 @@ class CnnAbs:
             CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
         result.setStats(originalQueryStats, finalQueryStats)
 
-        self.subResultUpdate(runtime=time.time() - startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
-        
+        endLocal = time.time()
+        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
+        self.decGtimeout(endLocal - startLocal)
         return result
 
     def setLogger(suffix=''):
@@ -557,6 +563,15 @@ class CnnAbs:
     def dumpResultsJson(self):
         if not self.dumpQueries:
             self.dumpJson(self.resultsJson, CnnAbs.resultsFile, saveDir=self.logDir)
+
+    def setGtimeout(self, val):
+        if val <= 0:
+            self.gtimeout = 1 #Because 0 is used in timeout to signal no timeout.
+        else:
+            self.gtimeout = int(val)
+
+    def decGtimeout(self, val):
+        self.setGtimeout(self.gtimeout - val)
 
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
         self.resultsJson["subResults"].append({"index" : self.maskIndex+1,
@@ -1050,8 +1065,8 @@ class InputQueryUtils:
         net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in varSet]
         net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in varSet}
         net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
-        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape) #FIXME move to dict instead of NP array.
-        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape) #FIXME move to dict instead of NP array.
+        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
+        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
         net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
@@ -1152,7 +1167,7 @@ class InputQueryUtils:
         inBounds = np.logical_and(geqLow, leqUp)
         violations = np.logical_not(inBounds)
         assert violations.shape == x.shape
-        return np.all(inBounds), violations #FIXME shouldn't allow isclose, floating point errors?
+        return np.all(inBounds), violations #FIXME Notice isclose, this is because of floating point errors.
 
     @staticmethod
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
@@ -1180,30 +1195,3 @@ class InputQueryUtils:
 #################################################################################################################
 #################################################################################################################
 #################################################################################################################
-                
-#def printImg(image, title):
-#    if not isinstance(image,list):
-#        imlist = [image]
-#    else:
-#        imlist = image
-#    for i, im in enumerate(imlist):
-#        if len(im.shape) == 1:
-#            im = im.reshape(im.shape + (1,))
-#        if len(imlist) > 1:
-#            suff = "_" + str(i)
-#        else:
-#            suff = ""
-#        plt.title(title + suff)
-#        plt.imshow(im, cmap='Greys')
-#        plt.savefig(title + suff + ".png")
-#
-#def printAvgDomain(model, from_label=False): #from_label or from_prediction
-#    if from_label:
-#        x_test_by_class = {label : np.asarray([x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == label]) for label in range(self.ds.num_classes)}
-#    else:
-#        predictions =  model.predict(self.ds.x_test)
-#        x_test_by_class = {label : np.asarray([x for x,y in zip(self.ds.x_test, predictions) if y.argmax() == label]) for label in range(self.ds.num_classes)}
-#    meanAct = [meanActivation(model, model.layers[-1].name, x_test_by_class[y]) for y in range(self.ds.num_classes)]
-#    for y in range(self.ds.num_classes):
-#        printImg(meanAct[y], "{}_meanAct_label_{}.png".format(model.name, y))
-#
