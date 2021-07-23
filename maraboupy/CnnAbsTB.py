@@ -225,7 +225,7 @@ cnnAbs.resultsJson["ySecondPrediction"] = int(ySecond)
 cnnAbs.dumpResultsJson()
 
 endPrepare = time.time()
-cnnAbs.defGtimeout(endPrepare - startPrepare)
+cnnAbs.decGtimeout(endPrepare - startPrepare)
 
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     CnnAbs.printLog("Started dumping bounds - used for abstraction")
