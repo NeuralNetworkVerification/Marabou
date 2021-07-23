@@ -387,7 +387,7 @@ class CnnAbs:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
             commonFlags.append("--use_dumped_queries")
-        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq", "--gtimeout", int(self.gtimeout)]
+        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq", "--gtimeout", str(int(self.gtimeout))]
         runSingleRun(cmd, runTitle, CnnAbs.basePath, "/".join(filter(None, [CnnAbs.basePath, "logs", batchId])), str(self.maskIndex+1))
         
         
@@ -497,9 +497,12 @@ class CnnAbs:
             CnnAbs.logger.info(s)
         print(s)
 
-    def dumpNpArray(self, npArray, name, saveDir=''):
+    def dumpNpArray(self, npArray, name, saveDir='', saveAtLog=False):
         if not saveDir:
-            saveDir = self.dumpDir
+            if saveAtLog:
+                saveDir = self.logDir
+            else:
+                saveDir = self.dumpDir
         if not name.endswith(".npy"):
             name += ".npy"
         if not saveDir.endswith("/"):
@@ -532,7 +535,7 @@ class CnnAbs:
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")
-        self.dumpNpArray(cex, "Cex_{}".format(runName))
+        self.dumpNpArray(cex, "Cex_{}".format(runName), saveAtLog=True)
 
     @staticmethod
     def dumpCoi(inputVarsMapping, runName):
