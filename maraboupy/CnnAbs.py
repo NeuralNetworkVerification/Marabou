@@ -276,6 +276,7 @@ class Result(Enum):
     TIMEOUT = 0
     SAT = 1
     UNSAT = 2
+    GTIMEOUT = 3
 
     @classmethod
     def str2Result(cls, s):
@@ -286,6 +287,8 @@ class Result(Enum):
             return cls.SAT
         elif s == "unsat":
             return cls.UNSAT
+        elif s == "gtimeout":
+            return cls.GTIMEOUT
         else:
             raise NotImplementedError            
         
@@ -301,7 +304,7 @@ class ResultObj:
         self.result = Result.str2Result(result)
 
     def timedOut(self):
-        return self.result is Result.TIMEOUT
+        return (self.result is Result.TIMEOUT) or (self.result is Result.GTIMEOUT)
 
     def sat(self):
         return self.result is Result.SAT
@@ -346,8 +349,6 @@ class CnnAbs:
     resultsFile = 'Results'
     
     def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200):
-        if CnnAbs.logger == None:
-            CnnAbs.setLogger(suffix=maskIndex)
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
@@ -356,6 +357,8 @@ class CnnAbs:
             self.logDir += "/"
         os.makedirs(self.logDir, exist_ok=True)
         os.chdir(self.logDir)
+        if CnnAbs.logger == None:
+            CnnAbs.setLogger(suffix=maskIndex)
         if dumpDir:            
             self.dumpDir = dumpDir
             if not self.dumpDir.endswith("/"):
@@ -577,6 +580,9 @@ class CnnAbs:
 
     def decGtimeout(self, val):
         self.setGtimeout(self.gtimeout - val)
+
+    def isGlobalTimedOut(self):
+        return self.gtimeout <= 1
 
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
         self.resultsJson["subResults"].append({"index" : self.maskIndex+1,

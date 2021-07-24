@@ -110,7 +110,8 @@ if cfg_runOn == "local":
 else :
     optionsObj = optionsCluster
 
-cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout)
+maskIndexStr = str(cfg_maskIndex) if cfg_maskIndex > 0 else ''
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr)
 
 startPrepare = time.time()
 
@@ -274,6 +275,9 @@ prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 cnnAbs.numMasks = len(maskList)
 
 for i, mask in enumerate(maskList):
+    globalTimeout = cnnAbs.isGlobalTimedOut()
+    if globalTimeout:
+        break
     if cfg_maskIndex != -1 and i != cfg_maskIndex:
         continue
     cnnAbs.maskIndex = i
@@ -325,11 +329,14 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
+globalTimeout = cnnAbs.isGlobalTimedOut()    
+if globalTimeout:
+    resultObj = ResultObj("gtimeout")
 if not cfg_dumpQueries:
     success = not resultObj.timedOut() and (successful is not None)
 else:
     success = False
-if cfg_slurmSeq and (cfg_dumpQueries or not success):
+if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout)):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
     CnnAbs.printLog("Launching next mask")
