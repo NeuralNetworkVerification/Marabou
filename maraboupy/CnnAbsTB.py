@@ -50,7 +50,7 @@ parser.add_argument("--batch_id",       type=str,                               
 parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier to satisfy, negative makes it harder.")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
-parser.add_argument("--timeout",        type=int,                                   default=1200,                   help="Single solver timeout in seconds.")
+parser.add_argument("--timeout",        type=int,                                   default=600,                   help="Single solver timeout in seconds.")
 parser.add_argument("--gtimeout",       type=int,                                   default=7200,                   help="Global timeout for all solving in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
@@ -65,7 +65,7 @@ parser.add_argument("--arg",  type=str, default="", help="Push custom string arg
 parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
 parser.add_argument("--mask_index",      type=int,                                  default=-1,                     help="Choose specific mask to run.")
 parser.add_argument("--slurm_seq"      ,action="store_true",                        default=False,                  help="Run next mask if this one fails.")
-parser.add_argument("--rerun_sporious" ,action="store_true",                        default=False,                  help="When recieved sporious SAT, run again CEX to find a satisfying assignment.") 
+parser.add_argument("--rerun_sporious" ,action="store_true",                        default=True,                   help="When recieved sporious SAT, run again CEX to find a satisfying assignment.") 
 
 args = parser.parse_args()
 
@@ -225,7 +225,7 @@ cnnAbs.resultsJson["ySecondPrediction"] = int(ySecond)
 cnnAbs.dumpResultsJson()
 
 endPrepare = time.time()
-cnnAbs.decGtimeout(endPrepare - startPrepare)
+cnnAbs.decGtimeout(endPrepare - startPrepare) #FIXME count also non-solving processes in gtimeout
 
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     CnnAbs.printLog("Started dumping bounds - used for abstraction")
@@ -290,8 +290,7 @@ for i, mask in enumerate(maskList):
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
-    if resultObj.timedOut():
-        assert i+1 != len(maskList)
+    if resultObj.timedOut():        
         continue
     if resultObj.sat():
         if not cfg_useDumpedQueries:
@@ -334,17 +333,17 @@ if cfg_slurmSeq and (cfg_dumpQueries or not success):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
     CnnAbs.printLog("Launching next mask")
-    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy)
+    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy, rerun=cfg_rerunSporious)
     
 if not cfg_dumpQueries:    
     if success:
         CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
-        accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
-        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
-        cnnAbs.resultsJson["SAT"] = resultObj.sat()
-        cnnAbs.resultsJson["Result"] = resultObj.result.name
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
         cnnAbs.resultsJson["successfulRun"] = successful
+    accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
+    cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
+    cnnAbs.resultsJson["SAT"] = resultObj.sat()
+    cnnAbs.resultsJson["Result"] = resultObj.result.name
     cnnAbs.dumpResultsJson()
 
     CnnAbs.printLog(resultObj.result.name)

@@ -286,6 +286,7 @@ for resultDict in resultDicts :
     totalSet = totalSet | set(resultDict.keys())
 samplesTotal = list(totalSet)
 samplesTotal.remove('label')
+samplesTotal.sort()
 
 runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
 runtimesTotal   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]

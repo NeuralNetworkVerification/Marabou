@@ -375,7 +375,7 @@ class CnnAbs:
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
 
-    def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None):
+    def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None):
         if self.maskIndex+1 == self.numMasks:
             return
         commonFlags = ["--batch_id", batchId, "--prop_distance", str(0.03), "--dump_dir", self.dumpDir]
@@ -383,6 +383,8 @@ class CnnAbs:
             commonFlags += ["--cnn_size", cnnSize]
         if validation:
             commonFlags += ["--validation", validation]
+        if rerun:
+            commonFlags.append("--rerun_sporious")
         if self.dumpQueries:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
@@ -920,7 +922,7 @@ class ModelUtils:
         yBad = prop.ySecond
         inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex)
         if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()]))
+            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()])) #FIXME catch this and keep verifying
         prediction = model.predict(np.array([cex]))
         if not sporiousStrict:
             return prediction.argmax() == yCorrect
