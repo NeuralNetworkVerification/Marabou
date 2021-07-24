@@ -268,7 +268,7 @@ CnnAbs.printLog("Starting verification phase")
 
 successful = None
 
-modelOrigDenseSavedName = "modelOrigDense.h5"
+modelOrigDenseSavedName = "modelOrigDense.h5" # Add logDir to this and ONNX files.
 modelOrigDense.save(modelOrigDenseSavedName)
 prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
