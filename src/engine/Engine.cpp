@@ -1209,7 +1209,7 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
-        switch ( Options::get()->getMILPSolverBoundTighteningType() )
+        switch ( _milpSolverBoundTighteningType )
         {
         case MILPSolverBoundTighteningType::LP_RELAXATION:
             _networkLevelReasoner->LPTighteningForOneLayer( targetIndex );
