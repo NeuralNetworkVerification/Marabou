@@ -424,11 +424,9 @@ class CnnAbs:
             self.subResultAppend()
         else:
             boundDictCopy = boundDict.copy()
-            freeInputs = True
             for var,value in rerunObj.vals.items():
                 varOrig = rerunObj.varsMapping[var]
-            #if not (freeInputs and varOrig in rerunObj.inputs):
-            if not (freeInputs and varOrig in rerunObj.preAbsVars):
+                if varOrig not in rerunObj.preAbsVars:
                     boundDictCopy[varOrig] = (value, value)
             boundDict = boundDictCopy
         startLocal = time.time()
