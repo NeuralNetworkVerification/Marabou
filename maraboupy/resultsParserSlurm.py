@@ -74,10 +74,10 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         yResult = yDict[sample]["result"].upper()
         assert not (xResult == "SAT"   and yResult == "UNSAT")
         assert not (xResult == "UNSAT" and yResult == "SAT"  )
-        if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"]):
+        if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]):
             c.append(cellColor(xResult))
         else:
-            assert (yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"])
+            assert (yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"])
             c.append(cellColor(yResult))
             
     xyCountSame = countSame(x,y)
@@ -120,7 +120,7 @@ def plotCOIRatio(resultDict):
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))    
-    solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT", "TIMEOUT", "GTIMEOUT", "SPURIOUS"]]
+    solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT", "TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]]
     x  = [resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
     y1 = [resultDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
     y2 = [resultDict[sample]["finalPartiallity"]["equations"] for sample in solved]
@@ -248,7 +248,7 @@ for fullpath in resultsFiles:
             finalPartiallity = dict(numRuns=1 if resultDict["subResults"] else -1, vars=-1, equations=-1, reluConstraints=-1)
             
         assert len(originalQueryStats) == len(finalQueryStats)
-        successfulRuntime = -1 if resultDict["Result"].upper() in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"] or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
+        successfulRuntime = -1 if resultDict["Result"].upper() in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"] or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
         #totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
         totalRuntime = TIMEOUT_VAL if not "totalRuntime" in resultDict else resultDict["totalRuntime"]
         if "cfg_sampleIndex" in resultDict:
