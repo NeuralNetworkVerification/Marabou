@@ -27,6 +27,8 @@ def cellColor(result, dark=False):
         return 'green' if not dark else 'darkgreen'
     elif result.upper() == 'SAT':
         return 'red' if not dark else 'darkred'
+    else:
+        return 'yellow' if not dark else 'gold'
     return None
 
 def markerChoice(result):
@@ -35,7 +37,9 @@ def markerChoice(result):
     elif result.upper() == 'UNSAT':
         return "|" 
     elif result.upper() == 'SAT':
-        return "_" 
+        return "_"
+    else:
+        return "x"
     return None
 
 def setFigSize(w=12, h=9):
@@ -70,10 +74,10 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         yResult = yDict[sample]["result"].upper()
         assert not (xResult == "SAT"   and yResult == "UNSAT")
         assert not (xResult == "UNSAT" and yResult == "SAT"  )
-        if (xResult == yResult) or (yResult == "TIMEOUT"):
+        if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"]):
             c.append(cellColor(xResult))
         else:
-            assert (yResult != "TIMEOUT") and (xResult == "TIMEOUT")
+            assert (yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"])
             c.append(cellColor(yResult))
             
     xyCountSame = countSame(x,y)
@@ -115,8 +119,8 @@ def plotCOIRatio(resultDict):
     plt.figure()
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
-    solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT", "TIMEOUT"]]
+    ax2.xaxis.set_major_locator(MaxNLocator(integer=True))    
+    solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT", "TIMEOUT", "GTIMEOUT", "SPURIOUS"]]
     x  = [resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
     y1 = [resultDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
     y2 = [resultDict[sample]["finalPartiallity"]["equations"] for sample in solved]
@@ -244,8 +248,9 @@ for fullpath in resultsFiles:
             finalPartiallity = dict(numRuns=1 if resultDict["subResults"] else -1, vars=-1, equations=-1, reluConstraints=-1)
             
         assert len(originalQueryStats) == len(finalQueryStats)
-        successfulRuntime = -1 if resultDict["Result"].upper() == "TIMEOUT" or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
-        totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
+        successfulRuntime = -1 if resultDict["Result"].upper() in ["TIMEOUT", "GTIMEOUT", "SPURIOUS"] or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
+        #totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
+        totalRuntime = TIMEOUT_VAL if not "totalRuntime" in resultDict else resultDict["totalRuntime"]
         if "cfg_sampleIndex" in resultDict:
             sampleIndex = resultDict["cfg_sampleIndex"]
         else:

@@ -301,7 +301,6 @@ for i, mask in enumerate(maskList):
             modelOrigDense = load_model(modelOrigDenseSavedName)
         isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
-
         if not isSporious:
             successful = i
             break;
@@ -320,6 +319,7 @@ for i, mask in enumerate(maskList):
                 CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
                 break;
             else:
+                resultObj = ResultObj("spurious")
                 CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
 
     elif resultObj.unsat():
@@ -330,12 +330,14 @@ for i, mask in enumerate(maskList):
         raise NotImplementedError
 
 globalTimeout = cnnAbs.isGlobalTimedOut()    
-if globalTimeout:
-    resultObj = ResultObj("gtimeout")
 if not cfg_dumpQueries:
+    if globalTimeout:
+        resultObj = ResultObj("gtimeout")
     success = not resultObj.timedOut() and (successful is not None)
+    if resultObj.sat() and not success:
+        resultObj = ResultObj("spurious")
 else:
-    success = False
+    success = False    
 if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout)):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()

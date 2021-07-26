@@ -277,6 +277,7 @@ class Result(Enum):
     SAT = 1
     UNSAT = 2
     GTIMEOUT = 3
+    SPURIOUS = 4
 
     @classmethod
     def str2Result(cls, s):
@@ -289,6 +290,8 @@ class Result(Enum):
             return cls.UNSAT
         elif s == "gtimeout":
             return cls.GTIMEOUT
+        elif s == "spurious":
+            return cls.SPURIOUS
         else:
             raise NotImplementedError            
         
