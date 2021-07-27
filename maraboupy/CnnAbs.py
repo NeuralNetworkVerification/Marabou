@@ -278,6 +278,7 @@ class Result(Enum):
     UNSAT = 2
     GTIMEOUT = 3
     SPURIOUS = 4
+    ERROR = 5
 
     @classmethod
     def str2Result(cls, s):
@@ -292,6 +293,8 @@ class Result(Enum):
             return cls.GTIMEOUT
         elif s == "spurious":
             return cls.SPURIOUS
+        elif s == "error":
+            return cls.ERROR
         else:
             raise NotImplementedError            
         
@@ -430,6 +433,13 @@ class CnnAbs:
             for var,value in rerunObj.vals.items():
                 varOrig = rerunObj.varsMapping[var]
                 if varOrig not in rerunObj.preAbsVars:
+                    if not varOrig in boundDictCopy:
+                        print(rerunObj.varsMapping) #FIXME remove prints
+                        print("*************************************")
+                        print(boundDict)
+                        print("*************************************")                        
+                        print("var={}, varOrig={}".format(var,varOrig)                        )
+                    assert varOrig in boundDictCopy
                     boundDictCopy[varOrig] = (value, value)
             boundDict = boundDictCopy
         startLocal = time.time()
@@ -929,7 +939,7 @@ class ModelUtils:
         yBad = prop.ySecond
         inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex)
         if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()])) #FIXME catch this and keep verifying
+            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
         if not sporiousStrict:
             return prediction.argmax() == yCorrect
@@ -1164,7 +1174,7 @@ class InputQueryUtils:
         return x - r, x + r
 
     @staticmethod    
-    def inBoundsInftyBall(x, r, p, pos=True, allowClose=True):
+    def inBoundsInftyBall(x, r, p, pos=True, allowClose=False):
         if p.shape != x.shape:
             print("p.shape={}".format(p.shape))
             print("x.shape={}".format(x.shape))
@@ -1179,7 +1189,7 @@ class InputQueryUtils:
         inBounds = np.logical_and(geqLow, leqUp)
         violations = np.logical_not(inBounds)
         assert violations.shape == x.shape
-        return np.all(inBounds), violations #FIXME Notice isclose, this is because of floating point errors.
+        return np.all(inBounds), violations
 
     @staticmethod
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
