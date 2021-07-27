@@ -160,12 +160,6 @@ public:
 private:
  
     /*
-      Perform the split according to the constraint marked for
-      splitting. Update bounds, add equations and update the stack.
-    */
-    void doSplitLogic(List<PiecewiseLinearCaseSplit> const& splits);
-
-    /*
       Valid splits that were implied by level 0 of the stack.
     */
     List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;

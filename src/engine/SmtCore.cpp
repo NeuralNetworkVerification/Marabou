@@ -132,9 +132,6 @@ void SmtCore::notifyEvent(SolveEvent event)
     }
 }
 
-void SmtCore::doSplitLogic(List<PiecewiseLinearCaseSplit> const &splits)
-{
-}
 
 void SmtCore::performSplit()
 {
@@ -185,7 +182,7 @@ void SmtCore::performSplit()
             // notify the subscribers a split was performed
             for (auto const &subscriber : _subscribers)
             {
-                subscriber->splitOccurred({"splitted !!!", split});
+                subscriber->splitOccurred({"splitted !!!", split, _stack});
             }
         }
         else
@@ -230,19 +227,20 @@ void SmtCore::performSplit()
 
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
-    List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    _engine->applySplit(*split);
-    stackEntry->_activeSplit = *split;
-    *_lastSplit = *split;
-    stackEntry->_pastSplits.append(*split);
+    List<PiecewiseLinearCaseSplit>::iterator splitIt = splits.begin();
+    auto const split = *splitIt;
+    _engine->applySplit(split);
+    stackEntry->_activeSplit = split;
+    *_lastSplit = split;
+    stackEntry->_pastSplits.append(split);
 
     // Store the remaining splits on the stack, for later
     stackEntry->_engineState = stateBeforeSplits;
-    ++split;
-    while (split != splits.end())
+    ++splitIt;
+    while (splitIt != splits.end())
     {
-        stackEntry->_alternativeSplits.append(*split);
-        ++split;
+        stackEntry->_alternativeSplits.append(split);
+        ++splitIt;
     }
 
     _stack.append(stackEntry);
@@ -256,7 +254,7 @@ void SmtCore::performSplit()
     // notify the subscribers a split was performed
     for (auto const &subscriber : _subscribers)
     {
-        subscriber->splitOccurred({});
+        subscriber->splitOccurred({"splitted !!!", split, _stack});
     }
 
     _constraintForSplitting = NULL;
@@ -353,7 +351,7 @@ bool SmtCore::popSplit()
     // notify the subscribers a split was performed
     for (auto const &subscriber : _subscribers)
     {
-        subscriber->splitOccurred({"splitted !!!", split});
+        subscriber->splitOccurred({"splitted !!!", split, _stack});
     }
 
     return true;

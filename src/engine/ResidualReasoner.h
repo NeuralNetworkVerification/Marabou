@@ -2,8 +2,10 @@
 #define __RESIDUALREASONER_H__
 
 #include "ISmtListener.h"
+#include "SortedContainer.h"
 #include <fstream>
 #include <sstream>
+#include <boost/algorithm/string.hpp>
 
 using Path = std::string;
 
@@ -40,32 +42,41 @@ inline std::ostream &operator<<(std::ostream &os, Phase const &phase)
      return os;
 }
 
-struct Literal
-{
-     Literal(Variable variable, Phase phase);
-
-     Variable _variable;
-     Phase _phase = Phase::UNDECIDED;
-
-     void set(Phase phase);
-};
-
-class Clause
+class Literal
 {
 public:
-     List<Literal> _literals;
+     Literal(Variable variable, Phase phase = Phase::UNDECIDED);
 
-     bool update(Variable variable, Phase phase);
-     void add(Variable variable, Phase phase = Phase::UNDECIDED);
+     Variable variable() const;
+     Phase phase() const;
+
+     bool operator<(Literal const& o) const;
+
+private:
+     Variable _variable;
+     Phase _phase;
+};
+
+
+class DisjunctionClause
+{
+public:
+     DisjunctionClause add(Literal literal) const;
+
+     SortedContainer<Literal> const& literals() const;
+
+private:
+     SortedContainer<Literal> _literals;
 };
 
 class ClausesTable
 {
 public:
-     List<Clause> _clauses;
+     List<DisjunctionClause> _clauses;
 
      bool update(Variable variable, Phase phase);
-     void add(Clause caluse);
+     void add(DisjunctionClause caluse);
+     List<Literal> forcedLiterals(DisjunctionClause clause) const;
 };
 
 inline void writeClauseTable(Path const &path, ClausesTable const &table)
@@ -73,9 +84,9 @@ inline void writeClauseTable(Path const &path, ClausesTable const &table)
      std::ofstream ofs{path};
      for (auto const &clause : table._clauses)
      {
-          for (auto const &literal : clause._literals)
+          for (auto const &literal : clause.literals())
           {
-               ofs << literal._variable << ":" << literal._phase << ",";
+               ofs << literal.variable() << ":" << static_cast<int>(literal.phase()) << ",";
           }
           ofs << std::endl;
      }
@@ -85,39 +96,47 @@ inline ClausesTable readClauseTable(Path const &path)
 {
      ClausesTable table;
 
-     std::ifstream ifs{path};
-     std::string line;
-     while (std::getline(ifs, line))
-     {
-          // each line is a clause
-          Clause clause;
+     // std::ifstream ifs{path};
+     // std::string line;
+     // while (std::getline(ifs, line))
+     // {
+     //      // each line is a clause
+     //      DisjunctionClause clause;
 
-          std::istringstream iss(line);
-          Variable variable;
-          Phase phase;
-          char phaseDelimiter, literalsDelimiter;
-          while (iss >> variable >> phaseDelimiter >> phase >> literalsDelimiter)
-          {
-               clause._literals.append(Literal{variable, phase});
-          }
+     //      std::vector<std::string> variableToken; // #2: Search for tokens
+     //      boost::split(variableToken, line, [](char c)
+     //                   { return c == ','; });
+     //      for (auto &&varToken : variableToken)
+     //      {
+     //           std::istringstream iss(varToken);
+     //           Variable variable;
+     //           char _;
+     //           Phase phase;
+     //           iss >> variable >> _ >> phase;
+     //           std::cout << variable << " " << phase << std::endl;
+     //           clause._literals.add(Literal{variable, phase});
+     //      }
 
-          table._clauses.append(clause);
-     }
+     //      table._clauses.append(clause);
+     // }
 
-     return table;
+     // return table;
 }
 
 class ResidualReasoner : public ISmtListener
 {
 
 public:
+     ResidualReasoner();
+     ResidualReasoner(ClausesTable gammaUnsat);
+
      List<PiecewiseLinearCaseSplit> impliedSplits(SmtCore &smtCore) const;
      void splitOccurred(SplitInfo const &splitInfo);
      void unsat();
 
      ClausesTable _gammaUnsatClausesTable;
      ClausesTable _currentRunUnsatClausesTable;
-     Clause _currentBranchClause;
+     DisjunctionClause _currentBranchClause;
 };
 
 #endif // __RESIDUALREASONER_H__

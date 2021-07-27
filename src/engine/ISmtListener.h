@@ -5,6 +5,7 @@
 #include "MString.h"
 
 class SmtCore;
+class SmtStackEntry;
 
 enum class SolveEvent
 {
@@ -17,6 +18,7 @@ struct ImpliedSplit {
 struct SplitInfo {
     String msg;
     PiecewiseLinearCaseSplit split;
+    List<SmtStackEntry *> const& smtStack;
 };
 
 class ISmtListener {

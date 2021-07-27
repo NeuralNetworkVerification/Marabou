@@ -48,7 +48,17 @@ void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    auto residualReasoner = std::make_shared<ResidualReasoner>();
+    constexpr bool readGammaUnsat = true;
+    std::shared_ptr<ResidualReasoner> residualReasoner;
+    if (readGammaUnsat)
+    {
+        auto gammaUnsat = readClauseTable("/home/elazar/marabou_stuff/Marabou/gammaUnsat");
+        residualReasoner = std::make_shared<ResidualReasoner>(gammaUnsat);
+    }
+    else
+    {
+        residualReasoner = std::make_shared<ResidualReasoner>();
+    }
     _engine.addReasoner(residualReasoner);
 
     prepareInputQuery();
@@ -57,6 +67,7 @@ void Marabou::run()
     struct timespec end = TimeUtils::sampleMicro();
 
     writeClauseTable("/home/elazar/marabou_stuff/Marabou/gammaUnsat", residualReasoner->_currentRunUnsatClausesTable);
+    writeClauseTable("/home/elazar/marabou_stuff/Marabou/inputGammaUnsatState", residualReasoner->_gammaUnsatClausesTable);
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );

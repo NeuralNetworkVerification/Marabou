@@ -3,6 +3,11 @@
 
 #include <boost/optional.hpp>
 
+struct nullopt_t {
+    explicit constexpr nullopt_t(int) {}
+};
+constexpr nullopt_t nullopt{int()};
+
 template <class T>
 class Optional
 {
@@ -11,8 +16,9 @@ public:
     using container_type = boost::optional<T>;
 
     Optional() = default;
-    template <class U>
-    Optional(U &&value) : _container{std::forward<U>(value)} {}
+    Optional(value_type const& v) : _container{v} {}
+    Optional(value_type &&value) : _container{std::move(value)} {}
+    Optional(nullopt_t) {}
     ~Optional() = default;
 
     operator bool() const
@@ -39,8 +45,6 @@ public:
     {
         return _container.operator->();
     }
-
-
 
 private:
     container_type _container;
