@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
+#include "Either.h"
 
 using Path = std::string;
 
@@ -45,18 +46,21 @@ inline std::ostream &operator<<(std::ostream &os, Phase const &phase)
 class Literal
 {
 public:
-     Literal(Variable variable, Phase phase = Phase::UNDECIDED);
+     explicit Literal(Variable variable, Phase phase);
 
      Variable variable() const;
      Phase phase() const;
 
      bool operator<(Literal const& o) const;
 
+     bool isValidWith(Phase phase) const;
+
 private:
      Variable _variable;
      Phase _phase;
 };
 
+class True {};
 
 class DisjunctionClause
 {
@@ -64,6 +68,10 @@ public:
      DisjunctionClause add(Literal literal) const;
 
      SortedContainer<Literal> const& literals() const;
+
+     Either<DisjunctionClause, True> assigned(Literal literal) const;
+
+     SortedContainer<Literal> forcedLiterals() const;
 
 private:
      SortedContainer<Literal> _literals;
@@ -74,9 +82,6 @@ class ClausesTable
 public:
      List<DisjunctionClause> _clauses;
 
-     bool update(Variable variable, Phase phase);
-     void add(DisjunctionClause caluse);
-     List<Literal> forcedLiterals(DisjunctionClause clause) const;
 };
 
 inline void writeClauseTable(Path const &path, ClausesTable const &table)
@@ -132,10 +137,10 @@ public:
 
      List<PiecewiseLinearCaseSplit> impliedSplits(SmtCore &smtCore) const;
      void splitOccurred(SplitInfo const &splitInfo);
-     void unsat();
+     void onUnsat();
 
      ClausesTable _gammaUnsatClausesTable;
-     ClausesTable _currentRunUnsatClausesTable;
+     List<SortedContainer<Literal>> _currentRunUnsatClausesTable;
      DisjunctionClause _currentBranchClause;
 };
 

@@ -66,8 +66,8 @@ void Marabou::run()
 
     struct timespec end = TimeUtils::sampleMicro();
 
-    writeClauseTable("/home/elazar/marabou_stuff/Marabou/gammaUnsat", residualReasoner->_currentRunUnsatClausesTable);
-    writeClauseTable("/home/elazar/marabou_stuff/Marabou/inputGammaUnsatState", residualReasoner->_gammaUnsatClausesTable);
+    // writeClauseTable("/home/elazar/marabou_stuff/Marabou/gammaUnsat", residualReasoner->_currentRunUnsatClausesTable);
+    // writeClauseTable("/home/elazar/marabou_stuff/Marabou/inputGammaUnsatState", residualReasoner->_gammaUnsatClausesTable);
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );

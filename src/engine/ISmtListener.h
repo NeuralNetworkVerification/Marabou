@@ -26,7 +26,7 @@ class ISmtListener {
 public:
     virtual List<PiecewiseLinearCaseSplit> impliedSplits(SmtCore & smtCore) const = 0;
     virtual void splitOccurred(SplitInfo const& splitInfo) = 0;
-    virtual void unsat() = 0;
+    virtual void onUnsat() = 0;
 
 };
 

@@ -6,41 +6,6 @@
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 
-Literal::Literal(Variable variable, Phase phase)
-    : _variable(variable), _phase(phase)
-{
-}
-
-Variable Literal::variable() const {
-     return _variable;
-}
-
-Phase Literal::phase() const {
-     return _phase;
-}
-
-bool Literal::operator<(Literal const& o) const {
-     return _variable < o._variable;
-}
-
-bool ClausesTable::update(Variable variable, Phase phase)
-{
-//     bool anyUpdated = false;
-//     for (auto &caluse : _clauses)
-//     {
-//         anyUpdated |= caluse.update(variable, phase);
-//     }
-//     return anyUpdated;
-}
-
-void ClausesTable::add(DisjunctionClause clause)
-{
-    _clauses.append(clause);
-}
-
-List<Literal> ClausesTable::forcedLiterals(DisjunctionClause clause) const
-{
-}
 
 ResidualReasoner::ResidualReasoner() = default;
 
@@ -111,7 +76,7 @@ void ResidualReasoner::splitOccurred(SplitInfo const &splitInfo)
         // find the variable splitted on, and it's phase
         auto const variablePhase = splitVariable(split);
         std::cout << "split " << variablePhase.first() << ":" << variablePhase.second() << ",";
-        clause.add(Literal(variablePhase.first(), variablePhase.second()));
+        // clause.add(Literal(variablePhase.first(), variablePhase.second()));
     }
 
     // search the table for implied splits
@@ -121,10 +86,10 @@ void ResidualReasoner::splitOccurred(SplitInfo const &splitInfo)
     // _currentBranchClause.add(variablePhase.first(), variablePhase.second());
 }
 
-void ResidualReasoner::unsat()
+void ResidualReasoner::onUnsat()
 {
     printf("got unsat\n");
-    _currentRunUnsatClausesTable.add(_currentBranchClause);
+    // _currentRunUnsatClausesTable.add(_currentBranchClause);
     _currentBranchClause = DisjunctionClause();
 }
 

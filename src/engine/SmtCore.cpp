@@ -123,7 +123,7 @@ void SmtCore::notifyEvent(SolveEvent event)
         switch (event)
         {
         case SolveEvent::UNSAT:
-            subscriber->unsat();
+            subscriber->onUnsat();
             break;
 
         default:
