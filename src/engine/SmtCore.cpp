@@ -101,9 +101,9 @@ PiecewiseLinearCaseSplit *SmtCore::getLastSplit()
 */
 bool SmtCore::subscribe(std::shared_ptr<ISmtListener> const &subscriber)
 {
-    for (const auto &existingSubscribers : _subscribers)
+    for (const auto &existingSubscriber : _subscribers)
     {
-        if (existingSubscribers == subscriber)
+        if (existingSubscriber == subscriber)
             return false; // the subscriber already subscribed. ignore.
     }
     // the subscriber is not yet subscribed. add it.
@@ -116,17 +116,34 @@ void SmtCore::unsubscribe(std::shared_ptr<ISmtListener> const &subscriber)
     _subscribers.erase(subscriber);
 }
 
-void SmtCore::doSplitLogic(List<PiecewiseLinearCaseSplit> const& splits) {
+void SmtCore::notifyEvent(SolveEvent event)
+{
+    for (const auto &subscriber : _subscribers)
+    {
+        switch (event)
+        {
+        case SolveEvent::UNSAT:
+            subscriber->unsat();
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+void SmtCore::doSplitLogic(List<PiecewiseLinearCaseSplit> const &splits)
+{
 }
 
 void SmtCore::performSplit()
 {
     ASSERT(_needToSplit);
 
-    for(auto const & reasoner: _subscribers)
+    for (auto const &reasoner : _subscribers)
     {
         auto possibleSplitsByReasoner = reasoner->impliedSplits(*this);
-        if(!possibleSplitsByReasoner.empty())
+        if (!possibleSplitsByReasoner.empty())
         {
             printf("split using subscriber\n");
 
@@ -140,20 +157,21 @@ void SmtCore::performSplit()
 
             SmtStackEntry *stackEntry = new SmtStackEntry;
             // Perform the first split: add bounds and equations
-            auto const& splits = possibleSplitsByReasoner;
-            auto split = splits.begin();
-            _engine->applySplit(*split);
-            stackEntry->_activeSplit = *split;
-            *_lastSplit = *split;
-            stackEntry->_pastSplits.append(*split);
+            auto const &splits = possibleSplitsByReasoner;
+            auto splitsIt = splits.begin();
+            auto const split = *splitsIt;
+            _engine->applySplit(*splitsIt);
+            stackEntry->_activeSplit = *splitsIt;
+            *_lastSplit = *splitsIt;
+            stackEntry->_pastSplits.append(*splitsIt);
 
             // Store the remaining splits on the stack, for later
             stackEntry->_engineState = stateBeforeSplits;
-            ++split;
-            while (split != splits.end())
+            ++splitsIt;
+            while (splitsIt != splits.end())
             {
-                stackEntry->_alternativeSplits.append(*split);
-                ++split;
+                stackEntry->_alternativeSplits.append(*splitsIt);
+                ++splitsIt;
             }
 
             _stack.append(stackEntry);
@@ -167,10 +185,11 @@ void SmtCore::performSplit()
             // notify the subscribers a split was performed
             for (auto const &subscriber : _subscribers)
             {
-                subscriber->splitOccurred({"splitted !!!"});
+                subscriber->splitOccurred({"splitted !!!", split});
             }
         }
-        else{
+        else
+        {
             printf("subscriber has no split\n");
         }
     }
@@ -235,7 +254,7 @@ void SmtCore::performSplit()
     }
 
     // notify the subscribers a split was performed
-    for(auto const & subscriber : _subscribers)
+    for (auto const &subscriber : _subscribers)
     {
         subscriber->splitOccurred({});
     }
@@ -304,23 +323,23 @@ bool SmtCore::popSplit()
     SMT_LOG("\tRestoring engine state - DONE");
 
     // Apply the new split and erase it from the list
-    auto split = stackEntry->_alternativeSplits.begin();
+    auto splitIt = stackEntry->_alternativeSplits.begin();
+    auto const split = *splitIt;
 
     // Erase any valid splits that were learned using the split we just popped
     stackEntry->_impliedValidSplits.clear();
 
     SMT_LOG("\tApplying new split...");
-    _engine->applySplit(*split);
+    _engine->applySplit(split);
     SMT_LOG("\tApplying new split - DONE");
 
     // update lastSplit, _pastSplits with the new split
-    *_lastSplit = *split;
-    stackEntry->_pastSplits.erase(*split); // TODO: popBack instead of erase?
-    stackEntry->_pastSplits.append(*split);
+    *_lastSplit = split;
+    stackEntry->_pastSplits.erase(split); // TODO: popBack instead of erase?
+    stackEntry->_pastSplits.append(split);
 
-    stackEntry->_activeSplit = *split;
-    stackEntry->_alternativeSplits.erase(split);
-
+    stackEntry->_activeSplit = split;
+    stackEntry->_alternativeSplits.erase(splitIt);
 
     if (_statistics)
     {
@@ -330,6 +349,12 @@ bool SmtCore::popSplit()
     }
 
     checkSkewFromDebuggingSolution();
+
+    // notify the subscribers a split was performed
+    for (auto const &subscriber : _subscribers)
+    {
+        subscriber->splitOccurred({"splitted !!!", split});
+    }
 
     return true;
 }

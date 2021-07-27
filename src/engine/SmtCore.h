@@ -30,7 +30,10 @@
 class EngineState;
 class IEngine;
 class String;
+
+// TODO remove, replace with include "ISmtListener.h"
 class ISmtListener;
+enum class SolveEvent;
 
 class SmtCore
 {
@@ -149,8 +152,10 @@ public:
     */
    bool subscribe(std::shared_ptr<ISmtListener> const& subscriber);
    void unsubscribe(std::shared_ptr<ISmtListener> const& subscriber);
+   void notifyEvent(SolveEvent event);
 
 
+  //  TODO remove
   friend class ResidualReasoner;
 private:
  

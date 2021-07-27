@@ -32,6 +32,7 @@
 #include "Tightening.h"
 #include "TimeUtils.h"
 #include "Pair.h"
+#include "ISmtListener.h"
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -40,7 +41,6 @@ Engine::Engine()
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
     , _work( NULL )
-    , _reasoner( std::make_shared<ResidualReasoner>() )
     , _basisRestorationRequired( Engine::RESTORATION_NOT_NEEDED )
     , _basisRestorationPerformed( Engine::NO_RESTORATION_PERFORMED )
     , _costFunctionManager( _tableau )
@@ -67,8 +67,6 @@ Engine::Engine()
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
-
-    _smtCore.subscribe(_reasoner);
 }
 
 Engine::~Engine()
@@ -304,6 +302,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             printf("FOUND !!!!!!!!!!!\n");
+            _smtCore.notifyEvent(SolveEvent::UNSAT);
             if ( !_smtCore.popSplit() )
             {
                 if ( _verbosity > 0 )
@@ -2735,6 +2734,11 @@ void Engine::resetBoundTighteners()
 {
     _constraintBoundTightener->resetBounds();
     _rowBoundTightener->resetBounds();
+}
+
+void Engine::addReasoner(std::shared_ptr<ISmtListener> const& reasoner) 
+{
+  _smtCore.subscribe(reasoner);
 }
 
 void Engine::warmStart()

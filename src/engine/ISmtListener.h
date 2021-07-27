@@ -6,11 +6,17 @@
 
 class SmtCore;
 
+enum class SolveEvent
+{
+    UNSAT = 1,
+};
+
 struct ImpliedSplit {
     PiecewiseLinearCaseSplit split;
 };
 struct SplitInfo {
     String msg;
+    PiecewiseLinearCaseSplit split;
 };
 
 class ISmtListener {
@@ -18,6 +24,7 @@ class ISmtListener {
 public:
     virtual List<PiecewiseLinearCaseSplit> impliedSplits(SmtCore & smtCore) const = 0;
     virtual void splitOccurred(SplitInfo const& splitInfo) = 0;
+    virtual void unsat() = 0;
 
 };
 

@@ -48,10 +48,15 @@ void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
+    auto residualReasoner = std::make_shared<ResidualReasoner>();
+    _engine.addReasoner(residualReasoner);
+
     prepareInputQuery();
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
+
+    writeClauseTable("/home/elazar/marabou_stuff/Marabou/gammaUnsat", residualReasoner->_currentRunUnsatClausesTable);
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
