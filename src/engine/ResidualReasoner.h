@@ -6,8 +6,8 @@
 class ResidualReasoner : public ISmtListener {
 
 public:
-     Optional<ImpliedSplit> isAnyImpliedSpilt() const;
-     void SplitOccurred(SplitInfo const& splitInfo);
+     List<PiecewiseLinearCaseSplit> impliedSplits(SmtCore & smtCore) const;
+     void splitOccurred(SplitInfo const& splitInfo);
 };
 
 #endif // __RESIDUALREASONER_H__

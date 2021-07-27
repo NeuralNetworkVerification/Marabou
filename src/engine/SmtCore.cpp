@@ -24,6 +24,8 @@
 #include "Options.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
+#include "Optional.h"
+#include "ISmtListener.h"
 
 SmtCore::SmtCore(IEngine *engine)
     : _statistics(NULL), _engine(engine), _needToSplit(false), _lastSplit(new PiecewiseLinearCaseSplit()), _constraintForSplitting(NULL), _stateId(0), _constraintViolationThreshold(Options::get()->getInt(Options::CONSTRAINT_VIOLATION_THRESHOLD))
@@ -113,12 +115,6 @@ void SmtCore::unsubscribe(std::shared_ptr<ISmtListener> const &subscriber)
 {
     _subscribers.erase(subscriber);
 }
-// void SmtCore::performRequiredSplits()
-// {
-//     for (auto requiredSplit : _requiredSplits) {
-//         performSplit(requiredSplit);
-//     }
-// }
 
 void SmtCore::doSplitLogic(List<PiecewiseLinearCaseSplit> const& splits) {
 }
@@ -127,11 +123,15 @@ void SmtCore::performSplit()
 {
     ASSERT(_needToSplit);
 
-    Optional<ImpliedSplit> possibleSplitByReasoner;
     for(auto const & reasoner: _subscribers)
     {
-        if(possibleSplitByReasoner = reasoner->isAnyImpliedSpilt())
+        auto possibleSplitsByReasoner = reasoner->impliedSplits(*this);
+        if(!possibleSplitsByReasoner.empty())
         {
+            printf("split using subscriber\n");
+
+            struct timespec start = TimeUtils::sampleMicro();
+
             // Obtain the current state of the engine
             EngineState *stateBeforeSplits = new EngineState;
             stateBeforeSplits->_stateId = _stateId;
@@ -140,13 +140,12 @@ void SmtCore::performSplit()
 
             SmtStackEntry *stackEntry = new SmtStackEntry;
             // Perform the first split: add bounds and equations
-
-            auto const split = possibleSplitByReasoner->split;
-            _engine->applySplit(split);
-
-            stackEntry->_activeSplit = split;
-            *_lastSplit = split;
-            stackEntry->_pastSplits.append(split);
+            auto const& splits = possibleSplitsByReasoner;
+            auto split = splits.begin();
+            _engine->applySplit(*split);
+            stackEntry->_activeSplit = *split;
+            *_lastSplit = *split;
+            stackEntry->_pastSplits.append(*split);
 
             // Store the remaining splits on the stack, for later
             stackEntry->_engineState = stateBeforeSplits;
@@ -168,10 +167,11 @@ void SmtCore::performSplit()
             // notify the subscribers a split was performed
             for (auto const &subscriber : _subscribers)
             {
-                subscriber->SplitOccurred({});
+                subscriber->splitOccurred({"splitted !!!"});
             }
-
-            return;
+        }
+        else{
+            printf("subscriber has no split\n");
         }
     }
 
@@ -237,7 +237,7 @@ void SmtCore::performSplit()
     // notify the subscribers a split was performed
     for(auto const & subscriber : _subscribers)
     {
-        subscriber->SplitOccurred({});
+        subscriber->splitOccurred({});
     }
 
     _constraintForSplitting = NULL;

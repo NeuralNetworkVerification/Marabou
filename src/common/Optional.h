@@ -20,22 +20,34 @@ public:
         return _container.has_value();
     }
 
-    value_type operator*() const
+    value_type const& operator*() const
     {
         return *_container;
     }
 
-    value_type* operator->() const
+    value_type & operator*() 
+    {
+        return *_container;
+    }
+
+    value_type const* operator->() const
     {
         return _container.operator->();
     }
+
+    value_type* operator->() 
+    {
+        return _container.operator->();
+    }
+
+
 
 private:
     container_type _container;
 };
 
 template <typename T>
-inline Optional<T> make_optional(T &&v)
+inline Optional<T> makeOptional(T &&v)
 {
     return Optional<T>(std::forward<T>(v));
 }

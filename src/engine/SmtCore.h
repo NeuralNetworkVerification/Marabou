@@ -22,7 +22,6 @@
 #include "Stack.h"
 #include "SmtStackEntry.h"
 #include "Statistics.h"
-#include "ISmtListener.h"
 
 #include <memory>
 
@@ -31,6 +30,7 @@
 class EngineState;
 class IEngine;
 class String;
+class ISmtListener;
 
 class SmtCore
 {
@@ -151,6 +151,7 @@ public:
    void unsubscribe(std::shared_ptr<ISmtListener> const& subscriber);
 
 
+  friend class ResidualReasoner;
 private:
  
     /*

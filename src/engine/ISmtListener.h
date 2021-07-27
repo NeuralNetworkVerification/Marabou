@@ -1,19 +1,23 @@
 #ifndef __ISMTLISTENER_H__
 #define __ISMTLISTENER_H__
 
-#include "Optional.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "MString.h"
+
+class SmtCore;
 
 struct ImpliedSplit {
     PiecewiseLinearCaseSplit split;
 };
-class SplitInfo {};
+struct SplitInfo {
+    String msg;
+};
 
 class ISmtListener {
 
 public:
-    virtual Optional<ImpliedSplit> isAnyImpliedSpilt() const = 0;
-    virtual void SplitOccurred(SplitInfo const& splitInfo) = 0;
+    virtual List<PiecewiseLinearCaseSplit> impliedSplits(SmtCore & smtCore) const = 0;
+    virtual void splitOccurred(SplitInfo const& splitInfo) = 0;
 
 };
 
