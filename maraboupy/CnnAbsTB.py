@@ -231,19 +231,23 @@ cnnAbs.decGtimeout(endPrepare - startPrepare) #FIXME count also non-solving proc
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     CnnAbs.printLog("Started dumping bounds - used for abstraction")
     ipq = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+    MarabouCore.saveQuery(ipq, cnnAbs.logDir + "IPQ_dumpBounds")
     CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
+    os.rename(cnnAbs.logDir + "dumpBounds.json", cnnAbs.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
-        exit()
-if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBounds.json"):
-        boundList = cnnAbs.loadJson("dumpBounds", loadDir=cnnAbs.logDir)
+        exit()    
+if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBoundsInitial.json"):
+        boundList = cnnAbs.loadJson("dumpBoundsInitial", loadDir=cnnAbs.logDir)
         boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
 else:
     boundDict = None
+
+cnnAbs.optionsObj._dumpBounds = False
 
 if policy.policy is Policy.SingleClassRank:    
     maskList = policy.genActivationMask(ModelUtils.intermidModel(modelOrigDense, replaceLayerName), prediction=yMax, includeFull=cfg_runFull)
@@ -289,7 +293,7 @@ for i, mask in enumerate(maskList):
         modelAbs = None    
 
     if i+1 == len(maskList):
-        cnnAbs.optionsObj._timeoutInSeconds = 0 #FIXME change to >0 value. prevent kill events - ensure gracefull exit by giving real timeout.
+        cnnAbs.optionsObj._timeoutInSeconds = 0
     runName = "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList))
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
@@ -299,13 +303,19 @@ for i, mask in enumerate(maskList):
     if resultObj.sat():
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
-        isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+        try:
+            isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+        except Exception as err:
+            CnnAbs.printLog(err)
+            isSporious = True
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
         if not isSporious:
             successful = i
-            break;
+            break
         elif i+1 == len(maskList):
-            raise Exception("Sporious CEX at full network.")
+            resultObj = ResultObj("error")
+            break 
+            #raise Exception("Sporious CEX at full network.")
         elif cfg_rerunSporious:
             mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
             layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
@@ -313,11 +323,15 @@ for i, mask in enumerate(maskList):
             resultObj.preAbsVars = {var for i in range(layerI) for var in layersDiv[i]}
             resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunObj=resultObj)
             if resultObjRerunSporious.sat():
-                assert not ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
+                try:
+                    isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
+                    assert not isSporious
+                except Exception as err:
+                    CnnAbs.printLog(err)
                 resultObj = resultObjRerunSporious
                 successful = i
                 CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
-                break;
+                break
             else:
                 resultObj = ResultObj("spurious")
                 CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
@@ -325,7 +339,7 @@ for i, mask in enumerate(maskList):
     elif resultObj.unsat():
         CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i+1, len(maskList)))        
         successful = i
-        break;
+        break
     else:
         raise NotImplementedError
 
