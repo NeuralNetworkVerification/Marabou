@@ -66,7 +66,7 @@ class PolicyBase:
         return sortedIndReverse
 
     @staticmethod
-    def linearStep(n, stepSize=10, startWith=50):
+    def linearStep(n, stepSize=5, startWith=0):
         stepSize = max(stepSize,1)
         startWith = max(startWith,0)
         size = n
@@ -94,8 +94,8 @@ class PolicyBase:
 
     @classmethod
     def steps(cls, n):
-        #return cls.linearStep(n)
-        return cls.geometricStep(n)
+        return cls.linearStep(n)
+        #return cls.geometricStep(n)
     
     def genMaskByOrderedInd(self, sortedIndDecsending, maskShape, includeFull=True):
         mask = np.zeros(maskShape)
