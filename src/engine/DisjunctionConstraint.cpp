@@ -9,11 +9,12 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** See the description of the class in DisjunctionConstraint.h.
  **/
 
-#include "Debug.h"
 #include "DisjunctionConstraint.h"
+
+#include "Debug.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Statistics.h"
@@ -23,7 +24,7 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
     , _disjuncts( disjuncts.begin(), disjuncts.end() )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
-    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
 
     extractParticipatingVariables();
@@ -34,7 +35,7 @@ DisjunctionConstraint::DisjunctionConstraint( const Vector<PiecewiseLinearCaseSp
     , _disjuncts( disjuncts )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
-    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
 
     extractParticipatingVariables();
@@ -94,10 +95,10 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
-    _lowerBounds[variable] = bound;
+    setLowerBound( variable, bound );
 
     updateFeasibleDisjuncts();
 }
@@ -107,10 +108,10 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    _upperBounds[variable] = bound;
+    setUpperBound( variable, bound );
 
     updateFeasibleDisjuncts();
 }
@@ -156,7 +157,7 @@ List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 List<PhaseStatus> DisjunctionConstraint::getAllCases() const
 {
     List<PhaseStatus> cases;
-    for ( unsigned i = 0; i < _disjuncts.size(); ++i  )
+    for ( unsigned i = 0; i < _disjuncts.size(); ++i )
         cases.append( indToPhaseStatus( i ) );
     return cases;
 }
@@ -329,18 +330,17 @@ bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit 
     {
         if ( bound._type == Tightening::LB )
         {
-            if ( _upperBounds.exists( bound._variable ) &&
-                 _upperBounds[bound._variable] < bound._value )
+            if ( existsUpperBound( bound._variable ) &&
+                 getUpperBound( bound._variable ) < bound._value )
                 return false;
         }
         else
         {
-            if ( _lowerBounds.exists( bound._variable ) &&
-                 _lowerBounds[bound._variable] > bound._value )
+            if ( existsLowerBound( bound._variable ) &&
+                 getLowerBound( bound._variable ) > bound._value )
                 return false;
         }
     }
 
     return true;
 }
-
