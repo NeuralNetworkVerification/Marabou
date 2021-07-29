@@ -325,6 +325,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     }
 }
 
+/*
 bool isActiveSplit(PiecewiseLinearCaseSplit split)
 {
     // check if active or not
@@ -587,7 +588,6 @@ bool Engine::solve_with_rr( unsigned timeoutInSeconds )
         }
     }
 }
-
 Map<PiecewiseLinearCaseSplit, unsigned> deriveRequiredSplits(currentSplits, unsatClauses){
     // derives all required splits
     // a required split is derived if it is part of any unsat clause and all other parts
@@ -661,6 +661,8 @@ bool isActiveSplit(PiecewiseLinearCaseSplit split)
     }
     return false;
 };
+
+*/
 
 /*
 bool Engine::solve(
