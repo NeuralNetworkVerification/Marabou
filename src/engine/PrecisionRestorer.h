@@ -17,6 +17,7 @@
 #define __PrecisionRestorer_h__
 
 #include "EngineState.h"
+#include "SmtStackManager.h"
 
 class SmtCore;
 
@@ -33,6 +34,11 @@ public:
     void restorePrecision( IEngine &engine,
                            ITableau &tableau,
                            SmtCore &smtCore,
+                           RestoreBasics restoreBasics );
+
+    void restorePrecision( IEngine &engine,
+                           ITableau &tableau,
+                           SmtStackManager &smtStackManager,
                            RestoreBasics restoreBasics );
 
 private:

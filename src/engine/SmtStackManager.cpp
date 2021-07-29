@@ -1,0 +1,270 @@
+#include "SmtStackManager.h"
+#include "MarabouError.h"
+#include "StdCompletion.h"
+#include "MStringf.h"
+
+SmtStackManager::SmtStackManager( IEngine* engine )
+    : _statistics( NULL )
+    , _engine( engine )
+    , _stateId( 0 )
+{
+}
+
+void SmtStackManager::reset() {
+    _stack.clear();
+    _stateId = 0;
+}
+
+void SmtStackManager::performSplit( PiecewiseLinearCaseSplit const& split ) {
+
+    struct timespec start = TimeUtils::sampleMicro();
+
+    // Obtain the current state of the engine
+    EngineState* stateBeforeSplits = new EngineState;
+    stateBeforeSplits->_stateId = _stateId;
+    ++_stateId;
+    _engine->storeState( *stateBeforeSplits, true );
+
+    auto stackEntry = std::make_unique<SmtStackEntry>();
+    // Perform the first split: add bounds and equations
+    _engine->applySplit( split );
+    stackEntry->_activeSplit = split;
+    stackEntry->_pastSplits.append( split );
+
+    _stack.append( std::move( stackEntry ) );
+    if ( _statistics )
+    {
+        _statistics->setCurrentStackDepth( getStackDepth() );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+    }
+}
+
+void SmtStackManager::replaySmtStackEntry( std::unique_ptr<SmtStackEntry> const& stackEntry )
+{
+    struct timespec start = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+    {
+        _statistics->incNumSplits();
+        _statistics->incNumVisitedTreeStates();
+    }
+
+    // Obtain the current state of the engine
+    EngineState* stateBeforeSplits = new EngineState;
+    stateBeforeSplits->_stateId = _stateId;
+    ++_stateId;
+    _engine->storeState( *stateBeforeSplits, true );
+    stackEntry->_engineState = stateBeforeSplits;
+
+    // Apply all the splits
+    _engine->applySplit( stackEntry->_activeSplit );
+    for ( const auto& impliedSplit : stackEntry->_impliedValidSplits )
+        _engine->applySplit( impliedSplit );
+
+    auto stackEntryDup = std::unique_ptr<SmtStackEntry>( stackEntry->duplicateSmtStackEntry() );
+    _stack.append( std::move( stackEntryDup ) );
+
+    if ( _statistics )
+    {
+        _statistics->setCurrentStackDepth( getStackDepth() );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+    }
+}
+
+
+void SmtStackManager::storeSmtState( SmtState2 &smtState )
+{
+    smtState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
+
+    for ( auto &stackEntry : _stack )
+        smtState._stack.append( std::unique_ptr<SmtStackEntry>( stackEntry->duplicateSmtStackEntry() ) );
+
+    smtState._stateId = _stateId;
+}
+
+void SmtStackManager::recordImpliedValidSplit( PiecewiseLinearCaseSplit& validSplit )
+{
+    _stack.back()->_impliedValidSplits.append( validSplit );
+
+    checkSkewFromDebuggingSolution();
+}
+
+
+void SmtStackManager::allSplitsSoFar( List<PiecewiseLinearCaseSplit>& result ) const
+{
+    result.clear();
+
+    for ( const auto& it : _stack )
+    {
+        result.append( it->_activeSplit );
+        // TODO figure out if it's needed
+        for ( const auto& impliedSplit : it->_impliedValidSplits )
+            result.append( impliedSplit );
+    }
+}
+
+
+bool SmtStackManager::popSplit() {
+    SMT_LOG( "Performing a pop" );
+
+    if ( _stack.empty() )
+        return false;
+
+    struct timespec start = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+    {
+        _statistics->incNumPops();
+        // A pop always sends us to a state that we haven't seen before - whether
+        // from a sibling split, or from a lower level of the tree.
+        _statistics->incNumVisitedTreeStates();
+    }
+
+    delete _stack.back()->_engineState;
+    _stack.popBack();
+
+    if ( _stack.empty() )
+        return false;
+
+    if ( checkSkewFromDebuggingSolution() )
+    {
+        // Pops should not occur from a compliant stack!
+        printf( "Error! Popping from a compliant stack\n" );
+        throw MarabouError( MarabouError::DEBUGGING_ERROR );
+    }
+
+    auto const& stackEntry = _stack.back();
+
+    // Restore the state of the engine
+    SMT_LOG( "\tRestoring engine state..." );
+    _engine->restoreState( *( stackEntry->_engineState ) );
+    SMT_LOG( "\tRestoring engine state - DONE" );
+
+    if ( _statistics )
+    {
+        _statistics->setCurrentStackDepth( getStackDepth() );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+    }
+
+    checkSkewFromDebuggingSolution();
+
+    return true;
+}
+
+unsigned SmtStackManager::getStackDepth() const {
+    return _stack.size();
+}
+
+SmtStack const& SmtStackManager::getStack() const {
+    return _stack;
+}
+
+bool SmtStackManager::subscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider ) {
+    for ( auto const& alreadySubscribed : _splitProviders )
+    {
+        if ( provider == alreadySubscribed ) return false;
+    }
+    _splitProviders.append( provider );
+    return true;
+}
+
+bool SmtStackManager::ubsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider ) {
+    auto it = std::find( _splitProviders.begin(), _splitProviders.end(), provider );
+    if ( it == _splitProviders.end() ) return false;
+    _splitProviders.erase( it );
+    return true;
+}
+
+SplitProviders const& SmtStackManager::splitProviders() const {
+    return _splitProviders;
+}
+
+void SmtStackManager::setStatistics( Statistics* statistics ) {
+    _statistics = statistics;
+}
+
+void SmtStackManager::storeDebuggingSolution( const Map<unsigned, double>& debuggingSolution ) {
+    _debuggingSolution = debuggingSolution;
+}
+
+bool SmtStackManager::checkSkewFromDebuggingSolution() {
+    if ( _debuggingSolution.empty() )
+        return false;
+
+    String error;
+
+    // Now go over the stack from oldest to newest and check that each level is compliant
+    for ( const auto& stackEntry : _stack )
+    {
+        // If the active split is non-compliant but there are alternatives, that's fine
+        if ( !splitAllowsStoredSolution( stackEntry->_activeSplit, error ) )
+        {
+            if ( stackEntry->_alternativeSplits.empty() )
+            {
+                printf( "Error! Have a split that is non-compliant with the stored solution, "
+                    "without alternatives:\n\t%s\n", error.ascii() );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            }
+
+            // Active split is non-compliant but this is fine, because there are alternatives. We're done.
+            return false;
+        }
+
+        // Did we learn any valid splits that are non-compliant?
+        for ( auto const& split : stackEntry->_impliedValidSplits )
+        {
+            if ( !splitAllowsStoredSolution( split, error ) )
+            {
+                printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
+                    error.ascii() );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            }
+        }
+    }
+
+    // No problems were detected, the stack is compliant with the stored solution
+    return true;
+}
+
+bool SmtStackManager::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit& split, String& error ) const {
+    // False if the split prevents one of the values in the stored solution, true otherwise.
+    error = "";
+    if ( _debuggingSolution.empty() )
+        return true;
+
+    for ( const auto& bound : split.getBoundTightenings() )
+    {
+        unsigned variable = bound._variable;
+
+        // If the possible solution doesn't care about this variable,
+        // ignore it
+        if ( !_debuggingSolution.exists( variable ) )
+            continue;
+
+        // Otherwise, check that the bound is consistent with the solution
+        double solutionValue = _debuggingSolution[variable];
+        double boundValue = bound._value;
+
+        if ( ( bound._type == Tightening::LB ) && FloatUtils::gt( boundValue, solutionValue ) )
+        {
+            error = Stringf( "Variable %u: new LB is %.5lf, which contradicts possible solution %.5lf",
+                variable,
+                boundValue,
+                solutionValue );
+            return false;
+        }
+        else if ( ( bound._type == Tightening::UB ) && FloatUtils::lt( boundValue, solutionValue ) )
+        {
+            error = Stringf( "Variable %u: new UB is %.5lf, which contradicts possible solution %.5lf",
+                variable,
+                boundValue,
+                solutionValue );
+            return false;
+        }
+    }
+
+    return true;
+}

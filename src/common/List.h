@@ -52,6 +52,11 @@ public:
             _container.push_back( element );
     }
 
+    void append(  T &&value )
+    {
+        _container.push_back( std::move( value ) );
+    }
+
     void append( const T &value )
     {
         _container.push_back( value );
