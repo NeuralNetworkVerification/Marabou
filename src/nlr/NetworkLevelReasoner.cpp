@@ -198,7 +198,7 @@ void NetworkLevelReasoner::MILPTighteningForOneLayer( unsigned targetIndex )
          MILPSolverBoundTighteningType::MILP_ENCODING )
         milpFormulator.optimizeBoundsOfOneLayerWithMILPEncoding( _layerIndexToLayer, targetIndex );
 
-    // TODO: implement for MILP_ENCODING_INCREMENTAL
+    // TODO: implement for MILP_ENCODING_INCREMENTAL 
 }
 
 void NetworkLevelReasoner::iterativePropagation()
