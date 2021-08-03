@@ -630,6 +630,7 @@ bool InputQuery::constructNetworkLevelReasoner()
 
     unsigned newLayerIndex = 1;
     // Now, repeatedly attempt to construct additional layers
+    // TG: ここに、constructSigmoidLayer とかを追加かな？
     while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||

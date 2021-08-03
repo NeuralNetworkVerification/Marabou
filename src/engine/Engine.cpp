@@ -1871,7 +1871,7 @@ void Engine::performSymbolicBoundTightening()
         _networkLevelReasoner->symbolicBoundPropagation();
     else if ( _symbolicBoundTighteningType ==
          SymbolicBoundTighteningType::DEEP_POLY )
-        _networkLevelReasoner->deepPolyPropagation();
+        _networkLevelReasoner->deepPolyPropagation();   // TG: ここで deeploy が実行されると思うけど、SigmoidConstraint は開発する必要ありそうか？
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
