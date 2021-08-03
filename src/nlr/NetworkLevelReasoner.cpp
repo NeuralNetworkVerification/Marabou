@@ -164,6 +164,18 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
         lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 
+void NetworkLevelReasoner::LPTighteningForOneLayer( unsigned targetIndex )
+{
+    LPFormulator lpFormulator( this );
+    lpFormulator.setCutoff( 0 );
+
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::LP_RELAXATION )
+        lpFormulator.optimizeBoundsOfOneLayerWithLpRelaxation( _layerIndexToLayer, targetIndex );
+
+    // TODO: implement for LP_RELAXATION_INCREMENTAL
+}
+
 void NetworkLevelReasoner::MILPPropagation()
 {
     MILPFormulator milpFormulator( this );
@@ -175,6 +187,18 @@ void NetworkLevelReasoner::MILPPropagation()
     else if ( Options::get()->getMILPSolverBoundTighteningType() ==
               MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL )
         milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
+}
+
+void NetworkLevelReasoner::MILPTighteningForOneLayer( unsigned targetIndex )
+{
+    MILPFormulator milpFormulator( this );
+    milpFormulator.setCutoff( 0 );
+
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::MILP_ENCODING )
+        milpFormulator.optimizeBoundsOfOneLayerWithMILPEncoding( _layerIndexToLayer, targetIndex );
+
+    // TODO: implement for MILP_ENCODING_INCREMENTAL
 }
 
 void NetworkLevelReasoner::iterativePropagation()
