@@ -354,7 +354,7 @@ class CnnAbs:
     basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
     resultsFile = 'Results'
     
-    def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200):
+    def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200, policy=None):
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
@@ -383,8 +383,9 @@ class CnnAbs:
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
+        self.policy = policy
 
-    def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None):
+    def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
         if self.maskIndex+1 == self.numMasks:
             return
         commonFlags = ["--batch_id", batchId, "--prop_distance", str(0.03), "--dump_dir", self.dumpDir]
@@ -398,6 +399,8 @@ class CnnAbs:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
             commonFlags.append("--use_dumped_queries")
+        if propDist:
+            commonFlags += ["--prop_distance", str(propDist)]
         cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq", "--gtimeout", str(int(self.gtimeout))]
         runSingleRun(cmd, runTitle, CnnAbs.basePath, "/".join(filter(None, [CnnAbs.basePath, "logs", batchId])), str(self.maskIndex+1))
         
@@ -406,7 +409,8 @@ class CnnAbs:
         modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
         inputs = list({i.item() for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
         InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
-        InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
+        if self.policy is not Policy.Vanilla:
+            InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
         originalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)
         if coi:
             inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
