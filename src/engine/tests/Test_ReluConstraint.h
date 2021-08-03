@@ -16,12 +16,12 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "MarabouError.h"
 #include "MockConstraintBoundTightener.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
-#include "MarabouError.h"
 #include "context/context.h"
 
 #include <string.h>
@@ -51,6 +51,8 @@ class ReluConstraintTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForReluConstraint *mock;
+    Context ctx;
+    BoundManager *bm;
 
     void setUp()
     {
@@ -431,9 +433,9 @@ public:
 
         relu.notifyUpperBound( 4, -1.0 );
         TS_ASSERT_THROWS_EQUALS( splits = relu.getCaseSplits(),
-                                  const MarabouError &e,
-                                  e.getCode(),
-                                  MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+                                 const MarabouError &e,
+                                 e.getCode(),
+                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
         relu.unregisterAsWatcher( &tableau );
     }
@@ -1019,9 +1021,16 @@ public:
         TS_ASSERT_EQUALS( query2.getUpperBound( aux ), 0 );
     }
 
-    ReluConstraint prepareRelu( unsigned b, unsigned f, unsigned aux, IConstraintBoundTightener *tightener )
+    ReluConstraint prepareRelu( unsigned b, unsigned f, unsigned aux, IConstraintBoundTightener *tightener, bool initBM=false )
     {
         ReluConstraint relu( b, f );
+
+        if ( initBM )
+        {
+            bm = new BoundManager( ctx );
+            bm->initialize( 1 + aux ); // assume aux is introduced after _b and _f
+            relu.registerBoundManager( bm );
+        }
 
         InputQuery dontCare;
         dontCare.setNumberOfVariables( aux );
@@ -1041,6 +1050,7 @@ public:
 
         return relu;
     }
+
 
     void test_notify_bounds()
     {
@@ -1082,6 +1092,36 @@ public:
             TS_ASSERT( tightenings.empty() );
         }
 
+        { // As above, but with registered BoundManager
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+
+            relu.notifyLowerBound( b, -20 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            relu.notifyLowerBound( f, -3 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            relu.notifyLowerBound( aux, -5 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            relu.notifyUpperBound( b, 20 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            relu.notifyUpperBound( f, 23 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            relu.notifyUpperBound( aux, 35 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+
+            TS_ASSERT_THROWS_NOTHING( delete bm );
+        }
+
         {
             // Tighter lower bound for b that is negative
             ReluConstraint relu = prepareRelu( b, f, aux, &tightener );
@@ -1091,11 +1131,29 @@ public:
         }
 
         {
+            // Tighter lower bound for b that is negative, with BM
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+            relu.notifyLowerBound( b, -8 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.exists( Tightening( aux, 8, Tightening::UB ) ) );
+            TS_ASSERT_THROWS_NOTHING( delete bm );
+        }
+
+        {
             // Tighter upper bound for aux that is positive
             ReluConstraint relu = prepareRelu( b, f, aux, &tightener );
             relu.notifyUpperBound( aux, 7 );
             tightener.getConstraintTightenings( tightenings );
             TS_ASSERT( tightenings.exists( Tightening( b, -7, Tightening::LB ) ) );
+        }
+
+        {
+            // Tighter upper bound for aux that is positive, with BM
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+            relu.notifyUpperBound( aux, 7 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.exists( Tightening( b, -7, Tightening::LB ) ) );
+            TS_ASSERT_THROWS_NOTHING( delete bm );
         }
 
         {
@@ -1111,12 +1169,35 @@ public:
         }
 
         {
+            // Tighter upper bound for b/f that is positive, with BM
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+            relu.notifyUpperBound( b, 13 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.exists( Tightening( f, 13, Tightening::UB ) ) );
+
+            relu.notifyUpperBound( f, 12 );
+            tightener.getConstraintTightenings( tightenings );
+            TS_ASSERT( tightenings.exists( Tightening( b, 12, Tightening::UB ) ) );
+            TS_ASSERT_THROWS_NOTHING( delete bm );
+        }
+
+        {
             // Tighter upper bound 0 for f
             ReluConstraint relu = prepareRelu( b, f, aux, &tightener );
             relu.notifyUpperBound( f, 0 );
             tightener.getConstraintTightenings( tightenings );
 
             TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+        }
+
+        {
+            // Tighter upper bound 0 for f, with BM
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+            relu.notifyUpperBound( f, 0 );
+            tightener.getConstraintTightenings( tightenings );
+
+            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+            TS_ASSERT_THROWS_NOTHING( delete bm );
         }
 
         {
@@ -1130,6 +1211,17 @@ public:
         }
 
         {
+            // Tighter negative upper bound for b
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+            relu.notifyUpperBound( b, -1 );
+            tightener.getConstraintTightenings( tightenings );
+
+            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( aux, 1, Tightening::LB ) ) );
+            TS_ASSERT_THROWS_NOTHING( delete bm );
+        }
+
+        {
             // Tighter positive lower bound for aux
             ReluConstraint relu = prepareRelu( b, f, aux, &tightener );
             relu.notifyLowerBound( aux, 1 );
@@ -1137,6 +1229,17 @@ public:
 
             TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
             TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
+        }
+
+        {
+            // Tighter positive lower bound for aux
+            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
+            relu.notifyLowerBound( aux, 1 );
+            tightener.getConstraintTightenings( tightenings );
+
+            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
+            TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
+            TS_ASSERT_THROWS_NOTHING( delete bm );
         }
     }
 
@@ -1206,7 +1309,6 @@ public:
             ++itFix;
             TS_ASSERT_EQUALS( itFix->_variable, b );
             TS_ASSERT_EQUALS( itFix->_value, 1 );
-
         }
         // b in [-2, 3], polarity should be 0.2, the direction should be RELU_PHASE_ACTIVE,
         // the active case should be the first element of the returned list by
@@ -1260,8 +1362,8 @@ public:
 
         List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2u );
-        TS_ASSERT_EQUALS( splits.front(), relu.getCaseSplit( RELU_PHASE_INACTIVE ) ) ;
-        TS_ASSERT_EQUALS( splits.back(), relu.getCaseSplit( RELU_PHASE_ACTIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.front(), relu.getCaseSplit( RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_EQUALS( splits.back(), relu.getCaseSplit( RELU_PHASE_ACTIVE ) );
     }
 
     /*
@@ -1276,7 +1378,6 @@ public:
         TestReluConstraint relu( b, f );
 
         relu.initializeCDOs( &context );
-
 
 
         TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
@@ -1380,14 +1481,4 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete relu1 );
     }
-
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//
-
