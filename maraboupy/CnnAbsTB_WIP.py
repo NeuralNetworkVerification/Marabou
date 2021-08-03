@@ -110,12 +110,12 @@ if cfg_runOn == "local":
 else :
     optionsObj = optionsCluster
 
+policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
+
 maskIndexStr = str(cfg_maskIndex) if cfg_maskIndex > 0 else ''
-cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr)
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr, policy=policy)
 
 startPrepare = time.time()
-
-policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
 
 mi = lambda s: s if not cfg_slurmSeq else (s + "-" + str(cfg_maskIndex))
 
@@ -356,7 +356,7 @@ if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout)):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
     CnnAbs.printLog("Launching next mask")
-    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy, rerun=cfg_rerunSporious)
+    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy, rerun=cfg_rerunSporious, propDist=cfg_propDist)
     
 if not cfg_dumpQueries:    
     if success:
