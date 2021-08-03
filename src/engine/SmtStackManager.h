@@ -3,7 +3,7 @@
 
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
-#include "SmtState2.h"
+#include "SmtState.h"
 #include "Stack.h"
 #include "SmtStackEntry.h"
 #include "Statistics.h"
@@ -13,7 +13,7 @@
 
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
 
-using SmtStack = List<std::unique_ptr<SmtStackEntry>>;
+using SmtStack = List<SmtStackEntry*>;
 using SplitProviders = List<std::shared_ptr<ISmtSplitProvider>>;
 
 class SmtStackManager
@@ -72,9 +72,9 @@ public:
 
   void recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
 
-  void replaySmtStackEntry( std::unique_ptr<SmtStackEntry> const& stackEntry );
+  void replaySmtStackEntry( SmtStackEntry * stackEntry );
 
-  void storeSmtState( SmtState2 &smtState );
+  void storeSmtState( SmtState &smtState );
 
 
 private:

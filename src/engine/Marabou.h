@@ -17,7 +17,7 @@
 #define __Marabou_h__
 
 #include "AcasParser.h"
-#include "Engine.h"
+#include "Engine2.h"
 #include "InputQuery.h"
 
 class Marabou
@@ -59,7 +59,7 @@ private:
     /*
       The solver
     */
-    Engine _engine;
+    Engine2 _engine;
 };
 
 #endif // __Marabou_h__

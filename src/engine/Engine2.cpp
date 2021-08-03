@@ -18,6 +18,7 @@
 #include "Debug.h"
 #include "DisjunctionConstraint.h"
 #include "Engine2.h"
+#include "SmtState.h"
 #include "EngineState.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
@@ -67,6 +68,8 @@ Engine2::Engine2()
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
+
+    _smtStackManager.subscribeSplitProvider( _smtCoreSplitProvider );
 }
 
 Engine2::~Engine2()
@@ -206,14 +209,13 @@ bool Engine2::solve( unsigned timeoutInSeconds )
                 splitJustPerformed = false;
             }
 
+            letProvidersThink();
+
             // Ask split providers for splits
-            auto splits = splitsFromProviders();
-            if ( splits )
+            auto split = splitFromProviders();
+            if ( split )
             {
-                for ( auto const& split : *splits )
-                {
-                    _smtStackManager.performSplit( split );
-                }
+                _smtStackManager.performSplit( *split );
                 splitJustPerformed = true;
             }
 
@@ -312,10 +314,6 @@ bool Engine2::solve( unsigned timeoutInSeconds )
                 }
                 _exitCode = Engine2::UNSAT;
                 return false;
-            }
-            else
-            {
-                splitJustPerformed = true;
             }
 
         }
@@ -2635,11 +2633,24 @@ List<unsigned> Engine2::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
-Optional<List<PiecewiseLinearCaseSplit>> Engine2::splitsFromProviders() const {
+void Engine2::letProvidersThink() 
+{
+    for ( auto const& splitProvider : _smtStackManager.splitProviders() )
+    {
+        splitProvider->thinkBeforeSplit(_smtStackManager.getStack());
+    }
+}
+
+void Engine2::addSplitProvider( std::shared_ptr<ISmtSplitProvider> const& splitProvider )
+{
+    _smtStackManager.subscribeSplitProvider( splitProvider );
+}
+
+Optional<PiecewiseLinearCaseSplit> Engine2::splitFromProviders() const {
     for ( auto const& splitProvider : _smtStackManager.splitProviders() )
     {
         auto const maybeSplits = splitProvider->needToSplit();
-        if ( !maybeSplits.empty() )
+        if ( maybeSplits )
         {
             return maybeSplits;
         }
@@ -2966,7 +2977,28 @@ PiecewiseLinearConstraint* Engine2::pickSplitPLConstraintSnC( SnCDivideStrategy 
     return candidatePLConstraint;
 }
 
-bool Engine2::restoreSmtState( SmtState2& smtState )
+template <typename T>
+struct empty_delete
+{
+    empty_delete() /* noexcept */
+    {
+    }
+
+    template <typename U>
+    empty_delete( const empty_delete<U>&,
+        typename std::enable_if<
+        std::is_convertible<U*, T*>::value
+        >::type* = nullptr ) /* noexcept */
+    {
+    }
+
+    void operator()( T* const ) const /* noexcept */
+    {
+        // do nothing
+    }
+};
+
+bool Engine2::restoreSmtState( SmtState& smtState )
 {
     try
     {
@@ -2988,7 +3020,7 @@ bool Engine2::restoreSmtState( SmtState2& smtState )
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
-        for ( auto& stackEntry : smtState._stack )
+        for ( auto stackEntry : smtState._stack )
         {
             _smtStackManager.replaySmtStackEntry( stackEntry );
             // Do all the bound propagation, and set ReLU constraints to inactive (at
@@ -3023,7 +3055,7 @@ bool Engine2::restoreSmtState( SmtState2& smtState )
     return true;
 }
 
-void Engine2::storeSmtState( SmtState2& smtState )
+void Engine2::storeSmtState( SmtState& smtState )
 {
     _smtStackManager.storeSmtState( smtState );
 }

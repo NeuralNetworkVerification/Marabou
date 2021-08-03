@@ -151,7 +151,9 @@ void SmtCore::performSplit()
     ++split;
     while ( split != splits.end() )
     {
+        #if ELAZAR_ENABLE
         stackEntry->_alternativeSplits.append( *split );
+        #endif
         ++split;
     }
 
@@ -195,6 +197,7 @@ bool SmtCore::popSplit()
 
     // Remove any entries that have no alternatives
     String error;
+        #if ELAZAR_ENABLE
     while ( _stack.back()->_alternativeSplits.empty() )
     {
         if ( checkSkewFromDebuggingSolution() )
@@ -211,6 +214,7 @@ bool SmtCore::popSplit()
         if ( _stack.empty() )
             return false;
     }
+        #endif
 
     if ( checkSkewFromDebuggingSolution() )
     {
@@ -223,10 +227,13 @@ bool SmtCore::popSplit()
 
     // Restore the state of the engine
     SMT_LOG( "\tRestoring engine state..." );
+        #if ELAZAR_ENABLE
     _engine->restoreState( *( stackEntry->_engineState ) );
+        #endif
     SMT_LOG( "\tRestoring engine state - DONE" );
 
     // Apply the new split and erase it from the list
+        #if ELAZAR_ENABLE
     auto split = stackEntry->_alternativeSplits.begin();
 
     // Erase any valid splits that were learned using the split we just popped
@@ -243,6 +250,7 @@ bool SmtCore::popSplit()
 
     stackEntry->_activeSplit = *split;
     stackEntry->_alternativeSplits.erase( split );
+        #endif
 
     if ( _statistics )
     {
@@ -322,12 +330,14 @@ bool SmtCore::checkSkewFromDebuggingSolution()
         // If the active split is non-compliant but there are alternatives, that's fine
         if ( !splitAllowsStoredSolution( stackEntry->_activeSplit, error ) )
         {
+        #if ELAZAR_ENABLE
             if ( stackEntry->_alternativeSplits.empty() )
             {
                 printf( "Error! Have a split that is non-compliant with the stored solution, "
                         "without alternatives:\n\t%s\n", error.ascii() );
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
+        #endif
 
             // Active split is non-compliant but this is fine, because there are alternatives. We're done.
             return false;

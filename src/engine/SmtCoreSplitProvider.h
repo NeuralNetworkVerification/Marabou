@@ -3,6 +3,7 @@
 
 #include "ISmtSplitProvider.h"
 #include "IEngine.h"
+#include "PiecewiseLinearConstraint.h"
 
 class SmtCoreSplitProvider : public ISmtSplitProvider
 {
@@ -10,7 +11,8 @@ class SmtCoreSplitProvider : public ISmtSplitProvider
 public:
     explicit SmtCoreSplitProvider( IEngine *_engine );
 
-    List<PiecewiseLinearCaseSplit> needToSplit() const override;
+    void thinkBeforeSplit( List<SmtStackEntry*> stack ) override;
+    Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
     void onSplitPerformed( SplitInfo const& ) override;
     void onStackPopPerformed( PopInfo const& ) override;
     void onUnsatReceived() override;
@@ -53,7 +55,8 @@ private:
       Do we need to perform a split and on which constraint.
     */
     bool _needToSplit;
-    PiecewiseLinearCaseSplit *_lastSplit;
+    Optional<PiecewiseLinearCaseSplit> _currentSplit;
+    Queue<PiecewiseLinearCaseSplit> _alternativeSplits;
     PiecewiseLinearConstraint *_constraintForSplitting;
 
     /*

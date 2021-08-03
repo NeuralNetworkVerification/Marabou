@@ -11,7 +11,13 @@ SmtStackManager::SmtStackManager( IEngine* engine )
 }
 
 void SmtStackManager::reset() {
-    _stack.clear();
+    for ( const auto &stackEntry : _stack )
+    {
+        delete stackEntry->_engineState;
+        delete stackEntry;
+    }
+
+   _stack.clear();
     _stateId = 0;
 }
 
@@ -25,22 +31,27 @@ void SmtStackManager::performSplit( PiecewiseLinearCaseSplit const& split ) {
     ++_stateId;
     _engine->storeState( *stateBeforeSplits, true );
 
-    auto stackEntry = std::make_unique<SmtStackEntry>();
+    auto stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     _engine->applySplit( split );
     stackEntry->_activeSplit = split;
     stackEntry->_pastSplits.append( split );
 
-    _stack.append( std::move( stackEntry ) );
+    _stack.append(  stackEntry  );
     if ( _statistics )
     {
         _statistics->setCurrentStackDepth( getStackDepth() );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
+
+    for(auto & provider : _splitProviders)
+    {
+        provider->onSplitPerformed({ split });
+    }
 }
 
-void SmtStackManager::replaySmtStackEntry( std::unique_ptr<SmtStackEntry> const& stackEntry )
+void SmtStackManager::replaySmtStackEntry( SmtStackEntry * stackEntry )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -62,8 +73,8 @@ void SmtStackManager::replaySmtStackEntry( std::unique_ptr<SmtStackEntry> const&
     for ( const auto& impliedSplit : stackEntry->_impliedValidSplits )
         _engine->applySplit( impliedSplit );
 
-    auto stackEntryDup = std::unique_ptr<SmtStackEntry>( stackEntry->duplicateSmtStackEntry() );
-    _stack.append( std::move( stackEntryDup ) );
+    auto stackEntryDup =  stackEntry->duplicateSmtStackEntry() ;
+    _stack.append( stackEntryDup );
 
     if ( _statistics )
     {
@@ -74,12 +85,12 @@ void SmtStackManager::replaySmtStackEntry( std::unique_ptr<SmtStackEntry> const&
 }
 
 
-void SmtStackManager::storeSmtState( SmtState2 &smtState )
+void SmtStackManager::storeSmtState( SmtState &smtState )
 {
     smtState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
 
     for ( auto &stackEntry : _stack )
-        smtState._stack.append( std::unique_ptr<SmtStackEntry>( stackEntry->duplicateSmtStackEntry() ) );
+        smtState._stack.append( stackEntry->duplicateSmtStackEntry() );
 
     smtState._stateId = _stateId;
 }
@@ -151,6 +162,11 @@ bool SmtStackManager::popSplit() {
 
     checkSkewFromDebuggingSolution();
 
+    for(auto & provider : _splitProviders)
+    {
+        provider->onStackPopPerformed({});
+    }
+
     return true;
 }
 
@@ -199,19 +215,6 @@ bool SmtStackManager::checkSkewFromDebuggingSolution() {
     // Now go over the stack from oldest to newest and check that each level is compliant
     for ( const auto& stackEntry : _stack )
     {
-        // If the active split is non-compliant but there are alternatives, that's fine
-        if ( !splitAllowsStoredSolution( stackEntry->_activeSplit, error ) )
-        {
-            if ( stackEntry->_alternativeSplits.empty() )
-            {
-                printf( "Error! Have a split that is non-compliant with the stored solution, "
-                    "without alternatives:\n\t%s\n", error.ascii() );
-                throw MarabouError( MarabouError::DEBUGGING_ERROR );
-            }
-
-            // Active split is non-compliant but this is fine, because there are alternatives. We're done.
-            return false;
-        }
 
         // Did we learn any valid splits that are non-compliant?
         for ( auto const& split : stackEntry->_impliedValidSplits )

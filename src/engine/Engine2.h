@@ -46,7 +46,9 @@
 #undef ERROR
 #endif
 
+#ifndef ENGINE_LOG
 #define ENGINE_LOG(x, ...) LOG(GlobalConfiguration::ENGINE_LOGGING, "Engine2: %s\n", x)
+#endif
 
 class EngineState;
 class InputQuery;
@@ -113,9 +115,18 @@ public:
     List<unsigned> getInputVariables() const;
 
     /*
+      Let providers think before requesting split
+    */
+    void letProvidersThink() ;
+
+    /* 
+    */
+   void addSplitProvider(std::shared_ptr<ISmtSplitProvider> const& splitProvider );
+
+    /*
       Request splits from providers
     */
-   Optional<List<PiecewiseLinearCaseSplit>> splitsFromProviders() const;
+    Optional<PiecewiseLinearCaseSplit> splitFromProviders() const;
 
     /*
       Add equations and tightenings from a split.
@@ -147,12 +158,12 @@ public:
       Apply the stack to the newly created SmtCore, returns false if UNSAT is
       found in this process.
     */
-    bool restoreSmtState( SmtState2 &smtState );
+    bool restoreSmtState( SmtState &smtState );
 
     /*
       Store the current stack of the smtCore into smtState
     */
-    void storeSmtState( SmtState2 &smtState );
+    void storeSmtState( SmtState &smtState );
 
     /*
       Pick the piecewise linear constraint for splitting

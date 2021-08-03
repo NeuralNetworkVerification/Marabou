@@ -47,6 +47,8 @@ void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
+    // _engine.addSplitProvider(std::make_shared<>())
+
     prepareInputQuery();
     solveQuery();
 
@@ -121,21 +123,21 @@ void Marabou::solveQuery()
     if ( _engine.processInputQuery( _inputQuery ) )
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
-    if ( _engine.getExitCode() == Engine::SAT )
+    if ( _engine.getExitCode() == Engine2::SAT )
         _engine.extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    Engine::ExitCode result = _engine.getExitCode();
+    Engine2::ExitCode result = _engine.getExitCode();
     String resultString;
 
-    if ( result == Engine::UNSAT )
+    if ( result == Engine2::UNSAT )
     {
         resultString = "unsat";
         printf( "unsat\n" );
     }
-    else if ( result == Engine::SAT )
+    else if ( result == Engine2::SAT )
     {
         resultString = "sat";
         printf( "sat\n" );
@@ -173,12 +175,12 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
             printf( "\n" );
         }
     }
-    else if ( result == Engine::TIMEOUT )
+    else if ( result == Engine2::TIMEOUT )
     {
         resultString = "TIMEOUT";
         printf( "Timeout\n" );
     }
-    else if ( result == Engine::ERROR )
+    else if ( result == Engine2::ERROR )
     {
         resultString = "ERROR";
         printf( "Error\n" );
