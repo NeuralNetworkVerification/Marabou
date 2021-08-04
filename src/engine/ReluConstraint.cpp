@@ -972,9 +972,9 @@ void ReluConstraint::addEqualZeroEqAndUpdate( unsigned var )
 	varIsZero.addAddend( 1, var );
 	_constraintBoundTightener->replaceEquationAndAdd( var, varIsZero );
 
-	if ( var == _aux)
+	if ( var == _aux )
 		_addedFixedAuxEq = true;
-	else if ( var == _f)
+	else if ( var == _f )
 		_addedFixedFEq = true;
 }
 

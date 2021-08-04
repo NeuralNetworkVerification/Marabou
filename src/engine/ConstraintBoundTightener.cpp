@@ -216,7 +216,7 @@ void ConstraintBoundTightener::replaceEquationAndAdd( unsigned var, const Equati
 	newITRow[n] = eq._scalar;
 
 	// Make all previous updates of same length
-	for (auto &row : _initialTableauUpdates)
+	for ( auto &row : _initialTableauUpdates )
 	{
 		row.insert(row.end() - 1, 0);
 		assert( row.size() == newITRow.size() );

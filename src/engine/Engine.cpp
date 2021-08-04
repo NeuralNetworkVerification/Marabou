@@ -519,9 +519,10 @@ void Engine::performSimplexStep()
 			{
                 applyAllBoundTightenings();
 				simplexBoundsUpdate();
+				applyAllConstraintTightenings(); // Can create additional constraint tightening which will change tableau and engine
 				printLinearInfeasibilityCertificate();
 				validateAllBounds( 0.001 );
-				certifyInfeasibility( 0.01 );
+				//certifyInfeasibility();
 			}
             throw InfeasibleQueryException();
         }
@@ -1352,15 +1353,20 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
 
 	if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
-		state._groundLowerBounds = std::vector<double> ( _tableau->getN(), 0 );
-		state._groundUpperBounds = std::vector<double> ( _tableau->getN(), 0 );
+		state._groundLowerBounds = std::vector<double> ( _groundLowerBounds.size(), 0 );
+		state._groundUpperBounds = std::vector<double> ( _groundUpperBounds.size(), 0 );
     	std::copy( _groundUpperBounds.begin(), _groundUpperBounds.end(), state._groundUpperBounds.begin() );
 		std::copy( _groundLowerBounds.begin(), _groundLowerBounds.end(), state._groundLowerBounds.begin() );
 
-		state._initialTableau = std::vector<std::vector<double>> ( _tableau->getM(), std::vector<double> ( _tableau->getN() + 1, 0 ) );
+		state._initialTableau = std::vector<std::vector<double>> ( _initialTableau.size(), std::vector<double> ( _initialTableau[0].size(), 0 ) );
 		ASSERT( _initialTableau.size() == state._initialTableau.size() );
 		ASSERT( _initialTableau[0].size() == state._initialTableau[0].size() );
-		std::copy( _initialTableau.begin(), _initialTableau.end(), state._initialTableau.begin() );
+		ASSERT( state._groundLowerBounds.size() == _tableau->getN() );
+		ASSERT( state._initialTableau.size() == _tableau->getM() )
+		ASSERT( state._initialTableau[0].size() == _tableau->getN() + 1 )
+
+		for ( unsigned i = 0 ; i < state._initialTableau.size(); ++i )
+			std::copy( _initialTableau[i].begin(), _initialTableau[i].end(), state._initialTableau[i].begin() );
 	}
 }
 
@@ -1387,16 +1393,27 @@ void Engine::restoreState( const EngineState &state )
 
 	if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
+		_groundUpperBounds.clear();
+		_groundLowerBounds.clear();
 		_groundUpperBounds.resize( state._groundUpperBounds.size() );
 		_groundLowerBounds.resize( state._groundLowerBounds.size() );
 
-		for( auto initialRow : _initialTableau )
-			initialRow.resize( state._initialTableau[0].size() );
 		_initialTableau.resize( state._initialTableau.size() );
 
 		std::copy( state._groundUpperBounds.begin(), state._groundUpperBounds.end(), _groundUpperBounds.begin() );
 		std::copy( state._groundLowerBounds.begin(), state._groundLowerBounds.end(), _groundLowerBounds.begin() );
-		std::copy( state._initialTableau.begin(), state._initialTableau.end(), _initialTableau.begin() );
+
+		for ( unsigned i = 0 ; i < state._initialTableau.size(); ++i )
+		{
+			_initialTableau[i].clear();
+			_initialTableau[i].resize( state._initialTableau[i].size() );
+			std::copy( state._initialTableau[i].begin(), state._initialTableau[i].end(), _initialTableau[i].begin() );
+		}
+
+		ASSERT( _groundLowerBounds.size() == _tableau->getN() );
+		ASSERT( _groundUpperBounds.size() == _tableau->getN() );
+		ASSERT( _initialTableau.size() == _tableau->getM() );
+		ASSERT( _initialTableau[0].size() == _tableau->getN() + 1 );
 	}
 
     // Make sure the data structures are initialized to the correct size
@@ -1685,24 +1702,31 @@ void Engine::applyAllConstraintTightenings()
 		for (  auto& row : _constraintBoundTightener->getTableauUpdates() )
 		{
 			ASSERT( row.size() == _initialTableau[0].size() );
-			_initialTableau.push_back(row);
+			_initialTableau.push_back( row );
 		}
 
 		for ( auto bound : _constraintBoundTightener->getLGBUpdates() )
-			_groundLowerBounds.push_back(bound);
+			_groundLowerBounds.push_back( bound );
 
 		for ( auto bound : _constraintBoundTightener->getUGBUpdates() )
-			_groundUpperBounds.push_back(bound);
+			_groundUpperBounds.push_back( bound );
 
 
 		ASSERT( _groundLowerBounds.size() == _initialTableau[0].size() - 1 );
 		ASSERT( _groundLowerBounds.size() == _initialTableau.back().size() - 1 );
 		ASSERT( _groundLowerBounds.size() == _groundUpperBounds.size() );
+		ASSERT( _groundLowerBounds.size() == _tableau->getN() );
+		ASSERT( _initialTableau.size() == _tableau->getM() );
 
 		_constraintBoundTightener->clearEngineUpdates();
 
 		for ( const auto &tightening : entailedTightenings ) //TODO delete
 			validateBounds(tightening._variable, 0.1);
+
+		_rowBoundTightener->setDimensions();
+		adjustWorkMemorySize();
+		_activeEntryStrategy->resizeHook( _tableau );
+		_costFunctionManager->initialize();
     }
 }
 
@@ -2423,6 +2447,11 @@ void Engine::printLinearInfeasibilityCertificate()
     }
 
     int var = _tableau->getInfeasibleVar();
+    if (var < 0)
+	{
+    	printf("Certification Error! No infeasible var was found.\n");
+    	return; // TODO delete
+	}
     ASSERT( var >= 0 );
 
     printf( "Found a variable with infeasible bounds: x%d\n", var );
@@ -2464,8 +2493,8 @@ void Engine::simplexBoundsUpdate()
 
     if ( newBound < _tableau->getUpperBound( var ) )
     {
+        _tableau->updateExplanation( boundUpdateRow, true ); // Need to be first, since tightening can notify other tightening
         _tableau->tightenUpperBound( var, newBound );
-        _tableau->updateExplanation( boundUpdateRow, true );
     }
     newBound = _tableau->computeRowBound( boundUpdateRow, false );
 
@@ -2474,17 +2503,17 @@ void Engine::simplexBoundsUpdate()
 
     if ( newBound > _tableau->getLowerBound( var ) )
     {
-        _tableau->tightenLowerBound( var, newBound );
         _tableau->updateExplanation( boundUpdateRow, false );
+        _tableau->tightenLowerBound( var, newBound );
     }
 }
 
-void Engine::certifyInfeasibility( const double epsilon ) const
+void Engine::certifyInfeasibility() const
 {
     int var = _tableau->getInfeasibleVar();
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
-    if (  computedLower <= computedUpper)
-    	printf("Certification error. %.5lf, %.5lf\n", computedUpper - computedLower ,epsilon);
+    if (  FloatUtils::lte( computedLower, computedUpper ) )
+    	printf("Certification error. gap is %.5lf \n", computedUpper - computedLower );
     //TODO revert upon completing
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
     //ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
@@ -2548,14 +2577,18 @@ void Engine::normalizeExplanations()
 
 bool Engine::validateBounds( unsigned var ,const double epsilon ) const
 {
-	if (  abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > epsilon )
+	auto certificate = _tableau->ExplainBound(var);
+	ASSERT( certificate->getLength() == _tableau->getM() );
+	certificate->assertLengthConsistency();
+
+	if ( abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > epsilon )
 	{
-		printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
+		//printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
 		return false;
 	}
 	if ( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) > epsilon)
 	{
-		printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+		//printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
 		return false;
 	}
 	return true;

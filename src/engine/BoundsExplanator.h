@@ -56,6 +56,11 @@ public:
 	 */
 	void addEntry( double coefficient );
 
+	/*
+	 * Asserts that all lengths are consistent
+	 */
+	void assertLengthConsistency();
+
 	unsigned _upperRecLevel; // For debugging purpose, TODO delete upon completing
 	unsigned _lowerRecLevel;
 
@@ -73,6 +78,15 @@ class BoundsExplanator {
 public:
 	BoundsExplanator( const unsigned varsNum, const unsigned rowsNum );
 
+	/*
+	 * Returns the number of rows
+	 */
+	unsigned getRowsNum();
+
+	/*
+ 	* Returns the number of variables
+ 	*/
+	unsigned getVarsNum();
 	/*
 	  Puts the values of a bound explanation in the array bound.
 	*/

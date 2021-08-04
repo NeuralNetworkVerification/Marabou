@@ -649,6 +649,11 @@ private:
     int getInfeasibleVar() const;
 
     /*
+     * Checks that the slack of a given row lhs is empty
+     */
+	bool checkSlack( unsigned rowIndex );
+
+    /*
     * Computes the upper bound imposed by row rhs
     * Consider making a static function
     */
