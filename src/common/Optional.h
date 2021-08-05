@@ -23,7 +23,7 @@ public:
 
     operator bool() const
     {
-        return _container.has_value();
+        return bool(_container);
     }
 
     value_type const& operator*() const
