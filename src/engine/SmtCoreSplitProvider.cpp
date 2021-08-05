@@ -8,25 +8,41 @@ SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
     : _engine( engine )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
     , _constraintForSplitting( nullptr )
-{ }
+{ 
+    _alternativeSplitsStack.push({});
+}
 
-void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
-    // We already have some splits in our backlog
+bool SmtCoreSplitProvider::searchForAlternatives()
+{
+    if ( !_currentSplit ) {
     if ( !_alternativeSplitsStack.empty() )
     {
-        if ( !_currentSplit ) {
+        printf("log: 1\n");
+            printf("log: 2\n");
             while( !_alternativeSplitsStack.empty() && _alternativeSplitsStack.top().empty() )
             {
+                printf("log: 2.1\n");
                 _alternativeSplitsStack.pop();
+                printf("log: 2.2\n");
             }
-            if( _alternativeSplitsStack.empty() ) return;
+            printf("log: 3\n");
+            if( _alternativeSplitsStack.empty() ) return false;
+            printf("log: 4\n");
 
             auto & currentAlternatives = _alternativeSplitsStack.top();
             _currentSplit = currentAlternatives.peak();
             currentAlternatives.pop();
+            printf("log: 5\n");
         }
-        return;
+        return true;
+    } else {
+        return false;
     }
+}
+
+void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
+    // We already have some splits in our backlog
+    if(searchForAlternatives()) return;
 
     if ( _constraintForSplitting == nullptr ) return;
 
