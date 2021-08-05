@@ -217,6 +217,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
             {
                 _smtStackManager.performSplit( *split );
                 splitJustPerformed = true;
+                continue;
             }
 
             if ( !_tableau->allBoundsValid() )
@@ -303,6 +304,11 @@ bool Engine2::solve( unsigned timeoutInSeconds )
         }
         catch ( const InfeasibleQueryException& )
         {
+            // notify unsat for providers
+            for ( auto const& splitProvider : _smtStackManager.splitProviders() )
+            {
+                splitProvider->onUnsatReceived();
+            }
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtStackManager.popSplit() )

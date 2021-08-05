@@ -12,11 +12,18 @@ SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
 
 void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
     // We already have some splits in our backlog
-    if ( !_alternativeSplits.empty() )
+    if ( !_alternativeSplitsStack.empty() )
     {
         if ( !_currentSplit ) {
-            _currentSplit = _alternativeSplits.peak();
-            _alternativeSplits.pop();
+            while( !_alternativeSplitsStack.empty() && _alternativeSplitsStack.top().empty() )
+            {
+                _alternativeSplitsStack.pop();
+            }
+            if( _alternativeSplitsStack.empty() ) return;
+
+            auto & currentAlternatives = _alternativeSplitsStack.top();
+            _currentSplit = currentAlternatives.peak();
+            currentAlternatives.pop();
         }
         return;
     }
@@ -40,22 +47,33 @@ void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
     _constraintForSplitting->setActiveConstraint( false );
 
-    for ( auto const& split : splits )
-        _alternativeSplits.push( split );
-    _currentSplit = _alternativeSplits.peak();
-    _alternativeSplits.pop();
+    auto & currentAlternatives = _alternativeSplitsStack.top();
+    for(auto const& split : splits)
+    {
+        currentAlternatives.push(split);
+    }
+    _currentSplit = currentAlternatives.peak();
+    currentAlternatives.pop();
 }
 
 Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::needToSplit() const {
-    return _currentSplit;
+    if(_needToSplit)
+        return _currentSplit;
+    else
+        return nullopt;
 }
 
 void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
     auto const bound = *splitInfo.theSplit.getBoundTightenings().begin();
-    std::cout << std::boolalpha << "on split " << bound._variable << " " << ( _currentSplit ? *_currentSplit == splitInfo.theSplit : false ) << std::endl;
+    auto const var = bound._variable;
+    auto const isActive = bound._type == Tightening::LB;
+    printf("split var=%d isactive=%d; ", var, isActive);
     if(_currentSplit && *_currentSplit == splitInfo.theSplit){
         // it was my split that was performed, so we need to reset it for the next split request
         _currentSplit = nullopt;
+        _needToSplit = false;
+   Queue<PiecewiseLinearCaseSplit> alternativeSplits; 
+    _alternativeSplitsStack.push( alternativeSplits );
     }
 }
 
@@ -68,7 +86,7 @@ void SmtCoreSplitProvider::onUnsatReceived() {
 }
 
 void SmtCoreSplitProvider::reportViolatedConstraint( PiecewiseLinearConstraint* constraint ) {
-    std::cout << "on violated constraint" << std::endl;
+    // std::cout << "on violated constraint" << std::endl;
     if ( !_constraintToViolationCount.exists( constraint ) )
         _constraintToViolationCount[constraint] = 0;
 

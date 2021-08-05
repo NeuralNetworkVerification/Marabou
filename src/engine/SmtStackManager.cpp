@@ -25,6 +25,12 @@ void SmtStackManager::performSplit( PiecewiseLinearCaseSplit const& split ) {
 
     struct timespec start = TimeUtils::sampleMicro();
 
+    if ( _statistics )
+    {
+        _statistics->incNumSplits();
+        _statistics->incNumVisitedTreeStates();
+    }
+
     // Obtain the current state of the engine
     EngineState* stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
@@ -36,6 +42,7 @@ void SmtStackManager::performSplit( PiecewiseLinearCaseSplit const& split ) {
     _engine->applySplit( split );
     stackEntry->_activeSplit = split;
     stackEntry->_pastSplits.append( split );
+    stackEntry->_engineState = stateBeforeSplits;
 
     _stack.append(  stackEntry  );
     if ( _statistics )

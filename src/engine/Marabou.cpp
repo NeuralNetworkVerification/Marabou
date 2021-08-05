@@ -47,7 +47,7 @@ void Marabou::run()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    // _engine.addSplitProvider(std::make_shared<>())
+    // _engine.addSplitProvider(std::make_shared<ResidualResoner>("/path/to/gammaUnsat"))
 
     prepareInputQuery();
     solveQuery();

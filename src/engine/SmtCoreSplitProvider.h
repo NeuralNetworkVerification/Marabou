@@ -4,6 +4,8 @@
 #include "ISmtSplitProvider.h"
 #include "IEngine.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Queue.h"
+#include "Stack.h"
 
 class SmtCoreSplitProvider : public ISmtSplitProvider
 {
@@ -56,7 +58,7 @@ private:
     */
     bool _needToSplit;
     Optional<PiecewiseLinearCaseSplit> _currentSplit;
-    Queue<PiecewiseLinearCaseSplit> _alternativeSplits;
+    Stack<Queue<PiecewiseLinearCaseSplit>> _alternativeSplitsStack;
     PiecewiseLinearConstraint *_constraintForSplitting;
 
     /*
