@@ -52,6 +52,11 @@ private:
     Map<unsigned, String> _variableToVariableName;
 
     /*
+      Index for Guroby binary variables
+    */
+    unsigned _binVarIndex = 0;
+
+    /*
       Encode an (in)equality into Gurobi.
     */
     void encodeEquation( GurobiWrapper &gurobi, const Equation &Equation );
@@ -69,9 +74,19 @@ private:
       The other two constraints f >= b and f >= 0 are encoded already when
       preprocessing
     */
-    void encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu,
-                               unsigned index );
+    void encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu );
 
+    /*
+      Encode a MAX constraint y = max(x_1, x_2, ... ,x_m) into Gurobi using the same encoding in
+      https://arxiv.org/pdf/1711.07356.pdf
+
+      Encode the following constraint:
+
+      y <= x_i + (1 - a_i) * (umax - l) & y >= x_i (i = 1 ~ m)
+      a_1 + a_2 + ... + a_m = 1
+      a_i \in {0, 1} (i = 1 ~ m)
+    */
+    void encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max );
 };
 
 #endif // __MILPEncoder_h__

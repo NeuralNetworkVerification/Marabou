@@ -17,9 +17,9 @@
 #define __MILPSolverBoundTighteningType_h__
 
 /*
-  MILP solver bound tighening options
+  MILP solver bound tightening options
 */
-enum MILPSolverBoundTighteningType
+enum class MILPSolverBoundTighteningType
 {
      // Only encode pure linear constraints in the underlying
      // solver, in a way that over-approximates the query

@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <boost/lockfree/queue.hpp>
+#include <boost/thread.hpp>
 #include <mutex>
 
 namespace NLR {
@@ -49,7 +50,8 @@ public:
                         std::mutex &mtx, std::atomic_bool &infeasible,
                         std::atomic_uint &tighterBoundCounter,
                         std::atomic_uint &signChanges,
-                        std::atomic_uint &cutoffs )
+                        std::atomic_uint &cutoffs,
+                        bool skipTightenLb, bool skipTightenUb )
         : _gurobi( gurobi )
         , _layer( layer )
         , _layers( layers )
@@ -65,6 +67,8 @@ public:
         , _tighterBoundCounter( tighterBoundCounter )
         , _signChanges( signChanges )
         , _cutoffs( cutoffs )
+        , _skipTightenLb ( skipTightenLb )
+        , _skipTightenUb ( skipTightenUb )
         , _lastFixedNeuron( NULL )
         {
         }
@@ -76,13 +80,14 @@ public:
                         std::mutex &mtx, std::atomic_bool &infeasible,
                         std::atomic_uint &tighterBoundCounter,
                         std::atomic_uint &signChanges,
-                        std::atomic_uint &cutoffs )
+                        std::atomic_uint &cutoffs,
+                        bool skipTightenLb, bool skipTightenUb )
         : _gurobi( gurobi )
         , _layer( layer )
         , _layers( NULL )
         , _index( index )
-        , _currentLb(currentLb )
-        , _currentUb(currentUb )
+        , _currentLb( currentLb )
+        , _currentUb( currentUb )
         , _cutoffInUse( cutoffInUse )
         , _cutoffValue( cutoffValue )
         , _layerOwner( layerOwner )
@@ -92,6 +97,8 @@ public:
         , _tighterBoundCounter( tighterBoundCounter )
         , _signChanges( signChanges )
         , _cutoffs( cutoffs )
+        , _skipTightenLb ( skipTightenLb )
+        , _skipTightenUb ( skipTightenUb )
         , _lastFixedNeuron( NULL )
         {
         }
@@ -108,8 +115,8 @@ public:
         , _layer( layer )
         , _layers( NULL )
         , _index( index )
-        , _currentLb(currentLb )
-        , _currentUb(currentUb )
+        , _currentLb( currentLb )
+        , _currentUb( currentUb )
         , _cutoffInUse( cutoffInUse )
         , _cutoffValue( cutoffValue )
         , _layerOwner( layerOwner )
@@ -120,6 +127,31 @@ public:
         , _signChanges( signChanges )
         , _cutoffs( cutoffs )
         , _lastFixedNeuron( lastFixedNeuron )
+        {
+        }
+
+        ThreadArgument( Layer *layer, const Map<unsigned, Layer *> *layers, 
+                        SolverQueue &freeSolvers,
+                        std::mutex &mtx, std::atomic_bool &infeasible,
+                        std::atomic_uint &tighterBoundCounter,
+                        std::atomic_uint &signChanges,
+                        std::atomic_uint &cutoffs,
+                        unsigned lastIndexOfRelaxation,
+                        unsigned targetIndex,
+                        boost::thread *threads,
+                        const Map<GurobiWrapper *, unsigned> *solverToIndex )
+        : _layer( layer )
+        , _layers( layers )
+        , _freeSolvers( freeSolvers )
+        , _mtx( mtx )
+        , _infeasible( infeasible )
+        , _tighterBoundCounter( tighterBoundCounter )
+        , _signChanges( signChanges )
+        , _cutoffs( cutoffs )
+        , _lastIndexOfRelaxation( lastIndexOfRelaxation )
+        , _targetIndex ( targetIndex )
+        , _threads( threads )
+        , _solverToIndex( solverToIndex )
         {
         }
 
@@ -138,7 +170,13 @@ public:
         std::atomic_uint &_tighterBoundCounter;
         std::atomic_uint &_signChanges;
         std::atomic_uint &_cutoffs;
+        bool _skipTightenLb;
+        bool _skipTightenUb;
         NeuronIndex *_lastFixedNeuron;
+        unsigned _lastIndexOfRelaxation;
+        unsigned _targetIndex;
+        boost::thread *_threads;
+        const Map<GurobiWrapper *, unsigned> *_solverToIndex;
     };
 
     /*

@@ -22,6 +22,7 @@
 #include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
+#include "SymbolicBoundTighteningType.h"
 
 #include "boost/program_options.hpp"
 
@@ -41,6 +42,9 @@ public:
         // Restore tree states of the parent when handling children in DnC.
         RESTORE_TREE_STATES,
 
+        // Dump the bounds of each variable after preprocessing
+        DUMP_BOUNDS,
+
         // Help flag
         HELP,
 
@@ -48,7 +52,10 @@ public:
         VERSION,
 
         // Solve the input query with a MILP solver
-        SOLVE_WITH_MILP
+        SOLVE_WITH_MILP,
+
+        // Whether to call a LP tightening after a case split
+        SKIP_LP_TIGHTENING_AFTER_SPLIT
     };
 
     enum IntOptions {
@@ -65,6 +72,9 @@ public:
         TIMEOUT,
 
         CONSTRAINT_VIOLATION_THRESHOLD,
+
+        // The number of simulations
+        NUMBER_OF_SIMULATIONS,
     };
 
     enum FloatOptions{
@@ -73,6 +83,9 @@ public:
 
         // Gurobi options
         MILP_SOLVER_TIMEOUT,
+
+        // Engine's Preprocessor options
+        PREPROCESSOR_BOUND_TOLERANCE,
     };
 
     enum StringOptions {
@@ -82,6 +95,7 @@ public:
         SUMMARY_FILE,
         SPLITTING_STRATEGY,
         SNC_SPLITTING_STRATEGY,
+        SYMBOLIC_BOUND_TIGHTENING_TYPE,
         MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
     };
@@ -110,6 +124,7 @@ public:
     String getString( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
+    SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
 
     /*

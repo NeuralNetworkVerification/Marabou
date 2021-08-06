@@ -1,8 +1,4 @@
-[![codecov.io](
-  https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](
-    https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
-
-#  Marabou
+#  Marabou [![Marabou](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml/badge.svg)](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml) [![codecov.io](https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
 Deep neural networks are revolutionizing the way complex systems are designed.
 Instead of spending long hours hand-crafting complex software, many engineers
 now opt to use deep neural networks (DNNs) - machine learning models, created by
@@ -41,9 +37,16 @@ paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
 For more information about the input formats please check the
 [wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
+**NEW** A guide to Split and Conquer mode is available in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb). The Jupyter Notebook gives on overview of SnC's parameters, discusses several runtime examples and a few rules of thumb to choose parameter values.
+
+Research
+------------------------------------------------------------------------------
+More information about publications involving Marabou can be found
+[here](https://neuralnetworkverification.github.io/).
+
 Download
 ------------------------------------------------------------------------------
-The latest version of Marabou is available on [https://github.com/NeuralNetworkVerification/Marabou].
+The latest version of Marabou is available on https://github.com/NeuralNetworkVerification/Marabou.
 
 Build and Dependencies
 ------------------------------------------------------------------------------
@@ -104,6 +107,9 @@ cmake ..
 make check -j PROC_NUM
 ```
 ### Build Instructions for Windows using Visual Studio
+
+We no longer provide Windows support. The below instructions apply to commits up
+to [0fc1d10](https://github.com/NeuralNetworkVerification/Marabou/commit/0fc1d10ff0e1859cf32abe54eb22f3ec0fec59f6).
 
 First, install Visual Studio 2017 or later and select the "Desktop development with C++" workload. 
 Ensure that CMake is installed and added to your PATH.
@@ -180,19 +186,21 @@ on Windows.
 Please see our [documentation](https://neuralnetworkverification.github.io/Marabou/)
 for the python interface, which contains examples, API documentation, and a developer's guide.
 
-### Using the Divide and Conquer (DNC) mode
-In the DNC mode, activated by *--dnc* Marabou decomposes the problem into *n0*
+### Using the Split and Conquer (SNC) mode
+In the SNC mode, activated by *--snc* Marabou decomposes the problem into *2^n0*
 sub-problems, specified by *--initial-divides=n0*. Each sub-problem will be
 solved with initial timeout of *t0*, supplied by *--initial-timeout=t0*. Every
-sub-problem that times out will be divided into *n* additional sub-problems,
+sub-problem that times out will be divided into *2^n* additional sub-problems,
 *--num-online-divides=n*, and the timeout is multiplied by a factor of *f*,
 *--timeout-factor=f*. Number of parallel threads *t* is specified by
 *--num-workers=t*.
 
-So to solve a problem in DNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
+So to solve a problem in SNC mode with 4 initial splits and initial timeout of 5s, 4 splits on each timeout and a timeout factor of 1.5:
 ```
-build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --dnc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
+build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt --snc --initial-divides=4 --initial-timeout=5 --num-online-divides=4 --timeout-factor=1.5 --num-workers=4
 ```
+
+A guide to Split and Conquer is available as a Jupyter Notebook in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb).
 
 ### Use LP Relaxation
 Marabou has an option to use LP relaxation for bound tightening.
@@ -204,14 +212,14 @@ issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-o
 A quick installation reference:
 ```
 export INSTALL_DIR=/opt
-sudo tar xvfz gurobi9.0.2_linux64.tar.gz -C $INSTALL_DIR
-cd $INSTALL_DIR/gurobi902/linux64/src/build
+sudo tar xvfz gurobi9.1.1_linux64.tar.gz -C $INSTALL_DIR
+cd $INSTALL_DIR/gurobi911/linux64/src/build
 sudo make
 sudo cp libgurobi_c++.a ../../lib/
 ```
 Next it is recommended to add the following to the .bashrc (but not necessary) 
 ```
-export GUROBI_HOME="/opt/gurobi902/linux64"
+export GUROBI_HOME="/opt/gurobi911/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 

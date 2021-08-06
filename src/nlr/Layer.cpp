@@ -14,6 +14,8 @@
  **/
 
 #include "Layer.h"
+#include "Options.h"
+#include "SymbolicBoundTighteningType.h"
 
 namespace NLR {
 
@@ -65,8 +67,11 @@ void Layer::allocateMemory()
 
     _assignment = new double[_size];
 
+    _simulations.assign( _size, Vector<double>( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) ) );
+
     _inputLayerSize = ( _type == INPUT ) ? _size : _layerOwner->getLayer( 0 )->getSize();
-    if ( GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING )
+    if ( Options::get()->getSymbolicBoundTighteningType() ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
     {
         _symbolicLb = new double[_size * _inputLayerSize];
         _symbolicUb = new double[_size * _inputLayerSize];
@@ -106,6 +111,16 @@ const double *Layer::getAssignment() const
 double Layer::getAssignment( unsigned neuron ) const
 {
     return _assignment[neuron];
+}
+
+void Layer::setSimulations( const Vector<Vector<double>> *values )
+{
+    _simulations = *values;
+}
+
+const Vector<Vector<double>> *Layer::getSimulations() const
+{
+    return &_simulations;
 }
 
 void Layer::computeAssignment()
@@ -192,6 +207,98 @@ void Layer::computeAssignment()
         _assignment[eliminated.first] = eliminated.second;
 }
 
+void Layer::computeSimulations()
+{
+    ASSERT( _type != INPUT );
+
+    unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
+    if ( _type == WEIGHTED_SUM )
+    {
+        // Process each of the source layers
+        for ( auto &sourceLayerEntry : _sourceLayers )
+        {
+            const Layer *sourceLayer = _layerOwner->getLayer( sourceLayerEntry.first );
+            const Vector<Vector<double>> *sourceSimulations = sourceLayer->getSimulations();
+
+            unsigned sourceSize = sourceLayerEntry.second;
+            const double *weights = _layerToWeights[sourceLayerEntry.first];
+
+            for ( unsigned i = 0; i < _size; i++ )
+            {
+                for ( unsigned j = 0; j < simulationSize; ++j )
+                    _simulations[i][j] = _bias[i];
+            }
+
+            for ( unsigned i = 0; i < sourceSize; ++i )
+                for ( unsigned j = 0; j < simulationSize; ++j )
+                    for ( unsigned k = 0; k < _size; ++k )
+                        _simulations[k][j] += ( ( *sourceSimulations ).get( i ).get( j ) * weights[i * _size + k] );
+        }
+    } 
+    else if ( _type == RELU )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();            
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), 0 );
+        }
+    }
+    else if ( _type == ABSOLUTE_VALUE )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            for ( unsigned j = 0; j < simulationSize; ++j ) 
+                _simulations[i][j] = FloatUtils::abs( simulations.get( j ) );
+        }
+    }
+    else if ( _type == MAX )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            for ( unsigned j = 0; j < simulationSize; ++j )
+            {
+                _simulations[i][j] = FloatUtils::negativeInfinity();
+
+                for ( const auto &input : _neuronToActivationSources[i] )
+                {
+                    //double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) )[input._neuron][j];
+                    double value = ( *( _layerOwner->getLayer( input._layer )->getSimulations() ) ).get( input._neuron ).get( j );
+                    if ( value > _simulations[i][j] )
+                        _simulations[i][j] = value;
+                }
+            }
+        }
+    }
+    else if ( _type == SIGN )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::isNegative( simulations.get( j ) ) ? -1 : 1;
+        }
+    }
+    else
+    {
+        printf( "Error! Neuron type %u unsupported\n", _type );
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_ACTIVATION_NOT_SUPPORTED );
+    }
+
+    // Eliminated variables supersede anything else - no matter what
+    // was computed due to left-over weights, etc, their set values
+    // prevail.
+    for ( const auto &eliminated : _eliminatedNeurons )
+    {
+        for ( unsigned j = 0; j < simulationSize; ++j )
+            _simulations[eliminated.first][j] = eliminated.second;
+    }
+}
+
 void Layer::addSourceLayer( unsigned layerNumber, unsigned layerSize )
 {
     ASSERT( _type != INPUT );
@@ -263,6 +370,21 @@ double Layer::getWeight( unsigned sourceLayer,
     return _layerToWeights[sourceLayer][index];
 }
 
+double *Layer::getWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToWeights[sourceLayerIndex];
+}
+
+double *Layer::getPositiveWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToPositiveWeights[sourceLayerIndex];
+}
+
+double *Layer::getNegativeWeights( unsigned sourceLayerIndex ) const
+{
+    return _layerToNegativeWeights[sourceLayerIndex];
+}
+
 void Layer::setBias( unsigned neuron, double bias )
 {
     _bias[neuron] = bias;
@@ -271,6 +393,11 @@ void Layer::setBias( unsigned neuron, double bias )
 double Layer::getBias( unsigned neuron ) const
 {
     return _bias[neuron];
+}
+
+double *Layer::getBiases() const
+{
+    return _bias;
 }
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
@@ -344,6 +471,16 @@ double Layer::getUb( unsigned neuron ) const
         return _eliminatedNeurons[neuron];
 
     return _ub[neuron];
+}
+
+double *Layer::getLbs() const
+{
+    return _lb;
+}
+
+double *Layer::getUbs() const
+{
+    return _ub;
 }
 
 void Layer::setLb( unsigned neuron, double bound )
@@ -693,13 +830,13 @@ void Layer::computeSymbolicBoundsForRelu()
           1. If the ReLU's variable has been externally fixed
           2. lbLb >= 0 (ACTIVE) or ubUb <= 0 (INACTIVE)
         */
-        ReluConstraint::PhaseStatus reluPhase = ReluConstraint::PHASE_NOT_FIXED;
+        PhaseStatus reluPhase = PHASE_NOT_FIXED;
 
         // Has the f variable been eliminated or fixed?
         if ( FloatUtils::isPositive( _lb[i] ) )
-            reluPhase = ReluConstraint::PHASE_ACTIVE;
+            reluPhase = RELU_PHASE_ACTIVE;
         else if ( FloatUtils::isZero( _ub[i] ) )
-            reluPhase = ReluConstraint::PHASE_INACTIVE;
+            reluPhase = RELU_PHASE_INACTIVE;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -732,14 +869,14 @@ void Layer::computeSymbolicBoundsForRelu()
         // Has the b variable been fixed?
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
-            reluPhase = ReluConstraint::PHASE_ACTIVE;
+            reluPhase = RELU_PHASE_ACTIVE;
         }
         else if ( !FloatUtils::isPositive( sourceUb ) )
         {
-            reluPhase = ReluConstraint::PHASE_INACTIVE;
+            reluPhase = RELU_PHASE_INACTIVE;
         }
 
-        if ( reluPhase == ReluConstraint::PHASE_NOT_FIXED )
+        if ( reluPhase == PHASE_NOT_FIXED )
         {
             // If we got here, we know that lbLb < 0 and ubUb
             // > 0 There are four possible cases, depending on
@@ -782,7 +919,7 @@ void Layer::computeSymbolicBoundsForRelu()
         else
         {
             // The phase of this ReLU is fixed!
-            if ( reluPhase == ReluConstraint::PHASE_ACTIVE )
+            if ( reluPhase == RELU_PHASE_ACTIVE )
             {
                 // Active ReLU, bounds are propagated as is
             }
@@ -854,13 +991,13 @@ void Layer::computeSymbolicBoundsForSign()
           1. If the Sign's variable has been externally fixed
           2. lbLb >= 0 (Positive) or ubUb < 0 (Negative)
         */
-        SignConstraint::PhaseStatus signPhase = SignConstraint::PHASE_NOT_FIXED;
+        PhaseStatus signPhase = PHASE_NOT_FIXED;
 
         // Has the f variable been eliminated or fixed?
         if ( !FloatUtils::isNegative( _lb[i] ) )
-            signPhase = SignConstraint::PHASE_POSITIVE;
+            signPhase = SIGN_PHASE_POSITIVE;
         else if ( FloatUtils::isNegative( _ub[i] ) )
-            signPhase = SignConstraint::PHASE_NEGATIVE;
+            signPhase = SIGN_PHASE_NEGATIVE;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -893,14 +1030,14 @@ void Layer::computeSymbolicBoundsForSign()
         // Has the b variable been fixed?
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
-            signPhase = SignConstraint::PHASE_POSITIVE;
+            signPhase = SIGN_PHASE_POSITIVE;
         }
         else if ( FloatUtils::isNegative( sourceUb ) )
         {
-            signPhase = SignConstraint::PHASE_NEGATIVE;
+            signPhase = SIGN_PHASE_NEGATIVE;
         }
 
-        if ( signPhase == SignConstraint::PHASE_NOT_FIXED )
+        if ( signPhase == PHASE_NOT_FIXED )
         {
             // If we got here, we know that lbLb < 0 and ubUb
             // > 0
@@ -972,7 +1109,7 @@ void Layer::computeSymbolicBoundsForSign()
         {
             // The phase of this Sign is fixed!
             double constant =
-                ( signPhase == SignConstraint::PHASE_POSITIVE ) ? 1 : -1;
+                ( signPhase == SIGN_PHASE_POSITIVE ) ? 1 : -1;
 
             _symbolicLbOfLb[i] = constant;
             _symbolicUbOfLb[i] = constant;
@@ -1033,7 +1170,7 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
             continue;
         }
 
-        AbsoluteValueConstraint::PhaseStatus absPhase = AbsoluteValueConstraint::PHASE_NOT_FIXED;
+        PhaseStatus absPhase = PHASE_NOT_FIXED;
 
         ASSERT( _neuronToActivationSources.exists( i ) );
         NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
@@ -1061,11 +1198,11 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
         _symbolicUbOfUb[i] = sourceLayer->getSymbolicUbOfUb( sourceIndex._neuron );
 
         if ( sourceLb >= 0 )
-            absPhase = AbsoluteValueConstraint::PHASE_POSITIVE;
+            absPhase = ABS_PHASE_POSITIVE;
         else if ( sourceUb <= 0 )
-            absPhase = AbsoluteValueConstraint::PHASE_NEGATIVE;
+            absPhase = ABS_PHASE_NEGATIVE;
 
-        if ( absPhase == AbsoluteValueConstraint::PHASE_NOT_FIXED )
+        if ( absPhase == PHASE_NOT_FIXED )
         {
             // If we got here, we know that lbOfLb < 0 < ubOfUb. In this case,
             // we do naive concretization: lb is 0, ub is the max between
@@ -1087,7 +1224,7 @@ void Layer::computeSymbolicBoundsForAbsoluteValue()
         else
         {
             // The phase of this AbsoluteValueConstraint is fixed!
-            if ( absPhase == AbsoluteValueConstraint::PHASE_POSITIVE )
+            if ( absPhase == ABS_PHASE_POSITIVE )
             {
                 // Positive AbsoluteValue, bounds are propagated as is
             }
@@ -1723,7 +1860,7 @@ void Layer::adjustWeightMapIndexing( Map<unsigned, double *> &map, unsigned star
         map[pair.first >= startIndex ? pair.first - 1 : pair.first] = pair.second;
 }
 
-void Layer::reduceIndexAfterMerge ( unsigned startIndex )
+void Layer::reduceIndexAfterMerge( unsigned startIndex )
 {
     if ( _layerIndex >= startIndex )
         --_layerIndex;
@@ -1799,6 +1936,16 @@ unsigned Layer::getMaxVariable() const
             result = pair.second;
 
     return result;
+}
+
+void Layer::dumpBounds() const
+{
+    printf( "Layer %u:\n", _layerIndex );
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        printf( "\tNeuron%u\tLB: %.4f, UB: %.4f \n", i + 1, _lb[i], _ub[i] );
+    }
+    printf("\n");
 }
 
 } // namespace NLR

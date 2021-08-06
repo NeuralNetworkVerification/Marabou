@@ -66,7 +66,7 @@ public:
     static const bool USE_HARRIS_RATIO_TEST;
 
     // Toggle query-preprocessing on/off.
-	static const bool PREPROCESS_INPUT_QUERY;
+    static const bool PREPROCESS_INPUT_QUERY;
 
     // Assuming the preprocessor is on, toggle whether or not it will attempt to perform variable
     // elimination.
@@ -133,6 +133,9 @@ public:
     // If the cost function error exceeds this threshold, it is recomputed
     static const double COST_FUNCTION_ERROR_THRESHOLD;
 
+    // Random seed for generating simulation values.
+    static const unsigned SIMULATION_RANDOM_SEED;
+
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
@@ -174,9 +177,6 @@ public:
       Symbolic bound tightening options
     */
 
-    // Whether symbolic bound tightening should be used or not
-    static const bool USE_SYMBOLIC_BOUND_TIGHTENING;
-
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 
@@ -197,7 +197,7 @@ public:
     */
 
     // The number of accumualted eta matrices, after which the basis will be refactorized
-	static const unsigned REFACTORIZATION_THRESHOLD;
+    static const unsigned REFACTORIZATION_THRESHOLD;
 
     // The kind of basis factorization algorithm in use
     enum BasisFactorizationType {

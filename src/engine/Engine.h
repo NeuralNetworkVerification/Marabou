@@ -25,19 +25,21 @@
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
-#include "SnCDivideStrategy.h"
 #include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "Map.h"
 #include "MILPEncoder.h"
+#include "Options.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
 #include "SignalHandler.h"
 #include "SmtCore.h"
+#include "SnCDivideStrategy.h"
 #include "Statistics.h"
 #include "UNSATCertificate.h"
+#include "SymbolicBoundTighteningType.h"
 
 #include <atomic>
 #include <assert.h>
@@ -87,6 +89,12 @@ public:
     void storeState( EngineState &state, bool storeAlsoTableauState ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
+
+    /*
+      Preprocessor access.
+    */
+    bool preprocessingEnabled() const;
+    const Preprocessor *getPreprocessor();
 
     /*
       A request from the user to terminate
@@ -213,10 +221,10 @@ private:
     */
     PiecewiseLinearConstraint *_plConstraintToFix;
 
-	/*
-	  Preprocessed InputQuery
-	*/
-	InputQuery _preprocessedQuery;
+    /*
+      Preprocessed InputQuery
+    */
+    InputQuery _preprocessedQuery;
 
     /*
       Pivot selection strategies.
@@ -336,6 +344,11 @@ private:
     DivideStrategy _splittingStrategy;
 
     /*
+      Type of symbolic bound tightening
+    */
+    SymbolicBoundTighteningType _symbolicBoundTighteningType;
+
+    /*
       Disjunction that is used for splitting but doesn't exist in the beginning
     */
     std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
@@ -354,6 +367,16 @@ private:
       MILPEncoder
     */
     std::unique_ptr<MILPEncoder> _milpEncoder;
+
+    /*
+      Stored options
+      Do this since Options object is not thread safe and 
+      there is a chance that multiple Engine object be accessing the Options object.
+    */
+    unsigned _simulationSize;
+    bool _isGurobyEnabled;
+    bool _isSkipLpTighteningAfterSplit;
+    MILPSolverBoundTighteningType _milpSolverBoundTighteningType;
 
     /*
       Perform a simplex step: compute the cost function, pick the
@@ -464,11 +487,19 @@ private:
     */
     bool attemptToMergeVariables( unsigned x1, unsigned x2 );
 
+    void performDeepPolyAnalysis();
+
     /*
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
     */
     void performSymbolicBoundTightening();
+
+    /*
+      Perform a simulation which calculates concrete values of each layer with
+      randomly generated input values.
+    */
+    void performSimulation();
 
     /*
       Check whether a timeout value has been provided and exceeded.
@@ -503,6 +534,11 @@ private:
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
     void performMILPSolverBoundedTightening();
+
+    /*
+      Call MILP bound tightening for a single layer.
+    */    
+    void performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex );
 
     /*
       Update the preferred direction to perform fixes and the preferred order

@@ -9,19 +9,35 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** See the description of the class in DisjunctionConstraint.h.
  **/
 
-#include "Debug.h"
 #include "DisjunctionConstraint.h"
+
+#include "Debug.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Statistics.h"
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
-    : _disjuncts( disjuncts )
-    , _feasibleDisjuncts( disjuncts )
+    : ContextDependentPiecewiseLinearConstraint( disjuncts.size() )
+    , _disjuncts( disjuncts.begin(), disjuncts.end() )
+    , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
+        _feasibleDisjuncts.append( ind );
+
+    extractParticipatingVariables();
+}
+
+DisjunctionConstraint::DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts )
+    : ContextDependentPiecewiseLinearConstraint( disjuncts.size() )
+    , _disjuncts( disjuncts )
+    , _feasibleDisjuncts( disjuncts.size(), 0 )
+{
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
+        _feasibleDisjuncts.append( ind );
+
     extractParticipatingVariables();
 }
 
@@ -36,17 +52,25 @@ PiecewiseLinearFunctionType DisjunctionConstraint::getType() const
     return PiecewiseLinearFunctionType::DISJUNCTION;
 }
 
-PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
 {
     DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );
     *clone = *this;
+    initializeDuplicateCDOs( clone );
     return clone;
 }
 
 void DisjunctionConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const DisjunctionConstraint *disjunction = dynamic_cast<const DisjunctionConstraint *>( state );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *disjunction;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void DisjunctionConstraint::registerAsWatcher( ITableau *tableau )
@@ -71,10 +95,10 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
-    _lowerBounds[variable] = bound;
+    setLowerBound( variable, bound );
 
     updateFeasibleDisjuncts();
 }
@@ -84,10 +108,10 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    _upperBounds[variable] = bound;
+    setUpperBound( variable, bound );
 
     updateFeasibleDisjuncts();
 }
@@ -127,7 +151,20 @@ List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITabl
 
 List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getCaseSplits() const
 {
-    return _disjuncts;
+    return List<PiecewiseLinearCaseSplit>( _disjuncts.begin(), _disjuncts.end() );
+}
+
+List<PhaseStatus> DisjunctionConstraint::getAllCases() const
+{
+    List<PhaseStatus> cases;
+    for ( unsigned i = 0; i < _disjuncts.size(); ++i )
+        cases.append( indToPhaseStatus( i ) );
+    return cases;
+}
+
+PiecewiseLinearCaseSplit DisjunctionConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    return _disjuncts.get( phaseStatusToInd( phase ) );
 }
 
 bool DisjunctionConstraint::phaseFixed() const
@@ -135,9 +172,14 @@ bool DisjunctionConstraint::phaseFixed() const
     return _feasibleDisjuncts.size() == 1;
 }
 
+PiecewiseLinearCaseSplit DisjunctionConstraint::getImpliedCaseSplit() const
+{
+    return _disjuncts.get( *_feasibleDisjuncts.begin() );
+}
+
 PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
 {
-    return *_feasibleDisjuncts.begin();
+    return getImpliedCaseSplit();
 }
 
 void DisjunctionConstraint::dump( String &output ) const
@@ -265,38 +307,40 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
 {
     _feasibleDisjuncts.clear();
 
-    for ( const auto &disjunct : _disjuncts )
+    for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
     {
-        if ( disjunctIsFeasible( disjunct ) )
-            _feasibleDisjuncts.append( disjunct );
+        if ( disjunctIsFeasible( ind ) )
+            _feasibleDisjuncts.append( ind );
+        else if ( _cdInfeasibleCases && !isCaseInfeasible( indToPhaseStatus( ind ) ) )
+            markInfeasible( indToPhaseStatus( ind ) );
     }
 }
 
-bool DisjunctionConstraint::disjunctIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const
+bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const
+{
+    if ( _cdInfeasibleCases && isCaseInfeasible( indToPhaseStatus( ind ) ) )
+        return false;
+
+    return caseSplitIsFeasible( _disjuncts.get( ind ) );
+}
+
+bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const
 {
     for ( const auto &bound : disjunct.getBoundTightenings() )
     {
         if ( bound._type == Tightening::LB )
         {
-            if ( _upperBounds.exists( bound._variable ) &&
-                 _upperBounds[bound._variable] < bound._value )
+            if ( existsUpperBound( bound._variable ) &&
+                 getUpperBound( bound._variable ) < bound._value )
                 return false;
         }
         else
         {
-            if ( _lowerBounds.exists( bound._variable ) &&
-                 _lowerBounds[bound._variable] > bound._value )
+            if ( existsLowerBound( bound._variable ) &&
+                 getLowerBound( bound._variable ) > bound._value )
                 return false;
         }
     }
 
     return true;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

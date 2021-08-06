@@ -39,3 +39,5 @@ _deps
 /tools/pybind11_2_3_0.tar.gz
 build
 maraboupy/examples/LPQueryCreator.py
+/.idea/
+cmake-build-debug/

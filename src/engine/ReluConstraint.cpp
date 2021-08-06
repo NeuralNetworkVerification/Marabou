@@ -9,10 +9,13 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** See the description of the class in ReluConstraint.h.
  **/
 
+#include "ReluConstraint.h"
+
 #include "ConstraintBoundTightener.h"
+#include "ContextDependentPiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -20,25 +23,25 @@
 #include "ITableau.h"
 #include "InputQuery.h"
 #include "MStringf.h"
-#include "PiecewiseLinearCaseSplit.h"
-#include "ReluConstraint.h"
 #include "MarabouError.h"
+#include "PiecewiseLinearCaseSplit.h"
 #include "Statistics.h"
+#include "TableauRow.h"
 
 #ifdef _WIN32
 #define __attribute__(x)
 #endif
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : _b( b )
+    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
     , _f( f )
     , _auxVarInUse( false )
-    , _direction( PhaseStatus::PHASE_NOT_FIXED )
+    , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
     , _addedFixedAuxEq( false )
     , _addedFixedFEq( false )
 {
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
@@ -75,8 +78,6 @@ ReluConstraint::ReluConstraint( const String &serializedRelu )
 
         _auxVarInUse = true;
     }
-
-    setPhaseStatus( PhaseStatus::PHASE_NOT_FIXED );
 }
 
 PiecewiseLinearFunctionType ReluConstraint::getType() const
@@ -84,17 +85,25 @@ PiecewiseLinearFunctionType ReluConstraint::getType() const
     return PiecewiseLinearFunctionType::RELU;
 }
 
-PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
+ContextDependentPiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
     *clone = *this;
+    this->initializeDuplicateCDOs( clone );
     return clone;
 }
 
 void ReluConstraint::restoreState( const PiecewiseLinearConstraint *state )
 {
     const ReluConstraint *relu = dynamic_cast<const ReluConstraint *>( state );
+
+    CVC4::context::CDO<bool> *activeStatus = _cdConstraintActive;
+    CVC4::context::CDO<PhaseStatus> *phaseStatus = _cdPhaseStatus;
+    CVC4::context::CDList<PhaseStatus> *infeasibleCases = _cdInfeasibleCases;
     *this = *relu;
+    _cdConstraintActive = activeStatus;
+    _cdPhaseStatus = phaseStatus;
+    _cdInfeasibleCases = infeasibleCases;
 }
 
 void ReluConstraint::registerAsWatcher( ITableau *tableau )
@@ -128,18 +137,18 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _lowerBounds.exists( variable ) && !FloatUtils::gt( bound, _lowerBounds[variable] ) )
+    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
-    _lowerBounds[variable] = bound;
+    setLowerBound( variable, bound );
 	SparseUnsortedList tighteningRow = createTighteningRow();
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
-        setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+        setPhaseStatus( RELU_PHASE_ACTIVE );
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-        setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
-    else if ( variable == _aux && FloatUtils::isPositive( bound ) )
-        setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+    else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( RELU_PHASE_INACTIVE );
 
     if ( isActive() && _constraintBoundTightener )
     {
@@ -204,17 +213,17 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incNumBoundNotificationsPlConstraints();
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    _upperBounds[variable] = bound;
+     setUpperBound( variable, bound );
 	SparseUnsortedList tighteningRow = createTighteningRow();
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
-        setPhaseStatus( PhaseStatus::PHASE_INACTIVE );
+        setPhaseStatus( RELU_PHASE_INACTIVE );
 
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
-        setPhaseStatus( PhaseStatus::PHASE_ACTIVE );
+        setPhaseStatus( RELU_PHASE_ACTIVE );
 
     if ( isActive() && _constraintBoundTightener )
     {
@@ -336,7 +345,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
         }
         else
         {
-            if ( _direction == PHASE_INACTIVE )
+            if ( _direction == RELU_PHASE_INACTIVE )
             {
                 fixes.append( PiecewiseLinearConstraint::Fix( _f, 0 ) );
                 fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
@@ -350,7 +359,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
     }
     else
     {
-        if ( _direction == PHASE_ACTIVE )
+        if ( _direction == RELU_PHASE_ACTIVE )
         {
             fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
             fixes.append( PiecewiseLinearConstraint::Fix( _b, 0 ) );
@@ -438,7 +447,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
 
         if ( !FloatUtils::areEqual( bDeltaToFDelta, 1.0 ) )
         {
-            double activeFixDelta = ( bValue - fValue )  / ( bDeltaToFDelta - 1 );
+            double activeFixDelta = ( bValue - fValue ) / ( bDeltaToFDelta - 1 );
             double activeFix = bValue + activeFixDelta;
             fixes.append( PiecewiseLinearConstraint::Fix( _b, activeFix ) );
         }
@@ -451,7 +460,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
         */
         if ( !FloatUtils::areEqual( fDeltaToBDelta, 1.0 ) )
         {
-            double activeFixDelta = ( fValue - bValue )  / ( fDeltaToBDelta - 1 );
+            double activeFixDelta = ( fValue - bValue ) / ( fDeltaToBDelta - 1 );
             double activeFix = fValue + activeFixDelta;
             fixes.append( PiecewiseLinearConstraint::Fix( _f, activeFix ) );
         }
@@ -487,18 +496,18 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
 
 List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 {
-    if ( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED )
+    if ( _phaseStatus != PHASE_NOT_FIXED )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PiecewiseLinearCaseSplit> splits;
 
-    if ( _direction == PHASE_INACTIVE )
+    if ( _direction == RELU_PHASE_INACTIVE )
     {
         splits.append( getInactiveSplit() );
         splits.append( getActiveSplit() );
         return splits;
     }
-    if ( _direction == PHASE_ACTIVE )
+    if ( _direction == RELU_PHASE_ACTIVE )
     {
         splits.append( getActiveSplit() );
         splits.append( getInactiveSplit() );
@@ -529,6 +538,37 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
     }
 
     return splits;
+}
+
+List<PhaseStatus> ReluConstraint::getAllCases() const
+{
+    if ( _direction == RELU_PHASE_INACTIVE )
+        return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
+
+    if ( _direction == RELU_PHASE_ACTIVE )
+        return { RELU_PHASE_ACTIVE, RELU_PHASE_INACTIVE };
+
+    // If we have existing knowledge about the assignment, use it to
+    // influence the order of splits
+    if ( _assignment.exists( _f ) )
+    {
+        if ( FloatUtils::isPositive( _assignment[_f] ) )
+            return { RELU_PHASE_ACTIVE, RELU_PHASE_INACTIVE };
+        else
+            return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
+    }
+    else
+        return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getCaseSplit( PhaseStatus phase ) const
+{
+    if ( phase == RELU_PHASE_INACTIVE )
+        return getInactiveSplit();
+    else if ( phase == RELU_PHASE_ACTIVE )
+        return getActiveSplit();
+    else
+        throw MarabouError( MarabouError::REQUESTED_NONEXISTENT_CASE_SPLIT );
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
@@ -566,17 +606,22 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
 
 bool ReluConstraint::phaseFixed() const
 {
-    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
+    return _phaseStatus != PHASE_NOT_FIXED;
+}
+
+PiecewiseLinearCaseSplit ReluConstraint::getImpliedCaseSplit() const
+{
+    ASSERT( _phaseStatus != PHASE_NOT_FIXED );
+
+    if ( _phaseStatus == RELU_PHASE_ACTIVE )
+        return getActiveSplit();
+
+    return getInactiveSplit();
 }
 
 PiecewiseLinearCaseSplit ReluConstraint::getValidCaseSplit() const
 {
-    ASSERT( _phaseStatus != PhaseStatus::PHASE_NOT_FIXED );
-
-    if ( _phaseStatus == PhaseStatus::PHASE_ACTIVE )
-        return getActiveSplit();
-
-    return getInactiveSplit();
+    return getImpliedCaseSplit();
 }
 
 void ReluConstraint::dump( String &output ) const
@@ -588,19 +633,19 @@ void ReluConstraint::dump( String &output ) const
                       );
 
     output += Stringf( "b in [%s, %s], ",
-                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
-                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
+                       existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
     output += Stringf( "f in [%s, %s]",
-                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
-                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
+                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
 
     if ( _auxVarInUse )
     {
         output += Stringf( ". Aux var: %u. Range: [%s, %s]\n",
                            _aux,
-                           _lowerBounds.exists( _aux ) ? Stringf( "%lf", _lowerBounds[_aux] ).ascii() : "-inf",
-                           _upperBounds.exists( _aux ) ? Stringf( "%lf", _upperBounds[_aux] ).ascii() : "inf" );
+                           existsLowerBound( _aux ) ? Stringf( "%lf", getLowerBound( _aux ) ).ascii() : "-inf",
+                           existsUpperBound( _aux ) ? Stringf( "%lf", getUpperBound( _aux ) ).ascii() : "inf" );
     }
 }
 
@@ -653,11 +698,11 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
             {
                 if ( FloatUtils::gt( fixedValue, 0 ) )
                 {
-                    ASSERT( _phaseStatus != PHASE_INACTIVE );
+                    ASSERT( _phaseStatus != RELU_PHASE_INACTIVE );
                 }
                 else if ( FloatUtils::lt( fixedValue, 0 ) )
                 {
-                    ASSERT( _phaseStatus != PHASE_ACTIVE );
+                    ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
                 }
             }
             else
@@ -665,7 +710,7 @@ void ReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variabl
                 // This is the aux variable
                 if ( FloatUtils::isPositive( fixedValue ) )
                 {
-                    ASSERT( _phaseStatus != PHASE_ACTIVE );
+                    ASSERT( _phaseStatus != RELU_PHASE_ACTIVE );
                 }
             }
         });
@@ -681,24 +726,24 @@ bool ReluConstraint::constraintObsolete() const
 
 void ReluConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
-            _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
+    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
+            existsUpperBound( _b ) && existsUpperBound( _f ) );
 
-    ASSERT( !_auxVarInUse || ( _lowerBounds.exists( _aux ) && _upperBounds.exists( _aux ) ) );
+    ASSERT( !_auxVarInUse || ( existsLowerBound( _aux ) && existsUpperBound( _aux ) ) );
 
-    double bLowerBound = _lowerBounds[_b];
-    double fLowerBound = _lowerBounds[_f];
+    double bLowerBound = getLowerBound( _b );
+    double fLowerBound = getLowerBound( _f );
 
-    double bUpperBound = _upperBounds[_b];
-    double fUpperBound = _upperBounds[_f];
+    double bUpperBound = getUpperBound( _b );
+    double fUpperBound = getUpperBound( _f );
 
     double auxLowerBound = 0;
     double auxUpperBound = 0;
 
     if ( _auxVarInUse )
     {
-        auxLowerBound = _lowerBounds[_aux];
-        auxUpperBound = _upperBounds[_aux];
+        auxLowerBound = getLowerBound( _aux );
+        auxUpperBound = getUpperBound( _aux );
     }
 
     // Determine if we are in the active phase, inactive phase or unknown phase
@@ -779,21 +824,16 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     case PHASE_NOT_FIXED:
         return "PHASE_NOT_FIXED";
 
-    case PHASE_ACTIVE:
-        return "PHASE_ACTIVE";
+    case RELU_PHASE_ACTIVE:
+        return "RELU_PHASE_ACTIVE";
 
-    case PHASE_INACTIVE:
-        return "PHASE_INACTIVE";
+    case RELU_PHASE_INACTIVE:
+        return "RELU_PHASE_INACTIVE";
 
     default:
         return "UNKNOWN";
     }
 };
-
-void ReluConstraint::setPhaseStatus( PhaseStatus phaseStatus )
-{
-    _phaseStatus = phaseStatus;
-}
 
 void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 {
@@ -823,13 +863,13 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.addEquation( equation );
 
     // Adjust the bounds for the new variable
-    ASSERT( _lowerBounds.exists( _b ) );
+    ASSERT( existsLowerBound( _b ) );
     inputQuery.setLowerBound( _aux, 0 );
 
     // Generally, aux.ub = -b.lb. However, if b.lb is positive (active
     // phase), then aux.ub needs to be 0
     double auxUpperBound =
-        _lowerBounds[_b] > 0 ? 0 : -_lowerBounds[_b];
+        getLowerBound( _b ) > 0 ? 0 : -getLowerBound( _b );
     inputQuery.setUpperBound( _aux, auxUpperBound );
 
     // We now care about the auxiliary variable, as well
@@ -887,10 +927,10 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
 
-    if ( FloatUtils::gt( _lowerBounds[_b], bValue ) || FloatUtils::lt( _upperBounds[_b], bValue ) )
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue ) || FloatUtils::lt( getUpperBound( _b ), bValue ) )
         return true;
 
-    if ( FloatUtils::gt( _lowerBounds[_f], fValue ) || FloatUtils::lt( _upperBounds[_f], fValue ) )
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) || FloatUtils::lt( getUpperBound( _f ), fValue ) )
         return true;
 
     return false;
@@ -915,11 +955,6 @@ unsigned ReluConstraint::getF() const
     return _f;
 }
 
-ReluConstraint::PhaseStatus ReluConstraint::getPhaseStatus() const
-{
-    return _phaseStatus;
-}
-
 bool ReluConstraint::supportPolarity() const
 {
     return true;
@@ -937,8 +972,8 @@ unsigned ReluConstraint::getAux() const
 
 double ReluConstraint::computePolarity() const
 {
-    double currentLb = _lowerBounds[_b];
-    double currentUb = _upperBounds[_b];
+    double currentLb = getLowerBound( _b );
+    double currentUb = getUpperBound( _b );
     if ( currentLb >= 0 ) return 1;
     if ( currentUb <= 0 ) return -1;
     double width = currentUb - currentLb;
@@ -948,10 +983,10 @@ double ReluConstraint::computePolarity() const
 
 void ReluConstraint::updateDirection()
 {
-    _direction = ( computePolarity() > 0 ) ? PHASE_ACTIVE : PHASE_INACTIVE;
+    _direction = ( computePolarity() > 0 ) ? RELU_PHASE_ACTIVE : RELU_PHASE_INACTIVE;
 }
 
-ReluConstraint::PhaseStatus ReluConstraint::getDirection() const
+PhaseStatus ReluConstraint::getDirection() const
 {
     return _direction;
 }

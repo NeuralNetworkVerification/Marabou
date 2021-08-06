@@ -40,12 +40,11 @@ def test_sat_query(tmpdir):
     vals_ipq, _ = Marabou.solve_query(ipq, filename = tempFile)
     
     # The two value dictionaries should have the same number of variables, 
-    # the same keys, and the values assigned should be within some tolerance of each other
+    # and the same keys
     assert len(vals_net) == len(vals_ipq)
     for k in vals_net:
         assert k in vals_ipq
-        assert np.abs(vals_ipq[k] - vals_net[k]) < TOL
-        
+
 def test_unsat_query(tmpdir):
     """
     Test that a query generated from Maraboupy can be saved and loaded correctly and return unsat

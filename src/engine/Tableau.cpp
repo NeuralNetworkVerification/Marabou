@@ -13,6 +13,8 @@
 
  **/
 
+#include "Tableau.h"
+
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
 #include "ConstraintMatrixAnalyzer.h"
@@ -25,15 +27,14 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
 
 #include <string.h>
 
 Tableau::Tableau()
-    : _n ( 0 )
-    , _m ( 0 )
+    : _n( 0 )
+    , _m( 0 )
     , _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _sparseRowsOfA( NULL )
@@ -370,7 +371,7 @@ void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
 
     // Assign the basic indices
     unsigned basicIndex = 0;
-    for( unsigned basicVar : initialBasicVariables )
+    for ( unsigned basicVar : initialBasicVariables )
     {
         markAsBasic( basicVar );
         assignIndexToBasicVariable( basicVar, basicIndex );
@@ -1740,19 +1741,9 @@ bool Tableau::allBoundsValid() const
     return _boundsValid;
 }
 
-void Tableau::tightenLowerBound( unsigned variable, double value )
+
+void Tableau::updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value )
 {
-    ASSERT( variable < _n );
-
-    if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
-        return;
-
-    if ( _statistics )
-        _statistics->incNumTightenedBounds();
-
-    setLowerBound( variable, value );
-
-    // Ensure that non-basic variables are within bounds
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
     {
@@ -1779,19 +1770,8 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
     */
 }
 
-void Tableau::tightenUpperBound( unsigned variable, double value )
+void Tableau::updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value )
 {
-    ASSERT( variable < _n );
-
-    if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
-        return;
-
-    if ( _statistics )
-        _statistics->incNumTightenedBounds();
-
-    setUpperBound( variable, value );
-
-    // Ensure that non-basic variables are within bounds
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
     {
@@ -1816,6 +1796,36 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         _boundsExplanator->updateBoundExplanation( row, true );
     }
     */
+}
+
+void Tableau::tightenLowerBound( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+
+    if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
+        return;
+
+    if ( _statistics )
+        _statistics->incNumTightenedBounds();
+
+    setLowerBound( variable, value );
+
+    updateVariableToComplyWithLowerBoundUpdate( variable, value );
+}
+
+void Tableau::tightenUpperBound( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+
+    if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
+        return;
+
+    if ( _statistics )
+        _statistics->incNumTightenedBounds();
+
+    setUpperBound( variable, value );
+
+    updateVariableToComplyWithUpperBoundUpdate( variable, value );
 }
 
 unsigned Tableau::addEquation( const Equation &equation )

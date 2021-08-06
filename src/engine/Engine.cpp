@@ -25,11 +25,13 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "NLRError.h"
-#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "Vector.h" 
+
+#include <random>
 
 
 
@@ -52,9 +54,15 @@ Engine::Engine()
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
     , _splittingStrategy( Options::get()->getDivideStrategy() )
+    , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
+    , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
+    , _isGurobyEnabled( Options::get()->gurobiEnabled() )
+    , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+    , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
+
     , _initialTableau {}
     , _groundUpperBounds {}
     , _groundLowerBounds {}
@@ -203,13 +211,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 applyAllValidConstraintCaseSplits();
             }
 
+            // If true, enter a new subproblem
             if ( splitJustPerformed )
             {
+                // Tighten bounds of a first hidden layer with MILP solver
+                performMILPSolverBoundedTighteningForSingleLayer( 1 );
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+
+                // Tighten bounds of an output layer with MILP solver
+                if ( _networkLevelReasoner )    // to avoid failing of system test.
+                    performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+
                 splitJustPerformed = false;
             }
 
@@ -1085,6 +1101,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 	{
     	plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
     	// Assuming aux var is use
+	// TODO conditioned with PROOF CERTIFICATE
     	if ( _preprocessedQuery._lastAddendToAux.exists (plConstraint->getParticipatingVariables().back() ) )
 			plConstraint->setTableauAuxVar( _preprocessedQuery._lastAddendToAux.at( plConstraint->getParticipatingVariables().back() ) );
 	}
@@ -1115,7 +1132,6 @@ void Engine::initializeNetworkLevelReasoning()
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
-
     struct timespec start = TimeUtils::sampleMicro();
 
     try
@@ -1153,7 +1169,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
 
         if ( preprocess )
+        {
+            performSymbolicBoundTightening();
+            performSimulation();
             performMILPSolverBoundedTightening();
+        }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
 
         if ( _splittingStrategy == DivideStrategy::Auto )
         {
@@ -1243,6 +1266,45 @@ void Engine::performMILPSolverBoundedTightening()
 					}
 				}
 			}
+        }
+    }
+}
+
+void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
+{
+    if ( _networkLevelReasoner && _isGurobyEnabled && !_isSkipLpTighteningAfterSplit
+            && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+
+        switch ( _milpSolverBoundTighteningType )
+        {
+        case MILPSolverBoundTighteningType::LP_RELAXATION:
+            _networkLevelReasoner->LPTighteningForOneLayer( targetIndex );
+            break;
+        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
+            return;
+
+        case MILPSolverBoundTighteningType::MILP_ENCODING:
+            _networkLevelReasoner->MILPTighteningForOneLayer( targetIndex );
+            break;
+        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
+            return;
+
+        case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
+        case MILPSolverBoundTighteningType::NONE:
+            return;
+        }
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
     }
 }
@@ -1973,9 +2035,36 @@ List<unsigned> Engine::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
+void Engine::performSimulation()
+{
+    if ( _simulationSize == 0 || !_networkLevelReasoner )
+    {
+        ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
+        return;
+    }
+
+    // outer vector is for neuron
+    // inner vector is for simulation value
+    Vector<Vector<double>> simulations;
+
+    std::mt19937 mt( GlobalConfiguration::SIMULATION_RANDOM_SEED );
+
+    for ( unsigned i = 0; i < _networkLevelReasoner->getLayer( 0 )->getSize(); ++i )
+    {
+        std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
+                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
+        Vector<double> simulationInput( _simulationSize );
+
+        for ( unsigned j = 0; j < _simulationSize; ++j )
+            simulationInput[j] = distribution( mt );
+        simulations.append( simulationInput );
+    }
+    _networkLevelReasoner->simulate( &simulations );
+}
+
 void Engine::performSymbolicBoundTightening()
 {
-    if ( ( !GlobalConfiguration::USE_SYMBOLIC_BOUND_TIGHTENING ) ||
+    if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) )
         return;
 
@@ -1987,7 +2076,12 @@ void Engine::performSymbolicBoundTightening()
     _networkLevelReasoner->obtainCurrentBounds();
 
     // Step 2: perform SBT
-    _networkLevelReasoner->symbolicBoundPropagation();
+    if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+        _networkLevelReasoner->symbolicBoundPropagation();
+    else if ( _symbolicBoundTighteningType ==
+         SymbolicBoundTighteningType::DEEP_POLY )
+        _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
@@ -2356,20 +2450,27 @@ void Engine::storeSmtState( SmtState & smtState )
 
 bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
-    // Apply bound tightening before handing to Gurobi
-    if ( _tableau->basisMatrixAvailable() )
-        {
-            explicitBasisBoundTightening();
-            applyAllBoundTightenings();
-            applyAllValidConstraintCaseSplits();
-        }
-
-    do
+    try
     {
-        performSymbolicBoundTightening();
+        // Apply bound tightening before handing to Gurobi
+        if ( _tableau->basisMatrixAvailable() )
+        {
+	    explicitBasisBoundTightening();
+	    applyAllBoundTightenings();
+	    applyAllValidConstraintCaseSplits();
+	}
+	do
+	{
+	    performSymbolicBoundTightening();
+	}
+	while ( applyAllValidConstraintCaseSplits() );
     }
-    while ( applyAllValidConstraintCaseSplits() );
-
+    catch ( const InfeasibleQueryException & )
+    {
+        _exitCode = Engine::UNSAT;
+        return false;
+    }
+    
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
@@ -2606,4 +2707,14 @@ bool Engine::validateAllBounds( const double epsilon ) const
        		res = false;
 
     return res;
+}
+
+bool Engine::preprocessingEnabled() const
+{
+    return _preprocessingEnabled;
+}
+
+const Preprocessor *Engine::getPreprocessor()
+{
+    return &_preprocessor;
 }

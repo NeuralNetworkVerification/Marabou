@@ -14,6 +14,7 @@
  **/
 
 #include "Debug.h"
+#include "Options.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
@@ -319,6 +320,8 @@ bool Preprocessor::processEquations()
             }
 
             // Now compute the actual bounds and see if they are tighter
+            double epsilon = Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE );
+
             if ( validLb )
             {
                 if ( ciSign[xi] == NEGATIVE )
@@ -336,7 +339,11 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                if ( FloatUtils::gt( lowerBound, _preprocessed.getLowerBound( xi ) ) )
+                if (
+                    FloatUtils::gt(
+                        lowerBound, _preprocessed.getLowerBound( xi ), epsilon
+                    )
+                )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setLowerBound( xi, lowerBound );
@@ -360,7 +367,11 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                if ( FloatUtils::lt( upperBound, _preprocessed.getUpperBound( xi ) ) )
+                if (
+                    FloatUtils::lt(
+                        upperBound, _preprocessed.getUpperBound( xi ), epsilon
+                    )
+                )
                 {
                     tighterBoundFound = true;
                     _preprocessed.setUpperBound( xi, upperBound );
@@ -556,8 +567,8 @@ void Preprocessor::collectFixedValues()
 
     // Collect any variables with identical lower and upper bounds, or
     // which are unused
-	for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
-	{
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
         if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
         {
             _fixedVariables[i] = _preprocessed.getLowerBound( i );

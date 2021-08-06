@@ -21,7 +21,7 @@
 #include "MString.h"
 
 #include <cfloat>
-#include <math.h>
+#include <cmath>
 
 #ifdef _WIN32
 #undef max
