@@ -192,7 +192,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         	if ( GlobalConfiguration :: PROOF_CERTIFICATE )
 			{
 				// TODO relaxed for now - should be ok on any case
-				if ( _phaseStatus == PHASE_INACTIVE )
+				if ( _phaseStatus == RELU_PHASE_INACTIVE )
 					_constraintBoundTightener->registerTighterUpperBound( _aux, -bound, tighteningRow );
 			}
         	else
@@ -233,7 +233,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
             // Any bound that we learned of f should be propagated to b
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
-				if ( _phaseStatus == PHASE_ACTIVE || FloatUtils::isZero( bound ) )
+				if ( _phaseStatus == RELU_PHASE_ACTIVE || FloatUtils::isZero( bound ) )
 					_constraintBoundTightener->registerTighterUpperBound( _b, bound, tighteningRow );
 			}
             else
@@ -255,7 +255,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 	if ( GlobalConfiguration::PROOF_CERTIFICATE )
 					{
 						// Aux's range is minus the range of b
-						if ( _phaseStatus != PHASE_ACTIVE)
+						if ( _phaseStatus != RELU_PHASE_ACTIVE)
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
                         else if ( FloatUtils::isNegative( bound )  && _addedFixedAuxEq )
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
@@ -270,7 +270,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
                 // b has a positive upper bound, propagate to f
 				if ( GlobalConfiguration::PROOF_CERTIFICATE )
 				{
-					if ( _phaseStatus == PHASE_ACTIVE )
+					if ( _phaseStatus == RELU_PHASE_ACTIVE )
                 		_constraintBoundTightener->registerTighterUpperBound( _f, bound, tighteningRow );
 				}
 				else
@@ -281,7 +281,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         {
 			if ( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
-				if ( _phaseStatus != PHASE_ACTIVE )
+				if ( _phaseStatus != RELU_PHASE_ACTIVE )
 					_constraintBoundTightener->registerTighterLowerBound( _b, -bound, tighteningRow );
 			}
 			else

@@ -239,6 +239,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( !_tableau->allBoundsValid() )
             {
+				//printLinearInfeasibilityCertificate(); //TODO review when called
+				//validateAllBounds( 0.001 );
                 // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
             }
@@ -536,7 +538,7 @@ void Engine::performSimplexStep()
                 applyAllBoundTightenings();
 				simplexBoundsUpdate();
 				applyAllConstraintTightenings(); // Can create additional constraint tightening which will change tableau and engine
-				printLinearInfeasibilityCertificate();
+				//printLinearInfeasibilityCertificate();
 				validateAllBounds( 0.001 );
 				//certifyInfeasibility();
 			}
@@ -1101,8 +1103,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 	{
     	plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
     	// Assuming aux var is use
-	// TODO conditioned with PROOF CERTIFICATE
-    	if ( _preprocessedQuery._lastAddendToAux.exists (plConstraint->getParticipatingVariables().back() ) )
+    	if (GlobalConfiguration::PROOF_CERTIFICATE && _preprocessedQuery._lastAddendToAux.exists (plConstraint->getParticipatingVariables().back() ) )
 			plConstraint->setTableauAuxVar( _preprocessedQuery._lastAddendToAux.at( plConstraint->getParticipatingVariables().back() ) );
 	}
 
@@ -1216,6 +1217,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
 void Engine::performMILPSolverBoundedTightening()
 {
+	if (GlobalConfiguration::PROOF_CERTIFICATE)
+		return; //TODO change
+
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         _networkLevelReasoner->obtainCurrentBounds();
@@ -1272,6 +1276,9 @@ void Engine::performMILPSolverBoundedTightening()
 
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
+	if (GlobalConfiguration::PROOF_CERTIFICATE)
+		return; //TODO change
+
     if ( _networkLevelReasoner && _isGurobyEnabled && !_isSkipLpTighteningAfterSplit
             && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
@@ -2065,7 +2072,7 @@ void Engine::performSimulation()
 void Engine::performSymbolicBoundTightening()
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
-         ( !_networkLevelReasoner ) )
+         ( !_networkLevelReasoner ) || GlobalConfiguration::PROOF_CERTIFICATE) //TODO change
         return;
 
     struct timespec start = TimeUtils::sampleMicro();

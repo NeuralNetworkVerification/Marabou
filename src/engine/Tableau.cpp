@@ -2644,27 +2644,30 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 
 int Tableau::getInfeasibleRow( TableauRow& row )
 {
-	//bool oneHasNoneEmptySlack = false;
+	bool oneHasNoneEmptySlack = false;
+	unsigned basicVar;
     for ( unsigned i = 0; i < _m; ++i )
-    {
-        if ( basicOutOfBounds( i )  )
+	{
+     	Tableau::getTableauRow( i, &row );
+        basicVar = row._lhs;
+     	if ( basicOutOfBounds( basicVar ) )
         {
-            Tableau::getTableauRow( i, &row );
-            if ( computeRowBound( row, true ) < _lowerBounds[row._lhs]  ||  computeRowBound( row, false ) > _upperBounds[row._lhs] )
+            if ( computeRowBound( row, true ) < _lowerBounds[basicVar]  ||  computeRowBound( row, false ) > _upperBounds[basicVar] )
                 return (int) i;
-             //if ( !checkSlack( i ) )
-				// oneHasNoneEmptySlack = true;
         }
+		if ( !checkSlack( i ) )
+			 oneHasNoneEmptySlack = true;
     }
-    //if ( oneHasNoneEmptySlack )
-    	//printf("There is a var with a none-empty slack\n");
+    if ( oneHasNoneEmptySlack )
+    	printf("There is a var with a none-empty slack\n");
+    else
+		printf("All vars have an empty slack\n");
     return -1;
 }
 
 
 bool Tableau::checkSlack( unsigned rowIndex )
 {
-	assert( basicOutOfBounds( rowIndex ) );
 
 	TableauRow *row = new TableauRow( _n );
 	Tableau::getTableauRow( rowIndex, row );
