@@ -49,12 +49,17 @@ public:
         _container.pop();
     }
 
-    T &peak()
+    T& peak()
     {
         if ( empty() )
             throw CommonError( CommonError::QUEUE_IS_EMPTY );
 
         return _container.front();
+    }
+
+    std::size_t size() const
+    {
+        return _container.size();
     }
 
 protected:

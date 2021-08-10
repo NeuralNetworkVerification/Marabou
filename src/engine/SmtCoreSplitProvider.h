@@ -11,76 +11,78 @@ class SmtCoreSplitProvider : public ISmtSplitProvider
 {
 
 public:
-    explicit SmtCoreSplitProvider( IEngine *_engine );
+  explicit SmtCoreSplitProvider( IEngine* _engine );
 
-    void thinkBeforeSplit( List<SmtStackEntry*> stack ) override;
-    Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
-    void onSplitPerformed( SplitInfo const& ) override;
-    void onStackPopPerformed( PopInfo const& ) override;
-    void onUnsatReceived() override;
+  void thinkBeforeSplit( List<SmtStackEntry*> stack ) override;
+  Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
+  void onSplitPerformed( SplitInfo const& ) override;
+  void onStackPopPerformed( PopInfo const& ) override;
+  void onUnsatReceived() override;
 
-    /*
-      Inform the SMT core that a PL constraint is violated.
-    */
-    void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
+  /*
+    Inform the SMT core that a PL constraint is violated.
+  */
+  void reportViolatedConstraint( PiecewiseLinearConstraint* constraint );
 
-    /*
-      Get the number of times a specific PL constraint has been reported as
-      violated.
-    */
-    unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
+  /*
+    Get the number of times a specific PL constraint has been reported as
+    violated.
+  */
+  unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
 
 
-    /*
-      Have the SMT core choose, among a set of violated PL constraints, which
-      constraint should be repaired (without splitting)
-    */
-    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
+  /*
+    Have the SMT core choose, among a set of violated PL constraints, which
+    constraint should be repaired (without splitting)
+  */
+  PiecewiseLinearConstraint* chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint*>& _violatedPlConstraints ) const;
 
-    void resetReportedViolations();
+  void resetReportedViolations();
 
 
 private:
-    bool pickSplitPLConstraint();
+  bool pickSplitPLConstraint();
 
-    /*
-      The engine. TODO figure out if we can avoid having it as a member
-    */
-    IEngine *_engine;
+  bool searchForAlternatives();
 
-    /*
-      Collect and print various statistics.
-    */
-    Statistics *_statistics;
+  /*
+    The engine. TODO figure out if we can avoid having it as a member
+  */
+  IEngine* _engine;
 
-    /*
-      Do we need to perform a split and on which constraint.
-    */
-    bool _needToSplit;
-    Optional<PiecewiseLinearCaseSplit> _currentSplit;
-    Stack<Queue<PiecewiseLinearCaseSplit>> _alternativeSplitsStack;
-    PiecewiseLinearConstraint *_constraintForSplitting;
+  /*
+    Collect and print various statistics.
+  */
+  Statistics* _statistics;
 
-    /*
-      Count how many times each constraint has been violated.
-    */
-    Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
+  /*
+    Do we need to perform a split and on which constraint.
+  */
+  bool _needToSplit;
+  Optional<PiecewiseLinearCaseSplit> _currentSplit;
+  Stack<Queue<PiecewiseLinearCaseSplit>> _alternativeSplitsStack;
+  PiecewiseLinearConstraint* _constraintForSplitting;
 
-    /*
-      For debugging purposes only
-    */
-    Map<unsigned, double> _debuggingSolution;
+  /*
+    Count how many times each constraint has been violated.
+  */
+  Map<PiecewiseLinearConstraint*, unsigned> _constraintToViolationCount;
 
-    /*
-      A unique ID allocated to every state that is stored, for
-      debugging purposes.
-    */
-    unsigned _stateId;
+  /*
+    For debugging purposes only
+  */
+  Map<unsigned, double> _debuggingSolution;
 
-    /*
-      Split when some relu has been violated for this many times
-    */
-    unsigned _constraintViolationThreshold;
+  /*
+    A unique ID allocated to every state that is stored, for
+    debugging purposes.
+  */
+  unsigned _stateId;
+
+  /*
+    Split when some relu has been violated for this many times
+  */
+  unsigned _constraintViolationThreshold;
 };
 
 #endif // __SMTCORESPLITPROVIDER_H__
