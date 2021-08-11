@@ -48,7 +48,7 @@ public:
 	/*
 	 * Constructor for a regular node
 	 */
-	CertificateNode( CertificateNode* parent, PiecewiseLinearConstraint* constraint );
+	CertificateNode( CertificateNode* parent, List<PiecewiseLinearCaseSplit> splits );
 
 	~CertificateNode();
 
@@ -75,7 +75,7 @@ public:
 	/*
 	 * Gets the constraint defining the node
 	 */
-	const PiecewiseLinearConstraint& getConstraint() const;
+	const List<PiecewiseLinearCaseSplit>& getSplits() const;
 
 	/*
 	 * Gets the children of the node
@@ -94,7 +94,7 @@ public:
 
 private:
 
-	PiecewiseLinearConstraint* _constraint;
+	List<PiecewiseLinearCaseSplit> _splits;
 	std::list<CertificateNode*> _children;
 	CertificateNode* _parent;
 	std::list<NewRowExplanation> _newRowsExplanations;
@@ -175,7 +175,7 @@ public:
 		// Then erase the coefficient of var
 		c = explanationRowsCombination[var];
 
-		ASSERT( c );
+		ASSERT( !FloatUtils::isZero( c ) );
 
 		for ( unsigned i = 0; i < n; ++i )
 			explanationRowsCombination[i] /= -c;
@@ -189,9 +189,9 @@ public:
 			if ( !FloatUtils::isZero( temp ) )
 			{
 				if ( isUpper )
-					temp *= explanationRowsCombination[i] > 0 ? groundUBs[i] : groundLBs[i];
+					temp *= FloatUtils::isPositive( explanationRowsCombination[i] ) ? groundUBs[i] : groundLBs[i];
 				else
-					temp *= explanationRowsCombination[i] > 0 ? groundLBs[i] : groundUBs[i];
+					temp *= FloatUtils::isPositive( explanationRowsCombination[i] ) ? groundLBs[i] : groundUBs[i];
 
 				if ( !FloatUtils::isZero( abs( temp ) ) )
 					derived_bound += temp;
@@ -202,6 +202,31 @@ public:
 		explanationRowsCombination.clear();
 		expl.clear();
 		return derived_bound;
+	}
+
+	/*
+	 * Return true iff the splits are created from a valid PLC
+	 * TODO currently supports ReLU only, and heavily based in its structure
+	 */
+	static bool certifySplits( List<PiecewiseLinearCaseSplit> splits)
+	{
+		if ( splits.size() != 2 )
+			return false;
+		auto firstSplitTightenings = splits.front().getBoundTightenings(), secondSplitTightenings = splits.back().getBoundTightenings();
+		if ( firstSplitTightenings.size() != 2 || secondSplitTightenings.size() != 2 )
+			return false;
+
+		// find the LB, it is b
+
+		// certify the other list has it as UB
+
+		// certify the other vars are not the same
+
+		// certify the tableau has it as a row?
+
+		// certify that all other bounds are zero?
+
+		return true;
 	}
 };
 

@@ -533,7 +533,7 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            if( GlobalConfiguration::PROOF_CERTIFICATE )
+			if( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
                 applyAllBoundTightenings();
 				simplexBoundsUpdate();
@@ -2619,6 +2619,7 @@ void Engine::simplexBoundsUpdate()
 void Engine::certifyInfeasibility() const
 {
     int var = _tableau->getInfeasibleVar();
+    ASSERT (var >= 0 );
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
     if (  FloatUtils::lte( computedLower, computedUpper ) )
     	printf("Certification error. gap is %.5lf \n", computedUpper - computedLower );

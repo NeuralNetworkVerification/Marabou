@@ -2644,43 +2644,45 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 
 int Tableau::getInfeasibleRow( TableauRow& row )
 {
-	bool oneHasNoneEmptySlack = false;
+	bool oneHasEmptySlack = false;
 	unsigned basicVar;
     for ( unsigned i = 0; i < _m; ++i )
 	{
-     	Tableau::getTableauRow( i, &row );
-        basicVar = row._lhs;
-     	if ( basicOutOfBounds( basicVar ) )
-        {
-            if ( computeRowBound( row, true ) < _lowerBounds[basicVar]  ||  computeRowBound( row, false ) > _upperBounds[basicVar] )
+     	if ( basicOutOfBounds( i ) )
+        //if ( _basicAssignment[i] < _lowerBounds[basicVar] || _basicAssignment[i] > _upperBounds[basicVar] )
+		{
+			basicVar = _basicIndexToVariable[i];
+     		Tableau::getTableauRow( i, &row );
+            if ( computeRowBound( row, true ) < _lowerBounds[basicVar] || computeRowBound( row, false ) > _upperBounds[basicVar] )
                 return (int) i;
+			if ( checkSlack( i ) )
+				oneHasEmptySlack = true;
         }
-		if ( !checkSlack( i ) )
-			 oneHasNoneEmptySlack = true;
     }
-    if ( oneHasNoneEmptySlack )
-    	printf("There is a var with a none-empty slack\n");
+    if ( !oneHasEmptySlack )
+    	printf("No one has empty slack.\n");
     else
-		printf("All vars have an empty slack\n");
-    return -1;
+		printf("Someone has empty slack.\n");
+
+	return -1;
 }
 
 
 bool Tableau::checkSlack( unsigned rowIndex )
 {
-
 	TableauRow *row = new TableauRow( _n );
 	Tableau::getTableauRow( rowIndex, row );
 
+	bool needDecreasing =  basicTooHigh( rowIndex ) /*_basicAssignment[rowIndex] > _upperBounds[basicVar]*/, needIncreasing = basicTooLow( rowIndex )/*_basicAssignment[rowIndex] < _lowerBounds[basicVar]*/;
 	for ( unsigned i = 0; i < row->_size; ++i )
 	{
-		auto curCoefficient = row->_row[i]._coefficient;
-		auto var = row->_row[i]._var;
+		double curCoefficient = row->_row[i]._coefficient;
+		unsigned var = row->_row[i]._var;
 
 		if ( FloatUtils::isZero( curCoefficient ) )
 			continue;
 		// Cases slack vars should be pressed against lower bounds
-		else if ( ( FloatUtils::isPositive( curCoefficient ) && basicTooHigh( i ) ) || ( FloatUtils::isNegative( curCoefficient ) && basicTooLow( i ) ) )
+		else if ( ( FloatUtils::isPositive( curCoefficient ) && needDecreasing ) || ( FloatUtils::isNegative( curCoefficient ) && needIncreasing ) )
 		{
 			if ( !( FloatUtils::areEqual( getValue( var ), _lowerBounds[var] ) ) )
 			{
@@ -2689,7 +2691,7 @@ bool Tableau::checkSlack( unsigned rowIndex )
 			}
 		}
 		// Cases slack vas should be pressed against upper bounds
-		else if ( ( FloatUtils::isPositive( curCoefficient ) && basicTooLow( i ) ) || ( FloatUtils::isNegative( curCoefficient ) && basicTooHigh( i ) ) )
+		else if ( ( FloatUtils::isPositive( curCoefficient ) && needIncreasing ) || ( FloatUtils::isNegative( curCoefficient ) && needDecreasing ) )
 		{
 			if ( !( FloatUtils::areEqual( getValue( var ), _upperBounds[var] ) ) )
 			{

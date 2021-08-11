@@ -15,7 +15,7 @@
 
 
 CertificateNode::CertificateNode( const std::vector<std::vector<double>> &initialTableau, const std::vector<double> &groundUBs, const std::vector<double> &groundLBs )
-	: _constraint( NULL )
+	: _splits()
 	, _children ( 0 )
 	, _parent( NULL )
 	, _newRowsExplanations( 0 )
@@ -24,8 +24,8 @@ CertificateNode::CertificateNode( const std::vector<std::vector<double>> &initia
 	copyInitials( initialTableau, groundUBs, groundLBs );
 }
 
-CertificateNode::CertificateNode( CertificateNode* parent, PiecewiseLinearConstraint* constraint )
-	: _constraint( constraint )
+CertificateNode::CertificateNode( CertificateNode* parent, List<PiecewiseLinearCaseSplit> splits )
+	: _splits( )
 	, _children ( 0 )
 	, _parent( parent )
 	, _newRowsExplanations( 0 )
@@ -34,6 +34,7 @@ CertificateNode::CertificateNode( CertificateNode* parent, PiecewiseLinearConstr
 	, _groundUpperBounds( 0 )
 	, _groundLowerBounds( 0 )
 {
+	_splits.append( splits );
 }
 
 CertificateNode::~CertificateNode()
@@ -45,11 +46,7 @@ CertificateNode::~CertificateNode()
 			child = NULL;
 		}
 
-	if ( _constraint )
-	{
-		delete _constraint;
-		_constraint = NULL;
-	}
+	_splits.clear(); //TODO check if need to erase elements as well
 
 	if ( !_newRowsExplanations.empty() )
 		_newRowsExplanations.clear();
@@ -79,9 +76,9 @@ const Contradiction& CertificateNode::getContradiction() const
 	return *_contradiction;
 }
 
-const PiecewiseLinearConstraint& CertificateNode::getConstraint() const
+const List<PiecewiseLinearCaseSplit>& CertificateNode::getSplits() const
 {
-	return *_constraint;
+	return _splits;
 }
 
 std::list<CertificateNode*> CertificateNode::getChildren() const
@@ -146,7 +143,9 @@ bool CertificateNode::certify()
 		// Certify all children
 		// return true iff all children are certified
 		answer = true;
-		// TODO constraint validation
+		if ( !UNSATCertificateUtils::certifySplits( _splits ) )
+			return false;
+
 		ASSERT( isValidNoneLeaf() );
 		for ( auto child : _children )
 			if ( !child->certify() )
@@ -191,12 +190,12 @@ void CertificateNode::copyInitials (const std::vector<std::vector<double>> &init
 
 bool CertificateNode::isValidLeaf() const
 {
-	return _contradiction && _children.empty() && !_constraint;
+	return _contradiction && _children.empty() && _splits.empty();
 }
 
 bool CertificateNode::isValidNoneLeaf() const
 {
-	return !_contradiction && !_children.empty() && _constraint;
+	return !_contradiction && !_children.empty() && !_splits.empty();
 }
 
 void CertificateNode::clearInitials()
