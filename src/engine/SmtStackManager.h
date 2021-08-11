@@ -7,19 +7,18 @@
 #include "Stack.h"
 #include "SmtStackEntry.h"
 #include "Statistics.h"
-#include "ISmtSplitProvider.h"
+#include "SplitProvidersManager.h"
 
 #include <memory>
 
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "SmtCore: %s\n", x )
 
 using SmtStack = List<SmtStackEntry*>;
-using SplitProviders = List<std::shared_ptr<ISmtSplitProvider>>;
 
 class SmtStackManager
 {
 public:
-   SmtStackManager( IEngine* engine );
+   SmtStackManager( IEngine* engine, std::shared_ptr<SplitProvidersManager> const& );
   ~SmtStackManager() = default;
 
   /*
@@ -48,13 +47,6 @@ public:
     The current stack.
   */
   SmtStack const& getStack() const;
-
-  /*
-    Split Provider subscription
-  */
-  bool subscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider );
-  bool ubsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider );
-  SplitProviders const& splitProviders() const;
 
   /*
     Have the SMT core start reporting statistics.
@@ -109,8 +101,7 @@ private:
   */
   unsigned _stateId;
 
-  SplitProviders _splitProviders;
-
+  std::shared_ptr<SplitProvidersManager> _splitProvidersManager;
 };
 
 

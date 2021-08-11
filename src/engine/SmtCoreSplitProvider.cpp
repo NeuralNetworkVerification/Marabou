@@ -8,33 +8,31 @@ SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
     : _engine( engine )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
     , _constraintForSplitting( nullptr )
-{
-    _alternativeSplitsStack.push( {} );
-}
+{ }
 
 bool SmtCoreSplitProvider::searchForAlternatives()
 {
     if ( !_currentSplit ) {
-        if ( !_alternativeSplitsStack.empty() )
-        {
-            printf( "log: 1\n" );
-            printf( "log: 2\n" );
-            while ( !_alternativeSplitsStack.empty() && _alternativeSplitsStack.top().empty() )
-            {
-                printf( "log: 2.1\n" );
-                _alternativeSplitsStack.pop();
-                printf( "log: 2.2\n" );
-            }
-            printf( "log: 3\n" );
-            if ( _alternativeSplitsStack.empty() ) return false;
-            printf( "log: 4\n" );
+        // if ( !_alternativeSplitsStack.empty() )
+        // {
+        //     printf( "log: 1\n" );
+        //     printf( "log: 2\n" );
+        //     while ( !_alternativeSplitsStack.empty() && _alternativeSplitsStack.top().empty() )
+        //     {
+        //         printf( "log: 2.1\n" );
+        //         _alternativeSplitsStack.pop();
+        //         printf( "log: 2.2\n" );
+        //     }
+        //     printf( "log: 3\n" );
+        //     if ( _alternativeSplitsStack.empty() ) return false;
+        //     printf( "log: 4\n" );
 
-            auto& currentAlternatives = _alternativeSplitsStack.top();
-            _currentSplit = currentAlternatives.peak();
-            currentAlternatives.pop();
-            printf( "log: 5\n" );
-        }
-        return true;
+        //     auto& currentAlternatives = _alternativeSplitsStack.top();
+        //     _currentSplit = currentAlternatives.peak();
+        //     currentAlternatives.pop();
+        //     printf( "log: 5\n" );
+        // }
+        // return true;
     }
     else {
         // didn't found any alternative
@@ -65,14 +63,14 @@ void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
     ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
     _constraintForSplitting->setActiveConstraint( false );
 
-    auto& currentAlternatives = _alternativeSplitsStack.top();
-    for ( auto const& split : splits )
-    {
-        currentAlternatives.push( split );
-    }
-    _currentSplit = currentAlternatives.peak();
-    currentAlternatives.pop();
-    printf("finish think. number alternatives in backlog: %d\n", currentAlternatives.size());
+    // auto& currentAlternatives = _alternativeSplitsStack.top();
+    // for ( auto const& split : splits )
+    // {
+    //     currentAlternatives.push( split );
+    // }
+    // _currentSplit = currentAlternatives.peak();
+    // currentAlternatives.pop();
+    // printf("finish think. number alternatives in backlog: %d\n", currentAlternatives.size());
 }
 
 Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::needToSplit() const {
@@ -92,11 +90,11 @@ void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
         _currentSplit = nullopt;
         _needToSplit = false;
         Queue<PiecewiseLinearCaseSplit> alternativeSplits;
-        _alternativeSplitsStack.push( alternativeSplits );
+        // _alternativeSplitsStack.push( alternativeSplits );
     }
 }
 
-void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& ) {
+void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
     std::cout << "on pop" << std::endl;
 }
 

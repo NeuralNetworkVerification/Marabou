@@ -30,7 +30,7 @@
 
 Marabou::Marabou()
     : _acasParser( NULL )
-    , _engine()
+    , _engine( std::make_shared<SplitProvidersManager>() )
 {
 }
 
@@ -148,13 +148,13 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         if ( _inputQuery._networkLevelReasoner )
         {
-            double *input = new double[_inputQuery.getNumInputVariables()];
+            double* input = new double[_inputQuery.getNumInputVariables()];
             for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
                 input[i] = _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) );
 
-            NLR::NetworkLevelReasoner *nlr = _inputQuery._networkLevelReasoner;
-            NLR::Layer *lastLayer = nlr->getLayer( nlr->getNumberOfLayers() - 1 );
-            double *output = new double[lastLayer->getSize()];
+            NLR::NetworkLevelReasoner* nlr = _inputQuery._networkLevelReasoner;
+            NLR::Layer* lastLayer = nlr->getLayer( nlr->getNumberOfLayers() - 1 );
+            double* output = new double[lastLayer->getSize()];
 
             nlr->evaluate( input, output );
 
@@ -206,11 +206,11 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",
-                                    _engine.getStatistics()->getNumVisitedTreeStates() ) );
+            _engine.getStatistics()->getNumVisitedTreeStates() ) );
 
         // Field #4: average pivot time in micro seconds
         summaryFile.write( Stringf( "%u",
-                                    _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
+            _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
 
         summaryFile.write( "\n" );
     }

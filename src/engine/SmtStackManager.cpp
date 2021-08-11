@@ -3,21 +3,22 @@
 #include "StdCompletion.h"
 #include "MStringf.h"
 
-SmtStackManager::SmtStackManager( IEngine* engine )
+SmtStackManager::SmtStackManager( IEngine* engine, std::shared_ptr<SplitProvidersManager> const& splitProvidersManager )
     : _statistics( NULL )
     , _engine( engine )
     , _stateId( 0 )
+    , _splitProvidersManager( splitProvidersManager )
 {
 }
 
 void SmtStackManager::reset() {
-    for ( const auto &stackEntry : _stack )
+    for ( const auto& stackEntry : _stack )
     {
         delete stackEntry->_engineState;
         delete stackEntry;
     }
 
-   _stack.clear();
+    _stack.clear();
     _stateId = 0;
 }
 
@@ -44,7 +45,7 @@ void SmtStackManager::performSplit( PiecewiseLinearCaseSplit const& split ) {
     stackEntry->_pastSplits.append( split );
     stackEntry->_engineState = stateBeforeSplits;
 
-    _stack.append(  stackEntry  );
+    _stack.append( stackEntry );
     if ( _statistics )
     {
         _statistics->setCurrentStackDepth( getStackDepth() );
@@ -52,13 +53,10 @@ void SmtStackManager::performSplit( PiecewiseLinearCaseSplit const& split ) {
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
 
-    for(auto & provider : _splitProviders)
-    {
-        provider->onSplitPerformed({ split });
-    }
+    _splitProvidersManager->onSplitPerformed( SplitInfo( split ) );
 }
 
-void SmtStackManager::replaySmtStackEntry( SmtStackEntry * stackEntry )
+void SmtStackManager::replaySmtStackEntry( SmtStackEntry* stackEntry )
 {
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -80,7 +78,7 @@ void SmtStackManager::replaySmtStackEntry( SmtStackEntry * stackEntry )
     for ( const auto& impliedSplit : stackEntry->_impliedValidSplits )
         _engine->applySplit( impliedSplit );
 
-    auto stackEntryDup =  stackEntry->duplicateSmtStackEntry() ;
+    auto stackEntryDup = stackEntry->duplicateSmtStackEntry();
     _stack.append( stackEntryDup );
 
     if ( _statistics )
@@ -92,11 +90,11 @@ void SmtStackManager::replaySmtStackEntry( SmtStackEntry * stackEntry )
 }
 
 
-void SmtStackManager::storeSmtState( SmtState &smtState )
+void SmtStackManager::storeSmtState( SmtState& smtState )
 {
     smtState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
 
-    for ( auto &stackEntry : _stack )
+    for ( auto& stackEntry : _stack )
         smtState._stack.append( stackEntry->duplicateSmtStackEntry() );
 
     smtState._stateId = _stateId;
@@ -141,6 +139,7 @@ bool SmtStackManager::popSplit() {
     }
 
     delete _stack.back()->_engineState;
+    auto const poppedSplit = _stack.back()->_activeSplit;
     _stack.popBack();
 
     if ( _stack.empty() )
@@ -169,10 +168,9 @@ bool SmtStackManager::popSplit() {
 
     checkSkewFromDebuggingSolution();
 
-    for(auto & provider : _splitProviders)
-    {
-        provider->onStackPopPerformed({});
-    }
+    List<PiecewiseLinearCaseSplit> allSplitsSoFar;
+    this->allSplitsSoFar( allSplitsSoFar );
+    _splitProvidersManager->onStackPopPerformed( PopInfo( allSplitsSoFar, poppedSplit ));
 
     return true;
 }
@@ -183,26 +181,6 @@ unsigned SmtStackManager::getStackDepth() const {
 
 SmtStack const& SmtStackManager::getStack() const {
     return _stack;
-}
-
-bool SmtStackManager::subscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider ) {
-    for ( auto const& alreadySubscribed : _splitProviders )
-    {
-        if ( provider == alreadySubscribed ) return false;
-    }
-    _splitProviders.append( provider );
-    return true;
-}
-
-bool SmtStackManager::ubsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider ) {
-    auto it = std::find( _splitProviders.begin(), _splitProviders.end(), provider );
-    if ( it == _splitProviders.end() ) return false;
-    _splitProviders.erase( it );
-    return true;
-}
-
-SplitProviders const& SmtStackManager::splitProviders() const {
-    return _splitProviders;
 }
 
 void SmtStackManager::setStatistics( Statistics* statistics ) {

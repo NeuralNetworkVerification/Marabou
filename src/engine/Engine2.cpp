@@ -34,9 +34,10 @@
 #include "TimeUtils.h"
 #include "Pair.h"
 
-Engine2::Engine2()
+Engine2::Engine2( std::shared_ptr<SplitProvidersManager> const& splitProvidersManager )
     : _rowBoundTightener( *_tableau )
-    , _smtStackManager( this )
+    , _splitProvidersManager( splitProvidersManager )
+    , _smtStackManager( this, splitProvidersManager )
     , _smtCoreSplitProvider( std::make_shared<SmtCoreSplitProvider>( this ) )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -69,7 +70,7 @@ Engine2::Engine2()
 
     _statistics.stampStartingTime();
 
-    _smtStackManager.subscribeSplitProvider( _smtCoreSplitProvider );
+    _splitProvidersManager->subscribeSplitProvider( _smtCoreSplitProvider );
 }
 
 Engine2::~Engine2()
@@ -209,10 +210,11 @@ bool Engine2::solve( unsigned timeoutInSeconds )
                 splitJustPerformed = false;
             }
 
-            letProvidersThink();
+
+            _splitProvidersManager->letProvidersThink( _smtStackManager.getStack() );
 
             // Ask split providers for splits
-            auto split = splitFromProviders();
+            auto split = _splitProvidersManager->splitFromProviders();
             if ( split )
             {
                 _smtStackManager.performSplit( *split );
@@ -305,10 +307,8 @@ bool Engine2::solve( unsigned timeoutInSeconds )
         catch ( const InfeasibleQueryException& )
         {
             // notify unsat for providers
-            for ( auto const& splitProvider : _smtStackManager.splitProviders() )
-            {
-                splitProvider->onUnsatReceived();
-            }
+            _splitProvidersManager->notifyUnsat();
+            
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtStackManager.popSplit() )
@@ -2639,29 +2639,9 @@ List<unsigned> Engine2::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
-void Engine2::letProvidersThink() 
-{
-    for ( auto const& splitProvider : _smtStackManager.splitProviders() )
-    {
-        splitProvider->thinkBeforeSplit(_smtStackManager.getStack());
-    }
-}
-
 void Engine2::addSplitProvider( std::shared_ptr<ISmtSplitProvider> const& splitProvider )
 {
-    _smtStackManager.subscribeSplitProvider( splitProvider );
-}
-
-Optional<PiecewiseLinearCaseSplit> Engine2::splitFromProviders() const {
-    for ( auto const& splitProvider : _smtStackManager.splitProviders() )
-    {
-        auto const maybeSplits = splitProvider->needToSplit();
-        if ( maybeSplits )
-        {
-            return maybeSplits;
-        }
-    }
-    return nullopt;
+    _splitProvidersManager->subscribeSplitProvider( splitProvider );
 }
 
 void Engine2::performSymbolicBoundTightening()

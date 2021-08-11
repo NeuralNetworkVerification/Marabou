@@ -58,7 +58,7 @@ class String;
 class Engine2 : public IEngine, public SignalHandler::Signalable
 {
 public:
-    Engine2();
+    Engine2( std::shared_ptr<SplitProvidersManager> const& splitProvidersManager );
     ~Engine2();
 
     /*
@@ -113,25 +113,15 @@ public:
       Get the list of input variables
     */
     List<unsigned> getInputVariables() const;
-
-    /*
-      Let providers think before requesting split
-    */
-    void letProvidersThink() ;
-
+      
     /* 
     */
-   void addSplitProvider(std::shared_ptr<ISmtSplitProvider> const& splitProvider );
-
-    /*
-      Request splits from providers
-    */
-    Optional<PiecewiseLinearCaseSplit> splitFromProviders() const;
+    void addSplitProvider(std::shared_ptr<ISmtSplitProvider> const& splitProvider );
 
     /*
       Add equations and tightenings from a split.
     */
-    void applySplit( const PiecewiseLinearCaseSplit &split );
+    void applySplit( const PiecewiseLinearCaseSplit& split );
 
     /*
       Reset the state of the engine, before solving a new query
@@ -247,6 +237,9 @@ private:
     */
     AutoRowBoundTightener _rowBoundTightener;
 
+    /*
+    */
+    std::shared_ptr<SplitProvidersManager> _splitProvidersManager;
     /*
       The smt stack manager
     */
@@ -375,6 +368,7 @@ private:
       MILPEncoder
     */
     std::unique_ptr<MILPEncoder> _milpEncoder;
+
 
     /*
       Perform a simplex step: compute the cost function, pick the

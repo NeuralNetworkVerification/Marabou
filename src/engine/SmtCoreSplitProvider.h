@@ -60,7 +60,7 @@ private:
   */
   bool _needToSplit;
   Optional<PiecewiseLinearCaseSplit> _currentSplit;
-  Stack<Queue<PiecewiseLinearCaseSplit>> _alternativeSplitsStack;
+  List<Pair<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>>> _alternativeSplitsStack;
   PiecewiseLinearConstraint* _constraintForSplitting;
 
   /*
