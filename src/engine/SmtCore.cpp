@@ -133,6 +133,10 @@ void SmtCore::performSplit()
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
+    auto const bound = *split->getBoundTightenings().begin();
+    auto const var = bound._variable;
+    auto const isActive = bound._type == Tightening::LB;
+    printf("split var=%d isactive=%d; ", var, isActive);
     _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
 
@@ -164,6 +168,7 @@ unsigned SmtCore::getStackDepth() const
 bool SmtCore::popSplit()
 {
     SMT_LOG( "Performing a pop" );
+    printf("pop! \n");
 
     if ( _stack.empty() )
         return false;

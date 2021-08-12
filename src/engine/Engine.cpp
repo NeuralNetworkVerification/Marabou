@@ -123,6 +123,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
     while ( true )
     {
+        printf( "1\n" );
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
         _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
@@ -156,11 +157,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         try
         {
+            printf( "2\n" );
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
-            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
-                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            if ( _verbosity > 1 && _statistics.getNumMainLoopIterations() %
+                GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
                 _statistics.print();
 
             // Check whether progress has been made recently
@@ -169,13 +171,16 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If the basis has become malformed, we need to restore it
             if ( basisRestorationNeeded() )
             {
+                printf( "3\n" );
                 if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
                 {
+                    printf( "3.1\n" );
                     performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
                     _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
                 }
                 else
                 {
+                    printf( "3.2\n" );
                     performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
                     _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
                 }
@@ -185,18 +190,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 continue;
             }
 
+            printf( "4\n" );
             // Restoration is not required
             _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
 
             // Possible restoration due to preceision degradation
             if ( shouldCheckDegradation() && highDegradation() )
             {
+                printf( "5\n" );
                 performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
                 continue;
             }
 
             if ( _tableau->basisMatrixAvailable() )
             {
+                printf( "6\n" );
                 explicitBasisBoundTightening();
                 applyAllBoundTightenings();
                 applyAllValidConstraintCaseSplits();
@@ -204,17 +212,18 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( splitJustPerformed )
             {
+                printf( "7\n" );
                 do
                 {
                     performSymbolicBoundTightening();
-                }
-                while ( applyAllValidConstraintCaseSplits() );
+                }                 while ( applyAllValidConstraintCaseSplits() );
                 splitJustPerformed = false;
             }
 
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
+                printf( "8\n" );
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -222,12 +231,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( !_tableau->allBoundsValid() )
             {
+                printf( "9\n" );
                 // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
             }
 
             if ( allVarsWithinBounds() )
             {
+                printf( "10\n" );
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 collectViolatedPlConstraints();
@@ -235,9 +246,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // If all constraints are satisfied, we are possibly done
                 if ( allPlConstraintsHold() )
                 {
+                    printf( "11\n" );
                     if ( _tableau->getBasicAssignmentStatus() !=
-                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                        ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                     {
+                        printf( "12\n" );
                         if ( _verbosity > 0 )
                         {
                             printf( "Before declaring sat, recomputing...\n" );
@@ -251,10 +264,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
                         printf( "\nEngine::solve: sat assignment found\n" );
                         _statistics.print();
                     }
+                    printf( "13\n" );
                     _exitCode = Engine::SAT;
                     return true;
                 }
 
+                printf("14\n");
                 // We have violated piecewise-linear constraints.
                 performConstraintFixingStep();
 
@@ -268,15 +283,18 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 while ( applyAllValidConstraintCaseSplits() )
                     performSymbolicBoundTightening();
 
+                printf("15\n");
                 continue;
             }
 
+                printf("16\n");
             // We have out-of-bounds variables.
             performSimplexStep();
             continue;
         }
-        catch ( const MalformedBasisException & )
+        catch ( const MalformedBasisException& )
         {
+                printf("17\n");
             // Debug
             printf( "MalformedBasisException caught!\n" );
             //
@@ -302,8 +320,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 return false;
             }
         }
-        catch ( const InfeasibleQueryException & )
+        catch ( const InfeasibleQueryException& )
         {
+                printf("18\n");
+            printf( "unsat! \n" );
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
@@ -336,14 +356,14 @@ void Engine::mainLoopStatistics()
     struct timespec start = TimeUtils::sampleMicro();
 
     unsigned activeConstraints = 0;
-    for ( const auto &constraint : _plConstraints )
+    for ( const auto& constraint : _plConstraints )
         if ( constraint->isActive() )
             ++activeConstraints;
 
     _statistics.setNumActivePlConstraints( activeConstraints );
     _statistics.setNumPlValidSplits( _numPlConstraintsDisabledByValidSplits );
     _statistics.setNumPlSMTSplits( _plConstraints.size() -
-                                   activeConstraints - _numPlConstraintsDisabledByValidSplits );
+        activeConstraints - _numPlConstraintsDisabledByValidSplits );
 
     _statistics.incNumMainLoopIterations();
 
@@ -392,34 +412,34 @@ void Engine::performSimplexStep()
     else
         _costFunctionManager->adjustBasicCostAccuracy();
 
-    DEBUG({
-            // Since we're performing a simplex step, there are out-of-bounds variables.
-            // Therefore, if the cost function is fresh, it should not be zero.
-            if ( _costFunctionManager->costFunctionJustComputed() )
+    DEBUG( {
+        // Since we're performing a simplex step, there are out-of-bounds variables.
+        // Therefore, if the cost function is fresh, it should not be zero.
+        if ( _costFunctionManager->costFunctionJustComputed() )
+        {
+            const double* costFunction = _costFunctionManager->getCostFunction();
+            unsigned size = _tableau->getN() - _tableau->getM();
+            bool found = false;
+            for ( unsigned i = 0; i < size; ++i )
             {
-                const double *costFunction = _costFunctionManager->getCostFunction();
-                unsigned size = _tableau->getN() - _tableau->getM();
-                bool found = false;
-                for ( unsigned i = 0; i < size; ++i )
+                if ( !FloatUtils::isZero( costFunction[i] ) )
                 {
-                    if ( !FloatUtils::isZero( costFunction[i] ) )
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if ( !found )
-                {
-                    printf( "Error! Have OOB vars but cost function is zero.\n"
-                            "Recomputing cost function. New one is:\n" );
-                    _costFunctionManager->computeCoreCostFunction();
-                    _costFunctionManager->dumpCostFunction();
-                    throw MarabouError( MarabouError::DEBUGGING_ERROR,
-                                         "Have OOB vars but cost function is zero" );
+                    found = true;
+                    break;
                 }
             }
-        });
+
+            if ( !found )
+            {
+                printf( "Error! Have OOB vars but cost function is zero.\n"
+                        "Recomputing cost function. New one is:\n" );
+                _costFunctionManager->computeCoreCostFunction();
+                _costFunctionManager->dumpCostFunction();
+                throw MarabouError( MarabouError::DEBUGGING_ERROR,
+                                     "Have OOB vars but cost function is zero" );
+            }
+        }
+        } );
 
     // Obtain all eligible entering varaibles
     List<unsigned> enteringVariableCandidates;
@@ -439,8 +459,8 @@ void Engine::performSimplexStep()
 
         // Attempt to pick the best entering variable from the available candidates
         if ( !_activeEntryStrategy->select( _tableau,
-                                            enteringVariableCandidates,
-                                            excludedEnteringVariables ) )
+            enteringVariableCandidates,
+            excludedEnteringVariables ) )
         {
             // No additional candidates can be found.
             break;
@@ -463,7 +483,7 @@ void Engine::performSimplexStep()
             bestEntering = _tableau->getEnteringVariableIndex();
             bestLeaving = _tableau->getLeavingVariableIndex();
             bestChangeRatio = _tableau->getChangeRatio();
-            memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
+            memcpy( _work, _tableau->getChangeColumn(), sizeof( double ) * _tableau->getM() );
             break;
         }
 
@@ -476,7 +496,7 @@ void Engine::performSimplexStep()
             bestPivotEntry = pivotEntry;
             bestLeaving = leavingIndex;
             bestChangeRatio = _tableau->getChangeRatio();
-            memcpy( _work, _tableau->getChangeColumn(), sizeof(double) * _tableau->getM() );
+            memcpy( _work, _tableau->getChangeColumn(), sizeof( double ) * _tableau->getM() );
         }
 
         // If the pivot is greater than the sought-after threshold, we
@@ -502,7 +522,7 @@ void Engine::performSimplexStep()
         {
             // This failure might have resulted from a corrupt cost function.
             ASSERT( _costFunctionManager->getCostFunctionStatus() ==
-                    ICostFunctionManager::COST_FUNCTION_UPDATED );
+                ICostFunctionManager::COST_FUNCTION_UPDATED );
             _costFunctionManager->invalidateCostFunction();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
@@ -526,7 +546,7 @@ void Engine::performSimplexStep()
     bool fakePivot = _tableau->performingFakePivot();
 
     if ( !fakePivot &&
-         bestPivotEntry < GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD )
+        bestPivotEntry < GlobalConfiguration::ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD )
     {
         /*
           Despite our efforts, we are stuck with a small pivot. If basis factorization
@@ -568,15 +588,15 @@ void Engine::fixViolatedPlConstraintIfPossible()
 
     // First, see if we can fix without pivoting. We are looking for a fix concerning a
     // non-basic variable, that doesn't set that variable out-of-bounds.
-    for ( const auto &fix : fixes )
+    for ( const auto& fix : fixes )
     {
         if ( !_tableau->isBasic( fix._variable ) )
         {
-			if ( _tableau->checkValueWithinBounds( fix._variable, fix._value ) )
-			{
+            if ( _tableau->checkValueWithinBounds( fix._variable, fix._value ) )
+            {
                 _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
                 return;
-			}
+            }
         }
     }
 
@@ -589,8 +609,8 @@ void Engine::fixViolatedPlConstraintIfPossible()
     {
         if ( _tableau->isBasic( it->_variable ) )
         {
-			if ( _tableau->checkValueWithinBounds( it->_variable, it->_value ) )
-			{
+            if ( _tableau->checkValueWithinBounds( it->_variable, it->_value ) )
+            {
                 found = true;
             }
         }
@@ -650,14 +670,14 @@ void Engine::fixViolatedPlConstraintIfPossible()
     _tableau->setNonBasicAssignment( fix._variable, fix._value, true );
 }
 
-bool Engine::processInputQuery( InputQuery &inputQuery )
+bool Engine::processInputQuery( InputQuery& inputQuery )
 {
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
-void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
+void Engine::informConstraintsOfInitialBounds( InputQuery& inputQuery ) const
 {
-    for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
+    for ( const auto& plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
         List<unsigned> variables = plConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
@@ -668,38 +688,38 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
     }
 }
 
-void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
+void Engine::invokePreprocessor( const InputQuery& inputQuery, bool preprocess )
 {
     if ( _verbosity > 0 )
         printf( "Engine::processInputQuery: Input query (before preprocessing): "
-                "%u equations, %u variables\n",
-                inputQuery.getEquations().size(),
-                inputQuery.getNumberOfVariables() );
+            "%u equations, %u variables\n",
+            inputQuery.getEquations().size(),
+            inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
     if ( _preprocessingEnabled )
         _preprocessedQuery = _preprocessor.preprocess
-            ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
+        ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
     else
         _preprocessedQuery = inputQuery;
 
     if ( _verbosity > 0 )
         printf( "Engine::processInputQuery: Input query (after preprocessing): "
-                "%u equations, %u variables\n\n",
-                _preprocessedQuery.getEquations().size(),
-                _preprocessedQuery.getNumberOfVariables() );
+            "%u equations, %u variables\n\n",
+            _preprocessedQuery.getEquations().size(),
+            _preprocessedQuery.getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )
     {
         _exitCode = Engine::ERROR;
         throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
+            Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
 }
 
-void Engine::printInputBounds( const InputQuery &inputQuery ) const
+void Engine::printInputBounds( const InputQuery& inputQuery ) const
 {
     printf( "Input bounds:\n" );
     for ( unsigned i = 0; i < inputQuery.getNumInputVariables(); ++i )
@@ -746,20 +766,20 @@ void Engine::storeEquationsInDegradationChecker()
     _degradationChecker.storeEquations( _preprocessedQuery );
 }
 
-double *Engine::createConstraintMatrix()
+double* Engine::createConstraintMatrix()
 {
-    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    const List<Equation>& equations( _preprocessedQuery.getEquations() );
     unsigned m = equations.size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
     // Step 1: create a constraint matrix from the equations
-    double *constraintMatrix = new double[n*m];
+    double* constraintMatrix = new double[n * m];
     if ( !constraintMatrix )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::constraintMatrix" );
-    std::fill_n( constraintMatrix, n*m, 0.0 );
+    std::fill_n( constraintMatrix, n * m, 0.0 );
 
     unsigned equationIndex = 0;
-    for ( const auto &equation : equations )
+    for ( const auto& equation : equations )
     {
         if ( equation._type != Equation::EQ )
         {
@@ -767,8 +787,8 @@ double *Engine::createConstraintMatrix()
             throw MarabouError( MarabouError::NON_EQUALITY_INPUT_EQUATION_DISCOVERED );
         }
 
-        for ( const auto &addend : equation._addends )
-            constraintMatrix[equationIndex*n + addend._variable] = addend._coefficient;
+        for ( const auto& addend : equation._addends )
+            constraintMatrix[equationIndex * n + addend._variable] = addend._coefficient;
 
         ++equationIndex;
     }
@@ -776,9 +796,9 @@ double *Engine::createConstraintMatrix()
     return constraintMatrix;
 }
 
-void Engine::removeRedundantEquations( const double *constraintMatrix )
+void Engine::removeRedundantEquations( const double* constraintMatrix )
 {
-    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    const List<Equation>& equations( _preprocessedQuery.getEquations() );
     unsigned m = equations.size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
@@ -787,7 +807,7 @@ void Engine::removeRedundantEquations( const double *constraintMatrix )
     analyzer->analyze( constraintMatrix, m, n );
 
     ENGINE_LOG( Stringf( "Number of redundant rows: %u out of %u",
-                         analyzer->getRedundantRows().size(), m ).ascii() );
+        analyzer->getRedundantRows().size(), m ).ascii() );
 
     // Step 2: remove any equations corresponding to redundant rows
     Set<unsigned> redundantRows = analyzer->getRedundantRows();
@@ -799,7 +819,7 @@ void Engine::removeRedundantEquations( const double *constraintMatrix )
     }
 }
 
-void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, List<unsigned> &initialBasis, List<unsigned> &basicRows )
+void Engine::selectInitialVariablesForBasis( const double* constraintMatrix, List<unsigned>& initialBasis, List<unsigned>& basicRows )
 {
     /*
       This method permutes rows and columns in the constraint matrix (prior
@@ -811,7 +831,7 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, Lis
       case the initial basis will have to be augmented later).
     */
 
-    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    const List<Equation>& equations( _preprocessedQuery.getEquations() );
 
     unsigned m = equations.size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
@@ -825,14 +845,14 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, Lis
         return;
     }
 
-    unsigned *nnzInRow = new unsigned[m];
-    unsigned *nnzInColumn = new unsigned[n];
+    unsigned* nnzInRow = new unsigned[m];
+    unsigned* nnzInColumn = new unsigned[n];
 
     std::fill_n( nnzInRow, m, 0 );
     std::fill_n( nnzInColumn, n, 0 );
 
-    unsigned *columnOrdering = new unsigned[n];
-    unsigned *rowOrdering = new unsigned[m];
+    unsigned* columnOrdering = new unsigned[n];
+    unsigned* rowOrdering = new unsigned[m];
 
     for ( unsigned i = 0; i < m; ++i )
         rowOrdering[i] = i;
@@ -845,7 +865,7 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, Lis
     {
         for ( unsigned j = 0; j < n; ++j )
         {
-            if ( !FloatUtils::isZero( constraintMatrix[i*n + j] ) )
+            if ( !FloatUtils::isZero( constraintMatrix[i * n + j] ) )
             {
                 ++nnzInRow[i];
                 ++nnzInColumn[j];
@@ -853,12 +873,12 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, Lis
         }
     }
 
-    DEBUG({
+    DEBUG( {
             for ( unsigned i = 0; i < m; ++i )
             {
                 ASSERT( nnzInRow[i] > 0 );
             }
-        });
+        } );
 
     unsigned numExcluded = 0;
     unsigned numTriangularRows = 0;
@@ -936,7 +956,7 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, Lis
             // Update the row counters to account for the excluded column
             for ( unsigned i = numTriangularRows; i < m; ++i )
             {
-                double element = constraintMatrix[rowOrdering[i]*n + columnOrdering[column]];
+                double element = constraintMatrix[rowOrdering[i] * n + columnOrdering[column]];
                 if ( !FloatUtils::isZero( element ) )
                 {
                     ASSERT( nnzInRow[i] > 1 );
@@ -972,7 +992,7 @@ void Engine::selectInitialVariablesForBasis( const double *constraintMatrix, Lis
 
 void Engine::addAuxiliaryVariables()
 {
-    List<Equation> &equations( _preprocessedQuery.getEquations() );
+    List<Equation>& equations( _preprocessedQuery.getEquations() );
 
     unsigned m = equations.size();
     unsigned originalN = _preprocessedQuery.getNumberOfVariables();
@@ -982,7 +1002,7 @@ void Engine::addAuxiliaryVariables()
 
     // Add auxiliary variables to the equations and set their bounds
     unsigned count = 0;
-    for ( auto &eq : equations )
+    for ( auto& eq : equations )
     {
         unsigned auxVar = originalN + count;
         eq.addAddend( -1, auxVar );
@@ -994,7 +1014,7 @@ void Engine::addAuxiliaryVariables()
     }
 }
 
-void Engine::augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows )
+void Engine::augmentInitialBasisIfNeeded( List<unsigned>& initialBasis, const List<unsigned>& basicRows )
 {
     unsigned m = _preprocessedQuery.getEquations().size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
@@ -1002,14 +1022,14 @@ void Engine::augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const Li
 
     if ( initialBasis.size() != m )
     {
-        for ( const auto &basicRow : basicRows )
+        for ( const auto& basicRow : basicRows )
             initialBasis.append( basicRow + originalN );
     }
 }
 
-void Engine::initializeTableau( const double *constraintMatrix, const List<unsigned> &initialBasis )
+void Engine::initializeTableau( const double* constraintMatrix, const List<unsigned>& initialBasis )
 {
-    const List<Equation> &equations( _preprocessedQuery.getEquations() );
+    const List<Equation>& equations( _preprocessedQuery.getEquations() );
     unsigned m = equations.size();
     unsigned n = _preprocessedQuery.getNumberOfVariables();
 
@@ -1018,7 +1038,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     adjustWorkMemorySize();
 
     unsigned equationIndex = 0;
-    for ( const auto &equation : equations )
+    for ( const auto& equation : equations )
     {
         _tableau->setRightHandSide( equationIndex, equation._scalar );
         ++equationIndex;
@@ -1043,11 +1063,11 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     _constraintBoundTightener->setDimensions();
 
     // Register the constraint bound tightener to all the PL constraints
-    for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+    for ( auto& plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
         plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
-    for ( const auto &constraint : _plConstraints )
+    for ( const auto& constraint : _plConstraints )
     {
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
@@ -1070,7 +1090,7 @@ void Engine::initializeNetworkLevelReasoning()
         _networkLevelReasoner->setTableau( _tableau );
 }
 
-bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
+bool Engine::processInputQuery( InputQuery& inputQuery, bool preprocess )
 {
     ENGINE_LOG( "processInputQuery starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
@@ -1082,7 +1102,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
-        double *constraintMatrix = createConstraintMatrix();
+        double* constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
 
         // The equations have changed, recreate the constraint matrix
@@ -1123,14 +1143,14 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         {
             _splittingStrategy =
                 ( _preprocessedQuery.getInputVariables().size() <
-                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
+                    GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
                 DivideStrategy::LargestInterval : DivideStrategy::ReLUViolation;
         }
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
-    catch ( const InfeasibleQueryException & )
+    catch ( const InfeasibleQueryException& )
     {
         ENGINE_LOG( "processInputQuery done\n" );
 
@@ -1143,13 +1163,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     ENGINE_LOG( "processInputQuery done\n" );
 
-    DEBUG({
-            // Initially, all constraints should be active
-            for ( const auto &plc : _plConstraints )
-                {
-                    ASSERT( plc->isActive() );
-                }
-        });
+    DEBUG( {
+        // Initially, all constraints should be active
+        for ( const auto& plc : _plConstraints )
+            {
+                ASSERT( plc->isActive() );
+            }
+        } );
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
@@ -1181,7 +1201,7 @@ void Engine::performMILPSolverBoundedTightening()
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-        for ( const auto &tightening : tightenings )
+        for ( const auto& tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
                 _tableau->tightenLowerBound( tightening._variable, tightening._value );
@@ -1192,7 +1212,7 @@ void Engine::performMILPSolverBoundedTightening()
     }
 }
 
-void Engine::extractSolution( InputQuery &inputQuery )
+void Engine::extractSolution( InputQuery& inputQuery )
 {
     if ( _solveWithMILP )
     {
@@ -1244,7 +1264,7 @@ bool Engine::allVarsWithinBounds() const
 void Engine::collectViolatedPlConstraints()
 {
     _violatedPlConstraints.clear();
-    for ( const auto &constraint : _plConstraints )
+    for ( const auto& constraint : _plConstraints )
     {
         if ( constraint->isActive() && !constraint->satisfied() )
             _violatedPlConstraints.append( constraint );
@@ -1270,18 +1290,18 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::storeTableauState( TableauState &state ) const
+void Engine::storeTableauState( TableauState& state ) const
 {
     _tableau->storeState( state );
 }
 
-void Engine::restoreTableauState( const TableauState &state )
+void Engine::restoreTableauState( const TableauState& state )
 {
     ENGINE_LOG( "\tRestoring tableau state" );
     _tableau->restoreState( state );
 }
 
-void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
+void Engine::storeState( EngineState& state, bool storeAlsoTableauState ) const
 {
     if ( storeAlsoTableauState )
     {
@@ -1291,13 +1311,13 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
     else
         state._tableauStateIsStored = false;
 
-    for ( const auto &constraint : _plConstraints )
+    for ( const auto& constraint : _plConstraints )
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
 
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 }
 
-void Engine::restoreState( const EngineState &state )
+void Engine::restoreState( const EngineState& state )
 {
     ENGINE_LOG( "Restore state starting" );
 
@@ -1308,7 +1328,7 @@ void Engine::restoreState( const EngineState &state )
     _tableau->restoreState( state._tableauState );
 
     ENGINE_LOG( "\tRestoring constraint states" );
-    for ( auto &constraint : _plConstraints )
+    for ( auto& constraint : _plConstraints )
     {
         if ( !state._plConstraintToState.exists( constraint ) )
             throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
@@ -1429,7 +1449,7 @@ bool Engine::attemptToMergeVariables( unsigned x1, unsigned x2 )
     return true;
 }
 
-void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
+void Engine::applySplit( const PiecewiseLinearCaseSplit& split )
 {
     ENGINE_LOG( "" );
     ENGINE_LOG( "Applying a split. " );
@@ -1438,14 +1458,14 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     List<Tightening> bounds = split.getBoundTightenings();
     List<Equation> equations = split.getEquations();
-    for ( auto &equation : equations )
+    for ( auto& equation : equations )
     {
         /*
           First, adjust the equation if any variables have been merged.
           E.g., if the equation is x1 + x2 + x3 = 0, and x1 and x2 have been
           merged, the equation becomes 2x1 + x3 = 0
         */
-        for ( auto &addend : equation._addends )
+        for ( auto& addend : equation._addends )
             addend._variable = _tableau->getVariableAfterMerging( addend._variable );
 
         List<Equation::Addend>::iterator addend;
@@ -1488,10 +1508,10 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             equation.isVariableMergingEquation( x1, x2 ) &&
             // And only if the variables are not out of bounds
             ( !_tableau->isBasic( x1 ) ||
-              !_tableau->basicOutOfBounds( _tableau->variableToIndex( x1 ) ) )
+                !_tableau->basicOutOfBounds( _tableau->variableToIndex( x1 ) ) )
             &&
             ( !_tableau->isBasic( x2 ) ||
-              !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
+                !_tableau->basicOutOfBounds( _tableau->variableToIndex( x2 ) ) );
 
         bool columnsSuccessfullyMerged = false;
         if ( canMergeColumns )
@@ -1530,7 +1550,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
 
-    for ( auto &bound : bounds )
+    for ( auto& bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
 
@@ -1555,7 +1575,7 @@ void Engine::applyAllRowTightenings()
     List<Tightening> rowTightenings;
     _rowBoundTightener->getRowTightenings( rowTightenings );
 
-    for ( const auto &tightening : rowTightenings )
+    for ( const auto& tightening : rowTightenings )
     {
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
@@ -1570,7 +1590,7 @@ void Engine::applyAllConstraintTightenings()
 
     _constraintBoundTightener->getConstraintTightenings( entailedTightenings );
 
-    for ( const auto &tightening : entailedTightenings )
+    for ( const auto& tightening : entailedTightenings )
     {
         _statistics.incNumBoundsProposedByPlConstraints();
 
@@ -1597,7 +1617,7 @@ bool Engine::applyAllValidConstraintCaseSplits()
     struct timespec start = TimeUtils::sampleMicro();
 
     bool appliedSplit = false;
-    for ( auto &constraint : _plConstraints )
+    for ( auto& constraint : _plConstraints )
         if ( applyValidConstraintCaseSplit( constraint ) )
             appliedSplit = true;
 
@@ -1607,14 +1627,14 @@ bool Engine::applyAllValidConstraintCaseSplits()
     return appliedSplit;
 }
 
-bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
+bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint* constraint )
 {
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
         String constraintString;
         constraint->dump( constraintString );
         ENGINE_LOG( Stringf( "A constraint has become valid. Dumping constraint: %s",
-                             constraintString.ascii() ).ascii() );
+            constraintString.ascii() ).ascii() );
 
         constraint->setActiveConstraint( false );
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
@@ -1631,7 +1651,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 bool Engine::shouldCheckDegradation()
 {
     return _statistics.getNumMainLoopIterations() %
-        GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY == 0 ;
+        GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY == 0;
 }
 
 bool Engine::highDegradation()
@@ -1659,7 +1679,7 @@ void Engine::tightenBoundsOnConstraintMatrix()
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics.getNumMainLoopIterations() %
-         GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
+        GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
     {
         _rowBoundTightener->examineConstraintMatrix( true );
         _statistics.incNumBoundTighteningOnConstraintMatrix();
@@ -1715,8 +1735,8 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
     double after = _degradationChecker.computeDegradation( *_tableau );
     if ( _verbosity > 0 )
         printf( "Performing precision restoration. Degradation before: %.15lf. After: %.15lf\n",
-                before,
-                after );
+            before,
+            after );
     //
 
     if ( highDegradation() && ( restoreBasics == PrecisionRestorer::RESTORE_BASICS ) )
@@ -1725,7 +1745,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         // Try again!
         start = TimeUtils::sampleMicro();
         _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore,
-                                             PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+            PrecisionRestorer::DO_NOT_RESTORE_BASICS );
         end = TimeUtils::sampleMicro();
         _statistics.addTimeForPrecisionRestoration( TimeUtils::timePassed( start, end ) );
         _statistics.incNumPrecisionRestorations();
@@ -1737,8 +1757,8 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
         if ( _verbosity > 0 )
             printf( "Performing 2nd precision restoration. Degradation before: %.15lf. After: %.15lf\n",
-                    after,
-                    afterSecond );
+                after,
+                afterSecond );
 
         if ( highDegradation() )
             throw MarabouError( MarabouError::RESTORATION_FAILED_TO_RESTORE_PRECISION );
@@ -1761,12 +1781,12 @@ bool Engine::basisRestorationNeeded() const
         _basisRestorationRequired == Engine::WEAK_RESTORATION_NEEDED;
 }
 
-const Statistics *Engine::getStatistics() const
+const Statistics* Engine::getStatistics() const
 {
     return &_statistics;
 }
 
-InputQuery *Engine::getInputQuery()
+InputQuery* Engine::getInputQuery()
 {
     return &_preprocessedQuery;
 }
@@ -1776,17 +1796,17 @@ void Engine::checkBoundCompliancyWithDebugSolution()
     if ( _smtCore.checkSkewFromDebuggingSolution() )
     {
         // The stack is compliant, we should not have learned any non-compliant bounds
-        for ( const auto &var : _preprocessedQuery._debuggingSolution )
+        for ( const auto& var : _preprocessedQuery._debuggingSolution )
         {
             // printf( "Looking at var %u\n", var.first );
 
             if ( FloatUtils::gt( _tableau->getLowerBound( var.first ), var.second, 1e-5 ) )
             {
                 printf( "Error! The stack is compliant, but learned an non-compliant bound: "
-                        "Solution for x%u is %.15lf, but learned lower bound %.15lf\n",
-                        var.first,
-                        var.second,
-                        _tableau->getLowerBound( var.first ) );
+                    "Solution for x%u is %.15lf, but learned lower bound %.15lf\n",
+                    var.first,
+                    var.second,
+                    _tableau->getLowerBound( var.first ) );
 
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
@@ -1794,10 +1814,10 @@ void Engine::checkBoundCompliancyWithDebugSolution()
             if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
             {
                 printf( "Error! The stack is compliant, but learned an non-compliant bound: "
-                        "Solution for %u is %.15lf, but learned upper bound %.15lf\n",
-                        var.first,
-                        var.second,
-                        _tableau->getUpperBound( var.first ) );
+                    "Solution for %u is %.15lf, but learned upper bound %.15lf\n",
+                    var.first,
+                    var.second,
+                    _tableau->getUpperBound( var.first ) );
 
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
@@ -1815,7 +1835,7 @@ Engine::ExitCode Engine::getExitCode() const
     return _exitCode;
 }
 
-std::atomic_bool *Engine::getQuitRequested()
+std::atomic_bool* Engine::getQuitRequested()
 {
     return &_quitRequested;
 }
@@ -1829,7 +1849,7 @@ void Engine::performSimulation()
 {
     if ( _simulationSize == 0 || !_networkLevelReasoner )
     {
-        ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
+        ENGINE_LOG( Stringf( "Skip simulation..." ).ascii() );
         return;
     }
 
@@ -1842,7 +1862,7 @@ void Engine::performSimulation()
     for ( unsigned i = 0; i < _networkLevelReasoner->getLayer( 0 )->getSize(); ++i )
     {
         std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
-                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
+            _networkLevelReasoner->getLayer( 0 )->getUb( i ) );
         Vector<double> simulationInput( _simulationSize );
 
         for ( unsigned j = 0; j < _simulationSize; ++j )
@@ -1855,7 +1875,7 @@ void Engine::performSimulation()
 void Engine::performSymbolicBoundTightening()
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
-         ( !_networkLevelReasoner ) )
+        ( !_networkLevelReasoner ) )
         return;
 
     struct timespec start = TimeUtils::sampleMicro();
@@ -1867,28 +1887,28 @@ void Engine::performSymbolicBoundTightening()
 
     // Step 2: perform SBT
     if ( _symbolicBoundTighteningType ==
-         SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
+        SymbolicBoundTighteningType::SYMBOLIC_BOUND_TIGHTENING )
         _networkLevelReasoner->symbolicBoundPropagation();
     else if ( _symbolicBoundTighteningType ==
-         SymbolicBoundTighteningType::DEEP_POLY )
+        SymbolicBoundTighteningType::DEEP_POLY )
         _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
     _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-    for ( const auto &tightening : tightenings )
+    for ( const auto& tightening : tightenings )
     {
 
         if ( tightening._type == Tightening::LB &&
-             FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
         {
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
         }
 
         if ( tightening._type == Tightening::UB &&
-             FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
         {
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
             ++numTightenedBounds;
@@ -1974,8 +1994,8 @@ void Engine::warmStart()
         return;
     }
 
-    double *inputAssignment = new double[numInputVariables];
-    double *outputAssignment = new double[numOutputVariables];
+    double* inputAssignment = new double[numInputVariables];
+    double* outputAssignment = new double[numOutputVariables];
 
     for ( unsigned i = 0; i < numInputVariables; ++i )
     {
@@ -1989,9 +2009,9 @@ void Engine::warmStart()
     // Try to update as many variables as possible to match their assignment
     for ( unsigned i = 0; i < _networkLevelReasoner->getNumberOfLayers(); ++i )
     {
-        const NLR::Layer *layer = _networkLevelReasoner->getLayer( i );
+        const NLR::Layer* layer = _networkLevelReasoner->getLayer( i );
         unsigned layerSize = layer->getSize();
-        const double *assignment = layer->getAssignment();
+        const double* assignment = layer->getAssignment();
 
         for ( unsigned j = 0; j < layerSize; ++j )
         {
@@ -2028,8 +2048,8 @@ void Engine::checkOverallProgress()
     {
         // No progress has been made. If it's been too long, request a restoration
         if ( currentIteration >
-             _lastIterationWithProgress +
-             GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
+            _lastIterationWithProgress +
+            GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS )
         {
             ENGINE_LOG( "checkOverallProgress detected cycling. Requesting a precision restoration" );
             _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
@@ -2041,46 +2061,46 @@ void Engine::checkOverallProgress()
 void Engine::updateDirections()
 {
     if ( GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS )
-        for ( const auto &constraint : _plConstraints )
+        for ( const auto& constraint : _plConstraints )
             if ( constraint->supportPolarity() &&
-                 constraint->isActive() && !constraint->phaseFixed() )
+                constraint->isActive() && !constraint->phaseFixed() )
                 constraint->updateDirection();
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
+PiecewiseLinearConstraint* Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
 
     if ( !_networkLevelReasoner )
         throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
 
-    List<PiecewiseLinearConstraint *> constraints =
+    List<PiecewiseLinearConstraint*> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
-    Map<double, PiecewiseLinearConstraint *> scoreToConstraint;
-    for ( auto &plConstraint : constraints )
+    Map<double, PiecewiseLinearConstraint*> scoreToConstraint;
+    for ( auto& plConstraint : constraints )
     {
         if ( plConstraint->supportPolarity() &&
-             plConstraint->isActive() && !plConstraint->phaseFixed() )
+            plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
             plConstraint->updateScoreBasedOnPolarity();
             scoreToConstraint[plConstraint->getScore()] = plConstraint;
             if ( scoreToConstraint.size() >=
-                 GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
+                GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD )
                 break;
         }
     }
     if ( scoreToConstraint.size() > 0 )
     {
         ENGINE_LOG( Stringf( "Score of the picked ReLU: %f",
-                             ( *scoreToConstraint.begin() ).first ).ascii() );
-        return (*scoreToConstraint.begin()).second;
+            ( *scoreToConstraint.begin() ).first ).ascii() );
+        return ( *scoreToConstraint.begin() ).second;
     }
     else
         return NULL;
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
+PiecewiseLinearConstraint* Engine::pickSplitPLConstraintBasedOnTopology()
 {
     // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
     ENGINE_LOG( Stringf( "Using EarliestReLU heuristics..." ).ascii() );
@@ -2088,10 +2108,10 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
     if ( !_networkLevelReasoner )
         throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
 
-    List<PiecewiseLinearConstraint *> constraints =
+    List<PiecewiseLinearConstraint*> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
 
-    for ( auto &plConstraint : constraints )
+    for ( auto& plConstraint : constraints )
     {
         if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
             return plConstraint;
@@ -2099,14 +2119,14 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
     return NULL;
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
+PiecewiseLinearConstraint* Engine::pickSplitPLConstraintBasedOnIntervalWidth()
 {
     // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
     ENGINE_LOG( Stringf( "Using LargestInterval heuristics..." ).ascii() );
 
     unsigned inputVariableWithLargestInterval = 0;
     double largestIntervalSoFar = 0;
-    for ( const auto &variable : _preprocessedQuery.getInputVariables() )
+    for ( const auto& variable : _preprocessedQuery.getInputVariables() )
     {
         double interval = _tableau->getUpperBound( variable ) -
             _tableau->getLowerBound( variable );
@@ -2122,14 +2142,14 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
     else
     {
         double mid = ( _tableau->getLowerBound( inputVariableWithLargestInterval )
-                       + _tableau->getUpperBound( inputVariableWithLargestInterval )
-                       ) / 2;
+            + _tableau->getUpperBound( inputVariableWithLargestInterval )
+            ) / 2;
         PiecewiseLinearCaseSplit s1;
         s1.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
-                                             mid, Tightening::UB ) );
+            mid, Tightening::UB ) );
         PiecewiseLinearCaseSplit s2;
         s2.storeBoundTightening( Tightening( inputVariableWithLargestInterval,
-                                             mid, Tightening::LB ) );
+            mid, Tightening::LB ) );
 
         List<PiecewiseLinearCaseSplit> splits;
         splits.append( s1 );
@@ -2140,30 +2160,30 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
     }
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+PiecewiseLinearConstraint* Engine::pickSplitPLConstraint()
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
-    PiecewiseLinearConstraint *candidatePLConstraint = NULL;
+    PiecewiseLinearConstraint* candidatePLConstraint = NULL;
     if ( _splittingStrategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
-              _smtCore.getStackDepth() %
-              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+        _smtCore.getStackDepth() %
+        GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Picked..." :
-                           "Unable to pick using the current strategy..." ) ).ascii() );
+        "Picked..." :
+        "Unable to pick using the current strategy..." ) ).ascii() );
 
     return candidatePLConstraint;
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy strategy )
+PiecewiseLinearConstraint* Engine::pickSplitPLConstraintSnC( SnCDivideStrategy strategy )
 {
-    PiecewiseLinearConstraint *candidatePLConstraint = NULL;
+    PiecewiseLinearConstraint* candidatePLConstraint = NULL;
     if ( strategy == SnCDivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == SnCDivideStrategy::EarliestReLU )
@@ -2171,19 +2191,19 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
 
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
-                           "Picked..." :
-                           "Unable to pick using the current strategy..." ) ).ascii() );
+        "Picked..." :
+        "Unable to pick using the current strategy..." ) ).ascii() );
     return candidatePLConstraint;
 }
 
-bool Engine::restoreSmtState( SmtState & smtState )
+bool Engine::restoreSmtState( SmtState& smtState )
 {
     try
     {
         ASSERT( _smtCore.getStackDepth() == 0 );
 
         // Step 1: all implied valid splits at root
-        for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
+        for ( auto& validSplit : smtState._impliedValidSplitsAtRoot )
         {
             applySplit( validSplit );
             _smtCore.recordImpliedValidSplit( validSplit );
@@ -2198,7 +2218,7 @@ bool Engine::restoreSmtState( SmtState & smtState )
         while ( applyAllValidConstraintCaseSplits() );
 
         // Step 2: replay the stack
-        for ( auto &stackEntry : smtState._stack )
+        for ( auto& stackEntry : smtState._stack )
         {
             _smtCore.replaySmtStackEntry( stackEntry );
             // Do all the bound propagation, and set ReLU constraints to inactive (at
@@ -2213,7 +2233,7 @@ bool Engine::restoreSmtState( SmtState & smtState )
 
         }
     }
-    catch ( const InfeasibleQueryException & )
+    catch ( const InfeasibleQueryException& )
     {
         // The current query is unsat, and we need to pop.
         // If we're at level 0, the whole query is unsat.
@@ -2225,7 +2245,7 @@ bool Engine::restoreSmtState( SmtState & smtState )
                 _statistics.print();
             }
             _exitCode = Engine::UNSAT;
-            for ( PiecewiseLinearConstraint *p : _plConstraints )
+            for ( PiecewiseLinearConstraint* p : _plConstraints )
                 p->setActiveConstraint( true );
             return false;
         }
@@ -2233,7 +2253,7 @@ bool Engine::restoreSmtState( SmtState & smtState )
     return true;
 }
 
-void Engine::storeSmtState( SmtState & smtState )
+void Engine::storeSmtState( SmtState& smtState )
 {
     _smtCore.storeSmtState( smtState );
 }
@@ -2245,22 +2265,21 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         // Apply bound tightening before handing to Gurobi
         if ( _tableau->basisMatrixAvailable() )
         {
-	    explicitBasisBoundTightening();
-	    applyAllBoundTightenings();
-	    applyAllValidConstraintCaseSplits();
-	}
-	do
-	{
-	    performSymbolicBoundTightening();
-	}
-	while ( applyAllValidConstraintCaseSplits() );
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+        do
+        {
+            performSymbolicBoundTightening();
+        } 	while ( applyAllValidConstraintCaseSplits() );
     }
-    catch ( const InfeasibleQueryException & )
+    catch ( const InfeasibleQueryException& )
     {
         _exitCode = Engine::UNSAT;
         return false;
     }
-    
+
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
@@ -2268,9 +2287,9 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     ENGINE_LOG( "Query encoded in Gurobi...\n" );
 
     double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
-                                : timeoutInSeconds );
+        : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
-    _gurobi->setTimeLimit( timeoutForGurobi );
+        _gurobi->setTimeLimit( timeoutForGurobi );
 
     _gurobi->solve();
 
@@ -2288,7 +2307,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     return false;
 }
 
-void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
+void Engine::extractSolutionFromGurobi( InputQuery& inputQuery )
 {
     ASSERT( _gurobi != nullptr );
     Map<String, double> assignment;
