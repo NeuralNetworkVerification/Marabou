@@ -150,6 +150,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
         try
         {
+            printf("try\n");
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
@@ -198,6 +199,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( splitJustPerformed )
             {
+                printf("splitJustPerformed\n");
                 do
                 {
                     performSymbolicBoundTightening();
@@ -209,6 +211,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
+                printf("needToSplit\n");
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -216,12 +219,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( !_tableau->allBoundsValid() )
             {
+                printf("throw InfeasibleQueryException()\n");
                 // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
             }
 
             if ( allVarsWithinBounds() )
             {
+                printf("allVarsWithinBounds()\n");
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 collectViolatedPlConstraints();
