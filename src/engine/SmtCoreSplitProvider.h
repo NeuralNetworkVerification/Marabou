@@ -59,8 +59,9 @@ private:
     Do we need to perform a split and on which constraint.
   */
   bool _needToSplit;
-  Optional<PiecewiseLinearCaseSplit> _currentSplit;
-  List<Pair<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>>> _alternativeSplitsStack;
+  Optional<PiecewiseLinearCaseSplit> _currentSuggestedSplit;
+  List<PiecewiseLinearCaseSplit> _currentSuggestedSplitAlternatives;
+  List<Pair<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>>> _splitsStack;
   PiecewiseLinearConstraint* _constraintForSplitting;
 
   /*
