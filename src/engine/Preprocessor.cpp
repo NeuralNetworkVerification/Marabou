@@ -94,7 +94,8 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     */
 
     bool continueTightening = true;
-    while ( continueTightening )
+    int count = 0;
+    while ( continueTightening && count++ < 40)
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
