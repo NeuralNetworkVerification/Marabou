@@ -141,6 +141,10 @@ void SmtCore::performSplit()
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
+    auto const bound = *split->getBoundTightenings().begin();
+    auto const var = bound._variable;
+    auto const isActive = bound._type == Tightening::LB;
+    printf("split var=%d isactive=%d; \n", var, isActive);
     _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
     *_lastSplit = *split;
@@ -219,6 +223,8 @@ bool SmtCore::popSplit()
         throw MarabouError( MarabouError::DEBUGGING_ERROR );
     }
 
+    printf("on pop\n");
+
     SmtStackEntry *stackEntry = _stack.back();
 
     // Restore the state of the engine
@@ -232,6 +238,11 @@ bool SmtCore::popSplit()
     // Erase any valid splits that were learned using the split we just popped
     stackEntry->_impliedValidSplits.clear();
 
+    auto const bound = *split->getBoundTightenings().begin();
+    auto const var = bound._variable;
+    auto const isActive = bound._type == Tightening::LB;
+    printf("split var=%d isactive=%d; \n", var, isActive);
+    
     SMT_LOG( "\tApplying new split..." );
     _engine->applySplit( *split );
     SMT_LOG( "\tApplying new split - DONE" );

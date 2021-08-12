@@ -298,6 +298,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         }
         catch ( const InfeasibleQueryException & )
         {
+            printf("on unsat\n");
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
