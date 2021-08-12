@@ -15,7 +15,7 @@ public:
     Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
     void onSplitPerformed( SplitInfo const& ) override;
     void onStackPopPerformed( PopInfo const& ) override;
-    void onUnsatReceived() override;
+    void onUnsatReceived( List<PiecewiseLinearCaseSplit>& ) override;
 
     /*
       Inform the SMT core that a PL constraint is violated.

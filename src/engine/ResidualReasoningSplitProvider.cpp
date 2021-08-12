@@ -4,6 +4,8 @@
 #include "TimeUtils.h"
 #include "GlobalConfiguration.h"
 #include "Options.h"
+#include "PiecewiseLinearCaseSplitUtils.h"
+
 
 ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( IEngine* engine )
     : _engine( engine ),
@@ -21,10 +23,10 @@ Optional<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::needToSplit()
 }
 
 void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
-    Map<PiecewiseLinearCaseSplit, unsigned> requiredSplits = deriveRequiredSplits(splitInfo.theSplit);
+    Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> requiredSplits = deriveRequiredSplits(splitInfo.theSplit);
     for ( auto requiredSplit : requiredSplits ) {
         List<PiecewiseLinearCaseSplit> value = _split2derivedSplits.get(splitInfo.theSplit);
-        if ( value == NULL ) {
+        if ( value.empty() ) {
             List<PiecewiseLinearCaseSplit> derivedSplits;
             _split2derivedSplits.insert(splitInfo.theSplit, derivedSplits);
         }
@@ -33,14 +35,22 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
 }
 
 void ResidualReasoningSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
-    List<PiecewiseLinearCaseSplit> derivedSplits = _split2derivedSplits[popInfo.poppedSplit];
-    for ( PiecewiseLinearCaseSplit derivedSplit : derivedSplits ) {
-        _engine->popSplit(derivedSplit);
-    }
+    // List<PiecewiseLinearCaseSplit> derivedSplits = _split2derivedSplits[popInfo.poppedSplit];
+    // for ( PiecewiseLinearCaseSplit derivedSplit : derivedSplits ) {
+    //     _engine->popSplit(derivedSplit);
+    // }
 }
 
-void ResidualReasoningSplitProvider::onUnsatReceived( IEngine* engine ) {
-    _gammaUnsat.addUnsatSequence( engine->getUnsatSeq() );
+void ResidualReasoningSplitProvider::onUnsatReceived( List<PiecewiseLinearCaseSplit>& allSplitsSoFar ) {
+    // convert allSplitSoFar to unsatSeq
+    GammaUnsat::UnsatSequence unsatSeq;
+    for ( auto split : allSplitsSoFar ) {
+        unsigned int var_index = getSplitVariable(split);
+        GammaUnsat::ActivationType active_type;
+        active_type = isActiveSplit(split) ? GammaUnsat::ActivationType::ACTIVE : GammaUnsat::ActivationType::INACTIVE;
+        unsatSeq.activations.insert(var_index, active_type);
+    }
+    _gammaUnsat.addUnsatSequence( unsatSeq );
 }
 
 Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplitProvider::deriveRequiredSplits(PiecewiseLinearCaseSplit split){
@@ -72,8 +82,8 @@ Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplit
             // if split is satisfied, assign it in satisfiedSplits
             var_index = var_index2activation.first;
             bool activation = var_index2activation.second;
-            bool isSameSplit = var_index == _engine->getSplitVariable(currentSplit);
-            bool isSameActivation = activation == _engine->isActiveSplit(currentSplit);
+            bool isSameSplit = var_index == getSplitVariable(currentSplit);
+            bool isSameActivation = activation == isActiveSplit(currentSplit);
             if ( isSameSplit && isSameActivation ) {
                 satisfiedSplits[clause_index][var_index] = true;
             }
@@ -81,7 +91,7 @@ Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplit
         ++clause_index;
     }
     // for all clauses with exactly one unsatisfied split, derive oppose activation to this split
-    for ( auto (clause_index_and_clause) : satisfiedSplits ) {
+    for ( auto clause_index_and_clause : satisfiedSplits ) {
         // get the 2 parts of the pair...
         unsigned int clause_index = clause_index_and_clause.first;
         Map<unsigned, bool> clause = clause_index_and_clause.second;
@@ -120,7 +130,8 @@ Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplit
 
             GammaUnsat::ActivationType activeType = gammaClause.activations[unsatisfiedSplitIndex];
             // should assign active if unsat is imactive and vice versa
-            GammaUnsat::ActivationType opposeActivation = GammaUnsat::ActivationType::ACTIVE ? activeType == GammaUnsat::ActivationType::INACTIVE : GammaUnsat::ActivationType::INACTIVE;
+            GammaUnsat::ActivationType opposeActivation;
+            opposeActivation = activeType == GammaUnsat::ActivationType::INACTIVE ? GammaUnsat::ActivationType::ACTIVE : GammaUnsat::ActivationType::INACTIVE;
             derived.insert(split, opposeActivation);
         }
         ++clause_index;

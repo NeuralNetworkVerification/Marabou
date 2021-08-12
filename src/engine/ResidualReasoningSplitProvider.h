@@ -16,7 +16,7 @@ public:
     Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
     void onSplitPerformed( SplitInfo const& ) override;
     void onStackPopPerformed( PopInfo const& ) override;
-    void onUnsatReceived( IEngine* ) override;
+    void onUnsatReceived( List<PiecewiseLinearCaseSplit>& ) override;
 private:
     IEngine* _engine;
     GammaUnsat _gammaUnsat;

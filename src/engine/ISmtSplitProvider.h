@@ -22,7 +22,7 @@ public:
     virtual Optional<PiecewiseLinearCaseSplit> needToSplit() const = 0;
     virtual void onSplitPerformed( SplitInfo const& ) = 0;
     virtual void onStackPopPerformed( PopInfo const& ) = 0;
-    virtual void onUnsatReceived( IEngine* ) = 0;
+    virtual void onUnsatReceived( List<PiecewiseLinearCaseSplit>& ) = 0;
 };
 
 #endif // __ISMTSPLITPROVIDER_H__

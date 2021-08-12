@@ -63,7 +63,7 @@ void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& ) {
     std::cout << "on pop" << std::endl;
 }
 
-void SmtCoreSplitProvider::onUnsatReceived() {
+void SmtCoreSplitProvider::onUnsatReceived( List<PiecewiseLinearCaseSplit>& ) {
     std::cout << "on unsat" << std::endl;
 }
 

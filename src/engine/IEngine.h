@@ -100,9 +100,6 @@ public:
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
-    virtual GammaUnsat::UnsatSequence getUnsatSeq() = 0;
-    virtual bool isActiveSplit(PiecewiseLinearCaseSplit split) = 0;
-    virtual unsigned int getSplitVariable(PiecewiseLinearCaseSplit currentSplit) = 0;
 };
 
 #endif // __IEngine_h__
