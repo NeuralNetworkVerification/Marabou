@@ -1,5 +1,5 @@
-#ifndef __SMTCORESPLITPROVIDER_H__
-#define __SMTCORESPLITPROVIDER_H__
+#ifndef __SMTCORERESIDUALREASONERSPLITPROVIDER_H__
+#define __SMTCORERESIDUALREASONERSPLITPROVIDER_H__
 
 #include "ISmtSplitProvider.h"
 #include "IEngine.h"
@@ -26,7 +26,6 @@ private:
     Map<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>> _split2derivedSplits;
     // derive what are the required splits, after a given split was performed
     Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> deriveRequiredSplits( PiecewiseLinearCaseSplit );
-    bool isActiveSplit( PiecewiseLinearCaseSplit );
 };
 
-#endif // __SMTCORESPLITPROVIDER_H__
+#endif // __SMTCORERESIDUALREASONERSPLITPROVIDER_H__

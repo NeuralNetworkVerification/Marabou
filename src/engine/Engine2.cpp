@@ -326,7 +326,10 @@ bool Engine2::solve( unsigned timeoutInSeconds )
     }
 }
 
-/*
+unsigned int getSplitVariable(PiecewiseLinearCaseSplit currentSplit){
+    // TODO::implement
+}
+
 bool isActiveSplit(PiecewiseLinearCaseSplit split)
 {
     // check if active or not
@@ -344,6 +347,8 @@ bool isActiveSplit(PiecewiseLinearCaseSplit split)
     return false;
 };
 
+
+/*
 bool Engine2::solve_with_rr( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();

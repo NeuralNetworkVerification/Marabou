@@ -59,89 +59,71 @@ Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplit
   // activation will be added to the result
   // TBD: use watch literals
   
-      Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> derived;
-      // maps from clause index to clause's map (for each clause) 
-      // clause's map is map from split index in clause to its activation type
-      // if the split in this index in clause is satisfied
-      Map<unsigned, Map<unsigned int, bool>> satisfiedSplits;
-      const PiecewiseLinearCaseSplit currentSplit = split;
-      unsigned clause_index, split_index;
-      for ( auto unsatClause : _gammaUnsat.getUnsatSequences() ) {
-          clause_index = 0;
-          for ( auto split : unsatClause.activations ) {
-              split_index = 0;
-              // if split is satisfied, assign it in satisfiedSplits
-              bool isSameSplit = _engine->getSplitVariable(split) == _engine->getSplitVariable(currentSplit);
-              bool isSameActivation = _engine->isActiveSplit(split) == _engine->isActiveSplit(currentSplit);
-              if ( isSameSplit && isSameActivation ) {
-                  satisfiedSplits[clause_index][split_index] = true;
-              }
-              ++split_index;
-          }
-          ++clause_index;
-      }
-      // for all clauses with exactly one unsatisfied split, derive oppose activation to this split
-      for ( auto (clause_index_and_clause) : satisfiedSplits ) {
-          // get the 2 parts of the pair...
-          unsigned int clause_index = clause_index_and_clause.first;
-          Map<unsigned, bool> clause = clause_index_and_clause.second;
-          
-          // count the number of unsatisfied split. if 1, this one is a required split
-          unsigned int unsatisfiedCounter = 0;
-          unsigned int unsatisfiedSplitIndex = -1;
-          for ( auto split_index_and_isSplitSatisfied : clause ) {
-              // get the 2 parts of the pair...
-              unsigned split_index = split_index_and_isSplitSatisfied.first;
-              bool isSplitSatisfied = split_index_and_isSplitSatisfied.second;
-              
-              if ( !isSplitSatisfied ) {
-                  unsatisfiedCounter += 1;
-                  unsatisfiedSplitIndex = split_index;
-                  if (unsatisfiedCounter > 1 ) {
-                      break;
-                  }
-              }
-          }
+    Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> derived;
+    // maps from clause index to clause's map (for each clause) 
+    // clause's map is map from split index in clause to its activation type
+    // if the split in this index in clause is satisfied
+    Map<unsigned, Map<unsigned int, bool>> satisfiedSplits;
+    const PiecewiseLinearCaseSplit currentSplit = split;
+    unsigned clause_index = 0;
+    unsigned var_index;
+    for ( auto unsatClause : _gammaUnsat.getUnsatSequences() ) {
+        for ( auto var_index2activation : unsatClause.activations ) {
+            // if split is satisfied, assign it in satisfiedSplits
+            var_index = var_index2activation.first;
+            bool activation = var_index2activation.second;
+            bool isSameSplit = var_index == _engine->getSplitVariable(currentSplit);
+            bool isSameActivation = activation == _engine->isActiveSplit(currentSplit);
+            if ( isSameSplit && isSameActivation ) {
+                satisfiedSplits[clause_index][var_index] = true;
+            }
+        }
+        ++clause_index;
+    }
+    // for all clauses with exactly one unsatisfied split, derive oppose activation to this split
+    for ( auto (clause_index_and_clause) : satisfiedSplits ) {
+        // get the 2 parts of the pair...
+        unsigned int clause_index = clause_index_and_clause.first;
+        Map<unsigned, bool> clause = clause_index_and_clause.second;
+        
+        // count the number of unsatisfied split. if 1, this one is a required split
+        unsigned int unsatisfiedCounter = 0;
+        unsigned int unsatisfiedSplitIndex = -1;
+        for ( auto split_index_and_isSplitSatisfied : clause ) {
+            // get the 2 parts of the pair...
+            unsigned split_index = split_index_and_isSplitSatisfied.first;
+            bool isSplitSatisfied = split_index_and_isSplitSatisfied.second;
+            
+            if ( !isSplitSatisfied ) {
+                unsatisfiedCounter += 1;
+                unsatisfiedSplitIndex = split_index;
+                if (unsatisfiedCounter > 1 ) {
+                    break;
+                }
+            }
+        }
 
-          // derive activation to the split in unsatisfiedSplitIndex (the oppose to _gammaUnsat)
-          GammaUnsat::UnsatSequence gammaClause;
-          if (unsatisfiedCounter == 1) {
-              // get the relevant clause at _gammaUnsat
-              unsigned i = 0;
-              List<GammaUnsat::UnsatSequence> unsatClauses = _gammaUnsat.getUnsatSequences();
-              unsigned i = 0;
-              for (auto it = unsatClauses.begin(); it != unsatClauses.end(); ++it ) {
-                  ++i;
-                  if (i >= clause_index) {
-                      gammaClause = *it;
-                      break;
-                  }
-              }
+        // derive activation to the split in unsatisfiedSplitIndex (the oppose to _gammaUnsat)
+        GammaUnsat::UnsatSequence gammaClause;
+        if (unsatisfiedCounter == 1) {
+            // get the relevant clause at _gammaUnsat
+            unsigned i = 0;
+            List<GammaUnsat::UnsatSequence> unsatClauses = _gammaUnsat.getUnsatSequences();
+            unsigned i = 0;
+            for (auto it = unsatClauses.begin(); it != unsatClauses.end(); ++it ) {
+                ++i;
+                if (i >= clause_index) {
+                    gammaClause = *it;
+                    break;
+                }
+            }
 
-              GammaUnsat::ActivationType activeType = gammaClause.activations[unsatisfiedSplitIndex];
-              // should assign active if unsat is imactive and vice versa
-              GammaUnsat::ActivationType opposeActivation = GammaUnsat::ActivationType::ACTIVE ? activeType == GammaUnsat::ActivationType::INACTIVE : GammaUnsat::ActivationType::INACTIVE;
-              derived.insert(split, opposeActivation);
-          }
-          ++clause_index;
-      }
-      return derived;
-  }
-
-  bool isActiveSplit(PiecewiseLinearCaseSplit split)
-  {
-      // check if active or not
-      // is_active = there is at least one LB in _bounds
-      // because there are tw cases in Relu split:
-      // active: b>=0 (LB), f-b<=0 (UB)
-      // inactive b<=0 (UB), f-b<=0 (UB)
-      for (auto bound : split.getBoundTightenings())
-      {
-          if (bound._type == Tightening::BoundType::LB)
-          {
-              return true;
-          }
-      }
-      return false;
-  }
-
+            GammaUnsat::ActivationType activeType = gammaClause.activations[unsatisfiedSplitIndex];
+            // should assign active if unsat is imactive and vice versa
+            GammaUnsat::ActivationType opposeActivation = GammaUnsat::ActivationType::ACTIVE ? activeType == GammaUnsat::ActivationType::INACTIVE : GammaUnsat::ActivationType::INACTIVE;
+            derived.insert(split, opposeActivation);
+        }
+        ++clause_index;
+    }
+    return derived;
+}
