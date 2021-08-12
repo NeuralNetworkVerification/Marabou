@@ -47,6 +47,7 @@ public:
       Equality operator.
     */
     bool operator==( const PiecewiseLinearCaseSplit &other ) const;
+    bool operator!=( const PiecewiseLinearCaseSplit &other ) const;
 
     /*
       Change the index of a variable that appears in this case split

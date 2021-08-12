@@ -67,6 +67,10 @@ bool PiecewiseLinearCaseSplit::operator==( const PiecewiseLinearCaseSplit &other
     return ( _bounds == other._bounds ) && ( _equations == other._equations );
 }
 
+bool PiecewiseLinearCaseSplit::operator!=( const PiecewiseLinearCaseSplit &other ) const {
+    return !(*this == other);
+}
+
 void PiecewiseLinearCaseSplit::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     for ( auto &bound : _bounds )
