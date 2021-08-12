@@ -12,16 +12,16 @@ SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
 
 bool SmtCoreSplitProvider::searchForAlternatives()
 {
-    printf("searching for alternatives\n");
+    // printf("searching for alternatives\n");
     if ( _currentSuggestedSplit ) return true;
 
     if ( !_currentSuggestedSplitAlternatives.empty() ) {
-    printf("takeing from alternatives\n");
+    // printf("takeing from alternatives\n");
         _currentSuggestedSplit = _currentSuggestedSplitAlternatives.front();
         _currentSuggestedSplitAlternatives.popFront();
         return true;
     }
-    printf("no alternatives found\n");
+    // printf("no alternatives found\n");
 
     return false;
 }
@@ -42,7 +42,6 @@ void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
         _constraintForSplitting = NULL;
         return;
     }
-    printf("i have a new split\n");
 
     // Before storing the state of the engine, we:
    //   1. Obtain the splits.
@@ -53,6 +52,12 @@ void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
     _constraintForSplitting->setActiveConstraint( false );
 
     _currentSuggestedSplit = splits.front();
+
+    auto const bound = *_currentSuggestedSplit->getBoundTightenings().begin();
+    auto const var = bound._variable;
+    auto const isActive = bound._type == Tightening::LB;
+    printf("i have a new split on var=%d and it's active=%d\n", var, isActive);
+
     splits.popFront();
     _currentSuggestedSplitAlternatives = splits;
 }
@@ -72,7 +77,7 @@ void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
     _needToSplit = false;
     if ( _currentSuggestedSplit && *_currentSuggestedSplit == splitInfo.theSplit ) {
         // it was my split that was performed, so we need to reset it for the next split request
-        printf( "my split\n" );
+        // printf( "my split\n" );
         _splitsStack.emplace_back( splitInfo.theSplit, _currentSuggestedSplitAlternatives );
         _currentSuggestedSplit = nullopt;
         _currentSuggestedSplitAlternatives.clear();
@@ -108,7 +113,6 @@ void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
 }
 
 void SmtCoreSplitProvider::onUnsatReceived() {
-    std::cout << "on unsat" << std::endl;
 }
 
 void SmtCoreSplitProvider::reportViolatedConstraint( PiecewiseLinearConstraint* constraint ) {
