@@ -378,7 +378,7 @@ class CnnAbs:
         else:
             self.resultsJson = dict(subResults=[])
         self.numMasks = None
-        self.maskIndex = None
+        self.maskIndex = int(maskIndex) if maskIndex else None
         self.startTotal = time.time()
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries
@@ -460,7 +460,7 @@ class CnnAbs:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
+        vals, stats = Marabou.solve_query(ipq, verbose=True, options=self.optionsObj)
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
