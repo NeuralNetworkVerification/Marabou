@@ -238,6 +238,7 @@ if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
+        cnnAbs.resultsJson[mi("Result")] = resultObj.result.name
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()    

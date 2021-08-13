@@ -378,7 +378,7 @@ class CnnAbs:
         else:
             self.resultsJson = dict(subResults=[])
         self.numMasks = None
-        self.maskIndex = None
+        self.maskIndex = int(maskIndex) if maskIndex else None
         self.startTotal = time.time()
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries

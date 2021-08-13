@@ -351,8 +351,11 @@ if not cfg_dumpQueries:
     if resultObj.sat() and not success:
         resultObj = ResultObj("spurious")
 else:
-    success = False    
-if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout)):
+    success = False
+
+    
+forceContinuation = True #FIXME remove, this is a temp test.
+if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout) or forceContinuation):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
     CnnAbs.printLog("Launching next mask")
@@ -367,6 +370,7 @@ if not cfg_dumpQueries:
     cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
     cnnAbs.resultsJson["SAT"] = resultObj.sat()
     cnnAbs.resultsJson["Result"] = resultObj.result.name
+    cnnAbs.resultsJson[mi("Result")] = resultObj.result.name
     cnnAbs.dumpResultsJson()
 
     CnnAbs.printLog(resultObj.result.name)
