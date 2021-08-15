@@ -20,5 +20,7 @@
 
 bool isActiveSplit(PiecewiseLinearCaseSplit split);
 unsigned int getSplitVariable(PiecewiseLinearCaseSplit currentSplit);
+PiecewiseLinearCaseSplit getSplitFromVariable(unsigned int variable_index);
+PiecewiseLinearCaseSplit getAlternativeSplit(PiecewiseLinearCaseSplit split);
 
 #endif // PIECEWISELINEARCASESPLITUTILS_H

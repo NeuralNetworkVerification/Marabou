@@ -7,42 +7,51 @@
 #include "PiecewiseLinearCaseSplitUtils.h"
 
 
-ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( IEngine* engine )
-    : _engine( engine ),
+ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( ): 
     _gammaUnsat(),
-    _pastSplits()
+    _pastSplits(),
+    _required_splits()
 { }
 
 void ResidualReasoningSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
 }
 
 Optional<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::needToSplit() const {
-    if ( !_split2derivedSplits.empty() ) {
-        return *_split2derivedSplits.keys().begin();
+    if ( !_required_splits.empty() ) {
+        return _required_splits.back();
     }
+    return nullopt;
 }
 
 void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
-    Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> requiredSplits = deriveRequiredSplits(splitInfo.theSplit);
-    for ( auto requiredSplit : requiredSplits ) {
-        List<PiecewiseLinearCaseSplit> value = _split2derivedSplits.get(splitInfo.theSplit);
-        if ( value.empty() ) {
-            List<PiecewiseLinearCaseSplit> derivedSplits;
-            _split2derivedSplits.insert(splitInfo.theSplit, derivedSplits);
+    if ( splitInfo.theSplit == _required_splits.back() ) {
+        _required_splits.popBack();
+    }
+    _pastSplits.append(splitInfo.theSplit);
+    bool continue_deriving = true;
+    Map<unsigned int, GammaUnsat::ActivationType> requiredSplits;
+    // continue deriveing as long as possible (like BCP at DPLL)
+    while ( continue_deriving ) {
+        requiredSplits = deriveRequiredSplits();
+        if ( requiredSplits.empty() ) {
+            continue_deriving = false;
         }
-        _split2derivedSplits[splitInfo.theSplit].append(requiredSplit.first);
+        for ( auto var_index_and_activation : requiredSplits ) {
+            unsigned int var_index = var_index_and_activation.first;
+            PiecewiseLinearCaseSplit requiredSplit = getSplitFromVariable(var_index);
+            _required_splits.append(requiredSplit);
+        }
     }
 }
 
 void ResidualReasoningSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
-    // List<PiecewiseLinearCaseSplit> derivedSplits = _split2derivedSplits[popInfo.poppedSplit];
-    // for ( PiecewiseLinearCaseSplit derivedSplit : derivedSplits ) {
-    //     _engine->popSplit(derivedSplit);
-    // }
+    _pastSplits.erase(popInfo.poppedSplit);
+    // clear all required splits - maybe they were derived using the popped split
+    _required_splits.clear();
 }
 
 void ResidualReasoningSplitProvider::onUnsatReceived( List<PiecewiseLinearCaseSplit>& allSplitsSoFar ) {
-    // convert allSplitSoFar to unsatSeq
+    // convert allSplitSoFar to GammaUnsat::UnsatSequence
     GammaUnsat::UnsatSequence unsatSeq;
     for ( auto split : allSplitsSoFar ) {
         unsigned int var_index = getSplitVariable(split);
@@ -53,57 +62,55 @@ void ResidualReasoningSplitProvider::onUnsatReceived( List<PiecewiseLinearCaseSp
     _gammaUnsat.addUnsatSequence( unsatSeq );
 }
 
-Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplitProvider::deriveRequiredSplits(PiecewiseLinearCaseSplit split){
-  // derives all required splits
-  // a required split is derived if it is part of any unsat clause and all other parts
-  // in the clause are mapped the same as they are mapped in currentSplits (the current mapping)
-  // for example, if (notation is: active=1, inactive=-1)
-  // unsatClauses = [{c1:1, c2:1}, {c1:1, c3:-1}, {c2:-1,c3:-1}] and
-  // currentSplits = {c1:1}
-  // then 2 splits: {c2:-1, c3:1} are derived from the 2 first clauses
-  // (and no split is derived from the 3'rd clause)
+Map<unsigned int, GammaUnsat::ActivationType> ResidualReasoningSplitProvider::deriveRequiredSplits(){
+    // derives all required splits
+    // a split is required if it is part of any unsat clause in gammaUnsat and all other parts
+    // in the clause are mapped the same as they are mapped in _pastSplits (the current mapping)
+    // for example, if (notation is: active=1, inactive=-1)
+    // gammaUnsat = [{c1:1, c2:1}, {c1:1, c3:-1}, {c2:-1,c3:-1}] and
+    // _pastSplits = {c1:1}
+    // then 2 splits: {c2:-1, c3:1} are derived from the 2 first clauses
+    // (and no split is derived from the 3'rd clause)
+
+    // implementation:
+    // iterate _pastSplits, and for each one, assign all satisfied splits in any clause.
+    // if at last there are clauses with one remaining split, a required split with the oppose
+    // activation will be added to the result
+    // TBD: use watch literals
   
-  // implementation:
-  // iterate the current splits, and for each one, assign all satisfied splits in any clause
-  // if at last there are clauses with one remaining split, a required split with the oppose
-  // activation will be added to the result
-  // TBD: use watch literals
-  
-    Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> derived;
+    Map<unsigned int, GammaUnsat::ActivationType> derived;
     // maps from clause index to clause's map (for each clause) 
     // clause's map is map from split index in clause to its activation type
     // if the split in this index in clause is satisfied
     Map<unsigned, Map<unsigned int, bool>> satisfiedSplits;
-    const PiecewiseLinearCaseSplit currentSplit = split;
-    unsigned clause_index = 0;
-    unsigned var_index;
-    for ( auto unsatClause : _gammaUnsat.getUnsatSequences() ) {
-        for ( auto var_index2activation : unsatClause.activations ) {
-            // if split is satisfied, assign it in satisfiedSplits
-            var_index = var_index2activation.first;
-            bool activation = var_index2activation.second;
-            bool isSameSplit = var_index == getSplitVariable(currentSplit);
-            bool isSameActivation = activation == isActiveSplit(currentSplit);
-            if ( isSameSplit && isSameActivation ) {
-                satisfiedSplits[clause_index][var_index] = true;
+    for ( auto pastSplit : _pastSplits ) {
+        unsigned clause_index = 0;
+        for ( auto unsatClause : _gammaUnsat.getUnsatSequences() ) {
+            unsigned int split_index = 0;
+            for ( auto var_index2activation : unsatClause.activations ) {
+                // if split is satisfied, assign it in satisfiedSplits
+                unsigned var_index = var_index2activation.first;
+                bool activation = var_index2activation.second;
+                bool isSameSplit = var_index == getSplitVariable(pastSplit);
+                bool isSameActivation = activation == isActiveSplit(pastSplit);
+                if ( isSameSplit && isSameActivation ) {
+                    satisfiedSplits[clause_index][split_index] = true;
+                }
+                ++split_index;
             }
+            ++clause_index;
         }
-        ++clause_index;
     }
     // for all clauses with exactly one unsatisfied split, derive oppose activation to this split
     for ( auto clause_index_and_clause : satisfiedSplits ) {
-        // get the 2 parts of the pair...
         unsigned int clause_index = clause_index_and_clause.first;
         Map<unsigned, bool> clause = clause_index_and_clause.second;
-        
         // count the number of unsatisfied split. if 1, this one is a required split
         unsigned int unsatisfiedCounter = 0;
         unsigned int unsatisfiedSplitIndex = -1;
         for ( auto split_index_and_isSplitSatisfied : clause ) {
-            // get the 2 parts of the pair...
             unsigned split_index = split_index_and_isSplitSatisfied.first;
-            bool isSplitSatisfied = split_index_and_isSplitSatisfied.second;
-            
+            bool isSplitSatisfied = split_index_and_isSplitSatisfied.second;    
             if ( !isSplitSatisfied ) {
                 unsatisfiedCounter += 1;
                 unsatisfiedSplitIndex = split_index;
@@ -115,24 +122,33 @@ Map<PiecewiseLinearCaseSplit, GammaUnsat::ActivationType> ResidualReasoningSplit
 
         // derive activation to the split in unsatisfiedSplitIndex (the oppose to _gammaUnsat)
         GammaUnsat::UnsatSequence gammaClause;
-        if (unsatisfiedCounter == 1) {
-            // get the relevant clause at _gammaUnsat
-            unsigned i = 0;
+        if ( unsatisfiedCounter == 1 ) {
+            // get the relevant clause and split at _gammaUnsat
             List<GammaUnsat::UnsatSequence> unsatClauses = _gammaUnsat.getUnsatSequences();
             unsigned i = 0;
+            // relevant clause
             for (auto it = unsatClauses.begin(); it != unsatClauses.end(); ++it ) {
-                ++i;
-                if (i >= clause_index) {
+                if (i == clause_index) {
                     gammaClause = *it;
+                    unsigned int j = 0;
+                    // relevant split
+                    for ( auto split_var_and_activation : gammaClause.activations ) {
+                        unsigned split_var = split_var_and_activation.first;
+                        GammaUnsat::ActivationType activeType = split_var_and_activation.second;
+
+                        if ( j == unsatisfiedSplitIndex ) {
+                            GammaUnsat::ActivationType opposeActivation;
+                            opposeActivation = activeType == GammaUnsat::ActivationType::ACTIVE ? GammaUnsat::ActivationType::INACTIVE : GammaUnsat::ActivationType::ACTIVE;
+
+                            derived.insert(split_var, opposeActivation);
+                            break;
+                        }
+                        ++j;
+                    }
                     break;
                 }
+                ++i;
             }
-
-            GammaUnsat::ActivationType activeType = gammaClause.activations[unsatisfiedSplitIndex];
-            // should assign active if unsat is imactive and vice versa
-            GammaUnsat::ActivationType opposeActivation;
-            opposeActivation = activeType == GammaUnsat::ActivationType::INACTIVE ? GammaUnsat::ActivationType::ACTIVE : GammaUnsat::ActivationType::INACTIVE;
-            derived.insert(split, opposeActivation);
         }
         ++clause_index;
     }
