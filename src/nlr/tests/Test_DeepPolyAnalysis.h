@@ -760,4 +760,147 @@ public:
         for ( const auto &bound : expectedBounds )
             TS_ASSERT( bounds.exists( bound ) );
     }
+
+    void populateNetworkWithSigmoids( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
+    {
+        /*
+
+              1      S       1     
+          x0 --- x2 ---> x4 --- x6
+            \    /        \    /
+           1 \  /        1 \  /
+              \/            \/
+              /\            /\
+           1 /  \        1 /  \
+            /    \   S    /    \
+          x1 --- x3 ---> x5 --- x7
+              -1            -1
+
+        */
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::SIGMOID, 2 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 0, 1 );
+        nlr.setWeight( 0, 1, 1, 1, -1 );
+
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 0, 3, 1, 1 );
+        nlr.setWeight( 2, 1, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 1, -1 );
+
+        // Mark the Sigmoid sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 7 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+    }
+
+    void test_deeppoly_sigmoids()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkWithSigmoids( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, -1 );
+        tableau.setUpperBound( 1, 1 );
+
+        // Invoke Deeppoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        // Layer 1
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getLb( 0 ), -2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getUb( 0 ), 2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getLb( 1 ), -2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getUb( 1 ), 2 ) );
+
+        // Layer 2
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getLb( 0 ), 0.1192, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getUb( 0 ), 0.8807, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getLb( 1 ), 0.1192, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getUb( 1 ), 0.8807, 0.0001 ) );
+
+        // Layer 3
+        /*
+         Double-check with Python
+            ---
+            from math import exp as e
+            def g(x):
+            return 1 / (1 + e(-x))
+
+            def g_prime(x):
+            return g(x) * (1 - g(x))
+
+            def lam(l, u):
+            return (g(u) - g(l)) / (u - l)
+
+            def lam_prime(l, u):
+            return min(g_prime(l), g_prime(u))
+
+            l3 = l4 = -2
+            u3 = u4 = 2
+            l5 = l6 = g(-2)
+            u5 = u6 = g(2)
+            lambda7 = lam(l3, u3)
+            lambda7_prime = lam_prime(l3, u3)
+            lambda8 = lam(l4, u4)
+            lambda8_prime = lam_prime(l4, u4)
+            x7_l = lambda7_prime * (-2) + g(-2) + g(-2) - lambda7_prime * (-2 + -2)
+            x7_u = lambda7_prime * (2) + g(2) + g(2) -lambda7_prime * (2 + 2)
+            x8_l = lambda8_prime * (-2) + g(-2) - g(2) - lambda8_prime * (-2 - 2)
+            x8_u = lambda8_prime * (2) + g(2) - g(-2) -lambda8_prime * (2 - -2)
+            print(x7_l)
+            print(x7_u)
+            print(x8_l)
+            print(x8_u)
+            ---
+            [output]:
+            0.4483930148512481
+            1.5516069851487517
+            -0.5516069851487517
+            0.5516069851487517
+        */
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 0 ), 0.4483, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 0 ), 1.5516, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 1 ), -0.5516, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 1 ), 0.5516, 0.0001 ) );
+    }
 };

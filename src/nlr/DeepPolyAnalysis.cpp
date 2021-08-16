@@ -20,6 +20,7 @@
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
+#include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
@@ -53,7 +54,7 @@ DeepPolyAnalysis::DeepPolyAnalysis( LayerOwner *layerOwner )
         unsigned index = pair.first;
         Layer *layer = pair.second;
         log( Stringf( "Creating deeppoly element for layer %u...", index ) );
-        DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );  // TG: ここで sigmoid の色がわかるようにすれば良いかな。
+        DeepPolyElement *deepPolyElement = createDeepPolyElement( layer );
         _deepPolyElements[index] = deepPolyElement;
         log( Stringf( "Creating deeppoly element for layer %u - done", index ) );
     }
@@ -113,7 +114,7 @@ void DeepPolyAnalysis::run()
     deepPolyStart = TimeUtils::sampleMicro();
 
     const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
-    for ( const auto &pair : layers )   // TG: ここで NLR 内の全てのレイヤをループで回すから、少なくとも、Sigmoid レイヤということがわかっていれば良さそう。
+    for ( const auto &pair : layers )
     {
         /*
           Go over the layers, one by one. Each time construct and execute
@@ -209,7 +210,9 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
     else if ( type ==  Layer::ABSOLUTE_VALUE )
         deepPolyElement = new DeepPolyAbsoluteValueElement( layer );
     else if ( type ==  Layer::MAX )
-        deepPolyElement = new DeepPolyMaxPoolElement( layer );　// TG: この後に Sigmoid を追加
+        deepPolyElement = new DeepPolyMaxPoolElement( layer );
+    else if ( type == Layer::SIGMOID )
+        deepPolyElement = new DeepPolySigmoidElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",

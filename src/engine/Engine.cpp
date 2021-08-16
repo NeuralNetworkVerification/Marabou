@@ -220,10 +220,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 continue;
             }
 
-            if ( !_tableau->allBoundsValid() )  // TG: ここでチェック
+            if ( !_tableau->allBoundsValid() )
             {
                 // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();   // TG: これが投げられる
+                throw InfeasibleQueryException();
             }
 
             if ( allVarsWithinBounds() )
@@ -1111,7 +1111,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( preprocess )
         {
-            performSymbolicBoundTightening();   // TG: ここでチェック。ただ、この後の InfeasibleQueryException を catch するまでのコートで、 allBoundsValid を呼び出すところがないかも。。なければ、呼ばないのと、solve を呼んでしまうから要確認。Preprocessor::processEquations()　で確認できるてるかなー？、、
+            performSymbolicBoundTightening();
             performSimulation();
             performMILPSolverBoundedTightening();
         }
@@ -1130,7 +1130,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
     }
-    catch ( const InfeasibleQueryException & )  // TG: ここでキャッチして UNSAT を返すのね
+    catch ( const InfeasibleQueryException & )
     {
         ENGINE_LOG( "processInputQuery done\n" );
 
@@ -1871,7 +1871,7 @@ void Engine::performSymbolicBoundTightening()
         _networkLevelReasoner->symbolicBoundPropagation();
     else if ( _symbolicBoundTighteningType ==
          SymbolicBoundTighteningType::DEEP_POLY )
-        _networkLevelReasoner->deepPolyPropagation();   // TG: ここで deeploy が実行されると思うけど、SigmoidConstraint は開発する必要ありそうか？
+        _networkLevelReasoner->deepPolyPropagation();
 
     // Step 3: Extract the bounds
     List<Tightening> tightenings;
