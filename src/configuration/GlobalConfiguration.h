@@ -197,7 +197,7 @@ public:
     */
 
     // The number of accumualted eta matrices, after which the basis will be refactorized
-	static const unsigned REFACTORIZATION_THRESHOLD;
+    static const unsigned REFACTORIZATION_THRESHOLD;
 
     // The kind of basis factorization algorithm in use
     enum BasisFactorizationType {
