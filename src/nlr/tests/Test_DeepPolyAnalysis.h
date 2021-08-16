@@ -864,16 +864,16 @@ public:
             ---
             from math import exp as e
             def g(x):
-            return 1 / (1 + e(-x))
+                return 1 / (1 + e(-x))
 
             def g_prime(x):
-            return g(x) * (1 - g(x))
+                return g(x) * (1 - g(x))
 
             def lam(l, u):
-            return (g(u) - g(l)) / (u - l)
+                return (g(u) - g(l)) / (u - l)
 
             def lam_prime(l, u):
-            return min(g_prime(l), g_prime(u))
+                return min(g_prime(l), g_prime(u))
 
             l3 = l4 = -2
             u3 = u4 = 2
