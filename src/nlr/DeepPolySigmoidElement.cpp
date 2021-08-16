@@ -108,8 +108,8 @@ void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor
 
     /*
       We have the symbolic bound of the target layer in terms of the
-      ReLU outputs, the goal is to compute the symbolic bound of the target
-      layer in terms of the ReLU inputs.
+      Sigmoid outputs, the goal is to compute the symbolic bound of the target
+      layer in terms of the Sigmoid inputs.
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
@@ -130,14 +130,14 @@ void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor
           replace f_i with m * b_i + n
         */
 
-        // Symbolic bounds of the ReLU output in terms of the ReLU input
+        // Symbolic bounds of the Sigmoid output in terms of the Sigmoid input
         // coeffLb * b_i + lowerBias <= f_i <= coeffUb * b_i + upperBias
         double coeffLb = _symbolicLb[i];
         double coeffUb = _symbolicUb[i];
         double lowerBias = _symbolicLowerBias[i];
         double upperBias = _symbolicUpperBias[i];
 
-        // Substitute the ReLU input for the ReLU output
+        // Substitute the Sigmoid input for the Sigmoid output
         for ( unsigned j = 0; j < targetLayerSize; ++j )
         {
             // The symbolic lower- and upper- bounds of the j-th neuron in the
