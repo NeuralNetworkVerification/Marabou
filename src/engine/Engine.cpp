@@ -238,10 +238,16 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             if ( !_tableau->allBoundsValid() )
-            {
-				//printLinearInfeasibilityCertificate(); //TODO review when called
-				//validateAllBounds( 0.001 );
-                // Some variable bounds are invalid, so the query is unsat
+            { // Some variable bounds are invalid, so the query is unsat
+				 //TODO review when called, optimize
+				validateAllBounds(0.01);
+				int inf = _tableau->getInfeasibleVar();
+				if (inf > 0)
+				{
+					validateBounds( inf, 0.01 );
+					//printLinearInfeasibilityCertificate();
+					certifyInfeasibility();
+				}
                 throw InfeasibleQueryException();
             }
 
@@ -535,12 +541,17 @@ void Engine::performSimplexStep()
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
 			if( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
-                applyAllBoundTightenings();
+				//TODO optimize
+				applyAllBoundTightenings();
 				simplexBoundsUpdate();
-				applyAllConstraintTightenings(); // Can create additional constraint tightening which will change tableau and engine
-				//printLinearInfeasibilityCertificate();
-				validateAllBounds( 0.001 );
-				//certifyInfeasibility();
+				validateAllBounds( 0.01 );
+				int inf = _tableau->getInfeasibleVar();
+				if (inf > 0)
+				{
+					printLinearInfeasibilityCertificate();
+					certifyInfeasibility();
+				}
+
 			}
             throw InfeasibleQueryException();
         }
@@ -1113,7 +1124,6 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
     }
-
     _tableau->initializeTableau( initialBasis );
     _costFunctionManager->initialize();
     _tableau->registerCostFunctionManager( _costFunctionManager );
@@ -1788,14 +1798,15 @@ void Engine::applyAllConstraintTightenings()
 		ASSERT( _initialTableau.size() == _tableau->getM() );
 
 		_constraintBoundTightener->clearEngineUpdates();
-
 		for ( const auto &tightening : entailedTightenings ) //TODO delete
-			validateBounds(tightening._variable, 0.1);
+			validateBounds( tightening._variable, 0.01 );
+
+
 
 		_rowBoundTightener->setDimensions();
 		adjustWorkMemorySize();
 		_activeEntryStrategy->resizeHook( _tableau );
-		_costFunctionManager->initialize();
+		_costFunctionManager->initialize(); //TODO might be causing problems
     }
 }
 
@@ -2601,8 +2612,8 @@ void Engine::simplexBoundsUpdate()
 
     if ( newBound < _tableau->getUpperBound( var ) )
     {
-        _tableau->updateExplanation( boundUpdateRow, true ); // Need to be first, since tightening can notify other tightening
-        _tableau->tightenUpperBound( var, newBound );
+        _tableau->updateExplanation( boundUpdateRow, true );
+        //_tableau->tightenUpperBound( var, newBound ); // No re-tightening, since can create chain reaction
     }
     newBound = _tableau->computeRowBound( boundUpdateRow, false );
 
@@ -2612,7 +2623,7 @@ void Engine::simplexBoundsUpdate()
     if ( newBound > _tableau->getLowerBound( var ) )
     {
         _tableau->updateExplanation( boundUpdateRow, false );
-        _tableau->tightenLowerBound( var, newBound );
+        //_tableau->tightenLowerBound( var, newBound );
     }
 }
 
@@ -2627,7 +2638,7 @@ void Engine::certifyInfeasibility() const
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
     //ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
 
-    //ASSERT( computedUpper < computedLower );
+    //ASSERT( FloatUtils::lt( computedUpper, computedLower ) );
 }
 
 double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
@@ -2650,37 +2661,41 @@ double Engine::extractVarExplanationCoefficient ( const unsigned var, bool isUpp
 	certificate->getVarBoundExplanation( expl, isUpper );
 
 	for ( unsigned i = 0; i < m; ++i )
-		c += _initialTableau[i][var] * expl[i];
+		if ( !FloatUtils::isZero( expl[i] ) )
+			c += _initialTableau[i][var] * expl[i];
 
 	expl.clear();
 	delete certificate;
 	return c;
 }
 
-void Engine::normalizeExplanations()
+void Engine::normalizeExplanation( unsigned var )
+{
+	double upper, lower;
+	upper = extractVarExplanationCoefficient( var, true );
+	lower = extractVarExplanationCoefficient( var, false );
+	if ( upper && !FloatUtils::isZero( upper - 1 ) )
+	{
+		upper = 1 / upper;
+		if (FloatUtils::isZero( upper ) )
+			upper = 0;
+		_tableau->multiplyExplanationCoefficients( var, upper, true );
+	}
+
+	if ( lower && !FloatUtils::isZero( lower - 1 ) )
+	{
+		lower = 1 / lower;
+		if ( FloatUtils::isZero( lower ) )
+			lower = 0;
+		_tableau->multiplyExplanationCoefficients( var, lower, false );
+	}
+}
+
+void Engine::normalizeAllExplanations()
 {
 	unsigned n = _tableau->getN();
-	double upper, lower;
 	for ( unsigned var = 0; var < n; ++var )
-	{
-		upper = extractVarExplanationCoefficient( var, true );
-		lower = extractVarExplanationCoefficient( var, false );
-		if ( upper && !FloatUtils::isZero( upper - 1 ) )
-		{
-			upper = 1 / upper;
-            if (FloatUtils::isZero( upper ) )
-                upper = 0;
-			_tableau->multiplyExplanationCoefficients( var, upper, true );
-		}
-
-		if ( lower && !FloatUtils::isZero( lower - 1 ) )
-		{
-			lower = 1 / lower;
-            if ( FloatUtils::isZero( lower ) )
-                lower = 0;
-			_tableau->multiplyExplanationCoefficients( var, lower, false );
-		}
-	}
+		normalizeExplanation( var );
 }
 
 
@@ -2690,14 +2705,14 @@ bool Engine::validateBounds( unsigned var ,const double epsilon ) const
 	ASSERT( certificate->getLength() == _tableau->getM() );
 	certificate->assertLengthConsistency();
 
-	if ( abs( getExplainedBound( var, true ) - _tableau->getUpperBound( var ) ) > epsilon )
+	if ( getExplainedBound( var, true ) - _tableau->getUpperBound( var )  > epsilon )
 	{
-		//printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
+		printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
 		return false;
 	}
-	if ( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) > epsilon)
+	if ( getExplainedBound( var, false ) - _tableau->getLowerBound( var )  < -epsilon)
 	{
-		//printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+		printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
 		return false;
 	}
 	return true;

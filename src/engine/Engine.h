@@ -604,10 +604,15 @@ private:
      */
     double extractVarExplanationCoefficient (const unsigned var, bool isUpper);
 
+	/*
+	* Normalizes an explanation, i.e. making them produce explanation where the coefficient of explained var is 1
+	*/
+	void normalizeExplanation( unsigned var );
+
     /*
-     * Normalizes all explanations, i.e. making them produce explanation where the coefficient of explained var is 1
+     * Normalizes all explanations
      */
-    void normalizeExplanations();
+    void normalizeAllExplanations();
 
 	/*
 	 Validates that explanations epsilon close to real bounds of a given var

@@ -50,7 +50,7 @@ void SingleVarBoundsExplanator::getVarBoundExplanation( std::vector<double>& bou
 {
 	assert( bound.size() == _length );
 	const std::vector<double>& temp = isUpper? _upper : _lower;
-	std::copy(temp.begin(), temp.end(), bound.begin());
+	std::copy( temp.begin(), temp.end(), bound.begin() );
 }
 
 

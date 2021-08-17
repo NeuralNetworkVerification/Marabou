@@ -1000,9 +1000,8 @@ void ReluConstraint::addEqualZeroEqAndUpdate( unsigned var )
 {
 	if ( var == _aux )
 		assert( _auxVarInUse && !_addedFixedAuxEq );
-	if (var == _f)
+	if ( var == _f)
 		assert ( !_addedFixedFEq );
-
 	Equation varIsZero;
 	varIsZero.addAddend( 1, var );
 	_constraintBoundTightener->replaceEquationAndAdd( var, varIsZero );
