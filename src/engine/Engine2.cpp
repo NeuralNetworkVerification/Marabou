@@ -320,7 +320,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
             bool  alternativeApplied = false;
             while ( !alternativeApplied )
             {
-                alternativeApplied = _smtStackManager.applyAltenativeInCurrentStackState();
+                alternativeApplied = _smtStackManager.applyAlterativeInCurrentStackState();
                 if ( alternativeApplied )
                 {
                     splitJustPerformed = true;

@@ -179,7 +179,7 @@ bool SmtStackManager::popSplit() {
     return true;
 }
 
-bool SmtStackManager::applyAltenativeInCurrentStackState() {
+bool SmtStackManager::applyAlterativeInCurrentStackState() {
     _splitProvidersManager->letProvidersThinkForAlternatives( getStack() );
     const auto alternative = _splitProvidersManager->alternativeSplitsFromProviders();
     if ( alternative ) {

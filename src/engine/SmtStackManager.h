@@ -38,7 +38,7 @@ public:
   */
   bool popSplit();
 
-  bool applyAltenativeInCurrentStackState();
+  bool applyAlterativeInCurrentStackState();
 
   /*
     The current stack depth.
