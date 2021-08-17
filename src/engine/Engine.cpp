@@ -1802,11 +1802,13 @@ void Engine::applyAllConstraintTightenings()
 			validateBounds( tightening._variable, 0.01 );
 
 
-
-		_rowBoundTightener->setDimensions();
-		adjustWorkMemorySize();
-		_activeEntryStrategy->resizeHook( _tableau );
-		_costFunctionManager->initialize(); //TODO might be causing problems
+		if ( diffSize ) // Only in case something has changed
+		{
+			_rowBoundTightener->setDimensions();
+			adjustWorkMemorySize();
+			_activeEntryStrategy->resizeHook( _tableau );
+			_costFunctionManager->initialize(); //TODO might be causing problems
+		}
     }
 }
 
