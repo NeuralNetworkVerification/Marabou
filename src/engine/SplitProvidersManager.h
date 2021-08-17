@@ -33,6 +33,10 @@ public:
     void onSplitPerformed(SplitInfo const& split);
 
     void onStackPopPerformed(PopInfo const& pop);
+
+    Optional<PiecewiseLinearCaseSplit> alternativeSplitsFromProviders() const;
+
+    void letProvidersThinkForAlternatives( SmtStack const& stack );
 };
 
 

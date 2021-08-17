@@ -99,9 +99,11 @@ void Engine2::adjustWorkMemorySize()
     if ( !_work )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine2::work" );
 }
-
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 bool Engine2::solve( unsigned timeoutInSeconds )
 {
+    setvbuf( stdout, NULL, _IONBF, 0 );
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -111,8 +113,8 @@ bool Engine2::solve( unsigned timeoutInSeconds )
     mainLoopStatistics();
     if ( _verbosity > 0 )
     {
-        printf( "\nEngine2::solve: Initial statistics\n" );
-        _statistics.print();
+        // printf( "\nEngine2::solve: Initial statistics\n" );
+        // _statistics.print();
         printf( "\n---\n" );
     }
 
@@ -155,7 +157,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
 
         try
         {
-            printf("try\n");
+            printf( "try\n" );
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
@@ -227,14 +229,14 @@ bool Engine2::solve( unsigned timeoutInSeconds )
 
             if ( !_tableau->allBoundsValid() )
             {
-                printf("throw InfeasibleQueryException()\n");
+                printf( "throw InfeasibleQueryException()\n" );
                 // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
             }
 
             if ( allVarsWithinBounds() )
             {
-                printf("allVarsWithinBounds()\n");
+                printf( "allVarsWithinBounds()\n" );
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 collectViolatedPlConstraints();
@@ -250,9 +252,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
                             printf( "Before declaring sat, recomputing...\n" );
                         }
                         // Make sure that the assignment is precise before declaring success
-                        printf( "before compute assignment\n" );
                         _tableau->computeAssignment();
-                        printf( "after compute assignment\n" );
                         continue;
                     }
                     if ( _verbosity > 0 )
@@ -317,33 +317,29 @@ bool Engine2::solve( unsigned timeoutInSeconds )
             // notify unsat for providers
             _splitProvidersManager->notifyUnsat();
 
-            // The current query is unsat, and we need to pop.
-            // If we're at level 0, the whole query is unsat.
-            if ( !_smtStackManager.popSplit() )
+            bool  alternativeApplied = false;
+            while ( !alternativeApplied )
             {
-                if ( _verbosity > 0 )
+                alternativeApplied = _smtStackManager.applyAltenativeInCurrentStackState();
+                if ( alternativeApplied )
                 {
-                    printf( "\nEngine2::solve: unsat query\n" );
-                    _statistics.print();
-                }
-                _exitCode = Engine2::UNSAT;
-                return false;
-            }
-            else
-            {
-
-                _splitProvidersManager->letProvidersThink( _smtStackManager.getStack() );
-
-                // Ask split providers for splits
-                auto split = _splitProvidersManager->splitFromProviders();
-                if ( split )
-                {
-                    // printf("got split\n");
-                    _smtStackManager.performSplit( *split );
                     splitJustPerformed = true;
-
+                    break;
                 }
+                else {
+                    bool const smtStackIsEmpty = !_smtStackManager.popSplit();
 
+                    if ( smtStackIsEmpty )
+                    {
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "\nEngine2::solve: unsat query\n" );
+                            _statistics.print();
+                        }
+                        _exitCode = Engine2::UNSAT;
+                        return false;
+                    }
+                }
             }
 
         }
@@ -355,6 +351,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
         }
     }
 }
+#pragma GCC pop_options
 
 /*
 bool isActiveSplit(PiecewiseLinearCaseSplit split)
@@ -1514,11 +1511,11 @@ void Engine2::informConstraintsOfInitialBounds( InputQuery& inputQuery ) const
 
 void Engine2::invokePreprocessor( const InputQuery& inputQuery, bool preprocess )
 {
-    if ( _verbosity > 0 )
-        printf( "Engine2::processInputQuery: Input query (before preprocessing): "
-            "%u equations, %u variables\n",
-            inputQuery.getEquations().size(),
-            inputQuery.getNumberOfVariables() );
+    // if ( _verbosity > 0 )
+    //     printf( "Engine2::processInputQuery: Input query (before preprocessing): "
+    //         "%u equations, %u variables\n",
+    //         inputQuery.getEquations().size(),
+    //         inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
@@ -1528,11 +1525,11 @@ void Engine2::invokePreprocessor( const InputQuery& inputQuery, bool preprocess 
     else
         _preprocessedQuery = inputQuery;
 
-    if ( _verbosity > 0 )
-        printf( "Engine2::processInputQuery: Input query (after preprocessing): "
-            "%u equations, %u variables\n\n",
-            _preprocessedQuery.getEquations().size(),
-            _preprocessedQuery.getNumberOfVariables() );
+    // if ( _verbosity > 0 )
+    //     printf( "Engine2::processInputQuery: Input query (after preprocessing): "
+    //         "%u equations, %u variables\n\n",
+    //         _preprocessedQuery.getEquations().size(),
+    //         _preprocessedQuery.getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )

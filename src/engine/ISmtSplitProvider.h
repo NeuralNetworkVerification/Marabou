@@ -23,6 +23,8 @@ class ISmtSplitProvider
 public:
     virtual void thinkBeforeSplit( List<SmtStackEntry*> stack ) = 0;
     virtual Optional<PiecewiseLinearCaseSplit> needToSplit() const = 0;
+    virtual void thinkBeforeSuggestingAlternative( List<SmtStackEntry*> stack ) = 0;
+    virtual Optional<PiecewiseLinearCaseSplit> alternativeSplitOnCurrentStack() const = 0;
     virtual void onSplitPerformed( SplitInfo const& ) = 0;
     virtual void onStackPopPerformed( PopInfo const& ) = 0;
     virtual void onUnsatReceived() = 0;

@@ -18,7 +18,7 @@ using SmtStack = List<SmtStackEntry*>;
 class SmtStackManager
 {
 public:
-   SmtStackManager( IEngine* engine, std::shared_ptr<SplitProvidersManager> const& );
+  SmtStackManager( IEngine* engine, std::shared_ptr<SplitProvidersManager> const& );
   ~SmtStackManager() = default;
 
   /*
@@ -37,6 +37,8 @@ public:
     Return true if successful, false if the stack is empty.
   */
   bool popSplit();
+
+  bool applyAltenativeInCurrentStackState();
 
   /*
     The current stack depth.
@@ -60,20 +62,20 @@ public:
   bool checkSkewFromDebuggingSolution();
   bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit& split, String& error ) const;
 
-  void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const;
+  void allSplitsSoFar( List<PiecewiseLinearCaseSplit>& result ) const;
 
-  void recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
+  void recordImpliedValidSplit( PiecewiseLinearCaseSplit& validSplit );
 
-  void replaySmtStackEntry( SmtStackEntry * stackEntry );
+  void replaySmtStackEntry( SmtStackEntry* stackEntry );
 
-  void storeSmtState( SmtState &smtState );
+  void storeSmtState( SmtState& smtState );
 
 
 private:
   /*
       Valid splits that were implied by level 0 of the stack.
     */
-    List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
+  List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
 
   /*
     Collect and print various statistics.

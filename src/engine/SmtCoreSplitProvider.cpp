@@ -4,6 +4,9 @@
 #include "GlobalConfiguration.h"
 #include "Options.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
     : _engine( engine )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
@@ -16,7 +19,7 @@ bool SmtCoreSplitProvider::searchForAlternatives()
     if ( _currentSuggestedSplit ) return true;
 
     if ( !_currentSuggestedSplitAlternatives.empty() ) {
-    // printf("takeing from alternatives\n");
+        // printf("takeing from alternatives\n");
         _currentSuggestedSplit = _currentSuggestedSplitAlternatives.front();
         _currentSuggestedSplitAlternatives.popFront();
         return true;
@@ -27,11 +30,12 @@ bool SmtCoreSplitProvider::searchForAlternatives()
 }
 
 void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
-    if ( !_needToSplit ) return;
 
     // We already have some splits in our backlog
     if ( searchForAlternatives() ) return;
 
+    if ( !_needToSplit ) return;
+    
     if ( _constraintForSplitting == nullptr ) return;
 
     //  Maybe the constraint has already become inactive - if so, ignore
@@ -56,14 +60,40 @@ void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
     auto const bound = *_currentSuggestedSplit->getBoundTightenings().begin();
     auto const var = bound._variable;
     auto const isActive = bound._type == Tightening::LB;
-    printf("i have a new split on var=%d and it's active=%d\n", var, isActive);
+    // printf("i have a new split on var=%d and it's active=%d\n", var, isActive);
 
     splits.popFront();
     _currentSuggestedSplitAlternatives = splits;
+    _currentSuggestedAlternativeSplit = nullopt;
 }
 
 Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::needToSplit() const {
     return _currentSuggestedSplit;
+}
+
+void SmtCoreSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> stack ) {
+    auto const& latestSplit = stack.back()->_activeSplit;
+    auto const& currentTopSplit = _splitsStack.back();
+    if ( currentTopSplit.first() != latestSplit ) {
+        std::cout << "bug!!" << std::endl;
+        _currentSuggestedAlternativeSplit = nullopt;
+    }
+
+    if ( currentTopSplit.second().empty() )
+    {
+        // no alternatives
+        _currentSuggestedAlternativeSplit = nullopt;
+    }
+    else
+    {
+        // has alternatives
+        _currentSuggestedAlternativeSplit = currentTopSplit.second().front();
+    }
+
+}
+
+Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::alternativeSplitOnCurrentStack() const {
+    return _currentSuggestedAlternativeSplit;
 }
 
 void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
@@ -81,6 +111,16 @@ void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
         _splitsStack.emplace_back( splitInfo.theSplit, _currentSuggestedSplitAlternatives );
         _currentSuggestedSplit = nullopt;
         _currentSuggestedSplitAlternatives.clear();
+    }
+    else if ( _currentSuggestedAlternativeSplit && *_currentSuggestedAlternativeSplit == splitInfo.theSplit )
+    {
+        _splitsStack.back().first() = splitInfo.theSplit;
+        if ( _splitsStack.back().second().front() != splitInfo.theSplit )
+        {
+            std::cout << "bug!!" << std::endl;
+        }
+        _splitsStack.back().second().popFront();
+        _currentSuggestedAlternativeSplit = nullopt;
     }
     else {
         printf( "not my split\n" );

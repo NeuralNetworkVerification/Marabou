@@ -24,11 +24,30 @@ void SplitProvidersManager::onStackPopPerformed( PopInfo const& pop )
     }
 }
 
+Optional<PiecewiseLinearCaseSplit> SplitProvidersManager::alternativeSplitsFromProviders() const {
+    for ( auto const& splitProvider : _splitProviders )
+    {
+        auto const maybeSplits = splitProvider->alternativeSplitOnCurrentStack();
+        if ( maybeSplits )
+        {
+            return maybeSplits;
+        }
+    }
+    return nullopt;
+}
+
 void SplitProvidersManager::onSplitPerformed( SplitInfo const& split )
 {
     for ( auto const& splitProvider : _splitProviders )
     {
         splitProvider->onSplitPerformed( { split } );
+    }
+}
+
+void SplitProvidersManager::letProvidersThinkForAlternatives( SmtStack const& stack ) {
+    for ( auto const& splitProvider : _splitProviders )
+    {
+        splitProvider->thinkBeforeSuggestingAlternative( stack );
     }
 }
 

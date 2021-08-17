@@ -3,6 +3,9 @@
 #include "StdCompletion.h"
 #include "MStringf.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 SmtStackManager::SmtStackManager( IEngine* engine, std::shared_ptr<SplitProvidersManager> const& splitProvidersManager )
     : _statistics( NULL )
     , _engine( engine )
@@ -140,6 +143,7 @@ bool SmtStackManager::popSplit() {
 
     delete _stack.back()->_engineState;
     auto const poppedSplit = _stack.back()->_activeSplit;
+    delete _stack.back();
     _stack.popBack();
 
     if ( _stack.empty() )
@@ -170,9 +174,38 @@ bool SmtStackManager::popSplit() {
 
     List<PiecewiseLinearCaseSplit> allSplitsSoFar;
     this->allSplitsSoFar( allSplitsSoFar );
-    _splitProvidersManager->onStackPopPerformed( PopInfo( allSplitsSoFar, poppedSplit ));
+    _splitProvidersManager->onStackPopPerformed( PopInfo( allSplitsSoFar, poppedSplit ) );
 
     return true;
+}
+
+bool SmtStackManager::applyAltenativeInCurrentStackState() {
+    _splitProvidersManager->letProvidersThinkForAlternatives( getStack() );
+    const auto alternative = _splitProvidersManager->alternativeSplitsFromProviders();
+    if ( alternative ) {
+        printf( "on pop\n" );
+        auto const& split = alternative;
+
+        auto& stackEntry = _stack.back();
+
+        // Restore the state of the engine
+        SMT_LOG( "\tRestoring engine state..." );
+        _engine->restoreState( *( stackEntry->_engineState ) );
+        SMT_LOG( "\tRestoring engine state - DONE" );
+
+        SMT_LOG( "\tApplying new split..." );
+        _engine->applySplit( *split );
+        SMT_LOG( "\tApplying new split - DONE" );
+
+        stackEntry->_impliedValidSplits.clear();
+        stackEntry->_activeSplit = *split;
+        stackEntry->_pastSplits.popBack();
+        stackEntry->_pastSplits.append( *split );
+
+        _splitProvidersManager->onSplitPerformed( SplitInfo( *split ) );
+        return true;
+    }
+    return false;
 }
 
 unsigned SmtStackManager::getStackDepth() const {

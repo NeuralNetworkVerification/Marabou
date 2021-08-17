@@ -15,6 +15,8 @@ public:
 
   void thinkBeforeSplit( List<SmtStackEntry*> stack ) override;
   Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
+  void thinkBeforeSuggestingAlternative( List<SmtStackEntry*> stack );
+  Optional<PiecewiseLinearCaseSplit> alternativeSplitOnCurrentStack() const;
   void onSplitPerformed( SplitInfo const& ) override;
   void onStackPopPerformed( PopInfo const& ) override;
   void onUnsatReceived() override;
@@ -62,6 +64,9 @@ private:
   Optional<PiecewiseLinearCaseSplit> _currentSuggestedSplit;
   List<PiecewiseLinearCaseSplit> _currentSuggestedSplitAlternatives;
   List<Pair<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>>> _splitsStack;
+
+  Optional<PiecewiseLinearCaseSplit> _currentSuggestedAlternativeSplit;
+
   PiecewiseLinearConstraint* _constraintForSplitting;
 
   /*
