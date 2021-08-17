@@ -28,7 +28,7 @@
 #include "CommonError.h"
 #include "DnCManager.h"
 #include "DisjunctionConstraint.h"
-#include "Engine.h"
+#include "Engine2.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
@@ -278,9 +278,10 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
         options.setOptions();
 
+        printf("marabou1\n");
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
 
-        Engine engine;
+        Engine2 engine( std::make_shared<SplitProvidersManager>() );
 
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
         if ( dnc )
@@ -437,14 +438,14 @@ PYBIND11_MODULE(MarabouCore, m) {
             f (int): Output variable
         )pbdoc",
         py::arg("inputQuery"), py::arg("b"), py::arg("f"));
-    m.def("addDisjunctionConstraint", &addDisjunctionConstraint, R"pbdoc(
+    m.def( "addDisjunctionConstraint", &addDisjunctionConstraint, R"pbdoc(
         Add a disjunction constraint to the InputQuery
 
         Args:
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
             disjuncts (list of pairs): A list of disjuncts. Each disjunct is represented by a pair: a list of bounds, and a list of (in)equalities.
         )pbdoc",
-          py::arg("inputQuery"), py::arg("disjuncts"));
+        py::arg("inputQuery"), py::arg("disjuncts"));
     py::class_<InputQuery>(m, "InputQuery")
         .def(py::init())
         .def("setUpperBound", &InputQuery::setUpperBound)
