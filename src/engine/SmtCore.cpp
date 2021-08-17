@@ -25,6 +25,9 @@
 #include "ReluConstraint.h"
 #include "SmtCore.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
@@ -249,7 +252,7 @@ bool SmtCore::popSplit()
 
     // update lastSplit, _pastSplits with the new split
     *_lastSplit = *split;
-    stackEntry->_pastSplits.erase( *split );  // TODO: popBack instead of erase?
+    stackEntry->_pastSplits.popBack();  // TODO: popBack instead of erase?
     stackEntry->_pastSplits.append( *split );
 
     stackEntry->_activeSplit = *split;

@@ -120,6 +120,14 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
+Map<unsigned, Pair<unsigned, unsigned>> Options::getGammaAbstract( unsigned option ) const {
+  return {};
+}
+
+List<Map<unsigned, PiecewiseLinearCaseSplit>> Options::getGamma( unsigned option ) const {
+  return {};
+}
+
 void Options::setBool( unsigned option, bool value )
 {
     _boolOptions[option] = value;
