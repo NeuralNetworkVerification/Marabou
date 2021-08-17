@@ -105,7 +105,12 @@ void SmtStackManager::storeSmtState( SmtState& smtState )
 
 void SmtStackManager::recordImpliedValidSplit( PiecewiseLinearCaseSplit& validSplit )
 {
-    _stack.back()->_impliedValidSplits.append( validSplit );
+    if ( _stack.empty() )
+        _impliedValidSplitsAtRoot.append( validSplit );
+    else
+        _stack.back()->_impliedValidSplits.append( validSplit );
+
+
 
     checkSkewFromDebuggingSolution();
 }
@@ -180,6 +185,9 @@ bool SmtStackManager::popSplit() {
 }
 
 bool SmtStackManager::applyAlterativeInCurrentStackState() {
+
+    if ( _stack.empty() ) return false;
+
     _splitProvidersManager->letProvidersThinkForAlternatives( getStack() );
     const auto alternative = _splitProvidersManager->alternativeSplitsFromProviders();
     if ( alternative ) {
