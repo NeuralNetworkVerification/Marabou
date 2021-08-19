@@ -16,30 +16,25 @@
 #ifndef __GammaUnsat_h__
 #define __GammaUnsat_h__
 
-#include <List.h>
-#include <Map.h>
+#include "List.h"
+#include "PLCaseSplitRawData.h"
 
 class GammaUnsat
 {
 public:
-    enum ActivationType {
-        INACTIVE = -1,
-        ACTIVE = 1,
-    };
+  
 
     struct UnsatSequence
     {
-        UnsatSequence() {}
-        Map<unsigned, ActivationType> activations;
+        UnsatSequence();
+        List<PLCaseSplitRawData> activations;
     };
 
-    GammaUnsat() {}
-    ~GammaUnsat() {}
+    GammaUnsat();
+    ~GammaUnsat();
 
-    void addUnsatSequence( UnsatSequence unsatSeq ) { unsatSequences.append(unsatSeq); }
-    List<UnsatSequence> getUnsatSequences( ) { return unsatSequences; }
-    void reset() { unsatSequences = List<UnsatSequence>(); }
-    void dump() {}
+    void addUnsatSequence( UnsatSequence unsatSeq );
+    List<UnsatSequence> getUnsatSequences( ) const;
 private:
     List<UnsatSequence> unsatSequences;
 };

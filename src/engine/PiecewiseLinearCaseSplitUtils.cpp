@@ -1,9 +1,9 @@
 #include "PiecewiseLinearCaseSplitUtils.h"
 
-
-unsigned int getSplitVariable(PiecewiseLinearCaseSplit currentSplit){
-    // TODO::implement
-    return 0;
+unsigned int getSplitVariable(const PiecewiseLinearCaseSplit & currentSplit) {
+    // TODO::ask Guy about defining that aux is always the last and front is always the f variable
+    unsigned int var = currentSplit.getBoundTightenings().front()._variable;
+    return var;
 }
 
 bool isActiveSplit(PiecewiseLinearCaseSplit split)
@@ -22,4 +22,3 @@ bool isActiveSplit(PiecewiseLinearCaseSplit split)
     }
     return false;
 };
-

@@ -11,13 +11,14 @@ class ResidualReasoningSplitProvider : public ISmtSplitProvider
 {
 
 public:
-    explicit ResidualReasoningSplitProvider( );
+    explicit ResidualReasoningSplitProvider( GammaUnsat gammaUnsat );
 
     void thinkBeforeSplit( List<SmtStackEntry*> ) override;
     Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
     void onSplitPerformed( SplitInfo const& ) override;
     void onStackPopPerformed( PopInfo const& ) override;
     void onUnsatReceived( List<PiecewiseLinearCaseSplit>& ) override;
+    const List<PiecewiseLinearCaseSplit> & getRequiredSplits();
 private:
     IEngine* _engine;
     GammaUnsat _gammaUnsat;
@@ -28,7 +29,7 @@ private:
     // map from split to all splits that was derived from it
     Map<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>> _split2derivedSplits;
     // derive what are the required splits, after a given split was performed
-    Map<unsigned int, GammaUnsat::ActivationType> deriveRequiredSplits( );
+    List<PLCaseSplitRawData> deriveRequiredSplits() const;
 };
 
 #endif // __SMTCORERESIDUALREASONERSPLITPROVIDER_H__

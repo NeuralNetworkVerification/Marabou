@@ -17,6 +17,13 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include <cstdio>
 
+/*
+  Store/get information regarding a case split raw data
+*/
+void PiecewiseLinearCaseSplit::setRawData(PLCaseSplitRawData rawData){ _rawData = rawData; }
+
+PLCaseSplitRawData PiecewiseLinearCaseSplit::getRawData(void) const { return _rawData; }
+
 void PiecewiseLinearCaseSplit::storeBoundTightening( const Tightening &tightening )
 {
     _bounds.append( tightening );
