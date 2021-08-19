@@ -62,6 +62,12 @@ public:
         _container.push_back( value );
     }
 
+    template <class ...Args>
+    void emplace_back( Args && ...args )
+    {
+        _container.emplace_back( std::forward<Args>( args )... );
+    }
+
     void append2( const T &value )
     {
         _container.push_back( value );
@@ -258,6 +264,14 @@ public:
             throw CommonError( CommonError::LIST_IS_EMPTY );
 
         _container.pop_back();
+    }
+
+    void popFront()
+    {
+        if ( empty() )
+            throw CommonError( CommonError::LIST_IS_EMPTY );
+
+        _container.pop_front();
     }
 
     bool operator==( const List<T> &other ) const

@@ -34,9 +34,10 @@
 #include "TimeUtils.h"
 #include "Pair.h"
 
-Engine2::Engine2()
+Engine2::Engine2( std::shared_ptr<SplitProvidersManager> const& splitProvidersManager )
     : _rowBoundTightener( *_tableau )
-    , _smtStackManager( this )
+    , _splitProvidersManager( splitProvidersManager )
+    , _smtStackManager( this, splitProvidersManager )
     , _smtCoreSplitProvider( std::make_shared<SmtCoreSplitProvider>( this ) )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -69,11 +70,12 @@ Engine2::Engine2()
 
     _statistics.stampStartingTime();
 
-    _smtStackManager.subscribeSplitProvider( _smtCoreSplitProvider );
+    _splitProvidersManager->subscribeSplitProvider( _smtCoreSplitProvider );
 }
 
 Engine2::~Engine2()
 {
+    _splitProvidersManager->unsubscribeSplitProvider( _smtCoreSplitProvider );
     if ( _work )
     {
         delete[] _work;
@@ -101,6 +103,7 @@ void Engine2::adjustWorkMemorySize()
 
 bool Engine2::solve( unsigned timeoutInSeconds )
 {
+    setvbuf( stdout, NULL, _IONBF, 0 );
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -154,6 +157,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
 
         try
         {
+            printf( "try\n" );
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
@@ -209,14 +213,15 @@ bool Engine2::solve( unsigned timeoutInSeconds )
                 splitJustPerformed = false;
             }
 
-            letProvidersThink();
+            _splitProvidersManager->letProvidersThink( _smtStackManager.getStack() );
 
             // Ask split providers for splits
-            auto split = splitFromProviders();
+            auto split = _splitProvidersManager->splitFromProviders();
             if ( split )
             {
                 _smtStackManager.performSplit( *split );
                 splitJustPerformed = true;
+                continue;
             }
 
             if ( !_tableau->allBoundsValid() )
@@ -303,281 +308,33 @@ bool Engine2::solve( unsigned timeoutInSeconds )
         }
         catch ( const InfeasibleQueryException& )
         {
-            // The current query is unsat, and we need to pop.
-            // If we're at level 0, the whole query is unsat.
-            if ( !_smtStackManager.popSplit() )
+            printf( "on unsat\n" );
+            // notify unsat for providers
+            _splitProvidersManager->notifyUnsat();
+
+            bool  alternativeApplied = false;
+            while ( !alternativeApplied )
             {
-                if ( _verbosity > 0 )
+                alternativeApplied = _smtStackManager.applyAlterativeInCurrentStackState();
+                if ( alternativeApplied )
                 {
-                    printf( "\nEngine2::solve: unsat query\n" );
-                    _statistics.print();
+                    splitJustPerformed = true;
+                    break;
                 }
-                _exitCode = Engine2::UNSAT;
-                return false;
-            }
+                else {
+                    bool const smtStackIsEmpty = !_smtStackManager.popSplit();
 
-        }
-        catch ( ... )
-        {
-            _exitCode = Engine2::ERROR;
-            printf( "Engine2: Unknown error!\n" );
-            return false;
-        }
-    }
-}
-
-/*
-bool isActiveSplit(PiecewiseLinearCaseSplit split)
-{
-    // check if active or not
-    // is_active = there is at least one LB in _bounds
-    // because there are tw cases in Relu split:
-    // active: b>=0 (LB), f-b<=0 (UB)
-    // inactive b<=0 (UB), f-b<=0 (UB)
-    for (auto bound : split.getBoundTightenings())
-    {
-        if (bound._type == Tightening::BoundType::LB)
-        {
-            return true;
-        }
-    }
-    return false;
-};
-
-bool Engine2::solve_with_rr( unsigned timeoutInSeconds )
-{
-    SignalHandler::getInstance()->initialize();
-    SignalHandler::getInstance()->registerClient( this );
-
-    updateDirections();
-    storeInitialEngineState();
-
-    mainLoopStatistics();
-    if ( _verbosity > 0 )
-    {
-        printf( "\nEngine2::solve: Initial statistics\n" );
-        _statistics.print();
-        printf( "\n---\n" );
-    }
-
-    applyAllValidConstraintCaseSplits();
-
-    bool splitJustPerformed = true;
-    struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    while ( true )
-    {
-        struct timespec mainLoopEnd = TimeUtils::sampleMicro();
-        _statistics.addTimeMainLoop( TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-        mainLoopStart = mainLoopEnd;
-
-        if ( shouldExitDueToTimeout( timeoutInSeconds ) )
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\n\nEngine2: quitting due to timeout...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
-
-            _exitCode = Engine2::TIMEOUT;
-            _statistics.timeout();
-            return false;
-        }
-
-        if ( _quitRequested )
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\n\nEngine2: quitting due to external request...\n\n" );
-                printf( "Final statistics:\n" );
-                _statistics.print();
-            }
-
-            _exitCode = Engine2::QUIT_REQUESTED;
-            return false;
-        }
-
-        try
-        {
-            DEBUG( _tableau->verifyInvariants() );
-
-            mainLoopStatistics();
-            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
-                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-                _statistics.print();
-
-            // Check whether progress has been made recently
-            checkOverallProgress();
-
-            // If the basis has become malformed, we need to restore it
-            if ( basisRestorationNeeded() )
-            {
-                if ( _basisRestorationRequired == Engine2::STRONG_RESTORATION_NEEDED )
-                {
-                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine2::PERFORMED_STRONG_RESTORATION;
-                }
-                else
-                {
-                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine2::PERFORMED_WEAK_RESTORATION;
-                }
-
-                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
-                _basisRestorationRequired = Engine2::RESTORATION_NOT_NEEDED;
-                continue;
-            }
-
-            // Restoration is not required
-            _basisRestorationPerformed = Engine2::NO_RESTORATION_PERFORMED;
-
-            // Possible restoration due to preceision degradation
-            if ( shouldCheckDegradation() && highDegradation() )
-            {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                continue;
-            }
-
-            if ( _tableau->basisMatrixAvailable() )
-            {
-                explicitBasisBoundTightening();
-                applyAllBoundTightenings();
-                applyAllValidConstraintCaseSplits();
-            }
-
-            if ( splitJustPerformed )
-            {
-                // get current splits + Gamma's clauses and derive required splits
-                List<Map<PiecewiseLinearCaseSplit, unsigned>> clauses = getGammaCluases(gamma);
-                Map<PiecewiseLinearCaseSplit, unsigned> currentSplits = getCurrentSplits();
-                Map<PiecewiseLinearCaseSplit, unsigned> requiredSplits = deriveRequiredSplits(currentSplits, clauses);
-                // notify _smtCore about the new required splits
-                _smtCore.handleRequiredSplits(requiredSplits);
-
-                do
-                {
-                    performSymbolicBoundTightening();
-                }
-                while ( applyAllValidConstraintCaseSplits() );
-                splitJustPerformed = false;
-            }
-
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit())
-            {
-                _smtCore.performSplit();
-                splitJustPerformed = true;
-                continue;
-            }
-
-            if ( _smtCore.isThereRequiredSplits())
-            {
-                _smtCore.performReuiredSplits();
-                splitJustPerformed = true;
-                continue;
-            }
-
-            if ( !_tableau->allBoundsValid() )
-            {
-                // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();
-            }
-
-            if ( allVarsWithinBounds() )
-            {
-                // The linear portion of the problem has been solved.
-                // Check the status of the PL constraints
-                collectViolatedPlConstraints();
-
-                // If all constraints are satisfied, we are possibly done
-                if ( allPlConstraintsHold() )
-                {
-                    if ( _tableau->getBasicAssignmentStatus() !=
-                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                    if ( smtStackIsEmpty )
                     {
                         if ( _verbosity > 0 )
                         {
-                            printf( "Before declaring sat, recomputing...\n" );
+                            printf( "\nEngine2::solve: unsat query\n" );
+                            _statistics.print();
                         }
-                        // Make sure that the assignment is precise before declaring success
-                        _tableau->computeAssignment();
-                        continue;
+                        _exitCode = Engine2::UNSAT;
+                        return false;
                     }
-                    if ( _verbosity > 0 )
-                    {
-                        printf( "\nEngine2::solve: sat assignment found\n" );
-                        _statistics.print();
-                    }
-                    _exitCode = Engine2::SAT;
-                    return true;
                 }
-
-                // We have violated piecewise-linear constraints.
-                performConstraintFixingStep();
-
-                // Finally, take this opporunity to tighten any bounds
-                // and perform any valid case splits.
-                tightenBoundsOnConstraintMatrix();
-                applyAllBoundTightenings();
-                // For debugging purposes
-                checkBoundCompliancyWithDebugSolution();
-
-                while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening();
-
-                continue;
-            }
-
-            // We have out-of-bounds variables.
-            performSimplexStep();
-            continue;
-        }
-        catch ( const MalformedBasisException & )
-        {
-            // Debug
-            printf( "MalformedBasisException caught!\n" );
-            //
-
-            if ( _basisRestorationPerformed == Engine2::NO_RESTORATION_PERFORMED )
-            {
-                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
-                {
-                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
-                    _basisRestorationRequired = Engine2::WEAK_RESTORATION_NEEDED;
-                }
-                else
-                {
-                    _basisRestorationRequired = Engine2::STRONG_RESTORATION_NEEDED;
-                }
-            }
-            else if ( _basisRestorationPerformed == Engine2::PERFORMED_STRONG_RESTORATION )
-                _basisRestorationRequired = Engine2::WEAK_RESTORATION_NEEDED;
-            else
-            {
-                printf( "Engine2: Cannot restore tableau!\n" );
-                _exitCode = Engine2::ERROR;
-                return false;
-            }
-        }
-        catch ( const InfeasibleQueryException & )
-        {
-            //add unsat split sequence to Gamma
-            gamma.append(getCurrentSplits())
-            // The current query is unsat, and we need to pop.
-            // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
-            {
-                if ( _verbosity > 0 )
-                {
-                    printf( "\nEngine2::solve: unsat query\n" );
-                    _statistics.print();
-                }
-                _exitCode = Engine2::UNSAT;
-                return false;
-            }
-            else
-            {
-                splitJustPerformed = true;
             }
 
         }
@@ -589,561 +346,7 @@ bool Engine2::solve_with_rr( unsigned timeoutInSeconds )
         }
     }
 }
-Map<PiecewiseLinearCaseSplit, unsigned> deriveRequiredSplits(currentSplits, unsatClauses){
-    // derives all required splits
-    // a required split is derived if it is part of any unsat clause and all other parts
-    // in the clause are mapped the same as they are mapped in currentSplits (the current mapping)
-    // for example, if (notation is: active=1, inactive=0)
-    // clauses = [{c1:1, c2:1}, {c1:1, c3:0}, {c2:0,c3:0}] and
-    // currentSplits = {c1:1}
-    // then 2 splits: {c2:0, c3:1} are derived from the 2 first clauses
-    // (and no split is derived from the 3'rd clause)
 
-    // implementation:
-    // iterate the current splits, and for each one, assign all satisfied splits in any clause
-    // if at last there are clauses with one remaining split, a required split with the oppose
-    // activation will be added to the result
-    // TBD: use watch literals
-
-    Map<PiecewiseLinearCaseSplit, unsigned> derived;
-    // list of mappings (for each clause)
-    // from index in clause to bool if the split in this index in clause is satisfied
-    List<Map<PiecewiseLinearCaseSplit, bool>> satisfiedSplits;
-    for ( auto currentSplit : currentSplits ) {
-        for ( auto clause_index, clause : unsatClauses ) {
-            for ( auto split_index, split : clause ) {
-                // if split is satisfied, assign it in satisfiedSplits
-                bool isSameSplit = split.getVariable() == currentSplit.getVariable();
-                bool isSameActivation = isActiveSplit(split) == isActiveSplit(currentSplit);
-                if ( isSameSplit && isSameActivation ) {
-                    satisfiedSplits[clause_index][split_index] = true;
-                }
-            }
-        }
-    }
-    // for all clauses with exactly one unsatisfied split, derive oppose activation to this split
-    for ( auto clause_index, clause : satisfiedSplits ) {
-        unsigned int unsatisfiedCounter = 0;
-        unsatisfiedSplitIndex = -1;
-        for ( auto split_index, isSplitSatisfied : clause ) {
-            if ( !isSplitSatisfied ) {
-                unsatisfiedCounter += 1;
-                if (unsatisfiedCounter > 1 ) {
-                    break;
-                }
-            }
-            else {
-                unsatisfiedSplitIndex = split_index;
-            }
-        }
-        if (unsatisfiedcounter == 1) {
-            derivedSplit = unsatClauses[clause_index][unsatisfiedSplitIndex];
-            // should assign active if unsat is imactive and vice versa
-            unsigned int opposeActivation = -1 if isActiveSplit(derivedSplit) else 1;
-            derived.add(key=split, value=opposeActivation)
-        }
-    }
-    return derived;
-}
-
-bool isActiveSplit(PiecewiseLinearCaseSplit split)
-{
-    // check if active or not
-    // is_active = there is at least one LB in _bounds
-    // because there are tw cases in Relu split:
-    // active: b>=0 (LB), f-b<=0 (UB)
-    // inactive b<=0 (UB), f-b<=0 (UB)
-    for (auto bound : split.getBoundTightenings())
-    {
-        if (bound._type == Tightening::BoundType::LB)
-        {
-            return true;
-        }
-    }
-    return false;
-};
-
-*/
-
-/*
-bool Engine2::solve(
-    List<Map<unsigned, bool>> gammaUnsat,
-    Map<unsigned, Pair<unsigned, unsigned>> gammaAbs,
-    Map<unsigned, bool> is_pos,
-    Map<unsigned, bool> is_inc,
-    Map<unsigned, unsigned> post_var_indices,
-    unsigned timeoutInSeconds)
-{
-    SignalHandler::getInstance()->initialize();
-    SignalHandler::getInstance()->registerClient(this);
-
-    if (_solveWithMILP)
-        return solveWithMILPEncoding(timeoutInSeconds);
-
-    updateDirections();
-    storeInitialEngineState();
-
-    mainLoopStatistics();
-    if (_verbosity > 0)
-    {
-        printf("\nEngine2::solve: Initial statistics\n");
-        _statistics.print();
-        printf("\n---\n");
-    }
-
-    applyAllValidConstraintCaseSplits();
-
-    bool splitJustPerformed = true;
-    struct timespec mainLoopStart = TimeUtils::sampleMicro();
-    while (true)
-    {
-        struct timespec mainLoopEnd = TimeUtils::sampleMicro();
-        _statistics.addTimeMainLoop(TimeUtils::timePassed(mainLoopStart, mainLoopEnd));
-        mainLoopStart = mainLoopEnd;
-
-        if (shouldExitDueToTimeout(timeoutInSeconds))
-        {
-            if (_verbosity > 0)
-            {
-                printf("\n\nEngine2: quitting due to timeout...\n\n");
-                printf("Final statistics:\n");
-                _statistics.print();
-            }
-
-            _exitCode = Engine2::TIMEOUT;
-            _statistics.timeout();
-            return false;
-        }
-
-        if (_quitRequested)
-        {
-            if (_verbosity > 0)
-            {
-                printf("\n\nEngine2: quitting due to external request...\n\n");
-                printf("Final statistics:\n");
-                _statistics.print();
-            }
-
-            _exitCode = Engine2::QUIT_REQUESTED;
-            return false;
-        }
-
-        try
-        {
-            DEBUG(_tableau->verifyInvariants());
-
-            mainLoopStatistics();
-            if (_verbosity > 1 && _statistics.getNumMainLoopIterations() %
-                                          GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY ==
-                                      0)
-                _statistics.print();
-
-            // Check whether progress has been made recently
-            checkOverallProgress();
-
-            // If the basis has become malformed, we need to restore it
-            if (basisRestorationNeeded())
-            {
-                if (_basisRestorationRequired == Engine2::STRONG_RESTORATION_NEEDED)
-                {
-                    performPrecisionRestoration(PrecisionRestorer::RESTORE_BASICS);
-                    _basisRestorationPerformed = Engine2::PERFORMED_STRONG_RESTORATION;
-                }
-                else
-                {
-                    performPrecisionRestoration(PrecisionRestorer::DO_NOT_RESTORE_BASICS);
-                    _basisRestorationPerformed = Engine2::PERFORMED_WEAK_RESTORATION;
-                }
-
-                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
-                _basisRestorationRequired = Engine2::RESTORATION_NOT_NEEDED;
-                continue;
-            }
-
-            // Restoration is not required
-            _basisRestorationPerformed = Engine2::NO_RESTORATION_PERFORMED;
-
-            // Possible restoration due to preceision degradation
-            if (shouldCheckDegradation() && highDegradation())
-            {
-                performPrecisionRestoration(PrecisionRestorer::RESTORE_BASICS);
-                continue;
-            }
-
-            if (_tableau->basisMatrixAvailable())
-            {
-                explicitBasisBoundTightening();
-                applyAllBoundTightenings();
-                applyAllValidConstraintCaseSplits();
-            }
-
-            if (splitJustPerformed)
-            {
-                // use GammaUnsat + gammaAbs to prune redundant splits
-                // if last split is of n1 and n1 is refined from abstract node n
-                // and n is (pos-inc & active) or (neg-dec & inactive)
-                // and n is active in some sequence in GammaUnsat (assuming that
-                // refinement is in abstraction order)
-                // and post(n) are (pos-inc & active) or (neg-dec & inactive)
-                // then we should split n2, the second node refined from n, to
-                // the second (unequal to n1's) option (inactive/active)
-                unsigned last_index = _smtCore.getLastSplit()->getBoundTightenings().front()._variable;
-
-                auto const isVariableActive = [this](unsigned var) { !FloatUtils::lte(0, this->_tableau->getLowerBound(var)); };
-                constexpr bool ACTIVE = true;
-                constexpr bool INACTIVE = false;
-                auto const getSplitVariable = [](PiecewiseLinearCaseSplit split) -> std::pair<unsigned, bool>
-                {
-                    for (auto const &bound : split.getBoundTightenings())
-                    {
-                        if(bound._type == Tightening::LB)
-                        {
-                            return {bound._variable, ACTIVE};
-                        }
-                        if (bound._type == Tightening::UB)
-                        {
-                            return {bound._variable, INACTIVE};
-                        }
-                    }
-                };
-
-                // condition 0: check if there is a decided node in the split seq, that is refined node of some abstract node
-
-                // check condition 0: is there a decided node in the split seq, that is refined node of some abstract node
-                bool condition0_holds = false;
-                List<PiecewiseLinearCaseSplit> all_splits;
-                _smtCore.allSplitsSoFar(all_splits);
-                for (auto abstract_step : gammaAbs) // TODO: send GammaAbs in the query
-                {
-                    unsigned refined_1_index = abstract_step.second.first();
-                    unsigned refined_2_index = abstract_step.second.second();
-                    for (auto const &split : all_splits)
-                    {
-                        auto const splitVar = getSplitVariable(split);
-                        if (splitVar.first == refined_1_index || splitVar.first == refined_2_index)
-                        {
-                            condition0_holds = true;
-                        }
-                    }
-                }
-
-                // condition 1: it is the same split sequence (order-invariant)
-                bool condition1_holds= true;
-                for (auto const &unsat_seq : gammaUnsat)
-                {
-                    for (auto pair : unsat_seq)
-                    {
-                        unsigned var = pair.first;
-                        for(const auto & abstracted : gammaAbs)
-                        {
-                            if(var == abstracted.first)
-                            {
-
-                            }
-                        }
-                        bool is_active = pair.second;
-                        bool is_in_current_seq_and_same_activation = false;
-                        for (auto const &split : all_splits)
-                        {
-                            unsigned split_var; bool split_activation;
-                            std::tie(split_var, split_activation) = getSplitVariable(split);
-                            if (var == split_var && is_active == split_activation)
-                            {
-                                is_in_current_seq_and_same_activation = true;
-                                break;
-                            }
-                        }
-                        if(!is_in_current_seq_and_same_activation)
-                        {
-                            condition1_holds = false;
-                        }
-                    }
-
-                }
-
-
-                    // find if last_index is part of an abstraction step in gammaAbs
-                    for ( auto abstract_step : gammaAbs )  // TODO: send GammaAbs in the query
-                    {
-                        // abstract_step maps abstract_index to refine indices pair
-                        unsigned abstract_index = abstract_step.first;
-                        unsigned refined_1_index = abstract_step.second.first();
-                        unsigned refined_2_index = abstract_step.second.second();
-
-                        // check one of the refined is the last node
-                        if(! (refined_1_index == last_index || refined_2_index == last_index))
-                        {
-                            break;
-                        }
-
-                        bool is_refine1_active = !FloatUtils::lte( 0, _tableau->getLowerBound(refined_1_index) );
-                        bool is_refine2_active = !FloatUtils::lte( 0, _tableau->getLowerBound(refined_2_index) );
-                        // 1. is abstract node in UNSAT sequence? if so,
-                        // 2. is abstract is inc+active or dec+inactive? if so,
-                        // 3. is abstract node has equal activation to last_index?
-                        bool is_unsat_seq = false;
-
-                        // check 1. is abstract node in UNSAT sequence? if so,
-                        bool is_abstract_active = false;
-                        for ( auto unsat_seq : gammaUnsat ) {
-                            // each element in seq is (var_index, Map<unsigned, PiecewiseLinearCaseSplit>)
-                            for ( auto node_activation : unsat_seq ) {
-                                // the next condition checks 1
-                                if ( node_activation.first == abstract_index ) {
-                                    is_abstract_active = node_activation.second;
-                                }
-                            }
-                        }
-
-                        bool is_last_active = !FloatUtils::lte( 0, _tableau->getLowerBound(last_index) );
-                                   // the next condition checks 2
-                                    if (is_last_active != is_abstract_active)
-                                    {
-                                        break; // can't learn from abstract case
-                                    }
-                                    // the next condition checks 3
-                                    if (is_active == is_last_active)
-                                    {
-                                        is_unsat_seq = true;
-                                        break;
-                                    } // else, can't learn to refinement case
-                            }  // else, can't learn from random node
-                        }
-                        // stop if found one unsat sequence with abstract node
-                        if ( is_unsat_seq ) {
-                            break;
-                        }
-                    }
-
-                    // if any unsat sequence was not found, can't prune
-                    if ( !is_unsat_seq ) {
-                        continue;
-                    }
-
-                    // check if all post constraints enable pruning
-                    bool all_post_constraints_activated_properly = false;
-                    if ( last_index == refined_1_index || last_index == refined_2_index ) {
-                        all_post_constraints_activated_properly = true;
-                        for ( auto post_var : post_var_indices ) {
-                            unsigned var_index = post_var_indices[post_var.second];
-                            bool is_var_active = FloatUtils::lte(
-                                0, _tableau->getLowerBound(var_index) );
-                            if (!( ( is_var_active && is_pos[var_index] && is_inc[var_index] ) ||
-                                 ( !is_var_active && !is_pos[var_index] && !is_inc[var_index] ) )) {
-                                 all_post_constraints_activated_properly = false;
-                                 break;
-                            }
-                        }
-                    }
-                    if ( !all_post_constraints_activated_properly ) {
-                        continue;
-                    }
-
-                    // bcp: activate the second refined node as needed
-                    bool is_refined_1_active = !FloatUtils::lte( 0, _tableau->getLowerBound(refined_1_index) );
-                    bool is_refined_2_active = !FloatUtils::lte( 0, _tableau->getLowerBound(refined_2_index) );
-
-                    // if equal activations, UNSAT from residual reasoning
-                    if ( is_refined_1_active == is_refined_2_active ) {
-                        throw InfeasibleQueryException();
-                    }
-
-                    // otherwise, activate as needed
-                    if ( last_index == refined_1_index ) {
-                        // assert is_refined_2_active != is_refined_1_active
-                        if ( is_refined_1_active ) {
-                            _tableau->tightenUpperBound( 0, refined_2_index );
-                        }
-                        else {  // !is_refined_1_active
-                            _tableau->tightenLowerBound( refined_2_index, 0 );
-                        }
-                        break;
-                    }
-                    if ( last_index == refined_2_index ) {
-                        // assert is_refined_1_active != is_refined_2_active
-                        if ( is_refined_2_active ) {
-                            _tableau->tightenUpperBound( refined_1_index, 0 );
-                        }
-                        else {
-                            _tableau->tightenLowerBound( refined_1_index, 0 );
-                        }
-                    }
-                    break;
-                }
-
-                do
-                {
-                    performSymbolicBoundTightening();
-                }
-                while ( applyAllValidConstraintCaseSplits() );
-                splitJustPerformed = false;
-            }
-
-            // Perform any SmtCore-initiated case splits
-            if ( _smtCore.needToSplit() )
-            {
-                _smtCore.performSplit();
-                splitJustPerformed = true;
-                continue;
-            }
-
-            if ( !_tableau->allBoundsValid() )
-            {
-                // Some variable bounds are invalid, so the query is unsat
-                throw InfeasibleQueryException();
-            }
-
-            if ( allVarsWithinBounds() )
-            {
-                // The linear portion of the problem has been solved.
-                // Check the status of the PL constraints
-                collectViolatedPlConstraints();
-
-                // If all constraints are satisfied, we are possibly done
-                if ( allPlConstraintsHold() )
-                {
-                    if ( _tableau->getBasicAssignmentStatus() !=
-                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
-                    {
-                        if ( _verbosity > 0 )
-                        {
-                            printf( "Before declaring sat, recomputing...\n" );
-                        }
-                        // Make sure that the assignment is precise before declaring success
-                        _tableau->computeAssignment();
-                        continue;
-                    }
-                    if ( _verbosity > 0 )
-                    {
-                        printf( "\nEngine2::solve: sat assignment found\n" );
-                        _statistics.print();
-                    }
-                    _exitCode = Engine2::SAT;
-                    return true;
-                }
-
-                // We have violated piecewise-linear constraints.
-                performConstraintFixingStep();
-
-                // Finally, take this opporunity to tighten any bounds
-                // and perform any valid case splits.
-                tightenBoundsOnConstraintMatrix();
-                applyAllBoundTightenings();
-                // For debugging purposes
-                checkBoundCompliancyWithDebugSolution();
-
-                while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening();
-                continue;
-            }
-
-            // We have out-of-bounds variables.
-            performSimplexStep();
-            continue;
-        }
-        catch ( const MalformedBasisException & )
-        {
-            // Debug
-            printf( "MalformedBasisException caught!\n" );
-            //
-
-            if ( _basisRestorationPerformed == Engine2::NO_RESTORATION_PERFORMED )
-            {
-                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
-                {
-                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
-                    _basisRestorationRequired = Engine2::WEAK_RESTORATION_NEEDED;
-                }
-                else
-                {
-                    _basisRestorationRequired = Engine2::STRONG_RESTORATION_NEEDED;
-                }
-            }
-            else if ( _basisRestorationPerformed == Engine2::PERFORMED_STRONG_RESTORATION )
-                _basisRestorationRequired = Engine2::WEAK_RESTORATION_NEEDED;
-            else
-            {
-                printf( "Engine2: Cannot restore tableau!\n" );
-                _exitCode = Engine2::ERROR;
-                return false;
-            }
-        }
-        catch ( const InfeasibleQueryException & )
-        {
-            // The current query is unsat, and we need to pop.
-            // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
-            {
-                if ( _verbosity > 0 )
-                {
-                    printf( "\nEngine2::solve: unsat query\n" );
-                    _statistics.print();
-                }
-                _exitCode = Engine2::UNSAT;
-                Map<unsigned, bool> new_unsat_seq;
-                auto is_active_relu = [](PiecewiseLinearCaseSplit split) -> std::pair<unsigned, bool>
-                {
-                    // check if active or not
-                    // is_active = there is at least one LB in _bounds
-                    // because there are tw cases in Relu split:
-                    // active: b>=0 (LB), f-b<=0 (UB)
-                    // inactive b<=0 (UB), f-b<=0 (UB)
-                    for (auto bound : split.getBoundTightenings())
-                    {
-                        if (bound._type == Tightening::BoundType::LB)
-                        {
-                            return {bound._variable,true};
-                        }
-                    }
-                    // return false;
-                };
-
-                //                new_unsat_seq = new Map<unsigned, PiecewiseLinearCaseSplit>;
-                for (auto split : _smtCore.getStack().back()->_pastSplits)
-                {
-                    bool const is_active = is_active_relu(split);
-                    for (const auto &bound : split.getBoundTightenings())
-                    {
-                        if (bound._type == Tightening::BoundType::LB && bound._value > 0)
-                        {
-                            new_unsat_seq.insert(bound._variable, true);
-                        }
-                    }
-                }
-                _statistics.appendGammaUnsatSplitSequence(new_unsat_seq);
-               return false;
-            }
-            else
-            {
-                // add current splits sequence to UNSAT context list
-                // Map<unsigned, PiecewiseLinearCaseSplit> new_unsat_seq;
-                Map<unsigned, bool> new_unsat_seq;
-//                new_unsat_seq = new Map<unsigned, PiecewiseLinearCaseSplit>;
-                for (auto split : _smtCore.getStack().back()->_pastSplits) {
-                    for (const auto &bound : split.getBoundTightenings())
-                    {
-                        if (bound._type == Tightening::BoundType::LB
-                        && bound._value > 0)
-                        {
-                            new_unsat_seq.insert(bound._variable, true);
-                        }
-                    }
-
-                }
-                _statistics.appendGammaUnsatSplitSequence(new_unsat_seq);
-                splitJustPerformed = true;
-            }
-
-        }
-        catch ( ... )
-        {
-            _exitCode = Engine2::ERROR;
-            printf( "Engine2: Unknown error!\n" );
-            return false;
-        }
-    }
-}
-*/
 
 void Engine2::mainLoopStatistics()
 {
@@ -1484,11 +687,11 @@ void Engine2::informConstraintsOfInitialBounds( InputQuery& inputQuery ) const
 
 void Engine2::invokePreprocessor( const InputQuery& inputQuery, bool preprocess )
 {
-    if ( _verbosity > 0 )
-        printf( "Engine2::processInputQuery: Input query (before preprocessing): "
-            "%u equations, %u variables\n",
-            inputQuery.getEquations().size(),
-            inputQuery.getNumberOfVariables() );
+    // if ( _verbosity > 0 )
+    //     printf( "Engine2::processInputQuery: Input query (before preprocessing): "
+    //         "%u equations, %u variables\n",
+    //         inputQuery.getEquations().size(),
+    //         inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
@@ -1498,11 +701,11 @@ void Engine2::invokePreprocessor( const InputQuery& inputQuery, bool preprocess 
     else
         _preprocessedQuery = inputQuery;
 
-    if ( _verbosity > 0 )
-        printf( "Engine2::processInputQuery: Input query (after preprocessing): "
-            "%u equations, %u variables\n\n",
-            _preprocessedQuery.getEquations().size(),
-            _preprocessedQuery.getNumberOfVariables() );
+    // if ( _verbosity > 0 )
+    //     printf( "Engine2::processInputQuery: Input query (after preprocessing): "
+    //         "%u equations, %u variables\n\n",
+    //         _preprocessedQuery.getEquations().size(),
+    //         _preprocessedQuery.getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )
@@ -2633,29 +1836,9 @@ List<unsigned> Engine2::getInputVariables() const
     return _preprocessedQuery.getInputVariables();
 }
 
-void Engine2::letProvidersThink() 
-{
-    for ( auto const& splitProvider : _smtStackManager.splitProviders() )
-    {
-        splitProvider->thinkBeforeSplit(_smtStackManager.getStack());
-    }
-}
-
 void Engine2::addSplitProvider( std::shared_ptr<ISmtSplitProvider> const& splitProvider )
 {
-    _smtStackManager.subscribeSplitProvider( splitProvider );
-}
-
-Optional<PiecewiseLinearCaseSplit> Engine2::splitFromProviders() const {
-    for ( auto const& splitProvider : _smtStackManager.splitProviders() )
-    {
-        auto const maybeSplits = splitProvider->needToSplit();
-        if ( maybeSplits )
-        {
-            return maybeSplits;
-        }
-    }
-    return nullopt;
+    _splitProvidersManager->subscribeSplitProvider( splitProvider );
 }
 
 void Engine2::performSymbolicBoundTightening()

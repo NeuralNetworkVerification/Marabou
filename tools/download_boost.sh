@@ -7,7 +7,7 @@ cd $mydir
 # TODO: add progress bar, -q is quite, if removing it the progress bar is in
 # multiple lines
 echo "downloading boost"
-wget -q https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz
+wget -q https://boostorg.jfrog.io/artifactory/main/release/1.68.0/source/boost_1_68_0.tar.gz
 echo "unzipping boost"
 tar xzvf boost_1_68_0.tar.gz >> /dev/null
 echo "installing boost"
