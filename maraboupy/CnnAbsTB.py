@@ -277,12 +277,12 @@ modelOrigDenseSavedName = "modelOrigDense.h5" # Add logDir to this and ONNX file
 modelOrigDense.save(modelOrigDenseSavedName)
 prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
-runName = 'test'
-mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
-layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
-layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
-print("layerType={}".format(layerType))
-exit()
+#runName = 'test'
+#mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
+#layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
+#layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
+#print("layerType={}".format(layerType))
+#exit()
 
 cnnAbs.numMasks = len(maskList)
 
