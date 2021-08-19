@@ -1,6 +1,6 @@
 #include "SplitProvidersManager.h"
 
-bool SplitProvidersManager::ubsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider ) {
+bool SplitProvidersManager::unsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider ) {
     auto it = std::find( _splitProviders.begin(), _splitProviders.end(), provider );
     if ( it == _splitProviders.end() ) return false;
     _splitProviders.erase( it );

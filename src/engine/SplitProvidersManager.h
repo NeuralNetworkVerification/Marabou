@@ -16,7 +16,7 @@ private:
 public:
 
     bool subscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider );
-    bool ubsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider );
+    bool unsubscribeSplitProvider( std::shared_ptr<ISmtSplitProvider> provider );
 
     /*
       Let providers think before requesting split
