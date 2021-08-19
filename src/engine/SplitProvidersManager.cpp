@@ -70,9 +70,9 @@ Optional<PiecewiseLinearCaseSplit> SplitProvidersManager::splitFromProviders() c
     return nullopt;
 }
 
-void SplitProvidersManager::notifyUnsat() {
+void SplitProvidersManager::notifyUnsat(SmtStack const& stack) {
     for ( auto const& splitProvider : _splitProviders )
     {
-        splitProvider->onUnsatReceived();
+        splitProvider->onUnsatReceived(stack);
     }
 }

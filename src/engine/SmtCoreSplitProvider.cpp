@@ -129,7 +129,7 @@ void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
     }
 }
 
-void SmtCoreSplitProvider::onUnsatReceived() {
+void SmtCoreSplitProvider::onUnsatReceived(List<SmtStackEntry *> const &stack) {
 }
 
 void SmtCoreSplitProvider::reportViolatedConstraint( PiecewiseLinearConstraint* constraint ) {

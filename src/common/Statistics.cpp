@@ -609,7 +609,7 @@ unsigned Statistics::getNumVisitedTreeStates() const
     return _numVisitedTreeStates;
 }
 
-List<Map<unsigned, bool>> Statistics::getGammaUnsatSplitSequences() const
+    List<Map<unsigned, bool>> Statistics::getGammaUnsatSplitSequences() const
 {
     return _gammaUnsatSplitSequences;
 }

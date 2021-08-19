@@ -182,6 +182,9 @@ public:
 
     void updateScoreBasedOnPolarity();
 
+    PiecewiseLinearCaseSplit getInactiveSplit() const;
+    PiecewiseLinearCaseSplit getActiveSplit() const;
+
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
@@ -192,9 +195,6 @@ private:
       And which phase status to repair a relu into.
     */
     PhaseStatus _direction;
-
-    PiecewiseLinearCaseSplit getInactiveSplit() const;
-    PiecewiseLinearCaseSplit getActiveSplit() const;
 
     bool _haveEliminatedVariables;
 

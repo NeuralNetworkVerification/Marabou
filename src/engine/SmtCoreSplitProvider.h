@@ -19,7 +19,7 @@ public:
   Optional<PiecewiseLinearCaseSplit> alternativeSplitOnCurrentStack() const;
   void onSplitPerformed(SplitInfo const &) override;
   void onStackPopPerformed( PopInfo const& ) override;
-  void onUnsatReceived() override;
+  void onUnsatReceived(List<SmtStackEntry *> const &stack) override;
 
   /*
     Inform the SMT core that a PL constraint is violated.

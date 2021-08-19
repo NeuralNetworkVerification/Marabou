@@ -27,7 +27,7 @@ public:
     virtual Optional<PiecewiseLinearCaseSplit> alternativeSplitOnCurrentStack() const = 0;
     virtual void onSplitPerformed( SplitInfo const& ) = 0;
     virtual void onStackPopPerformed( PopInfo const& ) = 0;
-    virtual void onUnsatReceived() = 0;
+    virtual void onUnsatReceived( List<SmtStackEntry *> const &stack ) = 0;
 };
 
 inline PopInfo::PopInfo( List<PiecewiseLinearCaseSplit> const& splitsSoFar, PiecewiseLinearCaseSplit const& thePoppedSplit )

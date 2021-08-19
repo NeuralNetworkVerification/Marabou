@@ -157,7 +157,6 @@ bool Engine2::solve( unsigned timeoutInSeconds )
 
         try
         {
-            printf( "try\n" );
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
@@ -308,9 +307,8 @@ bool Engine2::solve( unsigned timeoutInSeconds )
         }
         catch ( const InfeasibleQueryException& )
         {
-            printf( "on unsat\n" );
             // notify unsat for providers
-            _splitProvidersManager->notifyUnsat();
+            _splitProvidersManager->notifyUnsat(_smtStackManager.getStack());
 
             bool  alternativeApplied = false;
             while ( !alternativeApplied )
@@ -687,11 +685,11 @@ void Engine2::informConstraintsOfInitialBounds( InputQuery& inputQuery ) const
 
 void Engine2::invokePreprocessor( const InputQuery& inputQuery, bool preprocess )
 {
-    // if ( _verbosity > 0 )
-    //     printf( "Engine2::processInputQuery: Input query (before preprocessing): "
-    //         "%u equations, %u variables\n",
-    //         inputQuery.getEquations().size(),
-    //         inputQuery.getNumberOfVariables() );
+    if ( _verbosity > 0 )
+        printf( "Engine2::processInputQuery: Input query (before preprocessing): "
+            "%u equations, %u variables\n",
+            inputQuery.getEquations().size(),
+            inputQuery.getNumberOfVariables() );
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
@@ -701,11 +699,11 @@ void Engine2::invokePreprocessor( const InputQuery& inputQuery, bool preprocess 
     else
         _preprocessedQuery = inputQuery;
 
-    // if ( _verbosity > 0 )
-    //     printf( "Engine2::processInputQuery: Input query (after preprocessing): "
-    //         "%u equations, %u variables\n\n",
-    //         _preprocessedQuery.getEquations().size(),
-    //         _preprocessedQuery.getNumberOfVariables() );
+    if ( _verbosity > 0 )
+        printf( "Engine2::processInputQuery: Input query (after preprocessing): "
+            "%u equations, %u variables\n\n",
+            _preprocessedQuery.getEquations().size(),
+            _preprocessedQuery.getNumberOfVariables() );
 
     unsigned infiniteBounds = _preprocessedQuery.countInfiniteBounds();
     if ( infiniteBounds != 0 )

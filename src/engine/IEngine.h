@@ -21,6 +21,8 @@
 #include "Map.h"
 #include "List.h"
 #include "Pair.h"
+#include "GammaUnsat.h"
+
 
 #ifdef _WIN32
 #undef ERROR
@@ -98,7 +100,6 @@ public:
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
-
 };
 
 #endif // __IEngine_h__

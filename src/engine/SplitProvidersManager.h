@@ -28,7 +28,7 @@ public:
     */
     Optional<PiecewiseLinearCaseSplit> splitFromProviders() const;
 
-    void notifyUnsat();
+    void notifyUnsat(SmtStack const& stack);
 
     void onSplitPerformed(SplitInfo const& split);
 
