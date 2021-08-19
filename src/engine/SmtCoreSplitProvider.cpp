@@ -57,11 +57,6 @@ void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry *> const &stack 
 
     _currentSuggestedSplit = splits.front();
 
-    auto const bound = *_currentSuggestedSplit->getBoundTightenings().begin();
-    auto const var = bound._variable;
-    auto const isActive = bound._type == Tightening::LB;
-    // printf("i have a new split on var=%d and it's active=%d\n", var, isActive);
-
     splits.popFront();
     _currentSuggestedSplitAlternatives = splits;
     _currentSuggestedAlternativeSplit = nullopt;
@@ -75,7 +70,6 @@ void SmtCoreSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry 
     auto const& latestSplit = stack.back()->_activeSplit;
     auto const& currentTopSplit = _splitsStack.back();
     if ( currentTopSplit.first() != latestSplit ) {
-        std::cout << "bug!!" << std::endl;
         _currentSuggestedAlternativeSplit = nullopt;
     }
 
@@ -98,16 +92,9 @@ Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::alternativeSplitOnCurre
 
 void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
 
-    // for debug
-    auto const bound = *splitInfo.theSplit.getBoundTightenings().begin();
-    auto const var = bound._variable;
-    auto const isActive = bound._type == Tightening::LB;
-    printf( "split var=%d isactive=%d; \n", var, isActive );
-
     _needToSplit = false;
     if ( _currentSuggestedSplit && *_currentSuggestedSplit == splitInfo.theSplit ) {
         // it was my split that was performed, so we need to reset it for the next split request
-        // printf( "my split\n" );
         _splitsStack.emplace_back( splitInfo.theSplit, _currentSuggestedSplitAlternatives );
         _currentSuggestedSplit = nullopt;
         _currentSuggestedSplitAlternatives.clear();
@@ -115,28 +102,18 @@ void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
     else if ( _currentSuggestedAlternativeSplit && *_currentSuggestedAlternativeSplit == splitInfo.theSplit )
     {
         _splitsStack.back().first() = splitInfo.theSplit;
-        if ( _splitsStack.back().second().front() != splitInfo.theSplit )
-        {
-            std::cout << "bug!!" << std::endl;
-        }
         _splitsStack.back().second().popFront();
         _currentSuggestedAlternativeSplit = nullopt;
     }
     else {
-        printf( "not my split\n" );
         // it some other provider split, we don't have alternatives for it
         _splitsStack.emplace_back( splitInfo.theSplit, List<PiecewiseLinearCaseSplit>{} );
     }
 }
 
 void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
-    std::cout << "on pop" << std::endl;
     // debug: verify it the corrent split
     auto& currentTopSplit = _splitsStack.back();
-    if ( currentTopSplit.first() != popInfo.thePoppedSplit ) {
-        std::cout << "bug!!" << std::endl;
-        return;
-    }
 
     if ( currentTopSplit.second().empty() )
     {
