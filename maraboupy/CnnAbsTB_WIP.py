@@ -238,6 +238,7 @@ if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
+        cnnAbs.resultsJson[mi("Result")] = resultObj.result.name
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()    
@@ -275,6 +276,13 @@ successful = None
 modelOrigDenseSavedName = "modelOrigDense.h5" # Add logDir to this and ONNX files.
 modelOrigDense.save(modelOrigDenseSavedName)
 prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
+
+runName = 'test'
+mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
+layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
+layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
+print("layerType={}".format(layerType))
+exit()
 
 cnnAbs.numMasks = len(maskList)
 
@@ -353,8 +361,7 @@ if not cfg_dumpQueries:
 else:
     success = False
 
-    
-forceContinuation = True #FIXME remove, this is a temp test.
+forceContinuation = False #FIXME remove, this is a temp test.
 if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout) or forceContinuation):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()

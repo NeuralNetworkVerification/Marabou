@@ -277,6 +277,13 @@ modelOrigDenseSavedName = "modelOrigDense.h5" # Add logDir to this and ONNX file
 modelOrigDense.save(modelOrigDenseSavedName)
 prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
+runName = 'test'
+mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
+layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
+layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
+print("layerType={}".format(layerType))
+exit()
+
 cnnAbs.numMasks = len(maskList)
 
 for i, mask in enumerate(maskList):
@@ -352,8 +359,10 @@ if not cfg_dumpQueries:
     if resultObj.sat() and not success:
         resultObj = ResultObj("spurious")
 else:
-    success = False    
-if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout)):
+    success = False
+
+forceContinuation = False #FIXME remove, this is a temp test.
+if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout) or forceContinuation):
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
     CnnAbs.printLog("Launching next mask")
@@ -368,6 +377,7 @@ if not cfg_dumpQueries:
     cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
     cnnAbs.resultsJson["SAT"] = resultObj.sat()
     cnnAbs.resultsJson["Result"] = resultObj.result.name
+    cnnAbs.resultsJson[mi("Result")] = resultObj.result.name
     cnnAbs.dumpResultsJson()
 
     CnnAbs.printLog(resultObj.result.name)

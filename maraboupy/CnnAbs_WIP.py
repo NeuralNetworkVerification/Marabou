@@ -66,7 +66,7 @@ class PolicyBase:
         return sortedIndReverse
 
     @staticmethod
-    def linearStep(n, stepSize=5, startWith=0):
+    def linearStep(n, stepSize=10, startWith=50):
         stepSize = max(stepSize,1)
         startWith = max(startWith,0)
         size = n
@@ -94,8 +94,8 @@ class PolicyBase:
 
     @classmethod
     def steps(cls, n):
-        return cls.linearStep(n)
-        #return cls.geometricStep(n)
+        #return cls.linearStep(n)
+        return cls.geometricStep(n)
     
     def genMaskByOrderedInd(self, sortedIndDecsending, maskShape, includeFull=True):
         mask = np.zeros(maskShape)
@@ -460,7 +460,7 @@ class CnnAbs:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        vals, stats = Marabou.solve_query(ipq, verbose=True, options=self.optionsObj)
+        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
