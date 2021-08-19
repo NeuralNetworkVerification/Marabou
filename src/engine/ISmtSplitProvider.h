@@ -21,9 +21,9 @@ struct PopInfo
 class ISmtSplitProvider
 {
 public:
-    virtual void thinkBeforeSplit( List<SmtStackEntry*> stack ) = 0;
+    virtual void thinkBeforeSplit( List<SmtStackEntry*> const& stack ) = 0;
     virtual Optional<PiecewiseLinearCaseSplit> needToSplit() const = 0;
-    virtual void thinkBeforeSuggestingAlternative( List<SmtStackEntry*> stack ) = 0;
+    virtual void thinkBeforeSuggestingAlternative( List<SmtStackEntry*> const& stack ) = 0;
     virtual Optional<PiecewiseLinearCaseSplit> alternativeSplitOnCurrentStack() const = 0;
     virtual void onSplitPerformed( SplitInfo const& ) = 0;
     virtual void onStackPopPerformed( PopInfo const& ) = 0;

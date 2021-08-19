@@ -13,11 +13,11 @@ class SmtCoreSplitProvider : public ISmtSplitProvider
 public:
   explicit SmtCoreSplitProvider( IEngine* _engine );
 
-  void thinkBeforeSplit( List<SmtStackEntry*> stack ) override;
+  void thinkBeforeSplit(List<SmtStackEntry *> const &stack) override;
   Optional<PiecewiseLinearCaseSplit> needToSplit() const override;
-  void thinkBeforeSuggestingAlternative( List<SmtStackEntry*> stack );
+  void thinkBeforeSuggestingAlternative(List<SmtStackEntry *> const &stack);
   Optional<PiecewiseLinearCaseSplit> alternativeSplitOnCurrentStack() const;
-  void onSplitPerformed( SplitInfo const& ) override;
+  void onSplitPerformed(SplitInfo const &) override;
   void onStackPopPerformed( PopInfo const& ) override;
   void onUnsatReceived() override;
 

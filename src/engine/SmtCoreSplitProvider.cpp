@@ -29,7 +29,7 @@ bool SmtCoreSplitProvider::searchForAlternatives()
     return false;
 }
 
-void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> stack ) {
+void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry *> const &stack ) {
 
     // We already have some splits in our backlog
     if ( searchForAlternatives() ) return;
@@ -71,7 +71,7 @@ Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::needToSplit() const {
     return _currentSuggestedSplit;
 }
 
-void SmtCoreSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> stack ) {
+void SmtCoreSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry *> const &stack ) {
     auto const& latestSplit = stack.back()->_activeSplit;
     auto const& currentTopSplit = _splitsStack.back();
     if ( currentTopSplit.first() != latestSplit ) {
