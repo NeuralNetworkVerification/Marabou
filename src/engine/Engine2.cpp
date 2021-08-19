@@ -75,6 +75,7 @@ Engine2::Engine2( std::shared_ptr<SplitProvidersManager> const& splitProvidersMa
 
 Engine2::~Engine2()
 {
+    _splitProvidersManager->unsubscribeSplitProvider( _smtCoreSplitProvider );
     if ( _work )
     {
         delete[] _work;
