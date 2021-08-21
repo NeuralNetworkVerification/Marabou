@@ -42,8 +42,11 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
     _pastSplits.append( splitInfo.theSplit );
     bool continue_deriving = true;
     // continue deriveing as long as possible (like BCP at DPLL)
+    unsigned int loop_counter = 0;
     while ( continue_deriving )
     {
+        loop_counter += 1;
+        printf("iteration %d\n", loop_counter);
         List<PLCaseSplitRawData> requiredSplits = deriveRequiredSplits();
         if ( requiredSplits.empty() )
         {
@@ -67,7 +70,7 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
 
 void ResidualReasoningSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> const& stack ) {}
 
-Optional<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::alternativeSplitOnCurrentStack() const {return nullopt;}
+Optional<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::alternativeSplitOnCurrentStack() const { return nullopt; }
 
 void ResidualReasoningSplitProvider::onStackPopPerformed( PopInfo const& popInfo )
 {
@@ -76,12 +79,12 @@ void ResidualReasoningSplitProvider::onStackPopPerformed( PopInfo const& popInfo
     _required_splits.clear();
 }
 
-void ResidualReasoningSplitProvider::onUnsatReceived( List<SmtStackEntry *> const &stack )
+void ResidualReasoningSplitProvider::onUnsatReceived( List<SmtStackEntry*> const& stack )
 {
     List<PiecewiseLinearCaseSplit> allSplitsSoFar;
-    for(SmtStackEntry const * const entry: stack)
+    for ( SmtStackEntry const* const entry : stack )
     {
-        allSplitsSoFar.append(entry->_activeSplit);
+        allSplitsSoFar.append( entry->_activeSplit );
     }
     // convert allSplitSoFar to GammaUnsat::UnsatSequence
     GammaUnsat::UnsatSequence unsatSeq;
@@ -114,6 +117,10 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
     {
         pastSplitsRaw.append( split.getRawData() );
     }
+    for ( auto const& split : _required_splits )
+    {
+        pastSplitsRaw.append( split.getRawData() );
+    }
 
     auto const getUnsatisfied =
         [&pastSplitsRaw]( GammaUnsat::UnsatSequence const& seq ) -> Optional<PLCaseSplitRawData>
@@ -139,15 +146,34 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
         {
             return unsatisfied.front();
         }
+        return nullopt;
     };
 
     List<PLCaseSplitRawData> derived;
+    unsigned clause_index = 0;
     for ( auto const& gammaSeq : _gammaUnsat.getUnsatSequences() )
     {
         auto const maybeDerivedSplit = getUnsatisfied( gammaSeq );
-        if ( maybeDerivedSplit )
-            derived.append( *maybeDerivedSplit );
+        if ( maybeDerivedSplit ) {
+            ActivationType opposeActivation = maybeDerivedSplit->_activation == ActivationType::ACTIVE ? ActivationType::INACTIVE : ActivationType::ACTIVE;
+            PLCaseSplitRawData requiredSplit = PLCaseSplitRawData(maybeDerivedSplit->_b, maybeDerivedSplit->_f, opposeActivation);
+            derived.append( requiredSplit );
+            printf( "required from clause %d: variable=%u, activation=%s\n", clause_index,
+            requiredSplit._f,
+            requiredSplit._activation == ActivationType::ACTIVE ? "active" : "inactive" );
+        }
+        clause_index += 1;
     }
+    
+    for ( auto const& split : _pastSplits )
+    {
+        derived.erase( split.getRawData() );
+    }
+    for ( auto const& split : _required_splits )
+    {
+        derived.erase( split.getRawData() );
+    }
+    
     return derived;
 
     // Map<unsigned int, GammaUnsat::ActivationType> derived;

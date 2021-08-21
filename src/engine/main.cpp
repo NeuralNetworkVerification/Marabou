@@ -39,12 +39,12 @@ static std::string getCompiledDateTime() {
 
 void printVersion()
 {
-    std::cout <<
-        "Marabou version " << MARABOU_VERSION <<
-        " [" << GIT_BRANCH << " " << GIT_COMMIT_HASH << "]"
-	      << "\ncompiled with " << getCompiler()
-	      << "\non " << getCompiledDateTime()
-	      << std::endl;
+    // std::cout <<
+    //     "Marabou version " << MARABOU_VERSION <<
+    //     " [" << GIT_BRANCH << " " << GIT_COMMIT_HASH << "]"
+	//       << "\ncompiled with " << getCompiler()
+	//       << "\non " << getCompiledDateTime()
+	//       << std::endl;
 }
 
 void printHelpMessage()
@@ -53,8 +53,13 @@ void printHelpMessage()
     Options::get()->printHelpMessage();
 }
 
+
 int main( int argc, char **argv )
 {
+    printf("STARTED\n");
+     Marabou().run();
+    printf("FINISHED\n");
+    return 0;
     try
     {
         Options *options = Options::get();

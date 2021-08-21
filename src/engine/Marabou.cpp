@@ -24,6 +24,10 @@
 #include "MarabouError.h"
 #include "QueryLoader.h"
 
+#include "GammaUnsat.h"
+#include "ResidualReasoningSplitProvider.h"
+#include "PiecewiseLinearCaseSplitUtils.h"
+
 #ifdef _WIN32
 #undef ERROR
 #endif
@@ -43,8 +47,16 @@ Marabou::~Marabou()
     }
 }
 
+void test1();
+void test2();
+
 void Marabou::run()
 {
+    printf("start test1\n");
+    test1();
+    printf("start test2\n");
+    test2();
+    return;
     struct timespec start = TimeUtils::sampleMicro();
 
     // _engine.addSplitProvider(std::make_shared<ResidualResoner>("/path/to/gammaUnsat"))
@@ -57,6 +69,74 @@ void Marabou::run()
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
 }
+
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
+void test1()
+{
+    // /* 
+    // gammaUnsat = [{c1:1, c2:1}, {c1:1, c3:-1}, {c2:-1,c3:-1}] and
+    // _pastSplits = {c1:1}
+    // then 2 splits: {c2:-1, c3:1} are derived from the 2 first clauses
+    // */
+    GammaUnsat gamma = GammaUnsat();
+    GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
+    seq1.activations.append( PLCaseSplitRawData( 1, 1, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::ACTIVE ) );
+    gamma.addUnsatSequence( seq1 );
+    GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
+    seq2.activations.append( PLCaseSplitRawData( 1, 1, ActivationType::ACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 3, 3, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq2 );
+    GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
+    seq3.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::INACTIVE ) );
+    seq3.activations.append( PLCaseSplitRawData( 3, 3, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq3 );
+
+    ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
+
+    // at start - no need to split
+    if ( provider.needToSplit() ) {
+        printf( "at start, provider.needToSplit() != nullpoint" );
+    }
+    // activate split1: variable = 1, lb = 0;
+    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 1 ).getActiveSplit();
+    SplitInfo split1Info = SplitInfo(split1);
+    provider.onSplitPerformed( split1Info );
+}
+
+void test2()
+{
+    /*
+    sequential derivation (at first c1:1 -> c2:-1, and then c2:-1 -> c3:1)
+    gammaUnsat = [{c1:1, c2:1}, {c2:-1,c3:-1}] and
+    _pastSplits = {c1:1}
+    then 2 splits: {c2:-1, c3:1} are derived from the 2 first clauses
+    */
+    GammaUnsat gamma = GammaUnsat();
+    GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
+    seq1.activations.append( PLCaseSplitRawData( 1, 1, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::ACTIVE ) );
+    gamma.addUnsatSequence( seq1 );
+    GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
+    seq2.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::INACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 3, 3, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq2 );
+
+    ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
+
+    // at start - no need to split
+    if ( provider.needToSplit() ) {
+        printf( "at start, provider.needToSplit() != nullpoint" );
+    }
+    // activate split1: variable = 1, lb = 0;
+    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 1 ).getActiveSplit();
+    SplitInfo split1Info = SplitInfo(split1);
+    provider.onSplitPerformed( split1Info );
+}
+
+#pragma GCC pop_options
 
 void Marabou::prepareInputQuery()
 {
