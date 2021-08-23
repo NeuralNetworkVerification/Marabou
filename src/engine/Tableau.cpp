@@ -61,6 +61,7 @@ Tableau::Tableau()
     , _costFunctionManager( NULL )
     , _rhsIsAllZeros( true )
     , _boundsExplanator( NULL )
+    , _infeasibleVar ( -1 )
 {
 }
 
@@ -1652,7 +1653,10 @@ void Tableau::storeState( TableauState &state ) const
 
     // Store bounds explanations
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
+	{
+    	state._infeasibleVar = _infeasibleVar;
 		*state._boundsExplanator = *_boundsExplanator;
+	}
 }
 
 void Tableau::restoreState( const TableauState &state )
@@ -1704,6 +1708,7 @@ void Tableau::restoreState( const TableauState &state )
 		*_boundsExplanator = *state._boundsExplanator;
     	ASSERT(_boundsExplanator->getRowsNum() == _m);
 		ASSERT(_boundsExplanator->getVarsNum() == _n);
+		_infeasibleVar = state._infeasibleVar;
 	}
 
 
@@ -2130,7 +2135,7 @@ void Tableau::addRow()
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
 		for ( SingleVarBoundsExplanator& explanation : _boundsExplanator->getExplanations() )
-			explanation.addEntry(0);
+			explanation.addEntry( 0 );
 		_boundsExplanator->addZeroExplanation();
 	}
 
@@ -2654,15 +2659,18 @@ int Tableau::getInfeasibleRow( TableauRow& row )
 			basicVar = _basicIndexToVariable[i];
      		Tableau::getTableauRow( i, &row );
             if ( computeRowBound( row, true ) < _lowerBounds[basicVar] || computeRowBound( row, false ) > _upperBounds[basicVar] )
+			{
+            	_infeasibleVar = (int) basicVar;
                 return (int) i;
+			}
 			if ( checkSlack( i ) )
 				oneHasEmptySlack = true;
         }
     }
-    if ( !oneHasEmptySlack )
-    	printf("No one has empty slack.\n");
+    if ( !oneHasEmptySlack && allBoundsValid() )
+    	printf("No one has empty slack, and all bounds are valid.\n");
     else
-		printf("Someone has empty slack.\n");
+		printf("Someone has an empty slack or there's invalid bound.\n");
 
 	return -1;
 }
@@ -2706,6 +2714,9 @@ bool Tableau::checkSlack( unsigned rowIndex )
 
 int Tableau::getInfeasibleVar() const
 {
+	if ( _infeasibleVar >= 0 )
+		return _infeasibleVar;
+
     for (unsigned i = 0; i < _n; ++i)
         if ( _lowerBounds[i] > _upperBounds[i] )
             return ( int ) i;
