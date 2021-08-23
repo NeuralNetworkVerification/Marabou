@@ -706,6 +706,8 @@ private:
       Explanator of all bounds 
     */
     BoundsExplanator *_boundsExplanator;
+
+    int _infeasibleVar;
 };
 
 #endif // __Tableau_h__

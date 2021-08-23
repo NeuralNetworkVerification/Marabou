@@ -81,6 +81,12 @@ void SingleVarBoundsExplanator::addEntry( double coefficient )
 	_lower.push_back( coefficient );
 }
 
+void SingleVarBoundsExplanator::injectEntry( unsigned position, double coefficient, bool isUpper )
+{
+	std::vector<double> &temp = isUpper ? _upper : _lower;
+	temp[position] = coefficient;
+}
+
 void SingleVarBoundsExplanator::assertLengthConsistency()
 {
 	ASSERT( _length == _upper.size() );
@@ -254,7 +260,7 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 		tempUpper = (curCoefficient * ci < 0) == isUpper; // If coefficient of lhs and var are different, use same bound
 
 		getOneBoundExplanation( tempBound, entry._index, tempUpper );
-		addVecTimesScalar( sum, tempBound, curCoefficient / -ci );
+		addVecTimesScalar( sum, tempBound, - curCoefficient / ci );
 	}
 
 	extractSparseRowCoefficients( row, rowCoefficients, -ci ); // Update according to row coefficients

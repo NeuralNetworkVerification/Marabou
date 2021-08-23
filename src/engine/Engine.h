@@ -580,7 +580,7 @@ private:
     /*
      Updates bounds after deducing Simplex unfeasibility
     */
-    void simplexBoundsUpdate();
+    int simplexBoundsUpdate();
 
     std::vector<std::vector<double>> _initialTableau;
     std::vector<double> _groundUpperBounds;

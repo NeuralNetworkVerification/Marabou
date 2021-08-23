@@ -240,14 +240,16 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( !_tableau->allBoundsValid() )
             { // Some variable bounds are invalid, so the query is unsat
 				 //TODO review when called, optimize
-				validateAllBounds(0.01);
-				int inf = _tableau->getInfeasibleVar();
-				if (inf > 0)
-				{
-					validateBounds( inf, 0.01 );
-					//printLinearInfeasibilityCertificate();
-					certifyInfeasibility();
-				}
+				 if (GlobalConfiguration::PROOF_CERTIFICATE )
+				 {
+					 validateAllBounds(0.01);
+					 int inf = _tableau->getInfeasibleVar();
+					 assert (inf > 0);
+					 validateBounds( inf, 0.01 );
+					 //printLinearInfeasibilityCertificate();
+					 certifyInfeasibility();
+
+				 }
                 throw InfeasibleQueryException();
             }
 
@@ -543,15 +545,20 @@ void Engine::performSimplexStep()
 			{
 				//TODO optimize
 				applyAllBoundTightenings();
-				simplexBoundsUpdate();
+				int inf = simplexBoundsUpdate();
 				validateAllBounds( 0.01 );
-				int inf = _tableau->getInfeasibleVar();
 				if (inf > 0)
 				{
-					printLinearInfeasibilityCertificate();
+					validateBounds( inf, 0.01 );
+					//printLinearInfeasibilityCertificate();
 					certifyInfeasibility();
 				}
 
+			}
+			else
+			{
+				applyAllBoundTightenings();
+				simplexBoundsUpdate();
 			}
             throw InfeasibleQueryException();
         }
@@ -2596,14 +2603,14 @@ void Engine::printLinearInfeasibilityCertificate()
 	delete certificate;
 }
 
-void Engine::simplexBoundsUpdate()
+int Engine::simplexBoundsUpdate()
 {
 	// Failure of a simplex step implies infeasible bounds imposed by the row
     TableauRow boundUpdateRow = TableauRow( _tableau->getN() );
     // If an infeasible basic is lower than its lower bound, then it cannot be increased.
     // Thus the upper bound imposed by the row is too low
     if ( _tableau->getInfeasibleRow( boundUpdateRow ) < 0 )
-    	return;
+    	return -1;
 
     unsigned var = boundUpdateRow._lhs;
     double newBound;
@@ -2627,6 +2634,7 @@ void Engine::simplexBoundsUpdate()
         _tableau->updateExplanation( boundUpdateRow, false );
         //_tableau->tightenLowerBound( var, newBound );
     }
+    return var;
 }
 
 void Engine::certifyInfeasibility() const

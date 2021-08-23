@@ -124,6 +124,8 @@ public:
      * Explanator for all bounds
      */
     BoundsExplanator *_boundsExplanator;
+
+    int _infeasibleVar;
 };
 
 #endif // __TableauState_h__

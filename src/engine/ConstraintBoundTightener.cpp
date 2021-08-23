@@ -17,6 +17,8 @@
 #include "FloatUtils.h"
 #include "MarabouError.h"
 #include "Statistics.h"
+#include "InfeasibleQueryException.h"
+
 
 ConstraintBoundTightener::ConstraintBoundTightener( ITableau &tableau, IEngine &engine )
     : _tableau( tableau )
@@ -97,6 +99,8 @@ void ConstraintBoundTightener::freeMemoryIfNeeded()
         delete[] _tightenedUpper;
         _tightenedUpper = NULL;
     }
+
+	clearEngineUpdates();
 }
 
 void ConstraintBoundTightener::setStatistics( Statistics *statistics )
@@ -207,7 +211,6 @@ void ConstraintBoundTightener::replaceEquationAndAdd( unsigned var, const Equati
 
 	// Assuming equation is EQ type
 	unsigned newAux = _tableau.addEquation( eq ), n = _tableau.getN(), m = _tableau.getM();
-
 	// Register engine updates
 	std::vector<double> newITRow ( n + 1, 0 );
 	for (auto addend : eq._addends )
@@ -239,8 +242,8 @@ void ConstraintBoundTightener::replaceEquationAndAdd( unsigned var, const Equati
 
 	// Injects the new explanation - the last row
 	// No need for a tightening row, and avoid possible bug of adding a basic variable as non-basic
-	SingleVarBoundsExplanator expl ( m - 1 );
-	expl.addEntry( 1 );
+	SingleVarBoundsExplanator expl ( m );
+	expl.injectEntry( m - 1, 1, true );
 	_tableau.injectExplanation(var, expl);
 }
 

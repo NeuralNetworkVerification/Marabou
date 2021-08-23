@@ -57,6 +57,11 @@ public:
 	void addEntry( double coefficient );
 
 	/*
+	 * Manually changes the explanation
+	 */
+	void injectEntry( unsigned position, double coefficient, bool isUpper );
+
+	/*
 	 * Asserts that all lengths are consistent
 	 */
 	void assertLengthConsistency();
