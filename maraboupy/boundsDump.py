@@ -20,6 +20,7 @@ parser.add_argument("--sample", type=int, default=0, help="Sample number")
 parser.add_argument("--dist", type=float, default=0.03, help="Property distance")
 parser.add_argument("--onnx", type=str, default='fullVanilla.onnx', help="Onnx net file")
 parser.add_argument("--gurobi", type=str, default='lp', choices=['lp', 'milp'], help="Gurbi solver type")
+parser.add_argument("--flag", type=str, default='', help="Addition to the dump file's name")
 args = parser.parse_args()
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -41,6 +42,6 @@ if ipq.getNumberOfVariables() == 0:
     print("UNSAT on first LP bound tightening")
     exit()
 else:
-    newName = "dumpBounds_{}_{}.json".format(args.sample, str(args.dist).replace('.','-'))
+    newName = "dumpBounds_{}_{}{}.json".format(args.sample, str(args.dist).replace('.','-'), "_" + args.flag if args.flag else "")
     os.rename("dumpBounds.json", newName)
     print("dumped={}".format(newName))
