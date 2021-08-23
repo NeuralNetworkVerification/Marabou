@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='Run MNIST based verification schem
 parser.add_argument("--sample", type=int, default=0, help="Sample number")
 parser.add_argument("--dist", type=float, default=0.03, help="Property distance")
 parser.add_argument("--onnx", type=str, default='fullVanilla.onnx', help="Onnx net file")
-parser.add_argument("--type", type=str, default='lp', choices=['lp', 'milp'], help="Gurbi solver type")
+parser.add_argument("--gurobi", type=str, default='lp', choices=['lp', 'milp'], help="Gurbi solver type")
 args = parser.parse_args()
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -34,14 +34,13 @@ for i,x in enumerate(np.nditer(xAdv)):
     mbouNet.setUpperBound(i,max(x + epsilon, 0))    
     mbouNet.setLowerBound(i,max(x - epsilon, 0))
 
-processInputQuery(modelOnnxMarabou)
-options = Marabou.createOptions(verbosity=2, timeoutInSeconds=0, milpTightening=args.lpType, dumpBounds=True, tighteningStrategy='none')
-ipq = MarabouCore.preprocess(net.getMarabouQuery(), options)
+options = Marabou.createOptions(verbosity=2, timeoutInSeconds=0, milpTightening=args.gurobi, dumpBounds=True, tighteningStrategy='none')
+ipq = MarabouCore.preprocess(mbouNet.getMarabouQuery(), options)
 print(ipq.getNumberOfVariables())
 if ipq.getNumberOfVariables() == 0:
     print("UNSAT on first LP bound tightening")
     exit()
 else:
-    newName = "dumpBounds_{}_{}.json".format(args.sample, args.dist.replace('.','-'))
+    newName = "dumpBounds_{}_{}.json".format(args.sample, str(args.dist).replace('.','-'))
     os.rename("dumpBounds.json", newName)
     print("dumped={}".format(newName))
