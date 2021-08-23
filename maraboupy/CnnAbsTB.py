@@ -234,14 +234,15 @@ if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     MarabouCore.saveQuery(ipq, cnnAbs.logDir + "IPQ_dumpBounds")
     CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
-    os.rename(cnnAbs.logDir + "dumpBounds.json", cnnAbs.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
-        cnnAbs.resultsJson[mi("Result")] = resultObj.result.name
+        cnnAbs.resultsJson[mi("Result")] = "UNSAT"
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
-        exit()    
+        exit()
+    else:
+        os.rename(cnnAbs.logDir + "dumpBounds.json", cnnAbs.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
 if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBoundsInitial.json"):
         boundList = cnnAbs.loadJson("dumpBoundsInitial", loadDir=cnnAbs.logDir)
         boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
