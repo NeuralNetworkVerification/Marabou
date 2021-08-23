@@ -1458,26 +1458,26 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
 
 void Tableau::dumpAssignment()
 {
-    printf( "Dumping assignment\n" );
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        bool basic = _basicVariables.exists( i );
-        printf( "\tx%u (index: %u)  -->  %.5lf [%s]. ", i, _variableToIndex[i],
-                getValue( i ), basic ? "B" : "NB" );
-        if ( _lowerBounds[i] != FloatUtils::negativeInfinity() )
-            printf( "Range: [ %.5lf, ", _lowerBounds[i] );
-        else
-            printf( "Range: [ -INFTY, " );
-
-        if ( _upperBounds[i] != FloatUtils::infinity() )
-            printf( "%.5lf ] ", _upperBounds[i] );
-        else
-            printf( "INFTY ] " );
-        if ( basic && basicOutOfBounds( _variableToIndex[i] ) )
-            printf( "*" );
-
-        printf( "\n" );
-    }
+//    printf( "Dumping assignment\n" );
+//    for ( unsigned i = 0; i < _n; ++i )
+//    {
+//        bool basic = _basicVariables.exists( i );
+//        printf( "\tx%u (index: %u)  -->  %.5lf [%s]. ", i, _variableToIndex[i],
+//                getValue( i ), basic ? "B" : "NB" );
+//        if ( _lowerBounds[i] != FloatUtils::negativeInfinity() )
+//            printf( "Range: [ %.5lf, ", _lowerBounds[i] );
+//        else
+//            printf( "Range: [ -INFTY, " );
+//
+//        if ( _upperBounds[i] != FloatUtils::infinity() )
+//            printf( "%.5lf ] ", _upperBounds[i] );
+//        else
+//            printf( "INFTY ] " );
+//        if ( basic && basicOutOfBounds( _variableToIndex[i] ) )
+//            printf( "*" );
+//
+//        printf( "\n" );
+//    }
 
     std::ofstream bounds;
     bounds.open("dumpBounds.json");

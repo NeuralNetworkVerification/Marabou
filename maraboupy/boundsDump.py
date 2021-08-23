@@ -34,9 +34,9 @@ for i,x in enumerate(np.nditer(xAdv)):
     mbouNet.setUpperBound(i,max(x + epsilon, 0))    
     mbouNet.setLowerBound(i,max(x - epsilon, 0))
 
-options = Marabou.createOptions(verbosity=2, timeoutInSeconds=0, milpTightening=args.gurobi, dumpBounds=True, tighteningStrategy='none')
+options = Marabou.createOptions(verbosity=0, timeoutInSeconds=0, milpTightening=args.gurobi, dumpBounds=True, tighteningStrategy='none')
 ipq = MarabouCore.preprocess(mbouNet.getMarabouQuery(), options)
-print(ipq.getNumberOfVariables())
+print("Number of variables in IPQ={}".format(ipq.getNumberOfVariables()))
 if ipq.getNumberOfVariables() == 0:
     print("UNSAT on first LP bound tightening")
     exit()
