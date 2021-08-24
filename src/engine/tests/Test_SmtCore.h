@@ -112,9 +112,20 @@ public:
             return nextSplits;
         }
 
+        List<PhaseStatus> getAllCases() const
+        {
+            return List<PhaseStatus>();
+        }
+
         bool phaseFixed() const
         {
             return true;
+        }
+
+        PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus /*caseId*/ ) const
+        {
+            PiecewiseLinearCaseSplit dontCare;
+            return dontCare;
         }
 
         PiecewiseLinearCaseSplit getValidCaseSplit() const
@@ -122,6 +133,13 @@ public:
             PiecewiseLinearCaseSplit dontCare;
             return dontCare;
         }
+
+        PiecewiseLinearCaseSplit getImpliedCaseSplit() const
+        {
+            PiecewiseLinearCaseSplit dontCare;
+            return dontCare;
+        }
+
 
 		void updateVariableIndex( unsigned, unsigned )
 		{
