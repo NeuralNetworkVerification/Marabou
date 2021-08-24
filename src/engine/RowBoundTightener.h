@@ -163,6 +163,11 @@ private:
     double *_upperBounds;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+
+    /*
+       BoundManager object stores bounds of all variables.
+       NOT YET IN USE
+     */
     BoundManager *_boundManager;
 
     /*
