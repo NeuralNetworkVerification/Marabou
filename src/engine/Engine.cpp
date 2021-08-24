@@ -1781,8 +1781,10 @@ void Engine::applyAllConstraintTightenings()
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
 		unsigned diffSize =  _constraintBoundTightener->getTableauUpdates().size();
-		if ( diffSize )
-			for ( auto &initialRow : _initialTableau ) // Keeps scalar at last place
+		if ( !diffSize )
+			return;
+
+		for ( auto &initialRow : _initialTableau ) // Keeps scalar at last place
 				initialRow.insert( initialRow.end() - 1, diffSize, 0);
 
 		for (  auto& row : _constraintBoundTightener->getTableauUpdates() )
@@ -1808,15 +1810,11 @@ void Engine::applyAllConstraintTightenings()
 		for ( const auto &tightening : entailedTightenings ) //TODO delete
 			validateBounds( tightening._variable, 0.01 );
 
-
-		if ( diffSize ) // Only in case something has changed
-		{
-			_rowBoundTightener->setDimensions();
-			adjustWorkMemorySize();
-			_activeEntryStrategy->resizeHook( _tableau );
-			_costFunctionManager->initialize(); //TODO might be causing problems
-		}
-    }
+		_rowBoundTightener->setDimensions();
+		adjustWorkMemorySize();
+		_activeEntryStrategy->resizeHook( _tableau );
+		_costFunctionManager->initialize(); //TODO might be causing problems
+	}
 }
 
 void Engine::applyAllBoundTightenings()

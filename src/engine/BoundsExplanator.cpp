@@ -206,13 +206,13 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 		}
 
 	assert ( varIndex >= 0 );
-	double ci = row[varIndex]; 
+	double ci = row[varIndex];
 	assert ( ci );  // Coefficient of var cannot be zero.
 	double coeff = 1 / ci;
 	// Create a new row with var as its lhs
 	TableauRow equiv = TableauRow( row._size );
 	equiv._lhs = var;
-	equiv._scalar = - row._scalar * coeff;
+	equiv._scalar = FloatUtils::isZero( row._scalar ) ? 0 : - row._scalar * coeff;
 
 	for ( unsigned i = 0; i < row._size; ++i )
 	{

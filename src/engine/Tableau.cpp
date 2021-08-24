@@ -2649,6 +2649,7 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 
 int Tableau::getInfeasibleRow( TableauRow& row )
 {
+	checkBoundsValid();
 	bool oneHasEmptySlack = false;
 	unsigned basicVar;
     for ( unsigned i = 0; i < _m; ++i )
