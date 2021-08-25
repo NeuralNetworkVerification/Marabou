@@ -24,6 +24,7 @@ parser.add_argument("--dist", type=float, default=0.03, help="Property distance"
 parser.add_argument("--onnx", type=str, default='fullVanilla.onnx', help="Onnx net file")
 parser.add_argument("--gurobi", type=str, default='lp', choices=['lp', 'milp'], help="Gurbi solver type")
 parser.add_argument("--flag", type=str, default='', help="Addition to the dump file's name")
+parser.add_argument("--genMax", action="store_true", default=False, help="genMax")
 args = parser.parse_args()
 
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -33,18 +34,26 @@ x_test = np.expand_dims(x_test, -1)
 
 xAdv = x_test[args.sample]
 
-genMax = True
+genMax = args.genMax
+
 if genMax:
     mbouNet = mnet.MarabouNetwork()
-    maxIn = 4
-    mbouNet.numVars = maxIn + 1
-    mbouNet.addMaxConstraint({i for i in range(maxIn)}, maxIn)
-    mbouNet.inputVars = [np.array([i for i in range(maxIn)])]
-    mbouNet.outputVars = np.array([maxIn])
-    np.random.seed(0)
-    randBase = np.random.uniform(low=0., high=1., size=(maxIn,))
-    [mbouNet.setLowerBound(i, randBase[i] - 0.5) for i in range(maxIn)]
-    [mbouNet.setUpperBound(i, randBase[i] + 0.5) for i in range(maxIn)]
+    maxIn = 16
+    numOut = 8
+    mbouNet.numVars = maxIn + numOut + (numOut - 1)    
+    [mbouNet.addMaxConstraint({i + j for i in range(maxIn)}, maxIn + numOut + j - 1) for j in range(numOut)] 
+    mbouNet.inputVars = [np.array([i for i in range(maxIn + numOut - 1)])]
+    mbouNet.outputVars = np.array([maxIn + numOut + i - 1 for i in range(numOut)])
+    #np.random.seed(0)
+    randBase = np.random.uniform(low=0., high=1., size=(maxIn + numOut - 1,))
+    randNoiseL = np.random.normal(loc=1., size=(maxIn + numOut - 1,))
+    randNoiseU = np.random.normal(loc=1., size=(maxIn + numOut - 1,))
+    [mbouNet.setLowerBound(i, randBase[i] - randNoiseL[i]) for i in range(maxIn + numOut - 1)]
+    [mbouNet.setUpperBound(i, randBase[i] + randNoiseU[i]) for i in range(maxIn + numOut - 1)]
+    firstOut = np.min(mbouNet.outputVars)
+    for out in np.nditer(mbouNet.outputVars):        
+        if out != firstOut:
+            mbouNet.addInequality([out, firstOut], [1, -1], 0.)    
     #mbouNet.setLowerBound(maxIn, -100)
     #mbouNet.setUpperBound(maxIn,  100)
     #[mbouNet.setLowerBound(i, 0. ) for i in range(maxIn)]
@@ -55,6 +64,11 @@ else:
     for i,x in enumerate(np.nditer(xAdv)):
         mbouNet.setUpperBound(i,max(x + epsilon, 0))    
         mbouNet.setLowerBound(i,max(x - epsilon, 0))
+    firstOut = np.min(mbouNet.outputVars)
+    for out in np.nditer(mbouNet.outputVars):        
+        if out != firstOut:
+            mbouNet.addInequality([out, firstOut], [1, -1], 0.)
+        
 
 options = Marabou.createOptions(verbosity=0, timeoutInSeconds=0, milpTightening=args.gurobi, dumpBounds=True, tighteningStrategy='none')
 ipq = MarabouCore.preprocess(mbouNet.getMarabouQuery(), options)
@@ -66,3 +80,6 @@ else:
     newName = "dumpBounds_{}_{}{}.json".format(args.sample, str(args.dist).replace('.','-'), "_" + args.flag if args.flag else "")
     os.rename("dumpBounds.json", newName)
     print("dumped={}".format(newName))
+
+if genMax:
+    print("max UB={}".format(max([randBase[i] + randNoiseU[i] for i in range(maxIn)])))    
