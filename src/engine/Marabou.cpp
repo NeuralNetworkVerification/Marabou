@@ -52,10 +52,12 @@ void test2();
 
 void Marabou::run()
 {
-    printf("start test1\n");
+    printf( "**** start test1 ****\n" );
     test1();
-    printf("start test2\n");
-    test2();
+    printf( "\n\n" );
+    // printf( "**** start test2 ****\n" );
+    // test2();
+    // printf( "\n\n" );
     return;
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -73,6 +75,17 @@ void Marabou::run()
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 
+char const* activationStr( ActivationType activation )
+{
+    switch ( activation )
+    {
+    case ActivationType::ACTIVE:
+        return "Active";
+    case ActivationType::INACTIVE:
+        return "Inactive";
+    }
+}
+
 void test1()
 {
     // /* 
@@ -80,30 +93,50 @@ void test1()
     // _pastSplits = {c1:1}
     // then 2 splits: {c2:-1, c3:1} are derived from the 2 first clauses
     // */
-    GammaUnsat gamma = GammaUnsat();
-    GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
-    seq1.activations.append( PLCaseSplitRawData( 1, 1, ActivationType::ACTIVE ) );
-    seq1.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::ACTIVE ) );
-    gamma.addUnsatSequence( seq1 );
-    GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
-    seq2.activations.append( PLCaseSplitRawData( 1, 1, ActivationType::ACTIVE ) );
-    seq2.activations.append( PLCaseSplitRawData( 3, 3, ActivationType::INACTIVE ) );
-    gamma.addUnsatSequence( seq2 );
-    GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
-    seq3.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::INACTIVE ) );
-    seq3.activations.append( PLCaseSplitRawData( 3, 3, ActivationType::INACTIVE ) );
-    gamma.addUnsatSequence( seq3 );
+    GammaUnsat gamma = GammaUnsat::readFromFile( "/home/elazar/marabou/Marabou/gamma.txt" );
+    // GammaUnsat gamma = GammaUnsat();
+    // GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
+    // seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    // seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
+    // gamma.addUnsatSequence( seq1 );
+    // GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
+    // seq2.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    // seq2.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
+    // gamma.addUnsatSequence( seq2 );
+    // GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
+    // seq3.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
+    // seq3.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
+    // gamma.addUnsatSequence( seq3 );
 
     ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
+    provider.gammaUnsat().saveToFile( "/home/elazar/marabou/Marabou/gamma2.txt" );
+    return;
 
     // at start - no need to split
     if ( provider.needToSplit() ) {
         printf( "at start, provider.needToSplit() != nullpoint" );
     }
     // activate split1: variable = 1, lb = 0;
-    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 1 ).getActiveSplit();
-    SplitInfo split1Info = SplitInfo(split1);
-    provider.onSplitPerformed( split1Info );
+    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
+    provider.onSplitPerformed( SplitInfo( split1 ) );
+
+    const auto shouldBeASplit2 = provider.needToSplit();
+    if ( !shouldBeASplit2 )
+    {
+        printf( "no split. a bug\n" );
+        return;
+    }
+    printf( "split on %d activation=%s\n", shouldBeASplit2->getRawData()._b, activationStr( shouldBeASplit2->getRawData()._activation ) );
+    provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
+
+    const auto shouldBeASplit3 = provider.needToSplit();
+    if ( !shouldBeASplit3 )
+    {
+        printf( "no split. a bug\n" );
+        return;
+    }
+    printf( "split on %d activation=%s\n", shouldBeASplit3->getRawData()._b, activationStr( shouldBeASplit3->getRawData()._activation ) );
+    provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
 }
 
 void test2()
@@ -116,24 +149,42 @@ void test2()
     */
     GammaUnsat gamma = GammaUnsat();
     GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
-    seq1.activations.append( PLCaseSplitRawData( 1, 1, ActivationType::ACTIVE ) );
-    seq1.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
     gamma.addUnsatSequence( seq1 );
     GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
-    seq2.activations.append( PLCaseSplitRawData( 2, 2, ActivationType::INACTIVE ) );
-    seq2.activations.append( PLCaseSplitRawData( 3, 3, ActivationType::INACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
     gamma.addUnsatSequence( seq2 );
 
     ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
 
     // at start - no need to split
     if ( provider.needToSplit() ) {
-        printf( "at start, provider.needToSplit() != nullpoint" );
+        printf( "at start, provider.needToSplit() != nullpoint\n" );
+        return;
     }
     // activate split1: variable = 1, lb = 0;
-    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 1 ).getActiveSplit();
-    SplitInfo split1Info = SplitInfo(split1);
-    provider.onSplitPerformed( split1Info );
+    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
+    provider.onSplitPerformed( SplitInfo( split1 ) );
+
+    const auto shouldBeASplit2 = provider.needToSplit();
+    if ( !shouldBeASplit2 )
+    {
+        printf( "no split. a bug\n" );
+        return;
+    }
+    printf( "split on %d activation=%s\n", shouldBeASplit2->getRawData()._b, activationStr( shouldBeASplit2->getRawData()._activation ) );
+    provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
+
+    const auto shouldBeASplit3 = provider.needToSplit();
+    if ( !shouldBeASplit3 )
+    {
+        printf( "no split. a bug\n" );
+        return;
+    }
+    printf( "split on %d activation=%s\n", shouldBeASplit3->getRawData()._b, activationStr( shouldBeASplit3->getRawData()._activation ) );
+    provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
 }
 
 #pragma GCC pop_options
