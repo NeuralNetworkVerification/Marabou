@@ -30,6 +30,11 @@ List<PiecewiseLinearCaseSplit> const& ResidualReasoningSplitProvider::getRequire
 {
     return _required_splits;
 }
+
+GammaUnsat ResidualReasoningSplitProvider::gammaUnsat() const {
+    return _gammaUnsat;
+}
+
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 
@@ -66,7 +71,6 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
         }
     }
 }
-#pragma GCC pop_options
 
 void ResidualReasoningSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> const& stack ) {}
 

@@ -23,6 +23,8 @@ class GammaUnsat
 {
 public:
   
+    static GammaUnsat readFromFile( std::string const& path );
+    void saveToFile( std::string const& path ) const;
 
     struct UnsatSequence
     {

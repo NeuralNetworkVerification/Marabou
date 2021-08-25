@@ -21,6 +21,8 @@ public:
     void onStackPopPerformed( PopInfo const& ) override;
     void onUnsatReceived( List<SmtStackEntry *> const &stack ) override;
     List<PiecewiseLinearCaseSplit> const& getRequiredSplits();
+
+    GammaUnsat gammaUnsat() const;
 private:
     IEngine* _engine;
     GammaUnsat _gammaUnsat;
