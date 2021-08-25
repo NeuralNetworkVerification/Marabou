@@ -2654,8 +2654,7 @@ int Tableau::getInfeasibleRow( TableauRow& row )
 	unsigned basicVar;
     for ( unsigned i = 0; i < _m; ++i )
 	{
-     	if ( basicOutOfBounds( i ) )
-        //if ( _basicAssignment[i] < _lowerBounds[basicVar] || _basicAssignment[i] > _upperBounds[basicVar] )
+        if ( _basicAssignment[i] < _lowerBounds[basicVar] || _basicAssignment[i] > _upperBounds[basicVar] )
 		{
 			basicVar = _basicIndexToVariable[i];
      		Tableau::getTableauRow( i, &row );
@@ -2681,8 +2680,9 @@ bool Tableau::checkSlack( unsigned rowIndex )
 {
 	TableauRow *row = new TableauRow( _n );
 	Tableau::getTableauRow( rowIndex, row );
+    unsigned basicVar = row->_lhs;
 
-	bool needDecreasing =  basicTooHigh( rowIndex ) /*_basicAssignment[rowIndex] > _upperBounds[basicVar]*/, needIncreasing = basicTooLow( rowIndex )/*_basicAssignment[rowIndex] < _lowerBounds[basicVar]*/;
+	bool needDecreasing =  _basicAssignment[rowIndex] > _upperBounds[basicVar], needIncreasing = _basicAssignment[rowIndex] < _lowerBounds[basicVar];
 	for ( unsigned i = 0; i < row->_size; ++i )
 	{
 		double curCoefficient = row->_row[i]._coefficient;
