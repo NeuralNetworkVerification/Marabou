@@ -826,7 +826,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                 double scalar = maxConcreteLb;
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-                bool planetBounds = true;
+                bool planetBounds = false;
                 for ( const auto &source : sources )
                 {
                     const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
