@@ -68,12 +68,12 @@ GammaUnsat GammaUnsat::readFromFile( std::string const& path ) {
 void GammaUnsat::saveToFile( std::string const& path ) const {
     std::ofstream ofs{ path };
 
-    // write header explaing the file
+    // write header explains the file
     auto const fileHead = (
         "# Gamma Unsat file format:\n"
-        "# each line contains a single 'literal' of a gamma claues, in the format of 'b,f,activation', where:\n"
+        "# each line contains a single 'literal' of a gamma clause, in the format of 'b,f,activation', where:\n"
         "# b = b-variable of a neuron; f = f-variable of a neuron; activation of 1 means 'active' while -1 means 'inactive'\n"
-        "# clauses are seperated by '*' (single arstrisk)\n"
+        "# clauses are separated by '*' (single asterisk)\n"
         );
     ofs << fileHead;
 
