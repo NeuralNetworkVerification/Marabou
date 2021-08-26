@@ -212,13 +212,25 @@ bool Engine2::solve( unsigned timeoutInSeconds )
                 splitJustPerformed = false;
             }
 
-            _splitProvidersManager->letProvidersThink( _smtStackManager.getStack() );
-
-            // Ask split providers for splits
-            auto split = _splitProvidersManager->splitFromProviders();
-            if ( split )
+            // Ask split providers for splits until none are given by any provider
+            bool anySplitOccurred = false;
+            while ( true )
             {
-                _smtStackManager.performSplit( *split );
+                _splitProvidersManager->letProvidersThink( _smtStackManager.getStack() );
+
+                auto split = _splitProvidersManager->splitFromProviders();
+                if ( split )
+                {
+                    _smtStackManager.performSplit( *split );
+                    anySplitOccurred = true;
+                    continue;
+                }
+                else {
+                    break;
+                }
+            }
+            if ( anySplitOccurred )
+            {
                 splitJustPerformed = true;
                 continue;
             }
@@ -308,7 +320,7 @@ bool Engine2::solve( unsigned timeoutInSeconds )
         catch ( const InfeasibleQueryException& )
         {
             // notify unsat for providers
-            _splitProvidersManager->notifyUnsat(_smtStackManager.getStack());
+            _splitProvidersManager->notifyUnsat( _smtStackManager.getStack() );
 
             bool  alternativeApplied = false;
             while ( !alternativeApplied )
