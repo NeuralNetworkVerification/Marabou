@@ -74,7 +74,9 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     }
 
     if ( gurobi.cutoffOccurred() )
+    {
         return cutoffValue;
+    }
 
     if ( gurobi.optimal() )
     {
@@ -805,7 +807,6 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
                 gurobi.addGeqConstraint( terms, maxFixedSourceValue );
             }
-
             // Target must be smaller than greatest concrete upper bound
             terms.clear();
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -825,6 +826,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                 double scalar = maxConcreteLb;
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+                bool planetBounds = true;
                 for ( const auto &source : sources )
                 {
                     const Layer *sourceLayer = _layerOwner->getLayer( source._layer );
@@ -832,7 +834,11 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                     unsigned sourceVariable = sourceLayer->neuronToVariable( sourceNeuron );
                     double sourceLb = sourceLayer->getLb( sourceNeuron );
                     double sourceUb = sourceLayer->getUb( sourceNeuron );
-                    if  (sourceUb > maxConcreteLb)
+                    if ( planetBounds ){
+                        scalar -= sourceLb;
+                        terms.append( GurobiWrapper::Term( -1.0 , Stringf( "x%u", sourceVariable ) ) );
+                    }
+                    else if (sourceUb > maxConcreteLb)
                     {
                         double coefficent = (sourceUb - maxConcreteLb) / (sourceUb - sourceLb);
                         scalar -= coefficent * sourceLb;
@@ -842,7 +848,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
                 gurobi.addLeqConstraint( terms, scalar );
 
                 // Tighter upper bounds - second ("upper corner")
-                if (maxConcreteUb > secondMaxConcreteUb)
+                if ((maxConcreteUb > secondMaxConcreteUb) && !planetBounds)
                 {
                     terms.clear();
                     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
