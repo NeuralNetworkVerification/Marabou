@@ -94,7 +94,7 @@ mbouNet.setUpperBound(2,  2.)
 mbouNet.setLowerBound(3, -2.)
 mbouNet.setUpperBound(3,  2.)
 w1 = 1.
-w2 = -2. #-1.
+w2 = -1.
 b = 0.
 mbouNet.inputVars = [np.array(list(range(4)))]
 mbouNet.addEquality([0, 1, 4], [-w1, -w2, 1], b)
