@@ -52,16 +52,31 @@ void test2();
 
 void Marabou::run()
 {
-    printf( "**** start test1 ****\n" );
-    test1();
-    printf( "\n\n" );
+    // printf( "**** start test1 ****\n" );
+    // test1();
+    // printf( "\n\n" );
     // printf( "**** start test2 ****\n" );
     // test2();
     // printf( "\n\n" );
-    return;
+    // return;
     struct timespec start = TimeUtils::sampleMicro();
 
-    // _engine.addSplitProvider(std::make_shared<ResidualResoner>("/path/to/gammaUnsat"))
+    // temporay code for debug purposes code
+    std::string inputFile = "/home/elazar/marabou/Marabou/runGamma.txt";
+    std::string outputFile = "/home/elazar/marabou/Marabou/runGammaOut.txt";
+    GammaUnsat gammaUnsat;
+    if ( File::exists( inputFile ) ) {
+        gammaUnsat = GammaUnsat::readFromFile( inputFile );
+        if ( gammaUnsat.getUnsatSequences().empty() ) {
+            outputFile = inputFile;
+        }
+    }
+    else {
+        outputFile = inputFile;
+    }
+
+    auto residualReasoner = std::make_shared<ResidualReasoningSplitProvider>( gammaUnsat );
+    _engine.addSplitProvider( residualReasoner );
 
     prepareInputQuery();
     solveQuery();
@@ -70,6 +85,8 @@ void Marabou::run()
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
+
+    residualReasoner->gammaUnsat().saveToFile( outputFile );
 }
 
 #pragma GCC push_options
@@ -84,6 +101,7 @@ char const* activationStr( ActivationType activation )
     case ActivationType::INACTIVE:
         return "Inactive";
     }
+    throw std::runtime_error( "inavlid input to function activationStr " + std::to_string( static_cast<int>( activation ) ) );
 }
 
 void test1()
@@ -126,7 +144,7 @@ void test1()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit2->getRawData()._b, activationStr( shouldBeASplit2->getRawData()._activation ) );
+    printf( "split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
 
     const auto shouldBeASplit3 = provider.needToSplit();
@@ -135,7 +153,7 @@ void test1()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit3->getRawData()._b, activationStr( shouldBeASplit3->getRawData()._activation ) );
+    printf( "split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
 }
 
@@ -174,7 +192,7 @@ void test2()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit2->getRawData()._b, activationStr( shouldBeASplit2->getRawData()._activation ) );
+    printf( "split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
 
     const auto shouldBeASplit3 = provider.needToSplit();
@@ -183,7 +201,7 @@ void test2()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit3->getRawData()._b, activationStr( shouldBeASplit3->getRawData()._activation ) );
+    printf( "split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
 }
 
