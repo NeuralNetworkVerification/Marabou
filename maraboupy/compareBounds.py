@@ -22,7 +22,7 @@ yIntMutual = [yInt[k] for k in mutual]
 
 ratio = [yInt[k] / xInt[k] if xInt[k] != 0 else (100 if yInt[k] != 0 else 1) for k in mutual]
 
-graphDir = 'fx={}_fy={}'.format(args.fx.replace('.json',''), args.fy.replace('.json',''))
+graphDir = 'fx={}_fy={}'.format(args.fx.replace('.json','').replace('/','___'), args.fy.replace('.json','').replace('/','___'))
 if not os.path.exists(graphDir):
     os.mkdir(graphDir)
 os.chdir(graphDir)
