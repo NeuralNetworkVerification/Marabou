@@ -23,12 +23,13 @@
 #include "Tightening.h"
 #include "GammaUnsat.h"
 #include "PLCaseSplitRawData.h"
+#include "Optional.h"
 
 class PiecewiseLinearCaseSplit
 {
 public:
-    void setRawData(PLCaseSplitRawData rawData);
-    PLCaseSplitRawData getRawData(void) const;
+    void setReluRawData(PLCaseSplitRawData rawData);
+    Optional<PLCaseSplitRawData> reluRawData(void) const;
 
     /*
       Store/get information regarding a bound tightening.
@@ -68,7 +69,7 @@ private:
     /*
       raw data about variables and activation of the case split
     */
-    PLCaseSplitRawData _rawData;
+    Optional<PLCaseSplitRawData> _reluRawData;
 
     /*
       The equation that needs to be added.

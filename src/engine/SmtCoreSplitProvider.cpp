@@ -11,7 +11,8 @@ SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
     : _engine( engine )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
     , _constraintForSplitting( nullptr )
-{ }
+    , _currentSuggestedAlternativeSplit( nullopt )
+{}
 
 bool SmtCoreSplitProvider::searchForAlternatives()
 {
@@ -29,13 +30,13 @@ bool SmtCoreSplitProvider::searchForAlternatives()
     return false;
 }
 
-void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry *> const &stack ) {
+void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> const& stack ) {
 
     // We already have some splits in our backlog
     if ( searchForAlternatives() ) return;
 
     if ( !_needToSplit ) return;
-    
+
     if ( _constraintForSplitting == nullptr ) return;
 
     //  Maybe the constraint has already become inactive - if so, ignore
@@ -66,7 +67,7 @@ Optional<PiecewiseLinearCaseSplit> SmtCoreSplitProvider::needToSplit() const {
     return _currentSuggestedSplit;
 }
 
-void SmtCoreSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry *> const &stack ) {
+void SmtCoreSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> const& stack ) {
     auto const& latestSplit = stack.back()->_activeSplit;
     auto const& currentTopSplit = _splitsStack.back();
     if ( currentTopSplit.first() != latestSplit ) {
@@ -129,7 +130,7 @@ void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
     }
 }
 
-void SmtCoreSplitProvider::onUnsatReceived(List<SmtStackEntry *> const &stack) {
+void SmtCoreSplitProvider::onUnsatReceived( List<SmtStackEntry*> const& stack ) {
 }
 
 void SmtCoreSplitProvider::reportViolatedConstraint( PiecewiseLinearConstraint* constraint ) {

@@ -20,9 +20,9 @@
 /*
   Store/get information regarding a case split raw data
 */
-void PiecewiseLinearCaseSplit::setRawData(PLCaseSplitRawData rawData){ _rawData = rawData; }
+void PiecewiseLinearCaseSplit::setReluRawData(PLCaseSplitRawData rawData){ _reluRawData = rawData; }
 
-PLCaseSplitRawData PiecewiseLinearCaseSplit::getRawData(void) const { return _rawData; }
+Optional<PLCaseSplitRawData> PiecewiseLinearCaseSplit::reluRawData(void) const { return _reluRawData; }
 
 void PiecewiseLinearCaseSplit::storeBoundTightening( const Tightening &tightening )
 {

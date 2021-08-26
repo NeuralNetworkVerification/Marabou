@@ -44,6 +44,11 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
     {
         _required_splits.popBack();
     }
+    if ( !splitInfo.theSplit.reluRawData() )
+    {
+        // not a relu split, we can do nothing with it
+        return;
+    }
     _pastSplits.append( splitInfo.theSplit );
     bool continue_deriving = true;
     // continue deriveing as long as possible (like BCP at DPLL)
@@ -94,7 +99,9 @@ void ResidualReasoningSplitProvider::onUnsatReceived( List<SmtStackEntry*> const
     GammaUnsat::UnsatSequence unsatSeq;
     for ( auto const& split : allSplitsSoFar )
     {
-        unsatSeq.activations.append( split.getRawData() );
+        auto const reluRawData = split.reluRawData();
+        if ( reluRawData )
+            unsatSeq.activations.append( *reluRawData );
     }
     _gammaUnsat.addUnsatSequence( unsatSeq );
 }
@@ -119,11 +126,11 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
     List<PLCaseSplitRawData> pastSplitsRaw;
     for ( auto const& split : _pastSplits )
     {
-        pastSplitsRaw.append( split.getRawData() );
+        pastSplitsRaw.append( *split.reluRawData() );
     }
     for ( auto const& split : _required_splits )
     {
-        pastSplitsRaw.append( split.getRawData() );
+        pastSplitsRaw.append( *split.reluRawData() );
     }
 
     auto const getUnsatisfied =
@@ -168,16 +175,16 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
         }
         clause_index += 1;
     }
-    
+
     for ( auto const& split : _pastSplits )
     {
-        derived.erase( split.getRawData() );
+        derived.erase( *split.reluRawData() );
     }
     for ( auto const& split : _required_splits )
     {
-        derived.erase( split.getRawData() );
+        derived.erase( *split.reluRawData() );
     }
-    
+
     return derived;
 
     // Map<unsigned int, GammaUnsat::ActivationType> derived;
