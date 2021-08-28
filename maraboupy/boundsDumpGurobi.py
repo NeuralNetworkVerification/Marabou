@@ -19,33 +19,8 @@ import scipy.sparse as sp
 
 import gurobipy as gp
 from gurobipy import GRB
-#
-#model = gp.Model("signTest")
-#x = model.addMVar(shape=1, vtype=GRB.CONTINUOUS, name="x")
-#obj = np.array([1.0])
-#model.setObjective(obj @ x, GRB.MAXIMIZE)
-#
-#val = np.array([1.0, -1.0])
-#row = np.array([0, 1])
-#col = np.array([0, 0])
-#A = sp.csr_matrix((val, (row, col)), shape=(2,1))
-#print(A.todense())
-#B = np.array([3., -1.])
-#model.addConstr(A @ x <= B, name="c")
-#
-#model.optimize()
-#print(x.X)
-#print('Obj: %g' % model.objVal)
-#
-#obj = np.array([1.0])
-#model.setObjective(obj @ x, GRB.MINIMIZE)
-#model.optimize()
-#
-#print(x.X)
-#print('Obj: %g' % model.objVal)
-#
 
-model = gp.Model("signTest")
+'''model = gp.Model("signTest")
 var  = model.addMVar(shape=12, vtype=GRB.CONTINUOUS, name="var")
 obj = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0, -1.0])
 
@@ -107,9 +82,10 @@ model.setObjective(obj @ var, GRB.MINIMIZE)
 model.optimize()
 print("Min")
 print(var.X)
-print('Obj: %g' % model.objVal)
+print('Obj: %g' % model.objVal)'''
 
-print('****************************************************** MAX TEST ******************************************************')
+results = dict()
+print('****************************************************** MAX TEST LP ******************************************************')
 
 model = gp.Model("MaxTest")
 var  = model.addMVar(shape=20, vtype=GRB.CONTINUOUS, name="var")
@@ -137,6 +113,14 @@ obj = np.array(([0.] * 18) +  [1.0, -1.0])
 #x9 >= x7 + x8
 
 #Max Constraints
+
+### x4 in [-2,2], x5 in [-3,3], x6 in [-4,4]
+### maxL7 = -2, maxL8 = -3, f7=5,f8=6
+### x7 - (u4-maxL7)/(u4-l4)x4 - (u5-maxL7)/(u5-l5)x5 <= maxL7 - (u4-maxL7)/(u4-l4)l4 - (u5-maxL7)/(u5-l5)l5
+### x7 - (u5-u4)/(u5-l5)x5 <= u5*(u4-l5)/(u5-l5)
+### x8 - (u5-maxL8)/(u5-l5)x5 - (u6-maxL8)/(u6-l6)x6 <= maxL8 - (u5-maxL8)/(u5-l5)l5 - (u6-maxL8)/(u6-l6)l6
+### x8 - (u6-u5)/(u6-l6)x6 <= u6*(u5-l6)/(u6-l6)
+
 #x7 >= x4
 #x7 >= x5
 #x7 -x4 - 0.8333 x5 <= 2.5
@@ -179,15 +163,14 @@ a = np.array([[ 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 
 
 ])
 A = sp.csr_matrix(a)
-print(A.shape)
 B = np.array([1.] * 4 + [2.] * 4 + [0.] * 6 + [0.] * 2 + [0.] * 2 + [2.5] * 2 + [0.] * 2 + [3.5] * 2)
-print(B.shape)
 
 model.addConstr(A @ var <= B, name="c")
 model.setObjective(obj @ var, GRB.MAXIMIZE)
 model.optimize()
 print("Max")
 print(var.X)
+results['My bounds LP'] = [model.objVal,None]
 print('Obj: %g' % model.objVal)
 
 model.setObjective(obj @ var, GRB.MINIMIZE)
@@ -195,7 +178,7 @@ model.optimize()
 print("Min")
 print(var.X)
 print('Obj: %g' % model.objVal)
-
+results['My bounds LP'][1] = model.objVal
 
 print('****************************************************** MAX TEST PLANET ******************************************************')
 
@@ -268,15 +251,14 @@ a = np.array([[ 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 
 
 ])
 A = sp.csr_matrix(a)
-print(A.shape)
 B = np.array([1.] * 4 + [2.] * 4 + [0.] * 6 + [0.] * 2 + [0.] * 2 + [3.] * 2  + [0.] * 2 + [4.] * 2)
-print(B.shape)
 
 model.addConstr(A @ var <= B, name="c")
 model.setObjective(obj @ var, GRB.MAXIMIZE)
 model.optimize()
 print("Max")
 print(var.X)
+results['Planet bounds LP'] = [model.objVal,None]
 print('Obj: %g' % model.objVal)
 
 model.setObjective(obj @ var, GRB.MINIMIZE)
@@ -284,5 +266,106 @@ model.optimize()
 print("Min")
 print(var.X)
 print('Obj: %g' % model.objVal)
+results['Planet bounds LP'][1] = model.objVal
+
+print('****************************************************** MAX TEST MILP ******************************************************')
+
+model = gp.Model("MaxTestMILP")
+var  = model.addMVar(shape=20, vtype=GRB.CONTINUOUS, name="var")
+b7 = model.addMVar(shape=1, vtype=GRB.BINARY, name="bin7")
+b8 = model.addMVar(shape=1, vtype=GRB.BINARY, name="bin8")
+obj = np.array(([0.] * 18) +  [1.0, -1.0])
 
 
+#[ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+# x0 <= 1
+# x0 >= -1
+# x1 <= 1
+# x2 >= -1
+# x0 <= 2
+# x0 >= -2
+# x0 <= 2
+# x0 >= -2
+
+#x4 <= x0 - x1
+#x4 >= x0 - x1
+#x5 <= x1 - x2
+#x5 >= x1 - x2
+#x6 <= x2 - x3
+#x6 >= x2 - x3
+
+#x9 <= x7 + x8
+#x9 >= x7 + x8
+
+### x4 in [-2,2], x5 in [-3,3], x6 in [-4,4]
+### maxL7 = -2, maxL8 = -3, f7=5,f8=6
+
+#Max Constraints
+#x7 >= x4
+#x7 >= x5
+#x8 >= x5
+#x8 >= x6
+
+#b7 <= 1 ### This is trivial here, but has a more important role in cases with more than a 2 inputs.
+#b8 <= 1 ### This is trivial here, but has a more important role in cases with more than a 2 inputs.
+#x7 - x4 - 5 * b7 <= 0 ###x7 <= x4 + (uf7 - l4) * b7
+#x7 - x5 + 6 * b7 <= 6 ###x7 <= x5 + (uf7 - l5) * (1 - b7)
+#x7 - x5 - 7 * b8 <= 0  ###x8 <= x5 + (uf8 - l5) * b8
+#x7 - x6 + 8 * b8 <= 8  ###x8 <= x6 + (uf8 - l6) * (1 - b8)
+
+
+a = np.array([[ 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              
+              [-1., 1., 1.,-1., 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 1.,-1.,-1., 1., 0., 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0.,-1., 1., 1.,-1., 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 1.,-1.,-1., 1., 0., 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0.,-1., 1., 1.,-1., 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0., 1.,-1.,-1., 1., 0., 0., 0., 0.,-1., 1., 0., 0., 0., 0., 0., 0.],
+
+              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1., 1.,-1., 1., 1.,-1.],
+              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,-1., 1.,-1.,-1., 1.],
+
+
+              [ 0., 0., 0., 0., 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0.,-1., 1., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,-1., 0., 0.,-1., 1., 0., 0., 0., 0.],
+#              [ 0., 0., 0., 0., 0., 0., 0., 0.,-1., 1.,-0.8333, 0.8333, 0., 0., 1.,-1., 0., 0., 0., 0.],
+#              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-0.1666, 0.1666, 0., 0., 1.,-1., 0., 0., 0., 0.],
+              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,-1., 0., 0., 0., 0.,-1., 1., 0., 0.],
+              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.,-1., 0., 0.,-1., 1., 0., 0.]
+#              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-1., 1.,-0.875, 0.875, 0., 0., 1.,-1., 0., 0.],
+#              [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,-0.125, 0.125, 0., 0., 1.,-1., 0., 0.]
+
+])
+A = sp.csr_matrix(a)
+B = np.array([1.] * 4 + [2.] * 4 + [0.] * 6 + [0.] * 2 + [0.] * 2 + [0.] * 2)
+
+model.addConstr(A @ var <= B, name="c")
+model.addConstr(var[14] - var[15] - var[8]  + var[9]  - 5 * b7 <= 0, "cb0")
+model.addConstr(var[14] - var[15] - var[10] + var[11] + 6 * b7 <= 6, "cb1")
+model.addConstr(var[16] - var[17] - var[10] + var[11] - 7 * b8 <= 0, "cb2")
+model.addConstr(var[16] - var[17] - var[12] + var[13] + 8 * b8 <= 8, "cb3")
+model.setObjective(obj @ var, GRB.MAXIMIZE)
+model.optimize()
+print("Max")
+print(var.X)
+print('Obj: %g' % model.objVal)
+results['My bounds MILP'] = [model.objVal,None]
+
+model.setObjective(obj @ var, GRB.MINIMIZE)
+model.optimize()
+print("Min")
+print(var.X)
+print('Obj: %g' % model.objVal)
+results['My bounds MILP'][1] = model.objVal
+
+
+print('****************************************************** RESULTS ******************************************************')
+print(results)
