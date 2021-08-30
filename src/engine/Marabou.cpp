@@ -52,13 +52,13 @@ void test2();
 
 void Marabou::run()
 {
-    // printf( "**** start test1 ****\n" );
-    // test1();
-    // printf( "\n\n" );
-    // printf( "**** start test2 ****\n" );
-    // test2();
-    // printf( "\n\n" );
-    // return;
+    printf( "**** start test1 ****\n" );
+    test1();
+    printf( "\n\n" );
+    printf( "**** start test2 ****\n" );
+    test2();
+    printf( "\n\n" );
+    return;
     struct timespec start = TimeUtils::sampleMicro();
 
     // temporay code for debug purposes code
@@ -111,24 +111,24 @@ void test1()
     // _pastSplits = {c1:1}
     // then 2 splits: {c2:-1, c3:1} are derived from the 2 first clauses
     // */
-    GammaUnsat gamma = GammaUnsat::readFromFile( "/home/elazar/marabou/Marabou/gamma.txt" );
-    // GammaUnsat gamma = GammaUnsat();
-    // GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
-    // seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
-    // seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
-    // gamma.addUnsatSequence( seq1 );
-    // GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
-    // seq2.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
-    // seq2.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
-    // gamma.addUnsatSequence( seq2 );
-    // GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
-    // seq3.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
-    // seq3.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
-    // gamma.addUnsatSequence( seq3 );
+    // GammaUnsat gamma = GammaUnsat::readFromFile( "/home/elazar/marabou/Marabou/gamma.txt" );
+    GammaUnsat gamma = GammaUnsat();
+    GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
+    seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
+    gamma.addUnsatSequence( seq1 );
+    GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
+    seq2.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq2 );
+    GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
+    seq3.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
+    seq3.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq3 );
 
     ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
-    provider.gammaUnsat().saveToFile( "/home/elazar/marabou/Marabou/gamma2.txt" );
-    return;
+    // provider.gammaUnsat().saveToFile( "/home/elazar/marabou/Marabou/gamma2.txt" );
+    // return;
 
     // at start - no need to split
     if ( provider.needToSplit() ) {
@@ -144,7 +144,7 @@ void test1()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
+    printf( "1 split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
 
     const auto shouldBeASplit3 = provider.needToSplit();
@@ -153,7 +153,7 @@ void test1()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
+    printf( "2 split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
 }
 
@@ -192,7 +192,7 @@ void test2()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
+    printf( "3 split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
 
     const auto shouldBeASplit3 = provider.needToSplit();
@@ -201,7 +201,7 @@ void test2()
         printf( "no split. a bug\n" );
         return;
     }
-    printf( "split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
+    printf( "4 split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
     provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
 }
 

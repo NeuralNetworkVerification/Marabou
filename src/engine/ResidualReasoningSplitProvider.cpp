@@ -168,7 +168,19 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
         if ( maybeDerivedSplit ) {
             ActivationType opposeActivation = maybeDerivedSplit->_activation == ActivationType::ACTIVE ? ActivationType::INACTIVE : ActivationType::ACTIVE;
             PLCaseSplitRawData requiredSplit = PLCaseSplitRawData(maybeDerivedSplit->_b, maybeDerivedSplit->_f, opposeActivation);
-            derived.append( requiredSplit );
+            // avoid duplicated derived splits
+            bool doNotAppend = false;
+            for ( auto const& split : _pastSplits )
+            {
+                doNotAppend |= requiredSplit == *split.reluRawData();
+            }
+            for ( auto const& split : _required_splits )
+            {
+                doNotAppend |= requiredSplit == *split.reluRawData();
+            }
+            if ( !doNotAppend ) {
+                derived.append( requiredSplit );
+            }
             printf( "required from clause %d: variable=%u, activation=%s\n", clause_index,
             requiredSplit._f,
             requiredSplit._activation == ActivationType::ACTIVE ? "active" : "inactive" );
@@ -176,14 +188,14 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
         clause_index += 1;
     }
 
-    for ( auto const& split : _pastSplits )
-    {
-        derived.erase( *split.reluRawData() );
-    }
-    for ( auto const& split : _required_splits )
-    {
-        derived.erase( *split.reluRawData() );
-    }
+    // for ( auto const& split : _pastSplits )
+    // {
+    //     derived.erase( *split.reluRawData() );
+    // }
+    // for ( auto const& split : _required_splits )
+    // {
+    //     derived.erase( *split.reluRawData() );
+    // }
 
     return derived;
 
