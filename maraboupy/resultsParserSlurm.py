@@ -66,12 +66,12 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
     mutual = list(intersectSet)
     mutual.remove('label')
     
-    x = [xDict[sample]["totalRuntime"] for sample in mutual]
-    y = [yDict[sample]["totalRuntime"] for sample in mutual]
+    x = [xDict[xparam]["totalRuntime"] for xparam in mutual]
+    y = [yDict[xparam]["totalRuntime"] for xparam in mutual]
     c = []
-    for sample in mutual:
-        xResult = xDict[sample]["result"].upper()
-        yResult = yDict[sample]["result"].upper()
+    for xparam in mutual:
+        xResult = xDict[xparam]["result"].upper()
+        yResult = yDict[xparam]["result"].upper()
         assert not (xResult == "SAT"   and yResult == "UNSAT")
         assert not (xResult == "UNSAT" and yResult == "SAT"  )
         if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]):
@@ -93,7 +93,7 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         ax.plot([bottom, top], [top   , top], 'r:')
         ax.plot([top,    top], [bottom, top], 'r:')
         if singleFig:
-            plt.title("Total Runtime: {} vs. {}, {} samples".format(yLabel, xLabel, len(mutual)))        
+            plt.title("Total Runtime: {} vs. {}, {} xparams".format(yLabel, xLabel, len(mutual)))        
             plt.xlabel(xLabel + ' [sec]')
             plt.ylabel(yLabel + ' [sec]')
             plt.xlim([bottom, axisTop])
@@ -121,12 +121,12 @@ def plotCOIRatio(resultDict):
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))    
     solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT", "TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]]
-    x  = [resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in solved]
-    y1 = [resultDict[sample]["finalPartiallity"]["vars"]      for sample in solved]
-    y2 = [resultDict[sample]["finalPartiallity"]["equations"] for sample in solved]
-    c  = [cellColor(resultDict[sample]["result"]) for sample in solved]
-    marker = [markerChoice(resultDict[sample]["result"]) for sample in solved]
-    fig.suptitle("{} - Variables and Equations Ratio, {} Samples".format(resultDict["label"], len(solved)))
+    x  = [resultDict[xparam]["finalPartiallity"]["numRuns"]   for xparam in solved]
+    y1 = [resultDict[xparam]["finalPartiallity"]["vars"]      for xparam in solved]
+    y2 = [resultDict[xparam]["finalPartiallity"]["equations"] for xparam in solved]
+    c  = [cellColor(resultDict[xparam]["result"]) for xparam in solved]
+    marker = [markerChoice(resultDict[xparam]["result"]) for xparam in solved]
+    fig.suptitle("{} - Variables and Equations Ratio, {} Xparams".format(resultDict["label"], len(solved)))
     ax2.set_xlabel("Number of Runs")
     ax1.set_ylabel("Eventual Variables Ratio")
     ax2.set_ylabel("Eventual Equation Ratio")
@@ -201,11 +201,13 @@ if os.path.isfile(os.getcwd() + "/plotSpec.json"):
         TIMEOUT_VAL = plotSpec["TIMEOUT_VAL"]
         commonRunCommand = plotSpec["commonRunCommand"]
         runCommands = plotSpec["runCommands"]
+        xparameter = plotSpec["xparameter"] if "xparameter" in plotSpec else "cfg_sampleIndex"
 else:
     comparePropertiesPairs = [('VanillaCfg', 'MaskCOICfg')]
     COIRatioKeys = ['MaskCOICfg']
     runTitleToLabel = {'MaskCOICfg' : 'CNN Abstraction', 'VanillaCfg' : 'Vanilla Marabou'}
     TIMEOUT_VAL = 12 * 3600
+    xparameter = "cfg_sampleIndex"
 
 ####################################################################################################
 ####################################################################################################
@@ -251,16 +253,16 @@ for fullpath in resultsFiles:
         successfulRuntime = -1 if resultDict["Result"].upper() in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"] or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
         #totalRuntime = TIMEOUT_VAL if resultDict["Result"].upper() == "TIMEOUT" else resultDict["totalRuntime"]
         totalRuntime = TIMEOUT_VAL if not "totalRuntime" in resultDict else resultDict["totalRuntime"]
-        if "cfg_sampleIndex" in resultDict:
-            sampleIndex = resultDict["cfg_sampleIndex"]
+        if xparameter in resultDict:
+            param = resultDict[xparameter]
         else:
-            r = re.compile("cfg_sampleIndex.*")
+            r = re.compile(xparameter + ".*")
             matches = list(filter(r.match, resultDict.keys()))
-            sampleIndex = resultDict[matches[0]]
+            param = resultDict[matches[0]]
                         
         if runTitle not in results:
             results[runTitle] = dict()
-        results[runTitle][sampleIndex] = {"result" : resultDict["Result"].upper(),
+        results[runTitle][param] = {"result" : resultDict["Result"].upper(),
                                           "totalRuntime" : totalRuntime,
                                           "originalQueryStats": originalQueryStats,
                                           "finalQueryStats": finalQueryStats,
@@ -289,26 +291,26 @@ addPlus = lambda runtime: "{:.2f}".format(runtime) if runtime < TIMEOUT_VAL else
 totalSet = set()
 for resultDict in resultDicts :
     totalSet = totalSet | set(resultDict.keys())
-samplesTotal = list(totalSet)
-samplesTotal.remove('label')
-samplesTotal.sort()
+xparamTotal = list(totalSet)
+xparamTotal.remove('label')
+xparamTotal.sort()
 
-runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
-runtimesTotal   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in samplesTotal] for resultDict in resultDicts]
-numRuns          = [[resultDict[sample]["finalPartiallity"]["numRuns"]   for sample in samplesTotal] for resultDict in resultDicts]
-varsPartial      = [[resultDict[sample]["finalPartiallity"]["vars"]      for sample in samplesTotal] for resultDict in resultDicts]
-equationsPartial = [[resultDict[sample]["finalPartiallity"]["equations"] for sample in samplesTotal] for resultDict in resultDicts]
+runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in xparamTotal] for resultDict in resultDicts]
+runtimesTotal   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in xparamTotal] for resultDict in resultDicts]
+numRuns          = [[resultDict[xparam]["finalPartiallity"]["numRuns"]   for xparam in xparamTotal] for resultDict in resultDicts]
+varsPartial      = [[resultDict[xparam]["finalPartiallity"]["vars"]      for xparam in xparamTotal] for resultDict in resultDicts]
+equationsPartial = [[resultDict[xparam]["finalPartiallity"]["equations"] for xparam in xparamTotal] for resultDict in resultDicts]
 
-runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in samplesTotal] for resultDict in resultDicts]
+runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in xparamTotal] for resultDict in resultDicts]
 
-def plotResultSummery(name, tableLabels, samplesTotal, runColors, results):
+def plotResultSummery(name, tableLabels, xparamTotal, runColors, results):
     plt.figure()
     fig, ax = plt.subplots(nrows=1, ncols=1)
     fig.patch.set_visible(False)
     ax.axis('off')
     ax.axis('tight')
     colors = np.transpose(np.array(runColors))
-    df = pd.DataFrame(np.transpose(np.array(results)), columns=tableLabels, index=samplesTotal)
+    df = pd.DataFrame(np.transpose(np.array(results)), columns=tableLabels, index=xparamTotal)
     table = ax.table(cellText=df.values, colLabels=df.columns, colWidths=[2.0 / len(resultDicts)] * len(resultDicts), rowLabels=df.index, loc='center', cellColours=colors)
     table.auto_set_font_size(False)
     table.set_fontsize(12)
@@ -317,13 +319,13 @@ def plotResultSummery(name, tableLabels, samplesTotal, runColors, results):
     plt.savefig("ResultSummary_{}.png".format(name), bbox_inches="tight", dpi=100)
     plt.close()
 
-plotResultSummery("totalRuntime",      tableLabels, samplesTotal, runColors, runtimesTotal)
-plotResultSummery("SuccessfulRuntime", tableLabels, samplesTotal, runColors, runtimesSuccessful)
-plotResultSummery("numRuns",           tableLabels, samplesTotal, runColors, numRuns)
-plotResultSummery("RelativeVars",      tableLabels, samplesTotal, runColors, varsPartial)
-plotResultSummery("equationsVars",     tableLabels, samplesTotal, runColors, equationsPartial)
+plotResultSummery("totalRuntime",      tableLabels, xparamTotal, runColors, runtimesTotal)
+plotResultSummery("SuccessfulRuntime", tableLabels, xparamTotal, runColors, runtimesSuccessful)
+plotResultSummery("numRuns",           tableLabels, xparamTotal, runColors, numRuns)
+plotResultSummery("RelativeVars",      tableLabels, xparamTotal, runColors, varsPartial)
+plotResultSummery("equationsVars",     tableLabels, xparamTotal, runColors, equationsPartial)
     
-runResults = [[resultDict[s]["result"]                 if s in resultDict else "MISSING" for s in samplesTotal] for resultDict in resultDicts]
+runResults = [[resultDict[s]["result"]                 if s in resultDict else "MISSING" for s in xparamTotal] for resultDict in resultDicts]
 
 with open('ResultSummary.csv', mode='w') as f:
         wr = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -332,8 +334,8 @@ with open('ResultSummary.csv', mode='w') as f:
         subRowLabels = ['[sec]', 'Result']
         
         wr.writerow([''] + [resultDict['label'] + ' ' + subRowLabel for resultDict in resultDicts for subRowLabel in subRowLabels])
-        for sample, resultRow in zip(samplesTotal, resultRows):
-            wr.writerow([sample] + resultRow)
+        for xparam, resultRow in zip(xparamTotal, resultRows):
+            wr.writerow([xparam] + resultRow)
             
 ####################################################################################################
 ####################################################################################################
@@ -341,7 +343,7 @@ with open('ResultSummary.csv', mode='w') as f:
 
 cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
 plt.figure()
-runtimesTotalSolved = [[resultDict[s]["totalRuntime"] for s in samplesTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
+runtimesTotalSolved = [[resultDict[s]["totalRuntime"] for s in xparamTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
 [result.sort() for result in runtimesTotalSolved]
 sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesTotalSolved]
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
@@ -366,7 +368,7 @@ plt.close()
 
 cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
 plt.figure()
-runtimesSuccessfulSolved = [[resultDict[s]["successfulRuntime"] for s in samplesTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
+runtimesSuccessfulSolved = [[resultDict[s]["successfulRuntime"] for s in xparamTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
 [result.sort() for result in runtimesSuccessfulSolved]
 sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesSuccessfulSolved]
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]

@@ -551,7 +551,9 @@ class CnnAbs:
         else:
             modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
-        assert prop.ySecond == mbouPrediction
+        if prop.ySecond != mbouPrediction:
+            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
+            assert prop.ySecond == mbouPrediction
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")

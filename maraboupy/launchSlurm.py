@@ -80,7 +80,8 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
                     "commonRunCommand" : " ".join(commonFlags),
-                    "runCommands"  : [" ".join(cmd) for cmd in runCmds]}
+                    "runCommands"  : [" ".join(cmd) for cmd in runCmds],
+                    "xparameter" : "cfg_sampleIndex"}
         json.dump(jsonDict, f, indent = 4)
 
     return runCmds, runTitles
@@ -90,7 +91,7 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath):
     runTitles = list()
     title2Label = dict()
 
-    propDist = [round(x, 4) for x in np.linspace(0.025, 0.2, num=numRunsPerType)]
+    propDist = [round(x, 3) for x in np.linspace(0.025, 0.2, num=numRunsPerType)]
     
 
     for policy in solvingPolicies():
@@ -102,13 +103,14 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath):
 
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
         policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
-        jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
+        jsonDict = {"Experiment"  : "Different property distances on the same sample",
                     "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
                     "title2Label" : title2Label,
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
                     "commonRunCommand" : " ".join(commonFlags),
-                    "runCommands"  : [" ".join(cmd) for cmd in runCmds]}
+                    "runCommands"  : [" ".join(cmd) for cmd in runCmds],
+                    "xparameter" : "cfg_propDist"}
         json.dump(jsonDict, f, indent = 4)
 
     return runCmds, runTitles
