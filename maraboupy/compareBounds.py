@@ -2,6 +2,7 @@ import argparse
 import matplotlib.pyplot as plt
 import json
 import os
+import numpy as np
 
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
 parser.add_argument("--fx", type=str, help="X axis bound file")
@@ -37,4 +38,25 @@ plt.scatter(list(range(len(ratio))), ratio)
 figure = plt.gcf()
 figure.set_size_inches(12,9)
 plt.savefig("boundRatio.png", dpi=100)
+plt.close()
+
+plt.figure()
+print('Histogram')
+density = False
+bins = 30
+print(np.histogram(ratio, bins=bins, density=density))
+n, bins, patches = plt.hist(ratio, bins=bins, density=density, alpha=0.5, histtype='bar', ec='black')
+
+for rect, label in zip(patches, n):
+    label = int(label)
+    if label > 0:
+        height = rect.get_height()
+        plt.text(rect.get_x() + rect.get_width() / 2, height + 5, label, ha="center", va="bottom")            
+plt.xlabel('Ratio')
+plt.ylabel('Number of variables with that ratio')
+plt.title('Bound Ratio')
+#plt.xlim(min(ratio)-0.1, min(ratio)+0.1)
+plt.yscale('log')
+plt.grid(True)
+plt.savefig("histRatio.png", dpi=100)
 plt.close()
