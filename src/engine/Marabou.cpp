@@ -52,27 +52,21 @@ void test2();
 
 void Marabou::run()
 {
-    printf( "**** start test1 ****\n" );
-    test1();
-    printf( "\n\n" );
-    printf( "**** start test2 ****\n" );
-    test2();
-    printf( "\n\n" );
-    return;
+    // printf( "**** start test1 ****\n" );
+    // test1();
+    // printf( "\n\n" );
+    // printf( "**** start test2 ****\n" );
+    // test2();
+    // printf( "\n\n" );
+    // return;
     struct timespec start = TimeUtils::sampleMicro();
 
     // temporay code for debug purposes code
-    std::string inputFile = "/home/elazar/marabou/Marabou/runGamma.txt";
-    std::string outputFile = "/home/elazar/marabou/Marabou/runGammaOut.txt";
+    auto inputFile = Options::get()->getString( Options::GAMMA_UNSAT_INPUT_FILE );
+    auto outputFile = Options::get()->getString( Options::GAMMA_UNSAT_OUTPUT_FILE );
     GammaUnsat gammaUnsat;
-    if ( File::exists( inputFile ) ) {
+    if ( inputFile.length() > 0 && File::exists( inputFile ) ) {
         gammaUnsat = GammaUnsat::readFromFile( inputFile );
-        if ( gammaUnsat.getUnsatSequences().empty() ) {
-            outputFile = inputFile;
-        }
-    }
-    else {
-        outputFile = inputFile;
     }
 
     auto residualReasoner = std::make_shared<ResidualReasoningSplitProvider>( gammaUnsat );
@@ -86,7 +80,8 @@ void Marabou::run()
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
 
-    residualReasoner->gammaUnsat().saveToFile( outputFile );
+    if ( outputFile.length() > 0 )
+        residualReasoner->gammaUnsat().saveToFile( outputFile );
 }
 
 #pragma GCC push_options

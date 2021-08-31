@@ -17,14 +17,15 @@
 #define __GammaUnsat_h__
 
 #include "List.h"
+#include "MString.h"
 #include "PLCaseSplitRawData.h"
 
 class GammaUnsat
 {
 public:
   
-    static GammaUnsat readFromFile( std::string const& path );
-    void saveToFile( std::string const& path ) const;
+    static GammaUnsat readFromFile( String const& path );
+    void saveToFile( String const& path ) const;
 
     struct UnsatSequence
     {

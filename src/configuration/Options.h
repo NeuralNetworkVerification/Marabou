@@ -89,28 +89,9 @@ public:
         SNC_SPLITTING_STRATEGY,
         MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
+        GAMMA_UNSAT_INPUT_FILE,
+        GAMMA_UNSAT_OUTPUT_FILE,
     };
-
-    enum GammaAbstractOption {
-        GAMMA_ABSTRACT = 0
-    };
-
-    enum GammaOption {
-        GAMMA = 0
-    };
-
-    enum VarIndexToPosOption {
-        VAR_INDEX_TO_POS = 0
-    };
-
-    enum VarIndexToIncOption {
-        VAR_INDEX_TO_INC = 0
-    };
-
-    enum PostVarIndicesOption {
-        POST_VAR_INDICES = 0
-    };
-
 
     /*
       The singleton instance
@@ -134,15 +115,9 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
-    Map<unsigned, Pair<unsigned, unsigned>> getGammaAbstract( unsigned option ) const;
-    List<Map<unsigned, bool>> getGamma( unsigned option ) const;
     DivideStrategy getDivideStrategy() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
-    Map<unsigned, bool> getVarIndexToPos( unsigned option ) const;
-    Map<unsigned, bool> getVarIndexToInc( unsigned option ) const;
-    Map<unsigned, unsigned> getPostVarIndices( unsigned option ) const;
-
 
     /*
       Retrieve the value of the various options, by type
@@ -151,14 +126,6 @@ public:
     void setInt( unsigned option, int );
     void setFloat( unsigned option, float );
     void setString( unsigned option, std::string );
-    void setGammaAbstract( unsigned option,
-                           Map<unsigned, Pair<unsigned, unsigned>> values );
-    void setGamma( unsigned option,
-                   List<Map<unsigned, bool>> values );
-    void setVarIndexToPos( unsigned option, Map<unsigned, bool> values );
-    void setVarIndexToInc( unsigned option, Map<unsigned, bool> values );
-    void setPostVarIndices( unsigned option, Map<unsigned, unsigned> values );
-
 
     /*
       Options that are determined at compile time
@@ -193,8 +160,6 @@ private:
     Map<unsigned, int> _intOptions;
     Map<unsigned, float> _floatOptions;
     Map<unsigned, std::string> _stringOptions;
-    Map<unsigned, List<Map<unsigned, bool>>> _gammaOption;
-    Map<unsigned, Map<unsigned, Pair<unsigned, unsigned>>> _gammaAbstractOption;
     Map<unsigned, Map<unsigned, bool>> _varIndexToPosOption;
     Map<unsigned, Map<unsigned, bool>> _varIndexToIncOption;
     Map<unsigned, Map<unsigned, unsigned>> _postVarIndicesOption;

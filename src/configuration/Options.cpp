@@ -78,28 +78,8 @@ void Options::initializeDefaultValues()
     _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
-
-    /*
-      GammaAbstract options
-    */
-    _gammaAbstractOption[GAMMA_ABSTRACT] = Map< unsigned, Pair<unsigned, unsigned> >();
-    /*
-      VarIndexToPos options
-    */
-    _varIndexToPosOption[VAR_INDEX_TO_POS] = Map< unsigned, bool >();
-    /*
-      VarIndexToInc options
-    */
-    _varIndexToIncOption[VAR_INDEX_TO_INC] = Map< unsigned, bool >();
-    /*
-      PostVarIndices options
-    */
-    _postVarIndicesOption[POST_VAR_INDICES] = Map< unsigned, unsigned >();
-    /*
-      GammaAbstract options
-    */
-    _gammaOption[GAMMA] = List<Map<unsigned, bool>>();
-
+    _stringOptions[GAMMA_UNSAT_INPUT_FILE] = "";
+    _stringOptions[GAMMA_UNSAT_OUTPUT_FILE] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -132,31 +112,6 @@ String Options::getString( unsigned option ) const
     return String( _stringOptions.get( option ) );
 }
 
-Map<unsigned, Pair<unsigned, unsigned>> Options::getGammaAbstract( unsigned option ) const
-{
-    return _gammaAbstractOption.get( option );
-}
-
-List<Map<unsigned, bool>> Options::getGamma( unsigned option ) const
-{
-    return _gammaOption.get( option );
-}
-
-Map<unsigned, bool> Options::getVarIndexToPos( unsigned option ) const
-{
-    return _varIndexToPosOption.get( option );
-}
-
-Map<unsigned, bool> Options::getVarIndexToInc( unsigned option ) const
-{
-    return _varIndexToIncOption.get( option );
-}
-
-Map<unsigned, unsigned> Options::getPostVarIndices( unsigned option ) const
-{
-    return _postVarIndicesOption.get( option );
-}
-
 void Options::setBool( unsigned option, bool value )
 {
     _boolOptions[option] = value;
@@ -175,45 +130,6 @@ void Options::setFloat( unsigned option, float value )
 void Options::setString( unsigned option, std::string value )
 {
     _stringOptions[option] = value;
-}
-
-void Options::setGammaAbstract( unsigned option,
-                            Map<unsigned, Pair<unsigned, unsigned>> values )
-{
-    _gammaAbstractOption[option] = Map< unsigned, Pair<unsigned, unsigned> >();
-    for (auto item: values){
-        _gammaAbstractOption[option].insert(item.first, item.second);
-    }
-}
-
-void Options::setGamma( unsigned option,
-                        List<Map<unsigned, bool>> values )
-{
-    _gammaOption[option] = List<Map<unsigned, bool>>();
-    for (auto item: values){
-        _gammaOption[option].append(item);
-    }
-}
-
-void Options::setVarIndexToPos( unsigned option, Map<unsigned, bool> values )
-{
-    for (auto item: values){
-        _varIndexToPosOption[option].insert(item.first, item.second);
-    }
-}
-
-void Options::setVarIndexToInc( unsigned option, Map<unsigned, bool> values )
-{
-    for (auto item: values){
-        _varIndexToIncOption[option].insert(item.first, item.second);
-    }
-}
-
-void Options::setPostVarIndices( unsigned option, Map<unsigned, unsigned> values )
-{
-    for (auto item: values){
-        _postVarIndicesOption[option].insert(item.first, item.second);
-    }
 }
 
 DivideStrategy Options::getDivideStrategy() const

@@ -13,7 +13,7 @@ ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( GammaUnsat gamma
 {
 }
 
-void ResidualReasoningSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> const& stack )
+void ResidualReasoningSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> const& )
 {
 }
 
@@ -77,7 +77,7 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
     }
 }
 
-void ResidualReasoningSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> const& stack ) {}
+void ResidualReasoningSplitProvider::thinkBeforeSuggestingAlternative( List<SmtStackEntry*> const& ) {}
 
 Optional<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::alternativeSplitOnCurrentStack() const { return nullopt; }
 

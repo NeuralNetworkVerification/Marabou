@@ -1,6 +1,5 @@
 #include "GammaUnsat.h"
 #include <fstream>
-#include "MString.h"
 
 GammaUnsat::UnsatSequence::UnsatSequence() {}
 
@@ -28,8 +27,8 @@ int serializeActivation( ActivationType act )
     }
 }
 
-GammaUnsat GammaUnsat::readFromFile( std::string const& path ) {
-    std::ifstream ifs{ path };
+GammaUnsat GammaUnsat::readFromFile( String const& path ) {
+    std::ifstream ifs{ path.ascii() };
 
     GammaUnsat gammaUnsat;
     std::string sLine;
@@ -65,8 +64,8 @@ GammaUnsat GammaUnsat::readFromFile( std::string const& path ) {
     return gammaUnsat;
 }
 
-void GammaUnsat::saveToFile( std::string const& path ) const {
-    std::ofstream ofs{ path };
+void GammaUnsat::saveToFile( String const& path ) const {
+    std::ofstream ofs{ path.ascii() };
 
     // write header explains the file
     auto const fileHead = (
