@@ -163,6 +163,6 @@ def createOptions(
     options._splitThreshold = splitThreshold
     options._solveWithMILP = solveWithMILP
     options._preprocessorBoundTolerance = preprocessorBoundTolerance
-    options._gammaUnsatInputFile = gamma_abstract_input
-    options._gammaUnsatOutputFile = gamma_abstract_output
+    options._gammaUnsatInputFile = str(gamma_abstract_input)
+    options._gammaUnsatOutputFile = str(gamma_abstract_output)
     return options
