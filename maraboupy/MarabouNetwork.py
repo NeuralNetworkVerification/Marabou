@@ -260,7 +260,7 @@ class MarabouNetwork:
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
-        vals, stats = MarabouCore.solve(ipq, options, filename)
+        vals, stats = MarabouCore.solve(ipq, options, str(filename))
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
@@ -284,7 +284,7 @@ class MarabouNetwork:
             filename: (string) file to write serialized inputQuery
         """
         ipq = self.getMarabouQuery()
-        MarabouCore.saveQuery(ipq, filename)
+        MarabouCore.saveQuery(ipq, str(filename))
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", options=None):
         """Function to evaluate network at a given point using Marabou as solver
@@ -317,7 +317,7 @@ class MarabouNetwork:
 
         if options == None:
             options = MarabouCore.Options()
-        outputDict, _ = MarabouCore.solve(ipq, options, filename)
+        outputDict, _ = MarabouCore.solve(ipq, options, str(filename))
 
         # When the query is UNSAT an empty dictionary is returned
         if outputDict == {}:
