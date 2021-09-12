@@ -813,7 +813,7 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             gurobi.addLeqConstraint( terms, maxConcreteUb );
 
             // If the largest lower bound is bigger than the second largest upper bound, then the variable corresponding to that lower bound is the maximal variable.
-            if (maxConcreteLb >= secondMaxConcreteUb)
+            if (maxConcreteLb > secondMaxConcreteUb)
             {
                 terms.clear();
                 terms.append( GurobiWrapper::Term(  1, Stringf( "x%u", targetVariable ) ) );
