@@ -297,13 +297,19 @@ for i, mask in enumerate(maskList):
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
         modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
+#        pred = modelOrig.predict(np.array([xAdv]))
+#        yMax2 = pred.argmax()
+#        pred2 = np.copy(pred)
+#        pred2[0][yMax] = np.min(pred)
+#        ySecond2 = pred2.argmax()
+#        assert yMax2 == yMax and ySecond == ySecond2
         modelAbs = cnnAbs.modelUtils.cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
         modelAbs = None    
 
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
-    runName = "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList))
+    runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, str(cfg_propDist).replace('.','-'), i, len(maskList))
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
