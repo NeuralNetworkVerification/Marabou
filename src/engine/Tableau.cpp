@@ -61,7 +61,6 @@ Tableau::Tableau()
     , _costFunctionManager( NULL )
     , _rhsIsAllZeros( true )
     , _boundsExplanator( NULL )
-    , _infeasibleVar ( -1 )
 {
 }
 
@@ -1654,7 +1653,6 @@ void Tableau::storeState( TableauState &state ) const
     // Store bounds explanations
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
 	{
-    	state._infeasibleVar = _infeasibleVar;
 		*state._boundsExplanator = *_boundsExplanator;
 	}
 }
@@ -1708,7 +1706,6 @@ void Tableau::restoreState( const TableauState &state )
 		*_boundsExplanator = *state._boundsExplanator;
     	ASSERT(_boundsExplanator->getRowsNum() == _m);
 		ASSERT(_boundsExplanator->getVarsNum() == _n);
-		_infeasibleVar = state._infeasibleVar;
 	}
 
 
@@ -2654,35 +2651,57 @@ int Tableau::getInfeasibleRow( TableauRow& row )
 	unsigned basicVar;
     for ( unsigned i = 0; i < _m; ++i )
 	{
-        if ( _basicAssignment[i] < _lowerBounds[basicVar] || _basicAssignment[i] > _upperBounds[basicVar] )
+		basicVar = _basicIndexToVariable[i];
+        if ( FloatUtils::lt( _basicAssignment[i], _lowerBounds[basicVar] ) || FloatUtils::gt( _basicAssignment[i], _upperBounds[basicVar] ) )
 		{
-			basicVar = _basicIndexToVariable[i];
      		Tableau::getTableauRow( i, &row );
             if ( computeRowBound( row, true ) < _lowerBounds[basicVar] || computeRowBound( row, false ) > _upperBounds[basicVar] )
-			{
-            	_infeasibleVar = (int) basicVar;
                 return (int) i;
-			}
 			if ( checkSlack( i ) )
 				oneHasEmptySlack = true;
         }
     }
     if ( !oneHasEmptySlack && allBoundsValid() )
-    	printf("No one has empty slack, and all bounds are valid.\n");
-    else
-		printf("Someone has an empty slack or there's invalid bound.\n");
+	{
+     	checkCostFunctionSlack();
+	}
+
+//    if ( !oneHasEmptySlack && allBoundsValid() )
+//    	printf("No one has empty slack, and all bounds are valid.\n");
+//    else
+//		printf("Someone has an empty slack or there's invalid bound.\n");
 
 	return -1;
 }
 
+bool Tableau::checkCostFunctionSlack()
+{
+	const double *_costFunction = _costFunctionManager->getCostFunction();
+	for ( unsigned i = 0; i < _n - _m; ++i )
+	{
+		double coefficient = _costFunction[i];
+		if ( FloatUtils::isZero( coefficient ) )
+			continue;
+		unsigned var = nonBasicIndexToVariable( i );
+		// As far as I understand cost function always above ub.
+		if  ( FloatUtils::isPositive( coefficient ) &&  !( FloatUtils::areEqual( getValue( var ), _lowerBounds[var] ) ) )
+			printf("var %d is coefficient is %.10lf, value %.10lf ub %.10lf lb %.10lf\n", var, coefficient, getValue(var), _upperBounds[var], _lowerBounds[var]);
+
+
+		// Cases slack vas should be pressed against upper bounds
+		if ( FloatUtils::isNegative( coefficient ) && !( FloatUtils::areEqual( getValue( var ), _upperBounds[var] ) ) )
+			printf("var %d is coefficient is %.10lf, value %.10lf ub %.10lf lb %.10lf\n", var, coefficient, getValue(var), _upperBounds[var], _lowerBounds[var]);
+	}
+	return true;
+}
 
 bool Tableau::checkSlack( unsigned rowIndex )
 {
 	TableauRow *row = new TableauRow( _n );
 	Tableau::getTableauRow( rowIndex, row );
     unsigned basicVar = row->_lhs;
-
-	bool needDecreasing =  _basicAssignment[rowIndex] > _upperBounds[basicVar], needIncreasing = _basicAssignment[rowIndex] < _lowerBounds[basicVar];
+	bool needDecreasing =  FloatUtils::gt( _basicAssignment[rowIndex], _upperBounds[basicVar] ), needIncreasing = FloatUtils::lt( _basicAssignment[rowIndex], _lowerBounds[basicVar] );
+	assert( needDecreasing || needIncreasing );
 	for ( unsigned i = 0; i < row->_size; ++i )
 	{
 		double curCoefficient = row->_row[i]._coefficient;
@@ -2715,9 +2734,6 @@ bool Tableau::checkSlack( unsigned rowIndex )
 
 int Tableau::getInfeasibleVar() const
 {
-	if ( _infeasibleVar >= 0 )
-		return _infeasibleVar;
-
     for (unsigned i = 0; i < _n; ++i)
         if ( _lowerBounds[i] > _upperBounds[i] )
             return ( int ) i;

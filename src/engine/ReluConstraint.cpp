@@ -39,15 +39,11 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _auxVarInUse( false )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
-    , _addedFixedAuxEq( false )
-    , _addedFixedFEq( false )
 {
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
-    , _addedFixedAuxEq( false )
-    , _addedFixedFEq( false )
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -141,7 +137,6 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         return;
 
     setLowerBound( variable, bound );
-	SparseUnsortedList tighteningRow = createTighteningRow();
 
     if ( variable == _f && FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
@@ -152,12 +147,14 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( isActive() && _constraintBoundTightener )
     {
-        // A positive lower bound is always propagated between f and b
+		SparseUnsortedList tighteningRow = createTighteningRow();
+
+		// A positive lower bound is always propagated between f and b
         if ( ( variable == _f || variable == _b ) && bound > 0 )
         {
             // If we're in the active phase, aux should be 0
-			if ( GlobalConfiguration::PROOF_CERTIFICATE && _auxVarInUse && !_addedFixedAuxEq )
-				addEqualZeroEqAndUpdate( _aux );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE && _auxVarInUse )
+				registerExternalExplanationUpdate( _aux, 0, true );
 			else if ( !GlobalConfiguration::PROOF_CERTIFICATE )
 				_constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
 
@@ -168,8 +165,8 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // If b is non-negative, we're in the active phase
         else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
         {
-			if ( GlobalConfiguration::PROOF_CERTIFICATE && _auxVarInUse && !_addedFixedAuxEq )
-				addEqualZeroEqAndUpdate( _aux );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE && _auxVarInUse )
+				registerExternalExplanationUpdate( _aux, 0, true );
 			else if ( !GlobalConfiguration::PROOF_CERTIFICATE )
 				_constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
         }
@@ -178,8 +175,8 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // When inactive, b = -aux
         else if ( _auxVarInUse && variable == _aux && bound > 0 )
         {
-            if ( GlobalConfiguration::PROOF_CERTIFICATE && !_addedFixedFEq )
-            	addEqualZeroEqAndUpdate( _f );
+            if ( GlobalConfiguration::PROOF_CERTIFICATE )
+				registerExternalExplanationUpdate( _f, 0, true );
 			else if ( !GlobalConfiguration::PROOF_CERTIFICATE )
 				_constraintBoundTightener->registerTighterUpperBound( _f, 0 );
 
@@ -216,8 +213,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-     setUpperBound( variable, bound );
-	SparseUnsortedList tighteningRow = createTighteningRow();
+    setUpperBound( variable, bound );
 
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
@@ -227,13 +223,15 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( isActive() && _constraintBoundTightener )
     {
-        if ( variable == _f )
+		SparseUnsortedList tighteningRow = createTighteningRow();
+
+		if ( variable == _f )
         {
 			// TODO relaxed for now - should be ok on any case
             // Any bound that we learned of f should be propagated to b
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
-				if ( _phaseStatus == RELU_PHASE_ACTIVE || FloatUtils::isZero( bound ) )
+				if ( _phaseStatus == RELU_PHASE_ACTIVE )
 					_constraintBoundTightener->registerTighterUpperBound( _b, bound, tighteningRow );
 			}
             else
@@ -245,8 +243,8 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
             if ( !FloatUtils::isPositive( bound ) )
             {
                 // If b has a non-positive upper bound, f's upper bound is 0
-				if ( GlobalConfiguration::PROOF_CERTIFICATE && !_addedFixedFEq )
-					addEqualZeroEqAndUpdate( _f );
+				if ( GlobalConfiguration::PROOF_CERTIFICATE )
+					registerExternalExplanationUpdate( _f, 0, true );
 				else if ( !GlobalConfiguration::PROOF_CERTIFICATE )
 					_constraintBoundTightener->registerTighterUpperBound( _f, 0 );
 
@@ -257,7 +255,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 						// Aux's range is minus the range of b
 						if ( _phaseStatus != RELU_PHASE_ACTIVE)
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
-                        else if ( FloatUtils::isNegative( bound )  && _addedFixedAuxEq )
+                        else if ( FloatUtils::isNegative( bound ) )
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
                     }
                 	else
@@ -996,20 +994,14 @@ void ReluConstraint::updateScoreBasedOnPolarity()
     _score = std::abs( computePolarity() );
 }
 
-void ReluConstraint::addEqualZeroEqAndUpdate( unsigned var )
+void ReluConstraint::registerExternalExplanationUpdate( unsigned var, double value, bool isUpper )
 {
-	if ( var == _aux )
-		assert( _auxVarInUse && !_addedFixedAuxEq );
-	if ( var == _f)
-		assert ( !_addedFixedFEq );
-	Equation varIsZero;
-	varIsZero.addAddend( 1, var );
-	_constraintBoundTightener->replaceEquationAndAdd( var, varIsZero );
+	if (var == _aux)
+		assert(_auxVarInUse && _phaseStatus == RELU_PHASE_ACTIVE);
+	if (var == _f)
+		assert (_phaseStatus == RELU_PHASE_INACTIVE);
 
-	if ( var == _aux )
-		_addedFixedAuxEq = true;
-	else if ( var == _f )
-		_addedFixedFEq = true;
+	_constraintBoundTightener->externalExplanationUpdate(var, value, isUpper);
 }
 
 SparseUnsortedList ReluConstraint::createTighteningRow() const

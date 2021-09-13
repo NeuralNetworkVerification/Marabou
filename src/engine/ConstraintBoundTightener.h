@@ -16,6 +16,7 @@
 #ifndef __ConstraintBoundTightener_h__
 #define __ConstraintBoundTightener_h__
 
+#include <map>
 #include "IConstraintBoundTightener.h"
 
 class ConstraintBoundTightener : public IConstraintBoundTightener
@@ -70,15 +71,15 @@ public:
     void getConstraintTightenings( List<Tightening> &tightenings ) const;
 
 
-	std::list<double> getUGBUpdates() const;
-	std::list<double> getLGBUpdates() const;
+	std::map<unsigned , double> getUGBUpdates() const;
+	std::map<unsigned, double> getLGBUpdates() const;
 	std::list<std::vector<double>> getTableauUpdates() const;
 	void clearEngineUpdates();
 
 	/*
 	 * Replaces the indicating row by equation which is added to the Tableau
 	 */
-	void replaceEquationAndAdd( unsigned var, const Equation& eq);
+	void externalExplanationUpdate( unsigned var, double value, bool isUpper );
 
 
 private:
@@ -107,9 +108,8 @@ private:
     */
     void freeMemoryIfNeeded();
 
-    std::list<double> _lowerGBUpdates;
-	std::list<double> _upperGBUpdates;
-	std::list<std::vector<double>> _initialTableauUpdates;
+	std::map<unsigned, double> _lowerGBUpdates;
+	std::map<unsigned, double> _upperGBUpdates;
 
 	IEngine &_engine; // TODO Consider design
 };

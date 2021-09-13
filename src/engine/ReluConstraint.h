@@ -241,10 +241,7 @@ private:
     */
     bool haveOutOfBoundVariables() const;
 
-    bool _addedFixedAuxEq;
-    bool _addedFixedFEq;
-
-    void addEqualZeroEqAndUpdate( unsigned var );
+    void registerExternalExplanationUpdate( unsigned var, double value, bool isUpper );
 
     SparseUnsortedList createTighteningRow() const;
 };

@@ -661,6 +661,11 @@ private:
      */
 	bool checkSlack( unsigned rowIndex );
 
+	/*
+ 	* Checks that the slack of a given row lhs is empty
+ 	*/
+	bool checkCostFunctionSlack() ;
+
     /*
     * Computes the upper bound imposed by row rhs
     * Consider making a static function
@@ -707,7 +712,6 @@ private:
     */
     BoundsExplanator *_boundsExplanator;
 
-    int _infeasibleVar;
 };
 
 #endif // __Tableau_h__

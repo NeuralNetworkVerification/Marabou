@@ -18,15 +18,16 @@
 #include "PiecewiseLinearConstraint.h"
 #include "BoundsExplanator.h"
 #include <assert.h>
+#include "ReluConstraint.h"
 
 // Contains an explanation for a row addition during a run (i.e from ReLU phase-fixing)
-struct NewRowExplanation
+// For now only relevant to ReLU constraints
+struct PLCExplanation
 {
-	unsigned var;
-	SingleVarBoundsExplanator* explanation;
-	double upperBound;
-	double lowerBound;
-	std::vector<double> initialTableauRow;
+	unsigned _explainedVar;
+	unsigned _affectedVar;
+	SingleVarBoundsExplanator* _explanation;
+	PiecewiseLinearConstraint* _constraint;
 };
 
 struct Contradiction
@@ -92,12 +93,28 @@ public:
 	 */
 	double explainBound( unsigned var, bool isUpper, const SingleVarBoundsExplanator& boundsExplanation ) const;
 
+	/*
+	 * Adds an PLC explanation to the list
+	 */
+	void addPLCExplanation( PLCExplanation& expl);
+
+	/*
+ 	* Adds an a problem constraint to the list
+ 	*/
+	void addProblemConstraints( ReluConstraint& con);
+
+	/*
+ 	* Return true iff the splits are created from a valid PLC
+ 	*/
+	bool certifyReLUSplits( List<PiecewiseLinearCaseSplit> splits) const;
+
 private:
 
 	List<PiecewiseLinearCaseSplit> _splits;
 	std::list<CertificateNode*> _children;
+	std::list<ReluConstraint*> _problemConstraints;
 	CertificateNode* _parent;
-	std::list<NewRowExplanation> _newRowsExplanations;
+	std::list<PLCExplanation> _PLCExplanations;
 	Contradiction* _contradiction;
 
 	std::vector<std::vector<double>> _initialTableau;
@@ -113,11 +130,6 @@ private:
 	 * Inherits the initialTableau and ground bounds from parent, if exists
 	 */
 	void inheritInitials();
-
-	/*
-	 * Updates the tableau according to the new row explanations
-	 */
-	void updateInitialsWithNewRowsExplanations();
 
 	/*
 	 * Checks if the node is a valid leaf
@@ -147,7 +159,7 @@ public:
 		ASSERT( groundLBs.size() == initialTableau[0].size() - 1 );
 		ASSERT( groundLBs.size() == initialTableau[initialTableau.size() - 1].size() - 1 );
 
-		double derived_bound = 0, scalar = 0, c = 0, temp = 0;
+		double derived_bound = 0, scalar = 0, c, temp;
 		unsigned n = groundUBs.size(), m = boundsExplanation.getLength();
 		std::vector<double> expl ( m );
 		boundsExplanation.getVarBoundExplanation( expl, isUpper );
@@ -202,31 +214,6 @@ public:
 		explanationRowsCombination.clear();
 		expl.clear();
 		return derived_bound;
-	}
-
-	/*
-	 * Return true iff the splits are created from a valid PLC
-	 * TODO currently supports ReLU only, and heavily based in its structure
-	 */
-	static bool certifySplits( List<PiecewiseLinearCaseSplit> splits)
-	{
-		if ( splits.size() != 2 )
-			return false;
-		auto firstSplitTightenings = splits.front().getBoundTightenings(), secondSplitTightenings = splits.back().getBoundTightenings();
-		if ( firstSplitTightenings.size() != 2 || secondSplitTightenings.size() != 2 )
-			return false;
-
-		// find the LB, it is b
-
-		// certify the other list has it as UB
-
-		// certify the other vars are not the same
-
-		// certify the tableau has it as a row?
-
-		// certify that all other bounds are zero?
-
-		return true;
 	}
 };
 

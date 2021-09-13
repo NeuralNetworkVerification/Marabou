@@ -94,14 +94,14 @@ public:
         _tightenings.clear();
     }
 
-	std::list<double> getUGBUpdates() const
+	std::map<unsigned, double> getUGBUpdates() const
 	{
-    	return std::list<double>();
+    	return std::map<unsigned, double>();
 	}
 
-	std::list<double> getLGBUpdates() const
+	std::map<unsigned, double> getLGBUpdates() const
 	{
-		return std::list<double>();
+		return std::map<unsigned, double>();
 	}
 
 	std::list<std::vector<double>> getTableauUpdates() const
@@ -110,10 +110,9 @@ public:
 	}
 
 	void clearEngineUpdates(){}
-	void replaceEquationAndAdd( unsigned  var , const Equation&  eq )
+	void externalExplanationUpdate( unsigned var, double value, bool isUpper )
 	{
-    	registerTighterUpperBound( var, eq._scalar );
-		registerTighterLowerBound( var, eq._scalar );
+    	isUpper? registerTighterUpperBound( var, value ) : registerTighterLowerBound( var, value );
     }
 };
 

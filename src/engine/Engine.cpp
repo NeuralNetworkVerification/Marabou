@@ -238,20 +238,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             if ( !_tableau->allBoundsValid() )
-            { // Some variable bounds are invalid, so the query is unsat
-				 //TODO review when called, optimize
-				 if (GlobalConfiguration::PROOF_CERTIFICATE )
-				 {
-					 validateAllBounds(0.01);
-					 int inf = _tableau->getInfeasibleVar();
-					 assert (inf > 0);
-					 validateBounds( inf, 0.01 );
-					 //printLinearInfeasibilityCertificate();
-					 certifyInfeasibility();
-
-				 }
+            // Some variable bounds are invalid, so the query is unsat
                 throw InfeasibleQueryException();
-            }
 
             if ( allVarsWithinBounds() )
             {
@@ -333,6 +321,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
+			explainSimplexFailure();
             if ( !_smtCore.popSplit() )
             {
                 if ( _verbosity > 0 )
@@ -340,7 +329,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     printf( "\nEngine::solve: unsat query\n" );
                     _statistics.print();
                 }
-                applyAllBoundTightenings(); //TODO review carefully
                 _exitCode = Engine::UNSAT;
                 return false;
             }
@@ -541,25 +529,6 @@ void Engine::performSimplexStep()
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-			if( GlobalConfiguration::PROOF_CERTIFICATE )
-			{
-				//TODO optimize
-				applyAllBoundTightenings();
-				int inf = simplexBoundsUpdate();
-				validateAllBounds( 0.01 );
-				if (inf > 0)
-				{
-					validateBounds( inf, 0.01 );
-					//printLinearInfeasibilityCertificate();
-					certifyInfeasibility();
-				}
-
-			}
-			else
-			{
-				applyAllBoundTightenings();
-				simplexBoundsUpdate();
-			}
             throw InfeasibleQueryException();
         }
     }
@@ -1444,15 +1413,8 @@ void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
     	std::copy( _groundUpperBounds.begin(), _groundUpperBounds.end(), state._groundUpperBounds.begin() );
 		std::copy( _groundLowerBounds.begin(), _groundLowerBounds.end(), state._groundLowerBounds.begin() );
 
-		state._initialTableau = std::vector<std::vector<double>> ( _initialTableau.size(), std::vector<double> ( _initialTableau[0].size(), 0 ) );
-		ASSERT( _initialTableau.size() == state._initialTableau.size() );
-		ASSERT( _initialTableau[0].size() == state._initialTableau[0].size() );
 		ASSERT( state._groundLowerBounds.size() == _tableau->getN() );
-		ASSERT( state._initialTableau.size() == _tableau->getM() )
-		ASSERT( state._initialTableau[0].size() == _tableau->getN() + 1 )
-
-		for ( unsigned i = 0 ; i < state._initialTableau.size(); ++i )
-			std::copy( _initialTableau[i].begin(), _initialTableau[i].end(), state._initialTableau[i].begin() );
+		ASSERT( state._groundUpperBounds.size() == _tableau->getN() );
 	}
 }
 
@@ -1481,25 +1443,14 @@ void Engine::restoreState( const EngineState &state )
 	{
 		_groundUpperBounds.clear();
 		_groundLowerBounds.clear();
-		_groundUpperBounds.resize( state._groundUpperBounds.size() );
-		_groundLowerBounds.resize( state._groundLowerBounds.size() );
-
-		_initialTableau.resize( state._initialTableau.size() );
+		_groundUpperBounds = std::vector<double> ( state._groundUpperBounds.size(), 0 );
+		_groundLowerBounds = std::vector<double> ( state._groundLowerBounds.size(), 0 );
 
 		std::copy( state._groundUpperBounds.begin(), state._groundUpperBounds.end(), _groundUpperBounds.begin() );
 		std::copy( state._groundLowerBounds.begin(), state._groundLowerBounds.end(), _groundLowerBounds.begin() );
 
-		for ( unsigned i = 0 ; i < state._initialTableau.size(); ++i )
-		{
-			_initialTableau[i].clear();
-			_initialTableau[i].resize( state._initialTableau[i].size() );
-			std::copy( state._initialTableau[i].begin(), state._initialTableau[i].end(), _initialTableau[i].begin() );
-		}
-
 		ASSERT( _groundLowerBounds.size() == _tableau->getN() );
 		ASSERT( _groundUpperBounds.size() == _tableau->getN() );
-		ASSERT( _initialTableau.size() == _tableau->getM() );
-		ASSERT( _initialTableau[0].size() == _tableau->getN() + 1 );
 	}
 
     // Make sure the data structures are initialized to the correct size
@@ -1722,7 +1673,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 			{
             	if ( FloatUtils::lte( _tableau->getLowerBound( variable ), bound._value) )
 				{
-					// printf( "set lbu of %d from %f to %f\n", variable, _groundLowerBounds[variable], bound._value ); TODO delete
+					 //printf( "set lbu of %d from %f to %f\n", variable, _groundLowerBounds[variable], bound._value ); //TODO delete
 					_tableau->resetExplanation( variable, false );
 					_groundLowerBounds[variable] = bound._value;
 				}
@@ -1736,7 +1687,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 			{
 				if ( FloatUtils::gte( _tableau->getUpperBound( variable ), bound._value ) )
 				{
-					// printf("set gbu of %d from %f to %f\n", variable, _groundUpperBounds[variable], bound._value ); TODO delete
+					 //printf("set gbu of %d from %f to %f\n", variable, _groundUpperBounds[variable], bound._value ); //TODO delete
 					_tableau->resetExplanation( variable, true );
 					_groundUpperBounds[variable] = bound._value;
 				}
@@ -1759,6 +1710,10 @@ void Engine::applyAllRowTightenings()
         else
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
+
+	for ( const auto &tightening : rowTightenings )
+		validateBounds( tightening._variable, 0.01 ); //TODO delete
+
 }
 
 void Engine::applyAllConstraintTightenings()
@@ -1779,41 +1734,17 @@ void Engine::applyAllConstraintTightenings()
 
     // All updates to IT and GB registered by the CBT need to be updated
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
-	{
-		unsigned diffSize =  _constraintBoundTightener->getTableauUpdates().size();
-		if ( !diffSize )
-			return;
-
-		for ( auto &initialRow : _initialTableau ) // Keeps scalar at last place
-				initialRow.insert( initialRow.end() - 1, diffSize, 0);
-
-		for (  auto& row : _constraintBoundTightener->getTableauUpdates() )
-		{
-			ASSERT( row.size() == _initialTableau[0].size() );
-			_initialTableau.push_back( row );
-		}
-
-		for ( auto bound : _constraintBoundTightener->getLGBUpdates() )
-			_groundLowerBounds.push_back( bound );
-
-		for ( auto bound : _constraintBoundTightener->getUGBUpdates() )
-			_groundUpperBounds.push_back( bound );
-
-
-		ASSERT( _groundLowerBounds.size() == _initialTableau[0].size() - 1 );
-		ASSERT( _groundLowerBounds.size() == _initialTableau.back().size() - 1 );
-		ASSERT( _groundLowerBounds.size() == _groundUpperBounds.size() );
-		ASSERT( _groundLowerBounds.size() == _tableau->getN() );
-		ASSERT( _initialTableau.size() == _tableau->getM() );
-
-		_constraintBoundTightener->clearEngineUpdates();
+    {
+    	// TODO in updates model - uncomment
+//		for ( std::pair<unsigned, double> update : _constraintBoundTightener->getUGBUpdates() )
+//			_groundUpperBounds[update.first] = update.second;
+//
+//		for ( std::pair<unsigned, double> update : _constraintBoundTightener->getLGBUpdates() )
+//			_groundLowerBounds[update.first] = update.second;
+//
+//		_constraintBoundTightener->clearEngineUpdates();
 		for ( const auto &tightening : entailedTightenings ) //TODO delete
 			validateBounds( tightening._variable, 0.01 );
-
-		_rowBoundTightener->setDimensions();
-		adjustWorkMemorySize();
-		_activeEntryStrategy->resizeHook( _tableau );
-		_costFunctionManager->initialize(); //TODO might be causing problems
 	}
 }
 
@@ -2452,6 +2383,7 @@ bool Engine::restoreSmtState( SmtState & smtState )
     {
         // The current query is unsat, and we need to pop.
         // If we're at level 0, the whole query is unsat.
+		explainSimplexFailure();
         if ( !_smtCore.popSplit() )
         {
             if ( _verbosity > 0 )
@@ -2564,21 +2496,13 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
     }
 }
 
-void Engine::printLinearInfeasibilityCertificate()
+void Engine::printBoundsExplanation( unsigned var )
 {
     if ( !GlobalConfiguration::PROOF_CERTIFICATE )
     {
         printf("In order to provide a proof certificate, set GlobalConfiguration::PROOF_CERTIFICATE to true.\n");
         return;
     }
-
-    int var = _tableau->getInfeasibleVar();
-    if (var < 0)
-	{
-    	printf("Certification Error! No infeasible var was found.\n");
-    	return; // TODO delete
-	}
-    ASSERT( var >= 0 );
 
     printf( "Found a variable with infeasible bounds: x%d\n", var );
     unsigned m = _tableau->getM();
@@ -2632,13 +2556,11 @@ int Engine::simplexBoundsUpdate()
         _tableau->updateExplanation( boundUpdateRow, false );
         //_tableau->tightenLowerBound( var, newBound );
     }
-    return var;
+    return ( int ) var;
 }
 
-void Engine::certifyInfeasibility() const
+void Engine::certifyInfeasibility( unsigned var ) const
 {
-    int var = _tableau->getInfeasibleVar();
-    ASSERT (var >= 0 );
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
     if (  FloatUtils::lte( computedLower, computedUpper ) )
     	printf("Certification error. gap is %.5lf \n", computedUpper - computedLower );
@@ -2651,7 +2573,7 @@ void Engine::certifyInfeasibility() const
 
 double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 {
-	SingleVarBoundsExplanator* certificate = _tableau->ExplainBound( var );;
+	SingleVarBoundsExplanator* certificate = _tableau->ExplainBound( var );
 	return UNSATCertificateUtils::computeBound( var, isUpper, *certificate, _initialTableau, _groundUpperBounds, _groundLowerBounds);
 }
 
@@ -2748,4 +2670,36 @@ bool Engine::preprocessingEnabled() const
 const Preprocessor *Engine::getPreprocessor()
 {
     return &_preprocessor;
+}
+
+void Engine::updatedGroundUpperBound( unsigned var, double value )
+{
+	if ( value < _groundUpperBounds[var] )
+		_groundUpperBounds[var] = value;
+}
+
+void Engine::updatedGroundLowerBound( unsigned var, double value )
+{
+	if (value > _groundLowerBounds[var] )
+		_groundLowerBounds[var] = value;
+}
+
+void Engine::explainSimplexFailure()
+{
+	if( !GlobalConfiguration::PROOF_CERTIFICATE )
+		return;
+
+	applyAllBoundTightenings();
+	validateAllBounds( 0.01 );
+	int inf = _tableau->getInfeasibleVar();
+
+	if (inf < 0)
+		inf = simplexBoundsUpdate();
+
+	if ( inf >= 0 )
+	{
+		validateBounds( inf, 0.01 );
+		printBoundsExplanation( inf );
+		certifyInfeasibility( inf );
+	}
 }

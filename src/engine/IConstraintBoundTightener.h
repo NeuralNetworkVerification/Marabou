@@ -16,6 +16,7 @@
 #ifndef __IConstraintBoundTightener_h__
 #define __IConstraintBoundTightener_h__
 
+#include <map>
 #include "ITableau.h"
 #include "Tightening.h"
 #include "IEngine.h"
@@ -71,11 +72,10 @@ public:
     */
     virtual void getConstraintTightenings( List<Tightening> &tightenings ) const = 0;
 
-	virtual std::list<double> getUGBUpdates() const = 0;
-	virtual std::list<double> getLGBUpdates() const = 0;
-	virtual std::list<std::vector<double>> getTableauUpdates() const = 0;
+	virtual std::map<unsigned, double> getUGBUpdates() const = 0;
+	virtual std::map<unsigned, double> getLGBUpdates() const = 0;
 	virtual void clearEngineUpdates() = 0;
-	virtual void replaceEquationAndAdd( unsigned var, const Equation& eq) = 0;
+	virtual void externalExplanationUpdate( unsigned var, double value, bool isUpper ) = 0;
 };
 
 #endif // __IConstraintBoundTightener_h__

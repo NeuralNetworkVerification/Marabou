@@ -183,68 +183,35 @@ void ConstraintBoundTightener::ConstraintBoundTightener::getConstraintTightening
     }
 }
 
-std::list<double> ConstraintBoundTightener::getUGBUpdates() const
+std::map<unsigned, double> ConstraintBoundTightener::getUGBUpdates() const
 {
 	return _upperGBUpdates;
 }
 
-std::list<double> ConstraintBoundTightener::getLGBUpdates() const
+std::map<unsigned, double>ConstraintBoundTightener::getLGBUpdates() const
 {
 	return _lowerGBUpdates;
-}
-
-std::list<std::vector<double>> ConstraintBoundTightener::getTableauUpdates() const
-{
-	return _initialTableauUpdates;
 }
 
 void ConstraintBoundTightener::clearEngineUpdates()
 {
 	_lowerGBUpdates.clear();
 	_upperGBUpdates.clear();
-	_initialTableauUpdates.clear();
 }
 
-void ConstraintBoundTightener::replaceEquationAndAdd( unsigned var, const Equation& eq )
+void ConstraintBoundTightener::externalExplanationUpdate( unsigned var, double value, bool isUpper )
 {
-	_engine.applyAllConstraintTightenings(); // TODO consider design. Needed since adding rows deletes all info
+	// Register new ground bound, and reset explanation
+	if ( !isUpper && value <= _tableau.getLowerBound( var ) )
+		return;
+	if ( isUpper && value >= _tableau.getUpperBound( var ) )
+		return;
 
-	// Assuming equation is EQ type
-	unsigned newAux = _tableau.addEquation( eq ), n = _tableau.getN(), m = _tableau.getM();
-	// Register engine updates
-	std::vector<double> newITRow ( n + 1, 0 );
-	for (auto addend : eq._addends )
-		newITRow[addend._variable] = addend._coefficient;
-	newITRow[newAux] = 1;
-	newITRow[n] = eq._scalar;
+	_tableau.resetExplanation( var, isUpper );
+	isUpper? _engine.updatedGroundUpperBound( var, value ) : _engine.updatedGroundLowerBound( var, value );
+//	isUpper? _upperGBUpdates[var] = value : _lowerGBUpdates[var] = value; //TODO consider moving to updates model
+	isUpper? registerTighterUpperBound( var, value ) : registerTighterLowerBound( var, value );
 
-	// Make all previous updates of same length
-	for ( auto &row : _initialTableauUpdates )
-	{
-		row.insert(row.end() - 1, 0);
-		assert( row.size() == newITRow.size() );
-	}
-
-	_initialTableauUpdates.push_back( newITRow );
-
-
-	// Enforcing the new aux var to be zero
-	_lowerGBUpdates.push_back( 0 );
-	_upperGBUpdates.push_back( 0 );
-
-	registerTighterUpperBound( newAux, 0 );
-	registerTighterLowerBound( newAux, 0 );
-
-	// Assuming equation is of type var = scalar
-	// For generalization, can possibly compute bound imposed by row
-	registerTighterUpperBound( var, eq._scalar );
-	registerTighterLowerBound( var, eq._scalar );
-
-	// Injects the new explanation - the last row
-	// No need for a tightening row, and avoid possible bug of adding a basic variable as non-basic
-	SingleVarBoundsExplanator expl ( m );
-	expl.injectEntry( m - 1, 1, true );
-	_tableau.injectExplanation(var, expl);
 }
 
 //

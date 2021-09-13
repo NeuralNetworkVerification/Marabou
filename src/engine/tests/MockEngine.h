@@ -195,6 +195,14 @@ public:
 	{
 	}
 
+	void updatedGroundUpperBound( unsigned /*var*/, double /*value*/ )
+	{
+	}
+
+	void updatedGroundLowerBound( unsigned /*var*/, double /*value*/ )
+	{
+	}
+
 };
 
 #endif // __MockEngine_h__

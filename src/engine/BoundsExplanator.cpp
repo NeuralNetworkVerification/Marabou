@@ -216,9 +216,14 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 
 	for ( unsigned i = 0; i < row._size; ++i )
 	{
-		if ( row[i] ) // Updates of zero coefficients are unnecessary
+		if ( !FloatUtils::isZero( row[i] ) ) // Updates of zero coefficients are unnecessary
 		{
 			equiv._row[i]._coefficient = - row[i] * coeff;
+			equiv._row[i]._var = row._row[i]._var;
+		}
+		else
+		{
+			equiv._row[i]._coefficient = 0;
 			equiv._row[i]._var = row._row[i]._var;
 		}
 	}
@@ -325,12 +330,14 @@ void BoundsExplanator::addZeroExplanation()
 	_bounds.emplace_back( _rowsNum );
 }
 
-void BoundsExplanator::resetExplanation (const unsigned var, const bool isUpper)
+void BoundsExplanator::resetExplanation ( const unsigned var, const bool isUpper )
 {
 	_bounds[var].updateVarBoundExplanation( std::vector<double>( _rowsNum, 0 ), isUpper);
+	_bounds[var]._lowerRecLevel = 0;
+	_bounds[var]._upperRecLevel = 0;
 }
 
-void BoundsExplanator::injectExplanation(unsigned var, SingleVarBoundsExplanator& expl)
+void BoundsExplanator::injectExplanation( unsigned var, SingleVarBoundsExplanator& expl )
 {
 	assert( expl.getLength() == _bounds[var].getLength() );
 	_bounds[var] = expl;

@@ -17,8 +17,9 @@
 CertificateNode::CertificateNode( const std::vector<std::vector<double>> &initialTableau, const std::vector<double> &groundUBs, const std::vector<double> &groundLBs )
 	: _splits()
 	, _children ( 0 )
+	, _problemConstraints ( 0 )
 	, _parent( NULL )
-	, _newRowsExplanations( 0 )
+	, _PLCExplanations( 0 )
 	, _contradiction ( NULL )
 {
 	copyInitials( initialTableau, groundUBs, groundLBs );
@@ -27,8 +28,9 @@ CertificateNode::CertificateNode( const std::vector<std::vector<double>> &initia
 CertificateNode::CertificateNode( CertificateNode* parent, List<PiecewiseLinearCaseSplit> splits )
 	: _splits( )
 	, _children ( 0 )
+	, _problemConstraints ( 0 )
 	, _parent( parent )
-	, _newRowsExplanations( 0 )
+	, _PLCExplanations( 0 )
 	, _contradiction ( NULL )
 	, _initialTableau( 0 )
 	, _groundUpperBounds( 0 )
@@ -48,8 +50,8 @@ CertificateNode::~CertificateNode()
 
 	_splits.clear(); //TODO check if need to erase elements as well
 
-	if ( !_newRowsExplanations.empty() )
-		_newRowsExplanations.clear();
+	if ( !_PLCExplanations.empty() )
+		_PLCExplanations.clear();
 
 	if ( _contradiction )
 	{
@@ -94,43 +96,9 @@ void CertificateNode::inheritInitials()
 	copyInitials( _parent->_initialTableau, _parent->_groundUpperBounds, _parent->_groundLowerBounds );
 }
 
-void CertificateNode::updateInitialsWithNewRowsExplanations()
-{
-	inheritInitials();
-
-	unsigned diffSize =  _newRowsExplanations.size();
-	if ( !diffSize ) // Nothing to update
-		return;
-
-	for ( auto &initialRow : _initialTableau ) // Keeps scalar at last place
-		initialRow.insert( initialRow.end() - 1, diffSize, 0 );
-
-	// TODO certify explanations of new rows
-	// Update explanation of all new rows?
-
-	unsigned count = 0;
-	for ( auto& expl : _newRowsExplanations )
-	{
-		std::vector<double>& row = expl.initialTableauRow;
-		row.insert( row.end() - 1, diffSize - count, 0 );
-		ASSERT( row.size() == _initialTableau[0].size() );
-		_initialTableau.push_back( row );
-		_groundUpperBounds.push_back( expl.upperBound );
-		_groundLowerBounds.push_back( expl.lowerBound );
-		++count;
-	}
-
-	ASSERT( _groundLowerBounds.size() == _groundUpperBounds.size() );
-	ASSERT( _groundLowerBounds.size() == _initialTableau[0].size() - 1 );
-	ASSERT( _groundLowerBounds.size() == _initialTableau.back().size() -1 );
-}
-
-
 bool CertificateNode::certify()
 {
 	bool answer;
-	// Create the correct initial tableau and ground bounds by inheriting from parent and adding
-	updateInitialsWithNewRowsExplanations();
 
 	// Check if it is a leaf, and if so use contradiction to certify
 	// return true iff it is certified
@@ -143,7 +111,7 @@ bool CertificateNode::certify()
 		// Certify all children
 		// return true iff all children are certified
 		answer = true;
-		if ( !UNSATCertificateUtils::certifySplits( _splits ) )
+		if ( !certifyReLUSplits( _splits ) )
 			return false;
 
 		ASSERT( isValidNoneLeaf() );
@@ -206,4 +174,49 @@ void CertificateNode::clearInitials()
 
 	_groundUpperBounds.clear();
 	_groundLowerBounds.clear();
+}
+
+void CertificateNode::addPLCExplanation( PLCExplanation& expl)
+{
+	_PLCExplanations.push_back( expl );
+}
+
+
+void CertificateNode::addProblemConstraints( ReluConstraint& con)
+{
+	_problemConstraints.push_back( &con );
+}
+
+bool CertificateNode::certifyReLUSplits( List<PiecewiseLinearCaseSplit> splits) const
+{
+	//TODO debug
+	if ( splits.size() != 2 )
+		return false;
+	auto firstSplitTightenings = splits.front().getBoundTightenings(), secondSplitTightenings = splits.back().getBoundTightenings();
+	if ( firstSplitTightenings.size() != 2 || secondSplitTightenings.size() != 2 )
+		return false;
+
+	// find the LB, it is b
+	auto &activeSplit = firstSplitTightenings.back()._type == Tightening::LB ? firstSplitTightenings : secondSplitTightenings;
+	auto &inactiveSplit = firstSplitTightenings.back()._type == Tightening::LB ? secondSplitTightenings : firstSplitTightenings;
+
+	unsigned b = activeSplit.back()._variable;
+	unsigned aux = activeSplit.front()._variable;
+	unsigned f = inactiveSplit.front()._variable;
+
+	if ( inactiveSplit.back()._variable != b ||  inactiveSplit.back()._type == Tightening::UB || inactiveSplit.front()._type == Tightening::UB || activeSplit.front()._type == Tightening::UB )
+		return false;
+	if ( inactiveSplit.back()._value != 0.0 || inactiveSplit.front()._value != 0.0 || activeSplit.back()._value != 0.0 || activeSplit.front()._value != 0.0 )
+		return false;
+
+	// certify that f = relu(b) + aux is in problem constraints
+	bool foundConstraint = false;
+	for ( auto &con : _problemConstraints )
+	{
+		assert( con->auxVariableInUse() );
+		if ( con->getB() == b && con->getF() == f && con->getAux() == aux)
+			foundConstraint = true;
+	}
+
+	return foundConstraint;
 }

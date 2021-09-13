@@ -96,7 +96,9 @@ public:
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
 
-    virtual void applyAllConstraintTightenings() = 0;
+	virtual void updatedGroundUpperBound( unsigned var, double value ) = 0;
+	virtual void updatedGroundLowerBound( unsigned var, double value ) = 0;
+
 };
 
 #endif // __IEngine_h__

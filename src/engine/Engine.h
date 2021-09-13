@@ -176,6 +176,9 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
+    void updatedGroundUpperBound( unsigned var, double value );
+    void updatedGroundLowerBound( unsigned var, double value );
+
 private:
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -575,7 +578,7 @@ private:
     /*
      Prints coefficents of Simplex equations that witness UNSAT
     */
-    void printLinearInfeasibilityCertificate();
+    void printBoundsExplanation( unsigned var );
 
     /*
      Updates bounds after deducing Simplex unfeasibility
@@ -591,7 +594,7 @@ private:
      Returns true iff there is a variable with bounds which can explain infeasibility of the tableau
      Asserts the computed bound is epsilon close to the real one.
     */
-    void certifyInfeasibility() const;
+    void certifyInfeasibility( unsigned var ) const;
 
     /*
      Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds
@@ -620,12 +623,18 @@ private:
 	 Returns true iff both bounds are epsilon close to their explanations
 	*/
 	bool validateBounds( unsigned var ,const double epsilon ) const;
-    /*
+
+	/*
      Validates that all explanations epsilon close to real bounds
      Separately for tightenings and actual bounds
      Returns true iff all bounds are epsilon-close to theier explanations
     */
     bool validateAllBounds( const double epsilon ) const;
+
+    /*
+     * Finds the variable causing failure and updates its bounds explanations
+     */
+    void explainSimplexFailure();
 
 };
 
