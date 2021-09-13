@@ -103,7 +103,7 @@ cfg_slurmSeq          = args.slurm_seq
 cfg_rerunSporious     = args.rerun_sporious
 cfg_gtimeout          = args.gtimeout
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     optionsObj = optionsLocal
@@ -234,14 +234,15 @@ if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     MarabouCore.saveQuery(ipq, cnnAbs.logDir + "IPQ_dumpBounds")
     CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
-    os.rename(cnnAbs.logDir + "dumpBounds.json", cnnAbs.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
-        cnnAbs.resultsJson[mi("Result")] = resultObj.result.name
+        cnnAbs.resultsJson[mi("Result")] = "UNSAT"
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
-        exit()    
+        exit()
+    else:
+        os.rename(cnnAbs.logDir + "dumpBounds.json", cnnAbs.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
 if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBoundsInitial.json"):
         boundList = cnnAbs.loadJson("dumpBoundsInitial", loadDir=cnnAbs.logDir)
         boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
@@ -296,13 +297,19 @@ for i, mask in enumerate(maskList):
     if not cfg_useDumpedQueries:
         tf.keras.backend.clear_session()
         modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
+#        pred = modelOrig.predict(np.array([xAdv]))
+#        yMax2 = pred.argmax()
+#        pred2 = np.copy(pred)
+#        pred2[0][yMax] = np.min(pred)
+#        ySecond2 = pred2.argmax()
+#        assert yMax2 == yMax and ySecond == ySecond2
         modelAbs = cnnAbs.modelUtils.cloneAndMaskConvModel(modelOrig, replaceLayerName, mask)
     else:
         modelAbs = None    
 
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
-    runName = "sample_{},policy_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, i, len(maskList))
+    runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, str(cfg_propDist).replace('.','-'), i, len(maskList)-1)
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
@@ -316,7 +323,7 @@ for i, mask in enumerate(maskList):
         except Exception as err:
             CnnAbs.printLog(err)
             isSporious = True
-        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
+        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i, len(maskList)-1))
         if not isSporious:
             successful = i
             break
@@ -338,14 +345,14 @@ for i, mask in enumerate(maskList):
                     CnnAbs.printLog(err)
                 resultObj = resultObjRerunSporious
                 successful = i
-                CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
+                CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i, len(maskList)-1))
                 break
             else:
                 resultObj = ResultObj("spurious")
-                CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
+                CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i, len(maskList)-1))
 
     elif resultObj.unsat():
-        CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i+1, len(maskList)))        
+        CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i, len(maskList)-1))
         successful = i
         break
     else:
@@ -370,7 +377,7 @@ if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout) or f
     
 if not cfg_dumpQueries:    
     if success:
-        CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
+        CnnAbs.printLog("successful={}/{}".format(successful, len(maskList)-1)) if (successful+1) < len(maskList) else CnnAbs.printLog("successful=Full")
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
         cnnAbs.resultsJson["successfulRun"] = successful
     accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0

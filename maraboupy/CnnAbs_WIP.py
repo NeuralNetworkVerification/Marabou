@@ -388,7 +388,7 @@ class CnnAbs:
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
         if self.maskIndex+1 == self.numMasks:
             return
-        commonFlags = ["--batch_id", batchId, "--prop_distance", str(0.03), "--dump_dir", self.dumpDir]
+        commonFlags = ["--batch_id", batchId, "--dump_dir", self.dumpDir]
         if cnnSize:
             commonFlags += ["--cnn_size", cnnSize]
         if validation:
@@ -551,7 +551,10 @@ class CnnAbs:
         else:
             modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
-        assert prop.ySecond == mbouPrediction
+        if prop.ySecond != mbouPrediction:
+            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
+            print("cexPrediction={}".format(cexPrediction))
+            assert prop.ySecond == mbouPrediction
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")
@@ -600,8 +603,8 @@ class CnnAbs:
         return self.gtimeout <= 1
 
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
-        self.resultsJson["subResults"].append({"index" : self.maskIndex+1,
-                                               "outOf" : self.numMasks,
+        self.resultsJson["subResults"].append({"index" : self.maskIndex,
+                                               "outOf" : self.numMasks-1,
                                                "runtime" : runtime,
                                                "runtimeTotal":runtimeTotal,
                                                "originalQueryStats" : originalQueryStats,
@@ -620,8 +623,8 @@ class CnnAbs:
             self.resultsJson["subResults"][-1]["rerunSAT"] = sat
             self.resultsJson["subResults"][-1]["rerunTimedOut"] = timedOut
         else:
-            self.resultsJson["subResults"][-1] = {"index" : self.maskIndex+1,
-                                                  "outOf" : self.numMasks,
+            self.resultsJson["subResults"][-1] = {"index" : self.maskIndex,
+                                                  "outOf" : self.numMasks-1,
                                                   "runtime" : runtime,
                                                   "runtimeTotal":runtimeTotal,
                                                   "originalQueryStats" : originalQueryStats,

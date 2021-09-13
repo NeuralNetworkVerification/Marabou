@@ -21,14 +21,20 @@ def countSame(x,y):
     return list(zip(xyCount, xy))
 
 def cellColor(result, dark=False):
-    if result.upper() == 'TIMEOUT':
+    if result.upper() == 'GTIMEOUT':
         return 'yellow' if not dark else 'gold'
+    if result.upper() == 'TIMEOUT':
+        return 'orange' if not dark else 'darkorange'
     elif result.upper() == 'UNSAT':
         return 'green' if not dark else 'darkgreen'
     elif result.upper() == 'SAT':
         return 'red' if not dark else 'darkred'
+    elif result.upper() == 'SPURIOUS':
+        return 'fuchsia' if not dark else 'deeppink'
+    elif result.upper() == 'ERROR':
+        return 'gray' if not dark else 'darkgray' 
     else:
-        return 'yellow' if not dark else 'gold'
+        return 'black'
     return None
 
 def markerChoice(result):
@@ -247,7 +253,7 @@ for fullpath in resultsFiles:
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()
-            finalPartiallity = dict(numRuns=1 if resultDict["subResults"] else -1, vars=-1, equations=-1, reluConstraints=-1)
+            finalPartiallity = dict(numRuns=1 if resultDict["subResults"] else (0 if resultDict["Result"] == "UNSAT" else -1), vars=-1, equations=-1, reluConstraints=-1)
             
         assert len(originalQueryStats) == len(finalQueryStats)
         successfulRuntime = -1 if resultDict["Result"].upper() in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"] or not ("successfulRuntime" in resultDict) else resultDict["successfulRuntime"]
@@ -393,14 +399,14 @@ plt.close()
 plt.figure()
 
 # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-resultLabels = 'SAT', 'UNSAT', 'TIMEOUT'
+resultLabels = 'SAT', 'UNSAT', 'TIMEOUT', "GTIMEOUT", "SPURIOUS", "ERROR"
 runSampleNum = [[len([v for k,v in resultDict.items() if k != 'label' and v["result"] == l]) for l in resultLabels] for resultDict in resultDicts]
 
 fig, axes = plt.subplots(nrows=len(resultDicts), ncols=1)
 fig.suptitle("Run Results", fontsize=20)
 plt.subplots_adjust(wspace=1)
 for resultDict, ax , sampleNum in zip(resultDicts, axes, runSampleNum): 
-    ax.pie(sampleNum, labels=[l if s > 0 else "" for l,s in zip(resultLabels, sampleNum)], colors=["darkred","darkgreen","gold"], autopct=lambda pct: pctFunc(pct, sampleNum), shadow=True, startangle=90, textprops=dict(color="k"))
+    ax.pie(sampleNum, labels=[l if s > 0 else "" for l,s in zip(resultLabels, sampleNum)], colors=["darkred","darkgreen", "darkorange", "gold", "deeppink", "lightgray"], autopct=lambda pct: pctFunc(pct, sampleNum), shadow=True, startangle=90, textprops=dict(color="k"))
     ax.set_title("{}, {} samples".format(resultDict['label'], len(resultDict)-1), fontdict=dict(fontsize=12))
     ax.axis('equal')
 
