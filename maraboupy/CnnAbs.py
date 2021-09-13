@@ -603,8 +603,8 @@ class CnnAbs:
         return self.gtimeout <= 1
 
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
-        self.resultsJson["subResults"].append({"index" : self.maskIndex+1,
-                                               "outOf" : self.numMasks,
+        self.resultsJson["subResults"].append({"index" : self.maskIndex,
+                                               "outOf" : self.numMasks-1,
                                                "runtime" : runtime,
                                                "runtimeTotal":runtimeTotal,
                                                "originalQueryStats" : originalQueryStats,
@@ -623,8 +623,8 @@ class CnnAbs:
             self.resultsJson["subResults"][-1]["rerunSAT"] = sat
             self.resultsJson["subResults"][-1]["rerunTimedOut"] = timedOut
         else:
-            self.resultsJson["subResults"][-1] = {"index" : self.maskIndex+1,
-                                                  "outOf" : self.numMasks,
+            self.resultsJson["subResults"][-1] = {"index" : self.maskIndex,
+                                                  "outOf" : self.numMasks-1,
                                                   "runtime" : runtime,
                                                   "runtimeTotal":runtimeTotal,
                                                   "originalQueryStats" : originalQueryStats,

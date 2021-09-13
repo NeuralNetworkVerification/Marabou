@@ -103,7 +103,7 @@ cfg_slurmSeq          = args.slurm_seq
 cfg_rerunSporious     = args.rerun_sporious
 cfg_gtimeout          = args.gtimeout
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=0,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     optionsObj = optionsLocal
@@ -309,7 +309,7 @@ for i, mask in enumerate(maskList):
 
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
-    runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, str(cfg_propDist).replace('.','-'), i, len(maskList))
+    runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, str(cfg_propDist).replace('.','-'), i, len(maskList)-1)
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
@@ -323,7 +323,7 @@ for i, mask in enumerate(maskList):
         except Exception as err:
             CnnAbs.printLog(err)
             isSporious = True
-        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i+1, len(maskList)))
+        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i, len(maskList)-1))
         if not isSporious:
             successful = i
             break
@@ -345,14 +345,14 @@ for i, mask in enumerate(maskList):
                     CnnAbs.printLog(err)
                 resultObj = resultObjRerunSporious
                 successful = i
-                CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
+                CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i, len(maskList)-1))
                 break
             else:
                 resultObj = ResultObj("spurious")
-                CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i+1, len(maskList)))
+                CnnAbs.printLog("Didn't found CEX in mask {}/{} after rerun.".format(i, len(maskList)-1))
 
     elif resultObj.unsat():
-        CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i+1, len(maskList)))        
+        CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i, len(maskList)-1))
         successful = i
         break
     else:
@@ -377,7 +377,7 @@ if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout) or f
     
 if not cfg_dumpQueries:    
     if success:
-        CnnAbs.printLog("successful={}/{}".format(successful+1, len(maskList))) if successful < len(maskList) else CnnAbs.printLog("successful=Full")
+        CnnAbs.printLog("successful={}/{}".format(successful, len(maskList)-1)) if (successful+1) < len(maskList) else CnnAbs.printLog("successful=Full")
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
         cnnAbs.resultsJson["successfulRun"] = successful
     accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
