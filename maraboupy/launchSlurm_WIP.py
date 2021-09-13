@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import itertools
 import argparse
+import numpy as np
 #from CnnAbs import *
 #tf.compat.v1.enable_v2_behavior()
 
@@ -79,10 +80,41 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
                     "commonRunCommand" : " ".join(commonFlags),
-                    "runCommands"  : [" ".join(cmd) for cmd in runCmds]}
+                    "runCommands"  : [" ".join(cmd) for cmd in runCmds],
+                    "xparameter" : "cfg_sampleIndex"}
         json.dump(jsonDict, f, indent = 4)
 
     return runCmds, runTitles
+
+def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath):
+    runCmds = list()
+    runTitles = list()
+    title2Label = dict()
+
+    propDist = [round(x, 3) for x in np.linspace(0.025, 0.2, num=numRunsPerType)]
+    
+
+    for policy in solvingPolicies():
+        title2Label["{}Cfg".format(policy)] = "{}".format(policy)
+        for i in range(numRunsPerType):
+            title = "{}Cfg---{}".format(policy, str(propDist[i]).replace('.','-'))
+            runCmds.append(commonFlags + ["--run_title", title, "--prop_distance", str(propDist[i]), "--policy", policy])
+            runTitles.append(title)
+
+    with open(batchDirPath + "/plotSpec.json", 'w') as f:
+        policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
+        jsonDict = {"Experiment"  : "Different property distances on the same sample",
+                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "title2Label" : title2Label,
+                    "COIRatio"    : policiesCfg,
+                    "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
+                    "commonRunCommand" : " ".join(commonFlags),
+                    "runCommands"  : [" ".join(cmd) for cmd in runCmds],
+                    "xparameter" : "cfg_propDist"}
+        json.dump(jsonDict, f, indent = 4)
+
+    return runCmds, runTitles
+
 
 def experimentFindMinProvable(numRunsPerType, commonFlags, batchDirPath):
     
@@ -165,7 +197,8 @@ def main():
     
     experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                    "AbsPolicies"    : experimentAbsPolicies,
-                   "FindMinProvable": experimentFindMinProvable}
+                   "FindMinProvable": experimentFindMinProvable,
+                   "DifferentDistances" : experimentDifferentDistances}
     parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
     parser.add_argument("--exp", type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
     parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
@@ -218,7 +251,11 @@ def main():
     #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
     clusterFlags = []
     #commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
-    commonFlags = clusterFlags + ["--batch_id", batchId, "--prop_distance", str(prop_distance), "--dump_dir", dumpDirPath]
+    commonFlags = clusterFlags + ["--batch_id", batchId, "--dump_dir", dumpDirPath]
+    if experiment != 'DifferentDistances':
+        commonFlags += ["--prop_distance", str(prop_distance)]
+    else:
+        commonFlags += ["--sample", str(args.sample)]
     if cnn_size:
         commonFlags += ["--cnn_size", cnn_size]
     if validation:
