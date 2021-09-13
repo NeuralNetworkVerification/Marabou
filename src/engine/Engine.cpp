@@ -2631,6 +2631,9 @@ void Engine::normalizeAllExplanations()
 
 bool Engine::validateBounds( unsigned var ,const double epsilon ) const
 {
+	if ( !GlobalConfiguration::PROOF_CERTIFICATE )
+		return true;
+
 	auto certificate = _tableau->ExplainBound(var);
 	ASSERT( certificate->getLength() == _tableau->getM() );
 	certificate->assertLengthConsistency();
@@ -2653,6 +2656,9 @@ bool Engine::validateBounds( unsigned var ,const double epsilon ) const
 
 bool Engine::validateAllBounds( const double epsilon ) const
 {
+	if ( !GlobalConfiguration::PROOF_CERTIFICATE )
+		return true;
+
 	bool res = true;
     //Assuming all tightening were applied
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
@@ -2699,7 +2705,7 @@ void Engine::explainSimplexFailure()
 	if ( inf >= 0 )
 	{
 		validateBounds( inf, 0.01 );
-		printBoundsExplanation( inf );
+		//printBoundsExplanation( inf );
 		certifyInfeasibility( inf );
 	}
 }

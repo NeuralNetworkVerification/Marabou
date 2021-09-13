@@ -231,7 +231,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
             // Any bound that we learned of f should be propagated to b
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
-				if ( _phaseStatus == RELU_PHASE_ACTIVE )
+				if ( _phaseStatus == RELU_PHASE_ACTIVE || FloatUtils::isZero( bound ) )
 					_constraintBoundTightener->registerTighterUpperBound( _b, bound, tighteningRow );
 			}
             else
