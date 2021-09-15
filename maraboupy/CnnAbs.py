@@ -551,10 +551,11 @@ class CnnAbs:
         else:
             modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
-        if prop.ySecond != mbouPrediction:
-            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
-            print("cexPrediction={}".format(cexPrediction))
-            assert prop.ySecond == mbouPrediction
+#        FIXME: This assertion is incorrect unless I require ySecond to be maximal, which I don't.
+#        if prop.ySecond != mbouPrediction: 
+#            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
+#            print("cexPrediction={}".format(cexPrediction))
+#            assert prop.ySecond == mbouPrediction
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
         plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.savefig("Cex_{}".format(runName) + ".png")
@@ -948,6 +949,7 @@ class ModelUtils:
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
+        #FIXME if I will require ySecond to be max, spurious definition will have to change to force it.
         if not sporiousStrict:
             return prediction.argmax() == yCorrect
         return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
@@ -1199,6 +1201,7 @@ class InputQueryUtils:
         return np.all(inBounds), violations
 
     @staticmethod
+    #FIXME what happens if the property forces yBad to be maximal and not only greater than yCorrect.
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
         inAsNP = np.array(net.inputVars[0])
         x = x.reshape(inAsNP.shape)
