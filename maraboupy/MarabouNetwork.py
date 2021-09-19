@@ -4,6 +4,7 @@ Top contributors (to current version):
     - Shantanu Thakoor
     - Andrew Wu
     - Kyle Julian
+    - Teruhiro Tagomori
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -276,6 +277,95 @@ class MarabouNetwork:
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
         return [vals, stats]
+
+    def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
+        """Function to set a local robustness query
+
+        Args:
+            input (numpy.ndarray): Target input
+            epsilon (float): L-inf norm of purturbation
+            originalClass (int): Output class of a target input
+            verbose (bool): If true, print out solution after solve finishes
+            options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+            targetClass (int): If set, find a feasible solution with which the value of targetClass is max within outputs.
+
+        Returns:
+            (tuple): tuple containing:
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+                - maxClass (int): Output class which value is max within outputs if SAT.
+        """
+        if (type(self.inputVars) is list):
+            # This is in order to care a network loaded from an onnx file.
+            inputVars = self.inputVars[0][0]
+        elif (type(self.inputVars) is np.ndarray):
+            inputVars = self.inputVars[0]
+        else:
+            err_msg = "Unpexpected type of input vars."
+            raise RuntimeError(err_msg)
+
+        inputShape = inputVars.shape
+
+        if options == None:
+            options = MarabouCore.Options()
+
+        if len(inputShape) == 1:
+            # Case where input dimension is 1.
+            for h in range(inputShape[0]):
+                self.setLowerBound(inputVars[h], input[h] - epsilon)
+                self.setUpperBound(inputVars[h], input[h] + epsilon)
+        elif len(inputShape) == 2:
+            # Case where input dimension is 2.
+            for h in range(inputShape[0]):
+                for w in range(inputShape[1]):
+                    self.setLowerBound(inputVars[h][w], input[h][w] - epsilon)
+                    self.setUpperBound(inputVars[h][w], input[h][w] + epsilon)
+        elif len(inputShape) == 3:
+            # Case where input dimension is 3.
+            for h in range(inputShape[0]):
+                for w in range(inputShape[1]):
+                    for c in range(inputShape[2]):
+                        self.setLowerBound(inputVars[h][w][c], input[h][w][c] - epsilon)
+                        self.setUpperBound(inputVars[h][w][c], input[h][w][c] + epsilon)
+        else:
+            raise NotImplementedError("Operation for %d dimension's input is not implemented" % len(inputShape)) 
+        
+        maxClass = None
+
+        if targetClass is None:
+            outputStartIndex = self.outputVars[0][0]
+            outputLayerSize = len(self.outputVars[0])
+            # loop for all of output classes except for original class
+            for outputLayerIndex in range(outputLayerSize):
+                if outputLayerIndex != originalClass:
+                    self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), outputLayerIndex)
+                    vals, stats = self.solve(options = options)
+                    if (stats.hasTimedOut()):
+                        break
+                    elif (len(vals) > 0):
+                        maxClass = outputLayerIndex
+                        break
+        else:
+            self.addMaxConstraint(set(self.outputVars[0]), targetClass)
+            vals, stats = self.solve(options = options)
+            if verbose:
+                if not stats.hasTimedOut() and len(vals) > 0:
+                    maxClass = targetClass
+        
+        # print timeout, or feasible inputs and outputs if verbose is on.
+        if verbose:
+            if stats.hasTimedOut():
+                print("TO")
+            elif len(vals) > 0:
+                print("sat")
+                for j in range(len(self.inputVars)):
+                    for i in range(self.inputVars[j].size):
+                        print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
+
+                for i in range(self.outputVars.size):
+                    print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
+
+        return [vals, stats, maxClass]
 
     def saveQuery(self, filename=""):
         """Serializes the inputQuery in the given filename
