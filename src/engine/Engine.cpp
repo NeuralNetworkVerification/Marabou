@@ -2504,7 +2504,7 @@ void Engine::printBoundsExplanation( unsigned var )
         return;
     }
 
-    printf( "Found a variable with infeasible bounds: x%d\n", var );
+    printf( "The explanation of variable x%d\n", var );
     unsigned m = _tableau->getM();
     SingleVarBoundsExplanator* certificate = new SingleVarBoundsExplanator( m );
     *certificate = *_tableau->ExplainBound( var );
@@ -2699,13 +2699,23 @@ void Engine::explainSimplexFailure()
 	validateAllBounds( 0.01 );
 	int inf = _tableau->getInfeasibleVar();
 
-	if (inf < 0)
+	if ( inf < 0 )
 		inf = simplexBoundsUpdate();
 
-	if ( inf >= 0 )
+	if ( inf < 0 )
 	{
-		validateBounds( inf, 0.01 );
-		//printBoundsExplanation( inf );
-		certifyInfeasibility( inf );
+		assert( _tableau->checkCostFunctionSlack() );
+		int infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
+		inf = _tableau->basicIndexToVariable( infIndex );
+		auto *costRow = _costFunctionManager->createRowOfCostFunction();
+		bool isUpper = _costFunctionManager->getBasicCost( infIndex ) < 0;
+		_tableau->updateExplanation( *costRow, isUpper, inf );
+		delete costRow;
 	}
+
+	assert ( inf >= 0 );
+	validateBounds( inf, 0.01 );
+	//printBoundsExplanation( inf );
+	certifyInfeasibility( inf );
+
 }

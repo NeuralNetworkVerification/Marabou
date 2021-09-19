@@ -389,6 +389,35 @@ double CostFunctionManager::getBasicCost( unsigned basicIndex ) const
     return _basicCosts[basicIndex];
 }
 
+SparseUnsortedList* CostFunctionManager::createRowOfCostFunction()
+{
+	SparseUnsortedList* costRow = new SparseUnsortedList();
+	for ( unsigned i = 0; i < _m; ++i )
+		if ( !FloatUtils::isZero( _basicCosts[i] ) )
+		{
+			costRow->append( _tableau->basicIndexToVariable( i ), -_basicCosts[i] ); //Minus sign since we are used to think about basics in lhs (while the row has all variables in rhs).
+			costRow->incrementSize();
+		}
+
+	for ( unsigned i = 0; i < _n - _m; ++i )
+		if ( !FloatUtils::isZero( _costFunction[i] ) )
+		{
+			costRow->append( _tableau->nonBasicIndexToVariable( i ), _costFunction[i] );
+			costRow->incrementSize();
+		}
+
+	return costRow;
+}
+
+int CostFunctionManager::getFirstParticipatingBasicIndex()
+{
+	for ( unsigned i = 0; i < _m; ++i )
+		if ( !FloatUtils::isZero( _basicCosts[i] ) )
+			return i;
+
+	return -1;
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

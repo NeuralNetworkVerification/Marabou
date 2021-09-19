@@ -192,7 +192,8 @@ public:
 	virtual void resetExplanation ( const unsigned var, const bool isUpper ) = 0;
     virtual void multiplyExplanationCoefficients ( const unsigned var, const double alpha, const bool isUpper ) = 0;
     virtual void injectExplanation(unsigned var, SingleVarBoundsExplanator& expl) = 0;
-   
+	virtual bool checkCostFunctionSlack() = 0;
+
 };
 
 #endif // __ITableau_h__

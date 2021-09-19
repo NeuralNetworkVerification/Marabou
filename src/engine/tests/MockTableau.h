@@ -638,6 +638,11 @@ public:
 	void injectExplanation( unsigned /* var */, SingleVarBoundsExplanator& /* expl */)
 	{
 	}
+
+	bool checkCostFunctionSlack()
+	{
+    	return true;
+	}
 };
 
 #endif // __MockTableau_h__

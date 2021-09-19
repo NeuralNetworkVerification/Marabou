@@ -129,6 +129,16 @@ public:
     void invalidateCostFunction()
     {
     }
+
+	SparseUnsortedList* createRowOfCostFunction()
+	{
+    	return NULL;
+	}
+
+	int getFirstParticipatingBasicIndex()
+	{
+    	return -1;
+	}
 };
 
 #endif // __MockCostFunctionManager_h__

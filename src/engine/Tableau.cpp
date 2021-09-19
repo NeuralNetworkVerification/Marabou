@@ -2647,7 +2647,6 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 int Tableau::getInfeasibleRow( TableauRow& row )
 {
 	checkBoundsValid();
-	bool oneHasEmptySlack = false;
 	unsigned basicVar;
     for ( unsigned i = 0; i < _m; ++i )
 	{
@@ -2657,20 +2656,8 @@ int Tableau::getInfeasibleRow( TableauRow& row )
      		Tableau::getTableauRow( i, &row );
             if ( computeRowBound( row, true ) < _lowerBounds[basicVar] || computeRowBound( row, false ) > _upperBounds[basicVar] )
                 return (int) i;
-			if ( checkSlack( i ) )
-				oneHasEmptySlack = true;
         }
     }
-    if ( !oneHasEmptySlack && allBoundsValid() )
-	{
-     	checkCostFunctionSlack();
-	}
-
-//    if ( !oneHasEmptySlack && allBoundsValid() )
-//    	printf("No one has empty slack, and all bounds are valid.\n");
-//    else
-//		printf("Someone has an empty slack or there's invalid bound.\n");
-
 	return -1;
 }
 

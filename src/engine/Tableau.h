@@ -664,7 +664,7 @@ private:
 	/*
  	* Checks that the slack of a given row lhs is empty
  	*/
-	bool checkCostFunctionSlack() ;
+	bool checkCostFunctionSlack();
 
     /*
     * Computes the upper bound imposed by row rhs

@@ -81,6 +81,17 @@ public:
     */
     void dumpCostFunction() const;
 
+    /*
+     * Returns the cost function as a SparseUnsortedList object, so it can be viewed as a Tableau row.
+     */
+    SparseUnsortedList* createRowOfCostFunction();
+
+	/*
+	 * Gets the first index of the basic participating in the cost function (cost != 0)
+	 * Returns -1 if for some reason not found.
+	 */
+    int getFirstParticipatingBasicIndex();
+
 private:
     /*
       The tableau.

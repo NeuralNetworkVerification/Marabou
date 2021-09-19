@@ -263,7 +263,6 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 			continue;
 
 		tempUpper = (curCoefficient * ci < 0) == isUpper; // If coefficient of lhs and var are different, use same bound
-
 		getOneBoundExplanation( tempBound, entry._index, tempUpper );
 		addVecTimesScalar( sum, tempBound, - curCoefficient / ci );
 	}
