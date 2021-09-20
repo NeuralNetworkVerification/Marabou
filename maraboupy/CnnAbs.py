@@ -912,8 +912,8 @@ class ModelUtils:
             #origM = load_model(basePath + "/" + savedModelOrig)
             origM.summary()
             score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            CnnAbs.printLog("(Original) Test loss:".format(score[0]))
-            CnnAbs.printLog("(Original) Test accuracy:".format(score[1]))
+            CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
+            CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
     
         return origM
 
