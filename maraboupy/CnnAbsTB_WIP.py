@@ -230,7 +230,7 @@ cnnAbs.decGtimeout(endPrepare - startPrepare) #FIXME count also non-solving proc
 
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
     CnnAbs.printLog("Started dumping bounds - used for abstraction")
-    ipq = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+    ipq, ipq_numVars = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
     MarabouCore.saveQuery(ipq, cnnAbs.logDir + "IPQ_dumpBounds")
     CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
@@ -249,6 +249,10 @@ if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBoundsInitial.json"):
 else:
     boundDict = None
 
+ipq, ipq_numVars = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+print(ipq_numVars)
+exit()
+    
 cnnAbs.optionsObj._dumpBounds = False
 
 if policy.policy is Policy.SingleClassRank:    
@@ -324,14 +328,14 @@ for i, mask in enumerate(maskList):
             CnnAbs.printLog(err)
             isSporious = True
         CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i, len(maskList)-1))
-        if not isSporious:
-            successful = i
-            break
-        elif i+1 == len(maskList):
-            resultObj = ResultObj("error")
-            break 
-            #raise Exception("Sporious CEX at full network.")
-        elif cfg_rerunSporious:
+        #if not isSporious:
+        #    successful = i
+        #    break
+        #elif i+1 == len(maskList):
+        #    resultObj = ResultObj("error")
+        #    break 
+        #    #raise Exception("Sporious CEX at full network.")
+        if cfg_rerunSporious:
             mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
             layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
             layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
