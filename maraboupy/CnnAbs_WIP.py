@@ -433,18 +433,21 @@ class CnnAbs:
         if not rerun:
             self.subResultAppend()
         else:
-            boundDictCopy = boundDict.copy()
+            #boundDictCopy = boundDict.copy()
+            boundDictCopy = dict()
             for var,value in rerunObj.vals.items():
                 varOrig = rerunObj.varsMapping[var]
                 if varOrig not in rerunObj.preAbsVars:
-                    if not varOrig in boundDictCopy:
+                    if not varOrig in boundDict:
                         print(rerunObj.varsMapping) #FIXME remove prints
                         print("*************************************")
                         print(boundDict)
                         print("*************************************")                        
                         print("var={}, varOrig={}".format(var,varOrig)                        )
-                    assert varOrig in boundDictCopy
+                    assert varOrig in boundDict
                     boundDictCopy[varOrig] = (value, value)
+                else:
+                    boundDictCopy[varOrig] = boundDict[varOrig]
             boundDict = boundDictCopy
         startLocal = time.time()
         
@@ -703,7 +706,7 @@ class ModelUtils:
         keras2onnx.save_model(modelOnnx, modelOnnxName)
         modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
         InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
-        return self.processInputQuery(modelOnnxMarabou)
+        return self.processInputQuery(modelOnnxMarabou), modelOnnxMarabou.numVars
     
     def processInputQuery(self, net):
         net.saveQuery("processInputQuery")
@@ -912,9 +915,9 @@ class ModelUtils:
             #origM = load_model(basePath + "/" + savedModelOrig)
             origM.summary()
             score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            CnnAbs.printLog("(Original) Test loss:".format(score[0]))
-            CnnAbs.printLog("(Original) Test accuracy:".format(score[1]))
-    
+            CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
+            CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
+            exit()
         return origM
 
     @staticmethod
