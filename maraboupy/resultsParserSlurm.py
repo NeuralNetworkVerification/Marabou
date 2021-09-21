@@ -75,6 +75,8 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
     x = [xDict[xparam]["totalRuntime"] for xparam in mutual]
     y = [yDict[xparam]["totalRuntime"] for xparam in mutual]
     c = []
+    markerArr = []
+    chooseMarker = lambda mark: 'o' if mark == 'UNSAT' else ('x' if mark == 'SAT' else '*')
     for xparam in mutual:
         xResult = xDict[xparam]["result"].upper()
         yResult = yDict[xparam]["result"].upper()
@@ -82,12 +84,15 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         assert not (xResult == "UNSAT" and yResult == "SAT"  )
         if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]):
             c.append(cellColor(xResult))
+            markerArr.append(chooseMarker(xResult))
         else:
             assert (yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"])
             c.append(cellColor(yResult))
+            markerArr.append(chooseMarker(yResult))
             
     xyCountSame = countSame(x,y)
-    ax.scatter(x, y, s=70, c=c, marker=marker, alpha=0.3)
+    for _x, _y, _c, _m in zip(x, y, c, markerArr):
+        ax.scatter(_x, _y, s=70, c=_c, marker=_m, alpha=0.3)
     for count, coor in countSame(x,y):
         if count > 1:
             ax.annotate(count, coor)

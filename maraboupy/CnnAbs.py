@@ -383,6 +383,7 @@ class CnnAbs:
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
+        self.prevTimestamp = time.time()
         self.policy = policy
 
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
@@ -429,6 +430,8 @@ class CnnAbs:
         return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs
     
     def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False, rerunObj=None):
+
+        startLocal = time.time()
         
         if not rerun:
             self.subResultAppend()
@@ -446,7 +449,6 @@ class CnnAbs:
                     assert varOrig in boundDictCopy
                     boundDictCopy[varOrig] = (value, value)
             boundDict = boundDictCopy
-        startLocal = time.time()
         
         CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
         if not fromDumpedQuery:
@@ -493,7 +495,7 @@ class CnnAbs:
 
         endLocal = time.time()
         self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
-        self.decGtimeout(endLocal - startLocal)
+        self.tickGtimeout()
         return result
 
     def setLogger(suffix=''):
@@ -599,6 +601,11 @@ class CnnAbs:
 
     def decGtimeout(self, val):
         self.setGtimeout(self.gtimeout - val)
+
+    def tickGtimeout(self):
+        currentTime = time.time()
+        self.decGtimeout(currentTime - self.prevTimeStamp)
+        self.prevTimeStamp = currentTime
 
     def isGlobalTimedOut(self):
         return self.gtimeout <= 1
@@ -941,11 +948,14 @@ class ModelUtils:
         return cex, cexPrediction, inputDict, outputDict        
 
     @staticmethod
-    #Return bool, bool: Left is wether yCorrect is the maximal one, Right is wether yBad > yCorrect.
     def isCEXSporious(model, prop, cex, sporiousStrict=True):
         yCorrect = prop.yMax
         yBad = prop.ySecond
         inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex)
+        if not inBounds:
+            differences = prop.xAdv-cex
+            if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
+                cex[violations.nonzero()] -= differences[violations.nonzero()]
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
@@ -1179,7 +1189,7 @@ class InputQueryUtils:
         if r > floatingPointErrorGap and floatingPointErrorGap > 0:
             r -= floatingPointErrorGap
         if pos:
-            return np.maximum(x - r,np.zeros(x.shape)), x + r
+            return np.maximum(x - r,np.zeros_like(x)), np.minimum(x + r,np.ones_like(x))
         return x - r, x + r
 
     @staticmethod    

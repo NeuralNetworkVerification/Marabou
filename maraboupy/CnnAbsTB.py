@@ -225,19 +225,34 @@ cnnAbs.resultsJson["yMaxPrediction"] = int(yMax)
 cnnAbs.resultsJson["ySecondPrediction"] = int(ySecond)
 cnnAbs.dumpResultsJson()
 
-endPrepare = time.time()
-cnnAbs.decGtimeout(endPrepare - startPrepare) #FIXME count also non-solving processes in gtimeout
+cnnAbs.tickGtimeout()
 
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
-    CnnAbs.printLog("Started dumping bounds - used for abstraction")
+    startBoundTightening = time.time()
+    cnnAbs.tickGtimeout()
+    if cnnAbs.isGlobalTimedOut():
+        cnnAbs.resultsJson["Result"] = "GTIMEOUT"
+        cnnAbs.resultsJson[mi("Result")] = "GTIMEOUT"
+        accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
+        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime
+        cnnAbs.dumpResultsJson()
+        exit()
+    CnnAbs.printLog("Started dumping bounds - used for abstraction")        
     ipq = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
     MarabouCore.saveQuery(ipq, cnnAbs.logDir + "IPQ_dumpBounds")
     CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
+    endBoundTightening = time.time()
+    cnnAbs.tickGtimeout()
+    cnnAbs.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
         cnnAbs.resultsJson[mi("Result")] = "UNSAT"
+        cnnAbs.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
+        cnnAbs.resultsJson["successfulRun"] = 0
+        accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
+        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()
@@ -287,7 +302,10 @@ prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
 cnnAbs.numMasks = len(maskList)
 
+cnnAbs.tickGtimeout()
+
 for i, mask in enumerate(maskList):
+
     globalTimeout = cnnAbs.isGlobalTimedOut()
     if globalTimeout:
         break
@@ -310,6 +328,7 @@ for i, mask in enumerate(maskList):
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
     runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, str(cfg_propDist).replace('.','-'), i, len(maskList)-1)
+    cnnAbs.tickGtimeout()
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
@@ -358,6 +377,7 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
+cnnAbs.tickGtimeout()    
 globalTimeout = cnnAbs.isGlobalTimedOut()    
 if not cfg_dumpQueries:
     if globalTimeout:
@@ -379,7 +399,7 @@ if not cfg_dumpQueries:
     if success:
         CnnAbs.printLog("successful={}/{}".format(successful, len(maskList)-1)) if (successful+1) < len(maskList) else CnnAbs.printLog("successful=Full")
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
-        cnnAbs.resultsJson["successfulRun"] = successful
+        cnnAbs.resultsJson["successfulRun"] = successful + 1
     accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
     cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
     cnnAbs.resultsJson["SAT"] = resultObj.sat()
