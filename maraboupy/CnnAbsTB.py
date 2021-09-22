@@ -65,7 +65,8 @@ parser.add_argument("--arg",  type=str, default="", help="Push custom string arg
 parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
 parser.add_argument("--mask_index",      type=int,                                  default=-1,                     help="Choose specific mask to run.")
 parser.add_argument("--slurm_seq"      ,action="store_true",                        default=False,                  help="Run next mask if this one fails.")
-parser.add_argument("--rerun_sporious" ,action="store_true",                        default=True,                   help="When recieved sporious SAT, run again CEX to find a satisfying assignment.") 
+parser.add_argument("--rerun_sporious" ,action="store_true",                        default=True,                   help="When recieved sporious SAT, run again CEX to find a satisfying assignment.")
+
 
 args = parser.parse_args()
 
@@ -148,7 +149,6 @@ cnnAbs.resultsJson[mi("cfg_maskIndex")]         = cfg_maskIndex
 cnnAbs.resultsJson[mi("cfg_slurmSeq")]          = cfg_slurmSeq
 cnnAbs.resultsJson[mi("cfg_rerunSporious")]     = cfg_rerunSporious
 cnnAbs.resultsJson[mi("cfg_gtimeout")]          = cfg_gtimeout
-
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "TIMEOUT"
 #cnnAbs.resultsJson["subResults"] = []
@@ -338,7 +338,7 @@ for i, mask in enumerate(maskList):
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         try:
-            isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+            isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict, valueRange=cnnAbs.ds.valueRange)
         except Exception as err:
             CnnAbs.printLog(err)
             isSporious = True
@@ -358,7 +358,7 @@ for i, mask in enumerate(maskList):
             resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunObj=resultObj)
             if resultObjRerunSporious.sat():
                 try:
-                    isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
+                    isSporious = ModelUtils.isCEXSporiouso(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict, valueRange=cnnAbs.ds.valueRange)
                     assert not isSporious
                 except Exception as err:
                     CnnAbs.printLog(err)

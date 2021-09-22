@@ -346,7 +346,8 @@ class DataSet:
         self.featureShape=(1,28,28)
         self.loss='sparse_categorical_crossentropy'
         self.optimizer='adam'
-        self.metrics=['accuracy']        
+        self.metrics=['accuracy']
+        self.valueRange = (0,1) #Input pixels value range
     
 class CnnAbs:
 
@@ -383,7 +384,7 @@ class CnnAbs:
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
-        self.prevTimestamp = time.time()
+        self.prevTimeStamp = time.time()
         self.policy = policy
 
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
@@ -409,7 +410,7 @@ class CnnAbs:
     def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
         modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
         inputs = list({i.item() for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
-        InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond)
+        InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond, valueRange=self.ds.valueRange)
         if self.policy is not Policy.Vanilla:
             InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
         originalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)
@@ -481,7 +482,7 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
         else:
-            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi)
+            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi, valueRange=self.ds.valueRange)
             self.dumpCex(cex, cexPrediction, prop, runName, model)
             self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
             self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
@@ -709,7 +710,7 @@ class ModelUtils:
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
         modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-        InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond)
+        InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond, valueRange=self.ds.valueRange)
         return self.processInputQuery(modelOnnxMarabou)
     
     def processInputQuery(self, net):
@@ -925,9 +926,9 @@ class ModelUtils:
         return origM
 
     @staticmethod
-    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True):
+    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True, valueRange=None):
         if useMapping:
-            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist)[0]
+            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
             fail = False
             for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
                 if indCOI.item() is None:
@@ -948,16 +949,17 @@ class ModelUtils:
         return cex, cexPrediction, inputDict, outputDict        
 
     @staticmethod
-    def isCEXSporious(model, prop, cex, sporiousStrict=True):
+    def isCEXSporious(model, prop, cex, sporiousStrict=True, valueRange=None):
         yCorrect = prop.yMax
         yBad = prop.ySecond
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex)
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
         if not inBounds:
-            differences = prop.xAdv-cex
+            differences = cex - prop.xAdv
             if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
-                cex[violations.nonzero()] -= differences[violations.nonzero()]
+                cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
         if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()]))
+            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
         #FIXME if I will require ySecond to be max, spurious definition will have to change to force it.
         if not sporiousStrict:
@@ -1185,20 +1187,24 @@ class InputQueryUtils:
                         model.setUpperBound(i,ub)
 
     @staticmethod                        
-    def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0):
-        if r > floatingPointErrorGap and floatingPointErrorGap > 0:
-            r -= floatingPointErrorGap
-        if pos:
-            return np.maximum(x - r,np.zeros_like(x)), np.minimum(x + r,np.ones_like(x))
-        return x - r, x + r
+    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
+        assert valueRange is not None #FIXME
+        assert floatingPointErrorGap >= 0
+        if valueRange is not None:
+            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
+        l, u = x - r, x + r
+        assert np.all(u - l > 2 * floatingPointErrorGap)
+        u -= floatingPointErrorGap
+        l += floatingPointErrorGap
+        return l, u
 
     @staticmethod    
-    def inBoundsInftyBall(x, r, p, pos=True, allowClose=False):
+    def inBoundsInftyBall(x, r, p, allowClose=False, valueRange=None):
         if p.shape != x.shape:
             print("p.shape={}".format(p.shape))
             print("x.shape={}".format(x.shape))
         assert p.shape == x.shape
-        l,u = InputQueryUtils.getBoundsInftyBall(x,r,pos=pos)
+        l,u = InputQueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
         if allowClose:
             geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
             leqUp  = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
@@ -1212,10 +1218,10 @@ class InputQueryUtils:
 
     @staticmethod
     #FIXME what happens if the property forces yBad to be maximal and not only greater than yCorrect.
-    def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad):
+    def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
         inAsNP = np.array(net.inputVars[0])
         x = x.reshape(inAsNP.shape)
-        xDown, xUp = InputQueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025)
+        xDown, xUp = InputQueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
         floatingPointErrorGapOutput = 0.03
         for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
             net.lowerBounds.pop(i.item(), None)
