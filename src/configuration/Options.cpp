@@ -47,6 +47,7 @@ void Options::initializeDefaultValues()
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
+    _boolOptions[SKIP_LP_TIGHTENING_AFTER_SPLIT] = false;
 
     /*
       Int options

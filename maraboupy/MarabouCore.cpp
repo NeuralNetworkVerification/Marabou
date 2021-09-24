@@ -191,6 +191,7 @@ struct MarabouOptions {
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
+        , _skipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
@@ -207,6 +208,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
+    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -216,7 +218,6 @@ struct MarabouOptions {
     Options::get()->setInt( Options::VERBOSITY, _verbosity );
     Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
     Options::get()->setInt( Options::CONSTRAINT_VIOLATION_THRESHOLD, _splitThreshold );
-    Options::get()->setInt( Options::NUMBER_OF_SIMULATIONS, _numSimulations );
 
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
@@ -234,6 +235,7 @@ struct MarabouOptions {
     bool _restoreTreeStates;
     bool _solveWithMILP;
     bool _dumpBounds;
+    bool _skipLpTighteningAfterSplit;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -354,6 +356,28 @@ InputQuery loadQuery(std::string filename){
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
+    py::class_<MarabouOptions>(m, "Options")
+        .def(py::init())
+        .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
+        .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
+        .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
+        .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
+        .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
+        .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
+        .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
+        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout)
+        .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
+        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
+        .def_readwrite("_snc", &MarabouOptions::_snc)
+        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
+        .def_readwrite("_dumpBounds", &MarabouOptions::_dumpBounds)
+        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
+        .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
+        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
+        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
+        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
+        .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
+        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
@@ -460,27 +484,6 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("markInputVariable", &InputQuery::markInputVariable)
         .def("markOutputVariable", &InputQuery::markOutputVariable)
         .def("outputVariableByIndex", &InputQuery::outputVariableByIndex);
-    py::class_<MarabouOptions>(m, "Options")
-        .def(py::init())
-        .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
-        .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
-        .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
-        .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
-        .def_readwrite("_timeoutInSeconds", &MarabouOptions::_timeoutInSeconds)
-        .def_readwrite("_timeoutFactor", &MarabouOptions::_timeoutFactor)
-        .def_readwrite("_preprocessorBoundTolerance", &MarabouOptions::_preprocessorBoundTolerance)
-        .def_readwrite("_milpSolverTimeout", &MarabouOptions::_milpSolverTimeout)
-        .def_readwrite("_verbosity", &MarabouOptions::_verbosity)
-        .def_readwrite("_splitThreshold", &MarabouOptions::_splitThreshold)
-        .def_readwrite("_snc", &MarabouOptions::_snc)
-        .def_readwrite("_solveWithMILP", &MarabouOptions::_solveWithMILP)
-        .def_readwrite("_dumpBounds", &MarabouOptions::_dumpBounds)
-        .def_readwrite("_restoreTreeStates", &MarabouOptions::_restoreTreeStates)
-        .def_readwrite("_splittingStrategy", &MarabouOptions::_splittingStrategyString)
-        .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
-        .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
-        .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
-        .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations);
     py::enum_<PiecewiseLinearFunctionType>(m, "PiecewiseLinearFunctionType")
         .value("ReLU", PiecewiseLinearFunctionType::RELU)
         .value("AbsoluteValue", PiecewiseLinearFunctionType::ABSOLUTE_VALUE)
@@ -488,15 +491,15 @@ PYBIND11_MODULE(MarabouCore, m) {
         .value("Disjunction", PiecewiseLinearFunctionType::DISJUNCTION)
         .export_values();
     py::class_<Equation> eq(m, "Equation");
-    eq.def(py::init());
-    eq.def(py::init<Equation::EquationType>());
-    eq.def("addAddend", &Equation::addAddend);
-    eq.def("setScalar", &Equation::setScalar);
     py::enum_<Equation::EquationType>(eq, "EquationType")
         .value("EQ", Equation::EquationType::EQ)
         .value("GE", Equation::EquationType::GE)
         .value("LE", Equation::EquationType::LE)
         .export_values();
+    eq.def(py::init());
+    eq.def(py::init<Equation::EquationType>());
+    eq.def("addAddend", &Equation::addAddend);
+    eq.def("setScalar", &Equation::setScalar);
     py::class_<Statistics>(m, "Statistics")
         .def("getMaxStackDepth", &Statistics::getMaxStackDepth)
         .def("getNumPops", &Statistics::getNumPops)

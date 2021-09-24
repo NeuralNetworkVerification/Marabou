@@ -15,11 +15,14 @@
  ** The constraint introduces identifiers for its PiecewiseLinearCaseSplit
  ** elements.
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** DisjunctionConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __DisjunctionConstraint_h__
@@ -198,7 +201,7 @@ private:
 
     /*
       Go over the list of disjuncts and find just the ones that are
-      still possible, given the current varibale bounds
+      still feasible, given the current variable bounds
     */
     void updateFeasibleDisjuncts();
     bool disjunctIsFeasible( unsigned ind ) const;

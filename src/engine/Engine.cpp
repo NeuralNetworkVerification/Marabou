@@ -25,7 +25,6 @@
 #include "MalformedBasisException.h"
 #include "MarabouError.h"
 #include "NLRError.h"
-#include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Preprocessor.h"
 #include "TableauRow.h"
@@ -58,6 +57,9 @@ Engine::Engine()
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
     , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
+    , _isGurobyEnabled( Options::get()->gurobiEnabled() )
+    , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+    , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -202,13 +204,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 applyAllValidConstraintCaseSplits();
             }
 
+            // If true, enter a new subproblem
             if ( splitJustPerformed )
             {
+                // Tighten bounds of a first hidden layer with MILP solver
+                performMILPSolverBoundedTighteningForSingleLayer( 1 );
                 do
                 {
                     performSymbolicBoundTightening();
                 }
                 while ( applyAllValidConstraintCaseSplits() );
+
+                // Tighten bounds of an output layer with MILP solver
+                if ( _networkLevelReasoner )    // to avoid failing of system test.
+                    performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+
                 splitJustPerformed = false;
             }
 
@@ -1175,6 +1185,45 @@ void Engine::performMILPSolverBoundedTightening()
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
             _networkLevelReasoner->iterativePropagation();
             break;
+        case MILPSolverBoundTighteningType::NONE:
+            return;
+        }
+        List<Tightening> tightenings;
+        _networkLevelReasoner->getConstraintTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+        {
+            if ( tightening._type == Tightening::LB )
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+            else if ( tightening._type == Tightening::UB )
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
+}
+
+void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
+{
+    if ( _networkLevelReasoner && _isGurobyEnabled && !_isSkipLpTighteningAfterSplit
+            && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
+    {
+        _networkLevelReasoner->obtainCurrentBounds();
+
+        switch ( _milpSolverBoundTighteningType )
+        {
+        case MILPSolverBoundTighteningType::LP_RELAXATION:
+            _networkLevelReasoner->LPTighteningForOneLayer( targetIndex );
+            break;
+        case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
+            return;
+
+        case MILPSolverBoundTighteningType::MILP_ENCODING:
+            _networkLevelReasoner->MILPTighteningForOneLayer( targetIndex );
+            break;
+        case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
+            return;
+
+        case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:
             return;
         }
@@ -2327,4 +2376,14 @@ void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
             inputQuery.setSolutionValue( i, assignment[variableName] );
         }
     }
+}
+
+bool Engine::preprocessingEnabled() const
+{
+    return _preprocessingEnabled;
+}
+
+const Preprocessor *Engine::getPreprocessor()
+{
+    return &_preprocessor;
 }

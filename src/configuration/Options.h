@@ -52,7 +52,10 @@ public:
         VERSION,
 
         // Solve the input query with a MILP solver
-        SOLVE_WITH_MILP
+        SOLVE_WITH_MILP,
+
+        // Whether to call a LP tightening after a case split
+        SKIP_LP_TIGHTENING_AFTER_SPLIT
     };
 
     enum IntOptions {
