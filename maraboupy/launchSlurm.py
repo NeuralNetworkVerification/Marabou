@@ -209,7 +209,7 @@ def main():
     parser.add_argument("--validation", type=str, choices=validationNets, default="", help="Use validation net", required=False)
     parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
     parser.add_argument("--slurm_seq", action="store_true",                        default=True,                  help="Run next mask if this one fails.")
-    parser.add_argument("--rerun_sporious", action="store_true",                        default=True,                  help="Rerun Sporious CEX.")
+    parser.add_argument("--rerun_spurious", action="store_true",                        default=True,                  help="Rerun Spurious CEX.")
     parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
     args = parser.parse_args()
     experiment = args.exp
@@ -221,7 +221,7 @@ def main():
     validation = args.validation
     cnn_size = args.cnn_size
     slurm_seq = args.slurm_seq
-    rerun_sporious = args.rerun_sporious
+    rerun_spurious = args.rerun_spurious
     prop_distance = args.prop_distance
     
     assert (not validation) or (not cnn_size)
@@ -247,10 +247,10 @@ def main():
     with open(batchDirPath + "/runCmd.sh", 'w') as f:
         f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
-    #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--sporious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
+    #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--spurious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
     #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
     clusterFlags = []
-    #commonFlags = clusterFlags + ["--batch_id", batchId, "--sporious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
+    #commonFlags = clusterFlags + ["--batch_id", batchId, "--spurious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
     commonFlags = clusterFlags + ["--batch_id", batchId]
     if dumpQueries or useDumpedQueries or dumpSuffix:
         commonFlags += ["--dump_dir", dumpDirPath]    
@@ -268,8 +268,8 @@ def main():
         commonFlags.append("--use_dumped_queries")
     if slurm_seq:
         commonFlags += ["--slurm_seq", "--mask_index", str(0)]
-    if rerun_sporious:
-        commonFlags.append("--rerun_sporious")
+    if rerun_spurious:
+        commonFlags.append("--rerun_spurious")
         
         
     runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
