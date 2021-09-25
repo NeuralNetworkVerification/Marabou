@@ -396,7 +396,7 @@ class CnnAbs:
         if validation:
             commonFlags += ["--validation", validation]
         if rerun:
-            commonFlags.append("--rerun_sporious")
+            commonFlags.append("--rerun_spurious")
         if self.dumpQueries:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
@@ -949,7 +949,7 @@ class ModelUtils:
         return cex, cexPrediction, inputDict, outputDict        
 
     @staticmethod
-    def isCEXSporious(model, prop, cex, sporiousStrict=True, valueRange=None):
+    def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
         yCorrect = prop.yMax
         yBad = prop.ySecond
         inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
@@ -962,7 +962,7 @@ class ModelUtils:
             raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
         #FIXME if I will require ySecond to be max, spurious definition will have to change to force it.
-        if not sporiousStrict:
+        if not spuriousStrict:
             return prediction.argmax() == yCorrect
         return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
 
