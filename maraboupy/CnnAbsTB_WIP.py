@@ -47,25 +47,28 @@ parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small
 parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
-parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
+parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                   help="Distance checked for adversarial robustness (L1 metric)")
 parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier to satisfy, negative makes it harder.")
 parser.add_argument("--num_cpu",        type=int,                                   default=8,                      help="Number of CPU workers in a cluster run.")
-parser.add_argument("--timeout",        type=int,                                   default=600,                   help="Single solver timeout in seconds.")
+parser.add_argument("--timeout",        type=int,                                   default=600,                    help="Single solver timeout in seconds.")
 parser.add_argument("--gtimeout",       type=int,                                   default=7200,                   help="Global timeout for all solving in seconds.")
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
-parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",         help="Which abstraction policy to use")
-parser.add_argument("--sporious_strict",action="store_true",                        default=True,                  help="Criteria for sporious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
+parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
+parser.add_argument("--spurious_strict",action="store_true",                        default=True,                   help="Criteria for spurious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
 parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
 parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-inc", "milp", "milp-inc", "iter-prop", "none"], default="lp", help="Which bound tightening technique to use.")
-parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "none"], default="sbt",              help="Which bound tightening technique to use.")
+parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "none"], default="sbt",               help="Which bound tightening technique to use.")
 parser.add_argument("--solve_with_milp",action="store_true",                        default=False,                  help="Use MILP solver instead of regular engine.")
 parser.add_argument("--abs_layer",      type=str, default="c2",              help="Which layer should be abstracted.")
 parser.add_argument("--arg",  type=str, default="", help="Push custom string argument.")
 parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
-parser.add_argument("--mask_index",      type=int,                                  default=-1,                     help="Choose specific mask to run.")
+parser.add_argument("--mask_index",     type=int,                                  default=-1,                      help="Choose specific mask to run.")
 parser.add_argument("--slurm_seq"      ,action="store_true",                        default=False,                  help="Run next mask if this one fails.")
-parser.add_argument("--rerun_sporious" ,action="store_true",                        default=True,                   help="When recieved sporious SAT, run again CEX to find a satisfying assignment.") 
+rerun_parser = parser.add_mutually_exclusive_group(required=False)
+rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='store_true',  help="When recieved spurious SAT, run again CEX to find a satisfying assignment.")
+rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
+parser.set_defaults(rerun_spurious=True)
 
 args = parser.parse_args()
 
@@ -82,7 +85,7 @@ cfg_runTitle          = args.run_title
 cfg_batchDir          = args.batch_id if "batch_" + args.batch_id else ""
 cfg_numClusterCPUs    = args.num_cpu
 cfg_abstractionPolicy = args.policy
-cfg_sporiousStrict    = args.sporious_strict
+cfg_spuriousStrict    = args.spurious_strict
 cfg_sampleIndex       = args.sample
 cfg_doubleCheck       = args.double_check
 cfg_boundTightening   = args.bound_tightening
@@ -100,10 +103,10 @@ cfg_absLayer          = args.abs_layer
 cfg_extraArg          = args.arg
 cfg_maskIndex         = args.mask_index
 cfg_slurmSeq          = args.slurm_seq
-cfg_rerunSporious     = args.rerun_sporious
+cfg_rerunSpurious     = args.rerun_spurious
 cfg_gtimeout          = args.gtimeout
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=2,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=0,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
 optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
 if cfg_runOn == "local":
     optionsObj = optionsLocal
@@ -131,7 +134,7 @@ cnnAbs.resultsJson[mi("cfg_runTitle")]          = cfg_runTitle
 cnnAbs.resultsJson[mi("cfg_batchDir")]          = cfg_batchDir
 cnnAbs.resultsJson[mi("cfg_numClusterCPUs")]    = cfg_numClusterCPUs
 cnnAbs.resultsJson[mi("cfg_abstractionPolicy")] = cfg_abstractionPolicy
-cnnAbs.resultsJson[mi("cfg_sporiousStrict")]    = cfg_sporiousStrict
+cnnAbs.resultsJson[mi("cfg_spuriousStrict")]    = cfg_spuriousStrict
 cnnAbs.resultsJson[mi("cfg_sampleIndex")]       = cfg_sampleIndex
 cnnAbs.resultsJson[mi("cfg_doubleCheck")]       = cfg_doubleCheck
 cnnAbs.resultsJson[mi("cfg_boundTightening")]   = cfg_boundTightening
@@ -146,9 +149,8 @@ cnnAbs.resultsJson[mi("cfg_dumpBounds")]        = cfg_dumpBounds
 cnnAbs.resultsJson[mi("cfg_extraArg")]          = cfg_extraArg
 cnnAbs.resultsJson[mi("cfg_maskIndex")]         = cfg_maskIndex
 cnnAbs.resultsJson[mi("cfg_slurmSeq")]          = cfg_slurmSeq
-cnnAbs.resultsJson[mi("cfg_rerunSporious")]     = cfg_rerunSporious
+cnnAbs.resultsJson[mi("cfg_rerunSpurious")]     = cfg_rerunSpurious
 cnnAbs.resultsJson[mi("cfg_gtimeout")]          = cfg_gtimeout
-
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "TIMEOUT"
 #cnnAbs.resultsJson["subResults"] = []
@@ -225,19 +227,34 @@ cnnAbs.resultsJson["yMaxPrediction"] = int(yMax)
 cnnAbs.resultsJson["ySecondPrediction"] = int(ySecond)
 cnnAbs.dumpResultsJson()
 
-endPrepare = time.time()
-cnnAbs.decGtimeout(endPrepare - startPrepare) #FIXME count also non-solving processes in gtimeout
+cnnAbs.tickGtimeout()
 
 if cfg_dumpBounds and not (cfg_slurmSeq and cfg_maskIndex > 0):
-    CnnAbs.printLog("Started dumping bounds - used for abstraction")
-    ipq, ipq_numVars = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
+    startBoundTightening = time.time()
+    cnnAbs.tickGtimeout()
+    if cnnAbs.isGlobalTimedOut():
+        cnnAbs.resultsJson["Result"] = "GTIMEOUT"
+        cnnAbs.resultsJson[mi("Result")] = "GTIMEOUT"
+        accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
+        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime
+        cnnAbs.dumpResultsJson()
+        exit()
+    CnnAbs.printLog("Started dumping bounds - used for abstraction")        
+    ipq = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
     MarabouCore.saveQuery(ipq, cnnAbs.logDir + "IPQ_dumpBounds")
     CnnAbs.printLog("Finished dumping bounds - used for abstraction")
     print(ipq.getNumberOfVariables())
+    endBoundTightening = time.time()
+    cnnAbs.tickGtimeout()
+    cnnAbs.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
     if ipq.getNumberOfVariables() == 0:
         cnnAbs.resultsJson["SAT"] = False
         cnnAbs.resultsJson["Result"] = "UNSAT"
         cnnAbs.resultsJson[mi("Result")] = "UNSAT"
+        cnnAbs.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
+        cnnAbs.resultsJson["successfulRun"] = 0
+        accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
+        cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime
         cnnAbs.dumpResultsJson()
         CnnAbs.printLog("UNSAT on first LP bound tightening")
         exit()
@@ -249,10 +266,6 @@ if cfg_dumpBounds and os.path.isfile(cnnAbs.logDir + "dumpBoundsInitial.json"):
 else:
     boundDict = None
 
-ipq, ipq_numVars = cnnAbs.modelUtils.dumpBounds(modelOrigDense, xAdv, cfg_propDist, cfg_propSlack, yMax, ySecond)
-print(ipq_numVars)
-exit()
-    
 cnnAbs.optionsObj._dumpBounds = False
 
 if policy.policy is Policy.SingleClassRank:    
@@ -283,7 +296,7 @@ modelOrigDense.save(modelOrigDenseSavedName)
 prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
 #runName = 'test'
-#mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
+#mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSpurious", False)
 #layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
 #layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
 #print("layerType={}".format(layerType))
@@ -291,7 +304,10 @@ prop = AdversarialProperty(xAdv, yMax, ySecond, cfg_propDist, cfg_propSlack)
 
 cnnAbs.numMasks = len(maskList)
 
+cnnAbs.tickGtimeout()
+
 for i, mask in enumerate(maskList):
+
     globalTimeout = cnnAbs.isGlobalTimedOut()
     if globalTimeout:
         break
@@ -314,6 +330,7 @@ for i, mask in enumerate(maskList):
     if i+1 == len(maskList):
         cnnAbs.optionsObj._timeoutInSeconds = 0
     runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(cfg_sampleIndex, cfg_abstractionPolicy, str(cfg_propDist).replace('.','-'), i, len(maskList)-1)
+    cnnAbs.tickGtimeout()
     resultObj = cnnAbs.runMarabouOnKeras(modelAbs, prop, boundDict, runName, coi=(policy.coi and cfg_pruneCOI), onlyDump=cfg_dumpQueries, fromDumpedQuery=cfg_useDumpedQueries)
     if cfg_dumpQueries:
         continue
@@ -323,31 +340,31 @@ for i, mask in enumerate(maskList):
         if not cfg_useDumpedQueries:
             modelOrigDense = load_model(modelOrigDenseSavedName)
         try:
-            isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObj.cex, sporiousStrict=cfg_sporiousStrict)
+            isSpurious = ModelUtils.isCEXSpurious(modelOrigDense, prop, resultObj.cex, spuriousStrict=cfg_spuriousStrict, valueRange=cnnAbs.ds.valueRange)
         except Exception as err:
             CnnAbs.printLog(err)
-            isSporious = True
-        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("sporious" if isSporious else "real", i, len(maskList)-1))
-        #if not isSporious:
-        #    successful = i
-        #    break
-        #elif i+1 == len(maskList):
-        #    resultObj = ResultObj("error")
-        #    break 
-        #    #raise Exception("Sporious CEX at full network.")
-        if cfg_rerunSporious:
-            mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSporious", False)
+            isSpurious = True
+        CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("spurious" if isSpurious else "real", i, len(maskList)-1))
+        if not isSpurious:
+            successful = i
+            break
+        elif i+1 == len(maskList):
+            resultObj = ResultObj("error")
+            break 
+            #raise Exception("Spurious CEX at full network.")
+        elif cfg_rerunSpurious:
+            mbouNet, _ , _ , inputVarsMapping, outputVarsMapping, varsMapping, inputs = cnnAbs.genAdvMbouNet(modelOrigDense, prop, boundDict, runName + "_rerunSpurious", False)
             layersDiv, layerType = InputQueryUtils.divideToLayers(mbouNet)
             layerI = 8 if (cfg_validation and ("long" in cfg_validation)) else 5
             resultObj.preAbsVars = {var for i in range(layerI) for var in layersDiv[i]}
-            resultObjRerunSporious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSporious", coi=False, rerun=True, rerunObj=resultObj)
-            if resultObjRerunSporious.sat():
+            resultObjRerunSpurious = cnnAbs.runMarabouOnKeras(modelOrigDense, prop, boundDict, runName + "_rerunSpurious", coi=False, rerun=True, rerunObj=resultObj)
+            if resultObjRerunSpurious.sat():
                 try:
-                    isSporious = ModelUtils.isCEXSporious(modelOrigDense, prop, resultObjRerunSporious.cex, sporiousStrict=cfg_sporiousStrict)
-                    assert not isSporious
+                    isSpurious = ModelUtils.isCEXSpuriouso(modelOrigDense, prop, resultObjRerunSpurious.cex, spuriousStrict=cfg_spuriousStrict, valueRange=cnnAbs.ds.valueRange)
+                    assert not isSpurious
                 except Exception as err:
                     CnnAbs.printLog(err)
-                resultObj = resultObjRerunSporious
+                resultObj = resultObjRerunSpurious
                 successful = i
                 CnnAbs.printLog("Found real CEX in mask {}/{} after rerun.".format(i, len(maskList)-1))
                 break
@@ -362,6 +379,7 @@ for i, mask in enumerate(maskList):
     else:
         raise NotImplementedError
 
+cnnAbs.tickGtimeout()    
 globalTimeout = cnnAbs.isGlobalTimedOut()    
 if not cfg_dumpQueries:
     if globalTimeout:
@@ -377,13 +395,13 @@ if cfg_slurmSeq and (cfg_dumpQueries or (not success and not globalTimeout) or f
     cnnAbs.resultsJson["accumRuntime"] = time.time() - cnnAbs.startTotal + (cnnAbs.resultsJson["accumRuntime"] if "accumRuntime" in cnnAbs.resultsJson else 0)
     cnnAbs.dumpResultsJson()
     CnnAbs.printLog("Launching next mask")
-    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy, rerun=cfg_rerunSporious, propDist=cfg_propDist)
+    cnnAbs.launchNext(batchId=cfg_batchDir, cnnSize=cfg_cnnSizeChoice, validation=cfg_validation, runTitle=cfg_runTitle, sample=cfg_sampleIndex, policy=cfg_abstractionPolicy, rerun=cfg_rerunSpurious, propDist=cfg_propDist)
     
 if not cfg_dumpQueries:    
     if success:
         CnnAbs.printLog("successful={}/{}".format(successful, len(maskList)-1)) if (successful+1) < len(maskList) else CnnAbs.printLog("successful=Full")
         cnnAbs.resultsJson["successfulRuntime"] = cnnAbs.resultsJson["subResults"][-1]["runtime"]
-        cnnAbs.resultsJson["successfulRun"] = successful
+        cnnAbs.resultsJson["successfulRun"] = successful + 1
     accumRuntime = cnnAbs.resultsJson["accumRuntime"] if (("accumRuntime" in cnnAbs.resultsJson) and cfg_slurmSeq) else 0
     cnnAbs.resultsJson["totalRuntime"] = time.time() - cnnAbs.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
     cnnAbs.resultsJson["SAT"] = resultObj.sat()
