@@ -209,8 +209,11 @@ def main():
     parser.add_argument("--validation", type=str, choices=validationNets, default="", help="Use validation net", required=False)
     parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
     parser.add_argument("--slurm_seq", action="store_true",                        default=True,                  help="Run next mask if this one fails.")
-    parser.add_argument("--rerun_spurious", action="store_true",                        default=True,                  help="Rerun Spurious CEX.")
     parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
+    rerun_parser = parser.add_mutually_exclusive_group(required=False)
+    rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='store_true',  help="When recieved spurious SAT, run again CEX to find a satisfying assignment.")
+    rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
+    parser.set_defaults(rerun_spurious=True)
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
@@ -270,7 +273,8 @@ def main():
         commonFlags += ["--slurm_seq", "--mask_index", str(0)]
     if rerun_spurious:
         commonFlags.append("--rerun_spurious")
-        
+    else:
+        commonFlags.append("--norerun_spurious")
         
     runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath)
     
