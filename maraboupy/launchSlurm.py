@@ -20,10 +20,11 @@ def solvingPolicies():
     return absPolicies() + ['Vanilla']
 
 def globalTimeOut():
-    return 3,0,0
+    return 2,0,0
 
 TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
-TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M, TIMEOUT_S)
+gtimeout = TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S
+TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M + 2, TIMEOUT_S)
 
 def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
     
@@ -42,7 +43,7 @@ def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
         
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
         jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
-                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "TIMEOUT_VAL" : gtimeout,
                     "title2Label" : {'MaskCOICfg' : 'CNN Abstraction', 'VanillaCfg' : 'Vanilla Marabou'},
                     "COIRatio"    : ['MaskCOICfg'],
                     "compareProperties": [('VanillaCfg', 'MaskCOICfg')]}
@@ -75,7 +76,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath):
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
         policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
         jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
-                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "TIMEOUT_VAL" : gtimeout,
                     "title2Label" : title2Label,
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
@@ -104,7 +105,7 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath):
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
         policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
         jsonDict = {"Experiment"  : "Different property distances on the same sample",
-                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "TIMEOUT_VAL" : gtimeout,
                     "title2Label" : title2Label,
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
@@ -133,7 +134,7 @@ def experimentFindMinProvable(numRunsPerType, commonFlags, batchDirPath):
     with open(batchDirPath + "/plotSpec.json", 'w') as f:
         policiesCfg = ["{}Cfg".format(policy)]
         jsonDict = {"Experiment"  : "Find Maxmimal Removable Set of Neurons",
-                    "TIMEOUT_VAL" : TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S,
+                    "TIMEOUT_VAL" : gtimeout,
                     "title2Label" : title2Label,
                     "COIRatio"    : policiesCfg,
                     "compareProperties": list()}
@@ -254,7 +255,7 @@ def main():
     #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
     clusterFlags = []
     #commonFlags = clusterFlags + ["--batch_id", batchId, "--spurious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
-    commonFlags = clusterFlags + ["--batch_id", batchId]
+    commonFlags = clusterFlags + ["--batch_id", batchId] + ["--gtimeout", str(gtimeout)]
     if dumpQueries or useDumpedQueries or dumpSuffix:
         commonFlags += ["--dump_dir", dumpDirPath]    
     if experiment != 'DifferentDistances':

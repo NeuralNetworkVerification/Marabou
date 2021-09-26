@@ -9,7 +9,9 @@ import csv
 import pandas as pd
 import re
 from matplotlib.ticker import MaxNLocator
+import matplotlib.lines as mlines
 from datetime import datetime
+import shutil
 
 def pctFunc(pct, data):
     absolute = int(np.round(pct/100.*np.sum(data)))
@@ -104,9 +106,9 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         ax.plot([bottom, top], [top   , top], 'r:')
         ax.plot([top,    top], [bottom, top], 'r:')
         if singleFig:
-            plt.title("Total Runtime: {} vs. {}, {} xparams".format(yLabel, xLabel, len(mutual)))        
-            plt.xlabel(xLabel + ' [sec]')
-            plt.ylabel(yLabel + ' [sec]')
+            plt.title("Total Runtime: {} vs. {}  ({} samples)".format(yLabel, xLabel, len(mutual)))        
+            plt.xlabel(xLabel + ' Runtime [sec]')
+            plt.ylabel(yLabel + ' Runtime  [sec]')
             plt.xlim([bottom, axisTop])
             plt.ylim([bottom, axisTop])
         else:
@@ -290,6 +292,9 @@ if not os.path.exists(basePath + "graphs/"):
 graphDir = basePath + "graphs/" + "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 if not os.path.exists(graphDir):
     os.mkdir(graphDir)
+
+shutil.copy2("runCmd.sh", graphDir)
+
 os.chdir(graphDir)
 
 ####################################################################################################
@@ -352,23 +357,29 @@ with open('ResultSummary.csv', mode='w') as f:
 ####################################################################################################
 ####################################################################################################
 
-cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
+cactusLabels = [resultDict['label'] for resultDict in resultDicts]
+cactusMarkers = ['*', 's', 'o', 'P', 'X', '^', 'v', 'D'][:len(cactusLabels)]
+cactusColors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:cyan']
+
 plt.figure()
 runtimesTotalSolved = [[resultDict[s]["totalRuntime"] for s in xparamTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
 [result.sort() for result in runtimesTotalSolved]
 sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesTotalSolved]
+lines = []
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
-for sums, label in zip(sumRuntimes, cactusLabels):
+for sums, label, marker, color in zip(sumRuntimes, cactusLabels, cactusMarkers, cactusColors):
     solved = [0] + list(range(1,len(sums)+1))
     sums = [0] + sums
-    p = plt.step(sums, solved, label=label, where="post")
-    plt.scatter(sums[-1], solved[-1], s=70, marker="o", alpha=0.3, c=p[0].get_color())
+    p = plt.step(sums, solved, label=label, where="post", c=color)
+    #plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=0.3, c=color)
+    plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=1, facecolor='none', edgecolor=color)
+    lines.append(mlines.Line2D([], [], markerfacecolor='none', markeredgecolor=color, marker=marker, markersize=10, label=label, color=color))
     #print("label={}".format(label))
     #print("sums={}".format(sums))
     #print("solved={}".format(solved))        
 plt.xlabel("Total Runtime [sec]")
 plt.ylabel("Instances solved")
-plt.legend()
+plt.legend(handles=lines)
 setFigSize()
 plt.savefig("CactusTotal.png", bbox_inches="tight", dpi=100)
 plt.close()
@@ -377,23 +388,26 @@ plt.close()
 ####################################################################################################
 ####################################################################################################
 
-cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
+#cactusLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
 plt.figure()
 runtimesSuccessfulSolved = [[resultDict[s]["successfulRuntime"] for s in xparamTotal if (s in resultDict) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
 [result.sort() for result in runtimesSuccessfulSolved]
 sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesSuccessfulSolved]
 #[plt.plot(sums, list(range(1,len(sums)+1)), label=label) for sums, label in zip(sumRuntimes, cactusLabels)]
-for sums, label in zip(sumRuntimes, cactusLabels):
+lines = []
+for sums, label, marker, color in zip(sumRuntimes, cactusLabels, cactusMarkers, cactusColors):
     solved = [0] + list(range(1,len(sums)+1))
     sums = [0] + sums
-    p = plt.step(sums, solved, label=label, where="post")
-    plt.scatter(sums[-1], solved[-1], s=70, marker="o", alpha=0.3, c=p[0].get_color())
+    p = plt.step(sums, solved, label=label, where="post", c=color)
+    #plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=0.3, c=color)
+    plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=1, facecolor='none', edgecolor=color)
+    lines.append(mlines.Line2D([], [], markerfacecolor='none', markeredgecolor=color, marker=marker, markersize=10, label=label, color=color))
     #print("label={}".format(label))
     #print("sums={}".format(sums))
     #print("solved={}".format(solved))        
 plt.xlabel("Successful Runtime [sec]")
 plt.ylabel("Instances solved")
-plt.legend()
+plt.legend(handles=lines)
 setFigSize()
 plt.savefig("CactusSuccessful.png", bbox_inches="tight", dpi=100)
 plt.close()
@@ -445,4 +459,3 @@ with open("commonRunCommand.log", mode='w') as f:
 with open("runCommands.log", mode='w') as f:
     for cmd in runCommands:
         f.write("python3 cnn_abs_testbench.py " + cmd)
-
