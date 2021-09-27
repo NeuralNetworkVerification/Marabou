@@ -1186,25 +1186,26 @@ class InputQueryUtils:
                     if (i not in model.upperBounds) or (ub < model.upperBounds[i]):
                         model.setUpperBound(i,ub)
 
-#    @staticmethod
-#    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
-#        assert valueRange is not None #FIXME
-#        assert floatingPointErrorGap >= 0
-#        if valueRange is not None:
-#            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
-#        l, u = x - r, x + r
-#        assert np.all(u - l > 2 * floatingPointErrorGap)
-#        u -= floatingPointErrorGap
-#        l += floatingPointErrorGap
-#        return l, u
-
     @staticmethod
-    def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0, valueRange=None):
-        if r > floatingPointErrorGap and floatingPointErrorGap > 0:
-            r -= floatingPointErrorGap
-        if pos:
-            return np.maximum(x - r,np.zeros(x.shape)), x + r    
-        return x - r, x + r
+    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
+        assert valueRange is not None
+        assert floatingPointErrorGap >= 0
+        if valueRange is not None:
+            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
+        else:
+            l, u = x - r, x + r
+        assert np.all(u - l > 2 * floatingPointErrorGap)
+        u -= floatingPointErrorGap
+        l += floatingPointErrorGap
+        return l, u
+
+#    @staticmethod
+#    def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0, valueRange=None):
+#        if r > floatingPointErrorGap and floatingPointErrorGap > 0:
+#            r -= floatingPointErrorGap
+#        if pos:
+#            return np.maximum(x - r,np.zeros(x.shape)), x + r    
+#        return x - r, x + r
 
     @staticmethod    
     def inBoundsInftyBall(x, r, p, allowClose=False, valueRange=None):
