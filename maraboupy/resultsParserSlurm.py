@@ -166,14 +166,26 @@ def plotCOIRatio(resultDict):
     unique.sort()
     plt.plot(unique, [len([u for u in y1 if v == u]) for v in unique], marker='o', markerfacecolor='none', color='blue', markeredgecolor='blue')
 
-    plt.xlabel('Remaining Variables Ratio In Successful Run')
+    plt.xlabel('Remaining Variables Ratio In Successful Run - {}'.format(resultDict['label']))
     plt.ylabel('Num. Samples')
-    #plt.xlim()
-    #plt.ylim()
-    plt.grid(True)
-    
+    plt.xlim([0,1])
+    plt.grid(True)    
     plt.savefig("VariableRatioHistogram-{}.png".format(noWhiteLabel), dpi=100)
     plt.close()
+
+    plt.figure()
+    unique = set(x)
+    unique.discard(-1)
+    unique = list(unique)
+    unique.sort()
+    plt.plot(unique, [len([u for u in y1 if v == u]) for v in unique], marker='x', markerfacecolor='none', color='red', markeredgecolor='red')
+
+    plt.xlabel('Number of solver Runs Till Success - {}'.format(resultDict['label']))
+    plt.ylabel('Num. Samples')
+    plt.grid(True)    
+    plt.savefig("NumRunsHistogram-{}.png".format(noWhiteLabel), dpi=100)
+    plt.close()
+    
 
 ####################################################################################################
 ####################################################################################################
