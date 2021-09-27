@@ -111,9 +111,10 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
             plt.ylabel(yLabel + ' Runtime  [sec]')
             plt.xlim([bottom, axisTop])
             plt.ylim([bottom, axisTop])
+            plt.grid(True)
         else:
             ax.set_xlim([bottom, axisTop])
-            ax.set_ylim([bottom, axisTop])
+            ax.set_ylim([bottom, axisTop])            
 
     if lastFig:
         setFigSize()
@@ -124,7 +125,8 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         else:
             ax.set_title("Total Runtime: All vs. Vanilla")
             ax.set_xlabel('Vanilla [sec]')
-            ax.set_ylabel('Others [sec]')            
+            ax.set_ylabel('Others [sec]')
+            ax.grid(True)
             ax.figure.savefig("CompareProperties-All_vs_Vanilla.png", dpi=100)        
         plt.close()
 
@@ -153,8 +155,25 @@ def plotCOIRatio(resultDict):
 
     setFigSize()
     noWhiteLabel = resultDict['label'].replace(' ','')
+    plt.grid(True)
     plt.savefig("COIRatio-{}.png".format(noWhiteLabel), dpi=100)
-    plt.close()    
+    plt.close()
+
+    plt.figure()
+    unique = set(y1)
+    unique.discard(-1)
+    unique = list(unique)
+    unique.sort()
+    plt.plot(unique, [len([u for u in y1 if v == u]) for v in unique], marker='o', markerfacecolor='none', color='blue', markeredgecolor='blue')
+
+    plt.xlabel('Remaining Variables Ratio In Successful Run')
+    plt.ylabel('Num. Samples')
+    #plt.xlim()
+    #plt.ylim()
+    plt.grid(True)
+    
+    plt.savefig("VariableRatioHistogram-{}.png".format(noWhiteLabel), dpi=100)
+    plt.close()
 
 ####################################################################################################
 ####################################################################################################
@@ -381,6 +400,7 @@ plt.xlabel("Total Runtime [sec]")
 plt.ylabel("Instances solved")
 plt.legend(handles=lines)
 setFigSize()
+plt.grid(True)
 plt.savefig("CactusTotal.png", bbox_inches="tight", dpi=100)
 plt.close()
 
@@ -409,6 +429,7 @@ plt.xlabel("Successful Runtime [sec]")
 plt.ylabel("Instances solved")
 plt.legend(handles=lines)
 setFigSize()
+plt.grid(True)
 plt.savefig("CactusSuccessful.png", bbox_inches="tight", dpi=100)
 plt.close()
             
@@ -430,6 +451,7 @@ for resultDict, ax , sampleNum in zip(resultDicts, axes, runSampleNum):
     ax.axis('equal')
 
     setFigSize()
+plt.grid(True)    
 plt.savefig("ResultPie.png", dpi=100)
 plt.close()
 
