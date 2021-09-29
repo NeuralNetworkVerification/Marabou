@@ -23,6 +23,8 @@ import random
 from tensorflow.keras.models import load_model
 from launchSlurm_WIP import *
 
+import copy
+
 #################################################################################################################
 #################################################################################################################
 #################################################################################################################
@@ -387,6 +389,134 @@ class CnnAbs:
         self.prevTimeStamp = time.time()
         self.policy = policy
 
+    def solve(self, model, policy, sample, propDist, dataset):
+
+        xAdv = self.ds.x_test[sample]
+        yAdv = self.ds.y_test[sample]
+        yPredict = model.predict(np.array([xAdv]))
+        yMax = yPredict.argmax()
+        yPredictNoMax = np.copy(yPredict)
+        yPredictNoMax[0][yMax] = np.min(yPredict)
+        ySecond = yPredictNoMax.argmax()
+        if ySecond == yMax:
+            ySecond = 0 if yMax > 0 else 1
+
+        fName = "xAdv.png"
+        CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
+        plt.figure()
+        plt.imshow(np.squeeze(xAdv))
+        plt.title('Example {}. Real Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
+        plt.savefig(fName)
+        with open(fName.replace("png","npy"), "wb") as f:
+            np.save(f, xAdv)
+            
+        self.resultsJson["yDataset"] = int(yAdv.item())
+        self.resultsJson["yMaxPrediction"] = int(yMax)
+        self.resultsJson["ySecondPrediction"] = int(ySecond)
+        self.dumpResultsJson()
+
+        self.tickGtimeout()
+
+        startBoundTightening = time.time()
+        self.tickGtimeout()
+        if self.isGlobalTimedOut():
+            self.resultsJson["Result"] = "GTIMEOUT"
+            self.resultsJson[mi("Result")] = "GTIMEOUT"
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            exit()
+        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
+        ipq = self.modelUtils.dumpBounds(model, xAdv, propDist, 0, yMax, ySecond)
+        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+        CnnAbs.printLog("Finished dumping bounds - used for abstraction")
+        print(ipq.getNumberOfVariables())
+        endBoundTightening = time.time()
+        self.tickGtimeout()
+        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
+        if ipq.getNumberOfVariables() == 0:
+            self.resultsJson["SAT"] = False
+            self.resultsJson["Result"] = "UNSAT"
+            self.resultsJson[mi("Result")] = "UNSAT"
+            self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
+            self.resultsJson["successfulRun"] = 0
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            CnnAbs.printLog("UNSAT on first LP bound tightening")
+            exit()
+        else:
+            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
+        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
+            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
+            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
+        else:
+            boundDict = None
+
+        self.optionsObj._dumpBounds = False
+
+        mbouModel = self.modelUtils.tf2MbouOnnx(model)
+
+        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, 0)        
+        absRefineBatches = self.abstractionRefinementBatches(mbouModel, policy, prop)
+        self.setAdversarial(mbouModel, xAdv, propDist, 0, yMax, ySecond, valueRange==self.ds.valueRange)
+        for i, abstractNeurons in enumerate(absRefineBatches):
+            if self.isGlobalTimedOut():
+                break
+            mdouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
+            if i+1 == len(absRefineBatches):
+                self.optionsObj._timeoutInSeconds = 0
+            runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(sample, policy, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
+            self.tickGtimeout()
+            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping)
+            if resultObj.timedOut():
+                continue
+            if resultObj.sat():
+                try:
+                    isSpurious = ModelUtils.isCEXSpurious(modelOrigDense, prop, resultObj.cex, valueRange=self.ds.valueRange)
+                except Exception as err:
+                    CnnAbs.printLog(err)
+                    isSpurious = True
+                CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("spurious" if isSpurious else "real", i, len(absRefineBatches)-1))
+                if not isSpurious:
+                    successful = i
+                    break
+                elif i+1 == len(absRefineBatches):
+                    resultObj = ResultObj("error")
+                    break 
+            elif resultObj.unsat():
+                CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i, len(absRefineBatches)-1))
+                successful = i
+                break
+            else:
+                raise NotImplementedError                
+
+        netPriorToAbsLayer = set().union(*layerList[:absLayer+1])        
+        modelUpToAbsLayer = self.modelUtils.tf2MbouOnnx(model)
+        modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))        
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer)        
+
+        print(mbouModel.evaluate([xAdv]))
+        print(model.predict(np.array([xAdv])))
+        print(modelUpToAbsLayer.evaluate([xAdv]))
+        absLayerPrediction = ModelUtils.intermidModel(model, 'mp2').predict(np.array([xAdv]))
+        print(absLayerPrediction)
+        print(np.abs(modelUpToAbsLayer.evaluate([xAdv]).reshape(absLayerPrediction.shape) - absLayerPrediction))
+
+    def abstractionRefinementBatches(self, model, policy, prop):
+        layerList, layerTypes = InputQueryUtils.divideToLayers(model)
+        assert all([len(t) == 1 for t in layerTypes])
+        lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
+        absLayer = lastMax
+        
+    def abstractAndPrune(self, model, abstractNeurons, boundDict):
+        modelAbstract = copy.deepcopy(model)
+        modelAbstract.equList  = [eq for eq in modelAbstract.equList  if eq.addendList[-1][1] not in abstractNeurons]
+        modelAbstract.maxList  = [pw for pw in modelAbstract.maxList  if pw[1]                not in abstractNeurons]        
+        modelAbstract.reluList = [pw for pw in modelAbstract.reluList if pw[1]                not in abstractNeurons]
+        modelAbstract.absList  = [pw for pw in modelAbstract.absList  if pw[1]                not in abstractNeurons]
+        modelAbstract.signList = [pw for pw in modelAbstract.signList if pw[1]                not in abstractNeurons]
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelAbstract, modelAbstract.outputVars.flatten().tolist())
+        modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
+
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
         if self.maskIndex+1 == self.numMasks:
             return
@@ -498,6 +628,45 @@ class CnnAbs:
         self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
         self.tickGtimeout()
         return result
+
+    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping):
+
+        startLocal = time.time()    
+        self.subResultAppend()
+        
+        CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
+        ipq = mbouNet.getMarabouQuery()
+        if self.optionsObj._timeoutInSeconds <= 0:
+            self.optionsObj._timeoutInSeconds = self.gtimeout
+        else:
+            self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
+        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
+        CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
+        sat = len(vals) > 0
+        timedOut = stats.hasTimedOut()
+        if not sat:
+            if timedOut:
+                result = ResultObj("timeout")
+                CnnAbs.printLog("\n\n\n ----- Timed out in {} ----- \n\n\n".format(runName))
+            else:
+                result = ResultObj("unsat")
+                CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
+        else:
+            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
+            self.dumpCex(cex, cexPrediction, prop, runName, model)
+            self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
+            self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
+            result = ResultObj("sat")
+            result.setCex(cex, cexPrediction, inputDict, outputDict)
+            result.inputs = inputs
+            result.vals = vals
+            result.varsMapping = varsMapping
+            CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
+
+        endLocal = time.time()
+        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
+        self.tickGtimeout()
+        return result                   
 
     def setLogger(suffix=''):
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = 'cnnAbsTB{}.log'.format(suffix), filemode = "w")
@@ -1060,7 +1229,7 @@ class InputQueryUtils:
         return layerList, layerType
 
     @staticmethod        
-    def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+    def removeRedundantVariables(net, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
         if not keepSet:        
             net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
             net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
@@ -1110,7 +1279,10 @@ class InputQueryUtils:
         net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
         inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
         outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
-        net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
+        if keepInputShape:
+            assert all([v in varSet for input in net.inputVars for v in input.tolist()])
+        else:
+            net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
         if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
@@ -1186,25 +1358,26 @@ class InputQueryUtils:
                     if (i not in model.upperBounds) or (ub < model.upperBounds[i]):
                         model.setUpperBound(i,ub)
 
-#    @staticmethod
-#    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
-#        assert valueRange is not None #FIXME
-#        assert floatingPointErrorGap >= 0
-#        if valueRange is not None:
-#            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
-#        l, u = x - r, x + r
-#        assert np.all(u - l > 2 * floatingPointErrorGap)
-#        u -= floatingPointErrorGap
-#        l += floatingPointErrorGap
-#        return l, u
-
     @staticmethod
-    def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0, valueRange=None):
-        if r > floatingPointErrorGap and floatingPointErrorGap > 0:
-            r -= floatingPointErrorGap
-        if pos:
-            return np.maximum(x - r,np.zeros(x.shape)), x + r    
-        return x - r, x + r
+    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
+        assert valueRange is not None
+        assert floatingPointErrorGap >= 0
+        if valueRange is not None:
+            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
+        else:
+            l, u = x - r, x + r
+        assert np.all(u - l > 2 * floatingPointErrorGap)
+        u -= floatingPointErrorGap
+        l += floatingPointErrorGap
+        return l, u
+
+#    @staticmethod
+#    def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0, valueRange=None):
+#        if r > floatingPointErrorGap and floatingPointErrorGap > 0:
+#            r -= floatingPointErrorGap
+#        if pos:
+#            return np.maximum(x - r,np.zeros(x.shape)), x + r    
+#        return x - r, x + r
 
     @staticmethod    
     def inBoundsInftyBall(x, r, p, allowClose=False, valueRange=None):
