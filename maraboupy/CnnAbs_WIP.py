@@ -67,6 +67,11 @@ class PolicyBase:
         assert len(sortedIndReverse) == actMap.size
         return sortedIndReverse
 
+    def rankByScore(model, score):
+        assert score.shape == model.outputVars.shape
+        scoreSort = np.argsort(score)
+        return model.outputVars.flatten()[scoreSort[::-1]]
+
     @staticmethod
     def linearStep(n, stepSize=10, startWith=50):
         stepSize = max(stepSize,1)
@@ -136,6 +141,9 @@ class PolicyCentered(PolicyBase):
         indicesSortedDecsending = sorted(indicesList, key=lambda x: np.linalg.norm(np.array(x)-center))
         return self.genMaskByOrderedInd(indicesSortedDecsending, maskShape, includeFull=includeFull)
 
+    def rankAbsLayer(self, model, prop):
+        raise NotImplementedError
+
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllClassRank(PolicyBase):
     
@@ -145,6 +153,15 @@ class PolicyAllClassRank(PolicyBase):
 
     def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         return self.genMaskByActivation(intermidModel, self.ds.x_test, includeFull=includeFull)
+
+    def rankAbsLayer(self, model, prop):
+        evaluations = []
+        for i, sample in enumerate(self.ds.x_test):
+            print(i)
+            evaluations.append(model.evaluate([sample]))
+        score = np.mean(np.array(evaluations), axis=0)
+        #score = np.mean(np.array([model.evaluate([sample]) for sample in self.ds.x_test]), axis=0)
+        return rankByScore(model, score)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -156,6 +173,10 @@ class PolicySingleClassRank(PolicyBase):
     def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         features = [x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == prediction]
         return self.genMaskByActivation(intermidModel, np.array(features), includeFull=includeFull)
+
+    def rankAbsLayer(self, model, prop):
+        score = np.mean(np.array([model.evaluate([sample]) for sample, label in zip(self.ds.x_test, self.ds.y_test) if label == prop.yMax]), axis=0)
+        return rankByScore(model, score)
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
@@ -172,6 +193,9 @@ class PolicyMajorityClassVote(PolicyBase):
         sortedIndReverseDiscriminated = PolicyBase.sortActMapReverse(sum(actMaps))
         return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], includeFull=includeFull)
 
+    def rankAbsLayer(self, model, prop):
+        raise NotImplementedError
+    
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
     
@@ -183,6 +207,9 @@ class PolicyRandom(PolicyBase):
         maskShape = intermidModel.output_shape[1:-1]
         indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
         return self.genMaskByOrderedInd(indices, maskShape, includeFull=includeFull)
+
+    def rankAbsLayer(self, model, prop):
+        return np.random.permutation(model.outputVars)
     
 class PolicyVanilla(PolicyBase):
     
@@ -196,6 +223,9 @@ class PolicyVanilla(PolicyBase):
         if includeFull:
             return [np.ones(maskShape)]
         return []
+
+    def rankAbsLayer(self, model, prop):
+        raise NotImplementedError
     
 class PolicyFindMinProvable(PolicyBase):
     
@@ -350,6 +380,7 @@ class DataSet:
         self.optimizer='adam'
         self.metrics=['accuracy']
         self.valueRange = (0,1) #Input pixels value range
+        self.name = 'mnist'
     
 class CnnAbs:
 
@@ -387,10 +418,11 @@ class CnnAbs:
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
         self.prevTimeStamp = time.time()
-        self.policy = policy
+        self.policy = Policy.fromString(policy, self.ds.name)
 
-    def solve(self, model, policy, sample, propDist, dataset):
+    def solve(self, model, policyName, sample, propDist, dataset):
 
+        policy = Policy.fromString(policyName, self.ds.name)
         xAdv = self.ds.x_test[sample]
         yAdv = self.ds.y_test[sample]
         yPredict = model.predict(np.array([xAdv]))
@@ -464,7 +496,7 @@ class CnnAbs:
             mdouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.optionsObj._timeoutInSeconds = 0
-            runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(sample, policy, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
+            runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(sample, policyName, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
             self.tickGtimeout()
             resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping)
             if resultObj.timedOut():
@@ -487,25 +519,53 @@ class CnnAbs:
                 successful = i
                 break
             else:
-                raise NotImplementedError                
+                raise NotImplementedError
 
-        netPriorToAbsLayer = set().union(*layerList[:absLayer+1])        
-        modelUpToAbsLayer = self.modelUtils.tf2MbouOnnx(model)
-        modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))        
-        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer)        
-
-        print(mbouModel.evaluate([xAdv]))
-        print(model.predict(np.array([xAdv])))
-        print(modelUpToAbsLayer.evaluate([xAdv]))
-        absLayerPrediction = ModelUtils.intermidModel(model, 'mp2').predict(np.array([xAdv]))
-        print(absLayerPrediction)
-        print(np.abs(modelUpToAbsLayer.evaluate([xAdv]).reshape(absLayerPrediction.shape) - absLayerPrediction))
+        self.tickGtimeout()    
+        globalTimeout = self.isGlobalTimedOut()    
+        if not cfg_dumpQueries:
+            if globalTimeout:
+                resultObj = ResultObj("gtimeout")
+            success = not resultObj.timedOut() and (successful is not None)
+            if resultObj.sat() and not success:
+                resultObj = ResultObj("spurious")
+        else:
+            success = False
+    
+        if success:
+            CnnAbs.printLog("successful={}/{}".format(successful, len(maskList)-1)) if (successful+1) < len(maskList) else CnnAbs.printLog("successful=Full")
+            self.resultsJson["successfulRuntime"] = self.resultsJson["subResults"][-1]["runtime"]
+            self.resultsJson["successfulRun"] = successful + 1        
+        self.resultsJson["totalRuntime"] = time.time() - self.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
+        self.resultsJson["SAT"] = resultObj.sat()
+        self.resultsJson["Result"] = resultObj.result.name
+        self.resultsJson[mi("Result")] = resultObj.result.name
+        self.dumpResultsJson()
+        CnnAbs.printLog(resultObj.result.name)            
+        CnnAbs.printLog("Log files at {}".format(self.logDir))
+    
 
     def abstractionRefinementBatches(self, model, policy, prop):
+        if policy is Policy.Vanilla:
+            return [set()]
         layerList, layerTypes = InputQueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
         lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
         absLayer = lastMax
+
+        netPriorToAbsLayer = set().union(*layerList[:absLayer+1])
+        modelUpToAbsLayer = copy.deepcopy(model)
+        modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))        
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
+
+        absLayerRankInAbsModel = policy.rankAbsLayer(modelUpToAbsLayer, prop)
+        absLayerRank = [varsMapping[v] for v in absLayerRankInAbsModel]
+        absLayerRankAcsending = absLayerRank[::-1]
+        accum = 0
+        steps = list(policy.steps(len(absLayerRank)))
+        batchSizes = [sum(steps[:i+1] for i in range(len(steps)))][::-1]
+        return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
+        
         
     def abstractAndPrune(self, model, abstractNeurons, boundDict):
         modelAbstract = copy.deepcopy(model)
@@ -514,6 +574,10 @@ class CnnAbs:
         modelAbstract.reluList = [pw for pw in modelAbstract.reluList if pw[1]                not in abstractNeurons]
         modelAbstract.absList  = [pw for pw in modelAbstract.absList  if pw[1]                not in abstractNeurons]
         modelAbstract.signList = [pw for pw in modelAbstract.signList if pw[1]                not in abstractNeurons]
+        modeAbstract.inputVars.append(np.array(list(abstractNeurons)))
+        for v in abstractNeurons:
+            model.setLowerBound(boundDict[v][0], v)
+            model.setUpperBound(boundDict[v][1], v)
         inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelAbstract, modelAbstract.outputVars.flatten().tolist())
         modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
 
@@ -629,18 +693,17 @@ class CnnAbs:
         self.tickGtimeout()
         return result
 
-    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping):
+    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None):
 
         startLocal = time.time()    
         self.subResultAppend()
         
         CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
-        ipq = mbouNet.getMarabouQuery()
         if self.optionsObj._timeoutInSeconds <= 0:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
+        vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=True, options=self.optionsObj)
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -1280,9 +1343,9 @@ class InputQueryUtils:
         inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
         outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
         if keepInputShape:
-            assert all([v in varSet for input in net.inputVars for v in input.tolist()])
+            assert all([v in varSet for inp in net.inputVars for v in inp.flatten().tolist()])
         else:
-            net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
+            net.inputVars  = [np.array([tr(v) for input in net.inputVars for v in input.flatten().tolist()  if v in varSet])]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
         if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None

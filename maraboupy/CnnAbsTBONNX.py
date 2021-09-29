@@ -113,10 +113,8 @@ if cfg_runOn == "local":
 else :
     optionsObj = optionsCluster
 
-policy = Policy.fromString(cfg_abstractionPolicy, 'mnist')
-
 maskIndexStr = str(cfg_maskIndex) if cfg_maskIndex > 0 else ''
-cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr, policy=policy)
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr, policy=cfg_abstractionPolicy)
 
 startPrepare = time.time()
 
