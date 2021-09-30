@@ -2708,7 +2708,7 @@ void Engine::explainSimplexFailure()
 {
 	if( !GlobalConfiguration::PROOF_CERTIFICATE )
 		return;
-	
+
 	applyAllBoundTightenings();
 	validateAllBounds( 0.01 );
 	int inf = _tableau->getInfeasibleVar();
