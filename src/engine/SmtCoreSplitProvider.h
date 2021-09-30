@@ -65,9 +65,9 @@ private:
   List<PiecewiseLinearCaseSplit> _currentSuggestedSplitAlternatives;
   List<Pair<PiecewiseLinearCaseSplit, List<PiecewiseLinearCaseSplit>>> _splitsStack;
 
-  Optional<PiecewiseLinearCaseSplit> _currentSuggestedAlternativeSplit;
-
   PiecewiseLinearConstraint* _constraintForSplitting;
+
+  Optional<PiecewiseLinearCaseSplit> _currentSuggestedAlternativeSplit;
 
   /*
     Count how many times each constraint has been violated.

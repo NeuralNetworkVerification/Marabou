@@ -3,8 +3,6 @@
 #include "StdCompletion.h"
 #include "MStringf.h"
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 
 SmtStackManager::SmtStackManager( IEngine* engine, std::shared_ptr<SplitProvidersManager> const& splitProvidersManager )
     : _statistics( NULL )

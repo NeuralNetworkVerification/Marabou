@@ -35,13 +35,11 @@ GammaUnsat ResidualReasoningSplitProvider::gammaUnsat() const {
     return _gammaUnsat;
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInfo )
 {
     if ( splitInfo.theSplit == _required_splits.back() )
     {
+        printf("residual reasoning split!\n");
         _required_splits.popBack();
     }
     if ( !splitInfo.theSplit.reluRawData() )
@@ -56,7 +54,6 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
     while ( continue_deriving )
     {
         loop_counter += 1;
-        printf("iteration %d\n", loop_counter);
         List<PLCaseSplitRawData> requiredSplits = deriveRequiredSplits();
         if ( requiredSplits.empty() )
         {
@@ -167,7 +164,7 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
         auto const maybeDerivedSplit = getUnsatisfied( gammaSeq );
         if ( maybeDerivedSplit ) {
             ActivationType opposeActivation = maybeDerivedSplit->_activation == ActivationType::ACTIVE ? ActivationType::INACTIVE : ActivationType::ACTIVE;
-            PLCaseSplitRawData requiredSplit = PLCaseSplitRawData(maybeDerivedSplit->_b, maybeDerivedSplit->_f, opposeActivation);
+            PLCaseSplitRawData requiredSplit = PLCaseSplitRawData( maybeDerivedSplit->_b, maybeDerivedSplit->_f, opposeActivation );
             // avoid duplicated derived splits
             bool doNotAppend = false;
             for ( auto const& split : _pastSplits )
@@ -181,9 +178,9 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
             if ( !doNotAppend ) {
                 derived.append( requiredSplit );
             }
-            printf( "required from clause %d: variable=%u, activation=%s\n", clause_index,
-            requiredSplit._f,
-            requiredSplit._activation == ActivationType::ACTIVE ? "active" : "inactive" );
+            // printf( "required from clause %d: variable=%u, activation=%s\n", clause_index,
+            // requiredSplit._f,
+            //     requiredSplit._activation == ActivationType::ACTIVE ? "active" : "inactive" );
         }
         clause_index += 1;
     }

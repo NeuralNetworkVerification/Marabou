@@ -4,14 +4,11 @@
 #include "GlobalConfiguration.h"
 #include "Options.h"
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 SmtCoreSplitProvider::SmtCoreSplitProvider( IEngine* engine )
     : _engine( engine )
-    , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
     , _constraintForSplitting( nullptr )
     , _currentSuggestedAlternativeSplit( nullopt )
+    , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
 {}
 
 bool SmtCoreSplitProvider::searchForAlternatives()
@@ -30,7 +27,7 @@ bool SmtCoreSplitProvider::searchForAlternatives()
     return false;
 }
 
-void SmtCoreSplitProvider::thinkBeforeSplit( List<SmtStackEntry*> const& stack ) {
+void SmtCoreSplitProvider::thinkBeforeSplit( [[maybe_unused]] List<SmtStackEntry*> const& stack ) {
 
     // We already have some splits in our backlog
     if ( searchForAlternatives() ) return;
@@ -112,7 +109,7 @@ void SmtCoreSplitProvider::onSplitPerformed( SplitInfo const& splitInfo ) {
     }
 }
 
-void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
+void SmtCoreSplitProvider::onStackPopPerformed( [[maybe_unused]] PopInfo const& popInfo ) {
     // debug: verify it the corrent split
     auto& currentTopSplit = _splitsStack.back();
 
@@ -130,7 +127,7 @@ void SmtCoreSplitProvider::onStackPopPerformed( PopInfo const& popInfo ) {
     }
 }
 
-void SmtCoreSplitProvider::onUnsatReceived( List<SmtStackEntry*> const& stack ) {
+void SmtCoreSplitProvider::onUnsatReceived( [[maybe_unused]] List<SmtStackEntry*> const& stack ) {
 }
 
 void SmtCoreSplitProvider::reportViolatedConstraint( PiecewiseLinearConstraint* constraint ) {
