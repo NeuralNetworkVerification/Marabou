@@ -2774,6 +2774,7 @@ double Tableau::computeSparseRowBound( const SparseUnsortedList& row, const bool
 {
 	assert ( !row.empty() && var < _n);
 	double ci = 0;
+	bool realUpper = isUpper;
 
 	for ( const auto& entry : row )
 		if ( entry._index == var )
@@ -2784,7 +2785,7 @@ double Tableau::computeSparseRowBound( const SparseUnsortedList& row, const bool
 
 	assert( ci );
 	if (ci > 0)
-		isUpper = !isUpper;
+		realUpper = !isUpper;
 	double bound = 0, curVal, multiplier;
 	unsigned curVar;
 	for ( const auto& entry : row )
@@ -2792,10 +2793,10 @@ double Tableau::computeSparseRowBound( const SparseUnsortedList& row, const bool
 		curVar = entry._index;
 		curVal = entry._value;
 
-		if( FloatUtils::isZero( curVal ) )
+		if ( FloatUtils::isZero( curVal ) )
 			continue;
 
-		multiplier = ( isUpper && FloatUtils::isPositive( curVal ) ) || ( !isUpper && FloatUtils::isNegative( curVal ) ) ? _upperBounds[curVar] : _lowerBounds[curVar];
+		multiplier = ( realUpper && FloatUtils::isPositive( curVal ) ) || ( !realUpper && FloatUtils::isNegative( curVal ) ) ? _upperBounds[curVar] : _lowerBounds[curVar];
 		multiplier *= curVal;
 		bound += multiplier;
 	}

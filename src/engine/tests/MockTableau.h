@@ -610,7 +610,12 @@ public:
     	return 0;
     }
 
-    void updateExplanation( const TableauRow& /* row */, const bool /* isUpper */ ) const
+	double computeSparseRowBound( const SparseUnsortedList& /* row */,  bool /* isUpper */,  unsigned /* var */) const
+	{
+    	return 0;
+	}
+
+	void updateExplanation( const TableauRow& /* row */, const bool /* isUpper */ ) const
     {
     }
 
