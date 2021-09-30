@@ -2550,6 +2550,7 @@ int Engine::simplexBoundsUpdate()
     {
         _tableau->updateExplanation( boundUpdateRow, true );
         //_tableau->tightenUpperBound( var, newBound ); // No re-tightening, since can create chain reaction
+        //printf("Updating ub of var %d from %.5lf to %.5lf\n", var, _tableau->getUpperBound( var ), newBound ); //TODO delete
         return ( int ) var;
     }
     newBound = _tableau->computeRowBound( boundUpdateRow, false );
@@ -2560,7 +2561,8 @@ int Engine::simplexBoundsUpdate()
     if ( FloatUtils::gt( newBound, _tableau->getLowerBound( var ) ) )
     {
         _tableau->updateExplanation( boundUpdateRow, false );
-        //_tableau->tightenLowerBound( var, newBound );
+		//printf("Updating lb of var %d from %.5lf to %.5lf\n", var, _tableau->getLowerBound( var ), newBound ); //TODO delete
+		//_tableau->tightenLowerBound( var, newBound );
     }
     return ( int ) var;
 }
@@ -2656,8 +2658,8 @@ bool Engine::validateBounds( const unsigned var , const double epsilon ) const
 	}
 	return true;
 	//TODO revert upon completing
-	//ASSERT( abs( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) ) < epsilon );
-	//ASSERT( abs( getExplainedBound( var, false ) - _tableau->getLowerBound( var ) ) < epsilon );
+	//ASSERT( getExplainedBound( var, true ) - _tableau->getUpperBound ( var ) > epsilon );
+	//ASSERT(  getExplainedBound( var, false ) - _tableau->getLowerBound( var ) < -epsilon );
 }
 
 bool Engine::validateAllBounds( const double epsilon ) const
@@ -2706,7 +2708,6 @@ void Engine::explainSimplexFailure()
 {
 	if( !GlobalConfiguration::PROOF_CERTIFICATE )
 		return;
-
 	applyAllBoundTightenings();
 	validateAllBounds( 0.01 );
 	int inf = _tableau->getInfeasibleVar();
@@ -2716,9 +2717,11 @@ void Engine::explainSimplexFailure()
 
 	if ( inf < 0 )
 	{
+		_costFunctionManager->computeCoreCostFunction();
 		assert( _tableau->checkCostFunctionSlack() );
 		int infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
-		inf = _tableau->basicIndexToVariable( infIndex );
+		assert( infIndex >= 0 );
+		inf = ( int ) _tableau->basicIndexToVariable( infIndex );
 		auto *costRow = _costFunctionManager->createRowOfCostFunction();
 		bool isUpper = _costFunctionManager->getBasicCost( infIndex ) < 0;
 		_tableau->updateExplanation( *costRow, isUpper, inf );

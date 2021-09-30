@@ -413,7 +413,7 @@ int CostFunctionManager::getFirstParticipatingBasicIndex()
 {
 	for ( unsigned i = 0; i < _m; ++i )
 		if ( !FloatUtils::isZero( _basicCosts[i] ) )
-			return i;
+			return (int) i;
 
 	return -1;
 }
