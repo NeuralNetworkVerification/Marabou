@@ -122,8 +122,8 @@ def createOptions(
         timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
         splittingStrategy="auto", sncSplittingStrategy="auto",
         restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
-        preprocessorBoundTolerance=0.0000000001, gamma_abstract_input="",
-        gamma_abstract_output=""
+        preprocessorBoundTolerance=0.0000000001, gamma_unsat_input="",
+        gamma_unsat_output=""
 ):
     """Create an options object for how Marabou should solve the query
 
@@ -163,6 +163,6 @@ def createOptions(
     options._splitThreshold = splitThreshold
     options._solveWithMILP = solveWithMILP
     options._preprocessorBoundTolerance = preprocessorBoundTolerance
-    options._gammaUnsatInputFile = str(gamma_abstract_input)
-    options._gammaUnsatOutputFile = str(gamma_abstract_output)
+    options._gammaUnsatInputFile = str(gamma_unsat_input)
+    options._gammaUnsatOutputFile = str(gamma_unsat_output)
     return options
