@@ -90,7 +90,7 @@ void SingleVarBoundsExplanator::injectEntry( unsigned position, double coefficie
 void SingleVarBoundsExplanator::assertLengthConsistency()
 {
 	ASSERT( _length == _upper.size() );
-	ASSERT (_length == _lower.size() )
+	ASSERT (_length == _lower.size() );
 }
 
 

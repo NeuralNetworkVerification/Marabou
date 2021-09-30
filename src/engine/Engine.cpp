@@ -2708,6 +2708,7 @@ void Engine::explainSimplexFailure()
 {
 	if( !GlobalConfiguration::PROOF_CERTIFICATE )
 		return;
+	
 	applyAllBoundTightenings();
 	validateAllBounds( 0.01 );
 	int inf = _tableau->getInfeasibleVar();
@@ -2717,7 +2718,6 @@ void Engine::explainSimplexFailure()
 
 	if ( inf < 0 )
 	{
-		_costFunctionManager->computeCoreCostFunction();
 		assert( _tableau->checkCostFunctionSlack() );
 		int infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
 		assert( infIndex >= 0 );
