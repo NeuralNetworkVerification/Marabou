@@ -667,45 +667,49 @@ private:
 	bool checkCostFunctionSlack();
 
     /*
-    * Computes the upper bound imposed by row rhs
-    * Consider making a static function
+    * Computes the bound imposed by row rhs
     */
-    double computeRowBound(const TableauRow& row, const bool isUpper ) const;
+    double computeRowBound(const TableauRow& row, bool isUpper ) const;
+
+	/*
+	* Computes the bound imposed by row on a variable
+	*/
+	double computeSparseRowBound( const SparseUnsortedList& row, bool isUpper, unsigned var) const;
 
     /*
       Returns the bounds explanation of a variable in the tableau
     */
-    SingleVarBoundsExplanator* ExplainBound( const unsigned variable ) const;
+    SingleVarBoundsExplanator* ExplainBound( unsigned variable ) const;
 
     /*
      Update a bound explanation according to a row in the Tableau
     */
-    void updateExplanation( const TableauRow& row, const bool isUpper ) const;
+    void updateExplanation( const TableauRow& row, bool isUpper ) const;
 
     /*
     Update a bound explanation of a specific var in a row 
    */
-    void updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const;
+    void updateExplanation( const TableauRow& row, bool isUpper, unsigned var ) const;
 
     /*
      Update a bound explanation of a specific var in a row, when it is given as a SparseUnsortedList.
     */
-    void updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned var) const;
+    void updateExplanation( const SparseUnsortedList& row, bool isUpper, unsigned var ) const;
 
     /*
      * Resets a bound explanation
      */
-	void resetExplanation ( const unsigned var, const bool isUpper );
+	void resetExplanation ( unsigned var, bool isUpper );
 
     /*
      * Multiplies the explanation vector of a var by scalar alpha
      */
-	void multiplyExplanationCoefficients (const unsigned var, const double alpha, const bool isUpper);
+	void multiplyExplanationCoefficients ( unsigned var, double alpha, bool isUpper );
 
 	/*
  	* Artificially updates an explanation, without using the recursive rule
  	*/
-	void injectExplanation(unsigned var, SingleVarBoundsExplanator& expl);
+	void injectExplanation( unsigned var, SingleVarBoundsExplanator& expl );
 
 	/*
       Explanator of all bounds 

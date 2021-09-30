@@ -566,7 +566,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
               b - sum ci xi
 
       Then, when we consider xi we adjust the computed lower and upper
-      boudns accordingly.
+      bounds accordingly.
     */
 
     double auxLb = b[row];

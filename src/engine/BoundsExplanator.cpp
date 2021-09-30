@@ -90,7 +90,7 @@ void SingleVarBoundsExplanator::injectEntry( unsigned position, double coefficie
 void SingleVarBoundsExplanator::assertLengthConsistency()
 {
 	ASSERT( _length == _upper.size() );
-	ASSERT (_length == _lower.size() );
+	ASSERT (_length == _lower.size() )
 }
 
 
@@ -103,12 +103,12 @@ BoundsExplanator::BoundsExplanator( const unsigned varsNum, const unsigned rowsN
 
 }
 
-unsigned BoundsExplanator::getRowsNum()
+unsigned BoundsExplanator::getRowsNum() const
 {
 	return _rowsNum;
 }
 
-unsigned BoundsExplanator::getVarsNum()
+unsigned BoundsExplanator::getVarsNum() const
 {
 	return _varsNum;
 }
@@ -251,7 +251,7 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 		}
 
 	assert( ci );
-
+	unsigned tempLevel, maxLevel = 0;
 	std::vector<double> rowCoefficients = std::vector<double>( _rowsNum, 0 );
 	std::vector<double> sum = std::vector<double>( _rowsNum, 0 );
 	std::vector<double> tempBound = std::vector<double>( _rowsNum, 0 );
@@ -262,14 +262,23 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 		if ( FloatUtils::isZero( curCoefficient ) || entry._index == var ) // If coefficient is zero then nothing to add to the sum, also skip var
 			continue;
 
-		tempUpper = (curCoefficient * ci < 0) == isUpper; // If coefficient of lhs and var are different, use same bound
+		tempUpper = ( curCoefficient * ci < 0 ) == isUpper; // If coefficient of lhs and var are different, use same bound
 		getOneBoundExplanation( tempBound, entry._index, tempUpper );
 		addVecTimesScalar( sum, tempBound, - curCoefficient / ci );
+		tempLevel = tempUpper? _bounds[entry._index]._upperRecLevel : _bounds[entry._index]._lowerRecLevel;
+		if ( tempLevel > maxLevel )
+			maxLevel = tempLevel;
 	}
 
-	extractSparseRowCoefficients( row, rowCoefficients, -ci ); // Update according to row coefficients
+	extractSparseRowCoefficients( row, rowCoefficients, ci ); // Update according to row coefficients
 	addVecTimesScalar( sum, rowCoefficients, 1 );
 	_bounds[var].updateVarBoundExplanation( sum, isUpper );
+
+	++maxLevel;
+	if ( isUpper )
+		_bounds[var]._upperRecLevel = maxLevel;
+	else
+		_bounds[var]._lowerRecLevel = maxLevel;
 
 	tempBound.clear();
 	rowCoefficients.clear();
@@ -314,7 +323,7 @@ void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& r
 	//The coefficients of the row m highest-indices vars are the coefficients of slack variables
 	for ( const auto& entry : row )
 		if ( entry._index >= _varsNum - _rowsNum )
-				coefficients[entry._index - _varsNum + _rowsNum] = entry._value / ci;
+			coefficients[entry._index - _varsNum + _rowsNum] = - entry._value / ci;
 }
 
 std::vector<SingleVarBoundsExplanator>& BoundsExplanator::getExplanations()
@@ -331,7 +340,7 @@ void BoundsExplanator::addZeroExplanation()
 
 void BoundsExplanator::resetExplanation ( const unsigned var, const bool isUpper )
 {
-	_bounds[var].updateVarBoundExplanation( std::vector<double>( _rowsNum, 0 ), isUpper);
+	_bounds[var].updateVarBoundExplanation( std::vector<double>( _rowsNum, 0.0 ), isUpper);
 	_bounds[var]._lowerRecLevel = 0;
 	_bounds[var]._upperRecLevel = 0;
 }

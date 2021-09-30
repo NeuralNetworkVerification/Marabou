@@ -205,7 +205,7 @@ public:
 				else
 					temp *= FloatUtils::isPositive( explanationRowsCombination[i] ) ? groundLBs[i] : groundUBs[i];
 
-				if ( !FloatUtils::isZero(  temp ) )
+				if ( !FloatUtils::isZero( temp ) )
 					derived_bound += temp;
 			}
 		}

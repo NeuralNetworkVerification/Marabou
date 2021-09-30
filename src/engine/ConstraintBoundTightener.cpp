@@ -202,15 +202,24 @@ void ConstraintBoundTightener::clearEngineUpdates()
 void ConstraintBoundTightener::externalExplanationUpdate( unsigned var, double value, bool isUpper )
 {
 	// Register new ground bound, and reset explanation
-	if ( !isUpper && value <= _tableau.getLowerBound( var ) )
-		return;
-	if ( isUpper && value >= _tableau.getUpperBound( var ) )
-		return;
+	double realBound;
+	if ( !isUpper )
+	{
+		realBound = _tightenedLower[var] ? _lowerBounds[var] : _tableau.getLowerBound( var );
+		if ( FloatUtils::lte( value , realBound ) )
+			return;
+	}
+	if ( isUpper )
+	{
+		realBound = _tightenedUpper[var] ? _upperBounds[var] : _tableau.getUpperBound( var );
+		if ( FloatUtils::gte( value , realBound ) )
+			return;
+	}
 
-	_tableau.resetExplanation( var, isUpper );
-	isUpper? _engine.updatedGroundUpperBound( var, value ) : _engine.updatedGroundLowerBound( var, value );
-//	isUpper? _upperGBUpdates[var] = value : _lowerGBUpdates[var] = value; //TODO consider moving to updates model
+	//isUpper ? _engine.updateGroundUpperBound(var, value) : _engine.updateGroundLowerBound(var, value);
+	isUpper? _upperGBUpdates[var] = value : _lowerGBUpdates[var] = value; //TODO consider moving to updates model
 	isUpper? registerTighterUpperBound( var, value ) : registerTighterLowerBound( var, value );
+	_tableau.resetExplanation(var, isUpper);
 
 }
 

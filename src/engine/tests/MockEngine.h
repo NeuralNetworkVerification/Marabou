@@ -195,11 +195,11 @@ public:
 	{
 	}
 
-	void updatedGroundUpperBound( unsigned /*var*/, double /*value*/ )
+	void updateGroundUpperBound(unsigned /*var*/, double /*value*/ )
 	{
 	}
 
-	void updatedGroundLowerBound( unsigned /*var*/, double /*value*/ )
+	void updateGroundLowerBound(unsigned /*var*/, double /*value*/ )
 	{
 	}
 

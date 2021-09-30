@@ -176,8 +176,8 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
-    void updatedGroundUpperBound( unsigned var, double value );
-    void updatedGroundLowerBound( unsigned var, double value );
+    void updateGroundUpperBound(unsigned var, double value );
+    void updateGroundLowerBound(unsigned var, double value );
 
 private:
     enum BasisRestorationRequired {
@@ -599,13 +599,13 @@ private:
     /*
      Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds
     */
-    double getExplainedBound( const unsigned var, const bool isUpper ) const;
+    double getExplainedBound(  unsigned var,  bool isUpper ) const;
 
 
     /*
      * Returns the coefficient of a var according to its explanation of isUpper bound
      */
-    double extractVarExplanationCoefficient (const unsigned var, bool isUpper);
+    double extractVarExplanationCoefficient ( unsigned var, bool isUpper);
 
 	/*
 	* Normalizes an explanation, i.e. making them produce explanation where the coefficient of explained var is 1
@@ -622,14 +622,14 @@ private:
 	 Separately for tightenings and actual bounds
 	 Returns true iff both bounds are epsilon close to their explanations
 	*/
-	bool validateBounds( unsigned var ,const double epsilon ) const;
+	bool validateBounds( unsigned var , double epsilon ) const;
 
 	/*
      Validates that all explanations epsilon close to real bounds
      Separately for tightenings and actual bounds
      Returns true iff all bounds are epsilon-close to theier explanations
     */
-    bool validateAllBounds( const double epsilon ) const;
+    bool validateAllBounds( double epsilon ) const;
 
     /*
      * Finds the variable causing failure and updates its bounds explanations

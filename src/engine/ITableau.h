@@ -184,13 +184,14 @@ public:
     
     virtual int getInfeasibleRow( TableauRow& row ) = 0;
     virtual int getInfeasibleVar() const = 0;
-    virtual double computeRowBound( const TableauRow& row, const bool isUpper ) const = 0;
-    virtual SingleVarBoundsExplanator* ExplainBound( const unsigned variable ) const = 0;
-    virtual void updateExplanation( const TableauRow& row, const bool isUpper ) const = 0;
-    virtual void updateExplanation( const TableauRow& row, const bool isUpper, unsigned var ) const = 0;
-    virtual void updateExplanation( const SparseUnsortedList& row, const bool isUpper, unsigned var ) const = 0;
-	virtual void resetExplanation ( const unsigned var, const bool isUpper ) = 0;
-    virtual void multiplyExplanationCoefficients ( const unsigned var, const double alpha, const bool isUpper ) = 0;
+    virtual double computeRowBound( const TableauRow& row, bool isUpper ) const = 0;
+    virtual double computeSparseRowBound( const SparseUnsortedList& row,  bool isUpper,  unsigned var) const = 0;
+    virtual SingleVarBoundsExplanator* ExplainBound( unsigned variable ) const = 0;
+    virtual void updateExplanation( const TableauRow& row, bool isUpper ) const = 0;
+    virtual void updateExplanation( const TableauRow& row, bool isUpper, unsigned var ) const = 0;
+    virtual void updateExplanation( const SparseUnsortedList& row, bool isUpper, unsigned var ) const = 0;
+	virtual void resetExplanation ( unsigned var, bool isUpper ) = 0;
+    virtual void multiplyExplanationCoefficients ( unsigned var, double alpha, bool isUpper ) = 0;
     virtual void injectExplanation(unsigned var, SingleVarBoundsExplanator& expl) = 0;
 	virtual bool checkCostFunctionSlack() = 0;
 
