@@ -486,24 +486,25 @@ class CnnAbs:
         self.optionsObj._dumpBounds = False
 
         mbouModel = self.modelUtils.tf2MbouOnnx(model)
-
+        successful = None
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, 0)        
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, policy, prop)
-        self.setAdversarial(mbouModel, xAdv, propDist, 0, yMax, ySecond, valueRange==self.ds.valueRange)
+        self.numMasks = len(absRefineBatches)
+        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, 0, yMax, ySecond, valueRange=self.ds.valueRange)
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
                 break
-            mdouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
+            mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.optionsObj._timeoutInSeconds = 0
             runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(sample, policyName, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
             self.tickGtimeout()
-            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping)
+            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=model)
             if resultObj.timedOut():
                 continue
             if resultObj.sat():
                 try:
-                    isSpurious = ModelUtils.isCEXSpurious(modelOrigDense, prop, resultObj.cex, valueRange=self.ds.valueRange)
+                    isSpurious = ModelUtils.isCEXSpurious(model, prop, resultObj.cex, valueRange=self.ds.valueRange)
                 except Exception as err:
                     CnnAbs.printLog(err)
                     isSpurious = True
@@ -523,23 +524,19 @@ class CnnAbs:
 
         self.tickGtimeout()    
         globalTimeout = self.isGlobalTimedOut()    
-        if not cfg_dumpQueries:
-            if globalTimeout:
-                resultObj = ResultObj("gtimeout")
-            success = not resultObj.timedOut() and (successful is not None)
-            if resultObj.sat() and not success:
-                resultObj = ResultObj("spurious")
-        else:
-            success = False
+        if globalTimeout:
+            resultObj = ResultObj("gtimeout")
+        success = not resultObj.timedOut() and (successful is not None)
+        if resultObj.sat() and not success:
+            resultObj = ResultObj("spurious")
     
         if success:
-            CnnAbs.printLog("successful={}/{}".format(successful, len(maskList)-1)) if (successful+1) < len(maskList) else CnnAbs.printLog("successful=Full")
+            CnnAbs.printLog("successful={}/{}".format(successful, self.numMasks-1)) if (successful+1) < self.numMasks else CnnAbs.printLog("successful=Full")
             self.resultsJson["successfulRuntime"] = self.resultsJson["subResults"][-1]["runtime"]
             self.resultsJson["successfulRun"] = successful + 1        
-        self.resultsJson["totalRuntime"] = time.time() - self.startTotal + accumRuntime #FIXME total runtime in graphs is simply 2hr regardless of actuall acummelated runtime.
+        self.resultsJson["totalRuntime"] = time.time() - self.startTotal
         self.resultsJson["SAT"] = resultObj.sat()
         self.resultsJson["Result"] = resultObj.result.name
-        self.resultsJson[mi("Result")] = resultObj.result.name
         self.dumpResultsJson()
         CnnAbs.printLog(resultObj.result.name)            
         CnnAbs.printLog("Log files at {}".format(self.logDir))
@@ -563,7 +560,7 @@ class CnnAbs:
         absLayerRankAcsending = absLayerRank[::-1]
         accum = 0
         steps = list(policy.steps(len(absLayerRank)))
-        batchSizes = [sum(steps[:i+1] for i in range(len(steps)))][::-1]
+        batchSizes = [sum(steps[:i+1]) for i in range(len(steps))][::-1]
         return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
         
         
@@ -574,12 +571,12 @@ class CnnAbs:
         modelAbstract.reluList = [pw for pw in modelAbstract.reluList if pw[1]                not in abstractNeurons]
         modelAbstract.absList  = [pw for pw in modelAbstract.absList  if pw[1]                not in abstractNeurons]
         modelAbstract.signList = [pw for pw in modelAbstract.signList if pw[1]                not in abstractNeurons]
-        modeAbstract.inputVars.append(np.array(list(abstractNeurons)))
+        modelAbstract.inputVars.append(np.array(list(abstractNeurons)))
         for v in abstractNeurons:
-            model.setLowerBound(boundDict[v][0], v)
-            model.setUpperBound(boundDict[v][1], v)
+            modelAbstract.setLowerBound(v, boundDict[v][0])
+            modelAbstract.setUpperBound(v, boundDict[v][1])        
         inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelAbstract, modelAbstract.outputVars.flatten().tolist())
-        modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
+        return modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
 
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
         if self.maskIndex+1 == self.numMasks:
@@ -591,6 +588,8 @@ class CnnAbs:
             commonFlags += ["--validation", validation]
         if rerun:
             commonFlags.append("--rerun_spurious")
+        else:
+            commonFlags.append("--norerun_spurious")            
         if self.dumpQueries:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
@@ -693,7 +692,7 @@ class CnnAbs:
         self.tickGtimeout()
         return result
 
-    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None):
+    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None):
 
         startLocal = time.time()    
         self.subResultAppend()
@@ -716,18 +715,17 @@ class CnnAbs:
                 CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
         else:
             cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
-            self.dumpCex(cex, cexPrediction, prop, runName, model)
+            self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
             self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
             self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction, inputDict, outputDict)
-            result.inputs = inputs
             result.vals = vals
             result.varsMapping = varsMapping
             CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
 
         endLocal = time.time()
-        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
+        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut())
         self.tickGtimeout()
         return result                   
 
@@ -1293,6 +1291,7 @@ class InputQueryUtils:
 
     @staticmethod        
     def removeRedundantVariables(net, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+
         if not keepSet:        
             net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
             net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
@@ -1345,7 +1344,7 @@ class InputQueryUtils:
         if keepInputShape:
             assert all([v in varSet for inp in net.inputVars for v in inp.flatten().tolist()])
         else:
-            net.inputVars  = [np.array([tr(v) for input in net.inputVars for v in input.flatten().tolist()  if v in varSet])]
+            net.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in net.inputVars]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
         if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
