@@ -68,6 +68,9 @@ class PolicyBase:
         return sortedIndReverse
 
     def rankByScore(model, score):
+        if score.shape != model.outputVars.shape:
+            print(score.shape)
+            print(model.outputVars.shape)
         assert score.shape == model.outputVars.shape
         scoreSort = np.argsort(score)
         return model.outputVars.flatten()[scoreSort[::-1]]
@@ -141,8 +144,15 @@ class PolicyCentered(PolicyBase):
         indicesSortedDecsending = sorted(indicesList, key=lambda x: np.linalg.norm(np.array(x)-center))
         return self.genMaskByOrderedInd(indicesSortedDecsending, maskShape, includeFull=includeFull)
 
-    def rankAbsLayer(self, model, prop):
-        raise NotImplementedError
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        assert len(absLayerPredictions.shape) == 4
+        absLayerShape = (1,) + absLayerPredictions.shape[1:]
+        corMeshList = np.meshgrid(*[np.arange(d) for d in absLayerShape])
+        center = [(float(d)-1) / 2 for d in absLayerShape]
+        distance = np.linalg.norm(np.array([cor - cent for cor, cent in zip(corMeshList, center)]), axis=0)
+        score = -distance
+        return PolicyBase.rankByScore(model, score.flatten())
+
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllClassRank(PolicyBase):
@@ -154,14 +164,9 @@ class PolicyAllClassRank(PolicyBase):
     def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
         return self.genMaskByActivation(intermidModel, self.ds.x_test, includeFull=includeFull)
 
-    def rankAbsLayer(self, model, prop):
-        evaluations = []
-        for i, sample in enumerate(self.ds.x_test):
-            print(i)
-            evaluations.append(model.evaluate([sample]))
-        score = np.mean(np.array(evaluations), axis=0)
-        #score = np.mean(np.array([model.evaluate([sample]) for sample in self.ds.x_test]), axis=0)
-        return rankByScore(model, score)
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        score = np.mean(absLayerPredictions, axis=0)
+        return PolicyBase.rankByScore(model, score.flatten())
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -174,9 +179,9 @@ class PolicySingleClassRank(PolicyBase):
         features = [x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == prediction]
         return self.genMaskByActivation(intermidModel, np.array(features), includeFull=includeFull)
 
-    def rankAbsLayer(self, model, prop):
-        score = np.mean(np.array([model.evaluate([sample]) for sample, label in zip(self.ds.x_test, self.ds.y_test) if label == prop.yMax]), axis=0)
-        return rankByScore(model, score)
+    def rankAbsLayer(self, model, prop, absLayerPredictions):        
+        score = np.mean(np.array([alp for alp, label in zip(absLayerPredictions, self.ds.y_test) if label == prop.yMax]), axis=0)
+        return PolicyBase.rankByScore(model, score.flatten())
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
@@ -193,8 +198,10 @@ class PolicyMajorityClassVote(PolicyBase):
         sortedIndReverseDiscriminated = PolicyBase.sortActMapReverse(sum(actMaps))
         return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], includeFull=includeFull)
 
-    def rankAbsLayer(self, model, prop):
-        raise NotImplementedError
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        actByClasses = np.array([np.mean(np.array([alp for alp,y in zip(absLayerPredictions, self.ds.y_test) if y == label]), axis=0) for label in range(self.ds.num_classes)])
+        score = np.linalg.norm(actByClasses, axis=0)
+        return PolicyBase.rankByScore(model, score.flatten())
     
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
@@ -208,7 +215,7 @@ class PolicyRandom(PolicyBase):
         indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
         return self.genMaskByOrderedInd(indices, maskShape, includeFull=includeFull)
 
-    def rankAbsLayer(self, model, prop):
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
         return np.random.permutation(model.outputVars)
     
 class PolicyVanilla(PolicyBase):
@@ -224,7 +231,7 @@ class PolicyVanilla(PolicyBase):
             return [np.ones(maskShape)]
         return []
 
-    def rankAbsLayer(self, model, prop):
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
         raise NotImplementedError
     
 class PolicyFindMinProvable(PolicyBase):
@@ -435,9 +442,10 @@ class CnnAbs:
 
         fName = "xAdv.png"
         CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
-        plt.figure()
-        plt.imshow(np.squeeze(xAdv))
-        plt.title('Example {}. Real Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
+        plt.figure()        
+        plt.imshow(np.squeeze(xAdv), cmap='Greys')
+        plt.colorbar()
+        plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
         plt.savefig(fName)
         with open(fName.replace("png","npy"), "wb") as f:
             np.save(f, xAdv)
@@ -486,7 +494,7 @@ class CnnAbs:
         mbouModel = self.modelUtils.tf2MbouOnnx(model)
         successful = None
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack)        
-        absRefineBatches = self.abstractionRefinementBatches(mbouModel, policy, prop)
+        absRefineBatches = self.abstractionRefinementBatches(mbouModel, model, policy, prop)
         self.numMasks = len(absRefineBatches)
         InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)
         for i, abstractNeurons in enumerate(absRefineBatches):
@@ -540,20 +548,31 @@ class CnnAbs:
         CnnAbs.printLog("Log files at {}".format(self.logDir))
     
 
-    def abstractionRefinementBatches(self, model, policy, prop):
-        if policy is Policy.Vanilla:
+    def abstractionRefinementBatches(self, model, modelTF, policy, prop):
+        if policy.policy is Policy.Vanilla:
             return [set()]
         layerList, layerTypes = InputQueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
-        lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
+        lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1] #FIXME enable some choice of layer.
         absLayer = lastMax
+        modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, 'mp2')
+        absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
 
         netPriorToAbsLayer = set().union(*layerList[:absLayer+1])
         modelUpToAbsLayer = copy.deepcopy(model)
         modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))        
-        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
+        _ , _ , varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
+        
+        for j in random.sample(range(len(self.ds.x_test)), 1):
+            #print(modelUpToAbsLayer.evaluate(self.ds.x_test[j]))
+            #print(absLayerActivation[j])
+            tfout = absLayerActivation[j]
+            mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
+            assert np.all( np.isclose(tfout.flatten(), mbouout ) )
+            assert np.all( np.isclose(tfout, mbouout.reshape(tfout.shape) ) )
+            print("{} OK".format(j)) #FIXME remove
 
-        absLayerRankInAbsModel = policy.rankAbsLayer(modelUpToAbsLayer, prop)
+        absLayerRankInAbsModel = policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)
         absLayerRank = [varsMapping[v] for v in absLayerRankInAbsModel]
         absLayerRankAcsending = absLayerRank[::-1]
         accum = 0
@@ -787,10 +806,23 @@ class CnnAbs:
 #            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
 #            print("cexPrediction={}".format(cexPrediction))
 #            assert prop.ySecond == mbouPrediction
+        plt.figure()
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
-        plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
+        #plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
+        plt.imshow(np.squeeze(cex), cmap='Greys')
+        plt.colorbar()
         plt.savefig("Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName), saveAtLog=True)
+        
+        diff = np.abs(cex - prop.xAdv)
+        assert np.max(diff) <= prop.inDist
+        plt.figure()
+        plt.title('Distance between pixels: CEX and adv. sample')
+        #plt.imshow(diff.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
+        plt.imshow(np.squeeze(diff), cmap='Greys')
+        plt.colorbar()
+        plt.savefig("DiffCexXAdv_{}".format(runName) + ".png")
+        self.dumpNpArray(diff, "DiffCexXAdv_{}".format(runName), saveAtLog=True)
 
     @staticmethod
     def dumpCoi(inputVarsMapping, runName):
