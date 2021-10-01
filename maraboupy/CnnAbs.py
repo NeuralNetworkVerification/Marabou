@@ -397,6 +397,8 @@ class CnnAbs:
             commonFlags += ["--validation", validation]
         if rerun:
             commonFlags.append("--rerun_spurious")
+        else:
+            commonFlags.append("--norerun_spurious")
         if self.dumpQueries:
             commonFlags.append("--dump_queries")
         if self.useDumpedQueries:
