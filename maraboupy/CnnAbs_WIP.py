@@ -453,7 +453,6 @@ class CnnAbs:
         self.tickGtimeout()
         if self.isGlobalTimedOut():
             self.resultsJson["Result"] = "GTIMEOUT"
-            self.resultsJson[mi("Result")] = "GTIMEOUT"
             self.resultsJson["totalRuntime"] = time.time() - self.startTotal
             self.dumpResultsJson()
             exit()
@@ -468,7 +467,6 @@ class CnnAbs:
         if ipq.getNumberOfVariables() == 0:
             self.resultsJson["SAT"] = False
             self.resultsJson["Result"] = "UNSAT"
-            self.resultsJson[mi("Result")] = "UNSAT"
             self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
             self.resultsJson["successfulRun"] = 0
             self.resultsJson["totalRuntime"] = time.time() - self.startTotal
