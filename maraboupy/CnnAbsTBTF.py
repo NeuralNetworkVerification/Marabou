@@ -34,17 +34,10 @@ tf.compat.v1.enable_v2_behavior()
 
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
-parser.add_argument("--no_coi",         action="store_true",                        default=False,                  help="Don't use COI pruning")
-parser.add_argument("--no_mask",        action="store_true",                        default=False,                  help="Don't use mask abstraction")
-parser.add_argument("--no_full",        action="store_true",                        default=False,                  help="Don't run on full network")
-parser.add_argument("--no_verify",      action="store_true",                        default=False,                  help="Don't run verification process")
-parser.add_argument("--dump_queries",   action="store_true",                        default=False,                  help="Don't solve queries, just create and dump them")
-parser.add_argument("--use_dumped_queries", action="store_true",                    default=False,                  help="Use dumped queries")
 parser.add_argument("--dump_dir",       type=str,                                   default="",                     help="Location of dumped queries")
 parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
 parser.add_argument("--validation",     type=str,                                   default="",                     help="Use validation DNN")
 parser.add_argument("--cnn_size",       type=str, choices=["big","medium","small","toy"], default="small",          help="Which CNN size to use")
-parser.add_argument("--run_on",         type=str, choices=["local", "cluster"],     default="local",                help="Is the program running on cluster or local run?")
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                   help="Distance checked for adversarial robustness (L1 metric)")
@@ -55,11 +48,8 @@ parser.add_argument("--gtimeout",       type=int,                               
 #parser.add_argument("--timeout_factor", type=float,                                 default=1.5,                   help="timeoutFactor in DNC mode.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
-parser.add_argument("--spurious_strict",action="store_true",                        default=True,                   help="Criteria for spurious is that the original label is not achieved (no flag) or the second label is actually voted more tha the original (flag)")
-parser.add_argument("--double_check"   ,action="store_true",                        default=False,                  help="Run Marabou again using recieved CEX as an input assumption.")
 parser.add_argument("--bound_tightening",         type=str, choices=["lp", "lp-inc", "milp", "milp-inc", "iter-prop", "none"], default="lp", help="Which bound tightening technique to use.")
 parser.add_argument("--symbolic",       type=str, choices=["deeppoly", "sbt", "none"], default="sbt",               help="Which bound tightening technique to use.")
-parser.add_argument("--solve_with_milp",action="store_true",                        default=False,                  help="Use MILP solver instead of regular engine.")
 parser.add_argument("--abs_layer",      type=str, default="c2",              help="Which layer should be abstracted.")
 parser.add_argument("--arg",  type=str, default="", help="Push custom string argument.")
 parser.add_argument("--no_dumpBounds",action="store_true",                          default=False,                  help="Disable initial bound tightening.")
@@ -74,30 +64,19 @@ args = parser.parse_args()
 
 resultsJson = dict()
 cfg_freshModelOrig    = args.fresh
-cfg_noVerify          = args.no_verify
-cfg_pruneCOI          = not args.no_coi
-cfg_maskAbstract      = not args.no_mask
-cfg_runFull           = not args.no_full
 cfg_propDist          = args.prop_distance
 cfg_propSlack         = args.prop_slack
-cfg_runOn             = args.run_on
 cfg_runTitle          = args.run_title
 cfg_batchDir          = args.batch_id if "batch_" + args.batch_id else ""
 cfg_numClusterCPUs    = args.num_cpu
 cfg_abstractionPolicy = args.policy
-cfg_spuriousStrict    = args.spurious_strict
 cfg_sampleIndex       = args.sample
-cfg_doubleCheck       = args.double_check
 cfg_boundTightening   = args.bound_tightening
-cfg_solveWithMILP     = args.solve_with_milp
 cfg_symbolicTightening= args.symbolic
 cfg_timeoutInSeconds  = args.timeout
-cfg_dumpQueries       = args.dump_queries
-cfg_useDumpedQueries  = args.use_dumped_queries
 cfg_dumpDir           = args.dump_dir
 cfg_validation        = args.validation
 cfg_cnnSizeChoice     = args.cnn_size
-#cfg_dumpBounds        = cfg_maskAbstract or (cfg_boundTightening != "none")
 cfg_dumpBounds        = not args.no_dumpBounds
 cfg_absLayer          = args.abs_layer
 cfg_extraArg          = args.arg
@@ -106,41 +85,28 @@ cfg_slurmSeq          = args.slurm_seq
 cfg_rerunSpurious     = args.rerun_spurious
 cfg_gtimeout          = args.gtimeout
 
-optionsLocal   = Marabou.createOptions(snc=False, verbosity=0,                                solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
-optionsCluster = Marabou.createOptions(snc=True,  verbosity=0, numWorkers=cfg_numClusterCPUs, solveWithMILP=cfg_solveWithMILP, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening)
-if cfg_runOn == "local":
-    optionsObj = optionsLocal
-else :
-    optionsObj = optionsCluster
+optionsLocal   = Marabou.createOptions(snc=False, verbosity=0,                                solveWithMILP=False, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=cfg_dumpBounds, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100) #FIXME does actually tightening bounds with timeout>0 improve results?
+optionsObj = optionsLocal
 
 maskIndexStr = str(cfg_maskIndex) if cfg_maskIndex > 0 else ''
-cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=cfg_dumpQueries, useDumpedQueries=cfg_useDumpedQueries, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr, policy=cfg_abstractionPolicy)
+cnnAbs = CnnAbs(ds='mnist', dumpDir=cfg_dumpDir, optionsObj=optionsObj, logDir="/".join(filter(None, [CnnAbs.basePath, "logs", cfg_batchDir, cfg_runTitle])), dumpQueries=False, useDumpedQueries=False, gtimeout=cfg_gtimeout, maskIndex=maskIndexStr, policy=cfg_abstractionPolicy)
 
 startPrepare = time.time()
 
 mi = lambda s: s if not cfg_slurmSeq else (s + "-" + str(cfg_maskIndex))
 
 cnnAbs.resultsJson[mi("cfg_freshModelOrig")]    = cfg_freshModelOrig
-cnnAbs.resultsJson[mi("cfg_noVerify")]          = cfg_noVerify
 cnnAbs.resultsJson[mi("cfg_cnnSizeChoice")]     = cfg_cnnSizeChoice
-cnnAbs.resultsJson[mi("cfg_pruneCOI")]          = cfg_pruneCOI
-cnnAbs.resultsJson[mi("cfg_maskAbstract")]      = cfg_maskAbstract
 cnnAbs.resultsJson[mi("cfg_propDist")]          = cfg_propDist
 cnnAbs.resultsJson[mi("cfg_propSlack")]         = cfg_propSlack
-cnnAbs.resultsJson[mi("cfg_runOn")]             = cfg_runOn
 cnnAbs.resultsJson[mi("cfg_runTitle")]          = cfg_runTitle
 cnnAbs.resultsJson[mi("cfg_batchDir")]          = cfg_batchDir
 cnnAbs.resultsJson[mi("cfg_numClusterCPUs")]    = cfg_numClusterCPUs
 cnnAbs.resultsJson[mi("cfg_abstractionPolicy")] = cfg_abstractionPolicy
-cnnAbs.resultsJson[mi("cfg_spuriousStrict")]    = cfg_spuriousStrict
 cnnAbs.resultsJson[mi("cfg_sampleIndex")]       = cfg_sampleIndex
-cnnAbs.resultsJson[mi("cfg_doubleCheck")]       = cfg_doubleCheck
 cnnAbs.resultsJson[mi("cfg_boundTightening")]   = cfg_boundTightening
-cnnAbs.resultsJson[mi("cfg_solveWithMILP")]     = cfg_solveWithMILP
 cnnAbs.resultsJson[mi("cfg_symbolicTightening")]= cfg_symbolicTightening
 cnnAbs.resultsJson[mi("cfg_timeoutInSeconds")]  = cfg_timeoutInSeconds
-cnnAbs.resultsJson[mi("cfg_dumpQueries")]       = cfg_dumpQueries
-cnnAbs.resultsJson[mi("cfg_useDumpedQueries")]  = cfg_useDumpedQueries
 cnnAbs.resultsJson[mi("cfg_dumpDir")]           = cfg_dumpDir
 cnnAbs.resultsJson[mi("cfg_validation")]        = cfg_validation
 cnnAbs.resultsJson[mi("cfg_dumpBounds")]        = cfg_dumpBounds
@@ -187,4 +153,4 @@ CnnAbs.printLog("Finished model building")
 ####                                                                                     ####
 #############################################################################################
 
-cnnAbs.solve(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, 'mnist')
+cnnAbs.solve(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, 'mnist', propSlack=cfg_propSlack)
