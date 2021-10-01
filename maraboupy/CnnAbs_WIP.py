@@ -420,7 +420,7 @@ class CnnAbs:
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
 
-    def solve(self, model, policyName, sample, propDist, dataset):
+    def solve(self, model, policyName, sample, propDist, dataset, propSlack=0):
 
         policy = Policy.fromString(policyName, self.ds.name)
         xAdv = self.ds.x_test[sample]
@@ -457,7 +457,7 @@ class CnnAbs:
             self.dumpResultsJson()
             exit()
         CnnAbs.printLog("Started dumping bounds - used for abstraction")        
-        ipq = self.modelUtils.dumpBounds(model, xAdv, propDist, 0, yMax, ySecond)
+        ipq = self.modelUtils.dumpBounds(model, xAdv, propDist, propSlack, yMax, ySecond)
         MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         print(ipq.getNumberOfVariables())
@@ -485,10 +485,10 @@ class CnnAbs:
 
         mbouModel = self.modelUtils.tf2MbouOnnx(model)
         successful = None
-        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, 0)        
+        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack)        
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, policy, prop)
         self.numMasks = len(absRefineBatches)
-        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, 0, yMax, ySecond, valueRange=self.ds.valueRange)
+        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
                 break
