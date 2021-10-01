@@ -279,7 +279,7 @@ class MarabouNetwork:
         return [vals, stats]
 
     def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
-        """Function to set a local robustness query
+        """Function evaluating a specific input is a local robustness within the scope of epslion
 
         Args:
             input (numpy.ndarray): Target input
@@ -295,8 +295,10 @@ class MarabouNetwork:
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
                 - maxClass (int): Output class which value is max within outputs if SAT.
         """
+        inputVars = None
         if (type(self.inputVars) is list):
-            # This is in order to care a network loaded from an onnx file.
+            if (len(self.inputVars) != 1):
+                raise NotImplementedError("Operation for %d inputs is not implemented" % len(self.inputVars))
             inputVars = self.inputVars[0][0]
         elif (type(self.inputVars) is np.ndarray):
             inputVars = self.inputVars[0]
@@ -304,31 +306,18 @@ class MarabouNetwork:
             err_msg = "Unpexpected type of input vars."
             raise RuntimeError(err_msg)
 
-        inputShape = inputVars.shape
+        if inputVars.shape != input.shape:
+            raise RuntimeError("Input shape of the model should be same as the input shape\n input shape of the model: {0}, shape of the input: {1}".format(inputVars.shape, input.shape))
 
         if options == None:
             options = MarabouCore.Options()
 
-        if len(inputShape) == 1:
-            # Case where input dimension is 1.
-            for h in range(inputShape[0]):
-                self.setLowerBound(inputVars[h], input[h] - epsilon)
-                self.setUpperBound(inputVars[h], input[h] + epsilon)
-        elif len(inputShape) == 2:
-            # Case where input dimension is 2.
-            for h in range(inputShape[0]):
-                for w in range(inputShape[1]):
-                    self.setLowerBound(inputVars[h][w], input[h][w] - epsilon)
-                    self.setUpperBound(inputVars[h][w], input[h][w] + epsilon)
-        elif len(inputShape) == 3:
-            # Case where input dimension is 3.
-            for h in range(inputShape[0]):
-                for w in range(inputShape[1]):
-                    for c in range(inputShape[2]):
-                        self.setLowerBound(inputVars[h][w][c], input[h][w][c] - epsilon)
-                        self.setUpperBound(inputVars[h][w][c], input[h][w][c] + epsilon)
-        else:
-            raise NotImplementedError("Operation for %d dimension's input is not implemented" % len(inputShape)) 
+        # Add constratins to all input nodes
+        flattenInputVars = inputVars.flatten()
+        flattenInput = input.flatten()
+        for i in range(flattenInput.size):
+            self.setLowerBound(flattenInputVars[i], flattenInput[i] - epsilon)
+            self.setUpperBound(flattenInputVars[i], flattenInput[i] + epsilon)
         
         maxClass = None
 
