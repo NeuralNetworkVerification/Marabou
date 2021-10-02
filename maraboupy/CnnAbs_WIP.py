@@ -233,46 +233,34 @@ class PolicyVanilla(PolicyBase):
 
     def rankAbsLayer(self, model, prop, absLayerPredictions):
         raise NotImplementedError
-    
-class PolicyFindMinProvable(PolicyBase):
+
+#Policy - Rank According to activation values of single sample
+class PolicySampleRank(PolicyBase):
     
     def __init__(self, ds):
-        super().__init__(ds) 
-        self.policy = Policy.FindMinProvable
-        
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        maskShape = intermidModel.output_shape[1:-1]
-        indices = list(product(*[range(d) for d in maskShape]))
-        zeroList = [(0,5),(0,4),(1,5),(1,4),(10,9)]
-        FailedWithZeroList = [] #Meaning that was SAT or TimedOut during run with [(0,5),(0,4)]
-        indices = list(set(indices) - set(zeroList))
-        masks = list()
-        mask = np.ones(maskShape)
-        chooseFrom = set(indices) - set(FailedWithZeroList)
-        for z in zeroList:
-            mask[z] = 0
-        for i in range(10):
-            if not chooseFrom:
-                break
-            randomElement = random.choice(list(chooseFrom))
-            chooseFrom.remove(randomElement)
-            mask[randomElement] = 0
-            masks.append(mask.copy())
-            mask[randomElement] = 1
-        return masks
+        super().__init__(ds)
+        self.policy = Policy.SampleRank
 
+    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
+        raise NotImplementedError
+
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        score = np.abs(absLayerPredictions[prop.xAdvIndex])
+        return PolicyBase.rankByScore(model, score.flatten())
+    
+    
 class Policy(Enum):
     Centered          = 0
     AllClassRank      = 1
     SingleClassRank   = 2
     MajorityClassVote = 3
     Random            = 4
-    Vanilla           = 5
-    FindMinProvable   = 6
+    Vanilla           = 5    
+    SampleRank        = 6
 
     @staticmethod
     def absPolicies():
-        return [Policy.Centered.name, Policy.AllClassRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name]
+        return [Policy.Centered.name, Policy.AllClassRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name, Policy.SampleRank.name]
 
     @staticmethod
     def solvingPolicies():
@@ -297,18 +285,19 @@ class Policy(Enum):
             return PolicyRandom(ds)
         elif s == Policy.Vanilla.name.lower():
             return PolicyVanilla(ds)
-        elif s == Policy.FindMinProvable.name.lower():
-            return PolicyFindMinProvable(ds)
+        elif s == Policy.SampleRank.name.lower():
+            return PolicySampleRank(ds)
         else:
             raise NotImplementedError
 
 class AdversarialProperty:
-    def __init__(self, xAdv, yMax, ySecond, inDist, outSlack):
+    def __init__(self, xAdv, yMax, ySecond, inDist, outSlack, sample):
         self.xAdv = xAdv
         self.yMax = yMax
         self.ySecond = ySecond
         self.inDist = inDist
         self.outSlack = outSlack
+        self.xAdvIndex = sample
 
 class Result(Enum):
     
@@ -493,7 +482,7 @@ class CnnAbs:
 
         mbouModel = self.modelUtils.tf2MbouOnnx(model)
         successful = None
-        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack)        
+        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, model, policy, prop)
         self.numMasks = len(absRefineBatches)
         InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)
@@ -815,7 +804,7 @@ class CnnAbs:
         self.dumpNpArray(cex, "Cex_{}".format(runName), saveAtLog=True)
         
         diff = np.abs(cex - prop.xAdv)
-        assert np.max(diff) <= prop.inDist
+        #assert np.max(diff) <= prop.inDist
         plt.figure()
         plt.title('Distance between pixels: CEX and adv. sample')
         #plt.imshow(diff.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
