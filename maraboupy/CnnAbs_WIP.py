@@ -331,7 +331,7 @@ class ResultObj:
     def __init__(self, result):
         self.originalQueryStats = None
         self.finalQueryStats = None
-        self.cex = np.array([])
+        self.cex = None
         self.cexPrediction = np.array([])
         self.inputDict = dict()
         self.outputDict = dict()
@@ -486,15 +486,17 @@ class CnnAbs:
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, model, policy, prop)
         self.numMasks = len(absRefineBatches)
         InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)
+        generalRunName = "sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-'))
+        originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
                 break
             mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.optionsObj._timeoutInSeconds = 0
-            runName = "sample_{},policy_{},propDist_{},mask_{}_outOf_{}".format(sample, policyName, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
+            runName = generalRunName + ",mask_{}_outOf_{}".format(sample, policyName, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
             self.tickGtimeout()
-            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=model)
+            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=model, originalQueryStats=originalQueryStats)
             if resultObj.timedOut():
                 continue
             if resultObj.sat():
@@ -535,6 +537,7 @@ class CnnAbs:
         self.dumpResultsJson()
         CnnAbs.printLog(resultObj.result.name)            
         CnnAbs.printLog("Log files at {}".format(self.logDir))
+        return resultObj.result.name, resultObj.cex
     
 
     def abstractionRefinementBatches(self, model, modelTF, policy, prop):
@@ -698,10 +701,11 @@ class CnnAbs:
         self.tickGtimeout()
         return result
 
-    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None):
+    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
 
         startLocal = time.time()    
         self.subResultAppend()
+        finalQueryStats = self.dumpQueryStats(model, "finalQueryStats_" + runName)
         
         CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
         if self.optionsObj._timeoutInSeconds <= 0:
@@ -729,9 +733,10 @@ class CnnAbs:
             result.vals = vals
             result.varsMapping = varsMapping
             CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
+        result.setStats(originalQueryStats, finalQueryStats)            
 
         endLocal = time.time()
-        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut())
+        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
         self.tickGtimeout()
         return result                   
 
