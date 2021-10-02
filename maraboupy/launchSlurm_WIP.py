@@ -14,7 +14,7 @@ import numpy as np
 ####################################################################################################
 
 def absPolicies():
-    return ['Centered', 'AllClassRank', 'SingleClassRank', 'MajorityClassVote', 'Random']
+    return ['Centered', 'AllClassRank', 'SingleClassRank', 'MajorityClassVote', 'Random', 'SampleRank']
     
 def solvingPolicies():
     return absPolicies() + ['Vanilla']
@@ -175,7 +175,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
     sbatchCode.append("")
     sbatchCode.append("")
     sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
-    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTB_WIP.py {}".format(" ".join(cmd)))
+    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTBTF.py {}".format(" ".join(cmd)))
     sbatchCode.append("")
     sbatchCode.append("date")
 
@@ -214,7 +214,7 @@ def main():
     rerun_parser = parser.add_mutually_exclusive_group(required=False)
     rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='store_true',  help="When recieved spurious SAT, run again CEX to find a satisfying assignment.")
     rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
-    parser.set_defaults(rerun_spurious=True)
+    parser.set_defaults(rerun_spurious=False)
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
