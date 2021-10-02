@@ -214,7 +214,7 @@ def main():
     rerun_parser = parser.add_mutually_exclusive_group(required=False)
     rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='store_true',  help="When recieved spurious SAT, run again CEX to find a satisfying assignment.")
     rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
-    parser.set_defaults(rerun_spurious=True)
+    parser.set_defaults(rerun_spurious=False)
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type

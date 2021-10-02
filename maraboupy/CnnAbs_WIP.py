@@ -67,7 +67,7 @@ class PolicyBase:
         assert len(sortedIndReverse) == actMap.size
         return sortedIndReverse
 
-    def rankByScore(model, score):
+    def rankByScore(model, score): #FIXME switch to acesnding order
         if score.shape != model.outputVars.shape:
             print(score.shape)
             print(model.outputVars.shape)
@@ -569,7 +569,7 @@ class CnnAbs:
         absLayerRankAcsending = absLayerRank[::-1]
         accum = 0
         steps = list(policy.steps(len(absLayerRank)))
-        batchSizes = [sum(steps[:i+1]) for i in range(len(steps))][::-1]
+        batchSizes = [sum(steps[:i+1]) for i in range(len(steps))][::-1] #FIXME i think the batches are not actually increasing the same as steps.
         return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
         
         
