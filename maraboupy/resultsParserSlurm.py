@@ -389,7 +389,7 @@ with open('ResultSummary.csv', mode='w') as f:
 ####################################################################################################
 
 cactusLabels = [resultDict['label'] for resultDict in resultDicts]
-cactusMarkers = ['*', 's', 'o', 'P', 'X', '^', 'v', 'D'][:len(cactusLabels)]
+cactusMarkers = ['*', 's', 'o', 'P', 'X', '^', 'p', 'D'][:len(cactusLabels)]
 cactusColors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:cyan']
 
 plt.figure()
