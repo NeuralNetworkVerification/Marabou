@@ -381,10 +381,13 @@ class DataSet:
 class CnnAbs:
 
     logger = None
-    basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
+    basePath = None
     resultsFile = 'Results'
     
-    def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200, policy=None):
+    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200, policy=None):
+        optionsObj = Marabou.createOptions(**options)
+        CnnAbs.basePath = os.getcwd()
+        logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
@@ -494,7 +497,7 @@ class CnnAbs:
             mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.optionsObj._timeoutInSeconds = 0
-            runName = generalRunName + ",mask_{}_outOf_{}".format(sample, policyName, str(propDist).replace('.','-'), i, len(absRefineBatches)-1)
+            runName = generalRunName + ",mask_{}_outOf_{}".format(i, len(absRefineBatches)-1)
             self.tickGtimeout()
             resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=model, originalQueryStats=originalQueryStats)
             if resultObj.timedOut():
@@ -559,6 +562,8 @@ class CnnAbs:
         for j in random.sample(range(len(self.ds.x_test)), 1):
             tfout = absLayerActivation[j]
             mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
+            print(tfout.flatten())
+            print(mbouout)
             assert np.all( np.isclose(tfout.flatten(), mbouout ) )
             assert np.all( np.isclose(tfout, mbouout.reshape(tfout.shape) ) )
 
@@ -583,8 +588,8 @@ class CnnAbs:
         return modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
 
     def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
-        if self.maskIndex+1 == self.numMasks:
-            return
+        #if self.maskIndex+1 == self.numMasks:
+        #    return
         commonFlags = ["--batch_id", batchId, "--dump_dir", self.dumpDir]
         if cnnSize:
             commonFlags += ["--cnn_size", cnnSize]
