@@ -147,8 +147,8 @@ class PolicyCentered(PolicyBase):
 
     def rankAbsLayer(self, model, prop, absLayerPredictions):
         assert len(absLayerPredictions.shape) == 4
-        absLayerShape = (1,) + absLayerPredictions.shape[1:]
-        corMeshList = np.meshgrid(*[np.arange(d) for d in absLayerShape])
+        absLayerShape = absLayerPredictions.shape[1:]
+        corMeshList = np.meshgrid(*[np.arange(d) for d in absLayerShape], indexing='ij')
         center = [(float(d)-1) / 2 for d in absLayerShape]
         distance = np.linalg.norm(np.array([cor - cent for cor, cent in zip(corMeshList, center)]), axis=0)
         score = -distance
@@ -420,12 +420,12 @@ class CnnAbs:
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
 
-    def solveAdversarial(self, model, policyName, sample, propDist, propSlack=0):
+    def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
 
         policy = Policy.fromString(policyName, self.ds.name)
         xAdv = self.ds.x_test[sample]
         yAdv = self.ds.y_test[sample]
-        yPredict = model.predict(np.array([xAdv]))
+        yPredict = modelTF.predict(np.array([xAdv]))
         yMax = yPredict.argmax()
         yPredictNoMax = np.copy(yPredict)
         yPredictNoMax[0][yMax] = np.min(yPredict)
@@ -434,7 +434,7 @@ class CnnAbs:
             ySecond = 0 if yMax > 0 else 1
 
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
-        mbouModel = self.modelUtils.tf2Mbou(model)
+        mbouModel = self.modelUtils.tf2Mbou(modelTF)
         InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
 
         fName = "xAdv.png"
@@ -452,11 +452,11 @@ class CnnAbs:
         self.resultsJson["ySecondPrediction"] = int(ySecond)
         self.dumpResultsJson()
         self.tickGtimeout()
-        return self.solve(mbouModel, model, policy, prop, generalRunName = "sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
+        return self.solve(mbouModel, modelTF, policy, prop, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
 
 
 
-    def solve(mbouModel, modelTF, policy, prop, generalRunName=""):
+    def solve(self, mbouModel, modelTF, policy, prop, generalRunName=""):
         startBoundTightening = time.time()
         self.tickGtimeout()
         if self.isGlobalTimedOut():
@@ -464,7 +464,7 @@ class CnnAbs:
             self.resultsJson["totalRuntime"] = time.time() - self.startTotal
             self.dumpResultsJson()
             exit()
-        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
+        CnnAbs.printLog("Started dumping bounds - used for abstraction")
         ipq = self.modelUtils.dumpBounds(mbouModel)
         MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
@@ -490,12 +490,11 @@ class CnnAbs:
             boundDict = None
 
         self.optionsObj._dumpBounds = False
-
+        originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)        
         successful = None
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
         self.numMasks = len(absRefineBatches)
                 
-        originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
                 break
@@ -561,10 +560,10 @@ class CnnAbs:
 
         netPriorToAbsLayer = set().union(*layerList[:absLayer+1])
         modelUpToAbsLayer = copy.deepcopy(model)
-        modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))        
+        modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))
         _ , _ , varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
         
-        for j in random.sample(range(len(self.ds.x_test)), 10):
+        for j in random.sample(range(len(self.ds.x_test)), 1):
             tfout = absLayerActivation[j]
             mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
             assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout ) )
@@ -970,7 +969,8 @@ class ModelUtils:
         return log
 
     def dumpBounds(self, mbouModel):
-        return self.processInputQuery(mbouModel) 
+        mbouModelCopy = copy.deepcopy(mbouModel)
+        return self.processInputQuery(mbouModelCopy) 
     
     def dumpBoundsAdversarial(self, model, xAdv, inDist, outSlack, yMax, ySecond):
         modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
@@ -978,7 +978,7 @@ class ModelUtils:
         keras2onnx.save_model(modelOnnx, modelOnnxName)
         modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
         InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond, valueRange=self.ds.valueRange)
-        return self.dumpBounds(modelOnnxMarabou)
+        return self.processInputQuery(modelOnnxMarabou)
     
     def processInputQuery(self, net):
         net.saveQuery("processInputQuery")
@@ -1367,7 +1367,8 @@ class InputQueryUtils:
                 newEq.scalar = eq.scalar
                 newEq.EquationType = eq.EquationType
                 newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
-                newEquList.append(newEq)
+                if all([v != -1 for (c, v) in newEq.addendList]):
+                    newEquList.append(newEq)
         net.equList  = newEquList
         net.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
         net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in varSet]
