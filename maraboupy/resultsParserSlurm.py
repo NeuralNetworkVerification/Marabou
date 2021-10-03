@@ -178,7 +178,7 @@ def plotCOIRatio(resultDict):
     unique.discard(-1)
     unique = list(unique)
     unique.sort()
-    plt.plot(unique, [len([u for u in y1 if v == u]) for v in unique], marker='x', markerfacecolor='none', color='red', markeredgecolor='red')
+    plt.plot(unique, [len([u for u in x if v == u]) for v in unique], marker='x', markerfacecolor='none', color='red', markeredgecolor='red')
 
     plt.xlabel('Number of solver Runs Till Success - {}'.format(resultDict['label']))
     plt.ylabel('Num. Samples')
