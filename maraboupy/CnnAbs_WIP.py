@@ -547,7 +547,8 @@ class CnnAbs:
         assert all([len(t) == 1 for t in layerTypes])
         lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1] #FIXME enable some choice of layer.
         absLayer = lastMax
-        modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, 'mp2')
+        lastMaxLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
+        modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, lastMaxLayerName)
         absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
 
         netPriorToAbsLayer = set().union(*layerList[:absLayer+1])
