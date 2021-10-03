@@ -266,12 +266,12 @@ def main():
         commonFlags += ["--cnn_size", cnn_size]
     if validation:
         commonFlags += ["--validation", validation]
-    if dumpQueries:
-        commonFlags.append("--dump_queries")
-    if useDumpedQueries:
-        commonFlags.append("--use_dumped_queries")
-    if slurm_seq:
-        commonFlags += ["--slurm_seq", "--mask_index", str(0)]
+#    if dumpQueries:
+#        commonFlags.append("--dump_queries")
+#    if useDumpedQueries:
+#        commonFlags.append("--use_dumped_queries")
+#    if slurm_seq:
+#        commonFlags += ["--slurm_seq", "--mask_index", str(0)]
     if rerun_spurious:
         commonFlags.append("--rerun_spurious")
     else:
