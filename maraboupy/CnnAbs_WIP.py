@@ -68,6 +68,7 @@ class PolicyBase:
         return sortedIndReverse
 
     def rankByScore(model, score):
+        score = CnnAbs.flattenTF(score)
         if score.shape != model.outputVars.shape:
             print(score.shape)
             print(model.outputVars.shape)
@@ -151,7 +152,7 @@ class PolicyCentered(PolicyBase):
         center = [(float(d)-1) / 2 for d in absLayerShape]
         distance = np.linalg.norm(np.array([cor - cent for cor, cent in zip(corMeshList, center)]), axis=0)
         score = -distance
-        return PolicyBase.rankByScore(model, score.flatten())
+        return PolicyBase.rankByScore(model, score)
 
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
@@ -166,7 +167,7 @@ class PolicyAllClassRank(PolicyBase):
 
     def rankAbsLayer(self, model, prop, absLayerPredictions):
         score = np.mean(absLayerPredictions, axis=0)
-        return PolicyBase.rankByScore(model, score.flatten())
+        return PolicyBase.rankByScore(model, score)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -181,7 +182,7 @@ class PolicySingleClassRank(PolicyBase):
 
     def rankAbsLayer(self, model, prop, absLayerPredictions):        
         score = np.mean(np.array([alp for alp, label in zip(absLayerPredictions, self.ds.y_test) if label == prop.yMax]), axis=0)
-        return PolicyBase.rankByScore(model, score.flatten())
+        return PolicyBase.rankByScore(model, score)
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
@@ -201,7 +202,7 @@ class PolicyMajorityClassVote(PolicyBase):
     def rankAbsLayer(self, model, prop, absLayerPredictions):
         actByClasses = np.array([np.mean(np.array([alp for alp,y in zip(absLayerPredictions, self.ds.y_test) if y == label]), axis=0) for label in range(self.ds.num_classes)])
         score = np.linalg.norm(actByClasses, axis=0)
-        return PolicyBase.rankByScore(model, score.flatten())
+        return PolicyBase.rankByScore(model, score)
     
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
@@ -246,7 +247,7 @@ class PolicySampleRank(PolicyBase):
 
     def rankAbsLayer(self, model, prop, absLayerPredictions):
         score = np.abs(absLayerPredictions[prop.xAdvIndex])
-        return PolicyBase.rankByScore(model, score.flatten())
+        return PolicyBase.rankByScore(model, score)
     
     
 class Policy(Enum):
@@ -449,38 +450,38 @@ class CnnAbs:
 
         self.tickGtimeout()
 
-        startBoundTightening = time.time()
-        self.tickGtimeout()
-        if self.isGlobalTimedOut():
-            self.resultsJson["Result"] = "GTIMEOUT"
-            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
-            self.dumpResultsJson()
-            exit()
-        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
-        ipq = self.modelUtils.dumpBounds(model, xAdv, propDist, propSlack, yMax, ySecond)
-        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
-        CnnAbs.printLog("Finished dumping bounds - used for abstraction")
-        print(ipq.getNumberOfVariables())
-        endBoundTightening = time.time()
-        self.tickGtimeout()
-        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
-        if ipq.getNumberOfVariables() == 0:
-            self.resultsJson["SAT"] = False
-            self.resultsJson["Result"] = "UNSAT"
-            self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
-            self.resultsJson["successfulRun"] = 0
-            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
-            self.dumpResultsJson()
-            CnnAbs.printLog("UNSAT on first LP bound tightening")
-            exit()
-        else:
-            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
-        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
-            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
-            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
-        else:
-            boundDict = None
-
+#        startBoundTightening = time.time()
+#        self.tickGtimeout()
+#        if self.isGlobalTimedOut():
+#            self.resultsJson["Result"] = "GTIMEOUT"
+#            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+#            self.dumpResultsJson()
+#            exit()
+#        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
+#        ipq = self.modelUtils.dumpBounds(model, xAdv, propDist, propSlack, yMax, ySecond)
+#        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+#        CnnAbs.printLog("Finished dumping bounds - used for abstraction")
+#        print(ipq.getNumberOfVariables())
+#        endBoundTightening = time.time()
+#        self.tickGtimeout()
+#        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
+#        if ipq.getNumberOfVariables() == 0:
+#            self.resultsJson["SAT"] = False
+#            self.resultsJson["Result"] = "UNSAT"
+#            self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
+#            self.resultsJson["successfulRun"] = 0
+#            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+#            self.dumpResultsJson()
+#            CnnAbs.printLog("UNSAT on first LP bound tightening")
+#            exit()
+#        else:
+#            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
+#        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
+#            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
+#            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
+#        else:
+#            boundDict = None
+#
         self.optionsObj._dumpBounds = False
 
         mbouModel = self.modelUtils.tf2Mbou(model)
@@ -548,7 +549,7 @@ class CnnAbs:
             return [set()]
         layerList, layerTypes = InputQueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
-        lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1] #FIXME enable some choice of layer.
+        lastMax = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
         absLayer = lastMax
         lastMaxLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
         modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, lastMaxLayerName)
@@ -559,18 +560,30 @@ class CnnAbs:
         modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))        
         _ , _ , varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
         
-        for j in random.sample(range(len(self.ds.x_test)), 1):
+        for j in random.sample(range(len(self.ds.x_test)), 10):
             tfout = absLayerActivation[j]
             mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
-            print(tfout.flatten())
-            print(mbouout)
-            assert np.all( np.isclose(tfout.flatten(), mbouout ) )
-            assert np.all( np.isclose(tfout, mbouout.reshape(tfout.shape) ) )
-
+            assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout ) )
+            assert np.all( np.isclose(tfout, CnnAbs.reshapeMbouOut(mbouout, tfout.shape) ) )
         absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)]
         steps = list(policy.steps(len(absLayerRankAcsending)))
-        batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))] #FIXME i think the batches are not actually increasing the same as steps.
+        batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))]
         return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
+
+
+    @staticmethod
+    def flattenTF(tfout):
+        assert len(tfout.shape) == 3
+        if tfout.shape[2] > 1:
+            tfout = np.swapaxes(tfout, 0, 2)
+            tfout = np.swapaxes(tfout, 1, 2)
+        return tfout.flatten()
+
+    @staticmethod    
+    def reshapeMbouOut(mbouout, shape):
+        assert len(shape) == 3        
+        shape = np.roll(shape, 1)
+        return np.swapaxes(np.swapaxes(mbouout.reshape(shape), 1, 2), 0, 2)
         
         
     def abstractAndPrune(self, model, abstractNeurons, boundDict):
@@ -795,14 +808,8 @@ class CnnAbs:
         else:
             modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
-#        FIXME: This assertion is incorrect unless I require ySecond to be maximal, which I don't.
-#        if prop.ySecond != mbouPrediction: 
-#            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
-#            print("cexPrediction={}".format(cexPrediction))
-#            assert prop.ySecond == mbouPrediction
         plt.figure()
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
-        #plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.imshow(np.squeeze(cex), cmap='Greys')
         plt.colorbar()
         plt.savefig("Cex_{}".format(runName) + ".png")
@@ -812,7 +819,6 @@ class CnnAbs:
         #assert np.max(diff) <= prop.inDist
         plt.figure()
         plt.title('Distance between pixels: CEX and adv. sample')
-        #plt.imshow(diff.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
         plt.imshow(np.squeeze(diff), cmap='Greys')
         plt.colorbar()
         plt.savefig("DiffCexXAdv_{}".format(runName) + ".png")
@@ -1214,7 +1220,7 @@ class ModelUtils:
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
-        #FIXME if I will require ySecond to be max, spurious definition will have to change to force it.
+        #If I will require ySecond to be max, spurious definition will have to change to force it.
         if not spuriousStrict:
             return prediction.argmax() == yCorrect
         return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
@@ -1483,7 +1489,6 @@ class InputQueryUtils:
         return np.all(inBounds), violations
 
     @staticmethod
-    #FIXME what happens if the property forces yBad to be maximal and not only greater than yCorrect.
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
         inAsNP = np.array(net.inputVars[0])
         x = x.reshape(inAsNP.shape)
