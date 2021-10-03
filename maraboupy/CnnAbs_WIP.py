@@ -420,7 +420,7 @@ class CnnAbs:
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
 
-    def solve(self, model, policyName, sample, propDist, propSlack=0):
+    def solveAdversarial(self, model, policyName, sample, propDist, propSlack=0):
 
         policy = Policy.fromString(policyName, self.ds.name)
         xAdv = self.ds.x_test[sample]
@@ -432,6 +432,10 @@ class CnnAbs:
         ySecond = yPredictNoMax.argmax()
         if ySecond == yMax:
             ySecond = 0 if yMax > 0 else 1
+
+        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
+        mbouModel = self.modelUtils.tf2Mbou(model)
+        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
 
         fName = "xAdv.png"
         CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
@@ -447,50 +451,50 @@ class CnnAbs:
         self.resultsJson["yMaxPrediction"] = int(yMax)
         self.resultsJson["ySecondPrediction"] = int(ySecond)
         self.dumpResultsJson()
-
         self.tickGtimeout()
+        return self.solve(mbouModel, model, policy, prop, generalRunName = "sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
 
-#        startBoundTightening = time.time()
-#        self.tickGtimeout()
-#        if self.isGlobalTimedOut():
-#            self.resultsJson["Result"] = "GTIMEOUT"
-#            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
-#            self.dumpResultsJson()
-#            exit()
-#        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
-#        ipq = self.modelUtils.dumpBounds(model, xAdv, propDist, propSlack, yMax, ySecond)
-#        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
-#        CnnAbs.printLog("Finished dumping bounds - used for abstraction")
-#        print(ipq.getNumberOfVariables())
-#        endBoundTightening = time.time()
-#        self.tickGtimeout()
-#        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
-#        if ipq.getNumberOfVariables() == 0:
-#            self.resultsJson["SAT"] = False
-#            self.resultsJson["Result"] = "UNSAT"
-#            self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
-#            self.resultsJson["successfulRun"] = 0
-#            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
-#            self.dumpResultsJson()
-#            CnnAbs.printLog("UNSAT on first LP bound tightening")
-#            exit()
-#        else:
-#            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
-#        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
-#            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
-#            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
-#        else:
-#            boundDict = None
-#
+
+
+    def solve(mbouModel, modelTF, policy, prop, generalRunName=""):
+        startBoundTightening = time.time()
+        self.tickGtimeout()
+        if self.isGlobalTimedOut():
+            self.resultsJson["Result"] = "GTIMEOUT"
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            exit()
+        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
+        ipq = self.modelUtils.dumpBounds(mbouModel)
+        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+        CnnAbs.printLog("Finished dumping bounds - used for abstraction")
+        print(ipq.getNumberOfVariables())
+        endBoundTightening = time.time()
+        self.tickGtimeout()
+        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
+        if ipq.getNumberOfVariables() == 0:
+            self.resultsJson["SAT"] = False
+            self.resultsJson["Result"] = "UNSAT"
+            self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
+            self.resultsJson["successfulRun"] = 0
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            CnnAbs.printLog("UNSAT on first LP bound tightening")
+            exit()
+        else:
+            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
+        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
+            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
+            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
+        else:
+            boundDict = None
+
         self.optionsObj._dumpBounds = False
 
-        mbouModel = self.modelUtils.tf2Mbou(model)
         successful = None
-        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
-        absRefineBatches = self.abstractionRefinementBatches(mbouModel, model, policy, prop)
+        absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
         self.numMasks = len(absRefineBatches)
-        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)
-        generalRunName = "sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-'))
+                
         originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
@@ -500,12 +504,12 @@ class CnnAbs:
                 self.optionsObj._timeoutInSeconds = 0
             runName = generalRunName + ",mask_{}_outOf_{}".format(i, len(absRefineBatches)-1)
             self.tickGtimeout()
-            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=model, originalQueryStats=originalQueryStats)
+            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
             if resultObj.timedOut():
                 continue
             if resultObj.sat():
                 try:
-                    isSpurious = ModelUtils.isCEXSpurious(model, prop, resultObj.cex, valueRange=self.ds.valueRange)
+                    isSpurious = ModelUtils.isCEXSpurious(modelTF, prop, resultObj.cex, valueRange=self.ds.valueRange)
                 except Exception as err:
                     CnnAbs.printLog(err)
                     isSpurious = True
@@ -541,7 +545,7 @@ class CnnAbs:
         self.dumpResultsJson()
         CnnAbs.printLog(resultObj.result.name)            
         CnnAbs.printLog("Log files at {}".format(self.logDir))
-        return resultObj.result.name, resultObj.cex
+        return resultObj.result.name, resultObj.cex        
     
 
     def abstractionRefinementBatches(self, model, modelTF, policy, prop):
@@ -964,14 +968,17 @@ class ModelUtils:
             log.append(equal)
             CnnAbs.printLog("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
         return log
+
+    def dumpBounds(self, mbouModel):
+        return self.processInputQuery(mbouModel) 
     
-    def dumpBounds(self, model, xAdv, inDist, outSlack, yMax, ySecond):
+    def dumpBoundsAdversarial(self, model, xAdv, inDist, outSlack, yMax, ySecond):
         modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
         modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
         InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond, valueRange=self.ds.valueRange)
-        return self.processInputQuery(modelOnnxMarabou)
+        return self.dumpBounds(modelOnnxMarabou)
     
     def processInputQuery(self, net):
         net.saveQuery("processInputQuery")
