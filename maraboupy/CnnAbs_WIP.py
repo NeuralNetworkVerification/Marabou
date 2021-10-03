@@ -67,13 +67,13 @@ class PolicyBase:
         assert len(sortedIndReverse) == actMap.size
         return sortedIndReverse
 
-    def rankByScore(model, score): #FIXME switch to acesnding order
+    def rankByScore(model, score):
         if score.shape != model.outputVars.shape:
             print(score.shape)
             print(model.outputVars.shape)
         assert score.shape == model.outputVars.shape
         scoreSort = np.argsort(score)
-        return model.outputVars.flatten()[scoreSort[::-1]]
+        return model.outputVars.flatten()[scoreSort]
 
     @staticmethod
     def linearStep(n, stepSize=10, startWith=50):
@@ -416,7 +416,7 @@ class CnnAbs:
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
 
-    def solve(self, model, policyName, sample, propDist, dataset, propSlack=0):
+    def solve(self, model, policyName, sample, propDist, propSlack=0):
 
         policy = Policy.fromString(policyName, self.ds.name)
         xAdv = self.ds.x_test[sample]
@@ -480,7 +480,7 @@ class CnnAbs:
 
         self.optionsObj._dumpBounds = False
 
-        mbouModel = self.modelUtils.tf2MbouOnnx(model)
+        mbouModel = self.modelUtils.tf2Mbou(model)
         successful = None
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, model, policy, prop)
@@ -556,20 +556,14 @@ class CnnAbs:
         _ , _ , varsMapping = InputQueryUtils.removeRedundantVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
         
         for j in random.sample(range(len(self.ds.x_test)), 1):
-            #print(modelUpToAbsLayer.evaluate(self.ds.x_test[j]))
-            #print(absLayerActivation[j])
             tfout = absLayerActivation[j]
             mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
             assert np.all( np.isclose(tfout.flatten(), mbouout ) )
             assert np.all( np.isclose(tfout, mbouout.reshape(tfout.shape) ) )
-            print("{} OK".format(j)) #FIXME remove
 
-        absLayerRankInAbsModel = policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)
-        absLayerRank = [varsMapping[v] for v in absLayerRankInAbsModel]
-        absLayerRankAcsending = absLayerRank[::-1]
-        accum = 0
-        steps = list(policy.steps(len(absLayerRank)))
-        batchSizes = [sum(steps[:i+1]) for i in range(len(steps))][::-1] #FIXME i think the batches are not actually increasing the same as steps.
+        absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)]
+        steps = list(policy.steps(len(absLayerRankAcsending)))
+        batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))] #FIXME i think the batches are not actually increasing the same as steps.
         return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
         
         
@@ -610,7 +604,7 @@ class CnnAbs:
         
         
     def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
-        modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
+        modelOnnxMarabou = ModelUtils.tf2Mbou(model)
         inputs = list({i.item() for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
         InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond, valueRange=self.ds.valueRange)
         if self.policy is not Policy.Vanilla:
@@ -643,12 +637,12 @@ class CnnAbs:
             for var,value in rerunObj.vals.items():
                 varOrig = rerunObj.varsMapping[var]
                 if varOrig not in rerunObj.preAbsVars:
-                    if not varOrig in boundDictCopy:
-                        print(rerunObj.varsMapping) #FIXME remove prints
-                        print("*************************************")
-                        print(boundDict)
-                        print("*************************************")                        
-                        print("var={}, varOrig={}".format(var,varOrig)                        )
+#                    if not varOrig in boundDictCopy:
+#                        print(rerunObj.varsMapping)
+#                        print("*************************************")
+#                        print(boundDict)
+#                        print("*************************************")                        
+#                        print("var={}, varOrig={}".format(var,varOrig)                        )
                     assert varOrig in boundDictCopy
                     boundDictCopy[varOrig] = (value, value)
             boundDict = boundDictCopy
@@ -928,7 +922,7 @@ class ModelUtils:
         
 
     @staticmethod
-    def tf2MbouOnnx(model):
+    def tf2Mbou(model):
         modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
@@ -971,7 +965,6 @@ class ModelUtils:
         net.saveQuery("processInputQuery")
         return MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
     
-    #FIXME should work on MaxPool layers too
     #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
     def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=False):
         #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer
