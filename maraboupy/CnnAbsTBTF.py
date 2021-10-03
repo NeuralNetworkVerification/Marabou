@@ -153,4 +153,4 @@ CnnAbs.printLog("Finished model building")
 ####                                                                                     ####
 #############################################################################################
 
-cnnAbs.solve(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, 'mnist', propSlack=cfg_propSlack)
+cnnAbs.solve(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)

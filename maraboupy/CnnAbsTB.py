@@ -173,6 +173,7 @@ replaceLayerName = cfg_absLayer
 
 CnnAbs.printLog("Started model building")
 modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
+exit()
 maskShape = modelOrig.get_layer(name=replaceLayerName).output_shape[:-1]
 if maskShape[0] == None:
     maskShape = maskShape[1:]
