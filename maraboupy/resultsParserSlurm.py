@@ -389,6 +389,8 @@ with open('ResultSummary.csv', mode='w') as f:
 ####################################################################################################
 
 cactusLabels = [resultDict['label'] for resultDict in resultDicts]
+resultDicts = [rd for _, rd in sorted(zip(cactusLabels, resultDicts))]
+cactusLabels.sort()
 cactusMarkers = ['*', 's', 'o', 'P', 'X', '^', 'p', 'D'][:len(cactusLabels)]
 cactusColors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:cyan']
 
