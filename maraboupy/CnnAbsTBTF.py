@@ -94,4 +94,4 @@ CnnAbs.printLog("Started model building")
 modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
 CnnAbs.printLog("Finished model building")
 
-cnnAbs.solve(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
+cnnAbs.solveAdversarial(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
