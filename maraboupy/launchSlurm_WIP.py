@@ -20,7 +20,7 @@ def solvingPolicies():
     return absPolicies() + ['Vanilla']
 
 def globalTimeOut():
-    return 2,0,0
+    return 1,0,0
 
 TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
 gtimeout = TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S
@@ -251,27 +251,18 @@ def main():
     with open(batchDirPath + "/runCmd.sh", 'w') as f:
         f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
-    #commonFlags = ["--run_on", "cluster", "--batch_id", batchId, "--spurious_strict", "--num_cpu", str(CPUS), "--bound_tightening", "lp", "--symbolic", "deeppoly", "--prop_distance", str(0.02), "--timeout", str(1000)]
-    #clusterFlags = ["--run_on", "cluster", "--num_cpu", str(CPUS)]
     clusterFlags = []
-    #commonFlags = clusterFlags + ["--batch_id", batchId, "--spurious_strict", "--bound_tightening", "lp", "--symbolic", "sbt", "--prop_distance", str(0.02), "--prop_slack", str(-0.1), "--timeout", str(1000), "--dump_dir", dumpDirPath]
     commonFlags = clusterFlags + ["--batch_id", batchId] + ["--gtimeout", str(gtimeout)]
-    if dumpQueries or useDumpedQueries or dumpSuffix:
-        commonFlags += ["--dump_dir", dumpDirPath]    
+#    if dumpQueries or useDumpedQueries or dumpSuffix:
+#        commonFlags += ["--dump_dir", dumpDirPath]    
     if experiment != 'DifferentDistances':
         commonFlags += ["--prop_distance", str(prop_distance)]
     else:
         commonFlags += ["--sample", str(args.sample)]
-    if cnn_size:
-        commonFlags += ["--cnn_size", cnn_size]
+#    if cnn_size:
+#        commonFlags += ["--cnn_size", cnn_size]
     if validation:
         commonFlags += ["--validation", validation]
-#    if dumpQueries:
-#        commonFlags.append("--dump_queries")
-#    if useDumpedQueries:
-#        commonFlags.append("--use_dumped_queries")
-#    if slurm_seq:
-#        commonFlags += ["--slurm_seq", "--mask_index", str(0)]
     if rerun_spurious:
         commonFlags.append("--rerun_spurious")
     else:
