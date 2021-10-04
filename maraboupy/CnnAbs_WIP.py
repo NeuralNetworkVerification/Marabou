@@ -344,7 +344,7 @@ class CnnAbs:
         ySecond = yPredictNoMax.argmax()
         if ySecond == yMax:
             ySecond = 0 if yMax > 0 else 1
-
+            
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
         mbouModel = self.modelUtils.tf2Mbou(modelTF)
         InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
@@ -469,16 +469,17 @@ class CnnAbs:
         modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, absLayerLayerName)
         absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
 
-        netPriorToAbsLayer = set().union(*layerList[:absLayer+1])
+        netPriorToAbsLayer = list(set().union(*layerList[:absLayer+1]))
+        netPriorToAbsLayer.sort()
         modelUpToAbsLayer = copy.deepcopy(model)
-        modelUpToAbsLayer.outputVars = np.array(list(layerList[absLayer]))
+        modelUpToAbsLayer.outputVars = np.sort(np.array(list(layerList[absLayer])))
         _ , _ , varsMapping = InputQueryUtils.removeVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
         
-        for j in random.sample(range(len(self.ds.x_test)), 1):
+        for j in random.sample(range(len(self.ds.x_test)), 10):
             tfout = absLayerActivation[j]
             mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
-            assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout ) )
-            assert np.all( np.isclose(tfout, CnnAbs.reshapeMbouOut(mbouout, tfout.shape) ) )
+            assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout, atol=1e-4) )
+            assert np.all( np.isclose(tfout, CnnAbs.reshapeMbouOut(mbouout, tfout.shape), atol=1e-4 ) )
         absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)]
         steps = list(policy.steps(len(absLayerRankAcsending)))
         batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))]
@@ -523,7 +524,7 @@ class CnnAbs:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=True, options=self.optionsObj)
+        vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=False, options=self.optionsObj)
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -998,7 +999,7 @@ class InputQueryUtils:
         varSetList = list(varSet)
         varSetList.sort()
         varSetDict = {v:i for i,v in enumerate(varSetList)}
-        assert varSet == set(varSetDict.keys())
+        assert set(varSet) == set(varSetDict.keys()) and len(set(varSet)) == len(varSet)
         tr = lambda v: varSetDict[v] if v in varSetDict else -1
         varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
         
