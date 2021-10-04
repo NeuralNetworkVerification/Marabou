@@ -139,7 +139,7 @@ void Engine::exportInputQueryWithError( String errorMessage )
 {
     String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedMarabouQuery.ipq";
     prepareSnCInputQuery().saveQuery( ipqFileName );
-    printf( "Engine: %s!\nInput query has been saved as %s\n", errorMessage.ascii(), ipqFileName.ascii() );
+    printf( "Engine: %s!\nInput query has been saved as %s. Please attach the input query when you open the issue on GitHub.\n", errorMessage.ascii(), ipqFileName.ascii() );
 }
 
 
