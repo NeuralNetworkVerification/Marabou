@@ -60,6 +60,8 @@ Engine::Engine()
     , _isGurobyEnabled( Options::get()->gurobiEnabled() )
     , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
     , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
+    , _sncMode( false )
+    , _queryId( "" )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -99,6 +101,47 @@ void Engine::adjustWorkMemorySize()
     if ( !_work )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
+
+
+void Engine::applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId )
+{
+  _sncMode = true;
+  _sncSplit = sncSplit;
+  _queryId = queryId;
+  applySplit( sncSplit );
+}
+
+InputQuery Engine::prepareSnCInputQuery()
+{
+    List<Tightening> bounds = _sncSplit.getBoundTightenings();
+    List<Equation> equations = _sncSplit.getEquations();
+
+    InputQuery sncIPQ = _preprocessedQuery;
+    for ( auto &equation : equations )
+        sncIPQ.addEquation( equation );
+
+    for ( auto &bound : bounds )
+    {
+        switch ( bound._type )
+        {
+        case Tightening::LB:
+          sncIPQ.setLowerBound( bound._variable, bound._value ); break;
+
+        case Tightening::UB:
+          sncIPQ.setUpperBound( bound._variable, bound._value );
+        }
+    }
+
+    return sncIPQ;
+}
+
+void Engine::exportInputQueryWithError( String errorMessage )
+{
+    String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedMarabouQuery.ipq";
+    prepareSnCInputQuery().saveQuery( ipqFileName );
+    printf( "Engine: %s!\nInput query has been saved as %s\n", errorMessage.ascii(), ipqFileName.ascii() );
+}
+
 
 bool Engine::solve( unsigned timeoutInSeconds )
 {
@@ -307,8 +350,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
             else
             {
-                printf( "Engine: Cannot restore tableau!\n" );
                 _exitCode = Engine::ERROR;
+                exportInputQueryWithError( "Cannot restore tableau" );
                 return false;
             }
         }
@@ -335,7 +378,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
-            printf( "Engine: Unknown error!\n" );
+            exportInputQueryWithError( "Unknown error" );
             return false;
         }
     }
