@@ -99,11 +99,11 @@ class PolicyCentered(PolicyBase):
 
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
-class PolicyAllClassRank(PolicyBase):
+class PolicyAllSamplesRank(PolicyBase):
     
     def __init__(self, ds):
         super().__init__(ds)
-        self.policy = Policy.AllClassRank
+        self.policy = Policy.AllSamplesRank
 
     def rankAbsLayer(self, model, prop, absLayerPredictions):
         score = np.mean(absLayerPredictions, axis=0)
@@ -167,7 +167,7 @@ class PolicySampleRank(PolicyBase):
     
 class Policy(Enum):
     Centered          = 0
-    AllClassRank      = 1
+    AllSamplesRank    = 1
     SingleClassRank   = 2
     MajorityClassVote = 3
     Random            = 4
@@ -176,7 +176,7 @@ class Policy(Enum):
 
     @staticmethod
     def absPolicies():
-        return [Policy.Centered.name, Policy.AllClassRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name, Policy.SampleRank.name]
+        return [Policy.Centered.name, Policy.AllSamplesRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name, Policy.SampleRank.name]
 
     @staticmethod
     def solvingPolicies():
@@ -187,8 +187,8 @@ class Policy(Enum):
         s = s.lower()
         if   s == Policy.Centered.name.lower():
             return PolicyCentered(ds)
-        elif s == Policy.AllClassRank.name.lower():
-            return PolicyAllClassRank(ds)
+        elif s == Policy.AllSamplesRank.name.lower():
+            return PolicyAllSamplesRank(ds)
         elif s == Policy.SingleClassRank.name.lower():
             return PolicySingleClassRank(ds)
         elif s == Policy.MajorityClassVote.name.lower():
