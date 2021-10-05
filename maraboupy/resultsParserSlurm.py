@@ -94,7 +94,7 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
             
     xyCountSame = countSame(x,y)
     for _x, _y, _c, _m in zip(x, y, c, markerArr):
-        ax.scatter(_x, _y, s=70, c=_c, marker=_m, alpha=0.3)
+        ax.scatter(_x, _y, s=70, marker=_m, facecolor='none', edgecolor=_c)
     for count, coor in countSame(x,y):
         if count > 1:
             ax.annotate(count, coor)
