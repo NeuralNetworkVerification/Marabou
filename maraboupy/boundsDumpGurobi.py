@@ -128,6 +128,7 @@ U7=[2.,3.]
 gama07 = (sum([(u / (u-l)) for l,u in zip(L7,U7)]) - 1) / (sum([(1 / (u-l)) for l,u in zip(L7,U7)]))
 lmax7 = max(L7)
 umin7 = min(U7)
+assert gama07 <= umin7 and lmax7 <= gama07
 #print('={},={},={}'.format())
 gama7 = min(max(gama07, lmax7), umin7)
 print('gama07={}, lmax7={}, umin7={}, gama7={}'.format(gama07, lmax7, umin7, gama7))
@@ -137,6 +138,7 @@ gama08 = (sum([(u / (u-l)) for l,u in zip(L8,U8)]) - 1) / (sum([(1 / (u-l)) for 
 lmax8 = max(L8)
 umin8 = min(U8)
 gama8 = min(max(gama08, lmax8), umin8)
+assert gama08 <= umin8 and lmax8 <= gama08
 print('gama08={}, lmax8={}, umin8={}, gama8={}'.format(gama08, lmax8, umin8, gama8))
 
 c7_0_umin = (U7[0] - gama7) / (U7[0] - L7[0])
