@@ -846,3 +846,5 @@ results['Old bounds MILP'][1] = model.objVal
 
 print('****************************************************** RESULTS ******************************************************')
 print(results)
+
+[print(i) for i in sorted(results.items(), key=lambda item: abs(item[1][0]-item[1][1]))]
