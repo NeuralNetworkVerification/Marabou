@@ -1,6 +1,6 @@
 import tensorflow as tf
 #import numpy as np
-from CnnAbs_WIP import CnnAbs, Policy
+from CnnAbs import CnnAbs, Policy
 import time
 import argparse
 import datetime
