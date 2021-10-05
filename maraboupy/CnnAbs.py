@@ -2,14 +2,12 @@ import sys
 import os
 import time
 
-sys.path.append("/cs/labs/guykatz/matanos/Marabou")
-sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy")
+sys.path.append("/cs/labs/guykatz/matanos/Marabou") #FIXME
+sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy") #FIXME
 
-from itertools import product, chain
-#pip install keras2onnx
 import keras2onnx
 import tensorflow as tf
-from maraboupy import MarabouNetworkONNX as monnx
+from maraboupy import MarabouNetworkONNX
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
 from maraboupy import Marabou
@@ -21,7 +19,8 @@ from enum import Enum, auto
 import json
 import random
 from tensorflow.keras.models import load_model
-from launchSlurm import *
+
+import copy
 
 #################################################################################################################
 #################################################################################################################
@@ -37,33 +36,18 @@ class PolicyBase:
         self.startWith = 50
         self.ds = DataSet(ds)
         self.coi = True
-    
-    def meanActivation(features, seperateCh=False, model=None):
-        if len(features.shape) == 2:
-            features = features.reshape(features.shape + (1,1))
-        elif len(features.shape) == 3:
-            features = features.reshape(features.shape + (1,))
-        act = np.mean(features, axis=0) #Assume I recieve 4 dim feature array, then act is 3 dim.
-        if seperateCh:
-            act = [act[:,:,i] for i in range(act.shape[2])]
-        else:
-            act = np.max(act, axis=2)
-        return act
+        
+    def rankByScore(model, score):
+        score = CnnAbs.flattenTF(score)
+        if score.shape != model.outputVars.shape:
+            print(score.shape)
+            print(model.outputVars.shape)
+        assert score.shape == model.outputVars.shape
+        scoreSort = np.argsort(score)
+        return model.outputVars.flatten()[scoreSort]
 
-    def genMaskByActivation(self, intermidModel, features, includeFull=True):
-        sortedIndReverse = PolicyBase.sortReverseNeuronsByActivation(intermidModel, features)
-        return self.genMaskByOrderedInd(sortedIndReverse, intermidModel.output_shape[1:-1], includeFull=includeFull)
-
-    def sortActMapReverse(actMap):
-        sorted = list(np.array(list(product(*[range(d) for d in actMap.shape])))[actMap.flatten().argsort()])
-        sorted.reverse()
-        return sorted
-    
-    def sortReverseNeuronsByActivation(intermidModel, samples):
-        actMap = PolicyBase.meanActivation(intermidModel.predict(samples))
-        sortedIndReverse = PolicyBase.sortActMapReverse(actMap)
-        assert len(sortedIndReverse) == actMap.size
-        return sortedIndReverse
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        raise NotImplementedError    
 
     @staticmethod
     def linearStep(n, stepSize=10, startWith=50):
@@ -97,29 +81,6 @@ class PolicyBase:
         #return cls.linearStep(n)
         return cls.geometricStep(n)
     
-    def genMaskByOrderedInd(self, sortedIndDecsending, maskShape, includeFull=True):
-        mask = np.zeros(maskShape)
-        masks = list()
-        n = len(sortedIndDecsending)
-        for toAdd in self.steps(n):
-            for coor in sortedIndDecsending[:toAdd]:
-                mask[tuple(coor)] = 1
-            sortedIndDecsending = sortedIndDecsending[toAdd:]
-            if np.array_equal(mask, np.ones_like(mask)) and not includeFull:
-                break
-            masks.append(mask.copy())
-        return masks
-
-    def genSquareMask(shape, lBound, uBound):
-        onesInd = list(product(*[range(l,min(u+1,dim)) for dim, l, u in zip(shape, lBound, uBound)]))
-        mask = np.zeros(shape)
-        for ind in onesInd:
-            mask[ind] = 1
-        return mask
-    
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        raise NotImplementedError
-
 #Policy - Most important neurons are the center of the image.
 class PolicyCentered(PolicyBase):
     
@@ -127,12 +88,15 @@ class PolicyCentered(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.Centered
 
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        maskShape = intermidModel.output_shape[1:-1]
-        indicesList = list(product(*[range(d) for d in maskShape]))
-        center = np.array([float(d) / 2 for d in maskShape])
-        indicesSortedDecsending = sorted(indicesList, key=lambda x: np.linalg.norm(np.array(x)-center))
-        return self.genMaskByOrderedInd(indicesSortedDecsending, maskShape, includeFull=includeFull)
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        assert len(absLayerPredictions.shape) == 4
+        absLayerShape = absLayerPredictions.shape[1:]
+        corMeshList = np.meshgrid(*[np.arange(d) for d in absLayerShape], indexing='ij')
+        center = [(float(d)-1) / 2 for d in absLayerShape]
+        distance = np.linalg.norm(np.array([cor - cent for cor, cent in zip(corMeshList, center)]), axis=0)
+        score = -distance
+        return PolicyBase.rankByScore(model, score)
+
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllClassRank(PolicyBase):
@@ -141,8 +105,9 @@ class PolicyAllClassRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.AllClassRank
 
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        return self.genMaskByActivation(intermidModel, self.ds.x_test, includeFull=includeFull)
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        score = np.mean(absLayerPredictions, axis=0)
+        return PolicyBase.rankByScore(model, score)
 
 #Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -150,10 +115,10 @@ class PolicySingleClassRank(PolicyBase):
     def __init__(self, ds):
         super().__init__(ds)
         self.policy = Policy.SingleClassRank
-            
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        features = [x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == prediction]
-        return self.genMaskByActivation(intermidModel, np.array(features), includeFull=includeFull)
+
+    def rankAbsLayer(self, model, prop, absLayerPredictions):        
+        score = np.mean(np.array([alp for alp, label in zip(absLayerPredictions, self.ds.y_test) if label == prop.yMax]), axis=0)
+        return PolicyBase.rankByScore(model, score)
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
@@ -162,14 +127,11 @@ class PolicyMajorityClassVote(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.MajorityClassVote  
             
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        features = [[x for x,y in zip(self.ds.x_test, self.ds.y_test) if y == label] for label in range(self.ds.num_classes)]
-        actMaps = [PolicyBase.meanActivation(intermidModel.predict(np.array(feat))) for feat in features]
-        discriminate = lambda actM : np.square(actM)
-        actMaps = [discriminate(actMap) for actMap in actMaps]
-        sortedIndReverseDiscriminated = PolicyBase.sortActMapReverse(sum(actMaps))
-        return self.genMaskByOrderedInd(sortedIndReverseDiscriminated, intermidModel.output_shape[1:-1], includeFull=includeFull)
-
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        actByClasses = np.array([np.mean(np.array([alp for alp,y in zip(absLayerPredictions, self.ds.y_test) if y == label]), axis=0) for label in range(self.ds.num_classes)])
+        score = np.linalg.norm(actByClasses, axis=0)
+        return PolicyBase.rankByScore(model, score)
+    
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
     
@@ -177,11 +139,10 @@ class PolicyRandom(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.Random  
 
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        maskShape = intermidModel.output_shape[1:-1]
-        indices = np.random.permutation(np.array(list(product(*[range(d) for d in maskShape]))))
-        return self.genMaskByOrderedInd(indices, maskShape, includeFull=includeFull)
-    
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        return np.random.permutation(model.outputVars)
+
+#Policy - No abstraction.
 class PolicyVanilla(PolicyBase):
     
     def __init__(self, ds):
@@ -189,59 +150,37 @@ class PolicyVanilla(PolicyBase):
         self.policy = Policy.Vanilla
         self.coi = False
         
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        maskShape = intermidModel.output_shape[1:-1]
-        if includeFull:
-            return [np.ones(maskShape)]
-        return []
-    
-class PolicyFindMinProvable(PolicyBase):
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        raise NotImplementedError
+
+#Policy - Rank According to activation values of single sample
+class PolicySampleRank(PolicyBase):
     
     def __init__(self, ds):
-        super().__init__(ds) 
-        self.policy = Policy.FindMinProvable
-        
-    def genActivationMask(self, intermidModel, prediction=None, includeFull=True):
-        maskShape = intermidModel.output_shape[1:-1]
-        indices = list(product(*[range(d) for d in maskShape]))
-        zeroList = [(0,5),(0,4),(1,5),(1,4),(10,9)]
-        FailedWithZeroList = [] #Meaning that was SAT or TimedOut during run with [(0,5),(0,4)]
-        indices = list(set(indices) - set(zeroList))
-        masks = list()
-        mask = np.ones(maskShape)
-        chooseFrom = set(indices) - set(FailedWithZeroList)
-        for z in zeroList:
-            mask[z] = 0
-        for i in range(10):
-            if not chooseFrom:
-                break
-            randomElement = random.choice(list(chooseFrom))
-            chooseFrom.remove(randomElement)
-            mask[randomElement] = 0
-            masks.append(mask.copy())
-            mask[randomElement] = 1
-        return masks
+        super().__init__(ds)
+        self.policy = Policy.SampleRank
 
+    def rankAbsLayer(self, model, prop, absLayerPredictions):
+        score = np.abs(absLayerPredictions[prop.xAdvIndex])
+        return PolicyBase.rankByScore(model, score)
+    
+    
 class Policy(Enum):
     Centered          = 0
     AllClassRank      = 1
     SingleClassRank   = 2
     MajorityClassVote = 3
     Random            = 4
-    Vanilla           = 5
-    FindMinProvable   = 6
+    Vanilla           = 5    
+    SampleRank        = 6
 
     @staticmethod
     def absPolicies():
-        return [Policy.Centered.name, Policy.AllClassRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name]
+        return [Policy.Centered.name, Policy.AllClassRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name, Policy.SampleRank.name]
 
     @staticmethod
     def solvingPolicies():
         return Policy.absPolicies() + [Policy.Vanilla.name]
-
-#    @staticmethod
-#    def asString():
-#        return [policy.name for policy in Policy.solvingPolicies()]
 
     @staticmethod
     def fromString(s, ds):
@@ -258,18 +197,19 @@ class Policy(Enum):
             return PolicyRandom(ds)
         elif s == Policy.Vanilla.name.lower():
             return PolicyVanilla(ds)
-        elif s == Policy.FindMinProvable.name.lower():
-            return PolicyFindMinProvable(ds)
+        elif s == Policy.SampleRank.name.lower():
+            return PolicySampleRank(ds)
         else:
             raise NotImplementedError
 
 class AdversarialProperty:
-    def __init__(self, xAdv, yMax, ySecond, inDist, outSlack):
+    def __init__(self, xAdv, yMax, ySecond, inDist, outSlack, sample):
         self.xAdv = xAdv
         self.yMax = yMax
         self.ySecond = ySecond
         self.inDist = inDist
         self.outSlack = outSlack
+        self.xAdvIndex = sample
 
 class Result(Enum):
     
@@ -303,7 +243,7 @@ class ResultObj:
     def __init__(self, result):
         self.originalQueryStats = None
         self.finalQueryStats = None
-        self.cex = np.array([])
+        self.cex = None
         self.cexPrediction = np.array([])
         self.inputDict = dict()
         self.outputDict = dict()
@@ -348,14 +288,18 @@ class DataSet:
         self.optimizer='adam'
         self.metrics=['accuracy']
         self.valueRange = (0,1) #Input pixels value range
+        self.name = 'mnist'
     
 class CnnAbs:
 
     logger = None
-    basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
+    basePath = None
     resultsFile = 'Results'
     
-    def __init__(self, ds='mnist', dumpDir='', optionsObj=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200, policy=None):
+    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200, policy=None):
+        optionsObj = Marabou.createOptions(**options)
+        CnnAbs.basePath = os.getcwd()
+        logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
         self.modelUtils = ModelUtils(self.ds, self.optionsObj)
@@ -385,97 +329,204 @@ class CnnAbs:
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
         self.prevTimeStamp = time.time()
-        self.policy = policy
+        self.policy = Policy.fromString(policy, self.ds.name)
 
-    def launchNext(self, batchId=None, cnnSize=None, validation=None, runTitle=None, sample=None, policy=None, rerun=None, propDist=None):
-        if self.maskIndex+1 == self.numMasks:
-            return
-        commonFlags = ["--batch_id", batchId, "--dump_dir", self.dumpDir]
-        if cnnSize:
-            commonFlags += ["--cnn_size", cnnSize]
-        if validation:
-            commonFlags += ["--validation", validation]
-        if rerun:
-            commonFlags.append("--rerun_spurious")
+    def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
+
+        policy = Policy.fromString(policyName, self.ds.name)
+        xAdv = self.ds.x_test[sample]
+        yAdv = self.ds.y_test[sample]
+        yPredict = modelTF.predict(np.array([xAdv]))
+        yMax = yPredict.argmax()
+        yPredictNoMax = np.copy(yPredict)
+        yPredictNoMax[0][yMax] = np.min(yPredict)
+        ySecond = yPredictNoMax.argmax()
+        if ySecond == yMax:
+            ySecond = 0 if yMax > 0 else 1
+            
+        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
+        mbouModel = self.modelUtils.tf2Mbou(modelTF)
+        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
+
+        fName = "xAdv.png"
+        CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
+        plt.figure()        
+        plt.imshow(np.squeeze(xAdv), cmap='Greys')
+        plt.colorbar()
+        plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
+        plt.savefig(fName)
+        with open(fName.replace("png","npy"), "wb") as f:
+            np.save(f, xAdv)
+            
+        self.resultsJson["yDataset"] = int(yAdv.item())
+        self.resultsJson["yMaxPrediction"] = int(yMax)
+        self.resultsJson["ySecondPrediction"] = int(ySecond)
+        self.dumpResultsJson()
+        self.tickGtimeout()
+        return self.solve(mbouModel, modelTF, policy, prop, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
+
+
+
+    def solve(self, mbouModel, modelTF, policy, prop, generalRunName=""):
+        startBoundTightening = time.time()
+        self.tickGtimeout()
+        if self.isGlobalTimedOut():
+            self.resultsJson["Result"] = "GTIMEOUT"
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            exit()
+        CnnAbs.printLog("Started dumping bounds - used for abstraction")
+        ipq = self.modelUtils.dumpBounds(mbouModel)
+        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+        CnnAbs.printLog("Finished dumping bounds - used for abstraction")
+        print(ipq.getNumberOfVariables())
+        endBoundTightening = time.time()
+        self.tickGtimeout()
+        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
+        if ipq.getNumberOfVariables() == 0:
+            self.resultsJson["SAT"] = False
+            self.resultsJson["Result"] = "UNSAT"
+            self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
+            self.resultsJson["successfulRun"] = 0
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            CnnAbs.printLog("UNSAT on first LP bound tightening")
+            exit()
         else:
-            commonFlags.append("--norerun_spurious")
-        if self.dumpQueries:
-            commonFlags.append("--dump_queries")
-        if self.useDumpedQueries:
-            commonFlags.append("--use_dumped_queries")
-        if propDist:
-            commonFlags += ["--prop_distance", str(propDist)]
-        cmd = commonFlags + ["--run_title", runTitle, "--sample", str(sample), "--policy", policy, "--mask_index", str(self.maskIndex+1), "--slurm_seq", "--gtimeout", str(int(self.gtimeout))]
-        runSingleRun(cmd, runTitle, CnnAbs.basePath, "/".join(filter(None, [CnnAbs.basePath, "logs", batchId])), str(self.maskIndex+1))
-        
-        
-    def genAdvMbouNet(self, model, prop, boundDict, runName, coi):
-        modelOnnxMarabou = ModelUtils.tf2MbouOnnx(model)
-        inputs = list({i.item() for inputArray in modelOnnxMarabou.inputVars for i in np.nditer(inputArray)})
-        InputQueryUtils.setAdversarial(modelOnnxMarabou, prop.xAdv, prop.inDist, prop.outSlack, prop.yMax, prop.ySecond, valueRange=self.ds.valueRange)
-        if self.policy is not Policy.Vanilla:
-            InputQueryUtils.setBounds(modelOnnxMarabou, boundDict)
-        originalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "originalQueryStats_" + runName)
-        if coi:
-            inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.setCOIBoundes(modelOnnxMarabou, modelOnnxMarabou.outputVars.flatten().tolist())
-            self.dumpCoi(inputVarsMapping, runName)
-            InputQueryUtils.setUnconnectedAsInputs(modelOnnxMarabou)
+            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
+        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
+            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
+            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
         else:
-            inputVarsMapping = modelOnnxMarabou.inputVars[0]
-            outputVarsMapping = modelOnnxMarabou.outputVars
-            varsMapping = {v : v for v in range(modelOnnxMarabou.numVars)}
-        self.dumpNpArray(inputVarsMapping, "inputVarsMapping_" + runName)
-        self.dumpNpArray(outputVarsMapping, "outputVarsMapping_" + runName)
-        self.dumpJson(varsMapping, "varsMapping_" + runName)
-        self.dumpJson(inputs, "inputs_" + runName)
-        modelOnnxMarabou.saveQuery(self.dumpDir + "IPQ_" + runName)
-        finalQueryStats = self.dumpQueryStats(modelOnnxMarabou, "finalQueryStats_" + runName)
-        return modelOnnxMarabou, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs
+            boundDict = None
+
+        self.optionsObj._dumpBounds = False
+        originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)        
+        successful = None
+        absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
+        self.numMasks = len(absRefineBatches)
+                
+        for i, abstractNeurons in enumerate(absRefineBatches):
+            if self.isGlobalTimedOut():
+                break
+            mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
+            if i+1 == len(absRefineBatches):
+                self.optionsObj._timeoutInSeconds = 0
+            runName = generalRunName + ",mask_{}_outOf_{}".format(i, len(absRefineBatches)-1)
+            self.tickGtimeout()
+            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
+            if resultObj.timedOut():
+                continue
+            if resultObj.sat():
+                try:
+                    isSpurious = ModelUtils.isCEXSpurious(modelTF, prop, resultObj.cex, valueRange=self.ds.valueRange)
+                except Exception as err:
+                    CnnAbs.printLog(err)
+                    isSpurious = True
+                CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("spurious" if isSpurious else "real", i, len(absRefineBatches)-1))
+                if not isSpurious:
+                    successful = i
+                    break
+                elif i+1 == len(absRefineBatches):
+                    resultObj = ResultObj("error")
+                    break 
+            elif resultObj.unsat():
+                CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i, len(absRefineBatches)-1))
+                successful = i
+                break
+            else:
+                raise NotImplementedError
+
+        self.tickGtimeout()    
+        globalTimeout = self.isGlobalTimedOut()    
+        if globalTimeout:
+            resultObj = ResultObj("gtimeout")
+        success = not resultObj.timedOut() and (successful is not None)
+        if resultObj.sat() and not success:
+            resultObj = ResultObj("spurious")
     
-    def runMarabouOnKeras(self, model, prop, boundDict, runName="runMarabouOnKeras", coi=True, onlyDump=False, fromDumpedQuery=False, rerun=False, rerunObj=None):
+        if success:
+            CnnAbs.printLog("successful={}/{}".format(successful, self.numMasks-1)) if (successful+1) < self.numMasks else CnnAbs.printLog("successful=Full")
+            self.resultsJson["successfulRuntime"] = self.resultsJson["subResults"][-1]["runtime"]
+            self.resultsJson["successfulRun"] = successful + 1        
+        self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+        self.resultsJson["SAT"] = resultObj.sat()
+        self.resultsJson["Result"] = resultObj.result.name
+        self.dumpResultsJson()
+        CnnAbs.printLog(resultObj.result.name)            
+        CnnAbs.printLog("Log files at {}".format(self.logDir))
+        return resultObj.result.name, resultObj.cex        
+    
 
-        startLocal = time.time()
+    def abstractionRefinementBatches(self, model, modelTF, policy, prop):
+        if policy.policy is Policy.Vanilla:
+            return [set()]
+        layerList, layerTypes = InputQueryUtils.divideToLayers(model)
+        assert all([len(t) == 1 for t in layerTypes])
+        absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
+        absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
+        modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, absLayerLayerName)
+        absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
+
+        netPriorToAbsLayer = list(set().union(*layerList[:absLayer+1]))
+        netPriorToAbsLayer.sort()
+        modelUpToAbsLayer = copy.deepcopy(model)
+        modelUpToAbsLayer.outputVars = np.sort(np.array(list(layerList[absLayer])))
+        _ , _ , varsMapping = InputQueryUtils.removeVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
         
-        if not rerun:
-            self.subResultAppend()
-        else:
-            boundDictCopy = boundDict.copy()
-            for var,value in rerunObj.vals.items():
-                varOrig = rerunObj.varsMapping[var]
-                if varOrig not in rerunObj.preAbsVars:
-                    if not varOrig in boundDictCopy:
-                        print(rerunObj.varsMapping) #FIXME remove prints
-                        print("*************************************")
-                        print(boundDict)
-                        print("*************************************")                        
-                        print("var={}, varOrig={}".format(var,varOrig)                        )
-                    assert varOrig in boundDictCopy
-                    boundDictCopy[varOrig] = (value, value)
-            boundDict = boundDictCopy
+        for j in random.sample(range(len(self.ds.x_test)), 10):
+            tfout = absLayerActivation[j]
+            mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
+            assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout, atol=1e-4) )
+            assert np.all( np.isclose(tfout, CnnAbs.reshapeMbouOut(mbouout, tfout.shape), atol=1e-4 ) )
+        absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)]
+        steps = list(policy.steps(len(absLayerRankAcsending)))
+        batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))]
+        return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
+
+    @staticmethod
+    def flattenTF(tfout):
+        assert len(tfout.shape) == 3
+        if tfout.shape[2] > 1:
+            tfout = np.swapaxes(tfout, 0, 2)
+            tfout = np.swapaxes(tfout, 1, 2)
+        return tfout.flatten()
+
+    @staticmethod    
+    def reshapeMbouOut(mbouout, shape):
+        assert len(shape) == 3        
+        shape = np.roll(shape, 1)
+        return np.swapaxes(np.swapaxes(mbouout.reshape(shape), 1, 2), 0, 2)
+                
+    def abstractAndPrune(self, model, abstractNeurons, boundDict):
+        modelAbstract = copy.deepcopy(model)
+        modelAbstract.equList  = [eq for eq in modelAbstract.equList  if eq.addendList[-1][1] not in abstractNeurons]
+        modelAbstract.maxList  = [pw for pw in modelAbstract.maxList  if pw[1]                not in abstractNeurons]        
+        modelAbstract.reluList = [pw for pw in modelAbstract.reluList if pw[1]                not in abstractNeurons]
+        modelAbstract.absList  = [pw for pw in modelAbstract.absList  if pw[1]                not in abstractNeurons]
+        modelAbstract.signList = [pw for pw in modelAbstract.signList if pw[1]                not in abstractNeurons]
+        modelAbstract.inputVars.append(np.array(list(abstractNeurons)))
+        for v in abstractNeurons:
+            modelAbstract.setLowerBound(v, boundDict[v][0])
+            modelAbstract.setUpperBound(v, boundDict[v][1])        
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.pruneUnreachableNeurons(modelAbstract, modelAbstract.outputVars.flatten().tolist())
+        return modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
+
+    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
+
+        startLocal = time.time()    
+        self.subResultAppend()
+        finalQueryStats = self.dumpQueryStats(model, "finalQueryStats_" + runName)
         
         CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
-        if not fromDumpedQuery:
-            mbouNet, originalQueryStats, finalQueryStats, inputVarsMapping, outputVarsMapping, varsMapping, inputs = self.genAdvMbouNet(model, prop, boundDict, runName, coi)
-            ipq = mbouNet.getMarabouQuery()
-            if onlyDump:
-                return None
-        else:
-            ipq = Marabou.load_query(self.dumpDir + "IPQ_" + runName)
         if self.optionsObj._timeoutInSeconds <= 0:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        vals, stats = Marabou.solve_query(ipq, verbose=False, options=self.optionsObj)
+        vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=False, options=self.optionsObj)
         CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
-        if fromDumpedQuery:
-            originalQueryStats = self.loadJson("originalQueryStats_" + runName)
-            finalQueryStats = self.loadJson("finalQueryStats_" + runName)
-            inputVarsMapping = self.loadNpArray("inputVarsMapping_" + runName)
-            outputVarsMapping = self.loadNpArray("outputVarsMapping_" + runName)
-            varsMapping = {int(k) : v for k,v in self.loadJson("varsMapping_" + runName).items()}
-            inputs = self.loadJson("inputs_" + runName)
         if not sat:
             if timedOut:
                 result = ResultObj("timeout")
@@ -484,24 +535,23 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
         else:
-            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=coi, valueRange=self.ds.valueRange)
-            self.dumpCex(cex, cexPrediction, prop, runName, model)
+            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
+            self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
             self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
             self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction, inputDict, outputDict)
-            result.inputs = inputs
             result.vals = vals
             result.varsMapping = varsMapping
             CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
-        result.setStats(originalQueryStats, finalQueryStats)
+        result.setStats(originalQueryStats, finalQueryStats)            
 
         endLocal = time.time()
-        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats, sat=result.sat(), timedOut=result.timedOut(), rerun=rerun)
+        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
         self.tickGtimeout()
-        return result
+        return result                   
 
-    def setLogger(suffix=''):
+    def setLogger(suffix=''): #FIXME need single logger.
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = 'cnnAbsTB{}.log'.format(suffix), filemode = "w")
         CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
         CnnAbs.logger.setLevel(logging.INFO)
@@ -556,15 +606,21 @@ class CnnAbs:
         else:
             modelPrediction = None
         mbouPrediction = cexPrediction.argmax()
-#        FIXME: This assertion is incorrect unless I require ySecond to be maximal, which I don't.
-#        if prop.ySecond != mbouPrediction: 
-#            print("prop.ySecond={}, mbouPrediction={}".format(prop.ySecond, mbouPrediction))
-#            print("cexPrediction={}".format(cexPrediction))
-#            assert prop.ySecond == mbouPrediction
+        plt.figure()
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
-        plt.imshow(cex.reshape(prop.xAdv.shape[:-1]), cmap='Greys')
+        plt.imshow(np.squeeze(cex), cmap='Greys')
+        plt.colorbar()
         plt.savefig("Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName), saveAtLog=True)
+        
+        diff = np.abs(cex - prop.xAdv)
+        #assert np.max(diff) <= prop.inDist
+        plt.figure()
+        plt.title('Distance between pixels: CEX and adv. sample')
+        plt.imshow(np.squeeze(diff), cmap='Greys')
+        plt.colorbar()
+        plt.savefig("DiffCexXAdv_{}".format(runName) + ".png")
+        self.dumpNpArray(diff, "DiffCexXAdv_{}".format(runName), saveAtLog=True)
 
     @staticmethod
     def dumpCoi(inputVarsMapping, runName):
@@ -664,10 +720,6 @@ class ModelUtils:
         self.ds = ds
         self.optionsObj = optionsObj
 
-    @classmethod
-    def incNumClones(cls):
-        cls.numClones += 1
-
     @staticmethod
     def outputModelPath(m, suffix=""):
         if suffix:
@@ -676,141 +728,24 @@ class ModelUtils:
         
 
     @staticmethod
-    def tf2MbouOnnx(model):
+    def tf2Mbou(model):
         modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
-        return monnx.MarabouNetworkONNX(modelOnnxName)
+        return MarabouNetworkONNX.MarabouNetworkONNX(modelOnnxName)
                        
     def intermidModel(model, layerName):
         if layerName not in [l.name for l in model.layers]:
             layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
-        return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)
+        return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
+
+    def dumpBounds(self, mbouModel):
+        mbouModelCopy = copy.deepcopy(mbouModel)
+        return self.processInputQuery(mbouModelCopy) 
         
-    #https://keras.io/getting_started/faq/#how-can-i-obtain-the-output-of-an-intermediate-layer-feature-extraction
-    def compareModels(origM, absM):
-        CnnAbs.printLog("compareModels - Starting evaluation of differances between models.")
-        layersOrig = [l.name for l in origM.layers]
-        layersAbs  = [l.name for l in absM.layers if ("rplc" not in l.name or "rplcOut" in l.name)]
-        log = []
-        equal_full   = np.all(np.equal  (origM.predict(self.ds.x_test), absM.predict(self.ds.x_test)))
-        isclose_full = np.all(np.isclose(origM.predict(self.ds.x_test), absM.predict(self.ds.x_test)))
-        CnnAbs.printLog("equal_full={:>2}, equal_isclose={:>2}".format(equal_full, isclose_full))
-        for lo, la in zip(layersOrig, layersAbs):
-            mid_origM = intermidModel(origM, lo)
-            mid_absM  = intermidModel(absM , la)
-            CnnAbs.printLog("compare {} to {}".format(lo, la))
-            w_equal = (len(origM.get_layer(name=lo).get_weights()) == len(absM.get_layer(name=la).get_weights())) and all([np.all(np.equal(wo,wa)) for wo,wa in zip(origM.get_layer(name=lo).get_weights(), absM.get_layer(name=la).get_weights())])
-            equal   = np.all(np.equal  (mid_origM.predict(self.ds.x_test), mid_absM.predict(self.ds.x_test)))
-            isclose = np.all(np.isclose(mid_origM.predict(self.ds.x_test), mid_absM.predict(self.ds.x_test)))
-            log.append(equal)
-            CnnAbs.printLog("layers: orig={:>2} ; abs={:>20}, equal={:>2}, isclose={:>2}, w_equal={:>2}".format(lo, la, equal, isclose, w_equal))
-        return log
-    
-    def dumpBounds(self, model, xAdv, inDist, outSlack, yMax, ySecond):
-        modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
-        modelOnnxName = ModelUtils.outputModelPath(model)
-        keras2onnx.save_model(modelOnnx, modelOnnxName)
-        modelOnnxMarabou  = monnx.MarabouNetworkONNX(modelOnnxName)
-        InputQueryUtils.setAdversarial(modelOnnxMarabou, xAdv, inDist, outSlack, yMax, ySecond, valueRange=self.ds.valueRange)
-        return self.processInputQuery(modelOnnxMarabou)
-    
     def processInputQuery(self, net):
         net.saveQuery("processInputQuery")
-        return MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
-    
-    #FIXME should work on MaxPool layers too
-    #replaceW, replaceB = maskAndDensifyNDimConv(np.ones((2,2,1,1)), np.array([0.5]), np.ones((3,3,1)), (3,3,1), (3,3,1), (1,1))
-    def maskAndDensifyNDimConv(origW, origB, mask, convInShape, convOutShape, strides, cfg_dis_w=False):
-        #https://stackoverflow.com/questions/36966392/python-keras-how-to-transform-a-dense-layer-into-a-convolutional-layer
-        if convOutShape[0] == None:
-            convOutShape = convOutShape[1:]
-        if convInShape[0] == None:
-            convInShape = convInShape[1:]
-        replaceW = np.zeros((np.prod(convInShape), np.prod(convOutShape)))
-        replaceB = np.zeros(np.prod(convOutShape))
-        fDim = origW.shape[:-2] # W/O in/out channels.
-    
-        sOff = [int(np.prod(convInShape[i+1:]))  for i in range(len(convInShape))]
-        tOff = [int(np.prod(convOutShape[i+1:])) for i in range(len(convOutShape))]
-    
-        tCoors = product(*[range(d) for d in convOutShape[:-1]])
-        inChNum = origW.shape[-2]
-        outChNum = origW.shape[-1]
-        for tCoor in tCoors:
-            if mask[tCoor]:
-                sCoors = product(*[[coor for coor in [j*s+t for j in range(f)] if coor < i] for f,s,t,i in zip(fDim, strides, tCoor, convInShape)])
-                sCoors = list(sCoors)
-                wMats  = [origW[coor] for coor in product(*[range(d) for d in fDim])]
-                for sCoor, wMat in zip(sCoors, wMats):
-                    for in_ch, out_ch in product(range(inChNum), range(outChNum)):
-                        sCoorFlat = sum([coor * off for coor, off in zip((*sCoor, in_ch) , sOff)])
-                        tCoorFlat = sum([coor * off for coor, off in zip((*tCoor, out_ch), tOff)])
-                        if wMat[in_ch, out_ch].shape != ():
-                            raise Exception("wMat[x,y] values should be scalars. shape={}".format( wMat[in_ch, out_ch].shape))
-                        replaceW[sCoorFlat, tCoorFlat] = np.ones(wMat[in_ch, out_ch].shape) if cfg_dis_w else wMat[in_ch, out_ch].item()
-                        replaceB[tCoorFlat] = origB[out_ch]
-    
-        return replaceW, replaceB
-    
-    def cloneAndMaskConvModel(self, origM, rplcLayerName, mask, evaluate=True):
-        inputShape = self.ds.input_shape
-        rplcIn = origM.get_layer(name=rplcLayerName).input_shape
-        rplcOut = origM.get_layer(name=rplcLayerName).output_shape
-        origW = origM.get_layer(name=rplcLayerName).get_weights()[0]
-        origB = origM.get_layer(name=rplcLayerName).get_weights()[1]
-        strides = origM.get_layer(name=rplcLayerName).strides
-        clnW, clnB = ModelUtils.maskAndDensifyNDimConv(origW, origB, mask, rplcIn, rplcOut, strides)
-        clnLayers = [tf.keras.Input(shape=inputShape, name="input_clnM")]
-        toSetWeights = {}
-        lSuffix = "_clnM_{}".format(ModelUtils.numClones)
-        for l in origM.layers:
-            if l.name == rplcLayerName:
-                clnLayers.append(layers.Flatten(name=(rplcLayerName + "_f_rplc" + lSuffix)))
-                clnLayers.append(layers.Dense(units=np.prod(rplcOut[1:]), activation=l.activation, name=(rplcLayerName + "_rplcConv" + lSuffix)))
-                toSetWeights[(rplcLayerName + "_rplcConv" + lSuffix)] = [clnW, clnB]
-                clnLayers.append(layers.Reshape(rplcOut[1:], name=(rplcLayerName + "_rshp_rplcOut" + lSuffix)))
-            else:
-                if isinstance(l, tf.keras.layers.Dense):
-                    newL = tf.keras.layers.Dense(l.units, activation=l.activation, name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.Conv2D):
-                    newL = tf.keras.layers.Conv2D(l.get_weights()[0].shape[3], kernel_size=l.get_weights()[0].shape[0:2], activation=l.activation, name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.MaxPooling2D):
-                    newL = tf.keras.layers.MaxPooling2D(pool_size=l.pool_size, name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.Flatten):
-                    newL = tf.keras.layers.Flatten(name=(l.name + lSuffix))
-                elif isinstance(l, tf.keras.layers.Dropout):
-                    newL = tf.keras.layers.Dropout(l.rate, name=(l.name + lSuffix))
-                else:
-                    raise Exception("Not implemented")
-                toSetWeights[newL.name] = l.get_weights()
-                clnLayers.append(newL)
-        clnM = tf.keras.Sequential(
-            clnLayers,
-            name=("AbsModel_{}".format(ModelUtils.numClones))
-        )
-        ModelUtils.incNumClones()
-    
-        clnM.build(input_shape=self.ds.featureShape)
-        clnM.compile(loss=self.ds.loss, optimizer=self.ds.optimizer, metrics=self.ds.metrics)
-        clnM.summary()
-    
-        for l,w in toSetWeights.items():
-            clnM.get_layer(name=l).set_weights(w)
-    
-        if evaluate:
-            score = clnM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            CnnAbs.printLog("(Clone, neurons masked:{}%) Test loss:{}".format(100*(1 - np.average(mask)), score[0]))
-            CnnAbs.printLog("(Clone, neurons masked:{}%) Test accuracy:{}".format(100*(1 - np.average(mask)), score[1]))
-    
-            if np.all(np.equal(mask, np.ones_like(mask))):
-                if np.all(np.isclose(clnM.predict(self.ds.x_test), origM.predict(self.ds.x_test))):
-                    #if np.all(np.equal(clnM.predict(self.ds.x_test), origM.predict(self.ds.x_test))):
-                    CnnAbs.printLog("Prediction aligned")
-                else:
-                    CnnAbs.printLog("Prediction not aligned")
-    
-        return clnM
+        return MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)    
     
     def genValidationModel(self, validation):
         if "base" in validation: 
@@ -863,7 +798,6 @@ class ModelUtils:
     def genCnnForAbsTest(self, cfg_limitCh=True, cfg_freshModelOrig=False, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small", validation=None):
     
         CnnAbs.printLog("Starting model building")
-        #https://keras.io/examples/vision/mnist_convnet/
     
         if not validation:
             savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
@@ -908,7 +842,6 @@ class ModelUtils:
             origM.summary()
     
             origM.compile(optimizer=self.ds.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
-            #origM.compile(optimizer=self.ds.optimizer, loss=self.ds.loss, metrics=self.ds.metrics)
             origM.fit(self.ds.x_train, self.ds.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
     
             score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
@@ -919,7 +852,6 @@ class ModelUtils:
     
         else:
             origM = load_model(basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss})
-            #origM = load_model(basePath + "/" + savedModelOrig)
             origM.summary()
             score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
             CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
@@ -963,7 +895,7 @@ class ModelUtils:
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
-        #FIXME if I will require ySecond to be max, spurious definition will have to change to force it.
+        #If I will require ySecond to be max, spurious definition will have to change to force it.
         if not spuriousStrict:
             return prediction.argmax() == yCorrect
         return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
@@ -1033,27 +965,20 @@ class InputQueryUtils:
                 if (eq.addendList[-1][1] in layer) and (eq.EquationType == MarabouCore.Equation.EQ):
                     [nextLayer.add(el[1]) for el in eq.addendList[:-1] if el[0] != 0]
                     layerType[0].add("Linear")
-                    #[print("Adding eq {}".format(el[1])) for el in eq.addendList[:-1] if el[0] != 0]                    
             for maxArgs, maxOut in net.maxList:
                 if maxOut in layer:
                     [nextLayer.add(arg) for arg in maxArgs]
                     layerType[0].add("Max")
-                    #[print("Adding max {}".format(arg)) for arg in maxArgs]
             [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in net.reluList if vout in layer]
             [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in net.absList  if vout in layer]
             [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in net.signList if vout in layer]
             if not layerType[0]:
                 layerType[0].add("Input")
-            #[print("Adding relu {}".format(vin)) for vin,vout in net.reluList if vout in layer]
-            #[print("Adding abs {}".format(vin)) for vin,vout in net.absList  if vout in layer]
-            #[print("Adding sign {}".format(vin)) for vin,vout in net.signList if vout in layer]            
             layer = nextLayer
             assert not nextLayerWas0
             nextLayerWas0 = len(nextLayer) == 0
-            #print(len(layerMappingReverse))
             layerNum += 1
         layerMapping = dict()
-        #print("layerlNum={}".format(layerNum))
         for v,l in layerMappingReverse.items():
             layerMapping[v] = layerNum - l - 1
         assert all([i in layerMapping for i in net.inputVars[0].flatten().tolist()])
@@ -1062,7 +987,8 @@ class InputQueryUtils:
         return layerList, layerType
 
     @staticmethod        
-    def removeRedundantVariables(net, varSet, keepSet=True): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+    def removeVariables(net, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+
         if not keepSet:        
             net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
             net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
@@ -1072,7 +998,7 @@ class InputQueryUtils:
         varSetList = list(varSet)
         varSetList.sort()
         varSetDict = {v:i for i,v in enumerate(varSetList)}
-        assert varSet == set(varSetDict.keys())
+        assert set(varSet) == set(varSetDict.keys()) and len(set(varSet)) == len(varSet)
         tr = lambda v: varSetDict[v] if v in varSetDict else -1
         varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
         
@@ -1102,7 +1028,8 @@ class InputQueryUtils:
                 newEq.scalar = eq.scalar
                 newEq.EquationType = eq.EquationType
                 newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
-                newEquList.append(newEq)
+                if all([v != -1 for (c, v) in newEq.addendList]):
+                    newEquList.append(newEq)
         net.equList  = newEquList
         net.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
         net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in varSet]
@@ -1112,7 +1039,10 @@ class InputQueryUtils:
         net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
         inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
         outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
-        net.inputVars  = [np.array([tr(v) for v in net.inputVars[0].flatten().tolist()  if v in varSet])]
+        if keepInputShape:
+            assert all([v in varSet for inp in net.inputVars for v in inp.flatten().tolist()])
+        else:
+            net.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in net.inputVars]
         net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
         net.numVars = len(varSetList)
         if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
@@ -1120,7 +1050,7 @@ class InputQueryUtils:
         return inputVarsMapping, outputVarsMapping, varsMapping
 
     @staticmethod
-    def setCOIBoundes(net, init):
+    def pruneUnreachableNeurons(net, init):
     
         CnnAbs.printLog("net.numVars={}".format(net.numVars))    
         CnnAbs.printLog("len(net.equList)={}".format(len(net.equList)))
@@ -1135,7 +1065,6 @@ class InputQueryUtils:
     
         reach = set(init)
         lastLen = 0
-        #border = set()
         while len(reach) > lastLen:
             lastLen = len(reach)
             reachPrev = reach.copy()
@@ -1143,8 +1072,6 @@ class InputQueryUtils:
                 tw, tv = eq.addendList[-1]
                 if (tv in reachPrev) and (tw == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
                     [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
-          #          if [v for w,v in eq.addendList[:-1] if w == 0]:
-          #              border.add(tv)
                 elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                     [reach.add(v) for w,v in eq.addendList]
                     CnnAbs.printLog("eqi={}, eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eqi, eq.addendList, eq.scalar, eq.EquationType))
@@ -1160,7 +1087,7 @@ class InputQueryUtils:
     
         CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
     
-        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeRedundantVariables(net, reach)
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeVariables(net, reach)
         for eq in net.equList:
             for w,v in eq.addendList:
                 if v > net.numVars:
@@ -1179,16 +1106,6 @@ class InputQueryUtils:
         return inputVarsMapping, outputVarsMapping, varsMapping
 
     @staticmethod
-    def setBounds(model, boundDict):
-        if boundDict:
-            for i, (lb, ub) in boundDict.items():                
-                if i < model.numVars: #This might mean that there is disalignment between the queries' definition of variables
-                    if (i not in model.lowerBounds) or (model.lowerBounds[i] < lb):
-                        model.setLowerBound(i,lb)
-                    if (i not in model.upperBounds) or (ub < model.upperBounds[i]):
-                        model.setUpperBound(i,ub)
-
-    @staticmethod
     def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
         assert valueRange is not None
         assert floatingPointErrorGap >= 0
@@ -1201,34 +1118,18 @@ class InputQueryUtils:
         l += floatingPointErrorGap
         return l, u
 
-#    @staticmethod
-#    def getBoundsInftyBall(x, r, pos=True, floatingPointErrorGap=0, valueRange=None):
-#        if r > floatingPointErrorGap and floatingPointErrorGap > 0:
-#            r -= floatingPointErrorGap
-#        if pos:
-#            return np.maximum(x - r,np.zeros(x.shape)), x + r    
-#        return x - r, x + r
-
     @staticmethod    
-    def inBoundsInftyBall(x, r, p, allowClose=False, valueRange=None):
-        if p.shape != x.shape:
-            print("p.shape={}".format(p.shape))
-            print("x.shape={}".format(x.shape))
+    def inBoundsInftyBall(x, r, p, valueRange=None):
         assert p.shape == x.shape
         l,u = InputQueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
-        if allowClose:
-            geqLow = np.logical_or(np.less_equal(l,p), np.isclose(l,p))    
-            leqUp  = np.logical_or(np.less_equal(p,u), np.isclose(p,u))
-        else:
-            geqLow = np.less_equal(l,p)
-            leqUp  = np.less_equal(p,u)
+        geqLow = np.less_equal(l,p)
+        leqUp  = np.less_equal(p,u)
         inBounds = np.logical_and(geqLow, leqUp)
         violations = np.logical_not(inBounds)
         assert violations.shape == x.shape
         return np.all(inBounds), violations
 
     @staticmethod
-    #FIXME what happens if the property forces yBad to be maximal and not only greater than yCorrect.
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
         inAsNP = np.array(net.inputVars[0])
         x = x.reshape(inAsNP.shape)
