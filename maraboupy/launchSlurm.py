@@ -14,7 +14,7 @@ import numpy as np
 ####################################################################################################
 
 def absPolicies():
-    return ['Centered', 'AllClassRank', 'SingleClassRank', 'MajorityClassVote', 'Random', 'SampleRank']
+    return ['Centered', 'AllSamplesRank', 'SingleClassRank', 'MajorityClassVote', 'Random', 'SampleRank']
     
 def solvingPolicies():
     return absPolicies() + ['Vanilla']
