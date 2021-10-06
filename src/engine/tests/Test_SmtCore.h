@@ -140,23 +140,22 @@ public:
             return dontCare;
         }
 
+        void updateVariableIndex( unsigned, unsigned )
+        {
+        }
 
-		void updateVariableIndex( unsigned, unsigned )
-		{
-		}
-
-		void eliminateVariable( unsigned, double )
-		{
-		}
+        void eliminateVariable( unsigned, double )
+        {
+        }
 
         bool constraintObsolete() const
         {
             return false;
         }
 
-		void preprocessBounds( unsigned, double, Tightening::BoundType )
-		{
-		}
+        void preprocessBounds( unsigned, double, Tightening::BoundType )
+        {
+        }
 
         void getEntailedTightenings( List<Tightening> & ) const
         {

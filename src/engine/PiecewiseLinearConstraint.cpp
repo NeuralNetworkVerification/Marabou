@@ -17,7 +17,7 @@
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
-    : _numCases(0)
+    : _numCases( 0 )
     , _constraintActive( true )
     , _phaseStatus( PHASE_NOT_FIXED )
     , _boundManager( nullptr )

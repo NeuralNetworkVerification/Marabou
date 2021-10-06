@@ -502,7 +502,7 @@ protected:
     /*
        Method obtains lower bound of *var*.
      */
-    inline double getLowerBound( unsigned var ) const 
+    inline double getLowerBound( unsigned var ) const
     {
         return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
                                             : _lowerBounds[var];
@@ -511,7 +511,7 @@ protected:
     /*
        Method obtains upper bound of *var*.
      */
-    inline double getUpperBound( unsigned var ) const 
+    inline double getUpperBound( unsigned var ) const
     {
         return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
                                             : _upperBounds[var];
