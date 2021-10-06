@@ -20,7 +20,7 @@
 #include "Statistics.h"
 
 DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts )
-    : ContextDependentPiecewiseLinearConstraint( disjuncts.size() )
+    : PiecewiseLinearConstraint( disjuncts.size() )
     , _disjuncts( disjuncts.begin(), disjuncts.end() )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
@@ -31,7 +31,7 @@ DisjunctionConstraint::DisjunctionConstraint( const List<PiecewiseLinearCaseSpli
 }
 
 DisjunctionConstraint::DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts )
-    : ContextDependentPiecewiseLinearConstraint( disjuncts.size() )
+    : PiecewiseLinearConstraint( disjuncts.size() )
     , _disjuncts( disjuncts )
     , _feasibleDisjuncts( disjuncts.size(), 0 )
 {
@@ -52,7 +52,7 @@ PiecewiseLinearFunctionType DisjunctionConstraint::getType() const
     return PiecewiseLinearFunctionType::DISJUNCTION;
 }
 
-ContextDependentPiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
+PiecewiseLinearConstraint *DisjunctionConstraint::duplicateConstraint() const
 {
     DisjunctionConstraint *clone = new DisjunctionConstraint( _disjuncts );
     *clone = *this;
