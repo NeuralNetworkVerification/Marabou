@@ -412,7 +412,7 @@ lines = []
 for sums, label, marker, color in zip(sumRuntimes, cactusLabels, cactusMarkers, cactusColors):
     solved = [0] + list(range(1,len(sums)+1))
     sums = [0] + sums
-    dumpJson({'x': sums, 'y': solved}, 'CactusTotalRuntime_pltstep')
+    dumpJson({'x': sums, 'y': solved}, 'CactusTotalRuntime_pltstep_{}'.format(label))
     p = plt.step(sums, solved, label=label, where="post", c=color)
     #plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=0.3, c=color)
     plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=1, facecolor='none', edgecolor=color)
