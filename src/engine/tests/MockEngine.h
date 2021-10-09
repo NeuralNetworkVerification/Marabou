@@ -21,6 +21,8 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 
+class String;
+
 class MockEngine : public IEngine
 {
 public:
@@ -31,7 +33,7 @@ public:
 
         lastStoredState = NULL;
     }
-    
+
     ~MockEngine()
     {
     }
@@ -189,6 +191,10 @@ public:
             }
         else
             return NULL;
+    }
+
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
+    {
     }
 };
 

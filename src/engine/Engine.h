@@ -73,6 +73,9 @@ public:
     bool processInputQuery( InputQuery &inputQuery );
     bool processInputQuery( InputQuery &inputQuery, bool preprocess );
 
+    InputQuery prepareSnCInputQuery( );
+    void exportInputQueryWithError( String errorMessage );
+
     /*
       If the query is feasiable and has been successfully solved, this
       method can be used to extract the solution.
@@ -173,6 +176,11 @@ public:
     void resetSmtCore();
     void resetExitCode();
     void resetBoundTighteners();
+
+    /*
+       Register initial split when in SnC mode
+     */
+    void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
 private:
     enum BasisRestorationRequired {
@@ -375,6 +383,18 @@ private:
     bool _isGurobyEnabled;
     bool _isSkipLpTighteningAfterSplit;
     MILPSolverBoundTighteningType _milpSolverBoundTighteningType;
+
+    /*
+      SnC Split
+     */
+    bool _sncMode;
+    PiecewiseLinearCaseSplit _sncSplit;
+
+    /*
+      Query Identifier
+     */
+    String _queryId;
+
 
     /*
       Perform a simplex step: compute the cost function, pick the

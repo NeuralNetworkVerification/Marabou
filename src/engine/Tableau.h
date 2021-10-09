@@ -16,6 +16,7 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
+#include "BoundManager.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
 #include "MString.h"
@@ -548,6 +549,12 @@ private:
     */
     double *_lowerBounds;
     double *_upperBounds;
+
+    /*
+       BoundManager object stores bounds of all variables.
+       NOT YET IN USE
+     */
+    BoundManager *_boundManager;
 
     /*
       Whether all variables have valid bounds (l <= u).
