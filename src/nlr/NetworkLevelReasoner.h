@@ -124,6 +124,7 @@ public:
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
+    void clearConstraintTightenings();
 
     /*
       For debugging purposes: dump the network topology

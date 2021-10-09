@@ -137,6 +137,11 @@ void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenin
     _boundTightenings.clear();
 }
 
+void NetworkLevelReasoner::clearConstraintTightenings()
+{
+    _boundTightenings.clear();
+}
+
 void NetworkLevelReasoner::symbolicBoundPropagation()
 {
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
