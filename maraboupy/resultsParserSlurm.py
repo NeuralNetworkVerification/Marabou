@@ -13,6 +13,12 @@ import matplotlib.lines as mlines
 from datetime import datetime
 import shutil
 
+def dumpJson(data, name):
+    if not name.endswith(".json"):
+        name += ".json"
+    with open(name, "w") as f:
+        json.dump(data, f, indent = 4)
+            
 def pctFunc(pct, data):
     absolute = int(np.round(pct/100.*np.sum(data)))
     return "{:1.1f}%\n({})".format(pct, absolute) if pct > 0 else ""
@@ -78,20 +84,23 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
     y = [yDict[xparam]["totalRuntime"] for xparam in mutual]
     c = []
     markerArr = []
-    chooseMarker = lambda mark: 'o' if mark == 'UNSAT' else ('x' if mark == 'SAT' else '*')
+    chooseMarker = lambda mark: 'o' if mark == 'UNSAT' else ('X' if mark == 'SAT' else '*')
     for xparam in mutual:
         xResult = xDict[xparam]["result"].upper()
         yResult = yDict[xparam]["result"].upper()
         assert not (xResult == "SAT"   and yResult == "UNSAT")
         assert not (xResult == "UNSAT" and yResult == "SAT"  )
         if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]):
-            c.append(cellColor(xResult))
+            if yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]:
+                c.append(cellColor(xResult))
+            else:
+                c.append(cellColor('TIMEOUT'))
             markerArr.append(chooseMarker(xResult))
         else:
             assert (yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"])
-            c.append(cellColor(yResult))
+            c.append(cellColor('TIMEOUT'))
             markerArr.append(chooseMarker(yResult))
-            
+
     xyCountSame = countSame(x,y)
     for _x, _y, _c, _m in zip(x, y, c, markerArr):
         ax.scatter(_x, _y, s=70, marker=_m, facecolor='none', edgecolor=_c)
@@ -403,6 +412,7 @@ lines = []
 for sums, label, marker, color in zip(sumRuntimes, cactusLabels, cactusMarkers, cactusColors):
     solved = [0] + list(range(1,len(sums)+1))
     sums = [0] + sums
+    dumpJson({'x': sums, 'y': solved}, 'CactusTotalRuntime_pltstep')
     p = plt.step(sums, solved, label=label, where="post", c=color)
     #plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=0.3, c=color)
     plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=1, facecolor='none', edgecolor=color)
