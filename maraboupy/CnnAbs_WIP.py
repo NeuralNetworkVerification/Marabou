@@ -19,7 +19,6 @@ from enum import Enum, auto
 import json
 import random
 from tensorflow.keras.models import load_model
-#from launchSlurm_WIP import *
 
 import copy
 
@@ -464,8 +463,11 @@ class CnnAbs:
             return [set()]
         layerList, layerTypes = InputQueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
-        absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
-        absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
+        #absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
+        #absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))        
+        absLayer = next(i for i,t in enumerate(layerTypes) if 'Relu' in t)
+        #absLayerLayerName = next(layer.name for layer in modelTF.layers if isinstance(layer, tf.keras.layers.Conv2D))
+        absLayerLayerName = 'c1'
         modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, absLayerLayerName)
         absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
 
