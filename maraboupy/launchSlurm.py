@@ -233,7 +233,7 @@ def main():
     ####################################################################################################
     
     timestamp = datetime.now()
-    batchId = "_".join(filter(None, ["slurm", timestamp.strftime("%d-%m-%y"), experiment, cnn_size, validation, timestamp.strftime("%H-%M-%S")]))
+    batchId = "_".join(filter(None, ["Results", timestamp.strftime("%d-%m-%y"), experiment, cnn_size, validation, timestamp.strftime("%H-%M-%S")]))
     basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
     if not os.path.exists(basePath + "logs/"):
         os.mkdir(basePath + "logs/")
