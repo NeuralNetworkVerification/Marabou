@@ -175,7 +175,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
     sbatchCode.append("")
     sbatchCode.append("")
     sbatchCode.append('echo "Ive been launched" > {}/Started'.format(runDirPath))        
-    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTBTF.py {}".format(" ".join(cmd)))
+    sbatchCode.append("stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/CnnAbsTBTF_WIP.py {}".format(" ".join(cmd)))
     sbatchCode.append("")
     sbatchCode.append("date")
 
@@ -233,7 +233,7 @@ def main():
     ####################################################################################################
     
     timestamp = datetime.now()
-    batchId = "_".join(filter(None, ["slurm", timestamp.strftime("%d-%m-%y"), experiment, cnn_size, validation, timestamp.strftime("%H-%M-%S")]))
+    batchId = "_".join(filter(None, ["Results", timestamp.strftime("%d-%m-%y"), experiment, cnn_size, validation, timestamp.strftime("%H-%M-%S")]))
     basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
     if not os.path.exists(basePath + "logs/"):
         os.mkdir(basePath + "logs/")
