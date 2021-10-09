@@ -28,6 +28,7 @@ class EngineState;
 class Equation;
 class PiecewiseLinearCaseSplit;
 class SmtState;
+class String;
 class PiecewiseLinearConstraint;
 
 class IEngine
@@ -49,6 +50,11 @@ public:
       Add equations and apply tightenings from a PL case split.
     */
     virtual void applySplit( const PiecewiseLinearCaseSplit &split ) = 0;
+
+    /*
+      Register initial SnC split
+    */
+    virtual void applySnCSplit( PiecewiseLinearCaseSplit split, String queryId ) = 0;
 
     /*
       Methods for storing and restoring the state of the engine.
