@@ -169,6 +169,9 @@ public:
 		for( unsigned i = 0; i < expl.size(); ++i )
 			if ( !FloatUtils::isZero( expl[i] ) )
 				allZeros = false;
+			else
+				expl[i] = 0;
+
 		if ( allZeros )
 			return isUpper ? groundUBs[var] : groundLBs[var];
 
@@ -178,7 +181,8 @@ public:
 		for ( unsigned i = 0; i < m; ++i )
 		{
 			for ( unsigned j = 0; j < n; ++j )
-				explanationRowsCombination[j] += initialTableau[i][j] * expl[i];
+				if ( !FloatUtils::isZero( initialTableau[i][j] ) )
+					explanationRowsCombination[j] += initialTableau[i][j] * expl[i];
 
 			scalar += initialTableau[i][n] * expl[i];
 		}
