@@ -2758,7 +2758,7 @@ double Tableau::computeRowBound( const TableauRow& row, const bool isUpper ) con
     for ( unsigned i = 0; i < row._size; ++i )
     {
         var = row._row[i]._var;
-        if( FloatUtils::isZero( row[i] ) )
+        if ( FloatUtils::isZero( row[i] ) )
             continue;
 
         multiplier = ( isUpper && FloatUtils::isPositive( row[i] ) ) || ( !isUpper && FloatUtils::isNegative( row[i] ) ) ? _upperBounds[var] : _lowerBounds[var];

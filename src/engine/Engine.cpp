@@ -391,7 +391,6 @@ void Engine::performSimplexStep()
     // Statistics
     _statistics.incNumSimplexSteps();
     struct timespec start = TimeUtils::sampleMicro();
-
     /*
       In order to increase numerical stability, we attempt to pick a
       "good" entering/leaving combination, by trying to avoid tiny pivot
@@ -1203,7 +1202,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
 void Engine::performMILPSolverBoundedTightening()
 {
-	if (GlobalConfiguration::PROOF_CERTIFICATE)
+	if ( GlobalConfiguration::PROOF_CERTIFICATE )
 		return; //TODO change
 
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
@@ -1660,6 +1659,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         }
     }
 
+	updateGBfromCBT();
     adjustWorkMemorySize();
     _rowBoundTightener->resetBounds();
     _constraintBoundTightener->resetBounds();
@@ -1713,8 +1713,6 @@ void Engine::applyAllRowTightenings()
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
 
-//	for ( const auto &tightening : rowTightenings )
-//		validateBounds( tightening._variable, 0.01 ); //TODO delete
 // Checking all bounds here may be inaccurate, since there are ground bounds updates in CBT.
 
 }
@@ -1726,16 +1724,7 @@ void Engine::applyAllConstraintTightenings()
     _constraintBoundTightener->getConstraintTightenings( entailedTightenings );
 
 	// All updates to IT and GB registered by the CBT need to be updated
-	if ( GlobalConfiguration::PROOF_CERTIFICATE )
-	{
-		for (std::pair<unsigned, double> update : _constraintBoundTightener->getUGBUpdates())
-			_groundUpperBounds[update.first] = update.second;
-
-		for (std::pair<unsigned, double> update : _constraintBoundTightener->getLGBUpdates())
-			_groundLowerBounds[update.first] = update.second;
-
-		_constraintBoundTightener->clearEngineUpdates();
-	}
+	updateGBfromCBT();
 
     for ( const auto &tightening : entailedTightenings )
     {
@@ -1750,7 +1739,7 @@ void Engine::applyAllConstraintTightenings()
     // All updates to IT and GB registered by the CBT need to be updated
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
 		for ( const auto &tightening : entailedTightenings ) //TODO delete
-			validateBounds( tightening._variable, 0.01 );
+			validateBounds( tightening._variable, 0.01, tightening._type == Tightening::UB );
 }
 
 void Engine::applyAllBoundTightenings()
@@ -1880,6 +1869,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     _statistics.incNumPrecisionRestorations();
     _rowBoundTightener->clear();
+    updateGBfromCBT();
     _constraintBoundTightener->resetBounds();
 
     // debug
@@ -1902,6 +1892,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.incNumPrecisionRestorations();
 
         _rowBoundTightener->clear();
+        updateGBfromCBT();
         _constraintBoundTightener->resetBounds();
 
         // debug
@@ -1998,6 +1989,8 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSimulation()
 {
+	if ( GlobalConfiguration::PROOF_CERTIFICATE ) // TODO change
+		return;
     if ( _simulationSize == 0 || !_networkLevelReasoner )
     {
         ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
@@ -2125,6 +2118,7 @@ void Engine::resetExitCode()
 
 void Engine::resetBoundTighteners()
 {
+	updateGBfromCBT();
     _constraintBoundTightener->resetBounds();
     _rowBoundTightener->resetBounds();
 }
@@ -2570,7 +2564,7 @@ int Engine::simplexBoundsUpdate()
 void Engine::certifyInfeasibility( const unsigned var ) const
 {
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
-    if (  FloatUtils::lte( computedLower, computedUpper ) )
+    if ( computedLower <= computedUpper )
     	printf("Certification error. gap is %.5lf \n", computedUpper - computedLower );
     //TODO revert upon completing
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
@@ -2637,7 +2631,7 @@ void Engine::normalizeAllExplanations()
 }
 
 
-bool Engine::validateBounds( const unsigned var , const double epsilon ) const
+bool Engine::validateBounds( const unsigned var , const double epsilon, bool isUpper ) const
 {
 	if ( !GlobalConfiguration::PROOF_CERTIFICATE )
 		return true;
@@ -2645,15 +2639,19 @@ bool Engine::validateBounds( const unsigned var , const double epsilon ) const
 	auto certificate = _tableau->ExplainBound( var );
 	ASSERT( certificate->getLength() == _tableau->getM() );
 	certificate->assertLengthConsistency();
-
-	if ( getExplainedBound( var, true ) - _tableau->getUpperBound( var )  > epsilon )
+	if ( isUpper )
 	{
-		printf( "Var: %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
-		return false;
+		if ( getExplainedBound( var, true ) - _tableau->getUpperBound( var )  > epsilon )
+		{
+			printf( "Var %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
+			return false;
+		}
+		return true;
 	}
+
 	if ( getExplainedBound( var, false ) - _tableau->getLowerBound( var )  < -epsilon)
 	{
-		printf( "Var: %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
+		printf( "Var %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
 		return false;
 	}
 	return true;
@@ -2670,7 +2668,7 @@ bool Engine::validateAllBounds( const double epsilon ) const
 	bool res = true;
     //Assuming all tightening were applied
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
-       if ( !validateBounds( var, epsilon ) )
+       if ( !validateBounds( var, epsilon, true ) || !validateBounds( var, epsilon, false ) )
        		res = false;
 
     return res;
@@ -2708,9 +2706,18 @@ void Engine::explainSimplexFailure()
 {
 	if( !GlobalConfiguration::PROOF_CERTIFICATE )
 		return;
+	try
+	{
+		applyAllBoundTightenings();
+	}
+	catch ( InfeasibleQueryException )
+	{
+		updateGBfromCBT();
+	} // In case contradicting bounds will be discovered, might need to update the ground bounds
 
-	applyAllBoundTightenings();
+	checkGroundBounds();
 	validateAllBounds( 0.01 );
+
 	int inf = _tableau->getInfeasibleVar();
 
 	if ( inf < 0 )
@@ -2720,6 +2727,11 @@ void Engine::explainSimplexFailure()
 	{
 		assert( _tableau->checkCostFunctionSlack() );
 		int infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
+		if (infIndex < 0 )
+		{
+			_costFunctionManager->computeCoreCostFunction();
+			infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
+		}
 		assert( infIndex >= 0 );
 		inf = ( int ) _tableau->basicIndexToVariable( infIndex );
 		auto *costRow = _costFunctionManager->createRowOfCostFunction();
@@ -2729,8 +2741,30 @@ void Engine::explainSimplexFailure()
 	}
 
 	assert ( inf >= 0 );
-	validateBounds( inf, 0.01 );
+	validateBounds( inf, 0.01, true );
+	validateBounds( inf, 0.01, false );
 	//printBoundsExplanation( inf );
 	certifyInfeasibility( inf );
 
+}
+
+void Engine::checkGroundBounds()
+{
+	unsigned n = _tableau->getN();
+	for ( unsigned i = 0; i < n; ++i )
+		assert( FloatUtils::gte( _groundUpperBounds[i], _tableau->getUpperBound( i ) ) && FloatUtils::lte( _groundLowerBounds[i], _tableau->getLowerBound( i ) ) );
+}
+
+void Engine::updateGBfromCBT()
+{
+	if ( GlobalConfiguration::PROOF_CERTIFICATE )
+	{
+		for ( std::pair<unsigned, double> update : _constraintBoundTightener->getUGBUpdates() )
+			_groundUpperBounds[update.first] = update.second;
+
+		for ( std::pair<unsigned, double> update : _constraintBoundTightener->getLGBUpdates() )
+			_groundLowerBounds[update.first] = update.second;
+
+		_constraintBoundTightener->clearEngineUpdates();
+	}
 }

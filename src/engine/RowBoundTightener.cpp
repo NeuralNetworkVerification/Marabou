@@ -418,7 +418,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     for ( unsigned i = 0; i < n - m; ++i )
     {
         // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO )
+        if ( _ciSign[i] == ZERO || abs( row[i] ) < 0.00001)
             continue;
 
         lowerBound = auxLb;
@@ -612,6 +612,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
         // Now divide everything by ci, switching signs if needed.
         ci = entry._value;
+		if ( abs( ci ) < 0.00001)
+			continue;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;

@@ -622,7 +622,7 @@ private:
 	 Separately for tightenings and actual bounds
 	 Returns true iff both bounds are epsilon close to their explanations
 	*/
-	bool validateBounds( unsigned var , double epsilon ) const;
+	bool validateBounds( unsigned var , double epsilon, bool isUpper ) const;
 
 	/*
      Validates that all explanations epsilon close to real bounds
@@ -635,6 +635,16 @@ private:
      * Finds the variable causing failure and updates its bounds explanations
      */
     void explainSimplexFailure();
+
+    /*
+     * Sanity check for ground bounds
+     */
+    void checkGroundBounds();
+
+    /*
+     * Updated all ground bound as stored in CBT
+     */
+	void updateGBfromCBT();
 
 };
 
