@@ -739,7 +739,7 @@ class ModelUtils:
             layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
         return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
 
-    def dumpBounds(self, mbouModel):
+    def dumpBounds(self, mbouModel): #FIXME should be moved to CnnAbs Class, rename to propegateBounds
         mbouModelCopy = copy.deepcopy(mbouModel)
         return self.processInputQuery(mbouModelCopy) 
         

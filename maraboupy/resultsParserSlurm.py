@@ -130,6 +130,7 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         if singleFig:
             noWhiteXLabel = xLabel.replace(' ','')
             noWhiteYLabel = yLabel.replace(' ','')
+            dumpJson({'x': x, 'y': y, 'marker':markerArr, 'color':c}, 'CompareProperties-{}_vs_{}'.format(noWhiteXLabel, noWhiteYLabel))
             plt.savefig("CompareProperties-{}_vs_{}.png".format(noWhiteXLabel, noWhiteYLabel), dpi=100)            
         else:
             ax.set_title("Total Runtime: All vs. Vanilla")
