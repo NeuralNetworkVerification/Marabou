@@ -12,6 +12,7 @@ from matplotlib.ticker import MaxNLocator
 import matplotlib.lines as mlines
 from datetime import datetime
 import shutil
+from itertools import chain
 
 def dumpJson(data, name):
     if not name.endswith(".json"):
@@ -91,13 +92,13 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
         assert not (xResult == "SAT"   and yResult == "UNSAT")
         assert not (xResult == "UNSAT" and yResult == "SAT"  )
         if (xResult == yResult) or (yResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]):
-            if yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]:
+            if yResult in ["SAT", "UNSAT"]:
                 c.append(cellColor(xResult))
             else:
                 c.append(cellColor('TIMEOUT'))
             markerArr.append(chooseMarker(xResult))
         else:
-            assert (yResult not in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"])
+            assert (yResult in ["SAT", "UNSAT"]) and (xResult in ["TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"])
             c.append(cellColor('TIMEOUT'))
             markerArr.append(chooseMarker(yResult))
 
@@ -281,13 +282,15 @@ else:
 ####################################################################################################
 ####################################################################################################
 
-
+policies = set()
 results = dict()
 for fullpath in resultsFiles:
     if args.batch and args.batch not in fullpath:
         continue
     with open(fullpath, "r") as f:
         resultDict = json.load(f)
+        if 'cfg_abstractionPolicy' in resultDict:
+            policies.add(resultDict['cfg_abstractionPolicy'])
         if "cfg_runTitle" in resultDict:
             runTitle = resultDict["cfg_runTitle"].split("---")[0]
         else:
@@ -360,11 +363,47 @@ tableLabels = [resultDict['label'] + ' [sec]' for resultDict in resultDicts]
 
 addPlus = lambda runtime: "{:.2f}".format(runtime) if runtime < TIMEOUT_VAL else (str(TIMEOUT_VAL) + "+")
 totalSet = set()
-for resultDict in resultDicts :
+for resultDict in resultDicts :    
     totalSet = totalSet | set(resultDict.keys())
 xparamTotal = list(totalSet)
 xparamTotal.remove('label')
 xparamTotal.sort()
+
+#notVanilla = 0 if 'vanilla' not in resultDicts[0]['label'].lower() else 1
+#mutualSet = set(resultDicts[0].keys())
+#mutualSetNoVanilla = set(resultDicts[notVanilla].keys())
+#for resultDict in resultDicts :
+#    if not 'vanilla' in resultDict['label'].lower():
+#        mutualSetNoVanilla = mutualSetNoVanilla & set(resultDict.keys())
+#    mutualSet = mutualSet & set(resultDict.keys())
+#xparamMutual = list(mutualSet)
+#xparamMutual.remove('label')
+#xparamMutual.sort()
+#xparamMutualNoVanilla = list(mutualSetNoVanilla)
+#xparamMutualNoVanilla.remove('label')
+#xparamMutualNoVanilla.sort()
+
+solvedSamples = {policy : set() for policy in policies}
+for resultDict in resultDicts:
+    for policy in policies:
+        if policy.lower() in resultDict['label'].lower():
+            for sample in resultDict.keys():
+                if sample != 'label' and resultDict[sample]['result'] in ['SAT', 'UNSAT']:
+                    solvedSamples[policy].add(sample)
+
+for policy in policies:                    
+    solvedSamples[policy] = list(solvedSamples[policy])
+totalSolved = list(set(chain(*solvedSamples.values())))
+mutualSetNoVanilla = set(solvedSamples['Random'])
+mutualSet = set(solvedSamples['Random'])
+for policy, solved in solvedSamples.items():
+    if policy != 'Vanilla':
+        mutualSetNoVanilla = mutualSetNoVanilla & set(solved)
+    mutualSet = mutualSet & set(solved)
+solvedSamples['mutualNoVanilla'] = list(mutualSetNoVanilla)
+solvedSamples['mutual'] = list(mutualSet)
+solvedSamples['total'] = totalSolved
+dumpJson(solvedSamples, 'solvedSamples')
 
 runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in xparamTotal] for resultDict in resultDicts]
 runtimesTotal   = [[addPlus(resultDict[s]["totalRuntime"])  if s in resultDict else -1        for s in xparamTotal] for resultDict in resultDicts]
@@ -441,6 +480,32 @@ plt.legend(handles=lines)
 setFigSize()
 plt.grid(True)
 plt.savefig("CactusTotal.png", bbox_inches="tight", dpi=100)
+plt.close()
+
+####################################################################################################
+####################################################################################################
+####################################################################################################
+
+plt.figure()
+runtimesMutualSolved = [[resultDict[s]["totalRuntime"] for s in solvedSamples['mutualNoVanilla'] if (s in resultDict) and ('vanilla' not in resultDict['label'].lower()) and (resultDict[s]["result"] in ["SAT", "UNSAT"])] for resultDict in resultDicts]
+[result.sort() for result in runtimesMutualSolved]
+sumRuntimes = [[sum(result[:i+1]) for i in range(len(result))] for result in runtimesMutualSolved]
+lines = []
+for sums, label, marker, color in zip(sumRuntimes, cactusLabels, cactusMarkers, cactusColors):
+    if 'vanilla' in label.lower():
+        continue
+    solved = [0] + list(range(1,len(sums)+1))
+    sums = [0] + sums
+    dumpJson({'x': sums, 'y': solved}, 'CactusTotalRuntime_pltstep_InstancesSolvedByAll_{}'.format(label))
+    p = plt.step(sums, solved, label=label, where="post", c=color)
+    plt.scatter(sums[-1], solved[-1], s=70, marker=marker, alpha=1, facecolor='none', edgecolor=color)
+    lines.append(mlines.Line2D([], [], markerfacecolor='none', markeredgecolor=color, marker=marker, markersize=10, label=label, color=color))
+plt.xlabel("Total Runtime [sec]")
+plt.ylabel("Instances solved")
+plt.legend(handles=lines)
+setFigSize()
+plt.grid(True)
+plt.savefig("CactusTotal_InstancesSolvedByAll.png", bbox_inches="tight", dpi=100)
 plt.close()
 
 ####################################################################################################
