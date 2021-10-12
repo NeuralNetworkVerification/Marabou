@@ -140,15 +140,24 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
             ax.figure.savefig("CompareProperties-All_vs_Vanilla.png", dpi=100)        
         plt.close()
 
+def countValues(x):
+    values = set(x)
+    values.discard(-1)
+    values = list(values)
+    values.sort()
+    repeats = [len([u for u in x if v == u]) for v in values]
+    return values, repeats
+
 def plotCOIRatio(resultDict):
     plt.figure()
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))    
-    solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT", "TIMEOUT", "GTIMEOUT", "SPURIOUS", "ERROR"]]
+    solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT"]]
     x  = [resultDict[xparam]["finalPartiallity"]["numRuns"]   for xparam in solved]
     y1 = [resultDict[xparam]["finalPartiallity"]["vars"]      for xparam in solved]
     y2 = [resultDict[xparam]["finalPartiallity"]["equations"] for xparam in solved]
+    results = [resultDict[xparam]["result"] for xparam in solved]
     c  = [cellColor(resultDict[xparam]["result"]) for xparam in solved]
     marker = [markerChoice(resultDict[xparam]["result"]) for xparam in solved]
     fig.suptitle("{} - Variables and Equations Ratio, {} Xparams".format(resultDict["label"], len(solved)))
@@ -170,11 +179,9 @@ def plotCOIRatio(resultDict):
     plt.close()
 
     plt.figure()
-    unique = set(y1)
-    unique.discard(-1)
-    unique = list(unique)
-    unique.sort()
-    plt.plot(unique, [len([u for u in y1 if v == u]) for v in unique], marker='o', markerfacecolor='none', color='blue', markeredgecolor='blue')
+    uniqueVarRatio, repeatsVarRatio = countValues(y1)
+    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio}, "VariableRatioHistogram-{}".format(noWhiteLabel))
+    plt.plot(uniqueVarRatio, repeatsVarRatio, marker='o', markerfacecolor='none', color='blue', markeredgecolor='blue')    
 
     plt.xlabel('Remaining Variables Ratio In Successful Run - {}'.format(resultDict['label']))
     plt.ylabel('Num. Samples')
@@ -184,17 +191,24 @@ def plotCOIRatio(resultDict):
     plt.close()
 
     plt.figure()
-    unique = set(x)
-    unique.discard(-1)
-    unique = list(unique)
-    unique.sort()
-    plt.plot(unique, [len([u for u in x if v == u]) for v in unique], marker='x', markerfacecolor='none', color='red', markeredgecolor='red')
+    uniqueNumRuns, repeatsNumRuns = countValues(x)
+    plt.plot(uniqueNumRuns, repeatsNumRuns, marker='x', markerfacecolor='none', color='red', markeredgecolor='red')
+    dumpJson({'numRuns':uniqueNumRuns, 'repeats': repeatsNumRuns}, "NumRunsHistogram-{}".format(noWhiteLabel))
 
     plt.xlabel('Number of solver Runs Till Success - {}'.format(resultDict['label']))
     plt.ylabel('Num. Samples')
     plt.grid(True)    
     plt.savefig("NumRunsHistogram-{}.png".format(noWhiteLabel), dpi=100)
     plt.close()
+
+    uniqueVarRatio, repeatsVarRatio = countValues([var for var,result in zip(y1, results) if result == "SAT"])
+    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio, "SAT":None}, "VariableRatioHistogramSAT-{}".format(noWhiteLabel))
+    uniqueVarRatio, repeatsVarRatio = countValues([var for var,result in zip(y1, results) if result == "UNSAT"])
+    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio, "UNSAT":None}, "VariableRatioHistogramUNSAT-{}".format(noWhiteLabel))
+    uniqueNumRuns, repeatsNumRuns = countValues([var for var,result in zip(x, results) if result == "SAT"])
+    dumpJson({'numRuns': uniqueNumRuns, 'repeats': repeatsNumRuns, "SAT":None}, "NumRunsHistogramSAT-{}".format(noWhiteLabel))
+    uniqueNumRuns, repeatsNumRuns = countValues([var for var,result in zip(x, results) if result == "UNSAT"])
+    dumpJson({'numRuns': uniqueNumRuns, 'repeats': repeatsNumRuns, "UNSAT":None}, "NumRunsHistogramUNSAT-{}".format(noWhiteLabel))                 
     
 
 ####################################################################################################
