@@ -345,7 +345,7 @@ class CnnAbs:
             ySecond = 0 if yMax > 0 else 1
             
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
-        mbouModel = self.modelUtils.tf2Mbou(modelTF)
+        mbouModel = self.modelUtils.tf2Model(modelTF)
         InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
 
         fName = "xAdv.png"
@@ -728,7 +728,7 @@ class ModelUtils:
         
 
     @staticmethod
-    def tf2Mbou(model):
+    def tf2Model(model):
         modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, modelOnnxName)
