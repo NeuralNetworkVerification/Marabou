@@ -384,12 +384,14 @@ xparamTotal.sort()
 #xparamMutualNoVanilla.sort()
 
 solvedSamples = {policy : set() for policy in policies}
+totalRuntimes = {policy : dict() for policy in policies}
 for resultDict in resultDicts:
     for policy in policies:
         if policy.lower() in resultDict['label'].lower():
             for sample in resultDict.keys():
                 if sample != 'label' and resultDict[sample]['result'] in ['SAT', 'UNSAT']:
                     solvedSamples[policy].add(sample)
+                    totalRuntimes[policy][sample] = resultDict[sample]['totalRuntime']
 
 for policy in policies:                    
     solvedSamples[policy] = list(solvedSamples[policy])
@@ -403,6 +405,7 @@ for policy, solved in solvedSamples.items():
 solvedSamples['mutualNoVanilla'] = list(mutualSetNoVanilla)
 solvedSamples['mutual'] = list(mutualSet)
 solvedSamples['total'] = totalSolved
+solvedSamples['totalRuntimes'] = totalRuntimes
 dumpJson(solvedSamples, 'solvedSamples')
 
 runtimesSuccessful = [[resultDict[s]["successfulRuntime"]  if s in resultDict else -1        for s in xparamTotal] for resultDict in resultDicts]
