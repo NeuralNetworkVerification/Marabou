@@ -92,3 +92,5 @@ modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModel
 CnnAbs.printLog("Finished model building")
 
 cnnAbs.solveAdversarial(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
+
+#FIXME
