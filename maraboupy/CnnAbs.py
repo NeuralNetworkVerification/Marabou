@@ -463,8 +463,13 @@ class CnnAbs:
             return [set()]
         layerList, layerTypes = InputQueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
-        absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
-        absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
+        ABSTRACT_FIRST = False
+        if ABSTRACT_FIRST: #FIXME
+            absLayer = next(i for i,t in enumerate(layerTypes) if 'Relu' in t)
+            absLayerLayerName = 'c1'
+        else:
+            absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
+            absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
         modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, absLayerLayerName)
         absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
 
