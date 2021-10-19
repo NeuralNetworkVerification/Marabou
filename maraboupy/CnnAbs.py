@@ -864,6 +864,15 @@ class ModelUtils:
     
         return origM
 
+    def loadModel(self, path):
+        model = load_model(CnnAbs.basePath + "/" + path, custom_objects={'myLoss': myLoss})
+        model.summary()
+        score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
+        CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
+        CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
+        return model        
+        
+
     @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True, valueRange=None):
         if useMapping:
