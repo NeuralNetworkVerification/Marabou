@@ -193,8 +193,6 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 ####################################################################################################
 
 def main():
-
-    validationNets = ["mnist_{}_{}".format(layers, i) for i in [1, 2, 4] for layers in ["base", "long"]]
     
     experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
                    "AbsPolicies"    : experimentAbsPolicies,
@@ -203,12 +201,8 @@ def main():
     parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
     parser.add_argument("--exp", type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
     parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
-    parser.add_argument("--dump_queries", action="store_true", default=False, help="Only dump queries, don't solve.")
-    parser.add_argument("--use_dumped_queries", action="store_true", default=False, help="Solve with dumped queries (abstraction only, not Vanilla)")
     parser.add_argument("--sample", type=int, default=0, help="For part of experiments, specific sample choice")
-    parser.add_argument("--dump_suffix", type=str, default="", help="Suffix at ending the dumpQueries directory", required=False)
-    parser.add_argument("--validation", type=str, choices=validationNets, default="", help="Use validation net", required=False)
-    parser.add_argument("--cnn_size"  , type=str, default="", help="Use specific cnn size", required=False)
+    parser.add_argument("--net", type=str, help="Network to verify", required=True)
     parser.add_argument("--slurm_seq", action="store_true",                        default=True,                  help="Run next mask if this one fails.")
     parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
     rerun_parser = parser.add_mutually_exclusive_group(required=False)
@@ -219,50 +213,32 @@ def main():
     experiment = args.exp
     numRunsPerType = args.runs_per_type
     experimentFunc = experiments[experiment]
-    dumpQueries = args.dump_queries
-    useDumpedQueries = args.use_dumped_queries
-    dumpSuffix = args.dump_suffix
-    validation = args.validation
-    cnn_size = args.cnn_size
+    net = args.net
     slurm_seq = args.slurm_seq
     rerun_spurious = args.rerun_spurious
     prop_distance = args.prop_distance
     
-    assert (not validation) or (not cnn_size)
-    
     ####################################################################################################
     
     timestamp = datetime.now()
-    batchId = "_".join(filter(None, ["Results", timestamp.strftime("%d-%m-%y"), experiment, cnn_size, validation, timestamp.strftime("%H-%M-%S")]))
-    basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
+    batchId = "_".join(filter(None, ["Results", timestamp.strftime("%d-%m-%y"), experiment, net.replace('.h5', ''), timestamp.strftime("%H-%M-%S")]))
+    basePath = os.getcwd()
     if not os.path.exists(basePath + "logs/"):
         os.mkdir(basePath + "logs/")
     batchDirPath = basePath + "logs/" + batchId
     if not os.path.exists(batchDirPath):
         os.mkdir(batchDirPath)
-    if not dumpSuffix.startswith("dumpQueries"):
-        dumpDir = "dumpQueries" + (("_" + dumpSuffix) if dumpSuffix else "")
-    else:
-        dumpDir = dumpSuffix
-    dumpDirPath = basePath + "logs/{}/".format(dumpDir)
-    if (dumpQueries or useDumpedQueries) and not os.path.exists(dumpDirPath):
-        os.mkdir(dumpDirPath)
 
     with open(batchDirPath + "/runCmd.sh", 'w') as f:
         f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
     clusterFlags = []
     commonFlags = clusterFlags + ["--batch_id", batchId] + ["--gtimeout", str(gtimeout)]
-#    if dumpQueries or useDumpedQueries or dumpSuffix:
-#        commonFlags += ["--dump_dir", dumpDirPath]    
     if experiment != 'DifferentDistances':
         commonFlags += ["--prop_distance", str(prop_distance)]
     else:
         commonFlags += ["--sample", str(args.sample)]
-#    if cnn_size:
-#        commonFlags += ["--cnn_size", cnn_size]
-    if validation:
-        commonFlags += ["--validation", validation]
+    commonFlags += ["--net", net]
     if rerun_spurious:
         commonFlags.append("--rerun_spurious")
     else:

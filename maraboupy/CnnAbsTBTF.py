@@ -20,8 +20,6 @@ tf.compat.v1.enable_v2_behavior()
 
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
-parser.add_argument("--fresh",          action="store_true",                        default=False,                  help="Retrain CNN")
-parser.add_argument("--validation",     type=str,                                   default="",                     help="Use validation DNN")
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                   help="Distance checked for adversarial robustness (L1 metric)")
@@ -35,10 +33,11 @@ rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='
 rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
 parser.set_defaults(rerun_spurious=False)
 
+parser.add_argument("--net",     type=str, default="",                     help="verified neural network")
+
 args = parser.parse_args()
 
 resultsJson = dict()
-cfg_freshModelOrig    = args.fresh
 cfg_propDist          = args.prop_distance
 cfg_propSlack         = args.prop_slack
 cfg_runTitle          = args.run_title
@@ -48,10 +47,9 @@ cfg_sampleIndex       = args.sample
 cfg_boundTightening   = 'lp'
 cfg_symbolicTightening= 'sbt'
 cfg_timeoutInSeconds  = args.timeout
-cfg_validation        = args.validation
-cfg_cnnSizeChoice     = 'small'
 cfg_rerunSpurious     = args.rerun_spurious
 cfg_gtimeout          = args.gtimeout
+cfg_network           = args.net
 
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
 
@@ -59,8 +57,6 @@ cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs
 
 startPrepare = time.time()
 
-cnnAbs.resultsJson["cfg_freshModelOrig"]    = cfg_freshModelOrig
-cnnAbs.resultsJson["cfg_cnnSizeChoice"]     = cfg_cnnSizeChoice
 cnnAbs.resultsJson["cfg_propDist"]          = cfg_propDist
 cnnAbs.resultsJson["cfg_propSlack"]         = cfg_propSlack
 cnnAbs.resultsJson["cfg_runTitle"]          = cfg_runTitle
@@ -70,9 +66,9 @@ cnnAbs.resultsJson["cfg_sampleIndex"]       = cfg_sampleIndex
 cnnAbs.resultsJson["cfg_boundTightening"]   = cfg_boundTightening
 cnnAbs.resultsJson["cfg_symbolicTightening"]= cfg_symbolicTightening
 cnnAbs.resultsJson["cfg_timeoutInSeconds"]  = cfg_timeoutInSeconds
-cnnAbs.resultsJson["cfg_validation"]        = cfg_validation
 cnnAbs.resultsJson["cfg_rerunSpurious"]     = cfg_rerunSpurious
 cnnAbs.resultsJson["cfg_gtimeout"]          = cfg_gtimeout
+cnnAbs.resultsJson["cfg_network"]           = cfg_network
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "GTIMEOUT"
 cnnAbs.dumpResultsJson()
@@ -88,7 +84,7 @@ cnnAbs.dumpResultsJson()
 #############################################################################################
 
 CnnAbs.printLog("Started model building")
-modelOrig = cnnAbs.modelUtils.genCnnForAbsTest(cfg_freshModelOrig=cfg_freshModelOrig, cnnSizeChoice=cfg_cnnSizeChoice, validation=cfg_validation)
+modelTF = cnnAbs.modelUtils.loadModel(cfg_network)
 CnnAbs.printLog("Finished model building")
 
-cnnAbs.solveAdversarial(modelOrig, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
+cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
