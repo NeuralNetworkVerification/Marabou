@@ -186,7 +186,7 @@ public:
     virtual int getInfeasibleVar() const = 0;
     virtual double computeRowBound( const TableauRow& row, bool isUpper ) const = 0;
     virtual double computeSparseRowBound( const SparseUnsortedList& row,  bool isUpper,  unsigned var) const = 0;
-    virtual SingleVarBoundsExplanator* ExplainBound( unsigned variable ) const = 0;
+    virtual SingleVarBoundsExplanator* explainBound( unsigned variable ) const = 0;
     virtual void updateExplanation( const TableauRow& row, bool isUpper ) const = 0;
     virtual void updateExplanation( const TableauRow& row, bool isUpper, unsigned var ) const = 0;
     virtual void updateExplanation( const SparseUnsortedList& row, bool isUpper, unsigned var ) const = 0;

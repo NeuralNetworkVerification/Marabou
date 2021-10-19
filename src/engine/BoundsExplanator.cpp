@@ -156,7 +156,7 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	for ( unsigned i = 0; i < row._size; ++i )
 	{
 		curCoefficient = row._row[i]._coefficient;
-		if ( FloatUtils::isZero(curCoefficient) ) // If coefficient is zero then nothing to add to the sum
+		if ( FloatUtils::isZero( curCoefficient ) ) // If coefficient is zero then nothing to add to the sum
 			continue;
 
 		tempUpper = curCoefficient < 0 ? !isUpper : isUpper; // If coefficient is negative, then replace kind of bound
@@ -208,17 +208,17 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	assert ( varIndex >= 0 );
 	double ci = row[varIndex];
 	assert ( ci );  // Coefficient of var cannot be zero.
-	double coeff = 1 / ci;
+	double coeff = - 1 / ci;
 	// Create a new row with var as its lhs
 	TableauRow equiv = TableauRow( row._size );
 	equiv._lhs = var;
-	equiv._scalar = FloatUtils::isZero( row._scalar ) ? 0 : - row._scalar * coeff;
+	equiv._scalar = FloatUtils::isZero( row._scalar ) ? 0 :  row._scalar * coeff;
 
 	for ( unsigned i = 0; i < row._size; ++i )
 	{
 		if ( !FloatUtils::isZero( row[i] ) ) // Updates of zero coefficients are unnecessary
 		{
-			equiv._row[i]._coefficient = - row[i] * coeff;
+			equiv._row[i]._coefficient = row[i] * coeff;
 			equiv._row[i]._var = row._row[i]._var;
 		}
 		else
@@ -229,7 +229,7 @@ void BoundsExplanator::updateBoundExplanation( const TableauRow& row, const bool
 	}
 
 	// Since the original var is the new lhs, the new var should be replaced with original lhs 
-	equiv._row[varIndex]._coefficient = coeff;
+	equiv._row[varIndex]._coefficient = -coeff;
 	equiv._row[varIndex]._var = row._lhs;
 
 	updateBoundExplanation( equiv, isUpper );
@@ -242,7 +242,7 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 
 	assert( var < _varsNum );
 	bool tempUpper;
-	double curCoefficient, ci = 0;
+	double curCoefficient, ci = 0, realCoefficient;
 	for ( const auto& entry : row )
 		if ( entry._index == var )
 		{
@@ -261,10 +261,13 @@ void BoundsExplanator::updateBoundExplanationSparse( const SparseUnsortedList& r
 		curCoefficient = entry._value;
 		if ( FloatUtils::isZero( curCoefficient ) || entry._index == var ) // If coefficient is zero then nothing to add to the sum, also skip var
 			continue;
+		realCoefficient = curCoefficient / -ci;
+		if ( FloatUtils::isZero( realCoefficient ) )
+			continue;
 
-		tempUpper = ( curCoefficient * ci < 0 ) == isUpper; // If coefficient of lhs and var are different, use same bound
+		tempUpper =  ( isUpper && FloatUtils::isPositive( realCoefficient ) ) ||  ( !isUpper && FloatUtils::isNegative( realCoefficient ) ); // If coefficient of lhs and var are different, use same bound
 		getOneBoundExplanation( tempBound, entry._index, tempUpper );
-		addVecTimesScalar( sum, tempBound, - curCoefficient / ci );
+		addVecTimesScalar( sum, tempBound, realCoefficient);
 		tempLevel = tempUpper? _bounds[entry._index]._upperRecLevel : _bounds[entry._index]._lowerRecLevel;
 		if ( tempLevel > maxLevel )
 			maxLevel = tempLevel;
@@ -308,7 +311,7 @@ void BoundsExplanator::extractRowCoefficients( const TableauRow& row, std::vecto
 	assert( coefficients.size() == _rowsNum && ( row._size == _varsNum  || row._size == _varsNum - _rowsNum ) );
 	//The coefficients of the row m highest-indices vars are the coefficients of slack variables
 	for ( unsigned i = 0; i < row._size; ++i )
-		if ( row._row[i]._var >= _varsNum - _rowsNum )
+		if ( row._row[i]._var >= _varsNum - _rowsNum && !FloatUtils::isZero( row._row[i]._coefficient ) )
 			coefficients[row._row[i]._var - _varsNum + _rowsNum] = row._row[i]._coefficient;
 
 	if ( row._lhs >= _varsNum - _rowsNum ) //If the lhs was part of original basis, its coefficient is -1
@@ -322,7 +325,7 @@ void BoundsExplanator::extractSparseRowCoefficients( const SparseUnsortedList& r
 
 	//The coefficients of the row m highest-indices vars are the coefficients of slack variables
 	for ( const auto& entry : row )
-		if ( entry._index >= _varsNum - _rowsNum )
+		if ( entry._index >= _varsNum - _rowsNum && !FloatUtils::isZero( entry._value ) )
 			coefficients[entry._index - _varsNum + _rowsNum] = - entry._value / ci;
 }
 

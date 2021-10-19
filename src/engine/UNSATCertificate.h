@@ -194,7 +194,11 @@ public:
 		ASSERT( !FloatUtils::isZero( c ) );
 
 		for ( unsigned i = 0; i < n; ++i )
-			explanationRowsCombination[i] /= -c;
+			if ( !FloatUtils::isZero( explanationRowsCombination[i] ) )
+				explanationRowsCombination[i] /= -c;
+			else
+				explanationRowsCombination[i] = 0;
+
 		explanationRowsCombination[var] = 0;
 		scalar /= -c;
 

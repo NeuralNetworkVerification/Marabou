@@ -1696,7 +1696,8 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             _tableau->tightenUpperBound( variable, bound._value );
         }
     }
-    DEBUG( _tableau->verifyInvariants() );
+    validateAllBounds( 0.01 );
+	DEBUG( _tableau->verifyInvariants() );
     ENGINE_LOG( "Done with split\n" );
 }
 
@@ -1735,6 +1736,8 @@ void Engine::applyAllConstraintTightenings()
         else
 			_tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
+	// All updates to IT and GB registered by the CBT need to be updated
+	updateGBfromCBT();
 
     // All updates to IT and GB registered by the CBT need to be updated
     if ( GlobalConfiguration::PROOF_CERTIFICATE )
@@ -2506,7 +2509,7 @@ void Engine::printBoundsExplanation( const unsigned var )
     printf( "The explanation of variable x%d\n", var );
     unsigned m = _tableau->getM();
     SingleVarBoundsExplanator* certificate = new SingleVarBoundsExplanator( m );
-    *certificate = *_tableau->ExplainBound( var );
+    *certificate = *_tableau->explainBound(var);
     std::vector<double> expl = std::vector<double>( m, 0 ); 
     certificate->getVarBoundExplanation( expl, true );
 
@@ -2534,38 +2537,39 @@ int Engine::simplexBoundsUpdate()
     	return -1;
 
     unsigned var = boundUpdateRow._lhs;
-    double newBound;
-    newBound = _tableau->computeRowBound( boundUpdateRow, true );
+    double newUBound, newLBound;
+    newUBound = _tableau->computeRowBound( boundUpdateRow, true );
 
-    if ( FloatUtils::isZero( newBound ) )
-    	newBound = 0;
+    if ( FloatUtils::isZero( newUBound ) )
+    	newUBound = 0;
 
-    if ( FloatUtils::lt( newBound, _tableau->getUpperBound( var ) ) )
+    if ( FloatUtils::lt( newUBound, _tableau->getLowerBound( var ) ) )
     {
-        _tableau->updateExplanation( boundUpdateRow, true );
-        //_tableau->tightenUpperBound( var, newBound ); // No re-tightening, since can create chain reaction
+		_tableau->updateExplanation( boundUpdateRow, true );
+        //_tableau->tightenUpperBound( var, newUBound ); // No re-tightening, since can create chain reaction
         //printf("Updating ub of var %d from %.5lf to %.5lf\n", var, _tableau->getUpperBound( var ), newBound ); //TODO delete
         return ( int ) var;
     }
-    newBound = _tableau->computeRowBound( boundUpdateRow, false );
+    newLBound = _tableau->computeRowBound( boundUpdateRow, false );
 
-	if ( FloatUtils::isZero( newBound ) )
-		newBound = 0;
+	if ( FloatUtils::isZero( newLBound ) )
+		newLBound = 0;
 
-    if ( FloatUtils::gt( newBound, _tableau->getLowerBound( var ) ) )
+    if ( FloatUtils::gt( newLBound, _tableau->getUpperBound( var ) ) )
     {
-        _tableau->updateExplanation( boundUpdateRow, false );
-		//printf("Updating lb of var %d from %.5lf to %.5lf\n", var, _tableau->getLowerBound( var ), newBound ); //TODO delete
-		//_tableau->tightenLowerBound( var, newBound );
+    	_tableau->updateExplanation( boundUpdateRow, false );
+		//printf("Updating lb of var %d from %.5lf to %.5lf. ub is %.5lf, row ub is %.5lf\n", var, _tableau->getLowerBound( var ), newLBound, _tableau->getUpperBound( var ), _tableau->computeRowBound( boundUpdateRow, true ) ); //TODO delete
+		//_tableau->tightenLowerBound( var, newLBound );
+		return  ( int ) var;
     }
-    return ( int ) var;
+	return -1;
 }
 
 void Engine::certifyInfeasibility( const unsigned var ) const
 {
     double computedUpper = getExplainedBound( var, true ), computedLower = getExplainedBound( var, false );
     if ( computedLower <= computedUpper )
-    	printf("Certification error. gap is %.5lf \n", computedUpper - computedLower );
+    	printf("Certification error for var %d. ub is %.5lf, lb is %.5lf \n", var, computedUpper, computedLower );
     //TODO revert upon completing
     //ASSERT( abs( computedUpper - _tableau->getUpperBound( var ) ) < epsilon );
     //ASSERT( abs( computedLower - _tableau->getLowerBound( var ) ) < epsilon );
@@ -2575,8 +2579,8 @@ void Engine::certifyInfeasibility( const unsigned var ) const
 
 double Engine::getExplainedBound( const unsigned var, const bool isUpper ) const
 {
-	SingleVarBoundsExplanator* certificate = _tableau->ExplainBound( var );
-	return UNSATCertificateUtils::computeBound( var, isUpper, *certificate, _initialTableau, _groundUpperBounds, _groundLowerBounds);
+	SingleVarBoundsExplanator *certificate = _tableau->explainBound(var);
+	return UNSATCertificateUtils::computeBound( var, isUpper, *certificate, _initialTableau, _groundUpperBounds, _groundLowerBounds );
 }
 
 
@@ -2585,8 +2589,8 @@ double Engine::extractVarExplanationCoefficient ( const unsigned var, const bool
 	unsigned m = _tableau->getM();
 	double c = 0;
 
-	SingleVarBoundsExplanator* certificate = new SingleVarBoundsExplanator( m );
-	*certificate = *_tableau->ExplainBound( var );
+	auto* certificate = new SingleVarBoundsExplanator( m );
+	*certificate = *_tableau->explainBound( var );
 
 	// Retrieve bound explanation
 	std::vector<double> expl = std::vector<double>( m, 0 );
@@ -2606,15 +2610,15 @@ void Engine::normalizeExplanation( const unsigned var )
 	double upper, lower;
 	upper = extractVarExplanationCoefficient( var, true );
 	lower = extractVarExplanationCoefficient( var, false );
-	if ( upper && !FloatUtils::isZero( upper - 1 ) )
+	if ( upper && !FloatUtils::areEqual( upper, 1 ) )
 	{
 		upper = 1 / upper;
-		if (FloatUtils::isZero( upper ) )
+		if ( FloatUtils::isZero( upper ) )
 			upper = 0;
 		_tableau->multiplyExplanationCoefficients( var, upper, true );
 	}
 
-	if ( lower && !FloatUtils::isZero( lower - 1 ) )
+	if ( lower && !FloatUtils::areEqual( lower, 1 ) )
 	{
 		lower = 1 / lower;
 		if ( FloatUtils::isZero( lower ) )
@@ -2636,23 +2640,28 @@ bool Engine::validateBounds( const unsigned var , const double epsilon, bool isU
 	if ( !GlobalConfiguration::PROOF_CERTIFICATE )
 		return true;
 
-	auto certificate = _tableau->ExplainBound( var );
+	auto certificate = _tableau->explainBound( var );
 	ASSERT( certificate->getLength() == _tableau->getM() );
 	certificate->assertLengthConsistency();
+	double explained, real;
 	if ( isUpper )
 	{
-		if ( getExplainedBound( var, true ) - _tableau->getUpperBound( var )  > epsilon )
+		explained = getExplainedBound( var, true ), real = _tableau->getUpperBound( var );
+		if ( explained - real  > epsilon )
 		{
-			printf( "Var %d. Computed Upper %.5lf, real %.5lf\n", var, getExplainedBound( var, true ), _tableau->getUpperBound( var ) );
+			printf( "Var %d. Computed Upper %.5lf, real %.5lf\n", var, explained, real );
 			return false;
 		}
-		return true;
 	}
-
-	if ( getExplainedBound( var, false ) - _tableau->getLowerBound( var )  < -epsilon)
+	else
 	{
-		printf( "Var %d. Computed Lower  %.5lf, real %.5lf\n", var, getExplainedBound( var, false ), _tableau->getLowerBound( var ) );
-		return false;
+		explained = getExplainedBound( var, false ), real = _tableau->getLowerBound( var );
+
+		if ( explained - real  < -epsilon)
+		{
+			printf( "Var %d. Computed Lower  %.5lf, real %.5lf\n", var, explained, real );
+			return false;
+		}
 	}
 	return true;
 	//TODO revert upon completing
@@ -2724,35 +2733,23 @@ void Engine::explainSimplexFailure()
 		inf = simplexBoundsUpdate();
 
 	if ( inf < 0 )
-	{
-		assert( _tableau->checkCostFunctionSlack() );
-		int infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
-		if (infIndex < 0 )
-		{
-			_costFunctionManager->computeCoreCostFunction();
-			infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
-		}
-		assert( infIndex >= 0 );
-		inf = ( int ) _tableau->basicIndexToVariable( infIndex );
-		auto *costRow = _costFunctionManager->createRowOfCostFunction();
-		bool isUpper = _costFunctionManager->getBasicCost( infIndex ) < 0;
-		_tableau->updateExplanation( *costRow, isUpper, inf );
-		delete costRow;
-	}
+		inf = updateFirstInfeasibleBasic();
 
 	assert ( inf >= 0 );
 	validateBounds( inf, 0.01, true );
 	validateBounds( inf, 0.01, false );
 	//printBoundsExplanation( inf );
 	certifyInfeasibility( inf );
-
 }
 
 void Engine::checkGroundBounds()
 {
 	unsigned n = _tableau->getN();
 	for ( unsigned i = 0; i < n; ++i )
-		assert( FloatUtils::gte( _groundUpperBounds[i], _tableau->getUpperBound( i ) ) && FloatUtils::lte( _groundLowerBounds[i], _tableau->getLowerBound( i ) ) );
+	{
+		assert ( FloatUtils::lte( _groundLowerBounds[i], _tableau->getLowerBound( i ) ) );
+		assert( FloatUtils::gte( _groundUpperBounds[i], _tableau->getUpperBound( i ) ) );
+	}
 }
 
 void Engine::updateGBfromCBT()
@@ -2767,4 +2764,57 @@ void Engine::updateGBfromCBT()
 
 		_constraintBoundTightener->clearEngineUpdates();
 	}
+}
+
+int Engine::updateMostInfeasibleBasic()
+{
+	int maxInfVar = -1;
+	unsigned m = _tableau->getM(), curBasicVar;
+	double maxInf = 0, curInf, curCost;
+	bool maxInfUpper = false;
+	auto *costRow = _costFunctionManager->createRowOfCostFunction();
+
+	for ( unsigned i = 0; i < m; ++i )
+	{
+		curBasicVar = _tableau->basicIndexToVariable( i );
+		curCost = _costFunctionManager->getBasicCost( i ) ;
+		if ( FloatUtils::isNegative( curCost ) )
+			curInf = _tableau->getLowerBound( curBasicVar ) - _tableau->computeSparseRowBound( *costRow, true, curBasicVar );
+		else if ( FloatUtils::isPositive( curCost ) )
+			curInf = _tableau->computeSparseRowBound( *costRow, false, curBasicVar ) - _tableau->getUpperBound( curBasicVar );
+		else
+			curInf = -1;
+
+		if ( curInf > maxInf )
+		{
+			maxInf = curInf;
+			maxInfVar = ( int ) curBasicVar;
+			maxInfUpper = FloatUtils::isNegative( curCost );
+		}
+	}
+
+	assert ( maxInfVar >= 0 );
+	//printf("Updating var %d from prev lb %.5lf ub %.5lf. row lb is %.5lf, row ub is %.5lf\n", maxInfVar, _tableau->getLowerBound( maxInfVar ), _tableau->getUpperBound( maxInfVar ), _tableau->computeSparseRowBound( *costRow, false, maxInfVar ), _tableau->computeSparseRowBound( *costRow, true, maxInfVar ) );
+	_tableau->updateExplanation( *costRow, maxInfUpper, maxInfVar );
+	delete costRow;
+	return maxInfVar;
+}
+
+
+int Engine::updateFirstInfeasibleBasic()
+{
+	unsigned inf = -1;
+	int infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
+//	if (infIndex < 0 )
+//	{
+//		_costFunctionManager->computeCoreCostFunction();
+//		infIndex = _costFunctionManager->getFirstParticipatingBasicIndex();
+//	}
+	assert( infIndex >= 0 );
+	inf = ( int ) _tableau->basicIndexToVariable( infIndex );
+	auto *costRow = _costFunctionManager->createRowOfCostFunction();
+	bool isUpper = _costFunctionManager->getBasicCost( infIndex ) < 0;
+	_tableau->updateExplanation( *costRow, isUpper, inf );
+	delete costRow;
+	return ( int ) inf;
 }

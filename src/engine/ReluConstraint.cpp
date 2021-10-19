@@ -188,7 +188,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         {
         	if ( GlobalConfiguration :: PROOF_CERTIFICATE )
 			{
-				// TODO relaxed for now - should be ok on any case
+				// TODO consider more cases
 				if ( _phaseStatus == RELU_PHASE_INACTIVE )
 					_constraintBoundTightener->registerTighterUpperBound( _aux, -bound, tighteningRow );
 				else
@@ -202,7 +202,10 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         // we attempt to tighten it to 0
         else if ( bound < 0 && variable == _f )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+			if ( GlobalConfiguration::PROOF_CERTIFICATE )
+				registerExternalExplanationUpdate( _f, 0, false );
+			else if ( !GlobalConfiguration::PROOF_CERTIFICATE )
+            	_constraintBoundTightener->registerTighterLowerBound( _f, 0 );
         }
     }
 }
@@ -229,7 +232,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 
 		if ( variable == _f )
         {
-			// TODO relaxed for now - should be ok on any case
+			// TODO consider more cases
             // Any bound that we learned of f should be propagated to b
             if ( GlobalConfiguration::PROOF_CERTIFICATE )
 			{
@@ -258,9 +261,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
 					{
 						// Aux's range is minus the range of b
 						// TODO review again
-						if ( _phaseStatus != RELU_PHASE_ACTIVE)
-							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
-                        else if ( FloatUtils::isNegative( bound ) )
+						if ( !getLowerBound( _f ) )
 							_constraintBoundTightener->registerTighterLowerBound( _aux, -bound, tighteningRow );
                         else
 							registerExternalExplanationUpdate( _aux, -bound, false );

@@ -679,7 +679,7 @@ private:
     /*
       Returns the bounds explanation of a variable in the tableau
     */
-    SingleVarBoundsExplanator* ExplainBound( unsigned variable ) const;
+    SingleVarBoundsExplanator* explainBound( unsigned variable ) const;
 
     /*
      Update a bound explanation according to a row in the Tableau

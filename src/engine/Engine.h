@@ -55,8 +55,7 @@ class InputQuery;
 class PiecewiseLinearConstraint;
 class String;
 
-class Engine : public IEngine, public SignalHandler::Signalable
-{
+class Engine : public IEngine, public SignalHandler::Signalable {
 public:
     Engine();
     ~Engine();
@@ -373,7 +372,7 @@ private:
 
     /*
       Stored options
-      Do this since Options object is not thread safe and 
+      Do this since Options object is not thread safe and
       there is a chance that multiple Engine object be accessing the Options object.
     */
     unsigned _simulationSize;
@@ -540,7 +539,7 @@ private:
 
     /*
       Call MILP bound tightening for a single layer.
-    */    
+    */
     void performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex );
 
     /*
@@ -581,7 +580,7 @@ private:
     void printBoundsExplanation( unsigned var );
 
     /*
-     Updates bounds after deducing Simplex unfeasibility
+     Updates bounds after deducing Simplex infeasibility
     */
     int simplexBoundsUpdate();
 
@@ -599,13 +598,13 @@ private:
     /*
      Returns the value of a variable bound, as expressed by the bounds explanator and the initial bounds
     */
-    double getExplainedBound(  unsigned var,  bool isUpper ) const;
+    double getExplainedBound( unsigned var,  bool isUpper ) const;
 
 
     /*
      * Returns the coefficient of a var according to its explanation of isUpper bound
      */
-    double extractVarExplanationCoefficient ( unsigned var, bool isUpper);
+    double extractVarExplanationCoefficient( unsigned var, bool isUpper );
 
 	/*
 	* Normalizes an explanation, i.e. making them produce explanation where the coefficient of explained var is 1
@@ -646,6 +645,15 @@ private:
      */
 	void updateGBfromCBT();
 
+	/*
+	 * Updates explanations of the basic var with the largest gap between real bound and bound explained by cost function;
+	 */
+	int updateMostInfeasibleBasic();
+
+	/*
+ 	* Updates explanations of the first unfeasible basic var by cost function;
+ 	*/
+	int updateFirstInfeasibleBasic();
 };
 
 #endif // __Engine_h__
