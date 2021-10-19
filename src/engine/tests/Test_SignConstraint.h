@@ -41,7 +41,7 @@ public:
         : SignConstraint( b, f )
     {}
 
-    using ContextDependentPiecewiseLinearConstraint::getPhaseStatus;
+    using PiecewiseLinearConstraint::getPhaseStatus;
 };
 
 using namespace CVC4::context;

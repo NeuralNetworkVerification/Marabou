@@ -17,7 +17,7 @@
  ** ABS_PHASE_POSITIVE: b > 0
  ** ABS_PHASE_NEGATIVE: b <=0
  **
- ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** The constraint is implemented as PiecewiseLinearConstraint
  ** and operates in two modes:
  **   * pre-processing mode, which stores bounds locally, and
  **   * context dependent mode, used during the search.
@@ -30,9 +30,9 @@
 #ifndef __AbsoluteValueConstraint_h__
 #define __AbsoluteValueConstraint_h__
 
-#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "PiecewiseLinearConstraint.h"
 
-class AbsoluteValueConstraint : public ContextDependentPiecewiseLinearConstraint
+class AbsoluteValueConstraint : public PiecewiseLinearConstraint
 {
 
 public:
@@ -51,7 +51,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.

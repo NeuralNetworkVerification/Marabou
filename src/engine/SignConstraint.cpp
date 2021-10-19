@@ -29,7 +29,7 @@
 #endif
 
 SignConstraint::SignConstraint( unsigned b, unsigned f )
-    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
     , _b( b )
     , _f( f )
     , _direction( PHASE_NOT_FIXED )
@@ -60,7 +60,7 @@ PiecewiseLinearFunctionType SignConstraint::getType() const
     return PiecewiseLinearFunctionType::SIGN;
 }
 
-ContextDependentPiecewiseLinearConstraint *SignConstraint::duplicateConstraint() const
+PiecewiseLinearConstraint *SignConstraint::duplicateConstraint() const
 {
     SignConstraint *clone = new SignConstraint( _b, _f );
     *clone = *this;

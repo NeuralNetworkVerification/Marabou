@@ -43,6 +43,7 @@ public:
         ABSOLUTE_VALUE,
         MAX,
         SIGN,
+        SIGMOID,
     };
 
     /*

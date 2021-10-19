@@ -116,6 +116,78 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 13 );
     }
 
+    void populateNetworkWithSigmoids( NLR::NetworkLevelReasoner &nlr )
+    {
+        /*
+                a
+          x           d    f
+                b
+          y           e    g
+                c
+        */
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 3 );
+        nlr.addLayer( 2, NLR::Layer::SIGMOID, 3 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 4, NLR::Layer::SIGMOID, 2 );
+        nlr.addLayer( 5, NLR::Layer::WEIGHTED_SUM, 2 );
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 5; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, 2 );
+        nlr.setWeight( 0, 1, 1, 1, -3 );
+        nlr.setWeight( 0, 1, 1, 2, 1 );
+
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 0, 3, 1, -1 );
+        nlr.setWeight( 2, 1, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 1, 1 );
+        nlr.setWeight( 2, 2, 3, 0, -1 );
+        nlr.setWeight( 2, 2, 3, 1, -1 );
+
+        nlr.setWeight( 4, 0, 5, 0, 1 );
+        nlr.setWeight( 4, 0, 5, 1, 1 );
+        nlr.setWeight( 4, 1, 5, 1, 3 );
+
+        nlr.setBias( 1, 0, 1 );
+        nlr.setBias( 3, 1, 2 );
+
+        // Mark the ReLU sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 1, 2, 2, 2 );
+
+        nlr.addActivationSource( 3, 0, 4, 0 );
+        nlr.addActivationSource( 3, 1, 4, 1 );
+
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 2 ), 6 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 3 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 2 ), 7 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 8 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 10 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 4, 0 ), 9 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 4, 1 ), 11 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 5, 0 ), 12 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 13 );
+    }
+
     void test_evaluate_relus()
     {
         NLR::NetworkLevelReasoner nlr;
@@ -151,6 +223,43 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( output[0], 0 ) );
         TS_ASSERT( FloatUtils::areEqual( output[1], 0 ) );
+    }
+
+    void test_evaluate_sigmoids()
+    {
+        NLR::NetworkLevelReasoner nlr;
+
+        populateNetworkWithSigmoids( nlr );
+
+        double input[2];
+        double output[2];
+
+        // case 1
+        input[0] = 0;
+        input[1] = 0;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output[0], 0.6750, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( output[1], 3.0167, 0.0001 ) );
+
+        // case 2
+        input[0] = 1;
+        input[1] = 1;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output[0], 0.6032, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( output[1], 2.5790, 0.0001 ) );
+
+        // case 3
+        input[0] = 1;
+        input[1] = 2;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output[0], 0.5045, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( output[1], 2.1957, 0.0001 ) );
     }
 
     void test_evaluate_non_consecutive_layers()
@@ -315,6 +424,41 @@ public:
         TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
 
         // With ReLUs, case 1
+        input[0] = 1;
+        input[1] = 1;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output1 ) );
+        TS_ASSERT_THROWS_NOTHING( nlr2.evaluate( input, output2 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
+        TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
+    }
+
+    void test_store_into_other_with_sigmoids()
+    {
+        NLR::NetworkLevelReasoner nlr;
+
+        populateNetworkWithSigmoids( nlr );
+
+        NLR::NetworkLevelReasoner nlr2;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.storeIntoOther( nlr2 ) );
+
+        double input[2];
+        double output1[2];
+        double output2[2];
+
+        // case 1
+        input[0] = 0;
+        input[1] = 0;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, output1 ) );
+        TS_ASSERT_THROWS_NOTHING( nlr2.evaluate( input, output2 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( output1[0], output2[0] ) );
+        TS_ASSERT( FloatUtils::areEqual( output1[1], output2[1] ) );
+
+        // case 2
         input[0] = 1;
         input[1] = 1;
 
@@ -1639,6 +1783,55 @@ public:
             TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 0 ) );
         }
     }
+
+    void test_simulate_sigmoids()
+    {
+        NLR::NetworkLevelReasoner nlr;
+
+        populateNetworkWithSigmoids( nlr );
+
+        unsigned simulationSize = Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS );
+
+        // case 1
+        Vector<Vector<double>> simulations1;
+        simulations1.append( Vector<double>( simulationSize, 0 ) );
+        simulations1.append( Vector<double>( simulationSize, 0 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations1 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 0.6750, 0.0001 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 3.0167, 0.0001 ) );
+        }
+
+        // case 2
+        Vector<Vector<double>> simulations2;
+        simulations2.append( Vector<double>( simulationSize, 1 ) );
+        simulations2.append( Vector<double>( simulationSize, 1 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations2 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 0.6032, 0.0001 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 2.5790, 0.0001 ) );
+        }
+
+        // case 3
+        Vector<Vector<double>> simulations3;
+        simulations3.append( Vector<double>( simulationSize, 1 ) );
+        simulations3.append( Vector<double>( simulationSize, 2 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.simulate( &simulations3 ) );
+
+        for ( unsigned i = 0; i < simulationSize; ++i )
+        {
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 0.5045, 0.0001 ) );
+            TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 2.1957, 0.0001 ) );
+        }
+    }
+
     void test_simulate_non_consecutive_layers()
     {
         NLR::NetworkLevelReasoner nlr;
