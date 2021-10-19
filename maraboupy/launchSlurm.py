@@ -199,12 +199,11 @@ def main():
                    "FindMinProvable": experimentFindMinProvable,
                    "DifferentDistances" : experimentDifferentDistances}
     parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
-    parser.add_argument("--exp", type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
+    parser.add_argument("--exp",           type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
     parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
-    parser.add_argument("--sample", type=int, default=0, help="For part of experiments, specific sample choice")
-    parser.add_argument("--net", type=str, help="Network to verify", required=True)
-    parser.add_argument("--slurm_seq", action="store_true",                        default=True,                  help="Run next mask if this one fails.")
-    parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
+    parser.add_argument("--sample",        type=int, default=0, help="For part of experiments, specific sample choice")
+    parser.add_argument("--net",           type=str, help="Network to verify", required=True)
+    parser.add_argument("--prop_distance", type=float, default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)")
     rerun_parser = parser.add_mutually_exclusive_group(required=False)
     rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='store_true',  help="When recieved spurious SAT, run again CEX to find a satisfying assignment.")
     rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
@@ -214,14 +213,13 @@ def main():
     numRunsPerType = args.runs_per_type
     experimentFunc = experiments[experiment]
     net = args.net
-    slurm_seq = args.slurm_seq
     rerun_spurious = args.rerun_spurious
     prop_distance = args.prop_distance
     
     ####################################################################################################
     
     timestamp = datetime.now()
-    batchId = "_".join(filter(None, ["Results", timestamp.strftime("%d-%m-%y"), experiment, net.replace('.h5', ''), timestamp.strftime("%H-%M-%S")]))
+    batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
     basePath = os.getcwd()
     if not os.path.exists(basePath + "logs/"):
         os.mkdir(basePath + "logs/")
@@ -232,8 +230,7 @@ def main():
     with open(batchDirPath + "/runCmd.sh", 'w') as f:
         f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
-    clusterFlags = []
-    commonFlags = clusterFlags + ["--batch_id", batchId] + ["--gtimeout", str(gtimeout)]
+    commonFlags = ["--batch_id", batchId] + ["--gtimeout", str(gtimeout)]
     if experiment != 'DifferentDistances':
         commonFlags += ["--prop_distance", str(prop_distance)]
     else:
@@ -248,7 +245,7 @@ def main():
     
     sbatchFiles = list()
     for cmd, title in zip(runCmds, runTitles):
-        runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=(str(0) if slurm_seq else ""))
+        runSingleRun(cmd, title, basePath, batchDirPath, maskIndex="")
 
         
 if __name__ == "__main__":
