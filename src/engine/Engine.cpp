@@ -29,7 +29,7 @@
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
-#include "Vector.h" 
+#include "Vector.h"
 
 #include <random>
 
@@ -1251,6 +1251,7 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
             && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
         _networkLevelReasoner->obtainCurrentBounds();
+        _networkLevelReasoner->clearConstraintTightenings();
 
         switch ( _milpSolverBoundTighteningType )
         {
@@ -1934,7 +1935,7 @@ void Engine::performSimulation()
     for ( unsigned i = 0; i < _networkLevelReasoner->getLayer( 0 )->getSize(); ++i )
     {
         std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
-                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
+                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) );
         Vector<double> simulationInput( _simulationSize );
 
         for ( unsigned j = 0; j < _simulationSize; ++j )
@@ -2352,7 +2353,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         _exitCode = Engine::UNSAT;
         return false;
     }
-    
+
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
