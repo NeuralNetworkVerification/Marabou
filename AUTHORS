@@ -6,22 +6,43 @@ the copyright and licensing of Marabou.
 
 The core designers and authors of Marabou are:
 
-  Guy Katz, The Hebrew University of Jerusalem
+Current:
+
+  Guy Amir, Hebrew University of Jerusalem
+  Clark Barrett, Stanford University
+  Guy Katz, Hebrew University of Jerusalem
+  Teruhiro Tagamori, NRI SecureTechnologies, Ltd.
+  Haoze Andrew Wu, Stanford University
+  Aleksandar Zeljic, Stanford University
+
+Alumni:
+
+  Ben Goldberg, Hebrew University of Jerusalem
   Derek A. Huang, Stanford University
   Duligur Ibeling, Stanford University
+  Ahmed Irfan, Stanford University
+  Yuval Jacoby, Hebrew University of Jerusalem 
   Kyle Julian, Stanford University
+  Mykel Kochenderfer, Stanford University
   Christopher Lazarus, Stanford University
   Rachel Lim, Stanford University
   Parth Shah, Stanford University
   Shantanu Thakoor, Stanford University
-  Andrew Wu, Stanford University
-  Aleksandar Zeljic, Stanford University
-  Mykel Kochenderfer, Stanford University
-  Clark Barrett, Stanford University
+  Alex Usvyatsov, Hebrew University of Jerusalem
+
 
 Other contributors to the Marabou codebase are listed in the THANKS file.
 
-The project was partially supported by funding from the Intel Corporation,
-the Federal Aviation Administration, the Israel Science Foundation
-(grant number 683/18), and the Binational Science Foundation (grant
-number 2017662).
+Marabou is new implementation of the Reluplex algorithm, but does not
+incorporate any code from the Reluplex codebase.
+
+Marabou incorporates context-dependent structures of the CVC4/cvc5 SMT solver
+and project materials such as authorship policy, development and coding
+guidelines are adapted from CVC4/cvc5 documents and guidelines.
+
+The project was partially supported by funding from the Binational Science
+Foundation (2017662), the Defense Advanced Research Projects Agency
+(FA8750-18-C-0099), the Federal Aviation Administration, Ford Motor Company,
+Intel Corporation, the Israel Science Foundation (683/18), the National Science
+Foundation (1814369, DGE-1656518), NRI Secure, Siemens Corporation, and the
+Stanford CURIS program.
