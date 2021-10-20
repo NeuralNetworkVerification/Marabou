@@ -26,31 +26,6 @@ TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
 gtimeout = TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S
 TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M + 2, TIMEOUT_S)
 
-def experimentCNNAbsVsVanilla(numRunsPerType, commonFlags, batchDirPath):
-    
-    runCmds = list()
-    runTitles = list()
-
-    for i in range(numRunsPerType):
-        title = "MaskCOICfg---{}".format(i)
-        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i)])
-        runTitles.append(title)
-        
-    for i in range(numRunsPerType):
-        title = "VanillaCfg---{}".format(i)
-        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(i), "--no_coi", "--no_mask"])
-        runTitles.append(title)
-        
-    with open(batchDirPath + "/plotSpec.json", 'w') as f:
-        jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
-                    "TIMEOUT_VAL" : gtimeout,
-                    "title2Label" : {'MaskCOICfg' : 'CNN Abstraction', 'VanillaCfg' : 'Vanilla Marabou'},
-                    "COIRatio"    : ['MaskCOICfg'],
-                    "compareProperties": [('VanillaCfg', 'MaskCOICfg')]}
-        json.dump(jsonDict, f, indent = 4)
-
-    return runCmds, runTitles
-
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
@@ -116,32 +91,6 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath):
 
     return runCmds, runTitles
 
-
-def experimentFindMinProvable(numRunsPerType, commonFlags, batchDirPath):
-    
-    runCmds = list()
-    runTitles = list()
-    title2Label = dict()
-
-    policy = "FindMinProvable"
-    sample = 1
-    title2Label["{}Cfg".format(policy)] = "experiment - {}".format(policy)
-    for i in range(numRunsPerType):
-        title = "{}Cfg---{}".format(policy, i)
-        runCmds.append(commonFlags + ["--run_title", title, "--sample", str(sample), "--policy", policy, "--no_full"])
-        runTitles.append(title)
-
-    with open(batchDirPath + "/plotSpec.json", 'w') as f:
-        policiesCfg = ["{}Cfg".format(policy)]
-        jsonDict = {"Experiment"  : "Find Maxmimal Removable Set of Neurons",
-                    "TIMEOUT_VAL" : gtimeout,
-                    "title2Label" : title2Label,
-                    "COIRatio"    : policiesCfg,
-                    "compareProperties": list()}
-        json.dump(jsonDict, f, indent = 4)
-
-    return runCmds, runTitles
-
 def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 
     CPUS = 8
@@ -194,9 +143,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, maskIndex=""):
 
 def main():
     
-    experiments = {"CNNAbsVsVanilla": experimentCNNAbsVsVanilla,
-                   "AbsPolicies"    : experimentAbsPolicies,
-                   "FindMinProvable": experimentFindMinProvable,
+    experiments = {"AbsPolicies"    : experimentAbsPolicies,
                    "DifferentDistances" : experimentDifferentDistances}
     parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
     parser.add_argument("--exp",           type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
@@ -220,7 +167,7 @@ def main():
     
     timestamp = datetime.now()
     batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
-    basePath = os.getcwd()
+    basePath = os.getcwd() + "/"
     if not os.path.exists(basePath + "logs/"):
         os.mkdir(basePath + "logs/")
     batchDirPath = basePath + "logs/" + batchId

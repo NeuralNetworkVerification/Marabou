@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 #import numpy as np
 from CnnAbs import CnnAbs, Policy
@@ -51,6 +52,8 @@ cfg_rerunSpurious     = args.rerun_spurious
 cfg_gtimeout          = args.gtimeout
 cfg_network           = args.net
 
+cfg_cwd = os.getcwd()
+
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
 
 cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, maskIndex='', policy=cfg_abstractionPolicy)
@@ -84,7 +87,7 @@ cnnAbs.dumpResultsJson()
 #############################################################################################
 
 CnnAbs.printLog("Started model building")
-modelTF = cnnAbs.modelUtils.loadModel(cfg_network)
+modelTF = cnnAbs.modelUtils.loadModel(cfg_cwd + '/' + cfg_network)
 CnnAbs.printLog("Finished model building")
 
 cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
