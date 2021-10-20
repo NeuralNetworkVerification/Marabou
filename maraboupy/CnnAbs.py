@@ -307,7 +307,7 @@ class CnnAbs:
         if not self.logDir.endswith("/"):
             self.logDir += "/"
         os.makedirs(self.logDir, exist_ok=True)
-        os.chdir(self.logDir)
+        os.chdir(self.logDir) #FIXME should not change file, caused unxepected functionality in model grabbing.
         if CnnAbs.logger == None:
             CnnAbs.setLogger(suffix=maskIndex)
         if dumpDir:            
@@ -865,7 +865,9 @@ class ModelUtils:
         return origM
 
     def loadModel(self, path):
-        model = load_model(CnnAbs.basePath + "/" + path, custom_objects={'myLoss': myLoss})
+        #model = load_model(CnnAbs.basePath + "/" + path, custom_objects={'myLoss': myLoss})
+        print("os.path.abspath(path)={}".format(os.path.abspath(path)))
+        model = load_model(os.path.abspath(path), custom_objects={'myLoss': myLoss})
         model.summary()
         score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
         CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
