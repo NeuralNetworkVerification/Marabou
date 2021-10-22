@@ -89,12 +89,12 @@ public:
     /*
       Smt core related statistics.
     */
-    void setCurrentStackDepth( unsigned depth );
+    void setCurrentDecisionLevel( unsigned depth );
     void incNumSplits();
     void incNumPops();
     void addTimeSmtCore( unsigned long long time );
     void incNumVisitedTreeStates();
-    unsigned getMaxStackDepth() const;
+    unsigned getMaxDecisionLevel() const;
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;
     unsigned getNumSplits() const;
@@ -188,8 +188,8 @@ private:
     unsigned long long _numConstraintFixingSteps;
 
     // Current and max stack depth in the SMT core
-    unsigned _currentStackDepth;
-    unsigned _maxStackDepth;
+    unsigned _currentDecisionLevel;
+    unsigned _maxDecisionLevel;
 
     // Total number of splits so far
     unsigned _numSplits;
