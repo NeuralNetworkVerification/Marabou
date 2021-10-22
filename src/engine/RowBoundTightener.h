@@ -16,6 +16,7 @@
 #ifndef __RowBoundTightener_h__
 #define __RowBoundTightener_h__
 
+#include "BoundManager.h"
 #include "Equation.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
@@ -50,6 +51,55 @@ public:
     */
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
+
+    /*
+       Method obtains lower bound of *var*.
+     */
+    inline double getLowerBound( unsigned var ) const
+    {
+        return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
+                                            : _lowerBounds[var];
+    }
+
+    /*
+       Method obtains upper bound of *var*.
+     */
+    inline double getUpperBound( unsigned var ) const
+    {
+        return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
+                                            : _upperBounds[var];
+    }
+
+    /*
+       Method sets the lower bound of *var* to *value*.
+     */
+    inline void setLowerBound( unsigned var, double value )
+    {
+        ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
+                                     : _lowerBounds[var] = value;
+    }
+
+    /*
+       Method sets the upper bound of *var* to *value*.
+     */
+    inline void setUpperBound( unsigned var, double value )
+    {
+        ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
+                                     : _upperBounds[var] = value;
+    }
+
+    /*
+     * Local register new bound functions
+     * NOTE: Used post integration, currently these methods are not used anywhere atm.
+     */
+    inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound)
+    {
+        return _boundManager->tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
+    }
+    inline unsigned registerTighterUpperBound( unsigned variable, double newLowerBound)
+    {
+        return _boundManager->tightenUpperBound( variable, newLowerBound ) ? 1u : 0u;
+    }
 
     /*
       Callback from the Tableau, to inform of a change in dimensions
@@ -113,6 +163,12 @@ private:
     double *_upperBounds;
     bool *_tightenedLower;
     bool *_tightenedUpper;
+
+    /*
+       BoundManager object stores bounds of all variables.
+       NOT YET IN USE
+     */
+    BoundManager *_boundManager;
 
     /*
       Work space for the inverted basis matrix tighteners
