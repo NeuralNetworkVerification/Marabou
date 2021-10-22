@@ -127,6 +127,11 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
+      Recompute status of basic variables
+    */
+    void recomputeBasicStatus() { _tableau->computeBasicStatus(); };
+
+    /*
       Reset the state of the engine, before solving a new query
       (as part of DnC mode).
     */

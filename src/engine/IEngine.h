@@ -57,6 +57,11 @@ public:
     virtual void applySnCSplit( PiecewiseLinearCaseSplit split, String queryId ) = 0;
 
     /*
+      Recompute status of basic variables
+    */
+    virtual void recomputeBasicStatus() = 0;
+
+    /*
       Methods for storing and restoring the state of the engine.
     */
     virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
