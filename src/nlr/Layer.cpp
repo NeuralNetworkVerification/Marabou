@@ -1719,6 +1719,10 @@ String Layer::typeToString( Type type )
         return "RELU";
         break;
 
+    case SIGMOID:
+        return "SIGMOID";
+        break;
+
     case ABSOLUTE_VALUE:
         return "ABSOLUTE_VALUE";
         break;

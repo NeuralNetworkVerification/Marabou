@@ -178,6 +178,11 @@ public:
 
     const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
 
+    /*
+      Chech bound violations of all variables
+    */
+    void checkBoundsViolations();
+
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
@@ -196,6 +201,7 @@ private:
     void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );

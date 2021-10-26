@@ -67,15 +67,15 @@ private:
     */
     void setMissingBoundsToInfinity();
 
-	/*
+    /*
       Tighten bounds using the linear equations
-	*/
-	bool processEquations();
+    */
+    bool processEquations();
 
     /*
-      Tighten the bounds using the piecewise linear constraints
-	*/
-	bool processConstraints();
+      Tighten the bounds using the piecewise linear and transcendental constraints
+    */
+    bool processConstraints();
 
     /*
       If there exists an equation x = x', replace all instances of x with x'
@@ -97,8 +97,8 @@ private:
     /*
       Eliminate any variables that have become fixed or merged with an
       identical variable
-	*/
-	void eliminateVariables();
+    */
+    void eliminateVariables();
 
     /*
       Call on the PL constraints to add any auxiliary equations

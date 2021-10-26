@@ -42,7 +42,9 @@
 #include "ReluConstraint.h"
 #include "Set.h"
 #include "SnCDivideStrategy.h"
+#include "SigmoidConstraint.h"
 #include "SignConstraint.h"
+#include "TranscendentalConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -92,6 +94,11 @@ void restoreOutputStream(int outputStream)
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addTranscendentalConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -183,6 +190,7 @@ struct MarabouOptions {
         , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
         , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _dumpBounds( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        , _checkBoundsBeforeSolve( Options::get()->getBool( Options::CHECK_BOUNDS_BEFORE_SOLVE ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
@@ -209,6 +217,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
     Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit );
+    Options::get()->setBool( Options::CHECK_BOUNDS_BEFORE_SOLVE, _checkBoundsBeforeSolve ); 
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -236,6 +245,7 @@ struct MarabouOptions {
     bool _solveWithMILP;
     bool _dumpBounds;
     bool _skipLpTighteningAfterSplit;
+    bool _checkBoundsBeforeSolve;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -377,7 +387,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
+        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit)
+        .def_readwrite("_checkBoundsBeforeSolve", &MarabouOptions::_checkBoundsBeforeSolve);
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
@@ -430,6 +441,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
             var1 (int): Input variable to Relu constraint
             var2 (int): Output variable to Relu constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
+        Add a Sigmoid constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Sigmoid constraint
+            var2 (int): Output variable to Sigmoid constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
     m.def("addSignConstraint", &addSignConstraint, R"pbdoc(

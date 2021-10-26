@@ -195,6 +195,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.addEquations(node, makeEquations)
         elif node.op_type == 'Relu': 
             self.reluEquations(node, makeEquations)
+        elif node.op_type == 'Sigmoid':
+            self.sigmoidEquations(node, makeEquations)
         else:
             raise NotImplementedError("Operation %s not implemented" % (node.op_type))      
     
@@ -815,7 +817,34 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.addRelu(inputVars[i], outputVars[i])
         for f in outputVars:
             self.setLowerBound(f, 0.0)
-                     
+
+    def sigmoidEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to Sigmoid
+
+        Args:
+            node (node): ONNX node representing the Sigmoid operation
+            makeEquations (bool): True if we need to create new variables and add new Sigmoids
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName] 
+        if not makeEquations:
+            return
+        
+        # Get variables
+        inputVars = self.varMap[inputName].reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        assert len(inputVars) == len(outputVars)
+
+        # Generate equations
+        for i in range(len(inputVars)):
+            self.addSigmoid(inputVars[i], outputVars[i])
+        for f in outputVars:
+            self.setLowerBound(f, 0.0)
+            self.setUpperBound(f, 1.0)
+
     def cleanShapes(self):
         """Remove unused shapes
         
@@ -875,7 +904,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Adjust relu list
         for i, variables in enumerate(self.reluList):
             self.reluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
-        
+
+        # Adjust sigmoid list
+        for i, variables in enumerate(self.sigmoidList):
+            self.sigmoidList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
+
         # Adjust max pool list
         for i, (elements, outVar) in enumerate(self.maxList):
             newOutVar = self.reassignVariable(outVar, numInVars, outVars, newOutVars)

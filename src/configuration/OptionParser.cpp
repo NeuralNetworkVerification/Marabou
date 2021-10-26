@@ -51,6 +51,9 @@ void OptionParser::initialize()
         ( "dump-bounds",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
           "Dump the bounds after preprocessing" )
+        ( "check-bounds-before-solve",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::CHECK_BOUNDS_BEFORE_SOLVE]) ),
+          "Chech bound violations before solving" )
         ( "input",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
           "Neural netowrk file" )

@@ -479,6 +479,48 @@ bool Preprocessor::processConstraints()
 		}
 	}
 
+	for ( auto &constraint : _preprocessed.getTranscendentalConstraints() )
+	{
+		for ( unsigned variable : constraint->getParticipatingVariables() )
+		{
+			constraint->notifyLowerBound( variable, _preprocessed.getLowerBound( variable ) );
+			constraint->notifyUpperBound( variable, _preprocessed.getUpperBound( variable ) );
+		}
+
+        List<Tightening> tightenings;
+        constraint->getEntailedTightenings( tightenings );
+
+        for ( const auto &tightening : tightenings )
+		{
+			if ( ( tightening._type == Tightening::LB ) &&
+                 ( FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) ) )
+            {
+                tighterBoundFound = true;
+                _preprocessed.setLowerBound( tightening._variable, tightening._value );
+            }
+
+            else if ( ( tightening._type == Tightening::UB ) &&
+                      ( FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) ) )
+            {
+                tighterBoundFound = true;
+                _preprocessed.setUpperBound( tightening._variable, tightening._value );
+            }
+
+            if ( FloatUtils::areEqual( _preprocessed.getLowerBound( tightening._variable ),
+                                       _preprocessed.getUpperBound( tightening._variable ),
+                                       GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+                _preprocessed.setUpperBound( tightening._variable,
+                                             _preprocessed.getLowerBound( tightening._variable ) );
+
+            if ( FloatUtils::gt( _preprocessed.getLowerBound( tightening._variable ),
+                                 _preprocessed.getUpperBound( tightening._variable ),
+                                 GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+            {
+                throw InfeasibleQueryException();
+            }
+		}
+	}
+
     return tighterBoundFound;
 }
 

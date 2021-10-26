@@ -22,6 +22,7 @@
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
+#include "TranscendentalConstraint.h"
 
 class InputQuery
 {
@@ -51,6 +52,10 @@ public:
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
+  
+    void addTranscendentalConstraint( TranscendentalConstraint *constraint );
+    const List<TranscendentalConstraint *> &getTranscendentalConstraints() const;
+    List<TranscendentalConstraint *> &getTranscendentalConstraints();
 
     /*
       Methods for handling input and output variables
@@ -140,6 +145,7 @@ private:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;
+    List<TranscendentalConstraint *> _tsConstraints;
 
     Map<unsigned, double> _solution;
 
@@ -155,6 +161,9 @@ private:
                                    Map<unsigned, unsigned> &handledVariableToLayer,
                                    unsigned newLayerIndex );
     bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
+                             Map<unsigned, unsigned> &handledVariableToLayer,
+                             unsigned newLayerIndex );
+    bool constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
     bool constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,

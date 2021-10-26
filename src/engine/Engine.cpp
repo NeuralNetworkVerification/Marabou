@@ -1182,6 +1182,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+
+        // check bound violations of all variables
+        if ( Options::get()->getBool( Options::CHECK_BOUNDS_BEFORE_SOLVE ) )
+            _networkLevelReasoner->checkBoundsViolations();
+
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -1203,6 +1208,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                     ASSERT( plc->isActive() );
                 }
         });
+
+    // TODO: Remove this block after getting ready to support sigmoid with MILP.
+    if ( _exitCode != Engine::UNSAT && inputQuery.getTranscendentalConstraints().size() > 0 )
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid except some UNSAT cases yet." );
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
