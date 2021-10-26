@@ -204,13 +204,13 @@ def plotCOIRatio(resultDict):
     plt.close()
 
     uniqueVarRatio, repeatsVarRatio = countValues([var for var,result in zip(y1, results) if result == "SAT"])
-    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio, "SAT":None}, "VariableRatioHistogramSAT-{}".format(noWhiteLabel))
+    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio, "SAT":None, 'totalAbsRefineBatches' : totalAbsRefineBatches}, "VariableRatioHistogramSAT-{}".format(noWhiteLabel))
     uniqueVarRatio, repeatsVarRatio = countValues([var for var,result in zip(y1, results) if result == "UNSAT"])
-    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio, "UNSAT":None}, "VariableRatioHistogramUNSAT-{}".format(noWhiteLabel))
+    dumpJson({'ratio': uniqueVarRatio, 'repeats': repeatsVarRatio, "UNSAT":None, 'totalAbsRefineBatches' : totalAbsRefineBatches}, "VariableRatioHistogramUNSAT-{}".format(noWhiteLabel))
     uniqueNumRuns, repeatsNumRuns = countValues([var for var,result in zip(x, results) if result == "SAT"])
-    dumpJson({'numRuns': uniqueNumRuns, 'repeats': repeatsNumRuns, "SAT":None}, "NumRunsHistogramSAT-{}".format(noWhiteLabel))
+    dumpJson({'numRuns': uniqueNumRuns, 'repeats': repeatsNumRuns, "SAT":None, 'totalAbsRefineBatches' : totalAbsRefineBatches}, "NumRunsHistogramSAT-{}".format(noWhiteLabel))
     uniqueNumRuns, repeatsNumRuns = countValues([var for var,result in zip(x, results) if result == "UNSAT"])
-    dumpJson({'numRuns': uniqueNumRuns, 'repeats': repeatsNumRuns, "UNSAT":None}, "NumRunsHistogramUNSAT-{}".format(noWhiteLabel))                 
+    dumpJson({'numRuns': uniqueNumRuns, 'repeats': repeatsNumRuns, "UNSAT":None, 'totalAbsRefineBatches' : totalAbsRefineBatches}, "NumRunsHistogramUNSAT-{}".format(noWhiteLabel))                 
     
 
 ####################################################################################################
