@@ -37,6 +37,7 @@ engine_add_unit_test(ProjectedSteepestEdge)
 engine_add_unit_test(ReluConstraint)
 engine_add_unit_test(RowBoundTightener)
 engine_add_unit_test(SignConstraint)
+engine_add_unit_test(SigmoidConstraint)
 engine_add_unit_test(SmtCore)
 engine_add_unit_test(Tableau)
 

@@ -1223,6 +1223,12 @@ void Engine::performMILPSolverBoundedTightening()
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
+        // TODO: Remove this block after getting ready to support sigmoid with MILP.
+        if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
+            && _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                "Marabou doesn't support sigmoid with MILP" );
+
         switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
         case MILPSolverBoundTighteningType::LP_RELAXATION:

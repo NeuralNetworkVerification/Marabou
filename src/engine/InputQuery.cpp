@@ -256,18 +256,22 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         }
     }
 
+    // Setting tsConstraints
+    for ( const auto &constraint : other._tsConstraints )
+    _tsConstraints.append( constraint->duplicateConstraint() );
+
     // Setting plConstraints and topological order
     if ( !other._networkLevelReasoner )
     {
         for ( const auto &constraint : other._plConstraints )
             _plConstraints.append( constraint->duplicateConstraint() );
-        for ( const auto &constraint : other._tsConstraints )
-            _tsConstraints.append( constraint->duplicateConstraint() );
     }
     else
     {
         INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in input query: %u",
                                   other._plConstraints.size() ).ascii() );
+        INPUT_QUERY_LOG( Stringf( "Number of transcendental constraints in input query: %u",
+                                  other._tsConstraints.size() ).ascii() );
         INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in topological order %u",
                                   other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
 

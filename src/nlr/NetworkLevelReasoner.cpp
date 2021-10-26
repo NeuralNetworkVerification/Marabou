@@ -300,7 +300,10 @@ void NetworkLevelReasoner::checkBoundsViolations()
                                     getLayer( i )->getUb( j ),
                                     GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
-                printf( "Violation at Neuron_%u of Layer_%u - [%5.2lf,%5.2lf]\n", j, i, getLayer( i )->getLb( j ), getLayer( i )->getUb( j ) );
+                printf( "Violation at Neuron_%u of Layer_%u - LB:%5.2lf, UB:%5.2lf\n",
+                    j, i,
+                    getLayer( i )->getLb( j ),
+                    getLayer( i )->getUb( j ) );
                 throw InfeasibleQueryException();
             }
         }
