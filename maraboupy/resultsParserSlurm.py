@@ -156,6 +156,7 @@ def plotCOIRatio(resultDict):
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))    
     solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT"]]
     x  = [resultDict[xparam]["finalPartiallity"]["numRuns"]   for xparam in solved]
+    totalAbsRefineBatches = next(resultDict[xparam]["finalPartiallity"]["outOf"] for xparam in solved if "outOf" in resultDict[xparam]["finalPartiallity"])
     y1 = [resultDict[xparam]["finalPartiallity"]["vars"]      for xparam in solved]
     y2 = [resultDict[xparam]["finalPartiallity"]["equations"] for xparam in solved]
     results = [resultDict[xparam]["result"] for xparam in solved]
@@ -194,7 +195,7 @@ def plotCOIRatio(resultDict):
     plt.figure()
     uniqueNumRuns, repeatsNumRuns = countValues(x)
     plt.plot(uniqueNumRuns, repeatsNumRuns, marker='x', markerfacecolor='none', color='red', markeredgecolor='red')
-    dumpJson({'numRuns':uniqueNumRuns, 'repeats': repeatsNumRuns}, "NumRunsHistogram-{}".format(noWhiteLabel))
+    dumpJson({'numRuns':uniqueNumRuns, 'repeats': repeatsNumRuns, 'totalAbsRefineBatches' : totalAbsRefineBatches}, "NumRunsHistogram-{}".format(noWhiteLabel))
 
     plt.xlabel('Number of solver Runs Till Success - {}'.format(resultDict['label']))
     plt.ylabel('Num. Samples')
@@ -315,6 +316,7 @@ for fullpath in resultsFiles:
             finalPartiallity["equations"] = finalQueryStats["numEquations"] / originalQueryStats["numEquations"]
             finalPartiallity["reluConstraints"] = finalQueryStats["numReluConstraints"] / originalQueryStats["numReluConstraints"]
             finalPartiallity["numRuns"] = len(resultDict["subResults"])
+            finalPartiallity["outOf"] = resultDict["subResults"][-1]["outOf"] + 1
         else:
             originalQueryStats = dict()
             finalQueryStats = dict()

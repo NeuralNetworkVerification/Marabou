@@ -405,6 +405,8 @@ class CnnAbs:
         successful = None
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
         self.numMasks = len(absRefineBatches)
+        self.resultsJson["absRefineBatches"] = self.numMasks
+        self.dumpResultsJson()
                 
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
