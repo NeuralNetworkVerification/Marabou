@@ -91,9 +91,9 @@ public:
     /*
       Get the tightenings entailed by the constraint.
     */
-    virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0; // TG: need
+    virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
-    void setStatistics( Statistics *statistics ); // TG: needed
+    void setStatistics( Statistics *statistics );
 
     /*
       Produce string representation of the transcendental constraint.
@@ -102,7 +102,7 @@ public:
       the first string before a comma has the contraint type identifier
       (ie. "sigmoid", "tanh", etc)
     */
-    virtual String serializeToString() const = 0;  // TG: throw error
+    virtual String serializeToString() const = 0;
 
     /*
       Register a constraint bound tightener. If a tightener is registered,
@@ -130,7 +130,7 @@ protected:
 
     BoundManager *_boundManager;
 
-    IConstraintBoundTightener *_constraintBoundTightener; // TG: need
+    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection

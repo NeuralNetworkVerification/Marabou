@@ -85,7 +85,7 @@ public:
     /*
       Returns string with shape: sigmoid, _f, _b
     */
-    String serializeToString() const override;  // TG: throw error
+    String serializeToString() const override;
 
     /*
       Get the index of the B and F variables.
