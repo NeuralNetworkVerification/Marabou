@@ -275,11 +275,24 @@ class DataSet:
             self.setMnist()
         else:
             raise NotImplementedError
-        
+
+    @staticmethod
+    def readFromFile(dataset):
+        with open('/'.join([CnnAbs.basePath, dataset, 'x_train.npy']), 'rb') as f:
+            x_train = np.load(f, allow_pickle=True)
+        with open('/'.join([CnnAbs.basePath, dataset, 'y_train.npy']), 'rb') as f:
+            y_train = np.load(f, allow_pickle=True)
+        with open('/'.join([CnnAbs.basePath, dataset, 'x_test.npy']), 'rb') as f:
+            x_test = np.load(f, allow_pickle=True)
+        with open('/'.join([CnnAbs.basePath, dataset, 'y_test.npy']), 'rb') as f:
+            y_test = np.load(f, allow_pickle=True)            
+        return (x_train, y_train), (x_test, y_test)
+    
     def setMnist(self):
         self.num_classes = 10
         self.input_shape = (28,28,1)
-        (self.x_train, self.y_train), (self.x_test, self.y_test) = tf.keras.datasets.mnist.load_data()
+        #(self.x_train, self.y_train), (self.x_test, self.y_test) = tf.keras.datasets.mnist.load_data()
+        (self.x_train, self.y_train), (self.x_test, self.y_test) = DataSet.readFromFile('mnist')
         self.x_train, self.x_test = self.x_train / 255.0, self.x_test / 255.0
         self.x_train = np.expand_dims(self.x_train, -1)
         self.x_test = np.expand_dims(self.x_test, -1)

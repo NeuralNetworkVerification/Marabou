@@ -34,7 +34,7 @@ rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='
 rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
 parser.set_defaults(rerun_spurious=False)
 
-parser.add_argument("--net",     type=str, default="",                     help="verified neural network")
+parser.add_argument("--net", type=str, default="", help="verified neural network", required=True)
 
 args = parser.parse_args()
 

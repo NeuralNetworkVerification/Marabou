@@ -4,11 +4,15 @@ import os
 import tensorflow as tf
 import numpy as np
 
-for (x, y), name in zip(tf.keras.datasets.mnist.load_data(), ['train', 'test']):
-    os.makedirs('mnist/{}'.format(name), exist_ok=True)
-    for (i, sample),label in zip(enumerate(x), y):
-        with open('mnist/{}/{}-{}.npy'.format(name, i, label), 'wb') as f:
-            np.save(f, sample)
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
+with open('mnist/x_train.npy', 'wb') as f:
+            np.save(f, x_train)
+with open('mnist/y_train.npy', 'wb') as f:
+            np.save(f, y_train)
+with open('mnist/x_test.npy', 'wb') as f:
+            np.save(f, x_test)
+with open('mnist/y_test.npy', 'wb') as f:
+    np.save(f, y_test)
 
 
