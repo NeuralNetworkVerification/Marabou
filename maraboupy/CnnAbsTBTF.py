@@ -29,10 +29,6 @@ parser.add_argument("--timeout",        type=int,                               
 parser.add_argument("--gtimeout",       type=int,                                   default=3600,                   help="Global timeout for all solving in seconds.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
-rerun_parser = parser.add_mutually_exclusive_group(required=False)
-rerun_parser.add_argument('--rerun_spurious'   , dest='rerun_spurious', action='store_true',  help="When recieved spurious SAT, run again CEX to find a satisfying assignment.")
-rerun_parser.add_argument('--norerun_spurious', dest='rerun_spurious', action='store_false', help="Disable: When recieved spurious SAT, run again CEX to find a satisfying assignment.")
-parser.set_defaults(rerun_spurious=False)
 
 parser.add_argument("--net", type=str, default="", help="verified neural network", required=True)
 
@@ -48,7 +44,6 @@ cfg_sampleIndex       = args.sample
 cfg_boundTightening   = 'lp'
 cfg_symbolicTightening= 'sbt'
 cfg_timeoutInSeconds  = args.timeout
-cfg_rerunSpurious     = args.rerun_spurious
 cfg_gtimeout          = args.gtimeout
 cfg_network           = args.net
 
@@ -56,7 +51,7 @@ cfg_cwd = os.getcwd()
 
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
 
-cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, maskIndex='', policy=cfg_abstractionPolicy)
+cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs_CnnAbs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, maskIndex='', policy=cfg_abstractionPolicy)
 
 startPrepare = time.time()
 
@@ -69,7 +64,6 @@ cnnAbs.resultsJson["cfg_sampleIndex"]       = cfg_sampleIndex
 cnnAbs.resultsJson["cfg_boundTightening"]   = cfg_boundTightening
 cnnAbs.resultsJson["cfg_symbolicTightening"]= cfg_symbolicTightening
 cnnAbs.resultsJson["cfg_timeoutInSeconds"]  = cfg_timeoutInSeconds
-cnnAbs.resultsJson["cfg_rerunSpurious"]     = cfg_rerunSpurious
 cnnAbs.resultsJson["cfg_gtimeout"]          = cfg_gtimeout
 cnnAbs.resultsJson["cfg_network"]           = cfg_network
 cnnAbs.resultsJson["SAT"] = None
