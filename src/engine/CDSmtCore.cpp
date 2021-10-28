@@ -81,32 +81,30 @@ bool CDSmtCore::needToSplit() const
 
 void CDSmtCore::pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision )
 {
-    //ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
-    SMT_LOG( "New decision level ..." );
-
-    _context.push();
-
+    SMT_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
     TrailEntry te( constraint, decision );
-    _trail.push_back(te);
-    _decisions.push_back( te );
-
-    _engine->applySplit( constraint->getCaseSplit( decision ) );
-
+    applyTrailEntry( te, true );
     SMT_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
-    //ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
 }
 
 void CDSmtCore::pushImplication( PiecewiseLinearConstraint *constraint, PhaseStatus phase )
 {
-    SMT_LOG( Stringf( "Push implication on trail @%d ... ", _context.getLevel() ).ascii() );
-
+    SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
     TrailEntry te( constraint, phase );
+    applyTrailEntry( te, false );
+    SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
+}
+
+void CDSmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
+{
+    if ( isDecision )
+    {
+        _context.push();
+        _decisions.push_back( te );
+    }
 
     _trail.push_back(te);
-
-    _engine->applySplit( constraint->getCaseSplit( phase ) );
-
-    SMT_LOG( "Push implication on trail DONE"  );
+    _engine->applySplit( te.getPiecewiseLinearCaseSplit() );
 }
 
 void CDSmtCore::decide()

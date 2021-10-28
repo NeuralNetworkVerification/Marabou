@@ -78,23 +78,33 @@ public:
      * decideSplit - choose a phase of PiecewiseLinearConstraint's alternativeCases to decide.
      */
     void decideSplit( PiecewiseLinearConstraint *constraint );
+
     /*
      * Push TrailEntry representing the decision onto the trail. Push the decided PiecewiseLinearCaseSplit to the engine.
      */
     void pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision );
 
     /*
+      Let the smt core know of an implied valid case split that was discovered.
+    */
+    void implyValidSplit( PiecewiseLinearCaseSplit &validSplit );
+
+    /*
+      Let the smt core trail know of an implied valid case split that was discovered.
+    */
+    void pushImplication( PiecewiseLinearConstraint *constraint, PhaseStatus phase );
+
+    /*
+        Pushes trail element onto trail, handles decision book-keeping and
+        applies the case split to the engine.
+     */
+    void applyTrailEntry( TrailEntry &te, bool isDecision = false );
+
+    /*
       Backtrack the search, by popping stacks with no alternatives, and perform
       a decision or an implication as needed.
     */
     bool backtrackAndContinue();
-
-
-    /*
-      Pop a stack frame, copying alternativeSplits if any. Return
-      true if successful, false if the stack is empty.
-    */
-    bool popSplitFromStack( List<PiecewiseLinearCaseSplit> &alternativeSplits );
 
     /*
       Pop a stack frame. Return true if successful, false if the stack is empty.
@@ -111,16 +121,6 @@ public:
       The current stack depth.
     */
     unsigned getDecisionLevel() const;
-
-    /*
-      Let the smt core know of an implied valid case split that was discovered.
-    */
-    void implyValidSplit( PiecewiseLinearCaseSplit &validSplit );
-
-    /*
-      Let the smt core trail know of an implied valid case split that was discovered.
-    */
-    void pushImplication( PiecewiseLinearConstraint *constraint, PhaseStatus phase );
 
     /*
       Return a list of all splits performed so far, both SMT-originating and valid ones,
@@ -162,6 +162,7 @@ public:
       if a constraint for splitting is successfully picked
     */
     bool pickSplitPLConstraint();
+
     /*
      * For testing purposes
      */
@@ -171,6 +172,7 @@ public:
 
     /*
       For debugging purposes only - store a correct possible solution
+      TODO: Create a user interface for this
     */
     void storeDebuggingSolution( const Map<unsigned, double> &debuggingSolution );
     bool checkSkewFromDebuggingSolution();
