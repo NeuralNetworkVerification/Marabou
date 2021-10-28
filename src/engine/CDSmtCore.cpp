@@ -302,7 +302,7 @@ void CDSmtCore::interruptIfCompliantWithDebugSolution()
 }
 
 
-PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel )
+PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel ) const
 {
     ASSERT( decisionLevel <= getDecisionLevel() );
     ASSERT( decisionLevel > 0 );

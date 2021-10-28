@@ -165,7 +165,7 @@ public:
     /*
      * For testing purposes
      */
-    PiecewiseLinearCaseSplit getDecision( unsigned decisionLevel );
+    PiecewiseLinearCaseSplit getDecision( unsigned decisionLevel ) const;
 
     void reset();
 
