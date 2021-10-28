@@ -700,25 +700,15 @@ class CnnAbs:
                                                "timedOut" : timedOut})
         self.dumpResultsJson()
 
-    def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None, rerun=False):
-        if rerun:
-            self.resultsJson["subResults"][-1]["runtimeInitialRun"] = self.resultsJson["subResults"][-1]["runtime"]
-            self.resultsJson["subResults"][-1]["runtime"] += runtime
-            self.resultsJson["subResults"][-1]["runtimeRerun"] = runtime
-            self.resultsJson["subResults"][-1]["runtimeTotal"] = runtimeTotal
-            self.resultsJson["subResults"][-1]["doneRerun"] = True
-            self.resultsJson["subResults"][-1]["rerunSAT"] = sat
-            self.resultsJson["subResults"][-1]["rerunTimedOut"] = timedOut
-        else:
-            self.resultsJson["subResults"][-1] = {"index" : self.maskIndex,
-                                                  "outOf" : self.numMasks-1,
-                                                  "runtime" : runtime,
-                                                  "runtimeTotal":runtimeTotal,
-                                                  "originalQueryStats" : originalQueryStats,
-                                                  "finalQueryStats" : finalQueryStats,
-                                                  "SAT" : sat,
-                                                  "timedOut" : timedOut,
-                                                  "doneRerun" : False}
+    def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
+        self.resultsJson["subResults"][-1] = {"index" : self.maskIndex,
+                                              "outOf" : self.numMasks-1,
+                                              "runtime" : runtime,
+                                              "runtimeTotal":runtimeTotal,
+                                              "originalQueryStats" : originalQueryStats,
+                                              "finalQueryStats" : finalQueryStats,
+                                              "SAT" : sat,
+                                              "timedOut" : timedOut}
             
         self.dumpResultsJson()
         
