@@ -2,18 +2,17 @@
 /*! \file CDSmtCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Aleksandar Zeljic, Guy Katz, Parth Shah, Duligur Ibeling
+ **   Aleksandar Zeljic, Guy Katz, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** The CDSmtCore implements a CDCL-style loop, using context-dependent data types
- ** and state-based PiecewiseLinearConstraint to store the search state in an
- ** incremental and easy-to-backtrack way.
-
+ ** See the description of the class in CDSmtCore.h.
  **/
+
+#include "CDSmtCore.h"
 
 #include "Debug.h"
 #include "DivideStrategy.h"
@@ -24,7 +23,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "ReluConstraint.h"
-#include "CDSmtCore.h"
 
 using namespace CVC4::context;
 

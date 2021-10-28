@@ -2,15 +2,21 @@
 /*! \file CDSmtCore.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Parth Shah
+ **   AleksandarZeljic, Guy Katz, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-**/
+ ** This class implements a context-dependent SmtCore class with lazy
+ ** backtracking of search state. The search state is stored lightly using the
+ ** PhaseStatus enumeration in context-dependent PiecewiseLinearConstraint
+ ** class. The exhaustive search relies on correct implementation of the
+ ** isFeasible()/nextFeasibleCase() methods in PiecewiseLinearConstraint class.
+ **
+ ** TODO: Incremental frames
+ **/
 
 #ifndef __CDSmtCore_h__
 #define __CDSmtCore_h__
