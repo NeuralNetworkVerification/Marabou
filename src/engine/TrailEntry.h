@@ -37,7 +37,7 @@ public:
       _pwlConstraint->markInfeasible( _phase );
   }
 
-  inline bool isFeasible()
+  inline bool isFeasible() const
   {
       return _pwlConstraint->isFeasible();
   }
