@@ -199,7 +199,6 @@ void InputQuery::mergeIdenticalVariables( unsigned v1, unsigned v2 )
         }
     }
 
-    // TODO: update lower and upper bounds
 }
 
 void InputQuery::removeEquation( Equation e )

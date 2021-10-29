@@ -196,8 +196,6 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
     if ( isActive() && _constraintBoundTightener )
     {
-        // TODO: optimize this. Don't need to recompute ALL possible bounds,
-        // Can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
         for ( const auto &tightening : tightenings )
@@ -236,8 +234,6 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     if ( isActive() && _constraintBoundTightener )
     {
-        // TODO: optimize this. Don't need to recompute ALL possible bounds,
-        // Can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
         for ( const auto &tightening : tightenings )
@@ -311,7 +307,6 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
             tightenings.append( Tightening( *_elements.begin(), fLB, Tightening::LB ) );
     }
 
-    // TODO: can we derive additional bounds?
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -453,7 +448,6 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
     ASSERT( !satisfied() );
     ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
 
-    // TODO
     return getPossibleFixes();
 }
 
@@ -710,7 +704,6 @@ void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
         // Set the bounds for the aux variable
         inputQuery.setLowerBound( auxVariable, 0 );
 
-        // Todo: upper bound for aux?
     }
 }
 

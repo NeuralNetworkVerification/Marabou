@@ -95,8 +95,6 @@ public:
 
     /*
        Returns case split corresponding to the given phase/id
-       TODO: Update the signature in PiecewiseLinearConstraint, once the new
-       search is integrated.
      */
     virtual PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus caseId ) const = 0;
 

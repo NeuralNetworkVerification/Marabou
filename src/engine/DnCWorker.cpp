@@ -85,10 +85,6 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         _engine->restoreState( *_initialState );
         _engine->reset();
 
-        // TODO: each worker is going to keep a map from *CaseSplit to an
-        // object of class DnCStatistics, which contains some basic
-        // statistics. The maps are owned by the DnCManager.
-
         // Apply the split and solve
         _engine->applySplit( *split );
 
