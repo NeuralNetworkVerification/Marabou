@@ -180,32 +180,9 @@ public:
     void interruptIfCompliantWithDebugSolution();
 private:
     /*
-      A stack entry consists of the engine state before the split,
-      the active split, the alternative splits (in case of backtrack),
-      and also any implied splits that were discovered subsequently.
-    */
-    struct StackEntry
-    {
-    public:
-        PiecewiseLinearCaseSplit _activeSplit;
-        PiecewiseLinearConstraint *_sourceConstraint;
-        List<PiecewiseLinearCaseSplit> _impliedValidSplits;
-        List<PiecewiseLinearCaseSplit> _alternativeSplits;
-        EngineState *_engineState;
-    };
-
-
-
-    /*
-      Valid splits that were implied by level 0 of the stack.
-    */
-    List<PiecewiseLinearCaseSplit> _impliedValidSplitsAtRoot;
-
-    /*
       Collect and print various statistics.
     */
     Statistics *_statistics;
-
 
     /*
       CVC4 Context, constructed in Engine
@@ -213,18 +190,12 @@ private:
     CVC4::context::Context& _context;
 
     /*
-      The case-split stack.
-    */
-    //List<StackEntry *> _stack;
-
-    /*
-      Trail is context dependent and contains all the asserted PWLCaseSplits. 
-      TODO: Abstract from PWLCaseSplits to Literals
+      Trail is context dependent and contains all the asserted PWLCaseSplits
     */
     CVC4::context::CDList<TrailEntry> _trail;
 
     /*
-     * _decisions point to the decision at the beginning of each decision level
+     * _decisions stores the decision TrailEntries
      */
     CVC4::context::CDList<TrailEntry> _decisions;
 
@@ -249,29 +220,12 @@ private:
     */
     Map<unsigned, double> _debuggingSolution;
 
-    /*
-      A unique ID allocated to every state that is stored, for
-      debugging purposes.
-    */
-    unsigned _stateId;
-
-    /*
+   /*
       Split when some relu has been violated for this many times
     */
     unsigned _constraintViolationThreshold;
 
-    /*
-      Helper function to establish equivalence between trail and stack information
-     */
-    bool checkStackTrailEquivalence();
 };
 
 #endif // __CDSmtCore_h__
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

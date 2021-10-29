@@ -34,7 +34,6 @@ CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
     , _engine( engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
-    , _stateId( 0 )
     , _constraintViolationThreshold
       ( Options::CONSTRAINT_VIOLATION_THRESHOLD )
 {
@@ -416,10 +415,8 @@ void CDSmtCore::reset()
 {
     _context.popto( 0 );
     _engine->recomputeBasicStatus();
-    _impliedValidSplitsAtRoot.clear();
     _needToSplit = false;
     _constraintForSplitting = NULL;
-    _stateId = 0;
     _constraintToViolationCount.clear();
 }
 
