@@ -580,20 +580,10 @@ class CnnAbs:
         return result                   
 
     def setLogger(suffix='', logDir=''): #FIXME need single logger.
-        logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = 'cnnAbsTB{}.log'.format(suffix), filemode = "w")
-        CnnAbs.logger = logging.getLogger(logDir + 'cnnAbsTB{}'.format(suffix))
-        CnnAbs.logger.setLevel(logging.INFO)
-        fh = logging.FileHandler(logDir + 'cnnAbsTB{}.log'.format(suffix))
-        fh.setLevel(logging.DEBUG)
-        fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        CnnAbs.logger.addHandler(fh)
-        ch = logging.StreamHandler()
-        ch.setLevel(logging.ERROR)
-        ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        CnnAbs.logger.addHandler(ch)
-
+        logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
+        CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
         logging.getLogger('matplotlib.font_manager').disabled = True
-
+        
     @staticmethod
     def printLog(s):
         if CnnAbs.logger:
