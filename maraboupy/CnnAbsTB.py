@@ -51,7 +51,7 @@ cfg_cwd = os.getcwd()
 
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
 
-cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs_CnnAbs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, maskIndex='', policy=cfg_abstractionPolicy)
+cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs_CnnAbs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, policy=cfg_abstractionPolicy)
 
 startPrepare = time.time()
 

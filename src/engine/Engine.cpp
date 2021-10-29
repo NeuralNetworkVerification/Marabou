@@ -56,7 +56,7 @@ Engine::Engine()
     , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
-    , _milpEncoder( nullptr )    
+    , _milpEncoder( nullptr )
     , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
 {
     _smtCore.setStatistics( &_statistics );
@@ -1118,8 +1118,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         {
-            _networkLevelReasoner->dumpBounds();
-            //_networkLevelReasoner->dumpTopology();
+            //_networkLevelReasoner->dumpBounds();
             _tableau->dumpAssignment();
         }
 
