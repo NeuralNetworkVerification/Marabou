@@ -1658,7 +1658,6 @@ void Tableau::restoreState( const TableauState &state )
     memcpy( _b, state._b, sizeof(double) * _m );
 
     // Restore the bounds and valid status
-    // TODO: should notify all the constraints.
     memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
     memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
 

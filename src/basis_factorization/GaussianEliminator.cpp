@@ -255,7 +255,6 @@ void GaussianEliminator::choosePivot()
     // magnitude that has the smallet Markowitz rule.
     // Fail if no elements exists that are within acceptable magnitude
 
-    // Todo: more clever heuristics to reduce the search space
     unsigned minimalCost = _m * _m;
     double pivotEntry = 0.0;
     for ( unsigned column = _eliminationStep; column < _m; ++column )
@@ -402,7 +401,6 @@ void GaussianEliminator::eliminate()
 
     /*
       Put 1 in L's diagonal.
-      TODO: This can be made implicit
     */
     _luFactors->_F[fColumnIndex*_m + fColumnIndex] = 1;
 }

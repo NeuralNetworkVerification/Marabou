@@ -297,8 +297,7 @@ void SparseGaussianEliminator::choosePivot()
     // No singletons, apply the Markowitz rule. Find the element with acceptable
     // magnitude that has the smallet Markowitz value.
     // Fail if no elements exists that are within acceptable magnitude
-
-    // Todo: more clever heuristics to reduce the search space
+    
     unsigned minimalCost = _m * _m;
     _pivotElement = 0.0;
     double absPivotElement = 0.0;
