@@ -98,7 +98,7 @@ class PolicyCentered(PolicyBase):
         return PolicyBase.rankByScore(model, score)
 
 
-#Policy - Unmask stepsize most activated neurons, calculating activation on the entire Mnist test.    
+#Policy - Refine stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllSamplesRank(PolicyBase):
     
     def __init__(self, ds):
@@ -109,7 +109,7 @@ class PolicyAllSamplesRank(PolicyBase):
         score = np.mean(absLayerPredictions, axis=0)
         return PolicyBase.rankByScore(model, score)
 
-#Policy - Unmask stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
+#Policy - Refine stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
     
     def __init__(self, ds):
@@ -309,20 +309,18 @@ class CnnAbs:
     basePath = None
     resultsFile = 'Results'
     
-    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, maskIndex='', gtimeout=7200, policy=None):
+    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, gtimeout=7200, policy=None):
         optionsObj = Marabou.createOptions(**options)
         CnnAbs.basePath = os.getcwd()
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
-        self.modelUtils = ModelUtils(self.ds, self.optionsObj)
         self.logDir = logDir
         if not self.logDir.endswith("/"):
             self.logDir += "/"
         os.makedirs(self.logDir, exist_ok=True)
-        os.chdir(self.logDir) #FIXME should not change file, caused unxepected functionality in model grabbing.
         if CnnAbs.logger == None:
-            CnnAbs.setLogger(suffix=maskIndex)
+            CnnAbs.setLogger(logDir=self.logDir)
         if dumpDir:            
             self.dumpDir = dumpDir
             if not self.dumpDir.endswith("/"):
@@ -335,14 +333,15 @@ class CnnAbs:
             self.resultsJson = self.loadJson(CnnAbs.resultsFile, loadDir=self.logDir)
         else:
             self.resultsJson = dict(subResults=[])
-        self.numMasks = None
-        self.maskIndex = int(maskIndex) if maskIndex else None
+        self.numSteps = None
         self.startTotal = time.time()
         self.dumpQueries = dumpQueries
         self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
+
+        self.modelUtils = ModelUtils(self.ds, self.optionsObj, self.logDir)        
 
     def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
 
@@ -367,7 +366,7 @@ class CnnAbs:
         plt.imshow(np.squeeze(xAdv), cmap='Greys')
         plt.colorbar()
         plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
-        plt.savefig(fName)
+        plt.savefig(self.logDir + fName)
         with open(fName.replace("png","npy"), "wb") as f:
             np.save(f, xAdv)
             
@@ -392,7 +391,6 @@ class CnnAbs:
         ipq = self.modelUtils.dumpBounds(mbouModel)
         MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
-        print(ipq.getNumberOfVariables())
         endBoundTightening = time.time()
         self.tickGtimeout()
         self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
@@ -414,20 +412,22 @@ class CnnAbs:
             boundDict = None
 
         self.optionsObj._dumpBounds = False
+        self.modelUtils.optionsObj._dumpBounds = False        
         originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)        
         successful = None
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
-        self.numMasks = len(absRefineBatches)
-        self.resultsJson["absRefineBatches"] = self.numMasks
+        self.numSteps = len(absRefineBatches)
+        self.resultsJson["absRefineBatches"] = self.numSteps
         self.dumpResultsJson()
-                
+
+        CnnAbs.printLog("Abstraction-refinement steps up to full network = {}".format(len(absRefineBatches)))
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
                 break
             mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.optionsObj._timeoutInSeconds = 0
-            runName = generalRunName + ",mask_{}_outOf_{}".format(i, len(absRefineBatches)-1)
+            runName = generalRunName + ",step_{}_outOf_{}".format(i, len(absRefineBatches)-1)
             self.tickGtimeout()
             resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
             if resultObj.timedOut():
@@ -438,7 +438,7 @@ class CnnAbs:
                 except Exception as err:
                     CnnAbs.printLog(err)
                     isSpurious = True
-                CnnAbs.printLog("Found {} CEX in mask {}/{}.".format("spurious" if isSpurious else "real", i, len(absRefineBatches)-1))
+                CnnAbs.printLog("Found {} CEX in step {}/{}.".format("spurious" if isSpurious else "real", i, len(absRefineBatches)-1))
                 if not isSpurious:
                     successful = i
                     break
@@ -446,7 +446,7 @@ class CnnAbs:
                     resultObj = ResultObj("error")
                     break 
             elif resultObj.unsat():
-                CnnAbs.printLog("Found UNSAT in mask {}/{}.".format(i, len(absRefineBatches)-1))
+                CnnAbs.printLog("Found UNSAT in step {}/{}.".format(i, len(absRefineBatches)-1))
                 successful = i
                 break
             else:
@@ -461,14 +461,15 @@ class CnnAbs:
             resultObj = ResultObj("spurious")
     
         if success:
-            CnnAbs.printLog("successful={}/{}".format(successful, self.numMasks-1)) if (successful+1) < self.numMasks else CnnAbs.printLog("successful=Full")
+            CnnAbs.printLog("successful={}/{}".format(successful, self.numSteps-1)) if (successful+1) < self.numSteps else CnnAbs.printLog("successful=Full")
             self.resultsJson["successfulRuntime"] = self.resultsJson["subResults"][-1]["runtime"]
             self.resultsJson["successfulRun"] = successful + 1        
         self.resultsJson["totalRuntime"] = time.time() - self.startTotal
         self.resultsJson["SAT"] = resultObj.sat()
         self.resultsJson["Result"] = resultObj.result.name
         self.dumpResultsJson()
-        CnnAbs.printLog(resultObj.result.name)            
+        CnnAbs.printLog("\n*******************************************************************************\n")
+        CnnAbs.printLog("\n\nResult is:\n\n    {}\n\n".format(resultObj.result.name))
         CnnAbs.printLog("Log files at {}".format(self.logDir))
         return resultObj.result.name, resultObj.cex        
     
@@ -493,12 +494,16 @@ class CnnAbs:
         modelUpToAbsLayer = copy.deepcopy(model)
         modelUpToAbsLayer.outputVars = np.sort(np.array(list(layerList[absLayer])))
         _ , _ , varsMapping = InputQueryUtils.removeVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
-        
+
+        cwd = os.getcwd()
+        os.chdir(self.logDir)        
         for j in random.sample(range(len(self.ds.x_test)), 10):
             tfout = absLayerActivation[j]
             mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
             assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout, atol=1e-4) )
             assert np.all( np.isclose(tfout, CnnAbs.reshapeMbouOut(mbouout, tfout.shape), atol=1e-4 ) )
+        os.chdir(cwd)
+        
         absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)]
         steps = list(policy.steps(len(absLayerRankAcsending)))
         batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))]
@@ -538,22 +543,25 @@ class CnnAbs:
         self.subResultAppend()
         finalQueryStats = self.dumpQueryStats(model, "finalQueryStats_" + runName)
         
-        CnnAbs.printLog("\n\n\n ----- Start Solving {} ----- \n\n\n".format(runName))
+        CnnAbs.printLog("----- Start Solving {}".format(runName))
         if self.optionsObj._timeoutInSeconds <= 0:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
+        cwd = os.getcwd()
+        os.chdir(self.logDir)
         vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=False, options=self.optionsObj)
-        CnnAbs.printLog("\n\n\n ----- Finished Solving {} ----- \n\n\n".format(runName))
+        os.chdir(cwd)
+        CnnAbs.printLog("----- Finished Solving {}".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
         if not sat:
             if timedOut:
                 result = ResultObj("timeout")
-                CnnAbs.printLog("\n\n\n ----- Timed out in {} ----- \n\n\n".format(runName))
+                CnnAbs.printLog("----- Timed out in {}".format(runName))
             else:
                 result = ResultObj("unsat")
-                CnnAbs.printLog("\n\n\n ----- UNSAT in {} ----- \n\n\n".format(runName))
+                CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
             cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
             self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
@@ -563,7 +571,7 @@ class CnnAbs:
             result.setCex(cex, cexPrediction, inputDict, outputDict)
             result.vals = vals
             result.varsMapping = varsMapping
-            CnnAbs.printLog("\n\n\n ----- SAT in {} ----- \n\n\n".format(runName))
+            CnnAbs.printLog("----- SAT in {}".format(runName))
         result.setStats(originalQueryStats, finalQueryStats)            
 
         endLocal = time.time()
@@ -571,11 +579,11 @@ class CnnAbs:
         self.tickGtimeout()
         return result                   
 
-    def setLogger(suffix=''): #FIXME need single logger.
+    def setLogger(suffix='', logDir=''): #FIXME need single logger.
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s %(levelname)s %(message)s", filename = 'cnnAbsTB{}.log'.format(suffix), filemode = "w")
-        CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
+        CnnAbs.logger = logging.getLogger(logDir + 'cnnAbsTB{}'.format(suffix))
         CnnAbs.logger.setLevel(logging.INFO)
-        fh = logging.FileHandler('cnnAbsTB{}.log'.format(suffix))
+        fh = logging.FileHandler(logDir + 'cnnAbsTB{}.log'.format(suffix))
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         CnnAbs.logger.addHandler(fh)
@@ -630,7 +638,7 @@ class CnnAbs:
         plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
         plt.imshow(np.squeeze(cex), cmap='Greys')
         plt.colorbar()
-        plt.savefig("Cex_{}".format(runName) + ".png")
+        plt.savefig(self.logDir + "Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName), saveAtLog=True)
         
         diff = np.abs(cex - prop.xAdv)
@@ -639,14 +647,14 @@ class CnnAbs:
         plt.title('Distance between pixels: CEX and adv. sample')
         plt.imshow(np.squeeze(diff), cmap='Greys')
         plt.colorbar()
-        plt.savefig("DiffCexXAdv_{}".format(runName) + ".png")
+        plt.savefig(self.logDir + "DiffCexXAdv_{}".format(runName) + ".png")
         self.dumpNpArray(diff, "DiffCexXAdv_{}".format(runName), saveAtLog=True)
 
     @staticmethod
     def dumpCoi(inputVarsMapping, runName):
         plt.title('COI_{}'.format(runName))
         plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
-        plt.savefig('COI_{}'.format(runName))
+        plt.savefig(self.logDir + 'COI_{}'.format(runName))
 
     def loadJson(self, name, loadDir=''):
         if not loadDir:
@@ -690,8 +698,7 @@ class CnnAbs:
         return self.gtimeout <= 1
 
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
-        self.resultsJson["subResults"].append({"index" : self.maskIndex,
-                                               "outOf" : self.numMasks-1,
+        self.resultsJson["subResults"].append({"outOf" : self.numSteps-1,
                                                "runtime" : runtime,
                                                "runtimeTotal":runtimeTotal,
                                                "originalQueryStats" : originalQueryStats,
@@ -701,8 +708,7 @@ class CnnAbs:
         self.dumpResultsJson()
 
     def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
-        self.resultsJson["subResults"][-1] = {"index" : self.maskIndex,
-                                              "outOf" : self.numMasks-1,
+        self.resultsJson["subResults"][-1] = {"outOf" : self.numSteps-1,
                                               "runtime" : runtime,
                                               "runtimeTotal":runtimeTotal,
                                               "originalQueryStats" : originalQueryStats,
@@ -726,9 +732,10 @@ class ModelUtils:
     
     numClones = 0
 
-    def __init__(self, ds, optionsObj):
+    def __init__(self, ds, optionsObj, logDir):
         self.ds = ds
         self.optionsObj = optionsObj
+        self.logDir = logDir
 
     @staticmethod
     def outputModelPath(m, suffix=""):
@@ -736,13 +743,11 @@ class ModelUtils:
             suffix = "_" + suffix
         return "./{}{}.onnx".format(m.name, suffix)
         
-
-    @staticmethod
-    def tf2Model(model):
-        modelOnnx = keras2onnx.convert_keras(model, model.name+"_onnx", debug_mode=0)
+    def tf2Model(self, model):
+        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.outputModelPath(model)
-        keras2onnx.save_model(modelOnnx, modelOnnxName)
-        return MarabouNetworkONNX.MarabouNetworkONNX(modelOnnxName)
+        keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
+        return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
                        
     def intermidModel(model, layerName):
         if layerName not in [l.name for l in model.layers]:
@@ -754,8 +759,12 @@ class ModelUtils:
         return self.processInputQuery(mbouModelCopy) 
         
     def processInputQuery(self, net):
-        net.saveQuery("processInputQuery")
-        return MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)    
+        net.saveQuery(self.logDir + "processInputQuery")
+        cwd = os.getcwd()
+        os.chdir(self.logDir)
+        ipq = MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
+        os.chdir(cwd)
+        return ipq
     
     def genValidationModel(self, validation):
         if "base" in validation: 
@@ -1072,17 +1081,8 @@ class InputQueryUtils:
 
     @staticmethod
     def pruneUnreachableNeurons(net, init):
-    
-        CnnAbs.printLog("net.numVars={}".format(net.numVars))    
-        CnnAbs.printLog("len(net.equList)={}".format(len(net.equList)))
-        CnnAbs.printLog("len(net.maxList)={}".format(len(net.maxList)))
-        CnnAbs.printLog("len(net.reluList)={}".format(len(net.reluList)))
-        CnnAbs.printLog("len(net.absList)={}".format(len(net.absList)))
-        CnnAbs.printLog("len(net.signList)={}".format(len(net.signList)))
-        CnnAbs.printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
-        CnnAbs.printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
-        CnnAbs.printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
-        CnnAbs.printLog("net.outputVars.size={}".format(net.outputVars.size))
+
+        origNumVars = net.numVars
     
         reach = set(init)
         lastLen = 0
@@ -1095,7 +1095,6 @@ class InputQueryUtils:
                     [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
                 elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                     [reach.add(v) for w,v in eq.addendList]
-                    CnnAbs.printLog("eqi={}, eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eqi, eq.addendList, eq.scalar, eq.EquationType))
             for maxArgs, maxOut in net.maxList:
                 if maxOut in reachPrev:
                     [reach.add(arg) for arg in maxArgs]
@@ -1106,24 +1105,12 @@ class InputQueryUtils:
                 raise Exception("Not implemented")
         unreach = set([v for v in range(net.numVars) if v not in reach])
     
-        CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
-    
         inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeVariables(net, reach)
         for eq in net.equList:
             for w,v in eq.addendList:
                 if v > net.numVars:
                     CnnAbs.printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
-        CnnAbs.printLog("net.numVars={}".format(net.numVars))
-        CnnAbs.printLog("len(net.equList)={}".format(len(net.equList)))
-        CnnAbs.printLog("len(net.maxList)={}".format(len(net.maxList)))
-        CnnAbs.printLog("len(net.reluList)={}".format(len(net.reluList)))
-        CnnAbs.printLog("len(net.absList)={}".format(len(net.absList)))
-        CnnAbs.printLog("len(net.signList)={}".format(len(net.signList)))
-        CnnAbs.printLog("len(net.lowerBounds)={}".format(len(net.lowerBounds)))
-        CnnAbs.printLog("len(net.upperBounds)={}".format(len(net.upperBounds)))
-        CnnAbs.printLog("sum([i.size for i in net.inputVars])={}".format(sum([i.size for i in net.inputVars])))
-        CnnAbs.printLog("net.outputVars.size={}".format(net.outputVars.size))
-        CnnAbs.printLog("COI : reached={}, unreached={}, out_of={}".format(len(reach), len(unreach), net.numVars))
+        CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(net.numVars / float(origNumVars)))
         return inputVarsMapping, outputVarsMapping, varsMapping
 
     @staticmethod
