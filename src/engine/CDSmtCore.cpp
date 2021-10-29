@@ -282,44 +282,54 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
 
     String error;
 
+    int decisionLevel = 0 ;
+    bool isDecision = false;
     // First check that the valid splits implied at the root level are okay
-    for ( const auto &split : _impliedValidSplitsAtRoot )
+    for ( const auto &trailEntry: _trail)
     {
-        if ( !splitAllowsStoredSolution( split, error ) )
+        if ( trailEntry._pwlConstraint != _decisions[decisionLevel]._pwlConstraint )
+            isDecision = false;
+        else
         {
-            printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
-            throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            ASSERT( trailEntry._phase == _decisions[decisionLevel]._phase );
+            isDecision = true;
+            ++decisionLevel;
+        }
+
+        PiecewiseLinearCaseSplit caseSplit = trailEntry.getPiecewiseLinearCaseSplit();
+        if ( decisionLevel == 0 )
+        {    if ( !splitAllowsStoredSolution( caseSplit, error ) )
+            {
+                printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            }
+        }
+        else
+        {
+            // If the active split is non-compliant but there are alternatives, that's fine
+            if ( isDecision && !splitAllowsStoredSolution( caseSplit, error ) )
+            {
+                if ( !trailEntry.isFeasible() )
+                {
+                    printf( "Error! Have a split that is non-compliant with the stored solution, "
+                            "without alternatives:\n\t%s\n", error.ascii() );
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR );
+                }
+
+                // Active split is non-compliant but this is fine, because there are alternatives. We're done.
+                return false;
+            }
+            else // Implied split
+            {
+                if ( !splitAllowsStoredSolution( caseSplit, error ) )
+                {
+                    printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
+                            error.ascii() );
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR );
+                }
+            }
         }
     }
-
-    // Now go over the stack from oldest to newest and check that each level is compliant
-    // for ( const auto &stackEntry : _stack )
-    // {
-    //     // If the active split is non-compliant but there are alternatives, that's fine
-    //     if ( !splitAllowsStoredSolution( stackEntry->_activeSplit, error ) )
-    //     {
-    //         if ( stackEntry->_alternativeSplits.empty() )
-    //         {
-    //             printf( "Error! Have a split that is non-compliant with the stored solution, "
-    //                     "without alternatives:\n\t%s\n", error.ascii() );
-    //             throw MarabouError( MarabouError::DEBUGGING_ERROR );
-    //         }
-
-    //         // Active split is non-compliant but this is fine, because there are alternatives. We're done.
-    //         return false;
-    //     }
-
-    //     // Did we learn any valid splits that are non-compliant?
-    //     for ( auto const &split : stackEntry->_impliedValidSplits )
-    //     {
-    //         if ( !splitAllowsStoredSolution( split, error ) )
-    //         {
-    //             printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
-    //                     error.ascii() );
-    //             throw MarabouError( MarabouError::DEBUGGING_ERROR );
-    //         }
-    //     }
-    // }
 
     // No problems were detected, the stack is compliant with the stored solution
     return true;
