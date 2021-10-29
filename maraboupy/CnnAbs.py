@@ -278,13 +278,14 @@ class DataSet:
 
     @staticmethod
     def readFromFile(dataset):
-        with open('/'.join([CnnAbs.basePath, dataset, 'x_train.npy']), 'rb') as f:
+        
+        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'x_train.npy']), 'rb') as f:
             x_train = np.load(f, allow_pickle=True)
-        with open('/'.join([CnnAbs.basePath, dataset, 'y_train.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_train.npy']), 'rb') as f:
             y_train = np.load(f, allow_pickle=True)
-        with open('/'.join([CnnAbs.basePath, dataset, 'x_test.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'x_test.npy']), 'rb') as f:
             x_test = np.load(f, allow_pickle=True)
-        with open('/'.join([CnnAbs.basePath, dataset, 'y_test.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_test.npy']), 'rb') as f:
             y_test = np.load(f, allow_pickle=True)            
         return (x_train, y_train), (x_test, y_test)
     
@@ -306,12 +307,12 @@ class DataSet:
 class CnnAbs:
 
     logger = None
-    basePath = None
+    basePath = os.getcwd()
+    maraboupyPath = basePath.split('maraboupy', maxsplit=1)[0] + 'maraboupy'
     resultsFile = 'Results'
     
     def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, gtimeout=7200, policy=None):
         optionsObj = Marabou.createOptions(**options)
-        CnnAbs.basePath = os.getcwd()
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
         self.optionsObj = optionsObj
@@ -755,122 +756,8 @@ class ModelUtils:
         ipq = MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
         os.chdir(cwd)
         return ipq
-    
-    def genValidationModel(self, validation):
-        if "base" in validation: 
-            if validation == "mnist_base_4":
-                num_ch = 4
-            elif validation == "mnist_base_2":
-                num_ch = 2
-            elif validation == "mnist_base_1":
-                num_ch = 1
-            else:
-                raise Exception("Validation net {} not supported".format(validation))
-            return  tf.keras.Sequential(
-                [
-                    tf.keras.Input(shape=self.ds.input_shape),
-                    layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c1"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
-                    layers.Conv2D(num_ch, kernel_size=(2, 2), activation="relu", name="c2"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
-                    layers.Flatten(name="f1"),
-                    layers.Dense(40, activation="relu", name="fc1"),
-                    layers.Dense(self.ds.num_classes, activation=None, name="sm1"),
-                ],
-                name="origModel_" + validation
-            )
-        if "long" in validation:
-            if validation == "mnist_long_4":
-                num_ch = 4
-            elif validation == "mnist_long_2":
-                num_ch = 2
-            elif validation == "mnist_long_1":
-                num_ch = 1
-            else:
-                raise Exception("Validation net {} not supported".format(validation))
-            return  tf.keras.Sequential(
-                [
-                    tf.keras.Input(shape=self.ds.input_shape),
-                    layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c0"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp0"),
-                    layers.Conv2D(num_ch, kernel_size=(2, 2), activation="relu", name="c1"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
-                    layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c2"),
-                    layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
-                    layers.Flatten(name="f1"),
-                    layers.Dense(40, activation="relu", name="fc1"),
-                    layers.Dense(self.ds.num_classes, activation=None, name="sm1"),
-                ],
-                name="origModel_" + validation
-            )
-    
-    def genCnnForAbsTest(self, cfg_limitCh=True, cfg_freshModelOrig=False, savedModelOrig="cnn_abs_orig.h5", cnnSizeChoice = "small", validation=None):
-    
-        CnnAbs.printLog("Starting model building")
-    
-        if not validation:
-            savedModelOrig = savedModelOrig.replace(".h5", "_" + cnnSizeChoice + ".h5")
-        else:
-            savedModelOrig = savedModelOrig.replace(".h5", "_" + "validation_" + validation + ".h5")
-
-        basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy"
-        noModel = not os.path.exists(basePath + "/" + savedModelOrig)
-    
-        if cfg_freshModelOrig or noModel:
-            if not validation:
-                if cnnSizeChoice in ["big"]:
-                    num_ch = 32
-                elif cnnSizeChoice in ["medium"]:
-                    num_ch = 16
-                elif cnnSizeChoice in ["small"]:
-                    num_ch = 1
-                elif cnnSizeChoice == "toy":
-                    raise Exception("Toy network is not meant to be retrained")
-                else:
-                    raise Exception("cnnSizeChoice {} not supported".format(cnnSizeChoice))
-                origM = tf.keras.Sequential(
-                    [
-                        tf.keras.Input(shape=self.ds.input_shape),
-                        layers.Conv2D(num_ch, kernel_size=(3, 3), activation="relu", name="c1"),
-                        layers.MaxPooling2D(pool_size=(2, 2), name="mp1"),
-                        layers.Conv2D(num_ch, kernel_size=(2, 2), activation="relu", name="c2"),
-                        layers.MaxPooling2D(pool_size=(2, 2), name="mp2"),
-                        layers.Flatten(name="f1"),
-                        layers.Dense(40, activation="relu", name="fc1"),
-                        layers.Dense(self.ds.num_classes, activation=None, name="sm1"),
-                    ],
-                    name="origModel_" + cnnSizeChoice
-                )
-            else:
-                origM = genValidationModel(validation)
-    
-            batch_size = 128
-            epochs = 15
-    
-            origM.build(input_shape=self.ds.featureShape)
-            origM.summary()
-    
-            origM.compile(optimizer=self.ds.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
-            origM.fit(self.ds.x_train, self.ds.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
-    
-            score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
-            CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
-    
-            origM.save(basePath + "/" + savedModelOrig)
-    
-        else:
-            origM = load_model(basePath + "/" + savedModelOrig, custom_objects={'myLoss': myLoss})
-            origM.summary()
-            score = origM.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-            CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
-            CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
-    
-        return origM
 
     def loadModel(self, path):
-        #model = load_model(CnnAbs.basePath + "/" + path, custom_objects={'myLoss': myLoss})
-        print("os.path.abspath(path)={}".format(os.path.abspath(path)))
         model = load_model(os.path.abspath(path), custom_objects={'myLoss': myLoss})
         model.summary()
         score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
