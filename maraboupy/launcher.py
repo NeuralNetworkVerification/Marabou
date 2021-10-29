@@ -6,8 +6,6 @@ import json
 import itertools
 import argparse
 import numpy as np
-#from CnnAbs import *
-#tf.compat.v1.enable_v2_behavior()
 
 ####################################################################################################
 ####################################################################################################
@@ -189,7 +187,10 @@ def main():
             runSingleRun(cmd, title, basePath, batchDirPath, pyFilePath)
         cmdJson.append("python3 {} {}".format(pyFilePath, " ".join(cmd)))
     with open("launcherCmdList.json", 'w') as f:
-        json.dump(cmdJson, f, indent=4)
+        json.dump(cmdJson, f, indent=4)        
+    with open("launcherCmdList", 'w') as f:
+        for line in cmdJson:
+            f.write(line + '\n')
                 
 if __name__ == "__main__":
     main()    
