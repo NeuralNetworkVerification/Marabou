@@ -37,6 +37,11 @@ public:
       _pwlConstraint->markInfeasible( _phase );
   }
 
+  inline bool isFeasible()
+  {
+      return _pwlConstraint->isFeasible();
+  }
+
  TrailEntry(PiecewiseLinearConstraint * pwlc, PhaseStatus phase )
      : _pwlConstraint( pwlc )
      , _phase( phase )
