@@ -69,42 +69,42 @@ public:
     bool needToSplit() const;
 
     /*
-      Decide a case split to apply, according to the constraint marked for
-      splitting. Update bounds, add equations and update the stack.
-    */
-    void decide();
-
-    /*
-     * decideSplit - choose a phase of PiecewiseLinearConstraint's alternativeCases to decide.
-     */
-    void decideSplit( PiecewiseLinearConstraint *constraint );
-
-    /*
-     * Push TrailEntry representing the decision onto the trail. Push the decided PiecewiseLinearCaseSplit to the engine.
+       Push TrailEntry representing the decision onto the trail. 
      */
     void pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision );
 
     /*
-      Let the smt core know of an implied valid case split that was discovered.
+      Inform SmtCore of an implied (formerly valid) case split that was discovered.
     */
-    void implyValidSplit( PiecewiseLinearCaseSplit &validSplit );
+    void pushImplication( PiecewiseLinearConstraint *constraint );
 
     /*
-      Let the smt core trail know of an implied valid case split that was discovered.
-    */
-    void pushImplication( PiecewiseLinearConstraint *constraint, PhaseStatus phase );
-
-    /*
-        Pushes trail element onto trail, handles decision book-keeping and
-        applies the case split to the engine.
+        Pushes trail entry onto trail, handles decision book-keeping and
+        Update bounds and add equations to the engine.
      */
     void applyTrailEntry( TrailEntry &te, bool isDecision = false );
 
     /*
-      Backtrack the search, by popping stacks with no alternatives, and perform
-      a decision or an implication as needed.
+      Decide and apply a case split using the constraint marked for splitting.
     */
-    bool backtrackAndContinue();
+    void decide();
+
+    /*
+      Decide a constraint's feasible case. Update bounds, add equations
+      and trail.
+     */
+    void decideSplit( PiecewiseLinearConstraint *constraint );
+
+    /*
+       Backtracks fully explored decisions and stores the last (feasible decision
+     */
+    bool backtrackToFeasibleDecision( TrailEntry &feasibleDecision );
+
+    /*
+      Return to a feasible state and resume search by asserting the next case
+      (as either a decision or implication)
+    */
+    bool backtrackAndContinueSearch();
 
     /*
       Pop a stack frame. Return true if successful, false if the stack is empty.

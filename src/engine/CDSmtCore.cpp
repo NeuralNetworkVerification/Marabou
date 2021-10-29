@@ -87,10 +87,11 @@ void CDSmtCore::pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatu
     SMT_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
 }
 
-void CDSmtCore::pushImplication( PiecewiseLinearConstraint *constraint, PhaseStatus phase )
+void CDSmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
 {
+    ASSERT( constraint->isImplication() );
     SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
-    TrailEntry te( constraint, phase );
+    TrailEntry te( constraint, constraint->nextFeasibleCase() );
     applyTrailEntry( te, false );
     SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
 }
@@ -114,8 +115,8 @@ void CDSmtCore::decide()
 
     // Maybe the constraint has already become inactive - if so, ignore
     // TODO: Ideally we will not ever reach this point
-    // This should be a list of all constraints above the threshold
-    // If one is no longer active, we should proceed with the next one
+    // TODO: Maintain a vector of constraints above the threshold
+    //       Iterate until we find an active one
     if ( !_constraintForSplitting->isActive() )
         {
             _needToSplit = false;
@@ -144,10 +145,8 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint * constraint )
     if ( !constraint->isFeasible() )
         throw MarabouError( MarabouError::DEBUGGING_ERROR );
     ASSERT( constraint->isFeasible() );
-
     ASSERT( !constraint->isImplication() );
 
-    // TODO: DecisionMakingLogic
     PhaseStatus decision = constraint->nextFeasibleCase();
     pushDecision( constraint, decision );
 
@@ -172,11 +171,11 @@ bool CDSmtCore::popDecisionLevel( TrailEntry &lastDecision )
     if ( _decisions.empty() )
         return false;
 
-    SMT_LOG( "Backtracking context ..." );
+    SMT_LOG( "Popping trail ..." );
     lastDecision = _decisions.back();
     _context.pop();
     _engine->recomputeBasicStatus();
-    SMT_LOG( Stringf( "Backtracking context - %d DONE", _context.getLevel() ).ascii() );
+    SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
     return true;
 }
 
@@ -189,7 +188,6 @@ void CDSmtCore::interruptIfCompliantWithDebugSolution()
     }
 }
 
-
 PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel ) const
 {
     ASSERT( decisionLevel <= getDecisionLevel() );
@@ -197,24 +195,17 @@ PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel ) const
     return _decisions[decisionLevel - 1].getPiecewiseLinearCaseSplit() ;
 }
 
-bool CDSmtCore::backtrackAndContinue()
+bool CDSmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
 {
-    SMT_LOG( "Performing a pop" );
+    SMT_LOG( "Backtracking to a feasible decision..." );
 
     if ( getDecisionLevel() == 0 )
         return false;
 
-    struct timespec start = TimeUtils::sampleMicro();
-
-    if ( _statistics )
-        _statistics->incNumVisitedTreeStates();
-
-    TrailEntry lastDecision( NULL, PHASE_NOT_FIXED );
-
     popDecisionLevel( lastDecision );
     lastDecision.markInfeasible();
 
-    while ( !lastDecision._pwlConstraint->isFeasible() )
+    while ( !lastDecision.isFeasible() )
     {
         interruptIfCompliantWithDebugSolution();
 
@@ -226,11 +217,25 @@ bool CDSmtCore::backtrackAndContinue()
 
     interruptIfCompliantWithDebugSolution();
 
-    PiecewiseLinearConstraint *pwlc = lastDecision._pwlConstraint;
-    ASSERT( pwlc->isFeasible() );
+    return true;
+}
 
+bool CDSmtCore::backtrackAndContinueSearch()
+{
+    TrailEntry feasibleDecision( nullptr , CONSTRAINT_INFEASIBLE );
+    struct timespec start = TimeUtils::sampleMicro();
+
+    if ( !backtrackToFeasibleDecision( feasibleDecision ) )
+        return false;
+
+    ASSERT( feasibleDecision.isFeasible() );
+
+    if ( _statistics )
+        _statistics->incNumVisitedTreeStates();
+
+    PiecewiseLinearConstraint *pwlc = feasibleDecision._pwlConstraint;
     if ( pwlc->isImplication() )
-        pushImplication( pwlc, pwlc->nextFeasibleCase() );
+        pushImplication( pwlc );
     else
         decideSplit( pwlc );
 
