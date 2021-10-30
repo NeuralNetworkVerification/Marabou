@@ -6,6 +6,7 @@ import json
 import itertools
 import argparse
 import numpy as np
+import CnnAbs
 
 ####################################################################################################
 ####################################################################################################
@@ -111,9 +112,9 @@ def runSingleRun(cmd, title, basePath, batchDirPath, pyFilePath):
     sbatchCode.append("")
     sbatchCode.append("pwd; hostname; date")
     sbatchCode.append("")
-    sbatchCode.append("csh {}".format(CnnAbs.marabouPath + "/../py_env/bin/activate.csh"))
-    sbatchCode.append("export PYTHONPATH=$PYTHONPATH:{}:{}".format(CnnAbs.maraboupyPath, CnnAbs.marabouPath))
-    sbatchCode.append("export GUROBI_HOME={}".format(os.path.abspath(CnnAbs.marabouPath + "/../gurobi911/linux64")))
+    sbatchCode.append("csh {}".format(CnnAbs.CnnAbs.marabouPath + "/../py_env/bin/activate.csh"))
+    sbatchCode.append("export PYTHONPATH=$PYTHONPATH:{}:{}".format(CnnAbs.CnnAbs.maraboupyPath, CnnAbs.CnnAbs.marabouPath))
+    sbatchCode.append("export GUROBI_HOME={}".format(os.path.abspath(CnnAbs.CnnAbs.marabouPath + "/../gurobi911/linux64")))
     sbatchCode.append("export PATH=$PATH:${GUROBI_HOME}/bin")
     sbatchCode.append("export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib")
     sbatchCode.append("export GRB_LICENSE_FILE=/cs/share/etc/license/gurobi/gurobi.lic")
