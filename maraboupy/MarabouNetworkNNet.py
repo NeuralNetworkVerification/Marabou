@@ -169,7 +169,6 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.biases = biases
 
         self.computeNetworkAttributes()
-        # TODO (necessary? desirable?): create a new filename for the network
 
     def computeNetworkAttributes(self):
         """Computes the derived network attributes (equations, relus, bounds)
