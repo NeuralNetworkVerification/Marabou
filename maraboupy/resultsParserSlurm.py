@@ -13,6 +13,7 @@ import matplotlib.lines as mlines
 from datetime import datetime
 import shutil
 from itertools import chain
+import CnnAbs
 
 def dumpJson(data, name):
     if not name.endswith(".json"):
@@ -346,7 +347,7 @@ for fullpath in resultsFiles:
 resultDicts = list(results.values())
 
 origDir = os.getcwd()
-basePath = "/cs/labs/guykatz/matanos/Marabou/maraboupy/"
+basePath = CnnAbs.maraboupyPath
 graphDir = basePath + "graphs/" + "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 os.makedirs(graphDir, exists_ok=True)
 

@@ -306,6 +306,7 @@ class CnnAbs:
     logger = None
     basePath = os.getcwd()
     maraboupyPath = basePath.split('maraboupy', maxsplit=1)[0] + 'maraboupy'
+    marabouPath = basePath.split('Marabou', maxsplit=1)[0] + 'Marabou'    
     resultsFile = 'Results'
     
     def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, gtimeout=7200, policy=None, abstractFirst=False):
