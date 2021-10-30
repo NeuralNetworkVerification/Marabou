@@ -124,7 +124,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, pyFilePath):
     sbatchCode.append("")
     sbatchCode.append("date")
 
-    sbatchFile = runDirPath + "/" + "cnnAbsRun-{}sbatch".format(title)
+    sbatchFile = runDirPath + "/" + "cnnAbsRun-{}.sbatch".format(title)
     with open(sbatchFile, "w") as f:
         for line in sbatchCode:
             f.write(line + "\n")
@@ -165,7 +165,7 @@ def main():
     timestamp = datetime.now()
     batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
     basePath = os.getcwd() + "/"
-    batchDirPath = basePath + "logs/" + batchId
+    batchDirPath = basePath + "logs_CnnAbs/" + batchId
     if slurm:
         os.makedirs(batchDirPath, exist_ok=True)        
         with open(batchDirPath + "/runCmd.sh", 'w') as f:
