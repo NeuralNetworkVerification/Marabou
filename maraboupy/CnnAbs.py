@@ -365,7 +365,7 @@ class CnnAbs:
         plt.colorbar()
         plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
         plt.savefig(self.logDir + fName)
-        with open(fName.replace("png","npy"), "wb") as f:
+        with open(self.logDir + fName.replace("png","npy"), "wb") as f:
             np.save(f, xAdv)
             
         self.resultsJson["yDataset"] = int(yAdv.item())
