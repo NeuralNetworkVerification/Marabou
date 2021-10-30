@@ -31,6 +31,7 @@ parser.add_argument("--sample",         type=int,                               
 parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
 
 parser.add_argument("--net", type=str, default="", help="verified neural network", required=True)
+parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
 
 args = parser.parse_args()
 
@@ -46,12 +47,13 @@ cfg_symbolicTightening= 'sbt'
 cfg_timeoutInSeconds  = args.timeout
 cfg_gtimeout          = args.gtimeout
 cfg_network           = args.net
+cfg_abstractFirst     = args.abstract_first
 
 cfg_cwd = os.getcwd()
 
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
 
-cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs_CnnAbs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, policy=cfg_abstractionPolicy)
+cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs_CnnAbs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, policy=cfg_abstractionPolicy, abstractFirst=cfg_abstractFirst)
 
 startPrepare = time.time()
 
@@ -66,6 +68,7 @@ cnnAbs.resultsJson["cfg_symbolicTightening"]= cfg_symbolicTightening
 cnnAbs.resultsJson["cfg_timeoutInSeconds"]  = cfg_timeoutInSeconds
 cnnAbs.resultsJson["cfg_gtimeout"]          = cfg_gtimeout
 cnnAbs.resultsJson["cfg_network"]           = cfg_network
+cnnAbs.resultsJson["cfg_abstractFirst"]     = cfg_abstractFirst
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "GTIMEOUT"
 cnnAbs.dumpResultsJson()

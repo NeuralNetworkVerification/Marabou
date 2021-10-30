@@ -254,7 +254,7 @@ struct MarabouOptions {
 bool processInputQuery(InputQuery &inputQuery) {
         Engine engine;
         return engine.processInputQuery(inputQuery);
-} //FIXME redundant?
+}
 
 /* The default parameters here are just for readability, you should specify
  * them to make them work*/
@@ -326,7 +326,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
                 return std::make_pair( ret, retStats );
             }
             default:
-                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+                return std::make_pair( ret, Statistics() );
             }
         } else
         {
@@ -372,7 +372,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         Returns:
             (bool): False if found UNSAT query, else True.
         )pbdoc",
-          py::arg("inputQuery") = ""); //FIXME
+          py::arg("inputQuery") = "");
     
 
     m.def("preprocess", &preprocess, R"pbdoc(

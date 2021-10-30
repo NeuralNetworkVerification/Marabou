@@ -308,7 +308,7 @@ class CnnAbs:
     maraboupyPath = basePath.split('maraboupy', maxsplit=1)[0] + 'maraboupy'
     resultsFile = 'Results'
     
-    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, gtimeout=7200, policy=None):
+    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, gtimeout=7200, policy=None, abstractFirst=False):
         optionsObj = Marabou.createOptions(**options)
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
@@ -338,8 +338,8 @@ class CnnAbs:
         self.gtimeout = gtimeout
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
-
-        self.modelUtils = ModelUtils(self.ds, self.optionsObj, self.logDir)        
+        self.modelUtils = ModelUtils(self.ds, self.optionsObj, self.logDir)
+        self.abstractFirst = abstractFirst
 
     def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
 
@@ -477,8 +477,7 @@ class CnnAbs:
             return [set()]
         layerList, layerTypes = InputQueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
-        ABSTRACT_FIRST = False
-        if ABSTRACT_FIRST: #FIXME
+        if self.abstractFirst:
             absLayer = next(i for i,t in enumerate(layerTypes) if 'Relu' in t)
             absLayerLayerName = 'c1'
         else:
