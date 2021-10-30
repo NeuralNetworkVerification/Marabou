@@ -386,7 +386,7 @@ class CnnAbs:
             self.dumpResultsJson()
             exit()
         CnnAbs.printLog("Started dumping bounds - used for abstraction")
-        ipq = self.modelUtils.dumpBounds(mbouModel)
+        ipq = self.propagateBounds(mbouModel)
         MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
@@ -575,9 +575,21 @@ class CnnAbs:
         endLocal = time.time()
         self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
         self.tickGtimeout()
-        return result                   
+        return result
 
-    def setLogger(suffix='', logDir=''): #FIXME need single logger.
+    def propagateBounds(self, mbouModel):
+        mbouModelCopy = copy.deepcopy(mbouModel)
+        return self.processInputQuery(mbouModelCopy) 
+        
+    def processInputQuery(self, net):
+        net.saveQuery(self.logDir + "processInputQuery")
+        cwd = os.getcwd()
+        os.chdir(self.logDir)
+        ipq = MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
+        os.chdir(cwd)
+        return ipq    
+
+    def setLogger(suffix='', logDir=''):
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
         CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
         logging.getLogger('matplotlib.font_manager').disabled = True
@@ -741,18 +753,6 @@ class ModelUtils:
         if layerName not in [l.name for l in model.layers]:
             layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
         return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
-
-    def dumpBounds(self, mbouModel): #FIXME should be moved to CnnAbs Class, rename to propegateBounds
-        mbouModelCopy = copy.deepcopy(mbouModel)
-        return self.processInputQuery(mbouModelCopy) 
-        
-    def processInputQuery(self, net):
-        net.saveQuery(self.logDir + "processInputQuery")
-        cwd = os.getcwd()
-        os.chdir(self.logDir)
-        ipq = MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
-        os.chdir(cwd)
-        return ipq
 
     def loadModel(self, path):
         model = load_model(os.path.abspath(path), custom_objects={'myLoss': myLoss})
