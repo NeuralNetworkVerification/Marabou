@@ -2,9 +2,6 @@ import sys
 import os
 import time
 
-sys.path.append("/cs/labs/guykatz/matanos/Marabou") #FIXME
-sys.path.append("/cs/labs/guykatz/matanos/Marabou/maraboupy") #FIXME
-
 import keras2onnx
 import tensorflow as tf
 from maraboupy import MarabouNetworkONNX
