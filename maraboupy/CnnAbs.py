@@ -265,6 +265,11 @@ class ResultObj:
         self.inputDict = inputDict
         self.outputDict = outputDict
 
+    def returnResult(self):
+        CnnAbs.printLog("\n*******************************************************************************\n")
+        CnnAbs.printLog("\n\nResult is:\n\n    {}\n\n".format(self.result.name))        
+        return self.result.name, self.cex
+
 class DataSet:
 
     def __init__(self, ds='mnist'):
@@ -308,8 +313,9 @@ class CnnAbs:
     maraboupyPath = basePath.split('maraboupy', maxsplit=1)[0] + 'maraboupy'
     marabouPath = basePath.split('Marabou', maxsplit=1)[0] + 'Marabou'    
     resultsFile = 'Results'
+    resultsFileBrief = 'ResultsBrief'
     
-    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', dumpQueries=False, useDumpedQueries=False, gtimeout=7200, policy=None, abstractFirst=False):
+    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False):
         optionsObj = Marabou.createOptions(**options)
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
@@ -334,8 +340,6 @@ class CnnAbs:
             self.resultsJson = dict(subResults=[])
         self.numSteps = None
         self.startTotal = time.time()
-        self.dumpQueries = dumpQueries
-        self.useDumpedQueries = useDumpedQueries
         self.gtimeout = gtimeout
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
@@ -343,7 +347,8 @@ class CnnAbs:
         self.abstractFirst = abstractFirst
 
     def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
-
+        if not self.tickGtimeout():
+            return self.returnGtimeout()        
         policy = Policy.fromString(policyName, self.ds.name)
         xAdv = self.ds.x_test[sample]
         yAdv = self.ds.y_test[sample]
@@ -367,31 +372,28 @@ class CnnAbs:
         plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
         plt.savefig(self.logDir + fName)
         with open(self.logDir + fName.replace("png","npy"), "wb") as f:
-            np.save(f, xAdv)
-            
+            np.save(f, xAdv)            
         self.resultsJson["yDataset"] = int(yAdv.item())
         self.resultsJson["yMaxPrediction"] = int(yMax)
         self.resultsJson["ySecondPrediction"] = int(ySecond)
         self.dumpResultsJson()
-        self.tickGtimeout()
+        if not self.tickGtimeout():
+            return self.returnGtimeout()        
         return self.solve(mbouModel, modelTF, policy, prop, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
 
 
 
     def solve(self, mbouModel, modelTF, policy, prop, generalRunName=""):
         startBoundTightening = time.time()
-        self.tickGtimeout()
-        if self.isGlobalTimedOut():
-            self.resultsJson["Result"] = "GTIMEOUT"
-            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
-            self.dumpResultsJson()
-            exit()
+        if not self.tickGtimeout():
+            return self.returnGtimeout()
         CnnAbs.printLog("Started dumping bounds - used for abstraction")
         ipq = self.propagateBounds(mbouModel)
+        if not self.tickGtimeout():
+            return self.returnGtimeout()        
         MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
-        self.tickGtimeout()
         self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
         if ipq.getNumberOfVariables() == 0:
             self.resultsJson["SAT"] = False
@@ -401,7 +403,7 @@ class CnnAbs:
             self.resultsJson["totalRuntime"] = time.time() - self.startTotal
             self.dumpResultsJson()
             CnnAbs.printLog("UNSAT on first LP bound tightening")
-            exit()
+            return ResultObj("unsat").returnResult()
         else:
             os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
         if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
@@ -427,8 +429,11 @@ class CnnAbs:
             if i+1 == len(absRefineBatches):
                 self.optionsObj._timeoutInSeconds = 0
             runName = generalRunName + ",step_{}_outOf_{}".format(i, len(absRefineBatches)-1)
-            self.tickGtimeout()
+            if not self.tickGtimeout():
+                return self.returnGtimeout()
             resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
+            if not self.tickGtimeout():
+                return self.returnGtimeout()            
             if resultObj.timedOut():
                 continue
             if resultObj.sat():
@@ -451,7 +456,8 @@ class CnnAbs:
             else:
                 raise NotImplementedError
 
-        self.tickGtimeout()    
+            if not self.tickGtimeout():
+                return self.returnGtimeout()
         globalTimeout = self.isGlobalTimedOut()    
         if globalTimeout:
             resultObj = ResultObj("gtimeout")
@@ -467,10 +473,7 @@ class CnnAbs:
         self.resultsJson["SAT"] = resultObj.sat()
         self.resultsJson["Result"] = resultObj.result.name
         self.dumpResultsJson()
-        CnnAbs.printLog("\n*******************************************************************************\n")
-        CnnAbs.printLog("\n\nResult is:\n\n    {}\n\n".format(resultObj.result.name))
-        CnnAbs.printLog("Log files at {}".format(self.logDir))
-        return resultObj.result.name, resultObj.cex        
+        return resultObj.returnResult()
     
 
     def abstractionRefinementBatches(self, model, modelTF, policy, prop):
@@ -574,7 +577,8 @@ class CnnAbs:
 
         endLocal = time.time()
         self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
-        self.tickGtimeout()
+        if not self.tickGtimeout():
+            return ResultObj("gtimeout")
         return result
 
     def propagateBounds(self, mbouModel):
@@ -677,8 +681,11 @@ class CnnAbs:
             return np.load(f, allow_pickle=True)
 
     def dumpResultsJson(self):
-        if not self.dumpQueries:
-            self.dumpJson(self.resultsJson, CnnAbs.resultsFile, saveDir=self.logDir)
+        self.dumpJson(self.resultsJson, CnnAbs.resultsFile, saveDir=self.logDir)
+        brief = dict()
+        brief["Result"] = self.resultsJson["Result"] if "Result" in self.resultsJson else None
+        brief["totalRuntime"] = self.resultsJson["totalRuntime"] if "totalRuntime" in self.resultsJson else None        
+        self.dumpJson(brief, CnnAbs.resultsFileBrief, saveDir=self.logDir)
 
     def setGtimeout(self, val):
         if val <= 0:
@@ -693,9 +700,18 @@ class CnnAbs:
         currentTime = time.time()
         self.decGtimeout(currentTime - self.prevTimeStamp)
         self.prevTimeStamp = currentTime
+        if self.isGlobalTimedOut():
+            self.resultsJson["Result"] = "GTIMEOUT"
+            self.resultsJson["totalRuntime"] = time.time() - self.startTotal
+            self.dumpResultsJson()
+            return False
+        return True
 
     def isGlobalTimedOut(self):
         return self.gtimeout <= 1
+
+    def returnGtimeout(self):        
+        return ResultObj("gtimeout").returnResult()
 
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
         self.resultsJson["subResults"].append({"outOf" : self.numSteps-1,

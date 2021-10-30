@@ -88,3 +88,4 @@ modelTF = cnnAbs.modelUtils.loadModel(cfg_cwd + '/' + cfg_network)
 CnnAbs.printLog("Finished model building")
 
 cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
+CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
