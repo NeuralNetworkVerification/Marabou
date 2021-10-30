@@ -149,6 +149,7 @@ def main():
     parser.add_argument("--pyFile",           type=str, help="Python script path", required=True)    
     parser.add_argument("--prop_distance", type=float, default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)") 
     parser.add_argument('--slurm'   , dest='slurm', action='store_true',  help="Launch Cmds in Slurm")
+    parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")    
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
@@ -157,6 +158,7 @@ def main():
     prop_distance = args.prop_distance
     pyFilePath = os.path.abspath(args.pyFile)
     slurm = args.slurm
+    abstract_first = args.abstract_first
     
     ####################################################################################################
     
@@ -177,6 +179,8 @@ def main():
     else:
         commonFlags += ["--sample", str(args.sample)]
     commonFlags += ["--net", net]
+    if abstract_first:
+        commonFlags += ["--abstract_first"]
         
     runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath, slurm=slurm)
     
