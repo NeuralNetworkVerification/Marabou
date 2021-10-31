@@ -329,7 +329,7 @@ class ModelUtils:
     def modelUpToLayer(model, layerName):
         if layerName not in [l.name for l in model.layers]:
             layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
-        return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
+        return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)
 
     # Load saved model.
     def loadModel(self, path):
@@ -338,34 +338,8 @@ class ModelUtils:
         score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
         CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
         CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
-        return model        
+        return model    
         
-    @staticmethod
-    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, valueRange=None):
-        lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
-        assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
-        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
-        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
-        return cex, cexPrediction
-
-    @staticmethod
-    def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
-        yCorrect = prop.yMax
-        yBad = prop.ySecond
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
-        if not inBounds:
-            differences = cex - prop.xAdv
-            if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
-                cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
-        if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
-        prediction = model.predict(np.array([cex]))
-        #If I will require ySecond to be max, spurious definition will have to change to force it.
-        if not spuriousStrict:
-            return prediction.argmax() == yCorrect
-        return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
-
 class InputQueryUtils:
 
     @staticmethod
@@ -895,6 +869,33 @@ class CnnAbs:
     def propagateBounds(self, mbouModel):
         mbouModelCopy = copy.deepcopy(mbouModel)
         return InputQueryUtils.preprocessQuery(mbouModelCopy, self.optionsObj, self.logDir)
+
+    @staticmethod
+    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, valueRange=None):
+        lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
+        assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
+        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
+        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
+        return cex, cexPrediction
+
+    @staticmethod
+    def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
+        yCorrect = prop.yMax
+        yBad = prop.ySecond
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
+        if not inBounds:
+            differences = cex - prop.xAdv
+            if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
+                cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
+        if not inBounds:
+            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
+        prediction = model.predict(np.array([cex]))
+        #If I will require ySecond to be max, spurious definition will have to change to force it.
+        if not spuriousStrict:
+            return prediction.argmax() == yCorrect
+        return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
+    
 
     def setLogger(suffix='', logDir=''):
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
