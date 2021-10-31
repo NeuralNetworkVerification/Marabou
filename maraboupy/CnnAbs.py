@@ -19,11 +19,13 @@ from tensorflow.keras.models import load_model
 
 import copy
 
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
+####  _____      _ _      _
+#### |  __ \    | (_)    (_)
+#### | |__) |__ | |_  ___ _  ___  ___
+#### |  ___/ _ \| | |/ __| |/ _ \/ __|
+#### | |  | (_) | | | (__| |  __/\__ \
+#### |_|   \___/|_|_|\___|_|\___||___/
+####                                                         
 
 class PolicyBase:
 
@@ -35,10 +37,7 @@ class PolicyBase:
         self.coi = True
         
     def rankByScore(model, score):
-        score = CnnAbs.flattenTF(score)
-        if score.shape != model.outputVars.shape:
-            print(score.shape)
-            print(model.outputVars.shape)
+        score = CnnAbs.flattenTF(score)        
         assert score.shape == model.outputVars.shape
         scoreSort = np.argsort(score)
         return model.outputVars.flatten()[scoreSort]
@@ -402,7 +401,7 @@ class CnnAbs:
             self.resultsJson["successfulRun"] = 0
             self.resultsJson["totalRuntime"] = time.time() - self.startTotal
             self.dumpResultsJson()
-            CnnAbs.printLog("UNSAT on first LP bound tightening")
+            CnnAbs.printLog("----- UNSAT on first LP bound tightening")
             return ResultObj("unsat").returnResult()
         else:
             os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
