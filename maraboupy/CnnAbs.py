@@ -347,42 +347,43 @@ class QueryUtils:
 
     # Set neurons with no incoming edges as inputs.
     @staticmethod
-    def setUnconnectedAsInputs(net):        
-        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
-        for eq in net.equList:
+    def setUnconnectedAsInputs(model):        
+        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in model.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
+        for eq in model.equList:
             if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
                 varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
-        for peicewiseLinearConstraint in itertools.chain(net.maxList, net.reluList, net.signList, net.absList):
+        for peicewiseLinearConstraint in itertools.chain(model.maxList, model.reluList, model.signList, model.absList):
             varsWithIngoingEdgesOrInputs.add(peicewiseLinearConstraint[1])
-        varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-        assert all([net.lowerBoundExists(v) and net.upperBoundExists(v) for v in varsWithoutIngoingEdges])
-        net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
+        varsWithoutIngoingEdges = {v for v in range(model.numVars) if v not in varsWithIngoingEdgesOrInputs}
+        assert all([model.lowerBoundExists(v) and model.upperBoundExists(v) for v in varsWithoutIngoingEdges])
+        model.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
 
+    # Get division of the network to layers.
     @staticmethod        
-    def divideToLayers(net):
+    def divideToLayers(model):
         layerMappingReverse = dict()
-        layer = set(net.outputVars.flatten().tolist())
+        layer = set(model.outputVars.flatten().tolist())
         layerNum = 0
         lastMapped = 0
         nextLayerWas0 = False
         layerType = list()
-        while len(layerMappingReverse) < net.numVars:
+        while len(layerMappingReverse) < model.numVars:
             nextLayer = set()
             for var in layer:
                 assert var not in layerMappingReverse
                 layerMappingReverse[var] = layerNum
             layerType.insert(0, set())
-            for eq in net.equList:
+            for eq in model.equList:
                 if (eq.addendList[-1][1] in layer) and (eq.EquationType == MarabouCore.Equation.EQ):
                     [nextLayer.add(el[1]) for el in eq.addendList[:-1] if el[0] != 0]
                     layerType[0].add("Linear")
-            for maxArgs, maxOut in net.maxList:
+            for maxArgs, maxOut in model.maxList:
                 if maxOut in layer:
                     [nextLayer.add(arg) for arg in maxArgs]
                     layerType[0].add("Max")
-            [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in net.reluList if vout in layer]
-            [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in net.absList  if vout in layer]
-            [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in net.signList if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in model.reluList if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in model.absList  if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in model.signList if vout in layer]
             if not layerType[0]:
                 layerType[0].add("Input")
             layer = nextLayer
@@ -392,37 +393,37 @@ class QueryUtils:
         layerMapping = dict()
         for v,l in layerMappingReverse.items():
             layerMapping[v] = layerNum - l - 1
-        assert all([i in layerMapping for i in net.inputVars[0].flatten().tolist()])
+        assert all([i in layerMapping for i in model.inputVars[0].flatten().tolist()])
         layerList = [set() for i in range(layerNum)]
         [layerList[l].add(var) for var,l in layerMapping.items()]
         return layerList, layerType
 
     @staticmethod        
-    def removeVariables(net, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+    def removeVariables(model, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
 
         if not keepSet:        
-            net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
-            net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
-            net.signList = [(vin,vout) for vin,vout in net.signList if (vin not in varSet) and (vout not in varSet)]
-            varSet = {v for v in range(net.numVars) if v not in varSet}
+            model.reluList = [(vin,vout) for vin,vout in model.reluList if (vin not in varSet) and (vout not in varSet)]
+            model.absList  = [(vin,vout) for vin,vout in model.absList  if (vin not in varSet) and (vout not in varSet)]
+            model.signList = [(vin,vout) for vin,vout in model.signList if (vin not in varSet) and (vout not in varSet)]
+            varSet = {v for v in range(model.numVars) if v not in varSet}
     
         varSetList = list(varSet)
         varSetList.sort()
         varSetDict = {v:i for i,v in enumerate(varSetList)}
         assert set(varSet) == set(varSetDict.keys()) and len(set(varSet)) == len(varSet)
         tr = lambda v: varSetDict[v] if v in varSetDict else -1
-        varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
+        varsMapping = {tr(v) : v for v in range(model.numVars) if tr(v) != -1}
         
         if keepSet:
-            for vin,vout in net.reluList:
+            for vin,vout in model.reluList:
                 assert (vin not in varSet) == (vout not in varSet)
-            for vin,vout in net.absList:
+            for vin,vout in model.absList:
                 assert (vin not in varSet) == (vout not in varSet)
-            for vin,vout in net.signList:
+            for vin,vout in model.signList:
                 assert (vin not in varSet) == (vout not in varSet)
     
         newEquList = list()
-        for eq in net.equList:
+        for eq in model.equList:
             if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1):
                 newEq = MarabouUtils.Equation()
                 newEq.scalar = eq.scalar
@@ -441,57 +442,57 @@ class QueryUtils:
                 newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
                 if all([v != -1 for (c, v) in newEq.addendList]):
                     newEquList.append(newEq)
-        net.equList  = newEquList
-        net.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
-        net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in varSet]
-        net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in varSet]
-        net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in varSet]
-        net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in varSet}
-        net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
-        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
-        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
+        model.equList  = newEquList
+        model.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in model.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
+        model.reluList = [(tr(vin),tr(vout)) for vin,vout in model.reluList if vout in varSet]
+        model.absList  = [(tr(vin),tr(vout)) for vin,vout in model.absList  if vout in varSet]
+        model.signList = [(tr(vin),tr(vout)) for vin,vout in model.signList if vout in varSet]
+        model.lowerBounds = {tr(v):l for v,l in model.lowerBounds.items() if v in varSet}
+        model.upperBounds = {tr(v):u for v,u in model.upperBounds.items() if v in varSet}
+        inputVarsMapping = np.array([tr(v) for v in model.inputVars[0].flatten().tolist()]).reshape(model.inputVars[0].shape)
+        outputVarsMapping = np.array([tr(v) for v in model.outputVars.flatten().tolist()]).reshape(model.outputVars.shape)
         if keepInputShape:
-            assert all([v in varSet for inp in net.inputVars for v in inp.flatten().tolist()])
+            assert all([v in varSet for inp in model.inputVars for v in inp.flatten().tolist()])
         else:
-            net.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in net.inputVars]
-        net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
-        net.numVars = len(varSetList)
+            model.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in model.inputVars]
+        model.outputVars = np.array([tr(v) for v in model.outputVars.flatten().tolist() if v in varSet])
+        model.numVars = len(varSetList)
         if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
             raise Exception("None input/output varsMapping")
         return inputVarsMapping, outputVarsMapping, varsMapping
 
     @staticmethod
-    def pruneUnreachableNeurons(net, init):
+    def pruneUnreachableNeurons(model, init):
 
-        origNumVars = net.numVars
+        origNumVars = model.numVars
     
         reach = set(init)
         lastLen = 0
         while len(reach) > lastLen:
             lastLen = len(reach)
             reachPrev = reach.copy()
-            for eqi, eq in enumerate(net.equList):
+            for eqi, eq in enumerate(model.equList):
                 tw, tv = eq.addendList[-1]
                 if (tv in reachPrev) and (tw == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
                     [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
                 elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
                     [reach.add(v) for w,v in eq.addendList]
-            for maxArgs, maxOut in net.maxList:
+            for maxArgs, maxOut in model.maxList:
                 if maxOut in reachPrev:
                     [reach.add(arg) for arg in maxArgs]
-            [reach.add(vin) for vin,vout in net.reluList if vout in reachPrev]
-            [reach.add(vin) for vin,vout in net.absList  if vout in reachPrev]
-            [reach.add(vin) for vin,vout in net.signList if vout in reachPrev]
-            if len(net.disjunctionList) > 0:
+            [reach.add(vin) for vin,vout in model.reluList if vout in reachPrev]
+            [reach.add(vin) for vin,vout in model.absList  if vout in reachPrev]
+            [reach.add(vin) for vin,vout in model.signList if vout in reachPrev]
+            if len(model.disjunctionList) > 0:
                 raise Exception("Not implemented")
-        unreach = set([v for v in range(net.numVars) if v not in reach])
+        unreach = set([v for v in range(model.numVars) if v not in reach])
     
-        inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.removeVariables(net, reach)
-        for eq in net.equList:
+        inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.removeVariables(model, reach)
+        for eq in model.equList:
             for w,v in eq.addendList:
-                if v > net.numVars:
+                if v > model.numVars:
                     CnnAbs.printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
-        CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(net.numVars / float(origNumVars)))
+        CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(model.numVars / float(origNumVars)))
         return inputVarsMapping, outputVarsMapping, varsMapping
 
     @staticmethod
@@ -519,23 +520,23 @@ class QueryUtils:
         return np.all(inBounds), violations
 
     @staticmethod
-    def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
-        inAsNP = np.array(net.inputVars[0])
+    def setAdversarial(model, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
+        inAsNP = np.array(model.inputVars[0])
         x = x.reshape(inAsNP.shape)
         xDown, xUp = QueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
         floatingPointErrorGapOutput = 0.03
         for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
-            net.lowerBounds.pop(i.item(), None)
-            net.upperBounds.pop(i.item(), None)
-            net.setLowerBound(i.item(),d.item())
-            net.setUpperBound(i.item(),u.item())
-        for j,o in enumerate(np.nditer(np.array(net.outputVars))):
+            model.lowerBounds.pop(i.item(), None)
+            model.upperBounds.pop(i.item(), None)
+            model.setLowerBound(i.item(),d.item())
+            model.setUpperBound(i.item(),u.item())
+        for j,o in enumerate(np.nditer(np.array(model.outputVars))):
             if j == yCorrect:
                 yCorrectVar = o.item()
             if j == yBad:
                 yBadVar = o.item()
-        net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
-        return net
+        model.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
+        return model
     
     @staticmethod
     def saveQuery(ipq, path):
@@ -559,18 +560,18 @@ class QueryUtils:
         return ipq            
         
     @staticmethod
-    def marabouNetworkStats(net):
-        return {"numVars" : net.numVars,
-                "numEquations" : len(net.equList),
-                "numReluConstraints" : len(net.reluList),
-                "numMaxConstraints" : len(net.maxList),
-                "numAbsConstraints" : len(net.absList),
-                "numSignConstraints" : len(net.signList),
-                "numDisjunction" : len(net.disjunctionList),
-                "numLowerBounds" : len(net.lowerBounds),
-                "numUpperBounds" : len(net.upperBounds),
-                "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
-                "numOutputVars" : net.outputVars.size}
+    def marabouNetworkStats(model):
+        return {"numVars" : model.numVars,
+                "numEquations" : len(model.equList),
+                "numReluConstraints" : len(model.reluList),
+                "numMaxConstraints" : len(model.maxList),
+                "numAbsConstraints" : len(model.absList),
+                "numSignConstraints" : len(model.signList),
+                "numDisjunction" : len(model.disjunctionList),
+                "numLowerBounds" : len(model.lowerBounds),
+                "numUpperBounds" : len(model.upperBounds),
+                "numInputVars" : sum([np.array(inputVars).size for inputVars in model.inputVars]),
+                "numOutputVars" : model.outputVars.size}
     
 
 #################################################################################################################
