@@ -264,6 +264,7 @@ class ResultObj:
         CnnAbs.printLog("\n\nResult is:\n\n    {}\n\n".format(self.result.name))        
         return self.result.name, self.cex
 
+# Used dataset, MNIST is implemented.
 class DataSet:
 
     def __init__(self, ds='mnist'):
@@ -272,9 +273,9 @@ class DataSet:
         else:
             raise NotImplementedError
 
+    # Read dataset from numpy file for offline use.
     @staticmethod
-    def readFromFile(dataset):
-        
+    def readFromFile(dataset):        
         with open('/'.join([CnnAbs.maraboupyPath, dataset, 'x_train.npy']), 'rb') as f:
             x_train = np.load(f, allow_pickle=True)
         with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_train.npy']), 'rb') as f:
@@ -288,7 +289,6 @@ class DataSet:
     def setMnist(self):
         self.num_classes = 10
         self.input_shape = (28,28,1)
-        #(self.x_train, self.y_train), (self.x_test, self.y_test) = tf.keras.datasets.mnist.load_data()
         (self.x_train, self.y_train), (self.x_test, self.y_test) = DataSet.readFromFile('mnist')
         self.x_train, self.x_test = self.x_train / 255.0, self.x_test / 255.0
         self.x_train = np.expand_dims(self.x_train, -1)
@@ -300,12 +300,12 @@ class DataSet:
         self.valueRange = (0,1) #Input pixels value range
         self.name = 'mnist'
 
+# Custom loss object used while training the evaluated networks.        
 def myLoss(labels, logits):
     return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
+# Implements utilities for the Tensorflow interface.
 class ModelUtils:
-    
-    numClones = 0
 
     def __init__(self, ds, optionsObj, logDir):
         self.ds = ds
@@ -317,7 +317,8 @@ class ModelUtils:
         if suffix:
             suffix = "_" + suffix
         return "./{}{}.onnx".format(m.name, suffix)
-        
+
+    # Translate Tensorflow Sequential to Marabou model.
     def tf2Model(self, model):
         modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.outputModelPath(model)
@@ -337,7 +338,6 @@ class ModelUtils:
         CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
         return model        
         
-
     @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True, valueRange=None):
         if useMapping:
@@ -373,20 +373,6 @@ class ModelUtils:
         if not spuriousStrict:
             return prediction.argmax() == yCorrect
         return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
-
-    @staticmethod
-    def marabouNetworkStats(net):
-        return {"numVars" : net.numVars,
-                "numEquations" : len(net.equList),
-                "numReluConstraints" : len(net.reluList),
-                "numMaxConstraints" : len(net.maxList),
-                "numAbsConstraints" : len(net.absList),
-                "numSignConstraints" : len(net.signList),
-                "numDisjunction" : len(net.disjunctionList),
-                "numLowerBounds" : len(net.lowerBounds),
-                "numUpperBounds" : len(net.upperBounds),
-                "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
-                "numOutputVars" : net.outputVars.size}
 
 class InputQueryUtils:
 
@@ -591,6 +577,42 @@ class InputQueryUtils:
                 yBadVar = o.item()
         net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
         return net
+    
+    @staticmethod
+    def saveQuery(ipq, path):
+        return MarabouCore.saveQuery(ipq, path)
+
+    @staticmethod    
+    def solveQuery(model, options, logDir):
+        cwd = os.getcwd()        
+        os.chdir(logDir)
+        vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=False, options=options)
+        os.chdir(cwd)
+        return vals, stats
+
+    @staticmethod    
+    def preprocessQuery(model, options, logDir):
+        model.saveQuery(logDir + "processInputQuery")
+        cwd = os.getcwd()
+        os.chdir(logDir)
+        ipq = MarabouCore.preprocess(model.getMarabouQuery(), options)
+        os.chdir(cwd)
+        return ipq            
+        
+    @staticmethod
+    def marabouNetworkStats(net):
+        return {"numVars" : net.numVars,
+                "numEquations" : len(net.equList),
+                "numReluConstraints" : len(net.reluList),
+                "numMaxConstraints" : len(net.maxList),
+                "numAbsConstraints" : len(net.absList),
+                "numSignConstraints" : len(net.signList),
+                "numDisjunction" : len(net.disjunctionList),
+                "numLowerBounds" : len(net.lowerBounds),
+                "numUpperBounds" : len(net.upperBounds),
+                "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
+                "numOutputVars" : net.outputVars.size}
+    
 
 #################################################################################################################
 #################################################################################################################
@@ -693,7 +715,7 @@ class CnnAbs:
         ipq = self.propagateBounds(mbouModel)
         if not self.tickGtimeout():
             return self.returnGtimeout()        
-        MarabouCore.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+        InputQueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
         self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
@@ -851,10 +873,7 @@ class CnnAbs:
             self.optionsObj._timeoutInSeconds = self.gtimeout
         else:
             self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        cwd = os.getcwd()
-        os.chdir(self.logDir)
-        vals, stats = Marabou.solve_query(model.getMarabouQuery(), verbose=False, options=self.optionsObj)
-        os.chdir(cwd)
+        vals, stats = InputQueryUtils.solveQuery(model, self.optionsObj, self.logDir)
         CnnAbs.printLog("----- Finished Solving {}".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -883,15 +902,7 @@ class CnnAbs:
 
     def propagateBounds(self, mbouModel):
         mbouModelCopy = copy.deepcopy(mbouModel)
-        return self.processInputQuery(mbouModelCopy) 
-        
-    def processInputQuery(self, net):
-        net.saveQuery(self.logDir + "processInputQuery")
-        cwd = os.getcwd()
-        os.chdir(self.logDir)
-        ipq = MarabouCore.preprocess(net.getMarabouQuery(), self.optionsObj)
-        os.chdir(cwd)
-        return ipq    
+        return InputQueryUtils.preprocessQuery(mbouModelCopy, self.optionsObj, self.logDir)
 
     def setLogger(suffix='', logDir=''):
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
@@ -918,7 +929,7 @@ class CnnAbs:
             np.save(f, npArray)
 
     def dumpQueryStats(self, mbouNet, name):
-        queryStats = ModelUtils.marabouNetworkStats(mbouNet)
+        queryStats = InputQueryUtils.marabouNetworkStats(mbouNet)
         self.dumpJson(queryStats, name)
         return queryStats
 
