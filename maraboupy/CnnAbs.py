@@ -324,12 +324,14 @@ class ModelUtils:
         modelOnnxName = ModelUtils.outputModelPath(model)
         keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
         return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
-                       
-    def intermidModel(model, layerName):
+
+    # Cut sequential model up to a certain layer.
+    def modelUpToLayer(model, layerName):
         if layerName not in [l.name for l in model.layers]:
             layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
         return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
 
+    # Load saved model.
     def loadModel(self, path):
         model = load_model(os.path.abspath(path), custom_objects={'myLoss': myLoss})
         model.summary()
@@ -339,21 +341,11 @@ class ModelUtils:
         return model        
         
     @staticmethod
-    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True, valueRange=None):
-        if useMapping:
-            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
-            fail = False
-            for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
-                if indCOI.item() is None:
-                    CnnAbs.printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
-                    fail = True
-            if fail:
-                CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))    
-            cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
-            cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
-        else:
-            cex = np.array([valDict[i.item()] for i in np.nditer(inputVarsMapping)]).reshape(prop.xAdv.shape)
-            cexPrediction = np.array([valDict[o.item()] for o in np.nditer(outputVarsMapping)])
+    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, valueRange=None):
+        lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
+        assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
+        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
+        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
         return cex, cexPrediction
 
     @staticmethod
@@ -811,7 +803,7 @@ class CnnAbs:
         else:
             absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
             absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
-        modelTFUpToAbsLayer = ModelUtils.intermidModel(modelTF, absLayerLayerName)
+        modelTFUpToAbsLayer = ModelUtils.modelUpToLayer(modelTF, absLayerLayerName)
         absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
 
         netPriorToAbsLayer = list(set().union(*layerList[:absLayer+1]))
@@ -885,7 +877,7 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
-            cex, cexPrediction = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
+            cex, cexPrediction = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, valueRange=self.ds.valueRange)
             self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction)
