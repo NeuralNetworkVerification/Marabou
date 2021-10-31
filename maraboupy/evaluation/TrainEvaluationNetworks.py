@@ -68,21 +68,13 @@ def train(netPath, ds, justSummary=False, force=False):
         return None
     if os.path.exists(netPath) and not force:
         raise Exception('Network {} exists, and forced overwrite not configured'.format(netPath))
-    net.compile(optimizer=ds.optimizer, loss=myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+    net.compile(optimizer=ds.optimizer, loss=CnnAbs.myLoss, metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     net.fit(ds.x_train, ds.y_train, epochs=epochs, batch_size=batch_size, validation_split=0.1)
     score = net.evaluate(ds.x_test, ds.y_test, verbose=0)
     CnnAbs.CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
     CnnAbs.CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
     net.save(netPath)
     return net
-
-#def load(netPath, ds):
-#    net = load_model(os.path.abspath(netPath), custom_objects={'myLoss': myLoss})
-#    net.summary()
-#    score = net.evaluate(ds.x_test, ds.y_test, verbose=0)
-#    CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
-#    CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
-#    return net
 
 def main():
     parser = argparse.ArgumentParser(description='Choose network to train')

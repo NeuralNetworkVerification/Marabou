@@ -28,7 +28,7 @@ parser.add_argument("--prop_slack",     type=float,                             
 parser.add_argument("--timeout",        type=int,                                   default=800,                    help="Single solver timeout in seconds.")
 parser.add_argument("--gtimeout",       type=int,                                   default=3600,                   help="Global timeout for all solving in seconds.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
-parser.add_argument("--policy",         type=str, choices=Policy.solvingPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
+parser.add_argument("--policy",         type=str, choices=Policy.allPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
 
 parser.add_argument("--net", type=str, default="", help="verified neural network", required=True)
 parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
