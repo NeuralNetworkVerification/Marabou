@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from enum import Enum, auto
 import json
 import random
+import itertools
 from tensorflow.keras.models import load_model
 
 import copy
@@ -340,30 +341,21 @@ class ModelUtils:
         CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
         CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
         return model    
-        
-class InputQueryUtils:
 
+# Containing functions manipulating verification query, with specific implementation to used tool.    
+class QueryUtils:
+
+    # Set neurons with no incoming edges as inputs.
     @staticmethod
     def setUnconnectedAsInputs(net):        
         varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
         for eq in net.equList:
             if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
                 varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
-        for maxCons in net.maxList:
-            varsWithIngoingEdgesOrInputs.add(maxCons[1])
-        for reluCons in net.reluList:
-            varsWithIngoingEdgesOrInputs.add(reluCons[1])
-        for signCons in net.signList:
-            varsWithIngoingEdgesOrInputs.add(signCons[1])
-        for absCons in net.absList:
-            varsWithIngoingEdgesOrInputs.add(absCons[1])
+        for peicewiseLinearConstraint in itertools.chain(net.maxList, net.reluList, net.signList, net.absList):
+            varsWithIngoingEdgesOrInputs.add(peicewiseLinearConstraint[1])
         varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-        CnnAbs.printLog("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
-        for v in varsWithoutIngoingEdges:
-            if not net.lowerBoundExists(v):
-                raise Exception("inaccessible w/o lower bounds: {}".format(v))
-            if not net.upperBoundExists(v):
-                raise Exception("inaccessible w/o upper bounds: {}".format(v))
+        assert all([net.lowerBoundExists(v) and net.upperBoundExists(v) for v in varsWithoutIngoingEdges])
         net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
 
     @staticmethod        
@@ -494,7 +486,7 @@ class InputQueryUtils:
                 raise Exception("Not implemented")
         unreach = set([v for v in range(net.numVars) if v not in reach])
     
-        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeVariables(net, reach)
+        inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.removeVariables(net, reach)
         for eq in net.equList:
             for w,v in eq.addendList:
                 if v > net.numVars:
@@ -518,7 +510,7 @@ class InputQueryUtils:
     @staticmethod    
     def inBoundsInftyBall(x, r, p, valueRange=None):
         assert p.shape == x.shape
-        l,u = InputQueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
+        l,u = QueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
         geqLow = np.less_equal(l,p)
         leqUp  = np.less_equal(p,u)
         inBounds = np.logical_and(geqLow, leqUp)
@@ -530,7 +522,7 @@ class InputQueryUtils:
     def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
         inAsNP = np.array(net.inputVars[0])
         x = x.reshape(inAsNP.shape)
-        xDown, xUp = InputQueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
+        xDown, xUp = QueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
         floatingPointErrorGapOutput = 0.03
         for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
             net.lowerBounds.pop(i.item(), None)
@@ -653,7 +645,7 @@ class CnnAbs:
             
         prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
         mbouModel = self.modelUtils.tf2Model(modelTF)
-        InputQueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
+        QueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
 
         fName = "xAdv.png"
         CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
@@ -682,7 +674,7 @@ class CnnAbs:
         ipq = self.propagateBounds(mbouModel)
         if not self.tickGtimeout():
             return self.returnGtimeout()        
-        InputQueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+        QueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
         self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
@@ -729,7 +721,7 @@ class CnnAbs:
                 continue
             if resultObj.isSat():
                 try:
-                    isSpurious = ModelUtils.isCEXSpurious(modelTF, prop, resultObj.cex, valueRange=self.ds.valueRange)
+                    isSpurious = CnnAbs.isCEXSpurious(modelTF, prop, resultObj.cex, valueRange=self.ds.valueRange)
                 except Exception as err:
                     CnnAbs.printLog(err)
                     isSpurious = True
@@ -770,7 +762,7 @@ class CnnAbs:
     def abstractionRefinementBatches(self, model, modelTF, policy, prop):
         if policy.policy is Policy.Vanilla:
             return [set()]
-        layerList, layerTypes = InputQueryUtils.divideToLayers(model)
+        layerList, layerTypes = QueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
         if self.abstractFirst:
             absLayer = next(i for i,t in enumerate(layerTypes) if 'Relu' in t)
@@ -785,7 +777,7 @@ class CnnAbs:
         netPriorToAbsLayer.sort()
         modelUpToAbsLayer = copy.deepcopy(model)
         modelUpToAbsLayer.outputVars = np.sort(np.array(list(layerList[absLayer])))
-        _ , _ , varsMapping = InputQueryUtils.removeVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
+        _ , _ , varsMapping = QueryUtils.removeVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
 
         cwd = os.getcwd()
         os.chdir(self.logDir)        
@@ -826,7 +818,7 @@ class CnnAbs:
         for v in abstractNeurons:
             modelAbstract.setLowerBound(v, boundDict[v][0])
             modelAbstract.setUpperBound(v, boundDict[v][1])        
-        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.pruneUnreachableNeurons(modelAbstract, modelAbstract.outputVars.flatten().tolist())
+        inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.pruneUnreachableNeurons(modelAbstract, modelAbstract.outputVars.flatten().tolist())
         return modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
 
     def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
@@ -840,7 +832,7 @@ class CnnAbs:
             self.options._timeoutInSeconds = self.gtimeout
         else:
             self.options._timeoutInSeconds = int(min(self.options._timeoutInSeconds, self.gtimeout))
-        vals, stats = InputQueryUtils.solveQuery(model, self.options, self.logDir)
+        vals, stats = QueryUtils.solveQuery(model, self.options, self.logDir)
         CnnAbs.printLog("----- Finished Solving {}".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -852,7 +844,7 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
-            cex, cexPrediction = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, valueRange=self.ds.valueRange)
+            cex, cexPrediction = CnnAbs.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, valueRange=self.ds.valueRange)
             self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction)
@@ -869,11 +861,11 @@ class CnnAbs:
 
     def propagateBounds(self, mbouModel):
         mbouModelCopy = copy.deepcopy(mbouModel)
-        return InputQueryUtils.preprocessQuery(mbouModelCopy, self.options, self.logDir)
+        return QueryUtils.preprocessQuery(mbouModelCopy, self.options, self.logDir)
 
     @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, valueRange=None):
-        lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
+        lBounds = QueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
         assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
@@ -883,12 +875,12 @@ class CnnAbs:
     def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
         yCorrect = prop.yMax
         yBad = prop.ySecond
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
         if not inBounds:
             differences = cex - prop.xAdv
             if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
                 cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
@@ -923,7 +915,7 @@ class CnnAbs:
             np.save(f, npArray)
 
     def dumpQueryStats(self, mbouNet, name):
-        queryStats = InputQueryUtils.marabouNetworkStats(mbouNet)
+        queryStats = QueryUtils.marabouNetworkStats(mbouNet)
         self.dumpJson(queryStats, name)
         return queryStats
 
