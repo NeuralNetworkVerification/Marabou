@@ -74,6 +74,7 @@ class PolicyCentered(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.Centered
 
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         assert len(absLayerPredictions.shape) == 4
         absLayerShape = absLayerPredictions.shape[1:]
@@ -91,6 +92,7 @@ class PolicyAllSamplesRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.AllSamplesRank
 
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         score = np.mean(absLayerPredictions, axis=0)
         return PolicyBase.sortByScore(modelUpToAbsLayer, score)
@@ -102,6 +104,7 @@ class PolicySingleClassRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.SingleClassRank
 
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):        
         score = np.mean(np.array([alp for alp, label in zip(absLayerPredictions, self.ds.y_test) if label == property.yMax]), axis=0)
         return PolicyBase.sortByScore(modelUpToAbsLayer, score)
@@ -112,7 +115,8 @@ class PolicyMajorityClassVote(PolicyBase):
     def __init__(self, ds):
         super().__init__(ds)  
         self.policy = Policy.MajorityClassVote  
-            
+
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         actByClasses = np.array([np.mean(np.array([alp for alp,y in zip(absLayerPredictions, self.ds.y_test) if y == label]), axis=0) for label in range(self.ds.num_classes)])
         score = np.linalg.norm(actByClasses, axis=0)
@@ -125,6 +129,7 @@ class PolicyRandom(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.Random  
 
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         return np.random.permutation(modelUpToAbsLayer.outputVars)
 
@@ -135,7 +140,8 @@ class PolicyVanilla(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.Vanilla
         self.coi = False
-        
+
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         raise NotImplementedError
 
@@ -146,11 +152,12 @@ class PolicySampleRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.SampleRank
 
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         score = np.abs(absLayerPredictions[property.xAdvIndex])
         return PolicyBase.sortByScore(modelUpToAbsLayer, score)
     
-    
+# Enum defining the policies
 class Policy(Enum):
     Centered          = 0
     AllSamplesRank    = 1
@@ -188,28 +195,30 @@ class Policy(Enum):
         else:
             raise NotImplementedError
 
+# Adversarial property object.        
 class AdversarialProperty:
     def __init__(self, xAdv, yMax, ySecond, inDist, outSlack, sample):
-        self.xAdv = xAdv
-        self.yMax = yMax
-        self.ySecond = ySecond
-        self.inDist = inDist
-        self.outSlack = outSlack
-        self.xAdvIndex = sample
+        self.xAdv = xAdv # Sample pertubing around.
+        self.yMax = yMax # Highest prediction produced by the network.
+        self.ySecond = ySecond # Second highest prediction produced by the network.
+        self.inDist = inDist # Input pertubation distance.
+        self.outSlack = outSlack # Slack allowed in the output (default value is 0)
+        self.xAdvIndex = sample # Sample index in relevant dataset.
 
+# Possible verification results enum.        
 class Result(Enum):    
-    TIMEOUT = 0
-    SAT = 1
-    UNSAT = 2
-    GTIMEOUT = 3
-    SPURIOUS = 4
-    ERROR = 5
+    LTIMEOUT = 0 # Local timeout - verification ended in in a query timeout.
+    SAT = 1 # Verification ended with SAT.
+    UNSAT = 2 # Verification ended with UNSAT.
+    GTIMEOUT = 3 # Global timeout - verification ended in in a query timeout.
+    SPURIOUS = 4 # Spurious CEX.
+    ERROR = 5 # Error.
 
     @staticmethod
     def fromString(s):
         s = s.lower()
-        if s == "timeout":
-            return Result.TIMEOUT
+        if s == "ltimeout":
+            return Result.LTIMEOUT
         elif s == "sat":
             return Result.SAT
         elif s == "unsat":
@@ -222,7 +231,8 @@ class Result(Enum):
             return Result.ERROR
         else:
             raise NotImplementedError            
-        
+
+# Verification result.        
 class ResultObj:
     
     def __init__(self, result):
@@ -230,28 +240,24 @@ class ResultObj:
         self.finalQueryStats = None
         self.cex = None
         self.cexPrediction = np.array([])
-        self.inputDict = dict()
-        self.outputDict = dict()
         self.result = Result.fromString(result)
 
-    def timedOut(self):
-        return (self.result is Result.TIMEOUT) or (self.result is Result.GTIMEOUT)
+    def isTimeout(self):
+        return (self.result is Result.LTIMEOUT) or (self.result is Result.GTIMEOUT)
 
-    def sat(self):
+    def isSat(self):
         return self.result is Result.SAT
     
-    def unsat(self):
+    def isUnsat(self):
         return self.result is Result.UNSAT
     
     def setStats(self, orig, final):
         self.originalQueryStats = orig
         self.finalQueryStats = final
 
-    def setCex(self, cex, cexPrediction, inputDict, outputDict):
+    def setCex(self, cex, cexPrediction):
         self.cex = cex
         self.cexPrediction = cexPrediction
-        self.inputDict = inputDict
-        self.outputDict = outputDict
 
     def returnResult(self):
         CnnAbs.printLog("\n*******************************************************************************\n")
@@ -342,18 +348,13 @@ class ModelUtils:
                     CnnAbs.printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
                     fail = True
             if fail:
-                CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))
-            inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd.item() for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
-            outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0    for (indOrig, indCOI)      in     enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
-    
+                CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))    
             cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
             cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
         else:
-            inputDict = {i.item():valDict[i.item()] for i in np.nditer(inputVarsMapping)}
-            outputDict = {o.item():valDict[o.item()] for o in np.nditer(outputVarsMapping)}
             cex = np.array([valDict[i.item()] for i in np.nditer(inputVarsMapping)]).reshape(prop.xAdv.shape)
             cexPrediction = np.array([valDict[o.item()] for o in np.nditer(outputVarsMapping)])
-        return cex, cexPrediction, inputDict, outputDict        
+        return cex, cexPrediction
 
     @staticmethod
     def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
@@ -735,9 +736,9 @@ class CnnAbs:
             resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
             if not self.tickGtimeout():
                 return self.returnGtimeout()            
-            if resultObj.timedOut():
+            if resultObj.isTimeout():
                 continue
-            if resultObj.sat():
+            if resultObj.isSat():
                 try:
                     isSpurious = ModelUtils.isCEXSpurious(modelTF, prop, resultObj.cex, valueRange=self.ds.valueRange)
                 except Exception as err:
@@ -750,7 +751,7 @@ class CnnAbs:
                 elif i+1 == len(absRefineBatches):
                     resultObj = ResultObj("error")
                     break 
-            elif resultObj.unsat():
+            elif resultObj.isUnsat():
                 CnnAbs.printLog("Found UNSAT in step {}/{}.".format(i, len(absRefineBatches)-1))
                 successful = i
                 break
@@ -762,8 +763,8 @@ class CnnAbs:
         globalTimeout = self.isGlobalTimedOut()    
         if globalTimeout:
             resultObj = ResultObj("gtimeout")
-        success = not resultObj.timedOut() and (successful is not None)
-        if resultObj.sat() and not success:
+        success = not resultObj.isTimeout() and (successful is not None)
+        if resultObj.isSat() and not success:
             resultObj = ResultObj("spurious")
     
         if success:
@@ -771,7 +772,7 @@ class CnnAbs:
             self.resultsJson["successfulRuntime"] = self.resultsJson["subResults"][-1]["runtime"]
             self.resultsJson["successfulRun"] = successful + 1        
         self.resultsJson["totalRuntime"] = time.time() - self.startTotal
-        self.resultsJson["SAT"] = resultObj.sat()
+        self.resultsJson["SAT"] = resultObj.isSat()
         self.resultsJson["Result"] = resultObj.result.name
         self.dumpResultsJson()
         return resultObj.returnResult()
@@ -859,25 +860,23 @@ class CnnAbs:
         timedOut = stats.hasTimedOut()
         if not sat:
             if timedOut:
-                result = ResultObj("timeout")
-                CnnAbs.printLog("----- Timed out in {}".format(runName))
+                result = ResultObj("ltimeout")
+                CnnAbs.printLog("----- Timed out (local) in {}".format(runName))
             else:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
-            cex, cexPrediction, inputDict, outputDict = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
+            cex, cexPrediction = ModelUtils.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, useMapping=True, valueRange=self.ds.valueRange)
             self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
-            self.dumpJson(inputDict, "DICT_runMarabouOnKeras_InputDict")
-            self.dumpJson(outputDict, "DICT_runMarabouOnKeras_OutputDict")
             result = ResultObj("sat")
-            result.setCex(cex, cexPrediction, inputDict, outputDict)
+            result.setCex(cex, cexPrediction)
             result.vals = vals
             result.varsMapping = varsMapping
             CnnAbs.printLog("----- SAT in {}".format(runName))
         result.setStats(originalQueryStats, finalQueryStats)            
 
         endLocal = time.time()
-        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.sat(), timedOut=result.timedOut(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
+        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.isSat(), timedOut=result.isTimeout(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
         if not self.tickGtimeout():
             return ResultObj("gtimeout")
         return result
