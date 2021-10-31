@@ -307,13 +307,14 @@ def myLoss(labels, logits):
 # Implements utilities for the Tensorflow interface.
 class ModelUtils:
 
-    def __init__(self, ds, optionsObj, logDir):
+    def __init__(self, ds, options, logDir):
         self.ds = ds
-        self.optionsObj = optionsObj
+        self.options = options
         self.logDir = logDir
 
+    #Format to my onnx saving format.
     @staticmethod
-    def outputModelPath(m, suffix=""):
+    def onnxNameFormat(m, suffix=""):
         if suffix:
             suffix = "_" + suffix
         return "./{}{}.onnx".format(m.name, suffix)
@@ -321,7 +322,7 @@ class ModelUtils:
     # Translate Tensorflow Sequential to Marabou model.
     def tf2Model(self, model):
         modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
-        modelOnnxName = ModelUtils.outputModelPath(model)
+        modelOnnxName = ModelUtils.onnxNameFormat(model)
         keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
         return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
 
@@ -606,10 +607,10 @@ class CnnAbs:
     resultsFileBrief = 'ResultsBrief'
     
     def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False):
-        optionsObj = Marabou.createOptions(**options)
+        options = Marabou.createOptions(**options)
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
-        self.optionsObj = optionsObj
+        self.options = options
         self.logDir = logDir
         if not self.logDir.endswith("/"):
             self.logDir += "/"
@@ -633,7 +634,7 @@ class CnnAbs:
         self.gtimeout = gtimeout
         self.prevTimeStamp = time.time()
         self.policy = Policy.fromString(policy, self.ds.name)
-        self.modelUtils = ModelUtils(self.ds, self.optionsObj, self.logDir)
+        self.modelUtils = ModelUtils(self.ds, self.options, self.logDir)
         self.abstractFirst = abstractFirst
 
     def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
@@ -702,8 +703,8 @@ class CnnAbs:
         else:
             boundDict = None
 
-        self.optionsObj._dumpBounds = False
-        self.modelUtils.optionsObj._dumpBounds = False        
+        self.options._dumpBounds = False
+        self.modelUtils.options._dumpBounds = False        
         originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)        
         successful = None
         absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
@@ -717,7 +718,7 @@ class CnnAbs:
                 break
             mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
-                self.optionsObj._timeoutInSeconds = 0
+                self.options._timeoutInSeconds = 0
             runName = generalRunName + ",step_{}_outOf_{}".format(i, len(absRefineBatches)-1)
             if not self.tickGtimeout():
                 return self.returnGtimeout()
@@ -835,11 +836,11 @@ class CnnAbs:
         finalQueryStats = self.dumpQueryStats(model, "finalQueryStats_" + runName)
         
         CnnAbs.printLog("----- Start Solving {}".format(runName))
-        if self.optionsObj._timeoutInSeconds <= 0:
-            self.optionsObj._timeoutInSeconds = self.gtimeout
+        if self.options._timeoutInSeconds <= 0:
+            self.options._timeoutInSeconds = self.gtimeout
         else:
-            self.optionsObj._timeoutInSeconds = int(min(self.optionsObj._timeoutInSeconds, self.gtimeout))
-        vals, stats = InputQueryUtils.solveQuery(model, self.optionsObj, self.logDir)
+            self.options._timeoutInSeconds = int(min(self.options._timeoutInSeconds, self.gtimeout))
+        vals, stats = InputQueryUtils.solveQuery(model, self.options, self.logDir)
         CnnAbs.printLog("----- Finished Solving {}".format(runName))
         sat = len(vals) > 0
         timedOut = stats.hasTimedOut()
@@ -868,7 +869,7 @@ class CnnAbs:
 
     def propagateBounds(self, mbouModel):
         mbouModelCopy = copy.deepcopy(mbouModel)
-        return InputQueryUtils.preprocessQuery(mbouModelCopy, self.optionsObj, self.logDir)
+        return InputQueryUtils.preprocessQuery(mbouModelCopy, self.options, self.logDir)
 
     @staticmethod
     def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, valueRange=None):
