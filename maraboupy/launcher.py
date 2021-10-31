@@ -12,12 +12,6 @@ import CnnAbs
 ####################################################################################################
 ####################################################################################################
 
-def absPolicies():
-    return ['Centered', 'AllSamplesRank', 'SingleClassRank', 'MajorityClassVote', 'Random', 'SampleRank']
-    
-def solvingPolicies():
-    return absPolicies() + ['Vanilla']
-
 def globalTimeOut():
     return 1,0,0
 
@@ -34,7 +28,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False
     runTitles = list()
     title2Label = dict()
 
-    for policy in solvingPolicies():
+    for policy in CnnAbs.Policy.allPolicies():
         title2Label["{}Cfg".format(policy)] = "{}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
@@ -46,7 +40,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False
 
     if slurm:
         with open(batchDirPath + "/plotSpec.json", 'w') as f:
-            policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
+            policiesCfg = ["{}Cfg".format(policy) for policy in CnnAbs.Policy.abstractionPolicies()]
             jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
                         "TIMEOUT_VAL" : gtimeout,
                         "title2Label" : title2Label,
@@ -67,7 +61,7 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slur
     propDist = [round(x, 3) for x in np.linspace(0.025, 0.2, num=numRunsPerType)]
     
 
-    for policy in solvingPolicies():
+    for policy in CnnAbs.Policy.allPolicies():
         title2Label["{}Cfg".format(policy)] = "{}".format(policy)
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, str(propDist[i]).replace('.','-'))
@@ -76,7 +70,7 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slur
 
     if slurm:
         with open(batchDirPath + "/plotSpec.json", 'w') as f:
-            policiesCfg = ["{}Cfg".format(policy) for policy in absPolicies()]
+            policiesCfg = ["{}Cfg".format(policy) for policy in CnnAbs.Policy.abstractionPolicies()]
             jsonDict = {"Experiment"  : "Different property distances on the same sample",
                         "TIMEOUT_VAL" : gtimeout,
                         "title2Label" : title2Label,

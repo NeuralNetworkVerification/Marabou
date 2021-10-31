@@ -19,63 +19,53 @@ from tensorflow.keras.models import load_model
 
 import copy
 
-####  _____      _ _      _
-#### |  __ \    | (_)    (_)
-#### | |__) |__ | |_  ___ _  ___  ___
-#### |  ___/ _ \| | |/ __| |/ _ \/ __|
-#### | |  | (_) | | | (__| |  __/\__ \
-#### |_|   \___/|_|_|\___|_|\___||___/
-####                                                         
+####                     _ _ _                     ____  _     _           _
+####     /\             (_) (_)                   / __ \| |   (_)         | |
+####    /  \  _   ___  ___| |_  __ _ _ __ _   _  | |  | | |__  _  ___  ___| |_ ___
+####   / /\ \| | | \ \/ / | | |/ _` | '__| | | | | |  | | '_ \| |/ _ \/ __| __/ __|
+####  / ____ \ |_| |>  <| | | | (_| | |  | |_| | | |__| | |_) | |  __/ (__| |_\__ \
+#### /_/    \_\__,_/_/\_\_|_|_|\__,_|_|   \__, |  \____/|_.__/| |\___|\___|\__|___/
+####                                       __/ |             _/ |
+####                                      |___/             |__/   
 
+#All Policies inherit from this class
 class PolicyBase:
 
     def __init__(self, ds):
         self.policy = None
-        self.stepSize = 10
-        self.startWith = 50
+        self.geometricStepSize = 10
+        self.startWith = 0
+        self.geometricFactor = 2
         self.ds = DataSet(ds)
         self.coi = True
-        
-    def rankByScore(model, score):
+
+    # Return output indices of a model sorted according to score in an ascending order.
+    def sortByScore(model, score):
         score = CnnAbs.flattenTF(score)        
         assert score.shape == model.outputVars.shape
-        scoreSort = np.argsort(score)
-        return model.outputVars.flatten()[scoreSort]
+        return model.outputVars.flatten()[np.argsort(score)]
 
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
-        raise NotImplementedError    
+    # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
+        raise NotImplementedError
+    
+    #Generate refinemnet step sizes.        
+    def steps(self, n):
+        return self.geometricStep(n)
 
-    @staticmethod
-    def linearStep(n, stepSize=10, startWith=50):
-        stepSize = max(stepSize,1)
-        startWith = max(startWith,0)
-        size = n
-        yield startWith
-        size -= startWith
-        while size > 0:
-            toAdd = min(size, stepSize)
-            yield toAdd
-            size -= toAdd
-
-
-    @staticmethod
-    def geometricStep(n, initStepSize=10, startWith=0, factor=2):
-        stepSize = max(initStepSize,1)
-        startWith = max(startWith,0)
+    #Generate refinemnet step sizes - geometric increasment.
+    def geometricStep(self, n, factor=2):
+        stepSize = max(self.geometricStepSize, 1)
+        startWith = max(self.startWith, 0)
         size = n
         yield startWith
         size -= startWith
         i = 0
         while size > 0:
-            toAdd = min(size, initStepSize * (factor ** i))
+            toAdd = min(size, self.geometricStepSize * (factor ** i))
             yield toAdd
             size -= toAdd
             i += 1
-
-    @classmethod
-    def steps(cls, n):
-        #return cls.linearStep(n)
-        return cls.geometricStep(n)
     
 #Policy - Most important neurons are the center of the image.
 class PolicyCentered(PolicyBase):
@@ -84,14 +74,14 @@ class PolicyCentered(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.Centered
 
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         assert len(absLayerPredictions.shape) == 4
         absLayerShape = absLayerPredictions.shape[1:]
         corMeshList = np.meshgrid(*[np.arange(d) for d in absLayerShape], indexing='ij')
         center = [(float(d)-1) / 2 for d in absLayerShape]
         distance = np.linalg.norm(np.array([cor - cent for cor, cent in zip(corMeshList, center)]), axis=0)
         score = -distance
-        return PolicyBase.rankByScore(model, score)
+        return PolicyBase.sortByScore(modelUpToAbsLayer, score)
 
 
 #Policy - Refine stepsize most activated neurons, calculating activation on the entire Mnist test.    
@@ -101,9 +91,9 @@ class PolicyAllSamplesRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.AllSamplesRank
 
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         score = np.mean(absLayerPredictions, axis=0)
-        return PolicyBase.rankByScore(model, score)
+        return PolicyBase.sortByScore(modelUpToAbsLayer, score)
 
 #Policy - Refine stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
@@ -112,9 +102,9 @@ class PolicySingleClassRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.SingleClassRank
 
-    def rankAbsLayer(self, model, prop, absLayerPredictions):        
-        score = np.mean(np.array([alp for alp, label in zip(absLayerPredictions, self.ds.y_test) if label == prop.yMax]), axis=0)
-        return PolicyBase.rankByScore(model, score)
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):        
+        score = np.mean(np.array([alp for alp, label in zip(absLayerPredictions, self.ds.y_test) if label == property.yMax]), axis=0)
+        return PolicyBase.sortByScore(modelUpToAbsLayer, score)
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
@@ -123,10 +113,10 @@ class PolicyMajorityClassVote(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.MajorityClassVote  
             
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         actByClasses = np.array([np.mean(np.array([alp for alp,y in zip(absLayerPredictions, self.ds.y_test) if y == label]), axis=0) for label in range(self.ds.num_classes)])
         score = np.linalg.norm(actByClasses, axis=0)
-        return PolicyBase.rankByScore(model, score)
+        return PolicyBase.sortByScore(modelUpToAbsLayer, score)
     
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
@@ -135,8 +125,8 @@ class PolicyRandom(PolicyBase):
         super().__init__(ds)  
         self.policy = Policy.Random  
 
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
-        return np.random.permutation(model.outputVars)
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
+        return np.random.permutation(modelUpToAbsLayer.outputVars)
 
 #Policy - No abstraction.
 class PolicyVanilla(PolicyBase):
@@ -146,7 +136,7 @@ class PolicyVanilla(PolicyBase):
         self.policy = Policy.Vanilla
         self.coi = False
         
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
         raise NotImplementedError
 
 #Policy - Rank According to activation values of single sample
@@ -156,9 +146,9 @@ class PolicySampleRank(PolicyBase):
         super().__init__(ds)
         self.policy = Policy.SampleRank
 
-    def rankAbsLayer(self, model, prop, absLayerPredictions):
-        score = np.abs(absLayerPredictions[prop.xAdvIndex])
-        return PolicyBase.rankByScore(model, score)
+    def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
+        score = np.abs(absLayerPredictions[property.xAdvIndex])
+        return PolicyBase.sortByScore(modelUpToAbsLayer, score)
     
     
 class Policy(Enum):
@@ -171,12 +161,12 @@ class Policy(Enum):
     SampleRank        = 6
 
     @staticmethod
-    def absPolicies():
-        return [Policy.Centered.name, Policy.AllSamplesRank.name, Policy.SingleClassRank.name, Policy.MajorityClassVote.name, Policy.Random.name, Policy.SampleRank.name]
+    def abstractionPolicies():
+        return [policy.name for policy in Policy if policy is not Policy.Vanilla]
 
     @staticmethod
-    def solvingPolicies():
-        return Policy.absPolicies() + [Policy.Vanilla.name]
+    def allPolicies():
+        return [policy.name for policy in Policy]
 
     @staticmethod
     def fromString(s, ds):
@@ -207,8 +197,7 @@ class AdversarialProperty:
         self.outSlack = outSlack
         self.xAdvIndex = sample
 
-class Result(Enum):
-    
+class Result(Enum):    
     TIMEOUT = 0
     SAT = 1
     UNSAT = 2
@@ -216,21 +205,21 @@ class Result(Enum):
     SPURIOUS = 4
     ERROR = 5
 
-    @classmethod
-    def str2Result(cls, s):
+    @staticmethod
+    def fromString(s):
         s = s.lower()
         if s == "timeout":
-            return cls.TIMEOUT
+            return Result.TIMEOUT
         elif s == "sat":
-            return cls.SAT
+            return Result.SAT
         elif s == "unsat":
-            return cls.UNSAT
+            return Result.UNSAT
         elif s == "gtimeout":
-            return cls.GTIMEOUT
+            return Result.GTIMEOUT
         elif s == "spurious":
-            return cls.SPURIOUS
+            return Result.SPURIOUS
         elif s == "error":
-            return cls.ERROR
+            return Result.ERROR
         else:
             raise NotImplementedError            
         
@@ -243,7 +232,7 @@ class ResultObj:
         self.cexPrediction = np.array([])
         self.inputDict = dict()
         self.outputDict = dict()
-        self.result = Result.str2Result(result)
+        self.result = Result.fromString(result)
 
     def timedOut(self):
         return (self.result is Result.TIMEOUT) or (self.result is Result.GTIMEOUT)
@@ -304,7 +293,320 @@ class DataSet:
         self.metrics=['accuracy']
         self.valueRange = (0,1) #Input pixels value range
         self.name = 'mnist'
+
+def myLoss(labels, logits):
+    return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
+
+class ModelUtils:
     
+    numClones = 0
+
+    def __init__(self, ds, optionsObj, logDir):
+        self.ds = ds
+        self.optionsObj = optionsObj
+        self.logDir = logDir
+
+    @staticmethod
+    def outputModelPath(m, suffix=""):
+        if suffix:
+            suffix = "_" + suffix
+        return "./{}{}.onnx".format(m.name, suffix)
+        
+    def tf2Model(self, model):
+        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
+        modelOnnxName = ModelUtils.outputModelPath(model)
+        keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
+        return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
+                       
+    def intermidModel(model, layerName):
+        if layerName not in [l.name for l in model.layers]:
+            layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
+        return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
+
+    def loadModel(self, path):
+        model = load_model(os.path.abspath(path), custom_objects={'myLoss': myLoss})
+        model.summary()
+        score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
+        CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
+        CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
+        return model        
+        
+
+    @staticmethod
+    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True, valueRange=None):
+        if useMapping:
+            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
+            fail = False
+            for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
+                if indCOI.item() is None:
+                    CnnAbs.printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
+                    fail = True
+            if fail:
+                CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))
+            inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd.item() for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
+            outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0    for (indOrig, indCOI)      in     enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
+    
+            cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
+            cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
+        else:
+            inputDict = {i.item():valDict[i.item()] for i in np.nditer(inputVarsMapping)}
+            outputDict = {o.item():valDict[o.item()] for o in np.nditer(outputVarsMapping)}
+            cex = np.array([valDict[i.item()] for i in np.nditer(inputVarsMapping)]).reshape(prop.xAdv.shape)
+            cexPrediction = np.array([valDict[o.item()] for o in np.nditer(outputVarsMapping)])
+        return cex, cexPrediction, inputDict, outputDict        
+
+    @staticmethod
+    def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
+        yCorrect = prop.yMax
+        yBad = prop.ySecond
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
+        if not inBounds:
+            differences = cex - prop.xAdv
+            if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
+                cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
+        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
+        if not inBounds:
+            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
+        prediction = model.predict(np.array([cex]))
+        #If I will require ySecond to be max, spurious definition will have to change to force it.
+        if not spuriousStrict:
+            return prediction.argmax() == yCorrect
+        return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
+
+    @staticmethod
+    def marabouNetworkStats(net):
+        return {"numVars" : net.numVars,
+                "numEquations" : len(net.equList),
+                "numReluConstraints" : len(net.reluList),
+                "numMaxConstraints" : len(net.maxList),
+                "numAbsConstraints" : len(net.absList),
+                "numSignConstraints" : len(net.signList),
+                "numDisjunction" : len(net.disjunctionList),
+                "numLowerBounds" : len(net.lowerBounds),
+                "numUpperBounds" : len(net.upperBounds),
+                "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
+                "numOutputVars" : net.outputVars.size}
+
+class InputQueryUtils:
+
+    @staticmethod
+    def setUnconnectedAsInputs(net):        
+        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
+        for eq in net.equList:
+            if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
+                varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
+        for maxCons in net.maxList:
+            varsWithIngoingEdgesOrInputs.add(maxCons[1])
+        for reluCons in net.reluList:
+            varsWithIngoingEdgesOrInputs.add(reluCons[1])
+        for signCons in net.signList:
+            varsWithIngoingEdgesOrInputs.add(signCons[1])
+        for absCons in net.absList:
+            varsWithIngoingEdgesOrInputs.add(absCons[1])
+        varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
+        CnnAbs.printLog("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
+        for v in varsWithoutIngoingEdges:
+            if not net.lowerBoundExists(v):
+                raise Exception("inaccessible w/o lower bounds: {}".format(v))
+            if not net.upperBoundExists(v):
+                raise Exception("inaccessible w/o upper bounds: {}".format(v))
+        net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
+
+    @staticmethod        
+    def divideToLayers(net):
+        layerMappingReverse = dict()
+        layer = set(net.outputVars.flatten().tolist())
+        layerNum = 0
+        lastMapped = 0
+        nextLayerWas0 = False
+        layerType = list()
+        while len(layerMappingReverse) < net.numVars:
+            nextLayer = set()
+            for var in layer:
+                assert var not in layerMappingReverse
+                layerMappingReverse[var] = layerNum
+            layerType.insert(0, set())
+            for eq in net.equList:
+                if (eq.addendList[-1][1] in layer) and (eq.EquationType == MarabouCore.Equation.EQ):
+                    [nextLayer.add(el[1]) for el in eq.addendList[:-1] if el[0] != 0]
+                    layerType[0].add("Linear")
+            for maxArgs, maxOut in net.maxList:
+                if maxOut in layer:
+                    [nextLayer.add(arg) for arg in maxArgs]
+                    layerType[0].add("Max")
+            [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in net.reluList if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in net.absList  if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in net.signList if vout in layer]
+            if not layerType[0]:
+                layerType[0].add("Input")
+            layer = nextLayer
+            assert not nextLayerWas0
+            nextLayerWas0 = len(nextLayer) == 0
+            layerNum += 1
+        layerMapping = dict()
+        for v,l in layerMappingReverse.items():
+            layerMapping[v] = layerNum - l - 1
+        assert all([i in layerMapping for i in net.inputVars[0].flatten().tolist()])
+        layerList = [set() for i in range(layerNum)]
+        [layerList[l].add(var) for var,l in layerMapping.items()]
+        return layerList, layerType
+
+    @staticmethod        
+    def removeVariables(net, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
+
+        if not keepSet:        
+            net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
+            net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
+            net.signList = [(vin,vout) for vin,vout in net.signList if (vin not in varSet) and (vout not in varSet)]
+            varSet = {v for v in range(net.numVars) if v not in varSet}
+    
+        varSetList = list(varSet)
+        varSetList.sort()
+        varSetDict = {v:i for i,v in enumerate(varSetList)}
+        assert set(varSet) == set(varSetDict.keys()) and len(set(varSet)) == len(varSet)
+        tr = lambda v: varSetDict[v] if v in varSetDict else -1
+        varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
+        
+        if keepSet:
+            for vin,vout in net.reluList:
+                assert (vin not in varSet) == (vout not in varSet)
+            for vin,vout in net.absList:
+                assert (vin not in varSet) == (vout not in varSet)
+            for vin,vout in net.signList:
+                assert (vin not in varSet) == (vout not in varSet)
+    
+        newEquList = list()
+        for eq in net.equList:
+            if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1):
+                newEq = MarabouUtils.Equation()
+                newEq.scalar = eq.scalar
+                newEq.EquationType = MarabouCore.Equation.EQ
+                newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in varSet]
+                if (eq.addendList[-1][1] not in varSet) or len(newEq.addendList) == 1:
+                    continue
+                if all([el[0] == 0 for el in eq.addendList[:-1]]):
+                    continue
+                if newEq.addendList:
+                    newEquList.append(newEq)
+            else:
+                newEq = MarabouUtils.Equation()
+                newEq.scalar = eq.scalar
+                newEq.EquationType = eq.EquationType
+                newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
+                if all([v != -1 for (c, v) in newEq.addendList]):
+                    newEquList.append(newEq)
+        net.equList  = newEquList
+        net.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
+        net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in varSet]
+        net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in varSet]
+        net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in varSet]
+        net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in varSet}
+        net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
+        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
+        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
+        if keepInputShape:
+            assert all([v in varSet for inp in net.inputVars for v in inp.flatten().tolist()])
+        else:
+            net.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in net.inputVars]
+        net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
+        net.numVars = len(varSetList)
+        if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
+            raise Exception("None input/output varsMapping")
+        return inputVarsMapping, outputVarsMapping, varsMapping
+
+    @staticmethod
+    def pruneUnreachableNeurons(net, init):
+
+        origNumVars = net.numVars
+    
+        reach = set(init)
+        lastLen = 0
+        while len(reach) > lastLen:
+            lastLen = len(reach)
+            reachPrev = reach.copy()
+            for eqi, eq in enumerate(net.equList):
+                tw, tv = eq.addendList[-1]
+                if (tv in reachPrev) and (tw == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
+                    [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
+                elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
+                    [reach.add(v) for w,v in eq.addendList]
+            for maxArgs, maxOut in net.maxList:
+                if maxOut in reachPrev:
+                    [reach.add(arg) for arg in maxArgs]
+            [reach.add(vin) for vin,vout in net.reluList if vout in reachPrev]
+            [reach.add(vin) for vin,vout in net.absList  if vout in reachPrev]
+            [reach.add(vin) for vin,vout in net.signList if vout in reachPrev]
+            if len(net.disjunctionList) > 0:
+                raise Exception("Not implemented")
+        unreach = set([v for v in range(net.numVars) if v not in reach])
+    
+        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeVariables(net, reach)
+        for eq in net.equList:
+            for w,v in eq.addendList:
+                if v > net.numVars:
+                    CnnAbs.printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
+        CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(net.numVars / float(origNumVars)))
+        return inputVarsMapping, outputVarsMapping, varsMapping
+
+    @staticmethod
+    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
+        assert valueRange is not None
+        assert floatingPointErrorGap >= 0
+        if valueRange is not None:
+            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
+        else:
+            l, u = x - r, x + r
+        assert np.all(u - l > 2 * floatingPointErrorGap)
+        u -= floatingPointErrorGap
+        l += floatingPointErrorGap
+        return l, u
+
+    @staticmethod    
+    def inBoundsInftyBall(x, r, p, valueRange=None):
+        assert p.shape == x.shape
+        l,u = InputQueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
+        geqLow = np.less_equal(l,p)
+        leqUp  = np.less_equal(p,u)
+        inBounds = np.logical_and(geqLow, leqUp)
+        violations = np.logical_not(inBounds)
+        assert violations.shape == x.shape
+        return np.all(inBounds), violations
+
+    @staticmethod
+    def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
+        inAsNP = np.array(net.inputVars[0])
+        x = x.reshape(inAsNP.shape)
+        xDown, xUp = InputQueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
+        floatingPointErrorGapOutput = 0.03
+        for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
+            net.lowerBounds.pop(i.item(), None)
+            net.upperBounds.pop(i.item(), None)
+            net.setLowerBound(i.item(),d.item())
+            net.setUpperBound(i.item(),u.item())
+        for j,o in enumerate(np.nditer(np.array(net.outputVars))):
+            if j == yCorrect:
+                yCorrectVar = o.item()
+            if j == yBad:
+                yBadVar = o.item()
+        net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
+        return net
+
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+#################################################################################################################
+    
+
+####   _____                      _
+####  / ____|               /\   | |
+#### | |     _ __  _ __    /  \  | |__  ___
+#### | |    | '_ \| '_ \  / /\ \ | '_ \/ __|
+#### | |____| | | | | | |/ ____ \| |_) \__ \
+####  \_____|_| |_|_| |_/_/    \_\_.__/|___/
+####                                        
+                                        
+# Class implementing the tool's solving and logging procedures.
 class CnnAbs:
 
     logger = None
@@ -732,323 +1034,3 @@ class CnnAbs:
                                               "timedOut" : timedOut}
             
         self.dumpResultsJson()
-        
-
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-
-def myLoss(labels, logits):
-    return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
-
-class ModelUtils:
-    
-    numClones = 0
-
-    def __init__(self, ds, optionsObj, logDir):
-        self.ds = ds
-        self.optionsObj = optionsObj
-        self.logDir = logDir
-
-    @staticmethod
-    def outputModelPath(m, suffix=""):
-        if suffix:
-            suffix = "_" + suffix
-        return "./{}{}.onnx".format(m.name, suffix)
-        
-    def tf2Model(self, model):
-        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
-        modelOnnxName = ModelUtils.outputModelPath(model)
-        keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
-        return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
-                       
-    def intermidModel(model, layerName):
-        if layerName not in [l.name for l in model.layers]:
-            layerName = list([l.name for l in reversed(model.layers) if l.name.startswith(layerName)])[0]
-        return tf.keras.Model(inputs=model.input, outputs=model.get_layer(name=layerName).output)        
-
-    def loadModel(self, path):
-        model = load_model(os.path.abspath(path), custom_objects={'myLoss': myLoss})
-        model.summary()
-        score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
-        CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
-        CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
-        return model        
-        
-
-    @staticmethod
-    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, useMapping=True, valueRange=None):
-        if useMapping:
-            lBounds = InputQueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
-            fail = False
-            for (indOrig,indCOI) in enumerate(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])):
-                if indCOI.item() is None:
-                    CnnAbs.printLog("Failure. indOrig={}, indCOI={}".format(indOrig, indCOI))
-                    fail = True
-            if fail:
-                CnnAbs.printLog("inputVarsMapping={}".format(inputVarsMapping))
-            inputDict  = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else lBnd.item() for (indOrig, indCOI),lBnd in zip(enumerate(np.nditer(np.array(inputVarsMapping) , flags=["refs_ok"])), np.nditer(lBounds))}
-            outputDict = {indOrig : valDict[indCOI.item()] if indCOI.item() != -1 else 0    for (indOrig, indCOI)      in     enumerate(np.nditer(np.array(outputVarsMapping), flags=["refs_ok"]))}
-    
-            cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
-            cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
-        else:
-            inputDict = {i.item():valDict[i.item()] for i in np.nditer(inputVarsMapping)}
-            outputDict = {o.item():valDict[o.item()] for o in np.nditer(outputVarsMapping)}
-            cex = np.array([valDict[i.item()] for i in np.nditer(inputVarsMapping)]).reshape(prop.xAdv.shape)
-            cexPrediction = np.array([valDict[o.item()] for o in np.nditer(outputVarsMapping)])
-        return cex, cexPrediction, inputDict, outputDict        
-
-    @staticmethod
-    def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
-        yCorrect = prop.yMax
-        yBad = prop.ySecond
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
-        if not inBounds:
-            differences = cex - prop.xAdv
-            if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
-                cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
-        inBounds, violations =  InputQueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
-        if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
-        prediction = model.predict(np.array([cex]))
-        #If I will require ySecond to be max, spurious definition will have to change to force it.
-        if not spuriousStrict:
-            return prediction.argmax() == yCorrect
-        return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
-
-    @staticmethod
-    def marabouNetworkStats(net):
-        return {"numVars" : net.numVars,
-                "numEquations" : len(net.equList),
-                "numReluConstraints" : len(net.reluList),
-                "numMaxConstraints" : len(net.maxList),
-                "numAbsConstraints" : len(net.absList),
-                "numSignConstraints" : len(net.signList),
-                "numDisjunction" : len(net.disjunctionList),
-                "numLowerBounds" : len(net.lowerBounds),
-                "numUpperBounds" : len(net.upperBounds),
-                "numInputVars" : sum([np.array(inputVars).size for inputVars in net.inputVars]),
-                "numOutputVars" : net.outputVars.size}
-    
-
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-
-
-class InputQueryUtils:
-
-    @staticmethod
-    def setUnconnectedAsInputs(net):        
-        varsWithIngoingEdgesOrInputs = set([v.item() for nparr in net.inputVars for v in np.nditer(nparr, flags=["zerosize_ok"])])
-        for eq in net.equList:
-            if eq.EquationType == MarabouCore.Equation.EQ and eq.addendList[-1][0] == -1 and any([el[0] != 0 for el in eq.addendList[:-1]]):
-                varsWithIngoingEdgesOrInputs.add(eq.addendList[-1][1])
-        for maxCons in net.maxList:
-            varsWithIngoingEdgesOrInputs.add(maxCons[1])
-        for reluCons in net.reluList:
-            varsWithIngoingEdgesOrInputs.add(reluCons[1])
-        for signCons in net.signList:
-            varsWithIngoingEdgesOrInputs.add(signCons[1])
-        for absCons in net.absList:
-            varsWithIngoingEdgesOrInputs.add(absCons[1])
-        varsWithoutIngoingEdges = {v for v in range(net.numVars) if v not in varsWithIngoingEdgesOrInputs}
-        CnnAbs.printLog("varsWithoutIngoingEdges = {}".format(varsWithoutIngoingEdges))
-        for v in varsWithoutIngoingEdges:
-            if not net.lowerBoundExists(v):
-                raise Exception("inaccessible w/o lower bounds: {}".format(v))
-            if not net.upperBoundExists(v):
-                raise Exception("inaccessible w/o upper bounds: {}".format(v))
-        net.inputVars.append(np.array([v for v in varsWithoutIngoingEdges]))
-
-    @staticmethod        
-    def divideToLayers(net):
-        layerMappingReverse = dict()
-        layer = set(net.outputVars.flatten().tolist())
-        layerNum = 0
-        lastMapped = 0
-        nextLayerWas0 = False
-        layerType = list()
-        while len(layerMappingReverse) < net.numVars:
-            nextLayer = set()
-            for var in layer:
-                assert var not in layerMappingReverse
-                layerMappingReverse[var] = layerNum
-            layerType.insert(0, set())
-            for eq in net.equList:
-                if (eq.addendList[-1][1] in layer) and (eq.EquationType == MarabouCore.Equation.EQ):
-                    [nextLayer.add(el[1]) for el in eq.addendList[:-1] if el[0] != 0]
-                    layerType[0].add("Linear")
-            for maxArgs, maxOut in net.maxList:
-                if maxOut in layer:
-                    [nextLayer.add(arg) for arg in maxArgs]
-                    layerType[0].add("Max")
-            [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in net.reluList if vout in layer]
-            [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in net.absList  if vout in layer]
-            [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in net.signList if vout in layer]
-            if not layerType[0]:
-                layerType[0].add("Input")
-            layer = nextLayer
-            assert not nextLayerWas0
-            nextLayerWas0 = len(nextLayer) == 0
-            layerNum += 1
-        layerMapping = dict()
-        for v,l in layerMappingReverse.items():
-            layerMapping[v] = layerNum - l - 1
-        assert all([i in layerMapping for i in net.inputVars[0].flatten().tolist()])
-        layerList = [set() for i in range(layerNum)]
-        [layerList[l].add(var) for var,l in layerMapping.items()]
-        return layerList, layerType
-
-    @staticmethod        
-    def removeVariables(net, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
-
-        if not keepSet:        
-            net.reluList = [(vin,vout) for vin,vout in net.reluList if (vin not in varSet) and (vout not in varSet)]
-            net.absList  = [(vin,vout) for vin,vout in net.absList  if (vin not in varSet) and (vout not in varSet)]
-            net.signList = [(vin,vout) for vin,vout in net.signList if (vin not in varSet) and (vout not in varSet)]
-            varSet = {v for v in range(net.numVars) if v not in varSet}
-    
-        varSetList = list(varSet)
-        varSetList.sort()
-        varSetDict = {v:i for i,v in enumerate(varSetList)}
-        assert set(varSet) == set(varSetDict.keys()) and len(set(varSet)) == len(varSet)
-        tr = lambda v: varSetDict[v] if v in varSetDict else -1
-        varsMapping = {tr(v) : v for v in range(net.numVars) if tr(v) != -1}
-        
-        if keepSet:
-            for vin,vout in net.reluList:
-                assert (vin not in varSet) == (vout not in varSet)
-            for vin,vout in net.absList:
-                assert (vin not in varSet) == (vout not in varSet)
-            for vin,vout in net.signList:
-                assert (vin not in varSet) == (vout not in varSet)
-    
-        newEquList = list()
-        for eq in net.equList:
-            if (eq.EquationType == MarabouCore.Equation.EQ) and (eq.addendList[-1][0] == -1):
-                newEq = MarabouUtils.Equation()
-                newEq.scalar = eq.scalar
-                newEq.EquationType = MarabouCore.Equation.EQ
-                newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in varSet]
-                if (eq.addendList[-1][1] not in varSet) or len(newEq.addendList) == 1:
-                    continue
-                if all([el[0] == 0 for el in eq.addendList[:-1]]):
-                    continue
-                if newEq.addendList:
-                    newEquList.append(newEq)
-            else:
-                newEq = MarabouUtils.Equation()
-                newEq.scalar = eq.scalar
-                newEq.EquationType = eq.EquationType
-                newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList]
-                if all([v != -1 for (c, v) in newEq.addendList]):
-                    newEquList.append(newEq)
-        net.equList  = newEquList
-        net.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in net.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
-        net.reluList = [(tr(vin),tr(vout)) for vin,vout in net.reluList if vout in varSet]
-        net.absList  = [(tr(vin),tr(vout)) for vin,vout in net.absList  if vout in varSet]
-        net.signList = [(tr(vin),tr(vout)) for vin,vout in net.signList if vout in varSet]
-        net.lowerBounds = {tr(v):l for v,l in net.lowerBounds.items() if v in varSet}
-        net.upperBounds = {tr(v):u for v,u in net.upperBounds.items() if v in varSet}
-        inputVarsMapping = np.array([tr(v) for v in net.inputVars[0].flatten().tolist()]).reshape(net.inputVars[0].shape)
-        outputVarsMapping = np.array([tr(v) for v in net.outputVars.flatten().tolist()]).reshape(net.outputVars.shape)
-        if keepInputShape:
-            assert all([v in varSet for inp in net.inputVars for v in inp.flatten().tolist()])
-        else:
-            net.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in net.inputVars]
-        net.outputVars = np.array([tr(v) for v in net.outputVars.flatten().tolist() if v in varSet])
-        net.numVars = len(varSetList)
-        if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
-            raise Exception("None input/output varsMapping")
-        return inputVarsMapping, outputVarsMapping, varsMapping
-
-    @staticmethod
-    def pruneUnreachableNeurons(net, init):
-
-        origNumVars = net.numVars
-    
-        reach = set(init)
-        lastLen = 0
-        while len(reach) > lastLen:
-            lastLen = len(reach)
-            reachPrev = reach.copy()
-            for eqi, eq in enumerate(net.equList):
-                tw, tv = eq.addendList[-1]
-                if (tv in reachPrev) and (tw == -1) and (eq.EquationType == MarabouCore.Equation.EQ):
-                    [reach.add(v) for w,v in eq.addendList[:-1] if w != 0]
-                elif (eq.EquationType != MarabouCore.Equation.EQ) or (eq.addendList[-1][0] != -1):
-                    [reach.add(v) for w,v in eq.addendList]
-            for maxArgs, maxOut in net.maxList:
-                if maxOut in reachPrev:
-                    [reach.add(arg) for arg in maxArgs]
-            [reach.add(vin) for vin,vout in net.reluList if vout in reachPrev]
-            [reach.add(vin) for vin,vout in net.absList  if vout in reachPrev]
-            [reach.add(vin) for vin,vout in net.signList if vout in reachPrev]
-            if len(net.disjunctionList) > 0:
-                raise Exception("Not implemented")
-        unreach = set([v for v in range(net.numVars) if v not in reach])
-    
-        inputVarsMapping, outputVarsMapping, varsMapping = InputQueryUtils.removeVariables(net, reach)
-        for eq in net.equList:
-            for w,v in eq.addendList:
-                if v > net.numVars:
-                    CnnAbs.printLog("eq.addendList={}, eq.scalar={}, eq.EquationType={}".format(eq.addendList, eq.scalar, eq.EquationType))
-        CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(net.numVars / float(origNumVars)))
-        return inputVarsMapping, outputVarsMapping, varsMapping
-
-    @staticmethod
-    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
-        assert valueRange is not None
-        assert floatingPointErrorGap >= 0
-        if valueRange is not None:
-            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
-        else:
-            l, u = x - r, x + r
-        assert np.all(u - l > 2 * floatingPointErrorGap)
-        u -= floatingPointErrorGap
-        l += floatingPointErrorGap
-        return l, u
-
-    @staticmethod    
-    def inBoundsInftyBall(x, r, p, valueRange=None):
-        assert p.shape == x.shape
-        l,u = InputQueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
-        geqLow = np.less_equal(l,p)
-        leqUp  = np.less_equal(p,u)
-        inBounds = np.logical_and(geqLow, leqUp)
-        violations = np.logical_not(inBounds)
-        assert violations.shape == x.shape
-        return np.all(inBounds), violations
-
-    @staticmethod
-    def setAdversarial(net, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
-        inAsNP = np.array(net.inputVars[0])
-        x = x.reshape(inAsNP.shape)
-        xDown, xUp = InputQueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
-        floatingPointErrorGapOutput = 0.03
-        for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
-            net.lowerBounds.pop(i.item(), None)
-            net.upperBounds.pop(i.item(), None)
-            net.setLowerBound(i.item(),d.item())
-            net.setUpperBound(i.item(),u.item())
-        for j,o in enumerate(np.nditer(np.array(net.outputVars))):
-            if j == yCorrect:
-                yCorrectVar = o.item()
-            if j == yBad:
-                yBadVar = o.item()
-        net.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
-        return net
-                            
-    
-
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
-#################################################################################################################
