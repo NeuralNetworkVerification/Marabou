@@ -589,7 +589,7 @@ class CnnAbs:
     resultsFile = 'Results'
     resultsFileBrief = 'ResultsBrief'
     
-    def __init__(self, ds='mnist', dumpDir='', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False):
+    def __init__(self, ds='mnist', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False):
         options = Marabou.createOptions(**options)
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
@@ -600,14 +600,6 @@ class CnnAbs:
         os.makedirs(self.logDir, exist_ok=True)
         if CnnAbs.logger == None:
             CnnAbs.setLogger(logDir=self.logDir)
-        if dumpDir:            
-            self.dumpDir = dumpDir
-            if not self.dumpDir.endswith("/"):
-                self.dumpDir += "/"            
-            if self.dumpDir and not os.path.exists(self.dumpDir):
-                os.mkdir(self.dumpDir)
-        else:
-            self.dumpDir = self.logDir    
         if os.path.exists(self.logDir + CnnAbs.resultsFile + ".json"):
             self.resultsJson = self.loadJson(CnnAbs.resultsFile, loadDir=self.logDir)
         else:
@@ -654,8 +646,6 @@ class CnnAbs:
         if not self.tickGtimeout():
             return self.returnGtimeout()        
         return self.solve(mbouModel, modelTF, policy, prop, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
-
-
 
     def solve(self, mbouModel, modelTF, policy, prop, generalRunName=""):
         startBoundTightening = time.time()
@@ -873,101 +863,6 @@ class CnnAbs:
         prediction = model.predict(np.array([cex]))
         return prediction[0, prop.ySecond] + prop.outSlack < prediction[0, prop.yMax]
     
-
-    def setLogger(suffix='', logDir=''):
-        logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
-        CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
-        logging.getLogger('matplotlib.font_manager').disabled = True
-        
-    @staticmethod
-    def printLog(s):
-        if CnnAbs.logger:
-            CnnAbs.logger.info(s)
-        print(s)
-
-    def dumpNpArray(self, npArray, name, saveDir='', saveAtLog=False):
-        if not saveDir:
-            if saveAtLog:
-                saveDir = self.logDir
-            else:
-                saveDir = self.dumpDir
-        if not name.endswith(".npy"):
-            name += ".npy"
-        if not saveDir.endswith("/"):
-            saveDir += "/"
-        with open(saveDir + name, "wb") as f:
-            np.save(f, npArray)
-
-    def dumpQueryStats(self, mbouNet, name):
-        queryStats = QueryUtils.marabouNetworkStats(mbouNet)
-        self.dumpJson(queryStats, name)
-        return queryStats
-
-    def dumpJson(self, data, name, saveDir=''):
-        if not saveDir:
-            saveDir = self.dumpDir
-        if saveDir and not saveDir.endswith("/"):
-            saveDir += "/"            
-        if not name.endswith(".json"):
-            name += ".json"
-        with open(saveDir + name, "w") as f:
-            json.dump(data, f, indent = 4)
-
-    def dumpCex(self, cex, cexPrediction, prop, runName, model):
-        if model is not None:
-            modelPrediction = model.predict(np.array([cex])).argmax()
-        else:
-            modelPrediction = None
-        mbouPrediction = cexPrediction.argmax()
-        plt.figure()
-        plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
-        plt.imshow(np.squeeze(cex), cmap='Greys')
-        plt.colorbar()
-        plt.savefig(self.logDir + "Cex_{}".format(runName) + ".png")
-        self.dumpNpArray(cex, "Cex_{}".format(runName), saveAtLog=True)
-        
-        diff = np.abs(cex - prop.xAdv)
-        #assert np.max(diff) <= prop.inDist
-        plt.figure()
-        plt.title('Distance between pixels: CEX and adv. sample')
-        plt.imshow(np.squeeze(diff), cmap='Greys')
-        plt.colorbar()
-        plt.savefig(self.logDir + "DiffCexXAdv_{}".format(runName) + ".png")
-        self.dumpNpArray(diff, "DiffCexXAdv_{}".format(runName), saveAtLog=True)
-
-    @staticmethod
-    def dumpCoi(inputVarsMapping, runName):
-        plt.title('COI_{}'.format(runName))
-        plt.imshow(np.array([0 if i == -1 else 1 for i in np.nditer(inputVarsMapping.flatten())]).reshape(inputVarsMapping.shape[1:-1]), cmap='Greys')
-        plt.savefig(self.logDir + 'COI_{}'.format(runName))
-
-    def loadJson(self, name, loadDir=''):
-        if not loadDir:
-            loadDir = self.dumpDir
-        if not name.endswith(".json"):
-            name += ".json"
-        if not loadDir.endswith("/"):
-            loadDir += "/"
-        with open(loadDir + name, "r") as f:
-            return json.load(f)
-
-    def loadNpArray(self, name, loadDir=''):
-        if not loadDir:
-            loadDir = self.dumpDir
-        if not name.endswith(".npy"):
-            name += ".npy"
-        if not loadDir.endswith("/"):
-            loadDir += "/"
-        with open(loadDir + name, "rb") as f:
-            return np.load(f, allow_pickle=True)
-
-    def dumpResultsJson(self):
-        self.dumpJson(self.resultsJson, CnnAbs.resultsFile, saveDir=self.logDir)
-        brief = dict()
-        brief["Result"] = self.resultsJson["Result"] if "Result" in self.resultsJson else None
-        brief["totalRuntime"] = self.resultsJson["totalRuntime"] if "totalRuntime" in self.resultsJson else None        
-        self.dumpJson(brief, CnnAbs.resultsFileBrief, saveDir=self.logDir)
-
     def setGtimeout(self, val):
         if val <= 0:
             self.gtimeout = 1 #Because 0 is used in timeout to signal no timeout.
@@ -992,8 +887,96 @@ class CnnAbs:
         return self.gtimeout <= 1
 
     def returnGtimeout(self):        
-        return ResultObj("gtimeout").returnResult()
+        return ResultObj("gtimeout").returnResult()    
 
+    def setLogger(suffix='', logDir=''):
+        logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
+        CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
+        logging.getLogger('matplotlib.font_manager').disabled = True
+        
+    @staticmethod
+    def printLog(s):
+        if CnnAbs.logger:
+            CnnAbs.logger.info(s)
+        print(s)
+
+    def dumpCex(self, cex, cexPrediction, prop, runName, model):
+        if model is not None:
+            modelPrediction = model.predict(np.array([cex])).argmax()
+        else:
+            modelPrediction = None
+        mbouPrediction = cexPrediction.argmax()
+        plt.figure()
+        plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
+        plt.imshow(np.squeeze(cex), cmap='Greys')
+        plt.colorbar()
+        plt.savefig(self.logDir + "Cex_{}".format(runName) + ".png")
+        self.dumpNpArray(cex, "Cex_{}".format(runName))        
+        diff = np.abs(cex - prop.xAdv)
+        plt.figure()
+        plt.title('Distance between pixels: CEX and adv. sample')
+        plt.imshow(np.squeeze(diff), cmap='Greys')
+        plt.colorbar()
+        plt.savefig(self.logDir + "DiffCexXAdv_{}".format(runName) + ".png")
+        self.dumpNpArray(diff, "DiffCexXAdv_{}".format(runName))
+        
+    def dumpQueryStats(self, mbouNet, fileName):
+        queryStats = QueryUtils.marabouNetworkStats(mbouNet)
+        self.dumpJson(queryStats, fileName)
+        return queryStats
+
+    def dumpJson(self, data, fileName, saveDir=''):
+        if not saveDir:
+            saveDir = self.logDir
+        if not saveDir.endswith("/"):
+            saveDir += "/"            
+        if not fileName.endswith(".json"):
+            fileName += ".json"
+        with open(saveDir + fileName, "w") as f:
+            json.dump(data, f, indent = 4)
+    
+    # Load Json file from 
+    def loadJson(self, fileName, loadDir=''):
+        if not loadDir:
+            loadDir = self.logDir
+        if not fileName.endswith(".json"):
+            fileName += ".json"
+        if not loadDir.endswith("/"):
+            loadDir += "/"
+        with open(loadDir + fileName, "r") as f:
+            return json.load(f)
+
+    # Save Numpy array as .npy file.     
+    def dumpNpArray(self, npArray, fileName, saveDir=''):
+        if not saveDir:
+            saveDir = self.logDir
+        if not saveDir.endswith("/"):
+            saveDir += "/"            
+        if not fileName.endswith(".npy"):
+            fileName += ".npy"
+        with open(saveDir + fileName, "wb") as f:
+            np.save(f, npArray)        
+
+    # Load Numpy array from .npy file.
+    def loadNpArray(self, fileName, loadDir=''):
+        if not loadDir:
+            loadDir = self.logDir
+        if not fileName.endswith(".npy"):
+            fileName += ".npy"
+        if not loadDir.endswith("/"):
+            loadDir += "/"
+        with open(loadDir + fileName, "rb") as f:
+            return np.load(f, allow_pickle=True)
+
+    # Dump the resultJson data into Result.json file.
+    def dumpResultsJson(self):
+        self.dumpJson(self.resultsJson, CnnAbs.resultsFile)
+        brief = dict()
+        brief["Result"] = self.resultsJson["Result"] if "Result" in self.resultsJson else None
+        brief["totalRuntime"] = self.resultsJson["totalRuntime"] if "totalRuntime" in self.resultsJson else None        
+        self.dumpJson(brief, CnnAbs.resultsFileBrief)
+
+    # Update run statistics in Result.json log (create new entry)    
     def subResultAppend(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
         self.resultsJson["subResults"].append({"outOf" : self.numSteps-1,
                                                "runtime" : runtime,
@@ -1004,6 +987,7 @@ class CnnAbs:
                                                "timedOut" : timedOut})
         self.dumpResultsJson()
 
+    # Update run statistics in Result.json log (update last entry)
     def subResultUpdate(self, runtime=None, runtimeTotal=None, originalQueryStats=None, finalQueryStats=None, sat=None, timedOut=None):
         self.resultsJson["subResults"][-1] = {"outOf" : self.numSteps-1,
                                               "runtime" : runtime,
@@ -1011,6 +995,5 @@ class CnnAbs:
                                               "originalQueryStats" : originalQueryStats,
                                               "finalQueryStats" : finalQueryStats,
                                               "SAT" : sat,
-                                              "timedOut" : timedOut}
-            
+                                              "timedOut" : timedOut}            
         self.dumpResultsJson()
