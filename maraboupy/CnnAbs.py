@@ -490,7 +490,7 @@ class QueryUtils:
         CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(model.numVars / float(origNumVars)))
         return inputVarsMapping, outputVarsMapping, varsMapping
 
-    # Get pertubaition bounds according to infinity norm around a point
+    # Get pertubaition bounds according to infinity norm around a point.
     @staticmethod
     def getPertubationInftyBall(point, radius, floatingPointErrorGap=0, valueRange=None):
         assert floatingPointErrorGap >= 0
@@ -503,6 +503,7 @@ class QueryUtils:
         lower += floatingPointErrorGap
         return lower, upper
 
+    # Check if otherPoint is in infinity-norm distance radius from point.
     @staticmethod
     def inBoundsInftyBall(point, radius, otherPoint, valueRange=None):
         assert otherPoint.shape == point.shape
@@ -514,29 +515,32 @@ class QueryUtils:
         assert violations.shape == point.shape
         return np.all(inBounds), violations
 
+    # Set adversarial robustness query on model.
     @staticmethod
-    def setAdversarial(model, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
-        inAsNP = np.array(model.inputVars[0])
-        x = x.reshape(inAsNP.shape)
-        xDown, xUp = QueryUtils.getPertubationInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
+    def setAdversarial(model, point, inDist, outSlack, yMax, ySecond, valueRange=None):
+        inputAsNumpyArray = np.array(model.inputVars[0])
+        point = point.reshape(inputAsNumpyArray.shape)
+        lower, upper = QueryUtils.getPertubationInftyBall(point, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
         floatingPointErrorGapOutput = 0.03
-        for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
+        for i, l, u in zip(np.nditer(inputAsNumpyArray),np.nditer(lower),np.nditer(upper)):
             model.lowerBounds.pop(i.item(), None)
             model.upperBounds.pop(i.item(), None)
-            model.setLowerBound(i.item(),d.item())
+            model.setLowerBound(i.item(),l.item())
             model.setUpperBound(i.item(),u.item())
         for j,o in enumerate(np.nditer(np.array(model.outputVars))):
-            if j == yCorrect:
-                yCorrectVar = o.item()
-            if j == yBad:
-                yBadVar = o.item()
-        model.addInequality([yCorrectVar, yBadVar], [1,-1], outSlack - floatingPointErrorGapOutput) # correct + floatingPointErrorGap <= bad + slack
+            if j == yMax:
+                yMaxVar = o.item()
+            if j == ySecond:
+                ySecondVar = o.item()
+        model.addInequality([yMaxVar, ySecondVar], [1,-1], outSlack - floatingPointErrorGapOutput) # yMax + floatingPointErrorGap <= ySecond + slack
         return model
-    
+
+    # Save Query.
     @staticmethod
     def saveQuery(ipq, path):
         return MarabouCore.saveQuery(ipq, path)
 
+    # Solve Query.
     @staticmethod    
     def solveQuery(model, options, logDir):
         cwd = os.getcwd()        
@@ -545,6 +549,7 @@ class QueryUtils:
         os.chdir(cwd)
         return vals, stats
 
+    # Preprocess query, used to dump bounds.
     @staticmethod    
     def preprocessQuery(model, options, logDir):
         model.saveQuery(logDir + "processInputQuery")
@@ -553,7 +558,8 @@ class QueryUtils:
         ipq = MarabouCore.preprocess(model.getMarabouQuery(), options)
         os.chdir(cwd)
         return ipq            
-        
+
+    # Extract interesting statistics from query.
     @staticmethod
     def marabouNetworkStats(model):
         return {"numVars" : model.numVars,
@@ -867,8 +873,6 @@ class CnnAbs:
         return cex, cexPrediction
 
     def isCEXSpurious(self, model, prop, cex):
-        yCorrect = prop.yMax
-        yBad = prop.ySecond
         inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=self.ds.valueRange)
         if not inBounds:
             differences = cex - prop.xAdv
@@ -878,7 +882,7 @@ class CnnAbs:
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
-        return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
+        return prediction[0, prop.ySecond] + prop.outSlack < prediction[0, prop.yMax]
     
 
     def setLogger(suffix='', logDir=''):
