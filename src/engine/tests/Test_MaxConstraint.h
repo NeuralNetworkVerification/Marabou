@@ -728,7 +728,7 @@ public:
 
     void test_max_duplicate()
     {
-        TS_TRACE( "TODO: add a test for duplicate" );
+        TS_TRACE( "add a test for duplicate" );
     }
 
     void test_serialize_and_unserialize()
@@ -1647,8 +1647,6 @@ public:
             TS_ASSERT_DIFFERS( std::find( splits.begin(), splits.end(), split ), splits.end() );
         }
 
-
-        // TODO: Test cases when variables are eliminated
     }
 
     /*

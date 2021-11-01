@@ -335,8 +335,6 @@ public:
 
   public:
 
-    // FIXME we support operator--, but do we satisfy all the
-    // requirements of a bidirectional iterator ?
     typedef std::input_iterator_tag iterator_category;
     typedef T value_type;
     typedef std::ptrdiff_t difference_type;

@@ -338,7 +338,6 @@ class Scope {
   static void operator delete(void* pMem, ContextMemoryManager* pCMM) {}
   static void operator delete(void* pMem) {}
 
-  //FIXME:  //! Check for memory leaks
   //  void check();
 
 };/* class Scope */

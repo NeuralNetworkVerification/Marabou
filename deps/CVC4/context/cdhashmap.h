@@ -146,7 +146,6 @@ class CDOhash_map : public ContextObj {
         // If we call deleteSelf() here, it re-enters restore().  So,
         // put it on a "trash heap" instead, for later deletion.
         //
-        // FIXME multithreading
         if(d_map->d_first == this) {
           Debug("gc") << "remove first-elem " << this << " from map " << d_map << " with next-elem " << d_next << std::endl;
           if(d_next == this) {
@@ -391,8 +390,6 @@ public:
                                      true /* atLevelZero */);
     d_map.insert(std::make_pair(k, obj));
   }
-
-  // FIXME: no erase(), too much hassle to implement efficiently...
 
   using value_type = typename CDOhash_map<Key, Data, HashFcn>::value_type;
 
