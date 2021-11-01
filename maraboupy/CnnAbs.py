@@ -398,29 +398,18 @@ class QueryUtils:
         [layerList[l].add(var) for var,l in layerMapping.items()]
         return layerList, layerType
 
-    #TODO
+    # Remove the variables of model that are not in the set variablesToKeep. If KeepInputShape==False, input shape is flatten.
     @staticmethod        
-    def removeVariables(model, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
-        if not keepSet:        
-            model.reluList = [(vin,vout) for vin,vout in model.reluList if (vin not in varSet) and (vout not in varSet)]
-            model.absList  = [(vin,vout) for vin,vout in model.absList  if (vin not in varSet) and (vout not in varSet)]
-            model.signList = [(vin,vout) for vin,vout in model.signList if (vin not in varSet) and (vout not in varSet)]
-            varSet = {v for v in range(model.numVars) if v not in varSet}
-    
-        varSetList = list(varSet)
-        varSetList.sort()
-        varSetDict = {v:i for i,v in enumerate(varSetList)}
-        assert set(varSet) == set(varSetDict.keys()) and len(set(varSet)) == len(varSet)
-        tr = lambda v: varSetDict[v] if v in varSetDict else -1
+    def removeVariables(model, variablesToKeep, keepInputShape=False):
+        assert len(set(variablesToKeep)) == len(variablesToKeep)        
+        variablesToKeep = set(variablesToKeep)
+        variablesToKeepList = list(variablesToKeep)
+        variablesToKeepList.sort()
+        tr = lambda v: variablesToKeepList.index(v) if v in variablesToKeepList else -1
         varsMapping = {tr(v) : v for v in range(model.numVars) if tr(v) != -1}
         
-        if keepSet:
-            for vin,vout in model.reluList:
-                assert (vin not in varSet) == (vout not in varSet)
-            for vin,vout in model.absList:
-                assert (vin not in varSet) == (vout not in varSet)
-            for vin,vout in model.signList:
-                assert (vin not in varSet) == (vout not in varSet)
+        for vin,vout in itertools.chain(model.reluList, model.signList, model.absList):
+            assert (vin in variablesToKeep) == (vout in variablesToKeep)
     
         newEquList = list()
         for eq in model.equList:
@@ -428,8 +417,8 @@ class QueryUtils:
                 newEq = MarabouUtils.Equation()
                 newEq.scalar = eq.scalar
                 newEq.EquationType = MarabouCore.Equation.EQ
-                newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in varSet]
-                if (eq.addendList[-1][1] not in varSet) or len(newEq.addendList) == 1:
+                newEq.addendList = [(el[0],tr(el[1])) for el in eq.addendList if el[1] in variablesToKeep]
+                if (eq.addendList[-1][1] not in variablesToKeep) or len(newEq.addendList) == 1:
                     continue
                 if all([el[0] == 0 for el in eq.addendList[:-1]]):
                     continue
@@ -443,20 +432,20 @@ class QueryUtils:
                 if all([v != -1 for (c, v) in newEq.addendList]):
                     newEquList.append(newEq)
         model.equList  = newEquList
-        model.maxList  = [({tr(arg) for arg in maxArgs if arg in varSet}, tr(maxOut)) for maxArgs, maxOut in model.maxList if (maxOut in varSet and any([arg in varSet for arg in maxArgs]))]
-        model.reluList = [(tr(vin),tr(vout)) for vin,vout in model.reluList if vout in varSet]
-        model.absList  = [(tr(vin),tr(vout)) for vin,vout in model.absList  if vout in varSet]
-        model.signList = [(tr(vin),tr(vout)) for vin,vout in model.signList if vout in varSet]
-        model.lowerBounds = {tr(v):l for v,l in model.lowerBounds.items() if v in varSet}
-        model.upperBounds = {tr(v):u for v,u in model.upperBounds.items() if v in varSet}
+        model.maxList  = [({tr(arg) for arg in maxArgs if arg in variablesToKeep}, tr(maxOut)) for maxArgs, maxOut in model.maxList if (maxOut in variablesToKeep and any([arg in variablesToKeep for arg in maxArgs]))]
+        model.reluList = [(tr(vin),tr(vout)) for vin,vout in model.reluList if vout in variablesToKeep]
+        model.absList  = [(tr(vin),tr(vout)) for vin,vout in model.absList  if vout in variablesToKeep]
+        model.signList = [(tr(vin),tr(vout)) for vin,vout in model.signList if vout in variablesToKeep]
+        model.lowerBounds = {tr(v):l for v,l in model.lowerBounds.items() if v in variablesToKeep}
+        model.upperBounds = {tr(v):u for v,u in model.upperBounds.items() if v in variablesToKeep}
         inputVarsMapping = np.array([tr(v) for v in model.inputVars[0].flatten().tolist()]).reshape(model.inputVars[0].shape)
         outputVarsMapping = np.array([tr(v) for v in model.outputVars.flatten().tolist()]).reshape(model.outputVars.shape)
         if keepInputShape:
-            assert all([v in varSet for inp in model.inputVars for v in inp.flatten().tolist()])
+            assert all([v in variablesToKeep for inp in model.inputVars for v in inp.flatten().tolist()])
         else:
-            model.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in model.inputVars]
-        model.outputVars = np.array([tr(v) for v in model.outputVars.flatten().tolist() if v in varSet])
-        model.numVars = len(varSetList)
+            model.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in variablesToKeep]) for inp in model.inputVars]
+        model.outputVars = np.array([tr(v) for v in model.outputVars.flatten().tolist() if v in variablesToKeep])
+        model.numVars = len(variablesToKeepList)
         assert inputVarsMapping is not None and outputVarsMapping is not None
         return inputVarsMapping, outputVarsMapping, varsMapping
 
@@ -478,7 +467,7 @@ class QueryUtils:
             for maxArgs, maxOut in model.maxList:
                 if maxOut in reachPrev:
                     [reach.add(arg) for arg in maxArgs]
-            [reach.add(vin) for vin,vout in itertools.chain(model.reluList, model.absList, model.signList) if vout in reachPrev]
+            [reach.add(vin) for vin,vout in itertools.chain(model.reluList, model.signList, model.absList) if vout in reachPrev]
             if len(model.disjunctionList) > 0:
                 raise NotImplementedError
         unreach = {v for v in range(model.numVars) if v not in reach}
