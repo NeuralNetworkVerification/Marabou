@@ -617,12 +617,13 @@ class CnnAbs:
         self.resultsJson = dict(subResults=[])
         self.numSteps = None
         self.startTotal = time.time()
-        self.gtimeout = gtimeout
-        self.prevTimeStamp = time.time()
+        self.prevTimeStamp = self.startTotal
+        self.gtimeout = gtimeout        
         self.policy = Policy.fromString(policy, self.ds.name)
         self.modelUtils = ModelUtils(self.ds, self.options, self.logDir)
         self.abstractFirst = abstractFirst
 
+    # Solve adversarial robustness property on modelTF, pertubing in a distance of propDist around sample, abstracting according to the policy policyName.
     def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
         if not self.tickGtimeout():
             return self.returnGtimeout()        
@@ -706,7 +707,7 @@ class CnnAbs:
             runName = generalRunName + ",step_{}_outOf_{}".format(i, len(absRefineBatches)-1)
             if not self.tickGtimeout():
                 return self.returnGtimeout()
-            resultObj = self.runMarabou(modelAbstract, property, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
+            resultObj = self.verifyQuery(modelAbstract, property=property, runName=runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
             if not self.tickGtimeout():
                 return self.returnGtimeout()            
             if resultObj.isTimeout():
@@ -749,42 +750,42 @@ class CnnAbs:
         self.resultsJson["Result"] = resultObj.result.name
         self.dumpResultsJson()
         return resultObj.returnResult()
-    
 
+    # Create batches of neurons to abstract-refine according to policy.
     def abstractionRefinementBatches(self, model, modelTF, policy, property):
         if policy.policy is Policy.Vanilla:
             return [set()]
-        layerList, layerTypes = QueryUtils.divideToLayers(model)
+        layerDivision, layerTypes = QueryUtils.divideToLayers(model)
         assert all([len(t) == 1 for t in layerTypes])
         if self.abstractFirst:
             absLayer = next(i for i,t in enumerate(layerTypes) if 'Relu' in t)
-            absLayerLayerName = 'c1'
+            absLayerName = next(layer.name for layer in modelTF.layers)
         else:
             absLayer = [i for i,t in enumerate(layerTypes) if 'Max' in t][-1]
-            absLayerLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
-        modelTFUpToAbsLayer = ModelUtils.modelUpToLayer(modelTF, absLayerLayerName)
+            absLayerName = next(layer.name for layer in modelTF.layers[::-1] if isinstance(layer, tf.keras.layers.MaxPooling2D) or isinstance(layer, tf.keras.layers.MaxPooling1D))
+        modelTFUpToAbsLayer = ModelUtils.modelUpToLayer(modelTF, absLayerName)
         absLayerActivation = modelTFUpToAbsLayer.predict(self.ds.x_test)
-
-        netPriorToAbsLayer = list(set().union(*layerList[:absLayer+1]))
-        netPriorToAbsLayer.sort()
+        modelPriorToAbsLayer = list(set().union(*layerDivision[:absLayer+1]))
+        modelPriorToAbsLayer.sort()
         modelUpToAbsLayer = copy.deepcopy(model)
-        modelUpToAbsLayer.outputVars = np.sort(np.array(list(layerList[absLayer])))
-        _ , _ , varsMapping = QueryUtils.removeVariables(modelUpToAbsLayer, netPriorToAbsLayer, keepInputShape=True)
+        modelUpToAbsLayer.outputVars = np.sort(np.array(list(layerDivision[absLayer])))
+        _ , _ , varsMapping = QueryUtils.removeVariables(modelUpToAbsLayer, modelPriorToAbsLayer, keepInputShape=True)
 
-        cwd = os.getcwd()
-        os.chdir(self.logDir)        
-        for j in random.sample(range(len(self.ds.x_test)), 10):
-            tfout = absLayerActivation[j]
-            modelOut = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
-            assert np.all( np.isclose(QueryUtils.flattenTF(tfout), modelOut, atol=1e-4) )
-            assert np.all( np.isclose(tfout, QueryUtils.reshapeModelOut(modelOut, tfout.shape), atol=1e-4 ) )
-        os.chdir(cwd)
+#        cwd = os.getcwd()
+#        os.chdir(self.logDir)        
+#        for j in random.sample(range(len(self.ds.x_test)), 10): #This is a sanity test, testing the reshaping functions.
+#            tfout = absLayerActivation[j]
+#            modelOut = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
+#            assert np.all( np.isclose(QueryUtils.flattenTF(tfout), modelOut, atol=1e-4) )
+#            assert np.all( np.isclose(tfout, QueryUtils.reshapeModelOut(modelOut, tfout.shape), atol=1e-4 ) )
+#        os.chdir(cwd)
         
         absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, property, absLayerActivation)]
         steps = list(policy.steps(len(absLayerRankAcsending)))
         batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))]
         return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
-                
+
+    # Abstract abstractNeurons in model, and set their bounds as given in boundDict.
     def abstractAndPrune(self, model, abstractNeurons, boundDict):
         modelAbstract = copy.deepcopy(model)
         modelAbstract.equList  = [eq for eq in modelAbstract.equList  if eq.addendList[-1][1] not in abstractNeurons]
@@ -799,8 +800,8 @@ class CnnAbs:
         inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.pruneUnreachableNeurons(modelAbstract, modelAbstract.outputVars.flatten().tolist())
         return modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
 
-    def runMarabou(self, model, property, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
-
+    # Run single verification query on the model, assuming the property is already configured. 
+    def verifyQuery(self, model, property=None, runName="", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
         startLocal = time.time()    
         self.subResultAppend()
         finalQueryStats = self.dumpQueryStats(model, "finalQueryStats_" + runName)
@@ -822,30 +823,29 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
-            cex, cexPrediction = self.cexToImage(vals, property, inputVarsMapping, outputVarsMapping)
+            cex, cexPrediction = self.extractOriginalCEX(vals, property, inputVarsMapping, outputVarsMapping)
             self.dumpCex(cex, cexPrediction, property, runName, modelTF)
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction)
-            result.vals = vals
-            result.varsMapping = varsMapping
             CnnAbs.printLog("----- SAT in {}".format(runName))
         result.setStats(originalQueryStats, finalQueryStats)            
 
-        endLocal = time.time()
-        self.subResultUpdate(runtime=endLocal-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.isSat(), timedOut=result.isTimeout(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
+        self.subResultUpdate(runtime=time.time()-startLocal, runtimeTotal=time.time() - self.startTotal, sat=result.isSat(), timedOut=result.isTimeout(), originalQueryStats=originalQueryStats, finalQueryStats=finalQueryStats)
         if not self.tickGtimeout():
             return ResultObj("gtimeout")
         return result
 
+    # Bound propegation for the model (assuming the property is already configured on the model)
     def propagateBounds(self, model):
         modelCopy = copy.deepcopy(model)
         return QueryUtils.preprocessQuery(modelCopy, self.options, self.logDir)
 
-    def cexToImage(self, valDict, property, inputVarsMapping=None, outputVarsMapping=None):
+    # Transform CEX on abstract model to original model.
+    def extractOriginalCEX(self, valDict, property, inputVarsMapping=None, outputVarsMapping=None):
         lBounds = QueryUtils.getPertubationInftyBall(property.xAdv, property.inDist, valueRange=self.ds.valueRange)[0]
         assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(property.xAdv.shape)
-        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
+        cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0    for o      in np.nditer(np.array(outputVarsMapping),    flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
         return cex, cexPrediction
 
     # Return true if the CEX is spurious or not (compare CEX output on modelTF to property definitions).
