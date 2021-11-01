@@ -42,7 +42,7 @@ class PolicyBase:
 
     # Return output indices of a model sorted according to score in an ascending order.
     def sortByScore(model, score):
-        score = CnnAbs.flattenTF(score)        
+        score = QueryUtils.flattenTF(score)        
         assert score.shape == model.outputVars.shape
         return model.outputVars.flatten()[np.argsort(score)]
 
@@ -340,7 +340,7 @@ class ModelUtils:
         score = model.evaluate(self.ds.x_test, self.ds.y_test, verbose=0)
         CnnAbs.printLog("(Original) Test loss:{}".format(score[0]))
         CnnAbs.printLog("(Original) Test accuracy:{}".format(score[1]))
-        return model    
+        return model
 
 # Containing functions manipulating verification query, with specific implementation to used tool.    
 class QueryUtils:
@@ -550,7 +550,7 @@ class QueryUtils:
 
     # Extract interesting statistics from query.
     @staticmethod
-    def marabouNetworkStats(model):
+    def modelStats(model):
         return {"numVars" : model.numVars,
                 "numEquations" : len(model.equList),
                 "numReluConstraints" : len(model.reluList),
@@ -562,6 +562,22 @@ class QueryUtils:
                 "numUpperBounds" : len(model.upperBounds),
                 "numInputVars" : sum([np.array(inputVars).size for inputVars in model.inputVars]),
                 "numOutputVars" : model.outputVars.size}
+
+    # Shape Tensorflow model output to fit model output order. The differences in ordering are a result of the tf2model translation.
+    @staticmethod
+    def flattenTF(tfout):
+        assert len(tfout.shape) == 3
+        if tfout.shape[2] > 1:
+            tfout = np.swapaxes(tfout, 0, 2)
+            tfout = np.swapaxes(tfout, 1, 2)
+        return tfout.flatten()    
+    
+    # Shape model output (Numpy array) so that the variable will be ordered the same as corresponding Tensorflow model. The differences in ordering are a result of the tf2model translation.
+    @staticmethod
+    def reshapeModelOut(modelOut, shape):
+        assert len(shape) == 3        
+        shape = np.roll(shape, 1)
+        return np.swapaxes(np.swapaxes(modelOut.reshape(shape), 1, 2), 0, 2)
     
 
 #################################################################################################################
@@ -594,16 +610,11 @@ class CnnAbs:
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
         self.options = options
-        self.logDir = logDir
-        if not self.logDir.endswith("/"):
-            self.logDir += "/"
+        self.logDir = logDir if logDir.endswith("/") else logDir + "/"
         os.makedirs(self.logDir, exist_ok=True)
         if CnnAbs.logger == None:
-            CnnAbs.setLogger(logDir=self.logDir)
-        if os.path.exists(self.logDir + CnnAbs.resultsFile + ".json"):
-            self.resultsJson = self.loadJson(CnnAbs.resultsFile, loadDir=self.logDir)
-        else:
-            self.resultsJson = dict(subResults=[])
+            CnnAbs.initLogger(logDir=self.logDir)
+        self.resultsJson = dict(subResults=[])
         self.numSteps = None
         self.startTotal = time.time()
         self.gtimeout = gtimeout
@@ -626,9 +637,9 @@ class CnnAbs:
         if ySecond == yMax:
             ySecond = 0 if yMax > 0 else 1
             
-        prop = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
-        mbouModel = self.modelUtils.tf2Model(modelTF)
-        QueryUtils.setAdversarial(mbouModel, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
+        property = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
+        model = self.modelUtils.tf2Model(modelTF)
+        QueryUtils.setAdversarial(model, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
 
         fName = "xAdv.png"
         CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
@@ -645,14 +656,14 @@ class CnnAbs:
         self.dumpResultsJson()
         if not self.tickGtimeout():
             return self.returnGtimeout()        
-        return self.solve(mbouModel, modelTF, policy, prop, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
+        return self.solve(model, modelTF, policy, property, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
 
-    def solve(self, mbouModel, modelTF, policy, prop, generalRunName=""):
+    def solve(self, model, modelTF, policy, property, generalRunName=""):
         startBoundTightening = time.time()
         if not self.tickGtimeout():
             return self.returnGtimeout()
         CnnAbs.printLog("Started dumping bounds - used for abstraction")
-        ipq = self.propagateBounds(mbouModel)
+        ipq = self.propagateBounds(model)
         if not self.tickGtimeout():
             return self.returnGtimeout()        
         QueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
@@ -678,9 +689,9 @@ class CnnAbs:
 
         self.options._dumpBounds = False
         self.modelUtils.options._dumpBounds = False        
-        originalQueryStats = self.dumpQueryStats(mbouModel, "originalQueryStats_" + generalRunName)        
+        originalQueryStats = self.dumpQueryStats(model, "originalQueryStats_" + generalRunName)        
         successful = None
-        absRefineBatches = self.abstractionRefinementBatches(mbouModel, modelTF, policy, prop)
+        absRefineBatches = self.abstractionRefinementBatches(model, modelTF, policy, property)
         self.numSteps = len(absRefineBatches)
         self.resultsJson["absRefineBatches"] = self.numSteps
         self.dumpResultsJson()
@@ -689,20 +700,20 @@ class CnnAbs:
         for i, abstractNeurons in enumerate(absRefineBatches):
             if self.isGlobalTimedOut():
                 break
-            mbouModelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(mbouModel, abstractNeurons, boundDict)
+            modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(model, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.options._timeoutInSeconds = 0
             runName = generalRunName + ",step_{}_outOf_{}".format(i, len(absRefineBatches)-1)
             if not self.tickGtimeout():
                 return self.returnGtimeout()
-            resultObj = self.runMarabou(mbouModelAbstract, prop, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
+            resultObj = self.runMarabou(modelAbstract, property, runName, inputVarsMapping=inputVarsMapping, outputVarsMapping=outputVarsMapping, varsMapping=varsMapping, modelTF=modelTF, originalQueryStats=originalQueryStats)
             if not self.tickGtimeout():
                 return self.returnGtimeout()            
             if resultObj.isTimeout():
                 continue
             if resultObj.isSat():
                 try:
-                    isSpurious = self.isCEXSpurious(modelTF, prop, resultObj.cex)
+                    isSpurious = self.isCEXSpurious(modelTF, property, resultObj.cex)
                 except Exception as err:
                     CnnAbs.printLog(err)
                     isSpurious = True
@@ -740,7 +751,7 @@ class CnnAbs:
         return resultObj.returnResult()
     
 
-    def abstractionRefinementBatches(self, model, modelTF, policy, prop):
+    def abstractionRefinementBatches(self, model, modelTF, policy, property):
         if policy.policy is Policy.Vanilla:
             return [set()]
         layerList, layerTypes = QueryUtils.divideToLayers(model)
@@ -764,29 +775,15 @@ class CnnAbs:
         os.chdir(self.logDir)        
         for j in random.sample(range(len(self.ds.x_test)), 10):
             tfout = absLayerActivation[j]
-            mbouout = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
-            assert np.all( np.isclose(CnnAbs.flattenTF(tfout), mbouout, atol=1e-4) )
-            assert np.all( np.isclose(tfout, CnnAbs.reshapeMbouOut(mbouout, tfout.shape), atol=1e-4 ) )
+            modelOut = modelUpToAbsLayer.evaluate(self.ds.x_test[j])
+            assert np.all( np.isclose(QueryUtils.flattenTF(tfout), modelOut, atol=1e-4) )
+            assert np.all( np.isclose(tfout, QueryUtils.reshapeModelOut(modelOut, tfout.shape), atol=1e-4 ) )
         os.chdir(cwd)
         
-        absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, prop, absLayerActivation)]
+        absLayerRankAcsending = [varsMapping[v] for v in policy.rankAbsLayer(modelUpToAbsLayer, property, absLayerActivation)]
         steps = list(policy.steps(len(absLayerRankAcsending)))
         batchSizes = [len(absLayerRankAcsending) - sum(steps[:i+1]) for i in range(len(steps))]
         return [set(absLayerRankAcsending[:batchSize]) for batchSize in batchSizes]
-
-    @staticmethod
-    def flattenTF(tfout):
-        assert len(tfout.shape) == 3
-        if tfout.shape[2] > 1:
-            tfout = np.swapaxes(tfout, 0, 2)
-            tfout = np.swapaxes(tfout, 1, 2)
-        return tfout.flatten()
-
-    @staticmethod    
-    def reshapeMbouOut(mbouout, shape):
-        assert len(shape) == 3        
-        shape = np.roll(shape, 1)
-        return np.swapaxes(np.swapaxes(mbouout.reshape(shape), 1, 2), 0, 2)
                 
     def abstractAndPrune(self, model, abstractNeurons, boundDict):
         modelAbstract = copy.deepcopy(model)
@@ -802,7 +799,7 @@ class CnnAbs:
         inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.pruneUnreachableNeurons(modelAbstract, modelAbstract.outputVars.flatten().tolist())
         return modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping
 
-    def runMarabou(self, model, prop, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
+    def runMarabou(self, model, property, runName="runMarabouOnKeras", inputVarsMapping=None, outputVarsMapping=None, varsMapping=None, modelTF=None, originalQueryStats=None):
 
         startLocal = time.time()    
         self.subResultAppend()
@@ -825,8 +822,8 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
-            cex, cexPrediction = self.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping)
-            self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
+            cex, cexPrediction = self.cexToImage(vals, property, inputVarsMapping, outputVarsMapping)
+            self.dumpCex(cex, cexPrediction, property, runName, modelTF)
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction)
             result.vals = vals
@@ -840,38 +837,43 @@ class CnnAbs:
             return ResultObj("gtimeout")
         return result
 
-    def propagateBounds(self, mbouModel):
-        mbouModelCopy = copy.deepcopy(mbouModel)
-        return QueryUtils.preprocessQuery(mbouModelCopy, self.options, self.logDir)
+    def propagateBounds(self, model):
+        modelCopy = copy.deepcopy(model)
+        return QueryUtils.preprocessQuery(modelCopy, self.options, self.logDir)
 
-    def cexToImage(self, valDict, prop, inputVarsMapping=None, outputVarsMapping=None):
-        lBounds = QueryUtils.getPertubationInftyBall(prop.xAdv, prop.inDist, valueRange=self.ds.valueRange)[0]
+    def cexToImage(self, valDict, property, inputVarsMapping=None, outputVarsMapping=None):
+        lBounds = QueryUtils.getPertubationInftyBall(property.xAdv, property.inDist, valueRange=self.ds.valueRange)[0]
         assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
-        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
+        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(property.xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
         return cex, cexPrediction
 
-    def isCEXSpurious(self, model, prop, cex):
-        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=self.ds.valueRange)
-        if not inBounds:
-            differences = cex - prop.xAdv
+    # Return true if the CEX is spurious or not (compare CEX output on modelTF to property definitions).
+    def isCEXSpurious(self, modelTF, property, cex):
+        #First check that the CEX is in the input bounds.
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(property.xAdv, property.inDist, cex, valueRange=self.ds.valueRange)
+        if not inBounds: # Set bound deviations of up to 1e-10 from bounds to xAdv value, try to fix CEX to be in input bounds.
+            differences = cex - property.xAdv
             if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
-                cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
-        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=self.ds.valueRange)         
+                cex[violations.nonzero()] = property.xAdv[violations.nonzero()]
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(property.xAdv, property.inDist, cex, valueRange=self.ds.valueRange)         
         if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
-        prediction = model.predict(np.array([cex]))
-        return prediction[0, prop.ySecond] + prop.outSlack < prediction[0, prop.yMax]
-    
+            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, property.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-property.xAdv)[violations.nonzero()], cex[violations.nonzero()], property.xAdv[violations.nonzero()]))
+        prediction = modelTF.predict(np.array([cex]))
+        return prediction[0, property.ySecond] + property.outSlack < prediction[0, property.yMax] #Check if spurious.
+
+    # Update global time clock
     def setGtimeout(self, val):
         if val <= 0:
             self.gtimeout = 1 #Because 0 is used in timeout to signal no timeout.
         else:
             self.gtimeout = int(val)
 
+    # Decrement global time clock.
     def decGtimeout(self, val):
         self.setGtimeout(self.gtimeout - val)
 
+    # Update global time clock.
     def tickGtimeout(self):
         currentTime = time.time()
         self.decGtimeout(currentTime - self.prevTimeStamp)
@@ -883,48 +885,52 @@ class CnnAbs:
             return False
         return True
 
+    # Return true if run has globaly timed out.
     def isGlobalTimedOut(self):
         return self.gtimeout <= 1
 
+    # Return result object of GTIMEOUT (global timeout)
     def returnGtimeout(self):        
         return ResultObj("gtimeout").returnResult()    
 
-    def setLogger(suffix='', logDir=''):
+    # Init logger for the verification property.
+    def initLogger(suffix='', logDir=''):
         logging.basicConfig(level = logging.DEBUG, format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s", filename = logDir + 'cnnAbsTB{}.log'.format(suffix), filemode = "w")        
         CnnAbs.logger = logging.getLogger('cnnAbsTB{}'.format(suffix))
         logging.getLogger('matplotlib.font_manager').disabled = True
-        
+
+    # Print and log string s to user and logger.
     @staticmethod
     def printLog(s):
         if CnnAbs.logger:
             CnnAbs.logger.info(s)
         print(s)
 
-    def dumpCex(self, cex, cexPrediction, prop, runName, model):
-        if model is not None:
-            modelPrediction = model.predict(np.array([cex])).argmax()
-        else:
-            modelPrediction = None
-        mbouPrediction = cexPrediction.argmax()
+    # Dump CEX as an image and Numpy array, and the difference of the CEX from original input as image and Numpy array.
+    def dumpCex(self, cex, cexPrediction, property, runName, modelTF):
+        modelTFPrediction = modelTF.predict(np.array([cex])).argmax()
+        toolPrediction = cexPrediction.argmax()
         plt.figure()
-        plt.title('CEX, yMax={}, ySecond={}, MbouPredicts={}, modelPredicts={}'.format(prop.yMax, prop.ySecond, mbouPrediction, modelPrediction))
+        plt.title('CEX, yMax={}, ySecond={}, toolPredicts={}, modelTFPredicts={}'.format(property.yMax, property.ySecond, toolPrediction, modelTFPrediction))
         plt.imshow(np.squeeze(cex), cmap='Greys')
         plt.colorbar()
         plt.savefig(self.logDir + "Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName))        
-        diff = np.abs(cex - prop.xAdv)
+        diff = np.abs(cex - property.xAdv)
         plt.figure()
         plt.title('Distance between pixels: CEX and adv. sample')
         plt.imshow(np.squeeze(diff), cmap='Greys')
         plt.colorbar()
         plt.savefig(self.logDir + "DiffCexXAdv_{}".format(runName) + ".png")
         self.dumpNpArray(diff, "DiffCexXAdv_{}".format(runName))
-        
-    def dumpQueryStats(self, mbouNet, fileName):
-        queryStats = QueryUtils.marabouNetworkStats(mbouNet)
+
+    # Dump network stats in file and return them.
+    def dumpQueryStats(self, model, fileName):
+        queryStats = QueryUtils.modelStats(model)
         self.dumpJson(queryStats, fileName)
         return queryStats
 
+    # Save Json file from data.
     def dumpJson(self, data, fileName, saveDir=''):
         if not saveDir:
             saveDir = self.logDir
@@ -935,7 +941,7 @@ class CnnAbs:
         with open(saveDir + fileName, "w") as f:
             json.dump(data, f, indent = 4)
     
-    # Load Json file from 
+    # Load Json file.
     def loadJson(self, fileName, loadDir=''):
         if not loadDir:
             loadDir = self.logDir
