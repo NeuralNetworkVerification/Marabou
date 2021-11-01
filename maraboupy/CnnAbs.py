@@ -381,8 +381,8 @@ class QueryUtils:
                 if maxOut in layer:
                     [nextLayer.add(arg) for arg in maxArgs]
                     layerType[0].add("Max")
-            [(nextLayer.add(vin), layerType[0].add("Relu"))for vin,vout in model.reluList if vout in layer]
-            [(nextLayer.add(vin), layerType[0].add("Abs")) for vin,vout in model.absList  if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Relu")) for vin,vout in model.reluList if vout in layer]
+            [(nextLayer.add(vin), layerType[0].add("Abs"))  for vin,vout in model.absList  if vout in layer]
             [(nextLayer.add(vin), layerType[0].add("Sign")) for vin,vout in model.signList if vout in layer]
             if not layerType[0]:
                 layerType[0].add("Input")
@@ -398,9 +398,9 @@ class QueryUtils:
         [layerList[l].add(var) for var,l in layerMapping.items()]
         return layerList, layerType
 
+    #TODO
     @staticmethod        
     def removeVariables(model, varSet, keepSet=True, keepInputShape=False): # If keepSet then remove every variable not in keepSet. Else, remove variables in varSet.
-
         if not keepSet:        
             model.reluList = [(vin,vout) for vin,vout in model.reluList if (vin not in varSet) and (vout not in varSet)]
             model.absList  = [(vin,vout) for vin,vout in model.absList  if (vin not in varSet) and (vout not in varSet)]
@@ -457,16 +457,14 @@ class QueryUtils:
             model.inputVars  = [np.array([tr(v) for v in inp.flatten().tolist() if v in varSet]) for inp in model.inputVars]
         model.outputVars = np.array([tr(v) for v in model.outputVars.flatten().tolist() if v in varSet])
         model.numVars = len(varSetList)
-        if inputVarsMapping is None or outputVarsMapping is None: #I made this change now to test inputVarsMapping==None
-            raise Exception("None input/output varsMapping")
+        assert inputVarsMapping is not None and outputVarsMapping is not None
         return inputVarsMapping, outputVarsMapping, varsMapping
 
+    # Prune (remove) neurons that do not reach the initialSet.
     @staticmethod
-    def pruneUnreachableNeurons(model, init):
-
+    def pruneUnreachableNeurons(model, initialSet):
         origNumVars = model.numVars
-    
-        reach = set(init)
+        reach = set(initialSet)
         lastLen = 0
         while len(reach) > lastLen:
             lastLen = len(reach)
@@ -480,13 +478,10 @@ class QueryUtils:
             for maxArgs, maxOut in model.maxList:
                 if maxOut in reachPrev:
                     [reach.add(arg) for arg in maxArgs]
-            [reach.add(vin) for vin,vout in model.reluList if vout in reachPrev]
-            [reach.add(vin) for vin,vout in model.absList  if vout in reachPrev]
-            [reach.add(vin) for vin,vout in model.signList if vout in reachPrev]
+            [reach.add(vin) for vin,vout in itertools.chain(model.reluList, model.absList, model.signList) if vout in reachPrev]
             if len(model.disjunctionList) > 0:
-                raise Exception("Not implemented")
-        unreach = set([v for v in range(model.numVars) if v not in reach])
-    
+                raise NotImplementedError
+        unreach = {v for v in range(model.numVars) if v not in reach}
         inputVarsMapping, outputVarsMapping, varsMapping = QueryUtils.removeVariables(model, reach)
         for eq in model.equList:
             for w,v in eq.addendList:
@@ -495,35 +490,35 @@ class QueryUtils:
         CnnAbs.printLog("Number of vars in abstract network out of original network = {}".format(model.numVars / float(origNumVars)))
         return inputVarsMapping, outputVarsMapping, varsMapping
 
+    # Get pertubaition bounds according to infinity norm around a point
     @staticmethod
-    def getBoundsInftyBall(x, r, floatingPointErrorGap=0, valueRange=None):
-        assert valueRange is not None
+    def getPertubationInftyBall(point, radius, floatingPointErrorGap=0, valueRange=None):
         assert floatingPointErrorGap >= 0
         if valueRange is not None:
-            l, u = np.maximum(x - r,np.full_like(x, valueRange[0])), np.minimum(x + r,np.full_like(x, valueRange[1]))
+            lower, upper = np.maximum(point - radius,np.full_like(point, valueRange[0])), np.minimum(point + radius,np.full_like(point, valueRange[1]))
         else:
-            l, u = x - r, x + r
-        assert np.all(u - l > 2 * floatingPointErrorGap)
-        u -= floatingPointErrorGap
-        l += floatingPointErrorGap
-        return l, u
+            lower, upper = point - radius, point + radius
+        assert np.all(upper - lower > 2 * floatingPointErrorGap)
+        upper -= floatingPointErrorGap
+        lower += floatingPointErrorGap
+        return lower, upper
 
-    @staticmethod    
-    def inBoundsInftyBall(x, r, p, valueRange=None):
-        assert p.shape == x.shape
-        l,u = QueryUtils.getBoundsInftyBall(x,r, valueRange=valueRange)
-        geqLow = np.less_equal(l,p)
-        leqUp  = np.less_equal(p,u)
+    @staticmethod
+    def inBoundsInftyBall(point, radius, otherPoint, valueRange=None):
+        assert otherPoint.shape == point.shape
+        lower, upper = QueryUtils.getPertubationInftyBall(point, radius, valueRange=valueRange)
+        geqLow = np.less_equal(lower, otherPoint)
+        leqUp  = np.less_equal(otherPoint, upper)
         inBounds = np.logical_and(geqLow, leqUp)
         violations = np.logical_not(inBounds)
-        assert violations.shape == x.shape
+        assert violations.shape == point.shape
         return np.all(inBounds), violations
 
     @staticmethod
     def setAdversarial(model, x, inDist, outSlack, yCorrect, yBad, valueRange=None):
         inAsNP = np.array(model.inputVars[0])
         x = x.reshape(inAsNP.shape)
-        xDown, xUp = QueryUtils.getBoundsInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
+        xDown, xUp = QueryUtils.getPertubationInftyBall(x, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
         floatingPointErrorGapOutput = 0.03
         for i,d,u in zip(np.nditer(inAsNP),np.nditer(xDown),np.nditer(xUp)):
             model.lowerBounds.pop(i.item(), None)
@@ -722,7 +717,7 @@ class CnnAbs:
                 continue
             if resultObj.isSat():
                 try:
-                    isSpurious = CnnAbs.isCEXSpurious(modelTF, prop, resultObj.cex, valueRange=self.ds.valueRange)
+                    isSpurious = self.isCEXSpurious(modelTF, prop, resultObj.cex)
                 except Exception as err:
                     CnnAbs.printLog(err)
                     isSpurious = True
@@ -845,7 +840,7 @@ class CnnAbs:
                 result = ResultObj("unsat")
                 CnnAbs.printLog("----- UNSAT in {}".format(runName))
         else:
-            cex, cexPrediction = CnnAbs.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping, valueRange=self.ds.valueRange)
+            cex, cexPrediction = self.cexToImage(vals, prop, inputVarsMapping, outputVarsMapping)
             self.dumpCex(cex, cexPrediction, prop, runName, modelTF)
             result = ResultObj("sat")
             result.setCex(cex, cexPrediction)
@@ -864,30 +859,25 @@ class CnnAbs:
         mbouModelCopy = copy.deepcopy(mbouModel)
         return QueryUtils.preprocessQuery(mbouModelCopy, self.options, self.logDir)
 
-    @staticmethod
-    def cexToImage(valDict, prop, inputVarsMapping=None, outputVarsMapping=None, valueRange=None):
-        lBounds = QueryUtils.getBoundsInftyBall(prop.xAdv, prop.inDist, valueRange=valueRange)[0]
+    def cexToImage(self, valDict, prop, inputVarsMapping=None, outputVarsMapping=None):
+        lBounds = QueryUtils.getPertubationInftyBall(prop.xAdv, prop.inDist, valueRange=self.ds.valueRange)[0]
         assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
         cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(prop.xAdv.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0 for o in np.nditer(np.array(outputVarsMapping), flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
         return cex, cexPrediction
 
-    @staticmethod
-    def isCEXSpurious(model, prop, cex, spuriousStrict=True, valueRange=None):
+    def isCEXSpurious(self, model, prop, cex):
         yCorrect = prop.yMax
         yBad = prop.ySecond
-        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=self.ds.valueRange)
         if not inBounds:
             differences = cex - prop.xAdv
             if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
                 cex[violations.nonzero()] = prop.xAdv[violations.nonzero()]
-        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=valueRange)                
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(prop.xAdv, prop.inDist, cex, valueRange=self.ds.valueRange)         
         if not inBounds:
             raise Exception("CEX out of bounds, violations={}, values={}, cex={}, prop.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-prop.xAdv)[violations.nonzero()], cex[violations.nonzero()], prop.xAdv[violations.nonzero()]))
         prediction = model.predict(np.array([cex]))
-        #If I will require ySecond to be max, spurious definition will have to change to force it.
-        if not spuriousStrict:
-            return prediction.argmax() == yCorrect
         return prediction[0,yBad] + prop.outSlack < prediction[0,yCorrect]
     
 
