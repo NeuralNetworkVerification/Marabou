@@ -58,14 +58,14 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slur
     runTitles = list()
     title2Label = dict()
 
-    propDist = [round(x, 3) for x in np.linspace(0.025, 0.2, num=numRunsPerType)]
+    distance = [round(x, 3) for x in np.linspace(0.025, 0.2, num=numRunsPerType)]
     
 
     for policy in CnnAbs.Policy.allPolicies():
         title2Label["{}Cfg".format(policy)] = "{}".format(policy)
         for i in range(numRunsPerType):
-            title = "{}Cfg---{}".format(policy, str(propDist[i]).replace('.','-'))
-            runCmds.append(commonFlags + ["--run_title", title, "--prop_distance", str(propDist[i]), "--policy", policy])
+            title = "{}Cfg---{}".format(policy, str(distance[i]).replace('.','-'))
+            runCmds.append(commonFlags + ["--run_title", title, "--prop_distance", str(distance[i]), "--policy", policy])
             runTitles.append(title)
 
     if slurm:
@@ -78,7 +78,7 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slur
                         "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
                         "commonRunCommand" : " ".join(commonFlags),
                         "runCommands"  : [" ".join(cmd) for cmd in runCmds],
-                        "xparameter" : "cfg_propDist"}
+                        "xparameter" : "cfg_distance"}
             json.dump(jsonDict, f, indent = 4)
 
     return runCmds, runTitles

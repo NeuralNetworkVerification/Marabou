@@ -24,7 +24,6 @@ parser = argparse.ArgumentParser(description='Run MNIST based verification schem
 parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
 parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
 parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                   help="Distance checked for adversarial robustness (L1 metric)")
-parser.add_argument("--prop_slack",     type=float,                                 default=0,                      help="Slack given at the output property, ysecond >= ymax - slack. Positive slack makes the property easier to satisfy, negative makes it harder.")
 parser.add_argument("--timeout",        type=int,                                   default=800,                    help="Single solver timeout in seconds.")
 parser.add_argument("--gtimeout",       type=int,                                   default=3600,                   help="Global timeout for all solving in seconds.")
 parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
@@ -36,8 +35,7 @@ parser.add_argument("--abstract_first", dest='abstract_first', action='store_tru
 args = parser.parse_args()
 
 resultsJson = dict()
-cfg_propDist          = args.prop_distance
-cfg_propSlack         = args.prop_slack
+cfg_distance          = args.prop_distance
 cfg_runTitle          = args.run_title
 cfg_batchDir          = args.batch_id if "batch_" + args.batch_id else ""
 cfg_abstractionPolicy = args.policy
@@ -57,8 +55,7 @@ cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs
 
 startPrepare = time.time()
 
-cnnAbs.resultsJson["cfg_propDist"]          = cfg_propDist
-cnnAbs.resultsJson["cfg_propSlack"]         = cfg_propSlack
+cnnAbs.resultsJson["cfg_distance"]          = cfg_distance
 cnnAbs.resultsJson["cfg_runTitle"]          = cfg_runTitle
 cnnAbs.resultsJson["cfg_batchDir"]          = cfg_batchDir
 cnnAbs.resultsJson["cfg_abstractionPolicy"] = cfg_abstractionPolicy
@@ -87,5 +84,5 @@ CnnAbs.printLog("Started model building")
 modelTF = cnnAbs.modelUtils.loadModel(cfg_cwd + '/' + cfg_network)
 CnnAbs.printLog("Finished model building")
 
-cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_propDist, propSlack=cfg_propSlack)
+cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_distance)
 CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
