@@ -205,7 +205,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 2 ), 10.0 ) );
     }
 
-    void test_todo()
+    void test_tod()
     {
         TS_TRACE( "Move 'excluded' computation out to the Engine instead of repeating it in every invocation of PSE.select()" );
     }

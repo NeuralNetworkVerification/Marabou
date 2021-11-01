@@ -1531,7 +1531,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
-    void test_todo()
+    void test_tod()
     {
         TS_TRACE( "When resizing the talbeau, allocate a larger size and only use part of it, "
                   "instead of increasing it one row at a time?" );
