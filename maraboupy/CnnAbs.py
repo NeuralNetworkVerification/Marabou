@@ -155,7 +155,7 @@ class PolicySampleRank(PolicyBase):
 
     # Rank abstract layer neurons in according to specific policy. Return neuron indices in ascending order according to rank.        
     def rankAbsLayer(self, modelUpToAbsLayer, property, absLayerPredictions):
-        score = np.abs(absLayerPredictions[property.xAdvIndex])
+        score = np.abs(absLayerPredictions[property.sampleIndex])
         return PolicyBase.sortByScore(modelUpToAbsLayer, score)
     
 # Enum defining the policies
@@ -198,13 +198,12 @@ class Policy(Enum):
 
 # Adversarial property object.        
 class AdversarialProperty:
-    def __init__(self, xAdv, yMax, ySecond, inDist, outSlack, sample):
-        self.xAdv = xAdv # Sample pertubing around.
+    def __init__(self, sample, yMax, ySecond, distance, sampleIndex):
+        self.sample = sample # Sample pertubing around.
         self.yMax = yMax # Highest prediction produced by the network.
         self.ySecond = ySecond # Second highest prediction produced by the network.
-        self.inDist = inDist # Input pertubation distance.
-        self.outSlack = outSlack # Slack allowed in the output (default value is 0)
-        self.xAdvIndex = sample # Sample index in relevant dataset.
+        self.distance = distance # Input pertubation distance.
+        self.sampleIndex = sampleIndex # Sample index in relevant dataset.
 
 # Possible verification results enum.        
 class Result(Enum):    
@@ -506,10 +505,10 @@ class QueryUtils:
 
     # Set adversarial robustness query on model.
     @staticmethod
-    def setAdversarial(model, point, inDist, outSlack, yMax, ySecond, valueRange=None):
+    def setAdversarial(model, point, distance, yMax, ySecond, valueRange=None):
         inputAsNumpyArray = np.array(model.inputVars[0])
         point = point.reshape(inputAsNumpyArray.shape)
-        lower, upper = QueryUtils.getPertubationInftyBall(point, inDist, floatingPointErrorGap=0.0025, valueRange=valueRange)
+        lower, upper = QueryUtils.getPertubationInftyBall(point, distance, floatingPointErrorGap=0.0025, valueRange=valueRange)
         floatingPointErrorGapOutput = 0.03
         for i, l, u in zip(np.nditer(inputAsNumpyArray),np.nditer(lower),np.nditer(upper)):
             model.lowerBounds.pop(i.item(), None)
@@ -521,7 +520,7 @@ class QueryUtils:
                 yMaxVar = o.item()
             if j == ySecond:
                 ySecondVar = o.item()
-        model.addInequality([yMaxVar, ySecondVar], [1,-1], outSlack - floatingPointErrorGapOutput) # yMax + floatingPointErrorGap <= ySecond + slack
+        model.addInequality([yMaxVar, ySecondVar], [1,-1], - floatingPointErrorGapOutput) # yMax + floatingPointErrorGap <= ySecond
         return model
 
     # Save Query.
@@ -623,14 +622,14 @@ class CnnAbs:
         self.modelUtils = ModelUtils(self.ds, self.options, self.logDir)
         self.abstractFirst = abstractFirst
 
-    # Solve adversarial robustness property on modelTF, pertubing in a distance of propDist around sample, abstracting according to the policy policyName.
-    def solveAdversarial(self, modelTF, policyName, sample, propDist, propSlack=0):
+    # Solves an adversarial robustness query on the Keras.Sequential DNN modelTF, allowing input perturbations in an infinity-ball of radius distance around input sample whose index is sampleIndex in the dataset. The abstraction policy used is abstractionPolicy. The method returns the SAT or UNSAT results, along with a counterexample for the SAT case.
+    def solveAdversarial(self, modelTF, abstractionPolicyName, sampleIndex, distance):
         if not self.tickGtimeout():
             return self.returnGtimeout()        
-        policy = Policy.fromString(policyName, self.ds.name)
-        xAdv = self.ds.x_test[sample]
-        yAdv = self.ds.y_test[sample]
-        yPredict = modelTF.predict(np.array([xAdv]))
+        policy = Policy.fromString(abstractionPolicyName, self.ds.name)
+        sample = self.ds.x_test[sampleIndex]
+        yAdv = self.ds.y_test[sampleIndex]
+        yPredict = modelTF.predict(np.array([sample]))
         yMax = yPredict.argmax()
         yPredictNoMax = np.copy(yPredict)
         yPredictNoMax[0][yMax] = np.min(yPredict)
@@ -638,27 +637,28 @@ class CnnAbs:
         if ySecond == yMax:
             ySecond = 0 if yMax > 0 else 1
             
-        property = AdversarialProperty(xAdv, yMax, ySecond, propDist, propSlack, sample)
+        property = AdversarialProperty(sample, yMax, ySecond, distance, sampleIndex)
         model = self.modelUtils.tf2Model(modelTF)
-        QueryUtils.setAdversarial(model, xAdv, propDist, propSlack, yMax, ySecond, valueRange=self.ds.valueRange)        
+        QueryUtils.setAdversarial(model, sample, distance, yMax, ySecond, valueRange=self.ds.valueRange)        
 
-        fName = "xAdv.png"
-        CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sample, yAdv))
-        plt.figure()        
-        plt.imshow(np.squeeze(xAdv), cmap='Greys')
+        fName = "sample.png"
+        CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sampleIndex, yAdv))
+        plt.figure()  
+        plt.imshow(np.squeeze(sample), cmap='Greys')
         plt.colorbar()
-        plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sample, yAdv, yMax))
+        plt.title('Example {}. DataSet Label: {}, model Predicts {}'.format(sampleIndex, yAdv, yMax))
         plt.savefig(self.logDir + fName)
         with open(self.logDir + fName.replace("png","npy"), "wb") as f:
-            np.save(f, xAdv)            
+            np.save(f, sample)            
         self.resultsJson["yDataset"] = int(yAdv.item())
         self.resultsJson["yMaxPrediction"] = int(yMax)
         self.resultsJson["ySecondPrediction"] = int(ySecond)
         self.dumpResultsJson()
         if not self.tickGtimeout():
             return self.returnGtimeout()        
-        return self.solve(model, modelTF, policy, property, generalRunName="sample_{},policy_{},propDist_{}".format(sample, policyName, str(propDist).replace('.','-')))
+        return self.solve(model, modelTF, policy, property, generalRunName="sample_{},policy_{},distance_{}".format(sampleIndex, abstractionPolicyName, str(distance).replace('.','-')))
 
+    #solves model, which encodes both network and property, using the abstraction policy Policy. For technical reasons, this method also receives a property object property and a Keras sequential model modelTF. The method returns the result and possibly a counterexample, and supports general properties beyond adversarial robustness.
     def solve(self, model, modelTF, policy, property, generalRunName=""):
         startBoundTightening = time.time()
         if not self.tickGtimeout():
@@ -666,7 +666,7 @@ class CnnAbs:
         CnnAbs.printLog("Started dumping bounds - used for abstraction")
         ipq = self.propagateBounds(model)
         if not self.tickGtimeout():
-            return self.returnGtimeout()        
+            return self.returnGtimeout()
         QueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
@@ -687,7 +687,9 @@ class CnnAbs:
             boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
         else:
             boundDict = None
-
+            
+        if not self.tickGtimeout():
+            return self.returnGtimeout()
         self.options._dumpBounds = False
         self.modelUtils.options._dumpBounds = False        
         originalQueryStats = self.dumpQueryStats(model, "originalQueryStats_" + generalRunName)        
@@ -699,8 +701,8 @@ class CnnAbs:
 
         CnnAbs.printLog("Abstraction-refinement steps up to full network = {}".format(len(absRefineBatches)))
         for i, abstractNeurons in enumerate(absRefineBatches):
-            if self.isGlobalTimedOut():
-                break
+            if not self.tickGtimeout():
+                return self.returnGtimeout()            
             modelAbstract, inputVarsMapping, outputVarsMapping, varsMapping = self.abstractAndPrune(model, abstractNeurons, boundDict)
             if i+1 == len(absRefineBatches):
                 self.options._timeoutInSeconds = 0
@@ -842,25 +844,25 @@ class CnnAbs:
 
     # Transform CEX on abstract model to original model.
     def extractOriginalCEX(self, valDict, property, inputVarsMapping=None, outputVarsMapping=None):
-        lBounds = QueryUtils.getPertubationInftyBall(property.xAdv, property.inDist, valueRange=self.ds.valueRange)[0]
+        lBounds = QueryUtils.getPertubationInftyBall(property.sample, property.distance, valueRange=self.ds.valueRange)[0]
         assert all([indCOI.item() is not None for indCOI in np.nditer(np.array(inputVarsMapping), flags=["refs_ok"])])
-        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(property.xAdv.shape)
+        cex           = np.array([valDict[i.item()] if i.item() != -1 else lBnd for i,lBnd in zip(np.nditer(np.array(inputVarsMapping), flags=["refs_ok"]), np.nditer(lBounds))]).reshape(property.sample.shape)
         cexPrediction = np.array([valDict[o.item()] if o.item() != -1 else 0    for o      in np.nditer(np.array(outputVarsMapping),    flags=["refs_ok"])]).reshape(outputVarsMapping.shape)
         return cex, cexPrediction
 
     # Return true if the CEX is spurious or not (compare CEX output on modelTF to property definitions).
     def isCEXSpurious(self, modelTF, property, cex):
         #First check that the CEX is in the input bounds.
-        inBounds, violations =  QueryUtils.inBoundsInftyBall(property.xAdv, property.inDist, cex, valueRange=self.ds.valueRange)
-        if not inBounds: # Set bound deviations of up to 1e-10 from bounds to xAdv value, try to fix CEX to be in input bounds.
-            differences = cex - property.xAdv
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(property.sample, property.distance, cex, valueRange=self.ds.valueRange)
+        if not inBounds: # Set bound deviations of up to 1e-10 from bounds to sample value, try to fix CEX to be in input bounds.
+            differences = cex - property.sample
             if np.all(np.absolute(differences)[violations.nonzero()] <= np.full_like(differences[violations.nonzero()], 1e-10, dtype=np.double)):
-                cex[violations.nonzero()] = property.xAdv[violations.nonzero()]
-        inBounds, violations =  QueryUtils.inBoundsInftyBall(property.xAdv, property.inDist, cex, valueRange=self.ds.valueRange)         
+                cex[violations.nonzero()] = property.sample[violations.nonzero()]
+        inBounds, violations =  QueryUtils.inBoundsInftyBall(property.sample, property.distance, cex, valueRange=self.ds.valueRange)         
         if not inBounds:
-            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, property.xAdv={}".format(np.transpose(violations.nonzero()), np.absolute(cex-property.xAdv)[violations.nonzero()], cex[violations.nonzero()], property.xAdv[violations.nonzero()]))
+            raise Exception("CEX out of bounds, violations={}, values={}, cex={}, property.sample={}".format(np.transpose(violations.nonzero()), np.absolute(cex-property.sample)[violations.nonzero()], cex[violations.nonzero()], property.sample[violations.nonzero()]))
         prediction = modelTF.predict(np.array([cex]))
-        return prediction[0, property.ySecond] + property.outSlack < prediction[0, property.yMax] #Check if spurious.
+        return prediction[0, property.ySecond] < prediction[0, property.yMax] #Check if spurious.
 
     # Update global time clock
     def setGtimeout(self, val):
@@ -916,7 +918,7 @@ class CnnAbs:
         plt.colorbar()
         plt.savefig(self.logDir + "Cex_{}".format(runName) + ".png")
         self.dumpNpArray(cex, "Cex_{}".format(runName))        
-        diff = np.abs(cex - property.xAdv)
+        diff = np.abs(cex - property.sample)
         plt.figure()
         plt.title('Distance between pixels: CEX and adv. sample')
         plt.imshow(np.squeeze(diff), cmap='Greys')
