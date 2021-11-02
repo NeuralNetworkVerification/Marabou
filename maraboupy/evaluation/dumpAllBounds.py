@@ -9,15 +9,23 @@ from CnnAbs import CnnAbs, ModelUtils, DataSet, QueryUtils, AdversarialProperty
 from maraboupy import Marabou
 
 parser = argparse.ArgumentParser(description='Bound Dumping')
-parser.add_argument("--net", type=str, choices=['network' + i for i in ['A','B','C']] + [''], required=False, help="Chosen Network to dump bounds on")
+parser.add_argument("--net", type=str, choices=['network' + i for i in ['A','B','C']] + [''], required=False, help="Chosen network to dump bounds on")
+parser.add_argument("--sample", type=int, required=False, default=-1, help="Chosen sample")
+parser.add_argument("--distance", type=float, required=False, default=-1.0, help="Chosen distance")
 args = parser.parse_args()
 
 if not args.net:
     networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
 else:
     networks = [args.net + '.h5']
-samples = range(100)
-distances = [0.01, 0.02, 0.03]
+if args.sample < 0:
+    samples = range(100)
+else:
+    sample = [args.sample]
+if args.distance < 0:
+    distances = [0.01, 0.02, 0.03]
+else:
+    distances = [args.distance]
 
 options = dict(verbosity=0, timeoutInSeconds=800, milpTightening='lp', dumpBounds=True, tighteningStrategy='sbt', milpSolverTimeout=100)
 logDir="/".join([CnnAbs.maraboupyPath, "logs_CnnAbs", 'dumpedJsonGeneral']) + "/"
