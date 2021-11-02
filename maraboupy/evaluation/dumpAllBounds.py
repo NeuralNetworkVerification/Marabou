@@ -3,16 +3,17 @@ import json
 import os
 import copy
 import numpy as np
+import argparse
 from CnnAbs import CnnAbs, ModelUtils, DataSet, QueryUtils, AdversarialProperty
 
 from maraboupy import Marabou
 
-#import tensorflow as tf
-#import keras2onnx
-#import MarabouNetworkONNX
-#tf.compat.v1.enable_v2_behavior()
+parser = argparse.ArgumentParser(description='Bound Dumping')
+parser.add_argument("--net", type=str, choices=['network' + i for i in ['A','B','C']], required=True, help="Chosen Network to dump bounds on")
+args = parser.parse_args()
 
-networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
+#networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
+networks = [args.net + '.h5']
 samples = range(100)
 distances = [0.01, 0.02, 0.03]
 
