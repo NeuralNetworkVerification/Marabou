@@ -45,6 +45,8 @@ for network in networks:
             QueryUtils.setAdversarial(modelCopy, sample, distance, yMax, ySecond, valueRange=modelUtils.ds.valueRange)
             property = AdversarialProperty(sample, yMax, ySecond, distance, sampleIndex)
             savedFile = CnnAbs.dumpBoundsDir + '/' + CnnAbs.boundsFilePath(network, property)
+            if os.path.exists(savedFile):
+                continue
             
             print('Started dumping {}'.format(savedFile))
             ipq = QueryUtils.preprocessQuery(modelCopy, modelUtils.options, modelUtils.logDir)
