@@ -4,6 +4,7 @@ Top contributors (to current version):
     - Shantanu Thakoor
     - Andrew Wu
     - Kyle Julian
+    - Teruhiro Tagomori
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -276,6 +277,84 @@ class MarabouNetwork:
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
         return [vals, stats]
+
+    def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
+        """Function evaluating a specific input is a local robustness within the scope of epslion
+
+        Args:
+            input (numpy.ndarray): Target input
+            epsilon (float): L-inf norm of purturbation
+            originalClass (int): Output class of a target input
+            verbose (bool): If true, print out solution after solve finishes
+            options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+            targetClass (int): If set, find a feasible solution with which the value of targetClass is max within outputs.
+
+        Returns:
+            (tuple): tuple containing:
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+                - maxClass (int): Output class which value is max within outputs if SAT.
+        """
+        inputVars = None
+        if (type(self.inputVars) is list):
+            if (len(self.inputVars) != 1):
+                raise NotImplementedError("Operation for %d inputs is not implemented" % len(self.inputVars))
+            inputVars = self.inputVars[0][0]
+        elif (type(self.inputVars) is np.ndarray):
+            inputVars = self.inputVars[0]
+        else:
+            err_msg = "Unpexpected type of input vars."
+            raise RuntimeError(err_msg)
+
+        if inputVars.shape != input.shape:
+            raise RuntimeError("Input shape of the model should be same as the input shape\n input shape of the model: {0}, shape of the input: {1}".format(inputVars.shape, input.shape))
+
+        if options == None:
+            options = MarabouCore.Options()
+
+        # Add constratins to all input nodes
+        flattenInputVars = inputVars.flatten()
+        flattenInput = input.flatten()
+        for i in range(flattenInput.size):
+            self.setLowerBound(flattenInputVars[i], flattenInput[i] - epsilon)
+            self.setUpperBound(flattenInputVars[i], flattenInput[i] + epsilon)
+        
+        maxClass = None
+
+        if targetClass is None:
+            outputStartIndex = self.outputVars[0][0]
+            outputLayerSize = len(self.outputVars[0])
+            # loop for all of output classes except for original class
+            for outputLayerIndex in range(outputLayerSize):
+                if outputLayerIndex != originalClass:
+                    self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), outputLayerIndex)
+                    vals, stats = self.solve(options = options)
+                    if (stats.hasTimedOut()):
+                        break
+                    elif (len(vals) > 0):
+                        maxClass = outputLayerIndex
+                        break
+        else:
+            self.addMaxConstraint(set(self.outputVars[0]), targetClass)
+            vals, stats = self.solve(options = options)
+            if verbose:
+                if not stats.hasTimedOut() and len(vals) > 0:
+                    maxClass = targetClass
+        
+        # print timeout, or feasible inputs and outputs if verbose is on.
+        if verbose:
+            if stats.hasTimedOut():
+                print("TO")
+            elif len(vals) > 0:
+                print("sat")
+                for j in range(len(self.inputVars)):
+                    for i in range(self.inputVars[j].size):
+                        print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
+
+                for i in range(self.outputVars.size):
+                    print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
+
+        return [vals, stats, maxClass]
 
     def saveQuery(self, filename=""):
         """Serializes the inputQuery in the given filename
