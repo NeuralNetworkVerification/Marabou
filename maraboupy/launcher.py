@@ -146,6 +146,7 @@ def main():
     parser.add_argument('--slurm'   , dest='slurm', action='store_true',  help="Launch Cmds in Slurm")
     parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
     parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file.")
+    parser.add_argument("--batchDir",      type=str, help="Directory to locate experiment logs in.", default='')
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
@@ -160,11 +161,14 @@ def main():
     ####################################################################################################
     
     timestamp = datetime.now()
-    batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
+    if args.batchDir:
+        batchId = args.batchDir
+    else:
+        batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
     basePath = os.getcwd() + "/"
     batchDirPath = basePath + "logs_CnnAbs/" + batchId
+    os.makedirs(batchDirPath, exist_ok=True)
     if slurm:
-        os.makedirs(batchDirPath, exist_ok=True)        
         with open(batchDirPath + "/runCmd.sh", 'w') as f:
             f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
@@ -189,9 +193,9 @@ def main():
         if slurm:
             runSingleRun(cmd, title, basePath, batchDirPath, pyFilePath)
         cmdJson.append("python3 {} {}".format(pyFilePath, " ".join(cmd)))
-    with open("launcherCmdList.json", 'w') as f:
+    with open(batchDirPath + "/launcherCmdList.json", 'w') as f:
         json.dump(cmdJson, f, indent=4)        
-    with open("launcherCmdList", 'w') as f:
+    with open(batchDirPath + "/launcherCmdList", 'w') as f:
         for line in cmdJson:
             f.write(line + '\n')
                 
