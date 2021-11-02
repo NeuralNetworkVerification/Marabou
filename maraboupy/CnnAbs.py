@@ -321,7 +321,7 @@ class ModelUtils:
 
     # Translate Tensorflow Sequential to Marabou model.
     def tf2Model(self, model):
-        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=1)
+        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
         modelOnnxName = ModelUtils.onnxNameFormat(model)
         keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
         return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
@@ -615,10 +615,9 @@ class CnnAbs:
     # network : DNN name.
     # propagateFromFile : read propagated bounds from file instead of calculation on the fly.
     def __init__(self, ds='mnist', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False, network='', propagateFromFile=False):
-        options = Marabou.createOptions(**options)
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
-        self.options = options
+        self.options = Marabou.createOptions(**options)
         self.logDir = logDir if logDir.endswith("/") else logDir + "/"
         os.makedirs(self.logDir, exist_ok=True)
         if CnnAbs.logger == None:
