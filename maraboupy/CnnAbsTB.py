@@ -17,7 +17,7 @@ import datetime
 ####                          |___/                                    ####
 ###########################################################################
 
-tf.compat.v1.enable_v2_behavior()
+#tf.compat.v1.enable_v2_behavior()
 
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
 parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')

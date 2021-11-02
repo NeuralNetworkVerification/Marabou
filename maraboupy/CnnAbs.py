@@ -308,6 +308,7 @@ def myLoss(labels, logits):
 class ModelUtils:
 
     def __init__(self, ds, options, logDir):
+        tf.compat.v1.enable_v2_behavior()
         self.ds = ds
         self.options = options
         self.logDir = logDir
