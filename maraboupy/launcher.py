@@ -144,7 +144,8 @@ def main():
     parser.add_argument("--pyFile",           type=str, help="Python script path", required=True)    
     parser.add_argument("--prop_distance", type=float, default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)") 
     parser.add_argument('--slurm'   , dest='slurm', action='store_true',  help="Launch Cmds in Slurm")
-    parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")    
+    parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
+    parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file.")
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
@@ -154,6 +155,7 @@ def main():
     pyFilePath = os.path.abspath(args.pyFile)
     slurm = args.slurm
     abstract_first = args.abstract_first
+    propagate_from_file = args.propagate_from_file
     
     ####################################################################################################
     
@@ -176,6 +178,8 @@ def main():
     commonFlags += ["--net", net]
     if abstract_first:
         commonFlags += ["--abstract_first"]
+    if propagate_from_file:
+        commonFlags += ["--propagate_from_file"]
         
     runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath, slurm=slurm)
     

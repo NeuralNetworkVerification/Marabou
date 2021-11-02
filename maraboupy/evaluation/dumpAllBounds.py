@@ -1,4 +1,3 @@
-
 import json
 import os
 import copy
@@ -14,6 +13,8 @@ parser.add_argument("--sample", type=int, required=False, default=-1, help="Chos
 parser.add_argument("--distance", type=float, required=False, default=-1.0, help="Chosen distance")
 args = parser.parse_args()
 
+assert args.net and args.sample >= 0 and args.distance >= 0
+
 if not args.net:
     networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
 else:
@@ -28,7 +29,8 @@ else:
     distances = [args.distance]
 
 options = dict(verbosity=0, timeoutInSeconds=800, milpTightening='lp', dumpBounds=True, tighteningStrategy='sbt', milpSolverTimeout=100)
-logDir="/".join([CnnAbs.maraboupyPath, "logs_CnnAbs", 'dumpedJsonGeneral']) + "/"
+
+logDir="/".join([CnnAbs.maraboupyPath, "logs_CnnAbs", 'dumpedJson{}{}{}'.format(args.net, args.sample, str(args.distance).replace('.','-'))]) + "/"
 os.makedirs(logDir, exist_ok=True)
 modelUtils = ModelUtils(DataSet('mnist'), Marabou.createOptions(**options), logDir)
 
