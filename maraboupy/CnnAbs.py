@@ -321,7 +321,7 @@ class ModelUtils:
 
     # Translate Tensorflow Sequential to Marabou model.
     def tf2Model(self, model):
-        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=0)
+        modelOnnx = keras2onnx.convert_keras(model, model.name + "_onnx", debug_mode=1)
         modelOnnxName = ModelUtils.onnxNameFormat(model)
         keras2onnx.save_model(modelOnnx, self.logDir + modelOnnxName)
         return MarabouNetworkONNX.MarabouNetworkONNX(self.logDir + modelOnnxName)
@@ -600,11 +600,21 @@ class CnnAbs:
     logger = None
     basePath = os.getcwd()
     maraboupyPath = basePath.split('maraboupy', maxsplit=1)[0] + 'maraboupy'
-    marabouPath = basePath.split('Marabou', maxsplit=1)[0] + 'Marabou'    
+    marabouPath = basePath.split('Marabou', maxsplit=1)[0] + 'Marabou'
+    dumpBoundsDir = maraboupyPath + '/evaluation/bounds'
     resultsFile = 'Results'
     resultsFileBrief = 'ResultsBrief'
-    
-    def __init__(self, ds='mnist', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False):
+
+    # Initialize CnnAbs object used to operate the verification process.
+    # ds : dataset used.
+    # options : solver options configurations.
+    # logDir : directory to host log files.
+    # gtimeout : global time out since cnnAbs init to solving complete.
+    # policy : abstraction policy
+    # abstractFirst : abstract the first layer instead of the last Max pool - for evaluation purposes.
+    # network : DNN name.
+    # propagateFromFile : read propagated bounds from file instead of calculation on the fly.
+    def __init__(self, ds='mnist', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False, network='', propagateFromFile=False):
         options = Marabou.createOptions(**options)
         logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
@@ -621,6 +631,8 @@ class CnnAbs:
         self.policy = Policy.fromString(policy, self.ds.name)
         self.modelUtils = ModelUtils(self.ds, self.options, self.logDir)
         self.abstractFirst = abstractFirst
+        self.network = network
+        self.propagateFromFile = propagateFromFile
 
     # Solves an adversarial robustness query on the Keras.Sequential DNN modelTF, allowing input perturbations in an infinity-ball of radius distance around input sample whose index is sampleIndex in the dataset. The abstraction policy used is abstractionPolicy. The method returns the SAT or UNSAT results, along with a counterexample for the SAT case.
     def solveAdversarial(self, modelTF, abstractionPolicyName, sampleIndex, distance):
@@ -639,7 +651,7 @@ class CnnAbs:
             
         property = AdversarialProperty(sample, yMax, ySecond, distance, sampleIndex)
         model = self.modelUtils.tf2Model(modelTF)
-        QueryUtils.setAdversarial(model, sample, distance, yMax, ySecond, valueRange=self.ds.valueRange)        
+        QueryUtils.setAdversarial(model, sample, distance, yMax, ySecond, valueRange=self.ds.valueRange)
 
         fName = "sample.png"
         CnnAbs.printLog("Printing original input to file {}, this is sample {} with label {}".format(fName, sampleIndex, yAdv))
@@ -663,15 +675,14 @@ class CnnAbs:
         startBoundTightening = time.time()
         if not self.tickGtimeout():
             return self.returnGtimeout()
-        CnnAbs.printLog("Started dumping bounds - used for abstraction")
-        ipq = self.propagateBounds(model)
+        CnnAbs.printLog("Started dumping bounds - used for abstraction")        
+        boundDict, feasible = self.propagateBounds(model, property)
         if not self.tickGtimeout():
             return self.returnGtimeout()
-        QueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
-        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening    
-        if ipq.getNumberOfVariables() == 0:
+        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening        
+        if not feasible:
             self.resultsJson["SAT"] = False
             self.resultsJson["Result"] = "UNSAT"
             self.resultsJson["successfulRuntime"] = endBoundTightening - startBoundTightening
@@ -679,14 +690,7 @@ class CnnAbs:
             self.resultsJson["totalRuntime"] = time.time() - self.startTotal
             self.dumpResultsJson()
             CnnAbs.printLog("----- UNSAT on first LP bound tightening")
-            return ResultObj("unsat").returnResult()
-        else:
-            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
-        if os.path.isfile(self.logDir + "dumpBoundsInitial.json"):
-            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
-            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
-        else:
-            boundDict = None
+            return ResultObj("unsat").returnResult()    
             
         if not self.tickGtimeout():
             return self.returnGtimeout()
@@ -837,10 +841,23 @@ class CnnAbs:
             return ResultObj("gtimeout")
         return result
 
-    # Bound propegation for the model (assuming the property is already configured on the model)
-    def propagateBounds(self, model):
+    # Bound propagation for the model (assuming the property is already configured on the model). Property is used to read dumpBounds file, 
+    def propagateBounds(self, model, property):
         modelCopy = copy.deepcopy(model)
-        return QueryUtils.preprocessQuery(modelCopy, self.options, self.logDir)
+        if self.propagateFromFile:
+            boundDict = self.loadJson(CnnAbs.boundsFilePath(self.network, property) ,loadDir=CnnAbs.dumpBoundsDir)
+            if not boundDict:
+                return dict(), False
+        else:
+            ipq = QueryUtils.preprocessQuery(modelCopy, self.options, self.logDir)
+            if ipq.getNumberOfVariables() == 0:
+                return dict(), False
+            QueryUtils.saveQuery(ipq, self.logDir + "IPQ_dumpBounds")
+            os.rename(self.logDir + "dumpBounds.json", self.logDir + "dumpBoundsInitial.json") #This is to prevent accidental override of this file.
+            boundList = self.loadJson("dumpBoundsInitial", loadDir=self.logDir)
+            boundDict = {bound["variable"] : (bound["lower"], bound["upper"]) for bound in boundList}
+        return boundDict, True
+        
 
     # Transform CEX on abstract model to original model.
     def extractOriginalCEX(self, valDict, property, inputVarsMapping=None, outputVarsMapping=None):
@@ -931,6 +948,11 @@ class CnnAbs:
         queryStats = QueryUtils.modelStats(model)
         self.dumpJson(queryStats, fileName)
         return queryStats
+
+    # Path to find a dumpBounds.json file for given network, sample, and distance.
+    @staticmethod 
+    def boundsFilePath(network, property):
+        return '/'.join([network, property.sampleIndex, property.distance]) + '.json'
 
     # Save Json file from data.
     def dumpJson(self, data, fileName, saveDir=''):
