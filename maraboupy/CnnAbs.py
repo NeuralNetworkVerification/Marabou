@@ -32,6 +32,7 @@ import copy
 #All Policies inherit from this class
 class PolicyBase:
 
+    # ds : Name of used dataset.
     def __init__(self, ds):
         self.policy = None
         self.geometricStepSize = 10
@@ -70,7 +71,8 @@ class PolicyBase:
     
 #Policy - Most important neurons are the center of the image.
 class PolicyCentered(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
         self.policy = Policy.Centered
@@ -88,7 +90,8 @@ class PolicyCentered(PolicyBase):
 
 #Policy - Refine stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllSamplesRank(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
         self.policy = Policy.AllSamplesRank
@@ -100,7 +103,8 @@ class PolicyAllSamplesRank(PolicyBase):
 
 #Policy - Refine stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
         self.policy = Policy.SingleClassRank
@@ -112,7 +116,8 @@ class PolicySingleClassRank(PolicyBase):
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)  
         self.policy = Policy.MajorityClassVote  
@@ -125,7 +130,8 @@ class PolicyMajorityClassVote(PolicyBase):
     
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)  
         self.policy = Policy.Random  
@@ -136,7 +142,8 @@ class PolicyRandom(PolicyBase):
 
 #Policy - No abstraction.
 class PolicyVanilla(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
         self.policy = Policy.Vanilla
@@ -148,7 +155,8 @@ class PolicyVanilla(PolicyBase):
 
 #Policy - Rank According to activation values of single sample
 class PolicySampleRank(PolicyBase):
-    
+
+    # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
         self.policy = Policy.SampleRank
@@ -168,14 +176,17 @@ class Policy(Enum):
     Vanilla           = 5    
     SampleRank        = 6
 
+    # Return all abstraction policies.
     @staticmethod
     def abstractionPolicies():
         return [policy.name for policy in Policy if policy is not Policy.Vanilla]
 
+    # Return all policies.
     @staticmethod
     def allPolicies():
         return [policy.name for policy in Policy]
 
+    # Return a policy object given a policy name and dataset name.
     @staticmethod
     def fromString(s, ds):
         s = s.lower()
@@ -214,6 +225,7 @@ class Result(Enum):
     SPURIOUS = 4 # Spurious CEX.
     ERROR = 5 # Error.
 
+    # Give enum value based on string value.
     @staticmethod
     def fromString(s):
         s = s.lower()
@@ -234,7 +246,8 @@ class Result(Enum):
 
 # Verification result.        
 class ResultObj:
-    
+
+    # Proudce result object based on result string value
     def __init__(self, result):
         self.originalQueryStats = None
         self.finalQueryStats = None
@@ -242,23 +255,29 @@ class ResultObj:
         self.cexPrediction = np.array([])
         self.result = Result.fromString(result)
 
+    # Is the result a timeout results.
     def isTimeout(self):
         return (self.result is Result.LTIMEOUT) or (self.result is Result.GTIMEOUT)
 
+    # Is the result SAT?
     def isSat(self):
         return self.result is Result.SAT
-    
+
+    # Is the result UNSAT?
     def isUnsat(self):
         return self.result is Result.UNSAT
-    
+
+    # Insert query statistics to the result object. orig : before solving, final : after solving. This is a debug feature.
     def setStats(self, orig, final):
         self.originalQueryStats = orig
         self.finalQueryStats = final
 
+    # Insert CEX and the output predicted by solver to that CEX to the result object.    
     def setCex(self, cex, cexPrediction):
         self.cex = cex
         self.cexPrediction = cexPrediction
 
+    # Return result in the name, CEX format.
     def returnResult(self):
         CnnAbs.printLog("\n*******************************************************************************\n")
         CnnAbs.printLog("\n\nResult is:\n\n    {}\n\n".format(self.result.name))        
@@ -267,6 +286,7 @@ class ResultObj:
 # Used dataset, MNIST is implemented.
 class DataSet:
 
+    # Init the dataset base on name.
     def __init__(self, ds='mnist'):
         if ds.lower() == 'mnist':
             self.setMnist()
@@ -285,7 +305,8 @@ class DataSet:
         with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_test.npy']), 'rb') as f:
             y_test = np.load(f, allow_pickle=True)            
         return (x_train, y_train), (x_test, y_test)
-    
+
+    # Init MNIST dataset.
     def setMnist(self):
         self.num_classes = 10
         self.input_shape = (28,28,1)
@@ -307,6 +328,9 @@ def myLoss(labels, logits):
 # Implements utilities for the Tensorflow interface.
 class ModelUtils:
 
+    # ds : used DataSet() object.
+    # options : options object (solver format, not dict)
+    # logDir : used logging directory.
     def __init__(self, ds, options, logDir):
         tf.compat.v1.enable_v2_behavior()
         self.ds = ds
@@ -952,7 +976,7 @@ class CnnAbs:
     # Path to find a dumpBounds.json file for given network, sample, and distance.
     @staticmethod 
     def boundsFilePath(network, property):
-        return '/'.join([network, property.sampleIndex, property.distance]) + '.json'
+        return '/'.join([network, str(property.sampleIndex), str(property.distance)]) + '.json'
 
     # Save Json file from data.
     def dumpJson(self, data, fileName, saveDir=''):
