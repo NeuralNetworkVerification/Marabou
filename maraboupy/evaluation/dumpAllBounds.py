@@ -13,7 +13,7 @@ from maraboupy import Marabou
 #tf.compat.v1.enable_v2_behavior()
 
 networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
-samples = range(2)
+samples = range(100)
 distances = [0.01, 0.02, 0.03]
 
 options = dict(verbosity=0, timeoutInSeconds=800, milpTightening='lp', dumpBounds=True, tighteningStrategy='sbt', milpSolverTimeout=100)
