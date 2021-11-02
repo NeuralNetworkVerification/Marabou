@@ -9,11 +9,13 @@ from CnnAbs import CnnAbs, ModelUtils, DataSet, QueryUtils, AdversarialProperty
 from maraboupy import Marabou
 
 parser = argparse.ArgumentParser(description='Bound Dumping')
-parser.add_argument("--net", type=str, choices=['network' + i for i in ['A','B','C']], required=True, help="Chosen Network to dump bounds on")
+parser.add_argument("--net", type=str, choices=['network' + i for i in ['A','B','C']] + [''], required=False, help="Chosen Network to dump bounds on")
 args = parser.parse_args()
 
-#networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
-networks = [args.net + '.h5']
+if not args.net:
+    networks = ['network{}.h5'.format(i) for i in ['A','B','C']]
+else:
+    networks = [args.net + '.h5']
 samples = range(100)
 distances = [0.01, 0.02, 0.03]
 
