@@ -870,6 +870,7 @@ class CnnAbs:
         modelCopy = copy.deepcopy(model)
         if self.propagateFromFile:
             boundDict = self.loadJson(CnnAbs.boundsFilePath(self.network, property) ,loadDir=CnnAbs.dumpBoundsDir)
+            boundDict = {int(k) : v for k,v in boundDict.items()}
             if not boundDict:
                 return dict(), False
         else:
