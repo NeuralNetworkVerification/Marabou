@@ -347,8 +347,10 @@ for fullpath in resultsFiles:
 resultDicts = list(results.values())
 
 origDir = os.getcwd()
+
 graphDir = '/'.join([CnnAbs.CnnAbs.maraboupyPath, "graphs", "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")])
 os.makedirs(graphDir, exist_ok=True)
+
 
 shutil.copy2("runCmd.sh", graphDir)
 

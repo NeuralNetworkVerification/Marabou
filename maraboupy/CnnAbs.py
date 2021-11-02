@@ -71,7 +71,6 @@ class PolicyBase:
     
 #Policy - Most important neurons are the center of the image.
 class PolicyCentered(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
@@ -90,7 +89,6 @@ class PolicyCentered(PolicyBase):
 
 #Policy - Refine stepsize most activated neurons, calculating activation on the entire Mnist test.    
 class PolicyAllSamplesRank(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
@@ -103,7 +101,6 @@ class PolicyAllSamplesRank(PolicyBase):
 
 #Policy - Refine stepsize most activated neurons, calculating activation on the Mnist test examples labeled the same as prediction label.    
 class PolicySingleClassRank(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
@@ -116,7 +113,6 @@ class PolicySingleClassRank(PolicyBase):
     
 #Policy - calculate per class
 class PolicyMajorityClassVote(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)  
@@ -130,7 +126,6 @@ class PolicyMajorityClassVote(PolicyBase):
     
 #Policy - Add neurons randomly. 
 class PolicyRandom(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)  
@@ -142,7 +137,6 @@ class PolicyRandom(PolicyBase):
 
 #Policy - No abstraction.
 class PolicyVanilla(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
@@ -155,7 +149,6 @@ class PolicyVanilla(PolicyBase):
 
 #Policy - Rank According to activation values of single sample
 class PolicySampleRank(PolicyBase):
-
     # ds : Name of used dataset.
     def __init__(self, ds):
         super().__init__(ds)
@@ -255,6 +248,7 @@ class ResultObj:
         self.cexPrediction = np.array([])
         self.result = Result.fromString(result)
 
+
     # Is the result a timeout results.
     def isTimeout(self):
         return (self.result is Result.LTIMEOUT) or (self.result is Result.GTIMEOUT)
@@ -305,6 +299,7 @@ class DataSet:
         with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_test.npy']), 'rb') as f:
             y_test = np.load(f, allow_pickle=True)            
         return (x_train, y_train), (x_test, y_test)
+
 
     # Init MNIST dataset.
     def setMnist(self):
@@ -675,6 +670,7 @@ class CnnAbs:
             
         property = AdversarialProperty(sample, yMax, ySecond, distance, sampleIndex)
         model = self.modelUtils.tf2Model(modelTF)
+
         QueryUtils.setAdversarial(model, sample, distance, yMax, ySecond, valueRange=self.ds.valueRange)
 
         fName = "sample.png"

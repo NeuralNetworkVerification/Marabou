@@ -47,11 +47,13 @@ cfg_timeoutInSeconds  = args.timeout
 cfg_gtimeout          = args.gtimeout
 cfg_network           = args.net
 cfg_abstractFirst     = args.abstract_first
+
 cfg_propagateFromFile = args.propagate_from_file
 
 cfg_cwd = os.getcwd()
 
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
+
 
 cnnAbs = CnnAbs(ds='mnist', options=options, logDir="/".join(filter(None, ["logs_CnnAbs", cfg_batchDir, cfg_runTitle])), gtimeout=cfg_gtimeout, policy=cfg_abstractionPolicy, abstractFirst=cfg_abstractFirst, network=cfg_network, propagateFromFile=cfg_propagateFromFile)
 
@@ -70,6 +72,7 @@ cnnAbs.resultsJson["cfg_network"]           = cfg_network
 cnnAbs.resultsJson["cfg_abstractFirst"]     = cfg_abstractFirst
 cnnAbs.resultsJson["SAT"] = None
 cnnAbs.resultsJson["Result"] = "GTIMEOUT"
+
 cnnAbs.resultsJson["cfg_propagateFromFile"] = cfg_propagateFromFile
 cnnAbs.dumpResultsJson()
 
