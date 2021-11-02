@@ -976,7 +976,7 @@ class CnnAbs:
     # Path to find a dumpBounds.json file for given network, sample, and distance.
     @staticmethod 
     def boundsFilePath(network, property):
-        return '/'.join([network.replace('.h5',''), str(property.sampleIndex), str(property.distance).replace('.','-')]) + '.json'
+        return '/'.join([network.replace('.h5','').split("/")[-1], str(property.sampleIndex), str(property.distance).replace('.','-')]) + '.json'
 
     # Save Json file from data.
     def dumpJson(self, data, fileName, saveDir=''):
