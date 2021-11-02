@@ -9,7 +9,7 @@ def launchSlurm(saveDir, network, sample, distance):
     sbatchCode.append('#SBATCH --job-name=DumpAll')
     sbatchCode.append('#SBATCH --cpus-per-task=1')
     sbatchCode.append('#SBATCH --mem-per-cpu=8G')
-    sbatchCode.append('#SBATCH --output=/cs/labs/guykatz/matanos/Marabou/maraboupy/evaluation/network{}/{}/SbatchDumpAllBounds{}{}{}.out'.format(network, sample, network, sample, str(distance).replace('.','-')))
+    sbatchCode.append('#SBATCH --output=/cs/labs/guykatz/matanos/Marabou/maraboupy/evaluation/bounds/network{}/{}/SbatchDumpAllBounds{}{}{}.out'.format(network, sample, network, sample, str(distance).replace('.','-')))
     sbatchCode.append('#SBATCH --partition=long')
     sbatchCode.append('#SBATCH --signal=B:SIGUSR1@300')
     sbatchCode.append('#SBATCH --time=1:00:00')
@@ -25,7 +25,7 @@ def launchSlurm(saveDir, network, sample, distance):
     sbatchCode.append('export GRB_LICENSE_FILE=/cs/share/etc/license/gurobi/gurobi.lic')
     sbatchCode.append('')
     sbatchCode.append('')
-    sbatchCode.append('echo "Ive been launched" > /cs/labs/guykatz/matanos/Marabou/maraboupy/evaluation/StartedDumpAllBounds')
+    sbatchCode.append('echo "Ive been launched" > /cs/labs/guykatz/matanos/Marabou/maraboupy/evaluation/bounds/network{}/{}/StartedDumpAllBounds{}{}{}'.format(network, sample, network, sample, str(distance).replace('.','-')))
     sbatchCode.append('stdbuf -o0 -e0 python3 /cs/labs/guykatz/matanos/Marabou/maraboupy/evaluation/dumpAllBounds.py --net network{} --sample {} --distance {}'.format(network, sample, distance))
     sbatchCode.append('')
     sbatchCode.append('date')
@@ -36,12 +36,10 @@ def launchSlurm(saveDir, network, sample, distance):
         for line in sbatchCode:
             f.write(line + "\n")
 
-    #cwd = os.getcwd()
-    #os.chdir(saveDir)
     print("Running : {}".format(" ".join(["sbatch", sbatchFile])))
     subprocess.run(["sbatch", sbatchFile])
-    #os.chdir(cwd)
-
+    print("Launched : {}".format(" ".join(["sbatch", sbatchFile])))    
+    
 for network in ['A', 'B', 'C']:
     for sample in range(100):
         for distance in [0.01, 0.02, 0.03]:

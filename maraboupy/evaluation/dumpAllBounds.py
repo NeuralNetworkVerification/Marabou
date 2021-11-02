@@ -21,7 +21,7 @@ else:
 if args.sample < 0:
     samples = range(100)
 else:
-    sample = [args.sample]
+    samples = [args.sample]
 if args.distance < 0:
     distances = [0.01, 0.02, 0.03]
 else:
