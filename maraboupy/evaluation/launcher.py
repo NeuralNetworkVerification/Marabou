@@ -17,14 +17,13 @@ def globalTimeOut():
     return 1,0,0
 
 TIMEOUT_H, TIMEOUT_M, TIMEOUT_S = globalTimeOut()
-gtimeout = TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S
-TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M + 2, TIMEOUT_S)
+TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M + 2, TIMEOUT_S)    
 
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
 
-def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False):
+def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False, gtimeout=None):
     runCmds = list()
     runTitles = list()
     title2Label = dict()
@@ -52,7 +51,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False
 
     return runCmds, runTitles
 
-def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slurm=False):
+def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slurm=False, gtimeout=None):
     runCmds = list()
     runTitles = list()
     title2Label = dict()
@@ -146,6 +145,7 @@ def main():
     parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
     parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file.")
     parser.add_argument("--batchDir",      type=str, help="Directory to locate experiment logs in.", default='')
+    parser.add_argument("--gtimeout",      type=int, default=-1, help="Individual timeout for each verification run.")    
     args = parser.parse_args()
     experiment = args.exp
     numRunsPerType = args.runs_per_type
@@ -156,6 +156,11 @@ def main():
     slurm = args.slurm
     abstract_first = args.abstract_first
     propagate_from_file = args.propagate_from_file
+
+
+    gtimeout = TIMEOUT_H * 3600 + TIMEOUT_M * 60 + TIMEOUT_S
+    if args.gtimeout != -1:
+        gtimeout = args.gtimeout
     
     ####################################################################################################
     
@@ -171,7 +176,7 @@ def main():
     os.makedirs(batchDirPath, exist_ok=True)
     with open(batchDirPath + "/runCmd.sh", 'w') as f:
         f.write(" ".join(["python3"]+ sys.argv) + "\n")
-        
+
     commonFlags = ["--gtimeout", str(gtimeout)]
     commonFlags += ["--batch_id", batchId]
     if experiment != 'DifferentDistances':
@@ -184,7 +189,7 @@ def main():
     if propagate_from_file:
         commonFlags += ["--propagate_from_file"]
         
-    runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath, slurm=slurm)
+    runCmds, runTitles = experimentFunc(numRunsPerType, commonFlags, batchDirPath, slurm=slurm, gtimeout=gtimeout)
     
     sbatchFiles = list()
     cmdJson = list()

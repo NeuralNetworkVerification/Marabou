@@ -635,7 +635,7 @@ class CnnAbs:
     # network : DNN name.
     # propagateFromFile : read propagated bounds from file instead of calculation on the fly.
     def __init__(self, ds='mnist', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False, network='', propagateFromFile=False):
-        logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
+        logDir = "/".join(filter(None, [CnnAbs.maraboupyPath, logDir]))
         self.ds = DataSet(ds)
         self.options = Marabou.createOptions(**options)
         self.logDir = logDir if logDir.endswith("/") else logDir + "/"
