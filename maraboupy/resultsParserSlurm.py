@@ -257,6 +257,7 @@ if cntKill > 0:
 parser = argparse.ArgumentParser(description='Query log files')
 parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch")
 parser.add_argument("--graph_dir_name", type=str, default="", help="Name of the graph directorys")
+parser.add_argument('--force'   , dest='force', action='store_true',  help="Force overwrite of graph directory")
 args = parser.parse_args()
 
 
@@ -351,7 +352,7 @@ origDir = os.getcwd()
 
 graphDirName = args.graph_dir_name if args.graph_dir_name else "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 graphDir = '/'.join([CnnAbs.CnnAbs.maraboupyPath, "graphs", graphDirName])
-if os.path.exists(graphDir):
+if os.path.exists(graphDir) and not args.force:
     raise Exception("Trying to overwrite graph directory")
 os.makedirs(graphDir, exist_ok=True)
 

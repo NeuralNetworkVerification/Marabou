@@ -7,6 +7,7 @@ import itertools
 import argparse
 import numpy as np
 import CnnAbs
+import shutil
 
 ####################################################################################################
 ####################################################################################################
@@ -33,23 +34,21 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False
         for i in range(numRunsPerType):
             title = "{}Cfg---{}".format(policy, i)
             cmd = commonFlags + ["--policy", policy, "--sample", str(i)]
-            if slurm:
-                cmd += ["--run_title", title]
+            cmd += ["--run_title", title]
             runCmds.append(cmd)
             runTitles.append(title)
 
-    if slurm:
-        with open(batchDirPath + "/plotSpec.json", 'w') as f:
-            policiesCfg = ["{}Cfg".format(policy) for policy in CnnAbs.Policy.abstractionPolicies()]
-            jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
-                        "TIMEOUT_VAL" : gtimeout,
-                        "title2Label" : title2Label,
-                        "COIRatio"    : policiesCfg,
-                        "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
-                        "commonRunCommand" : " ".join(commonFlags),
-                        "runCommands"  : [" ".join(cmd) for cmd in runCmds],
-                        "xparameter" : "cfg_sampleIndex"}
-            json.dump(jsonDict, f, indent = 4)
+    with open(batchDirPath + "/plotSpec.json", 'w') as f:
+        policiesCfg = ["{}Cfg".format(policy) for policy in CnnAbs.Policy.abstractionPolicies()]
+        jsonDict = {"Experiment"  : "CNN Abstraction Vs. Vanilla Marabou",
+                    "TIMEOUT_VAL" : gtimeout,
+                    "title2Label" : title2Label,
+                    "COIRatio"    : policiesCfg,
+                    "compareProperties": list(itertools.combinations(policiesCfg, 2)) + [('VanillaCfg', policy) for policy in policiesCfg],
+                    "commonRunCommand" : " ".join(commonFlags),
+                    "runCommands"  : [" ".join(cmd) for cmd in runCmds],
+                    "xparameter" : "cfg_sampleIndex"}
+        json.dump(jsonDict, f, indent = 4)
 
     return runCmds, runTitles
 
@@ -165,16 +164,16 @@ def main():
         batchId = args.batchDir
     else:
         batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
-    basePath = os.getcwd() + "/"
+    basePath = CnnAbs.CnnAbs.maraboupyPath + "/"
     batchDirPath = basePath + "logs_CnnAbs/" + batchId
+    if os.path.exists(batchDirPath):
+        shutil.rmtree(batchDirPath, ignore_errors=True)
     os.makedirs(batchDirPath, exist_ok=True)
-    if slurm:
-        with open(batchDirPath + "/runCmd.sh", 'w') as f:
-            f.write(" ".join(["python3"]+ sys.argv) + "\n")
+    with open(batchDirPath + "/runCmd.sh", 'w') as f:
+        f.write(" ".join(["python3"]+ sys.argv) + "\n")
         
     commonFlags = ["--gtimeout", str(gtimeout)]
-    if slurm:
-        commonFlags += ["--batch_id", batchId]
+    commonFlags += ["--batch_id", batchId]
     if experiment != 'DifferentDistances':
         commonFlags += ["--prop_distance", str(prop_distance)]
     else:

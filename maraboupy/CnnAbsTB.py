@@ -38,7 +38,8 @@ args = parser.parse_args()
 resultsJson = dict()
 cfg_distance          = args.prop_distance
 cfg_runTitle          = args.run_title
-cfg_batchDir          = args.batch_id if "batch_" + args.batch_id else ""
+assert args.batch_id
+cfg_batchDir          = args.batch_id
 cfg_abstractionPolicy = args.policy
 cfg_sampleIndex       = args.sample
 cfg_boundTightening   = 'lp'
@@ -50,7 +51,7 @@ cfg_abstractFirst     = args.abstract_first
 
 cfg_propagateFromFile = args.propagate_from_file
 
-cfg_cwd = os.getcwd()
+#cfg_cwd = os.getcwd()
 
 options = dict(verbosity=0, timeoutInSeconds=cfg_timeoutInSeconds, milpTightening=cfg_boundTightening, dumpBounds=True, tighteningStrategy=cfg_symbolicTightening, milpSolverTimeout=100)
 
@@ -87,7 +88,7 @@ cnnAbs.dumpResultsJson()
 #############################################################################################
 
 CnnAbs.printLog("Started model building")
-modelTF = cnnAbs.modelUtils.loadModel(cfg_cwd + '/' + cfg_network)
+modelTF = cnnAbs.modelUtils.loadModel(cfg_network)
 CnnAbs.printLog("Finished model building")
 
 cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_distance)
