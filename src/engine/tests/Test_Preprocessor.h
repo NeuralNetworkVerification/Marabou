@@ -761,7 +761,7 @@ public:
         TS_ASSERT_EQUALS( output, 1 );
     }
 
-    void test_tod()
+    void test_todo()
     {
         TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );
     }

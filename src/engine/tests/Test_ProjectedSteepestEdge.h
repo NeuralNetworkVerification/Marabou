@@ -206,7 +206,7 @@ public:
     }
 
 
-    void test_tod()
+    void test_todo()
     {
         TS_TRACE( "Move 'excluded' computation out to the Engine instead of repeating it in every invocation of PSE.select()" );
     }

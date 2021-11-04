@@ -560,7 +560,7 @@ public:
         TS_ASSERT_EQUALS( *( ++caseSplits.begin() ), interval2 );
     }
 
-    void test_tod()
+    void test_todo()
     {
         TS_TRACE( "Future work: Guarantee correct behavior even when some variable is unbounded\n" );
     }

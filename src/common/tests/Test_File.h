@@ -153,7 +153,7 @@ public:
 		TS_ASSERT_THROWS_NOTHING( delete mock );
 	}
 
-    void test_tod()
+    void test_todo()
     {
         TS_ASSERT( "Reinstate unit tests when mac issues are resolved" );
     }
