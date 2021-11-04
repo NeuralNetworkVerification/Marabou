@@ -42,7 +42,7 @@ for net, dist in itertools.product(networks, distances):
     os.chdir(logDir)
     resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.maraboupyPath, suffix)
     print('Executing {}'.format(resultsParserCmd))
-    subprocess.run(resultsParserCmd.split(' '))
+    subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     os.chdir(cwd)
 
 graphDir = 'ComparePolicies'
@@ -53,14 +53,14 @@ print('chdir {}'.format(logDir))
 os.chdir(logDir)
 resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.maraboupyPath, graphDir)
 print('Executing {}'.format(resultsParserCmd))
-subprocess.run(resultsParserCmd.split(' '))
+subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 os.chdir(cwd)
 createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyComparePolicies'.format(CnnAbs.maraboupyPath, CnnAbs.maraboupyPath + '/graphs', outputDir)
 print('Executing {}'.format(createGraphCmd))
-subprocess.run(createGraphCmd.split(' '))
+subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     
 createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {}'.format(CnnAbs.maraboupyPath, CnnAbs.maraboupyPath + '/graphs', outputDir)
 print('Executing {}'.format(createGraphCmd))
-subprocess.run(createGraphCmd.split(' '))
+subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 print('Result Directory: {}'.format(outputDir))

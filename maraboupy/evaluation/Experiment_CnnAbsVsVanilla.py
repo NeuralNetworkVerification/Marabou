@@ -29,7 +29,7 @@ for net, dist in itertools.product(networks, distances):
     
     print('network{}, dist={}'.format(net,dist))
     print('Launching Command JSON creation')
-    subprocess.run('python3 {0}/evaluation/launcher.py --pyFile {0}/CnnAbsTB.py --net {0}/evaluation/network{3}.h5 --prop_dist {4} --propagate_from_file --runs_per_type {1} --batchDir {2}'.format(CnnAbs.maraboupyPath, args.instances, graphDir, net, diststr).split(' ') + (['--gtimeout', str(args.gtimeout)] if args.gtimeout != -1 else []))
+    subprocess.run('python3 {0}/evaluation/launcher.py --pyFile {0}/CnnAbsTB.py --net {0}/evaluation/network{3}.h5 --prop_dist {4} --propagate_from_file --runs_per_type {1} --batchDir {2}'.format(CnnAbs.maraboupyPath, args.instances, graphDir, net, diststr).split(' ') + (['--gtimeout', str(args.gtimeout)] if args.gtimeout != -1 else []), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     print('Launching Command JSON')
     executeFromJson.executeFile('{}/logs_CnnAbs/{}/launcherCmdList.json'.format(CnnAbs.maraboupyPath, graphDir))
     print('Creating Graphs - First Parser')
@@ -39,11 +39,11 @@ for net, dist in itertools.product(networks, distances):
     os.chdir(logDir)
     resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.maraboupyPath, suffix)
     print('Executing {}'.format(resultsParserCmd))
-    subprocess.run(resultsParserCmd.split(' '))
+    subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     os.chdir(cwd)
     
 createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyCnnAbsVsVanilla'.format(CnnAbs.maraboupyPath, CnnAbs.maraboupyPath + '/graphs', outputDir)
 print('Executing {}'.format(createGraphCmd))
-subprocess.run(createGraphCmd.split(' '))
+subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 print('Result Directory: {}'.format(outputDir))

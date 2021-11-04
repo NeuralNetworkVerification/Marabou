@@ -17,21 +17,18 @@ import datetime
 ####                          |___/                                    ####
 ###########################################################################
 
-#tf.compat.v1.enable_v2_behavior()
-
 defaultBatchId = "default_" + datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
-parser = argparse.ArgumentParser(description='Run MNIST based verification scheme using abstraction')
-parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run")
-parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch")
-parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                   help="Distance checked for adversarial robustness (L1 metric)")
+parser = argparse.ArgumentParser(description='Solve adversarial robustness query using CNN-Abs absttraction refinement verification scheme.')
+parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index in database of sample image to run on.")
+parser.add_argument("--prop_distance",  type=float,                                 default=0.03,                   help="Distance checked for adversarial robustness (L-inf metric)")
 parser.add_argument("--timeout",        type=int,                                   default=800,                    help="Single solver timeout in seconds.")
 parser.add_argument("--gtimeout",       type=int,                                   default=3600,                   help="Global timeout for all solving in seconds.")
-parser.add_argument("--sample",         type=int,                                   default=0,                      help="Index, in MNIST database, of sample image to run on.")
 parser.add_argument("--policy",         type=str, choices=Policy.allPolicies(),       default="Vanilla",        help="Which abstraction policy to use")
-
-parser.add_argument("--net", type=str, default="", help="verified neural network", required=True)
-parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
-parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file.")
+parser.add_argument("--net", type=str, default="", help="Verified neural network (.h5 file)", required=True)
+parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer, instead of the last Max-pooling layer (used for policy comparison experiment)")
+parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file, for no-Gurobi runs.")
+parser.add_argument("--run_title",      type=str,                                   default="default",              help="Add unique identifier identifying this current run (used by scripts).")
+parser.add_argument("--batch_id",       type=str,                                   default=defaultBatchId,         help="Add unique identifier identifying the whole batch (used by scripts).")
 
 args = parser.parse_args()
 
@@ -91,5 +88,6 @@ CnnAbs.printLog("Started model building")
 modelTF = cnnAbs.modelUtils.loadModel(cfg_network)
 CnnAbs.printLog("Finished model building")
 
-cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_distance)
+result, cex = cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_distance)
+print('Result={}, cex={}'.format(result, cex))
 CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
