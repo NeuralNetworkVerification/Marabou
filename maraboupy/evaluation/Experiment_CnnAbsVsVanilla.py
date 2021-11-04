@@ -14,7 +14,7 @@ parser.add_argument("--results", type=str, default='', help="Directory to put ou
 args = parser.parse_args()
 
 if args.results:
-    outputDir = args.results
+    outputDir = os.path.abspath(args.results)
 else:
     outputDir = CnnAbs.maraboupyPath + '/Results'
 
