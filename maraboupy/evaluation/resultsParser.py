@@ -352,8 +352,11 @@ origDir = os.getcwd()
 
 graphDirName = args.graph_dir_name if args.graph_dir_name else "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
 graphDir = '/'.join([CnnAbs.CnnAbs.maraboupyPath, "graphs", graphDirName])
-if os.path.exists(graphDir) and not args.force:
-    raise Exception("Trying to overwrite graph directory")
+if os.path.exists(graphDir):
+    if args.force:
+        shutil.rmtree(graphDir, ignore_errors=True)
+    else:
+        raise Exception("Trying to overwrite graph directory")
 os.makedirs(graphDir, exist_ok=True)
 
 
