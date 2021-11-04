@@ -621,7 +621,7 @@ class CnnAbs:
     cwdPath = os.getcwd()
     marabouPath = cwdPath.split('Marabou', maxsplit=1)[0] + 'Marabou' if '/Marabou/' in (cwdPath + '/') else  cwdPath + '/Marabou'
     maraboupyPath = marabouPath + '/maraboupy'
-    basePath = os.path.abspath(maraboupyPath)
+    basePath = marabouPath + '/CnnAbsFiles'
     
     dumpBoundsDir = basePath + '/evaluation/bounds'
     resultsFile = 'Results'

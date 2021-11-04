@@ -89,5 +89,8 @@ modelTF = cnnAbs.modelUtils.loadModel(cfg_network)
 CnnAbs.printLog("Finished model building")
 
 result, cex = cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_distance)
-print('Result={}, cex={}'.format(result, cex))
+cexFile = cnnAbs.logDir + 'finalCEX.npy'
+print('Result={}, cex at {}'.format(result, cexFile))
+if result.lower() == 'sat':
+    cnnAbs.dumpNpArray(cex, 'finalCEX')
 CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
