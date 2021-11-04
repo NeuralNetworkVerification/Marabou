@@ -1,4 +1,6 @@
 
+# Extract exact results from log files to replicate the exact same results xthat appeared in the paper.
+
 import executeFromJson
 import subprocess
 import argparse
@@ -16,11 +18,11 @@ args = parser.parse_args()
 if args.results:
     outputDir = os.path.abspath(args.results)
 else:
-    outputDir = CnnAbs.maraboupyPath + '/Results'
+    outputDir = CnnAbs.basePath + '/Results'
 if args.logs:
     logsDir = os.path.abspath(args.logs)
 else:
-    logsDir = CnnAbs.maraboupyPath + '/logs_CnnAbs'
+    logsDir = CnnAbs.basePath + '/logs_CnnAbs'
 
 if logsDir.endswith('/'):
     logsDir = logsDir[:-1]
@@ -40,7 +42,7 @@ for net, dist in itertools.product(networks, distances):
     logDir = '{}/{}'.format(logsDir, graphDir)
     print('chdir {}'.format(logDir))
     os.chdir(logDir)
-    resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.maraboupyPath, suffix)
+    resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.basePath, suffix)
     print('Executing {}'.format(resultsParserCmd))
     subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     os.chdir(cwd)
@@ -48,18 +50,18 @@ for net, dist in itertools.product(networks, distances):
 graphDir = 'ComparePolicies'
 print('Creating Graphs - First Parser')
 cwd = os.getcwd()
-logDir = '{}/logs_CnnAbs/{}'.format(CnnAbs.maraboupyPath, graphDir)
+logDir = '{}/logs_CnnAbs/{}'.format(CnnAbs.basePath, graphDir)
 print('chdir {}'.format(logDir))
 os.chdir(logDir)
-resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.maraboupyPath, graphDir)
+resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --force'.format(CnnAbs.basePath, graphDir)
 print('Executing {}'.format(resultsParserCmd))
 subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 os.chdir(cwd)
-createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyComparePolicies'.format(CnnAbs.maraboupyPath, CnnAbs.maraboupyPath + '/graphs', outputDir)
+createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyComparePolicies'.format(CnnAbs.basePath, CnnAbs.basePath + '/graphs', outputDir)
 print('Executing {}'.format(createGraphCmd))
 subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     
-createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {}'.format(CnnAbs.maraboupyPath, CnnAbs.maraboupyPath + '/graphs', outputDir)
+createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {}'.format(CnnAbs.basePath, CnnAbs.basePath + '/graphs', outputDir)
 print('Executing {}'.format(createGraphCmd))
 subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 

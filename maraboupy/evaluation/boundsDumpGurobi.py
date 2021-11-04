@@ -1,3 +1,6 @@
+
+# Perfrom LP optimizations queries, can not be used since there is no Gurobi. Different configurations are compared here.
+
 import random
 import sys
 import os

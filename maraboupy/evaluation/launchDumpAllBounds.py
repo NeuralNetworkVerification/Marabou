@@ -1,3 +1,6 @@
+
+# Used to create bound files for no-Gurobi mode. should not be used by user.
+
 import os
 import subprocess
 from CnnAbs import CnnAbs

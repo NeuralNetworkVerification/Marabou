@@ -13,6 +13,7 @@ import shutil
 ####################################################################################################
 ####################################################################################################
 
+# Define default global timeout.
 def globalTimeOut():
     return 1,0,0
 
@@ -23,6 +24,7 @@ TIME_LIMIT = "{}:{:02d}:{:02d}".format(TIMEOUT_H, TIMEOUT_M + 2, TIMEOUT_S)
 ####################################################################################################
 ####################################################################################################
 
+# Perform the default experiment running the same network, with the same distance, for different samples and different policies.
 def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False, gtimeout=None):
     runCmds = list()
     runTitles = list()
@@ -51,6 +53,7 @@ def experimentAbsPolicies(numRunsPerType, commonFlags, batchDirPath, slurm=False
 
     return runCmds, runTitles
 
+# Perform an experiment running the same network, with the different distances, for the same sample and different policies. Does not appear in the paper and used for sanity check.
 def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slurm=False, gtimeout=None):
     runCmds = list()
     runTitles = list()
@@ -81,6 +84,7 @@ def experimentDifferentDistances(numRunsPerType, commonFlags, batchDirPath, slur
 
     return runCmds, runTitles
 
+# Launch single run for slurm.
 def runSingleRun(cmd, title, basePath, batchDirPath, pyFilePath):
 
     CPUS = 8
@@ -105,7 +109,7 @@ def runSingleRun(cmd, title, basePath, batchDirPath, pyFilePath):
     sbatchCode.append("pwd; hostname; date")
     sbatchCode.append("")
     sbatchCode.append("csh {}".format(CnnAbs.CnnAbs.marabouPath + "/../py_env/bin/activate.csh"))
-    sbatchCode.append("export PYTHONPATH=$PYTHONPATH:{}:{}".format(CnnAbs.CnnAbs.maraboupyPath, CnnAbs.CnnAbs.marabouPath))
+    sbatchCode.append("export PYTHONPATH=$PYTHONPATH:{}:{}:{}".format(CnnAbs.CnnAbs.maraboupyPath, CnnAbs.CnnAbs.marabouPath, CnnAbs.CnnAbs.basePath))
     sbatchCode.append("export GUROBI_HOME={}".format(os.path.abspath(CnnAbs.CnnAbs.marabouPath + "/../gurobi911/linux64")))
     sbatchCode.append("export PATH=$PATH:${GUROBI_HOME}/bin")
     sbatchCode.append("export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib")
@@ -134,16 +138,16 @@ def main():
     
     experiments = {"AbsPolicies"    : experimentAbsPolicies,
                    "DifferentDistances" : experimentDifferentDistances}
-    parser = argparse.ArgumentParser(description='Launch Sbatch experiments')
+    parser = argparse.ArgumentParser(description='Launch batch experiments')
     parser.add_argument("--exp",           type=str, default="AbsPolicies", choices=list(experiments.keys()), help="Which experiment to launch?", required=False)
-    parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type.")
+    parser.add_argument("--runs_per_type", type=int, default=100, help="Number of runs per type (samples, distances etc.).")
     parser.add_argument("--sample",        type=int, default=0, help="For part of experiments, specific sample choice")
     parser.add_argument("--net",           type=str, help="Network to verify", required=True)
     parser.add_argument("--pyFile",           type=str, help="Python script path", required=True)    
-    parser.add_argument("--prop_distance", type=float, default=0.03,                    help="Distance checked for adversarial robustness (L1 metric)") 
+    parser.add_argument("--prop_distance", type=float, default=0.03,                    help="Distance checked for adversarial robustness (L-inf metric)") 
     parser.add_argument('--slurm'   , dest='slurm', action='store_true',  help="Launch Cmds in Slurm")
     parser.add_argument("--abstract_first", dest='abstract_first', action='store_true' , help="Abstract the first layer (used for specific experiment)")
-    parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file.")
+    parser.add_argument("--propagate_from_file", dest='propagate_from_file', action='store_true' , help="Read propagated bounds from file (no-Gurobi mode).")
     parser.add_argument("--batchDir",      type=str, help="Directory to locate experiment logs in.", default='')
     parser.add_argument("--gtimeout",      type=int, default=-1, help="Individual timeout for each verification run.")    
     args = parser.parse_args()
@@ -169,7 +173,7 @@ def main():
         batchId = args.batchDir
     else:
         batchId = "_".join(filter(None, [experiment, net.split('/')[-1].replace('.h5',''), timestamp.strftime("%d-%m-%y"), timestamp.strftime("%H-%M-%S")]))
-    basePath = CnnAbs.CnnAbs.maraboupyPath + "/"
+    basePath = CnnAbs.CnnAbs.basePath + "/"
     batchDirPath = basePath + "logs_CnnAbs/" + batchId
     if os.path.exists(batchDirPath):
         shutil.rmtree(batchDirPath, ignore_errors=True)

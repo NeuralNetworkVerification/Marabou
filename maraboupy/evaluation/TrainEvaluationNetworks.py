@@ -4,9 +4,11 @@ import argparse
 import os
 import CnnAbs
 
+#Custom loss object.
 def myLoss(labels, logits):
     return tf.keras.losses.sparse_categorical_crossentropy(labels, logits, from_logits=True)
 
+#Create the network object pre-training.
 def createNet(netName, ds):
 
     if netName == 'networkA':
@@ -56,7 +58,7 @@ def createNet(netName, ds):
     else :
         raise NotImplementedError
 
-
+#Function for training a network. Path to create it in, and a Cnn.DataSet to work on.
 def train(netPath, ds, justSummary=False, force=False):
     netName = netPath.split('/')[-1].replace('.h5', '')
     net = createNet(netName, ds)
@@ -77,12 +79,12 @@ def train(netPath, ds, justSummary=False, force=False):
     return net
 
 def main():
-    parser = argparse.ArgumentParser(description='Choose network to train')
+    parser = argparse.ArgumentParser(description='Choose network to create and train.')
     parser.add_argument("--net", type=str, choices=['network' + i for i in ['A','B','C']], required=True, help="Chosen Network to train")
     parser.add_argument("--justSummary", dest='justSummary', action='store_true' , help="Just show network structure")
-    parser.add_argument("--force", dest='force', action='store_true' , help="Overwrite network if exsits")
+    parser.add_argument("--force", dest='force', action='store_true' , help="Overwrite network if exists")
     args = parser.parse_args()
     net = train(os.path.abspath(args.net + '.h5'), CnnAbs.DataSet('mnist'), justSummary=args.justSummary, force=args.force)
 
 if __name__ == '__main__':
-    __main__()
+    main()

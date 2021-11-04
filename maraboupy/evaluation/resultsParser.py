@@ -1,3 +1,6 @@
+
+## This file is use to parse the Result.json files, but also creates graphs that DO NOT appear in the paper.
+
 from __future__ import division
 import os
 import sys
@@ -15,21 +18,25 @@ import shutil
 from itertools import chain
 import CnnAbs
 
+#Save JSON file from data.
 def dumpJson(data, name):
     if not name.endswith(".json"):
         name += ".json"
     with open(name, "w") as f:
         json.dump(data, f, indent = 4)
-            
+
+#Graph printing function.        
 def pctFunc(pct, data):
     absolute = int(np.round(pct/100.*np.sum(data)))
     return "{:1.1f}%\n({})".format(pct, absolute) if pct > 0 else ""
 
+#Count appreances of tuple in two lists.
 def countSame(x,y):
     xy = list(zip(x,y))
     xyCount = [xy.count(el) for el in xy]    
     return list(zip(xyCount, xy))
 
+#Choose color for specific xresult.
 def cellColor(result, dark=False):
     if result.upper() == 'GTIMEOUT':
         return 'yellow' if not dark else 'gold'
@@ -47,6 +54,7 @@ def cellColor(result, dark=False):
         return 'black'
     return None
 
+#Choose marker for specific result.
 def markerChoice(result):
     if result.upper() == 'TIMEOUT':
         return "x"
@@ -58,10 +66,12 @@ def markerChoice(result):
         return "x"
     return None
 
+# Set figure size.
 def setFigSize(w=12, h=9):
     figure = plt.gcf()
     figure.set_size_inches(w, h)
 
+# Plot graph - not used in paper
 def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True, lastFig=True, ax=plt):
     xLabel = xDict['label']
     yLabel = yDict['label']
@@ -142,6 +152,7 @@ def plotCompareProperties(xDict, yDict, marker="x", newFig=True, singleFig=True,
             ax.figure.savefig("CompareProperties-All_vs_Vanilla.png", dpi=100)        
         plt.close()
 
+# Count repeatitions in x.
 def countValues(x):
     values = set(x)
     values.discard(-1)
@@ -150,6 +161,7 @@ def countValues(x):
     repeats = [len([u for u in x if v == u]) for v in values]
     return values, repeats
 
+# plot graph - does not appear in paper.
 def plotCOIRatio(resultDict):
     plt.figure()
     fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1)
@@ -254,10 +266,10 @@ if cntViolation > 0:
 if cntKill > 0:
     print("\n\n ******** Found 'kill' {} times!".format(cntKill))
 
-parser = argparse.ArgumentParser(description='Query log files')
-parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch")
-parser.add_argument("--graph_dir_name", type=str, default="", help="Name of the graph directorys")
-parser.add_argument('--force'   , dest='force', action='store_true',  help="Force overwrite of graph directory")
+parser = argparse.ArgumentParser(description='Parse log files')
+parser.add_argument("--batch", type=str, default="", help="Limit to a specifc batch -- deprecated option.")
+parser.add_argument("--graph_dir_name", type=str, default="", help="Name of the graph directories to dump in (under the graphs directory in top of tree.")
+parser.add_argument('--force'   , dest='force', action='store_true',  help="Force overwrite of graph directory.")
 args = parser.parse_args()
 
 
@@ -351,7 +363,7 @@ resultDicts = list(results.values())
 origDir = os.getcwd()
 
 graphDirName = args.graph_dir_name if args.graph_dir_name else "__Graphs_" + datetime.now().strftime("%d-%m-%y___%H-%M-%S")
-graphDir = '/'.join([CnnAbs.CnnAbs.maraboupyPath, "graphs", graphDirName])
+graphDir = '/'.join([CnnAbs.CnnAbs.basePath, "graphs", graphDirName])
 if os.path.exists(graphDir):
     if args.force:
         shutil.rmtree(graphDir, ignore_errors=True)
@@ -425,6 +437,7 @@ equationsPartial = [[resultDict[xparam]["finalPartiallity"]["equations"] for xpa
 
 runColors  = [[cellColor(resultDict[s]["result"])      if s in resultDict else None      for s in xparamTotal] for resultDict in resultDicts]
 
+# Plot summary table - not used in paper.
 def plotResultSummery(name, tableLabels, xparamTotal, runColors, results):
     plt.figure()
     fig, ax = plt.subplots(nrows=1, ncols=1)

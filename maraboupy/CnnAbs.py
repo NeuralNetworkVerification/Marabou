@@ -290,13 +290,13 @@ class DataSet:
     # Read dataset from numpy file for offline use.
     @staticmethod
     def readFromFile(dataset):        
-        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'x_train.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.basePath, dataset, 'x_train.npy']), 'rb') as f:
             x_train = np.load(f, allow_pickle=True)
-        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_train.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.basePath, dataset, 'y_train.npy']), 'rb') as f:
             y_train = np.load(f, allow_pickle=True)
-        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'x_test.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.basePath, dataset, 'x_test.npy']), 'rb') as f:
             x_test = np.load(f, allow_pickle=True)
-        with open('/'.join([CnnAbs.maraboupyPath, dataset, 'y_test.npy']), 'rb') as f:
+        with open('/'.join([CnnAbs.basePath, dataset, 'y_test.npy']), 'rb') as f:
             y_test = np.load(f, allow_pickle=True)            
         return (x_train, y_train), (x_test, y_test)
 
@@ -618,10 +618,12 @@ class QueryUtils:
 class CnnAbs:
 
     logger = None
-    basePath = os.getcwd()
-    maraboupyPath = basePath.split('maraboupy', maxsplit=1)[0] + 'maraboupy'
-    marabouPath = basePath.split('Marabou', maxsplit=1)[0] + 'Marabou'
-    dumpBoundsDir = maraboupyPath + '/evaluation/bounds'
+    cwdPath = os.getcwd()
+    marabouPath = cwdPath.split('Marabou', maxsplit=1)[0] + 'Marabou' if '/Marabou/' in (cwdPath + '/') else  cwdPath + '/Marabou'
+    maraboupyPath = marabouPath + '/maraboupy'
+    basePath = os.path.abspath(maraboupyPath)
+    
+    dumpBoundsDir = basePath + '/evaluation/bounds'
     resultsFile = 'Results'
     resultsFileBrief = 'ResultsBrief'
 
@@ -635,7 +637,7 @@ class CnnAbs:
     # network : DNN name.
     # propagateFromFile : read propagated bounds from file instead of calculation on the fly.
     def __init__(self, ds='mnist', options=None, logDir='', gtimeout=7200, policy=None, abstractFirst=False, network='', propagateFromFile=False):
-        logDir = "/".join(filter(None, [CnnAbs.maraboupyPath, logDir]))
+        logDir = "/".join(filter(None, [CnnAbs.basePath, logDir]))
         self.ds = DataSet(ds)
         self.options = Marabou.createOptions(**options)
         self.logDir = logDir if logDir.endswith("/") else logDir + "/"

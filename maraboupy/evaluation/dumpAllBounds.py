@@ -1,3 +1,5 @@
+# Used to dump bounds for no-Gurobi mode. Should not be used by user.
+
 import json
 import os
 import copy
@@ -30,12 +32,12 @@ else:
 
 options = dict(verbosity=0, timeoutInSeconds=800, milpTightening='lp', dumpBounds=True, tighteningStrategy='sbt', milpSolverTimeout=100)
 
-logDir="/".join([CnnAbs.maraboupyPath, "logs_CnnAbs", 'dumpedJson{}{}{}'.format(args.net, args.sample, str(args.distance).replace('.','-'))]) + "/"
+logDir="/".join([CnnAbs.basePath, "logs_CnnAbs", 'dumpedJson{}{}{}'.format(args.net, args.sample, str(args.distance).replace('.','-'))]) + "/"
 os.makedirs(logDir, exist_ok=True)
 modelUtils = ModelUtils(DataSet('mnist'), Marabou.createOptions(**options), logDir)
 
 for network in networks:
-    modelTF = modelUtils.loadModel('/'.join([CnnAbs.maraboupyPath, 'evaluation', network]))
+    modelTF = modelUtils.loadModel('/'.join([CnnAbs.basePath, 'evaluation', network]))
     model = modelUtils.tf2Model(modelTF)
     for sampleIndex in samples:
         for distance in distances:

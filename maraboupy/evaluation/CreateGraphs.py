@@ -13,6 +13,8 @@ cactiMarkerSize = 1300
 legendMarkerSize = 20
 
 matplotlib.rc('font', **font)
+
+# Save json with data as name.
 def dumpJson(data, name, dumpDir=''):
     if dumpDir and not dumpDir.endswith('/'):
         dumpDir += '/'
@@ -22,6 +24,7 @@ def dumpJson(data, name, dumpDir=''):
     with open(dumpDir + name, "w") as f:
         json.dump(data, f, indent = 4)
 
+# Load json named name.
 def loadJson(name, loadDir=''):
     if loadDir and not loadDir.endswith('/'):
         loadDir += '/'
@@ -30,11 +33,12 @@ def loadJson(name, loadDir=''):
     with open(os.path.abspath(loadDir) + name, "r") as f:
         return json.load(f)
 
+# Set figure graph.
 def setFigSize(w=12, h=9):
     figure = plt.gcf()
     figure.set_size_inches(w, h)
 
-
+# plot Figures.
 def cactusTotal(queries, policy, loadDir, dumpDir):
     plt.figure()
     plt.grid(True)    
@@ -161,6 +165,7 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
     plt.savefig(dumpDir + "Fig8.png", bbox_inches="tight", dpi=100)
     plt.close()
 
+# Plot policy comparison figures.
 def comparePolicies(loadDir, dumpDir):
     policies = ['AllSamplesRank', 'Centered', 'MajorityClassVote', 'Random', 'SampleRank', 'SingleClassRank']
     policyLabel = {'AllSamplesRank': 'All Samples', 'Centered':'Centered', 'MajorityClassVote':'Majority Class Vote', 'Random':'Random', 'SampleRank':'Sample Rank', 'SingleClassRank':'Single Class'}
@@ -274,6 +279,7 @@ def histograms(queries, policy, loadDir, dumpDir):
     dumpJson(histUtilNumRuns(queries, policy, 'NumRunsHistogramSAT'), 'Fig15SAT', dumpDir=dumpDir)
     dumpJson(histUtilNumRuns(queries, policy, 'NumRunsHistogramUNSAT'), 'Fig15UNSAT', dumpDir=dumpDir)
 
+# Get Average results of runs.
 def getAverageResult(queries, policy, loadDir, dumpDir):
     solvedPolicy = []
     solvedVanilla = []
@@ -297,9 +303,9 @@ def getAverageResult(queries, policy, loadDir, dumpDir):
     jsonDict['ratioSolvedInstances'] = solvedInstancesPolicy / solvedInstancesVanilla
     dumpJson(jsonDict, 'TotalStatistics', dumpDir=dumpDir)
 
-parser = argparse.ArgumentParser(description='Choose network to train')
-parser.add_argument("--dataDir", type=str, default="", help="directory containing data")
-parser.add_argument("--outputDir", type=str, default="", help="directory to output graphs")
+parser = argparse.ArgumentParser(description='Create graphs for paper.')
+parser.add_argument("--dataDir", type=str, default="", help="directory containing results data")
+parser.add_argument("--outputDir", type=str, default="", help="directory to output paper graphs")
 parser.add_argument("--onlyComparePolicies", dest='onlyComparePolicies', action='store_true' , help="Only plot graphs of policy comparison")
 parser.add_argument("--onlyCnnAbsVsVanilla", dest='onlyCnnAbsVsVanilla', action='store_true' , help="Only plot graphs of CNNAbs Vs Vanilla")
 args = parser.parse_args()
