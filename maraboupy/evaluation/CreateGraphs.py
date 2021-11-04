@@ -55,7 +55,7 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
         color = colors[i]
         marker = markers(net, dist, 'CA')
         label = '{} {}'.format(net, dist)
-        graph = loadJson(query + '/CactusTotalRuntime_pltstep_{}.json'.format(policy), loadDir=loadDir)
+        graph = loadJson('/' + query + '/CactusTotalRuntime_pltstep_{}.json'.format(policy), loadDir=loadDir)
         plt.step(graph['x'], graph['y'], label=label, where='post', color=color, linewidth=2)
         #lines.append(mlines.Line2D([], [], markerfacecolor=color, markeredgecolor='black', marker=marker, markersize=legendMarkerSize, label=label, color=color))
         lines.append(mlines.Line2D([], [], label=label, color=color, linewidth=2))
@@ -67,7 +67,7 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
 
         marker = markers(net, dist, 'VM')        
         label = 'net {} {}'.format(dist, 'Vanilla')
-        graph = loadJson(query + '/CactusTotalRuntime_pltstep_{}.json'.format('Vanilla'), loadDir=loadDir)
+        graph = loadJson('/' + query + '/CactusTotalRuntime_pltstep_{}.json'.format('Vanilla'), loadDir=loadDir)
         plt.step(graph['x'], graph['y'], label=label, where='post', color=color, linestyle='-.', linewidth=2)
 
         if graph['y'][-1] > 0:
@@ -75,15 +75,15 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
         numSolvedVanilla.append(graph['y'][-1])
         medianVanilla.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
 
-        compareProp.append(loadJson(query + '/CompareProperties-Vanilla_vs_{}'.format(policy), loadDir=loadDir))
+        compareProp.append(loadJson('/' + query + '/CompareProperties-Vanilla_vs_{}'.format(policy), loadDir=loadDir))
 
     for i, (query, net, dist) in enumerate(queries):        
-        graph = loadJson(query + '/CactusTotalRuntime_pltstep_{}.json'.format(policy), loadDir=loadDir)
+        graph = loadJson('/' + query + '/CactusTotalRuntime_pltstep_{}.json'.format(policy), loadDir=loadDir)
         marker = markers(net, dist, 'CA')
         plt.scatter(graph['x'][-1], graph['y'][-1], s=coparePoliciesMarkerSize, marker='o', alpha=0.4, facecolor=colors[i], edgecolor='black')
         #plt.scatter(graph['x'][-1], graph['y'][-1], s=cactiMarkerSize, marker=marker, alpha=1, facecolor='black', edgecolor='black')
 
-        graph = loadJson(query + '/CactusTotalRuntime_pltstep_{}.json'.format('Vanilla'), loadDir=loadDir) 
+        graph = loadJson('/' + query + '/CactusTotalRuntime_pltstep_{}.json'.format('Vanilla'), loadDir=loadDir) 
         marker = markers(net, dist, 'VM')
         plt.scatter(graph['x'][-1], graph['y'][-1], s=coparePoliciesMarkerSize, marker='d', alpha=0.4, facecolor=colors[i], edgecolor='black')        
         #plt.scatter(graph['x'][-1], graph['y'][-1], s=cactiMarkerSize, marker=marker, alpha=1, facecolor='black', edgecolor='black')
@@ -215,7 +215,7 @@ def histUtil(queries, policy, name, key, density=True):
     
     valueHistogram = dict() #value -> repeats    
     for i, (query, net, dist) in enumerate(queries):
-        graph = loadJson(query + '/{}-{}.json'.format(name, policy), loadDir=loadDir)
+        graph = loadJson('/' + query + '/{}-{}.json'.format(name, policy), loadDir=loadDir)
         for value, repeat in zip(graph[key], graph['repeats']):
             valueHistogram[value] = repeat + (valueHistogram[value] if value in valueHistogram else 0)
     pairs = sorted(valueHistogram.items())
@@ -227,7 +227,7 @@ def histUtil(queries, policy, name, key, density=True):
 def histUtilNumRuns(queries, policy, name):
     classifyResult = {k : 0 for k in ['LP UNSAT', 'Full Abstraction', 'Partial Abstraction', 'Full Network']}
     for i, (query, net, dist) in enumerate(queries):
-        graph = loadJson(query + '/{}-{}.json'.format(name, policy), loadDir=loadDir)
+        graph = loadJson('/' + query + '/{}-{}.json'.format(name, policy), loadDir=loadDir)
         for value, repeat in zip(graph['numRuns'], graph['repeats']):
             full = graph["totalAbsRefineBatches"]
             if value == 0:
@@ -281,7 +281,7 @@ def getAverageResult(queries, policy, loadDir, dumpDir):
     solvedInstancesPolicy = 0
     solvedInstancesVanilla = 0
     for i, (query, net, dist) in enumerate(queries):
-        solved = loadJson(query + '/solvedSamples.json', loadDir=loadDir)
+        solved = loadJson('/' + query + '/solvedSamples.json', loadDir=loadDir)
         resultsPolicy  = solved['totalRuntimes'][policy]
         resultsVanilla = solved['totalRuntimes']['Vanilla']
         solvedInstancesPolicy  += len(set(resultsPolicy.keys()))
