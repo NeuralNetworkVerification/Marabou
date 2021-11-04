@@ -10,7 +10,7 @@ from CnnAbs import CnnAbs
 
 graphDirBase = 'CnnAbsVsVanilla'
 parser = argparse.ArgumentParser(description='Create results of both experiments from existing results.')
-parser.add_argument("--results", type=str, default='', required=True, help="Directory to put output results plots")
+parser.add_argument("--results", type=str, default='', required=False, help="Directory to put output results plots")
 parser.add_argument("--logs", type=str, default='', required=True, help="Directory to in which result logs tree reside")
 
 args = parser.parse_args()

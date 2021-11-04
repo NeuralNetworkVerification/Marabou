@@ -619,7 +619,7 @@ class CnnAbs:
 
     logger = None
     cwdPath = os.getcwd()
-    marabouPath = cwdPath.split('Marabou', maxsplit=1)[0] + 'Marabou' if '/Marabou/' in (cwdPath + '/') else  cwdPath + '/Marabou'
+    marabouPath = cwdPath.split('Marabou', maxsplit=1)[0] + 'Marabou' if '/Marabou/' in (cwdPath + '/') else  os.path.abspath(cwdPath + '/../Marabou')
     maraboupyPath = marabouPath + '/maraboupy'
     basePath = marabouPath + '/CnnAbsFiles'
     
