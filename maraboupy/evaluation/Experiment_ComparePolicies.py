@@ -23,3 +23,7 @@ resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --
 print('Executing {}'.format(resultsParserCmd))
 subprocess.run(resultsParserCmd.split(' '))
 os.chdir(cwd)
+createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyComparePolicies'.format(CnnAbs.maraboupyPath, CnnAbs.maraboupyPath + '/graphs', CnnAbs.maraboupyPath + '/Results')
+print('Executing {}'.format(createGraphCmd))
+subprocess.run(createGraphCmd.split(' '))
+
