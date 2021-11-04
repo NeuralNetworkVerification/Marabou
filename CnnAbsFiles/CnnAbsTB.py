@@ -90,8 +90,8 @@ CnnAbs.printLog("Finished model building")
 
 result, cex = cnnAbs.solveAdversarial(modelTF, cfg_abstractionPolicy, cfg_sampleIndex, cfg_distance)
 cexFile = cnnAbs.logDir + 'finalCEX.npy'
-print('Result={}')
+print('Result={}'.format(result))
 if result.lower() == 'sat':
-    print('cex at {}'.format(result, cexFile))    
+    print('cex at {}'.format(cexFile))
     cnnAbs.dumpNpArray(cex, 'finalCEX')
 CnnAbs.printLog("Log files at {}".format(cnnAbs.logDir))
