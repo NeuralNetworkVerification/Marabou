@@ -322,7 +322,7 @@ parser.add_argument("--dataDir", type=str, default="", help="directory containin
 parser.add_argument("--outputDir", type=str, default="", help="directory to output paper graphs")
 parser.add_argument("--onlyComparePolicies", dest='onlyComparePolicies', action='store_true' , help="Only plot graphs of policy comparison")
 parser.add_argument("--onlyCnnAbsVsVanilla", dest='onlyCnnAbsVsVanilla', action='store_true' , help="Only plot graphs of CNNAbs Vs Vanilla")
-parser.add_argument("--gtimeout", type=int, default="", help="GTIMEOUT value")
+parser.add_argument("--gtimeout", type=int, default=3600, help="GTIMEOUT value")
 args = parser.parse_args()
     
 queries = [('A_0-03', 'A', 0.03), ('A_0-02', 'A', 0.02), ('A_0-01', 'A', 0.01), ('B_0-03', 'B', 0.03), ('B_0-02', 'B', 0.02), ('B_0-01', 'B', 0.01), ('C_0-03', 'C', 0.03), ('C_0-02', 'C', 0.02), ('C_0-01', 'C', 0.01)]

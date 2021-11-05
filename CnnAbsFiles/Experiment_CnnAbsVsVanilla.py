@@ -43,7 +43,7 @@ for net, dist in itertools.product(networks, distances):
     subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
     os.chdir(cwd)
     
-createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyCnnAbsVsVanilla'.format(CnnAbs.basePath, CnnAbs.basePath + '/graphs', outputDir)
+createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyCnnAbsVsVanilla --gtimeout {}'.format(CnnAbs.basePath, CnnAbs.basePath + '/graphs', outputDir, args.gtimeout)
 print('Executing {}'.format(createGraphCmd))
 subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 

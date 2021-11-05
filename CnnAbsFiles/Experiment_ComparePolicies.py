@@ -34,7 +34,7 @@ resultsParserCmd ='python3 {}/evaluation/resultsParser.py --graph_dir_name {} --
 print('Executing {}'.format(resultsParserCmd))
 subprocess.run(resultsParserCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 os.chdir(cwd)
-createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyComparePolicies'.format(CnnAbs.basePath, CnnAbs.basePath + '/graphs', outputDir)
+createGraphCmd = 'python3 {}/evaluation/CreateGraphs.py --dataDir {} --outputDir {} --onlyComparePolicies --gtimeout {}'.format(CnnAbs.basePath, CnnAbs.basePath + '/graphs', outputDir, args.gtimeout)
 print('Executing {}'.format(createGraphCmd))
 subprocess.run(createGraphCmd.split(' '), stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
