@@ -39,7 +39,7 @@ def setFigSize(w=12, h=9):
     figure.set_size_inches(w, h)
 
 # plot Figures.
-def cactusTotal(queries, policy, loadDir, dumpDir):
+def cactusTotal(queries, policy, loadDir, dumpDir, gtimeout=3600):
     plt.figure()
     plt.grid(True)    
     lines = []
@@ -122,7 +122,12 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
     dictTimeout = {cnt : 0 for cnt in ['totalSat', 'totalUnsat', 'timeoutPolicySatVanilla', 'timeoutPolicyUnsatVanilla', 'timeoutVanillaSatPolicy', 'timeoutVanillaUnsatPolicy']}
     for graph in compareProp:
         x, y, marker, color = graph.values()
+        print(x, y, marker, color)
         for _x, _y, _m, _c in zip(x, y, marker, color):
+            if _x > gtimeout:
+                _x = gtimeout
+            if _y > gtimeout:
+                _y = gtimeout                
             if _m == 'X':
                 dictTimeout['totalSat'] += 1
             if _m == 'o':
@@ -132,16 +137,16 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
             elif _m == 'X' and _c != 'red':
                 _m = '*'
                 _c = 'red'
-                assert (_x == 3600 or _y == 3600) and _y != _x
-                if _x == 3600:
+                assert (_x == gtimeout or _y == gtimeout) and _y != _x
+                if _x == gtimeout:
                     dictTimeout['timeoutVanillaSatPolicy'] += 1
                 else:
                     dictTimeout['timeoutPolicySatVanilla'] += 1
             elif _m == 'o' and _c != 'green':
                 _m = 's'
                 _c = 'green'
-                assert (_x == 3600 or _y == 3600) and _y != _x
-                if _x == 3600:
+                assert (_x == gtimeout or _y == gtimeout) and _y != _x
+                if _x == gtimeout:
                     dictTimeout['timeoutVanillaUnsatPolicy'] += 1
                 else:
                     dictTimeout['timeoutPolicyUnsatVanilla'] += 1                
@@ -149,8 +154,8 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
 
     dumpJson(dictTimeout, 'Fig8CountResultTypes', dumpDir=dumpDir)
     bottom = 1
-    top = 3600
-    axisTop = 2 * 3600
+    top = gtimeout
+    axisTop = 2 * gtimeout
     plt.plot([bottom, top], [bottom, top], color='orange', linestyle='-', linewidth=2)
     plt.plot([bottom, top], [top   , top], color='orange', linestyle=':', linewidth=2)
     plt.plot([top,    top], [bottom, top], color='orange', linestyle=':', linewidth=2)
@@ -161,8 +166,8 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
     plt.yscale('log')    
     plt.xlabel("Vanilla Runtime [sec]")
     plt.ylabel("Single Class Runtime [sec]")
-    plt.text(80,4000, 'TIMEOUT=3600s', color='orange')
-    plt.text(4000, 5,'TIMEOUT=3600s', color='orange', rotation=270)
+    plt.text(80,4000, 'TIMEOUT={}s'.format(gtimeout), color='orange')
+    plt.text(4000, 5,'TIMEOUT={}s'.format(gtimeout), color='orange', rotation=270)
     lines = [mlines.Line2D([], [], markerfacecolor='none', markeredgecolor=c, marker=m, markersize=legendMarkerSize, label=l, color=c) for l,m,c in [('SAT-SAT','X', 'r'), ('SAT-TIMEOUT','*', 'r'), ('UNSAT-UNSAT','o', 'g'), ('UNSAT-TIMEOUT','s', 'g')]]#, ('TIMEOUT-TIMEOUT','d', 'orange')]]
     plt.legend(handles=lines)  
     setFigSize()
@@ -317,6 +322,7 @@ parser.add_argument("--dataDir", type=str, default="", help="directory containin
 parser.add_argument("--outputDir", type=str, default="", help="directory to output paper graphs")
 parser.add_argument("--onlyComparePolicies", dest='onlyComparePolicies', action='store_true' , help="Only plot graphs of policy comparison")
 parser.add_argument("--onlyCnnAbsVsVanilla", dest='onlyCnnAbsVsVanilla', action='store_true' , help="Only plot graphs of CNNAbs Vs Vanilla")
+parser.add_argument("--gtimeout", type=int, default="", help="GTIMEOUT value")
 args = parser.parse_args()
     
 queries = [('A_0-03', 'A', 0.03), ('A_0-02', 'A', 0.02), ('A_0-01', 'A', 0.01), ('B_0-03', 'B', 0.03), ('B_0-02', 'B', 0.02), ('B_0-01', 'B', 0.01), ('C_0-03', 'C', 0.03), ('C_0-02', 'C', 0.02), ('C_0-01', 'C', 0.01)]
@@ -326,7 +332,7 @@ dumpDir = args.outputDir if args.outputDir.endswith('/') or not args.outputDir e
 loadDir = args.dataDir   if args.dataDir.endswith('/')   or not args.dataDir   else args.dataDir + '/'
 
 if not args.onlyComparePolicies:
-    cactusTotal(queries, policy, loadDir, dumpDir)
+    cactusTotal(queries, policy, loadDir, dumpDir, gtimeout=args.gtimeout)
     histograms(queries, policy, loadDir, dumpDir)
     getAverageResult(queries, policy, loadDir, dumpDir)
 

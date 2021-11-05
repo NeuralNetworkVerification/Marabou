@@ -703,7 +703,14 @@ class CnnAbs:
             return self.returnGtimeout()
         CnnAbs.printLog("Finished dumping bounds - used for abstraction")
         endBoundTightening = time.time()
-        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening        
+        self.resultsJson["boundTighteningRuntime"] = endBoundTightening - startBoundTightening
+        
+        absRefineBatches = self.abstractionRefinementBatches(model, modelTF, policy, property)
+        self.numSteps = len(absRefineBatches)
+        self.resultsJson["absRefineBatches"] = self.numSteps
+        
+        self.dumpResultsJson()
+        
         if not feasible:
             self.resultsJson["SAT"] = False
             self.resultsJson["Result"] = "UNSAT"
@@ -720,9 +727,9 @@ class CnnAbs:
         self.modelUtils.options._dumpBounds = False        
         originalQueryStats = self.dumpQueryStats(model, "originalQueryStats_" + generalRunName)        
         successful = None
-        absRefineBatches = self.abstractionRefinementBatches(model, modelTF, policy, property)
-        self.numSteps = len(absRefineBatches)
-        self.resultsJson["absRefineBatches"] = self.numSteps
+#        absRefineBatches = self.abstractionRefinementBatches(model, modelTF, policy, property)
+#        self.numSteps = len(absRefineBatches)
+#        self.resultsJson["absRefineBatches"] = self.numSteps
         self.dumpResultsJson()
 
         CnnAbs.printLog("Abstraction-refinement steps up to full network = {}".format(len(absRefineBatches)))

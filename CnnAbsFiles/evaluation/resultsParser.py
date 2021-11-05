@@ -169,7 +169,10 @@ def plotCOIRatio(resultDict):
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))    
     solved = [k for k,v in resultDict.items() if k != 'label' and v["result"] in ["UNSAT", "SAT"]]
     x  = [resultDict[xparam]["finalPartiallity"]["numRuns"]   for xparam in solved]
-    totalAbsRefineBatches = next(resultDict[xparam]["finalPartiallity"]["outOf"] for xparam in solved if "outOf" in resultDict[xparam]["finalPartiallity"])
+    if "absRefineBatches" in resultDict[solved[0]]:
+        totalAbsRefineBatches = resultDict[solved[0]]["absRefineBatches"]
+    else:
+        totalAbsRefineBatches = next(resultDict[xparam]["finalPartiallity"]["outOf"] for xparam in solved if "outOf" in resultDict[xparam]["finalPartiallity"])
     y1 = [resultDict[xparam]["finalPartiallity"]["vars"]      for xparam in solved]
     y2 = [resultDict[xparam]["finalPartiallity"]["equations"] for xparam in solved]
     results = [resultDict[xparam]["result"] for xparam in solved]
