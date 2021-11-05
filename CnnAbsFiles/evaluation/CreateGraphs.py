@@ -67,7 +67,10 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
         if graph['y'][-1] > 0:
             avgPolicy.append(round(graph['x'][-1] / graph['y'][-1]))
         numSolvedPolicy.append(graph['y'][-1])
-        medianPolicy.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
+        if len(graph['x']) > 1:
+            medianPolicy.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
+        else:
+            medianPolicy.append(-1)
 
         marker = markers(net, dist, 'VM')        
         label = 'net {} {}'.format(dist, 'Vanilla')
@@ -77,7 +80,10 @@ def cactusTotal(queries, policy, loadDir, dumpDir):
         if graph['y'][-1] > 0:
             avgVanilla.append(round(graph['x'][-1] / graph['y'][-1]))
         numSolvedVanilla.append(graph['y'][-1])
-        medianVanilla.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
+        if len(graph['x']) > 1:        
+            medianVanilla.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
+        else:
+            medianVanilla.append(-1)
 
         compareProp.append(loadJson('/' + query + '/CompareProperties-Vanilla_vs_{}'.format(policy), loadDir=loadDir))
 
@@ -184,7 +190,10 @@ def comparePolicies(loadDir, dumpDir):
         if graph['y'][-1] > 0:
             avgRuntime.append(round(graph['x'][-1] / graph['y'][-1]))
         numSolved.append(graph['y'][-1])
-        medians.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
+        if len(graph['x']) > 1:
+            medians.append(round(statistics.median([b - a for a,b in zip(graph['x'][:-1], graph['x'][1:])])))
+        else:
+            medians.append(-1)
     jsonDict = dict()
     jsonDict['avgRuntime'] = {policy : avg for policy,avg in zip(policies, avgRuntime)}
     jsonDict['solvedInstances'] = {policy : solved for policy,solved in zip(policies, numSolved)}
@@ -298,8 +307,8 @@ def getAverageResult(queries, policy, loadDir, dumpDir):
             solvedVanilla.append(resultsVanilla[sample])
 
     jsonDict = dict()
-    jsonDict['avgRatio'] = statistics.mean(ratio)
-    jsonDict['medianRatio'] = statistics.median(ratio)
+    jsonDict['avgRatio'] = statistics.mean(ratio) if ratio else ''
+    jsonDict['medianRatio'] = statistics.median(ratio) if ratio else ''
     jsonDict['ratioSolvedInstances'] = solvedInstancesPolicy / solvedInstancesVanilla
     dumpJson(jsonDict, 'TotalStatistics', dumpDir=dumpDir)
 
