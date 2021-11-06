@@ -2,7 +2,7 @@
 /*! \file CDSmtCore.h
  ** \verbatim
  ** Top contributors (to current version):
- **   AleksandarZeljic, Guy Katz, Parth Shah
+ **   Guy Katz, AleksandarZeljic,  Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -15,7 +15,6 @@
  ** class. The exhaustive search relies on correct implementation of the
  ** isFeasible()/nextFeasibleCase() methods in PiecewiseLinearConstraint class.
  **
- ** TODO: Incremental frames
  **/
 
 #ifndef __CDSmtCore_h__
