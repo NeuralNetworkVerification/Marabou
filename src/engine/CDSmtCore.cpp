@@ -306,16 +306,9 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
         }
         else
         {
-            // If the active split is non-compliant but there are alternatives, that's fine
+            // If the active split is non-compliant but there are alternatives, i.e. it was a decision, that's fine
             if ( isDecision && !splitAllowsStoredSolution( caseSplit, error ) )
             {
-                if ( !trailEntry.isFeasible() )
-                {
-                    printf( "Error! Have a split that is non-compliant with the stored solution, "
-                            "without alternatives:\n\t%s\n", error.ascii() );
-                    throw MarabouError( MarabouError::DEBUGGING_ERROR );
-                }
-
                 // Active split is non-compliant but this is fine, because there are alternatives. We're done.
                 return false;
             }
