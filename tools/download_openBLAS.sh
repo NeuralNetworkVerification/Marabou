@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/bash -e
+
 curdir=$pwd
 mydir="${0%/*}"
 
