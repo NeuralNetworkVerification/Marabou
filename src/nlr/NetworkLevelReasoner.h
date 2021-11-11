@@ -178,11 +178,6 @@ public:
 
     const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
 
-    /*
-      Chech bound violations of all variables
-    */
-    void checkBoundsViolations();
-
 private:
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;

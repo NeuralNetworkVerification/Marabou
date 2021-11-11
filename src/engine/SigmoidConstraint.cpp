@@ -77,11 +77,15 @@ void SigmoidConstraint::restoreState( const TranscendentalConstraint *state )
 
 void SigmoidConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    ASSERT( variable == _b || variable == _f );
+
     _assignment[variable] = value;
 }
 
 void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
 {
+    ASSERT( variable == _b || variable == _f );
+
     if ( _statistics )
         _statistics->incNumBoundNotificationsTranscendentalConstraints();
 
@@ -89,10 +93,20 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
         return;
 
     setLowerBound( variable, bound );
+
+    if ( _constraintBoundTightener )
+    {
+        if ( variable == _f )
+            _constraintBoundTightener->registerTighterLowerBound( _b, sigmoidInverse(bound) );
+        else if ( variable == _b )
+            _constraintBoundTightener->registerTighterLowerBound( _f, sigmoid(bound) );
+    }
 }
 
 void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    ASSERT( variable == _b || variable == _f );
+
     if ( _statistics )
         _statistics->incNumBoundNotificationsTranscendentalConstraints();
 
@@ -100,6 +114,14 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
         return;
 
     setUpperBound( variable, bound );
+
+    if ( _constraintBoundTightener )
+    {
+        if ( variable == _f )
+            _constraintBoundTightener->registerTighterLowerBound( _b, sigmoidInverse(bound) );
+        else if ( variable == _b )
+            _constraintBoundTightener->registerTighterLowerBound( _f, sigmoid(bound) );
+    }
 }
 
 bool SigmoidConstraint::participatingVariable( unsigned variable ) const
@@ -121,8 +143,8 @@ void SigmoidConstraint::dump( String &output ) const
                        existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
     output += Stringf( "f in [%s, %s]",
-                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
-                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
+                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "1",
+                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
 }
 
 void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -161,6 +183,8 @@ void SigmoidConstraint::eliminateVariable( __attribute__((unused)) unsigned vari
                                         __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
+
+    // In a Sigmoid constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
 }
 
@@ -199,4 +223,15 @@ unsigned SigmoidConstraint::getB() const
 unsigned SigmoidConstraint::getF() const
 {
     return _f;
+}
+
+double SigmoidConstraint::sigmoid( double x )
+{
+    return 1 / ( 1 + std::exp( -x ) );
+}
+
+double SigmoidConstraint::sigmoidInverse( double y )
+{
+    ASSERT( y != 1 );
+    return log( y / ( 1 - y ) );
 }

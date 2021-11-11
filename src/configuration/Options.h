@@ -55,10 +55,7 @@ public:
         SOLVE_WITH_MILP,
 
         // Whether to call a LP tightening after a case split
-        SKIP_LP_TIGHTENING_AFTER_SPLIT,
-
-        // Whether to check bound violations before solving
-        CHECK_BOUNDS_BEFORE_SOLVE
+        SKIP_LP_TIGHTENING_AFTER_SPLIT
     };
 
     enum IntOptions {

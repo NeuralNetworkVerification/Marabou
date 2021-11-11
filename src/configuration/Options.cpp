@@ -48,7 +48,6 @@ void Options::initializeDefaultValues()
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
     _boolOptions[SKIP_LP_TIGHTENING_AFTER_SPLIT] = false;
-    _boolOptions[CHECK_BOUNDS_BEFORE_SOLVE] = false;
 
     /*
       Int options

@@ -58,22 +58,6 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
                                 "Only ReLU and Max are supported\n" );
         }
     }
-
-    // TODO: 
-    // // Add Transcendental Constraints
-    // for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
-    // {
-    //     switch ( tsConstraint->getType() )
-    //     {
-    //     case TranscendentalFunctionType::SIGMOID:
-    //         encodeSigmoidConstraint( gurobi, (SigmoidConstraint *)tsConstraint );
-    //         break;
-    //     default:
-    //         throw MarabouError( MarabouError::UNSUPPORTED_Transcendental_LINEAR_CONSTRAINT,
-    //                             "GurobiWrapper::encodeInputQuery: "
-    //                             "Only Sigmoid is supported\n" );
-    //     }
-    // }
 }
 
 String MILPEncoder::getVariableNameFromVariable( unsigned variable )
@@ -203,8 +187,3 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     }
     _binVarIndex++;
 }
-
-// TODO: 
-// void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid )
-// {
-// }

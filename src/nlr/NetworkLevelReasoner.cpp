@@ -290,26 +290,6 @@ void NetworkLevelReasoner::dumpTopology() const
         layer.second->dump();
 }
 
-void NetworkLevelReasoner::checkBoundsViolations()
-{
-    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
-    {
-        for ( unsigned j = 0; j < getLayer( i )->getSize(); j++ )
-        {
-            if ( FloatUtils::gt( getLayer( i )->getLb( j ),
-                                    getLayer( i )->getUb( j ),
-                                    GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-            {
-                printf( "Violation at Neuron_%u of Layer_%u - LB:%5.2lf, UB:%5.2lf\n",
-                    j, i,
-                    getLayer( i )->getLb( j ),
-                    getLayer( i )->getUb( j ) );
-                throw InfeasibleQueryException();
-            }
-        }
-    }
-}
-
 unsigned NetworkLevelReasoner::getNumberOfLayers() const
 {
     return _layerIndexToLayer.size();

@@ -69,8 +69,231 @@ public:
 
         TS_ASSERT( sigmoid.participatingVariable( b ) );
         TS_ASSERT( sigmoid.participatingVariable( f ) );
-        TS_ASSERT( !sigmoid.participatingVariable( 2 ) );
         TS_ASSERT( !sigmoid.participatingVariable( 0 ) );
+        TS_ASSERT( !sigmoid.participatingVariable( 2 ) );
+        TS_ASSERT( !sigmoid.participatingVariable( 3 ) );
         TS_ASSERT( !sigmoid.participatingVariable( 5 ) );
+
+        // not obsolete yet
+        TS_ASSERT( !sigmoid.constraintObsolete() );
+
+        // duplicate constraint
+        SigmoidConstraint* sigmoid2 = dynamic_cast<SigmoidConstraint *>( sigmoid.duplicateConstraint() );
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = sigmoid2->getParticipatingVariables() );
+        TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
+        it = participatingVariables.begin();
+        TS_ASSERT_EQUALS( *it, b );
+        ++it;
+        TS_ASSERT_EQUALS( *it, f );
+        TS_ASSERT( sigmoid2->participatingVariable( b ) );
+        TS_ASSERT( sigmoid2->participatingVariable( f ) );
+        TS_ASSERT( !sigmoid2->participatingVariable( 0 ) );
+        TS_ASSERT( !sigmoid2->participatingVariable( 2 ) );
+        TS_ASSERT( !sigmoid2->participatingVariable( 3 ) );
+        TS_ASSERT( !sigmoid2->participatingVariable( 5 ) );
+
+        // eliminate variable b
+        sigmoid.eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+
+        // sigmoid is obsolete now
+        TS_ASSERT( sigmoid.constraintObsolete() );
+
+        // sigmoid2 is not obsolete
+        TS_ASSERT( !sigmoid2->constraintObsolete() );
+    }
+
+    void test_sigmoid_notify_bounds()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        SigmoidConstraint sigmoid( b, f );
+
+        sigmoid.notifyLowerBound( b, -1.0 );
+        sigmoid.notifyLowerBound( f, 0.268 );
+        sigmoid.notifyUpperBound( b, 1.0 );
+        sigmoid.notifyUpperBound( f, 0.731 );
+
+        List<Tightening> tightenings;
+        sigmoid.getEntailedTightenings( tightenings );
+
+        auto it = tightenings.begin();
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -1.0 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0.268 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1.0 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0.731 );
+
+
+        // call notifyLowerBound and notifyUppderBound, but bounds aren't updated.
+        sigmoid.notifyLowerBound( b, -2.0 );
+        sigmoid.notifyLowerBound( f, 0.119 );
+        sigmoid.notifyUpperBound( b, 2.0 );
+        sigmoid.notifyUpperBound( f, 0.880 );
+
+        List<Tightening> tightenings2;
+        sigmoid.getEntailedTightenings( tightenings2 );
+
+        it = tightenings2.begin();
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -1.0 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0.268 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1.0 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0.731 );
+
+
+        // call notifyLowerBound and notifyUppderBound, and bounds are updated.
+        sigmoid.notifyLowerBound( b, -0.5 );
+        sigmoid.notifyLowerBound( f, 0.377 );
+        sigmoid.notifyUpperBound( b, 0.5 );
+        sigmoid.notifyUpperBound( f, 0.622 );
+
+        List<Tightening> tightenings3;
+        sigmoid.getEntailedTightenings( tightenings3 );
+
+        it = tightenings3.begin();
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -0.5 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0.377 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 0.5 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 0.622 );
+    }
+
+    void test_sigmoid_update_variable_index()
+    {
+        unsigned b = 0;
+        unsigned f = 1;
+        unsigned new_b = 2;
+        unsigned new_f = 3;
+
+        SigmoidConstraint sigmoid( b, f );
+
+        List<unsigned> participatingVariables;
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = sigmoid.getParticipatingVariables() );
+        TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
+        auto it = participatingVariables.begin();
+        TS_ASSERT_EQUALS( *it, b );
+        ++it;
+        TS_ASSERT_EQUALS( *it, f );
+
+        TS_ASSERT( sigmoid.participatingVariable( b ) );
+        TS_ASSERT( sigmoid.participatingVariable( f ) );
+        TS_ASSERT( !sigmoid.participatingVariable( new_b ) );
+        TS_ASSERT( !sigmoid.participatingVariable( new_f ) );
+
+        sigmoid.notifyLowerBound( b, -1.0 );
+        sigmoid.notifyLowerBound( f, 0.268 );
+        sigmoid.notifyUpperBound( b, 1.0 );
+        sigmoid.notifyUpperBound( f, 0.731 );
+
+
+        // update variable index
+        sigmoid.updateVariableIndex( b, new_b );
+        sigmoid.updateVariableIndex( f, new_f );
+
+        TS_ASSERT( !sigmoid.participatingVariable( b ) );
+        TS_ASSERT( !sigmoid.participatingVariable( f ) );
+        TS_ASSERT_EQUALS( sigmoid.getB(), new_b );
+        TS_ASSERT_EQUALS( sigmoid.getF(), new_f );
+        TS_ASSERT( sigmoid.participatingVariable( new_b ) );
+        TS_ASSERT( sigmoid.participatingVariable( new_f ) );
+
+        List<Tightening> tightenings;
+        sigmoid.getEntailedTightenings( tightenings );
+
+        auto it2 = tightenings.begin();
+        TS_ASSERT_EQUALS( it2->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it2->_variable, new_b );
+        TS_ASSERT_EQUALS( it2->_value, -1.0 );
+
+        ++it2;
+        TS_ASSERT_EQUALS( it2->_type, Tightening::LB );
+        TS_ASSERT_EQUALS( it2->_variable, new_f );
+        TS_ASSERT_EQUALS( it2->_value, 0.268 );
+
+        ++it2;
+        TS_ASSERT_EQUALS( it2->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it2->_variable, new_b );
+        TS_ASSERT_EQUALS( it2->_value, 1.0 );
+
+        ++it2;
+        TS_ASSERT_EQUALS( it2->_type, Tightening::UB );
+        TS_ASSERT_EQUALS( it2->_variable, new_f );
+        TS_ASSERT_EQUALS( it2->_value, 0.731 );
+    }
+
+    void test_sigmoid_serialize()
+    {
+        unsigned b = 0;
+        unsigned f = 1;
+
+        SigmoidConstraint sigmoid( b, f );
+    
+        String serializedString = sigmoid.serializeToString();
+
+        SigmoidConstraint serializedSigmooid( serializedString.ascii() );
+
+        TS_ASSERT_EQUALS( serializedSigmooid.getB(), b );
+        TS_ASSERT_EQUALS( serializedSigmooid.getF(), f );
+    }
+
+    void test_sigmoid_restore()
+    {
+        unsigned b_1 = 0;
+        unsigned f_1 = 1;
+        unsigned b_2 = 2;
+        unsigned f_2 = 3;
+
+        SigmoidConstraint sigmoid1( b_1, f_1 );
+        TS_ASSERT_EQUALS( sigmoid1.getB(), b_1 );
+        TS_ASSERT_EQUALS( sigmoid1.getF(), f_1 );
+
+        SigmoidConstraint sigmoid2( b_2, f_2 );
+        TS_ASSERT_EQUALS( sigmoid2.getB(), b_2 );
+        TS_ASSERT_EQUALS( sigmoid2.getF(), f_2 );
+        
+        // restore
+        sigmoid1.restoreState( &sigmoid2 );
+        TS_ASSERT_EQUALS( sigmoid1.getB(), b_2 );
+        TS_ASSERT_EQUALS( sigmoid1.getF(), f_2 );        
     }
 };

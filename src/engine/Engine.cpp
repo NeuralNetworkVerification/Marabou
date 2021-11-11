@@ -145,6 +145,10 @@ void Engine::exportInputQueryWithError( String errorMessage )
 
 bool Engine::solve( unsigned timeoutInSeconds )
 {
+    // TODO: Remove this block after getting ready to support sigmoid with MILP.
+    if ( _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid for solve yet." );
+
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -1183,9 +1187,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
 
-        // check bound violations of all variables
-        if ( Options::get()->getBool( Options::CHECK_BOUNDS_BEFORE_SOLVE ) )
-            _networkLevelReasoner->checkBoundsViolations();
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            throw InfeasibleQueryException();
+        }
 
     }
     catch ( const InfeasibleQueryException & )
@@ -1209,9 +1215,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 }
         });
 
-    // TODO: Remove this block after getting ready to support sigmoid with MILP.
-    if ( _exitCode != Engine::UNSAT && inputQuery.getTranscendentalConstraints().size() > 0 )
-        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid except some UNSAT cases yet." );
+    // // TODO: Remove this block after getting ready to support sigmoid with MILP.
+    // if ( _exitCode != Engine::UNSAT && inputQuery.getTranscendentalConstraints().size() > 0 )   // TG: may move it to solve method
+    //     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid except some UNSAT cases yet." );
 
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;

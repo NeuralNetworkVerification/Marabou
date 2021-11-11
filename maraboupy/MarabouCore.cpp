@@ -190,7 +190,6 @@ struct MarabouOptions {
         , _restoreTreeStates( Options::get()->getBool( Options::RESTORE_TREE_STATES ) )
         , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _dumpBounds( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-        , _checkBoundsBeforeSolve( Options::get()->getBool( Options::CHECK_BOUNDS_BEFORE_SOLVE ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
@@ -216,8 +215,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
-    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit );
-    Options::get()->setBool( Options::CHECK_BOUNDS_BEFORE_SOLVE, _checkBoundsBeforeSolve ); 
+    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit ); 
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -245,7 +243,6 @@ struct MarabouOptions {
     bool _solveWithMILP;
     bool _dumpBounds;
     bool _skipLpTighteningAfterSplit;
-    bool _checkBoundsBeforeSolve;
     unsigned _numWorkers;
     unsigned _initialTimeout;
     unsigned _initialDivides;
@@ -387,8 +384,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit)
-        .def_readwrite("_checkBoundsBeforeSolve", &MarabouOptions::_checkBoundsBeforeSolve);
+        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.

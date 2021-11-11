@@ -96,6 +96,17 @@ public:
 private:
     unsigned _b, _f; 
     bool _haveEliminatedVariables;
+
+    /*
+      Compute the sigmoid function.
+    */
+    double sigmoid( double x );
+
+    /*
+      Compute the inverse of the sigmoid function.
+    */
+    double sigmoidInverse( double y );
+
 };
 
 #endif // __SigmoidConstraint_h__
