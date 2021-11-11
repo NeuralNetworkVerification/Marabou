@@ -2,7 +2,7 @@
 /*! \file CDSmtCore.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, AleksandarZeljic,  Parth Shah
+ **   Guy Katz, AleksandarZeljic, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -108,7 +108,7 @@ public:
     bool needToSplit() const;
 
     /*
-       Push TrailEntry representing the decision onto the trail. 
+       Push TrailEntry representing the decision onto the trail.
      */
     void pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision );
 
@@ -119,7 +119,7 @@ public:
 
     /*
         Pushes trail entry onto trail, handles decision book-keeping and
-        Update bounds and add equations to the engine.
+        update bounds and add equations to the engine.
      */
     void applyTrailEntry( TrailEntry &te, bool isDecision = false );
 
@@ -135,7 +135,7 @@ public:
     void decideSplit( PiecewiseLinearConstraint *constraint );
 
     /*
-       Backtracks fully explored decisions and stores the last (feasible decision
+       Backtracks fully explored decisions and stores the last feasible decision
      */
     bool backtrackToFeasibleDecision( TrailEntry &feasibleDecision );
 
@@ -263,8 +263,6 @@ private:
       Split when some relu has been violated for this many times
     */
     unsigned _constraintViolationThreshold;
-
 };
 
 #endif // __CDSmtCore_h__
-
