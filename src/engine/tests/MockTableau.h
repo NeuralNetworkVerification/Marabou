@@ -595,6 +595,8 @@ public:
     {
         return 0;
     }
+
+    void postContextPopHook() override {}
 };
 
 #endif // __MockTableau_h__

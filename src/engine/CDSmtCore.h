@@ -47,8 +47,9 @@
  **
  ** Since the entire search state is context dependent, backtracking the context
  ** (via popDecisionLevel) backtracks the entire Marabou search state.
- ** The only exception is the labeling of basic/non-basic variables in the tableau,
- ** which may need to be recalculated.
+ ** The only exception is the labeling of basic/non-basic variables in the
+ ** tableau, which may need to be recalculated using Tableau's
+ ** postContextPopHook exposed via Engine.
  **
  ** Implementation relies on:
  **

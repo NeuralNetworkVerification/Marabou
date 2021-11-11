@@ -57,9 +57,9 @@ public:
     virtual void applySnCSplit( PiecewiseLinearCaseSplit split, String queryId ) = 0;
 
     /*
-      Recompute status of basic variables
+      Hook invoked after context pop to update context independent data.
     */
-    virtual void recomputeBasicStatus() = 0;
+    virtual void postContextPopHook() = 0;
 
     /*
       Methods for storing and restoring the state of the engine.

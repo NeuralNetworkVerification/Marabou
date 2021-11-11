@@ -127,9 +127,9 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
-      Recompute status of basic variables
+      Hook invoked after context pop to update context independent data.
     */
-    void recomputeBasicStatus() { _tableau->computeBasicStatus(); };
+    void postContextPopHook() { _tableau->postContextPopHook(); };
 
     /*
       Reset the state of the engine, before solving a new query

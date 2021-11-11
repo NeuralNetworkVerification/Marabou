@@ -173,7 +173,7 @@ bool CDSmtCore::popDecisionLevel( TrailEntry &lastDecision )
     SMT_LOG( "Popping trail ..." );
     lastDecision = _decisions.back();
     _context.pop();
-    _engine->recomputeBasicStatus();
+    _engine->postContextPopHook();
     SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
     return true;
 }
@@ -420,7 +420,7 @@ bool CDSmtCore::pickSplitPLConstraint()
 void CDSmtCore::reset()
 {
     _context.popto( 0 );
-    _engine->recomputeBasicStatus();
+    _engine->postContextPopHook();
     _needToSplit = false;
     _constraintForSplitting = NULL;
     _constraintToViolationCount.clear();
