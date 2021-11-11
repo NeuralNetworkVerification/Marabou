@@ -9,7 +9,10 @@
 ** All rights reserved. See the file COPYING in the top-level source
 ** directory for licensing information.\endverbatim
 **
-** [[ Add lengthier description here ]]
+** TrailEntry represent a case of PiecewiseLinearConstraint asserted on the
+** trail. Current implementation consists of a pointer to the
+** PiecewiseLinearConstraint and the chosen case represented using PhaseStatus
+** enum.
 **/
 
 #ifndef __TrailEntry_h__
@@ -42,7 +45,7 @@ public:
       return _pwlConstraint->isFeasible();
   }
 
- TrailEntry(PiecewiseLinearConstraint * pwlc, PhaseStatus phase )
+ TrailEntry( PiecewiseLinearConstraint *pwlc, PhaseStatus phase )
      : _pwlConstraint( pwlc )
      , _phase( phase )
     {}
@@ -51,11 +54,3 @@ public:
 };
 
 #endif // TrailEntry.h
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
