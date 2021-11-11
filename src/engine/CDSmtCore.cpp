@@ -30,7 +30,7 @@ CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
     : _statistics( NULL )
     , _context( ctx )
     , _trail( &_context )
-    , _decisions( &_context)
+    , _decisions( &_context )
     , _engine( engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
@@ -103,7 +103,7 @@ void CDSmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
         _decisions.push_back( te );
     }
 
-    _trail.push_back(te);
+    _trail.push_back( te );
     _engine->applySplit( te.getPiecewiseLinearCaseSplit() );
 }
 
@@ -117,11 +117,11 @@ void CDSmtCore::decide()
     // TODO: Maintain a vector of constraints above the threshold
     //       Iterate until we find an active one
     if ( !_constraintForSplitting->isActive() )
-        {
-            _needToSplit = false;
-            _constraintToViolationCount[_constraintForSplitting] = 0;
-            _constraintForSplitting = nullptr;
-            return;
+    {
+        _needToSplit = false;
+        _constraintToViolationCount[_constraintForSplitting] = 0;
+        _constraintForSplitting = nullptr;
+        return;
     }
 
     ASSERT( _constraintForSplitting->isActive() );
@@ -155,7 +155,7 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
-    SMT_LOG( "Performing a ReLU split - DONE");
+    SMT_LOG( "Performing a ReLU split - DONE" );
 }
 
 
@@ -191,7 +191,7 @@ PiecewiseLinearCaseSplit CDSmtCore::getDecision( unsigned decisionLevel ) const
 {
     ASSERT( decisionLevel <= getDecisionLevel() );
     ASSERT( decisionLevel > 0 );
-    return _decisions[decisionLevel - 1].getPiecewiseLinearCaseSplit() ;
+    return _decisions[decisionLevel - 1].getPiecewiseLinearCaseSplit();
 }
 
 bool CDSmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
@@ -221,7 +221,7 @@ bool CDSmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
 
 bool CDSmtCore::backtrackAndContinueSearch()
 {
-    TrailEntry feasibleDecision( nullptr , CONSTRAINT_INFEASIBLE );
+    TrailEntry feasibleDecision( nullptr, CONSTRAINT_INFEASIBLE );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( !backtrackToFeasibleDecision( feasibleDecision ) )
@@ -282,10 +282,10 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
 
     String error;
 
-    int decisionLevel = 0 ;
+    int decisionLevel = 0;
     bool isDecision = false;
     // First check that the valid splits implied at the root level are okay
-    for ( const auto &trailEntry: _trail)
+    for ( const auto &trailEntry : _trail )
     {
         if ( trailEntry._pwlConstraint != _decisions[decisionLevel]._pwlConstraint )
             isDecision = false;
@@ -298,7 +298,8 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
 
         PiecewiseLinearCaseSplit caseSplit = trailEntry.getPiecewiseLinearCaseSplit();
         if ( decisionLevel == 0 )
-        {    if ( !splitAllowsStoredSolution( caseSplit, error ) )
+        {
+            if ( !splitAllowsStoredSolution( caseSplit, error ) )
             {
                 printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
@@ -306,10 +307,12 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
         }
         else
         {
-            // If the active split is non-compliant but there are alternatives, i.e. it was a decision, that's fine
+            // If the active split is non-compliant but there are alternatives,
+            // i.e. it was a decision, that's fine
             if ( isDecision && !splitAllowsStoredSolution( caseSplit, error ) )
             {
-                // Active split is non-compliant but this is fine, because there are alternatives. We're done.
+                // Active split is non-compliant but this is fine, because there
+                // are alternatives. We're done.
                 return false;
             }
             else // Implied split

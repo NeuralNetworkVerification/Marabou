@@ -60,14 +60,14 @@
 #ifndef __CDSmtCore_h__
 #define __CDSmtCore_h__
 
-#include "context/context.h"
-#include "context/cdlist.h"
 #include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Stack.h"
 #include "Statistics.h"
 #include "TrailEntry.h"
+#include "context/cdlist.h"
+#include "context/context.h"
 
 #define SMT_LOG( x, ... ) LOG( GlobalConfiguration::SMT_CORE_LOGGING, "CDSmtCore: %s\n", x )
 
@@ -95,7 +95,7 @@ public:
       Get the number of times a specific PL constraint has been reported as
       violated.
     */
-    unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
+    unsigned getViolationCounts( PiecewiseLinearConstraint *constraint ) const;
 
     /*
       Reset all reported violation counts.
@@ -162,8 +162,8 @@ public:
     unsigned getDecisionLevel() const;
 
     /*
-      Return a list of all splits performed so far, both SMT-originating and valid ones,
-      in the correct order.
+      Return a list of all splits performed so far, both SMT-originating and
+      valid ones, in the correct order.
     */
     void allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const;
 
@@ -226,7 +226,7 @@ private:
     /*
       CVC4 Context, constructed in Engine
     */
-    CVC4::context::Context& _context;
+    CVC4::context::Context &_context;
 
     /*
       Trail is context dependent and contains all the asserted PWLCaseSplits

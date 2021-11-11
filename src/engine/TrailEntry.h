@@ -27,30 +27,31 @@
 class TrailEntry
 {
 public:
-  PiecewiseLinearConstraint * _pwlConstraint;
-  PhaseStatus _phase;
+    PiecewiseLinearConstraint *_pwlConstraint;
+    PhaseStatus _phase;
 
-  PiecewiseLinearCaseSplit getPiecewiseLinearCaseSplit() const
-  {
-      return _pwlConstraint->getCaseSplit( _phase );
-  }
+    PiecewiseLinearCaseSplit getPiecewiseLinearCaseSplit() const
+    {
+        return _pwlConstraint->getCaseSplit( _phase );
+    }
 
-  inline void markInfeasible()
-  {
-      _pwlConstraint->markInfeasible( _phase );
-  }
+    inline void markInfeasible()
+    {
+        _pwlConstraint->markInfeasible( _phase );
+    }
 
-  inline bool isFeasible() const
-  {
-      return _pwlConstraint->isFeasible();
-  }
+    inline bool isFeasible() const
+    {
+        return _pwlConstraint->isFeasible();
+    }
 
- TrailEntry( PiecewiseLinearConstraint *pwlc, PhaseStatus phase )
-     : _pwlConstraint( pwlc )
-     , _phase( phase )
-    {}
+    TrailEntry( PiecewiseLinearConstraint *pwlc, PhaseStatus phase )
+        : _pwlConstraint( pwlc )
+        , _phase( phase )
+    {
+    }
 
-  ~TrailEntry() {};
+    ~TrailEntry(){};
 };
 
 #endif // TrailEntry.h
