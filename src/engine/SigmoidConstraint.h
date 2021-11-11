@@ -93,20 +93,19 @@ public:
     unsigned getB() const;
     unsigned getF() const;
 
-private:
-    unsigned _b, _f; 
-    bool _haveEliminatedVariables;
-
     /*
       Compute the sigmoid function.
     */
-    double sigmoid( double x );
+    double sigmoid( double x ) const;
 
     /*
       Compute the inverse of the sigmoid function.
     */
-    double sigmoidInverse( double y );
+    double sigmoidInverse( double y ) const;
 
+private:
+    unsigned _b, _f; 
+    bool _haveEliminatedVariables;
 };
 
 #endif // __SigmoidConstraint_h__

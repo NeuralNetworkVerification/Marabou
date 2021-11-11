@@ -225,12 +225,12 @@ unsigned SigmoidConstraint::getF() const
     return _f;
 }
 
-double SigmoidConstraint::sigmoid( double x )
+double SigmoidConstraint::sigmoid( double x ) const
 {
     return 1 / ( 1 + std::exp( -x ) );
 }
 
-double SigmoidConstraint::sigmoidInverse( double y )
+double SigmoidConstraint::sigmoidInverse( double y ) const
 {
     ASSERT( y != 1 );
     return log( y / ( 1 - y ) );

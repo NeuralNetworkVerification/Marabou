@@ -77,11 +77,31 @@ public:
         // not obsolete yet
         TS_ASSERT( !sigmoid.constraintObsolete() );
 
+        // eliminate variable b
+        sigmoid.eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+
+        // sigmoid is obsolete now
+        TS_ASSERT( sigmoid.constraintObsolete() );
+    }
+
+    void test_sigmoid_duplicate()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        SigmoidConstraint *sigmoid = new SigmoidConstraint( b, f );
+
+        List<unsigned> participatingVariables;
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = sigmoid->getParticipatingVariables() );
+
+        // not obsolete yet
+        TS_ASSERT( !sigmoid->constraintObsolete() );
+
         // duplicate constraint
-        SigmoidConstraint* sigmoid2 = dynamic_cast<SigmoidConstraint *>( sigmoid.duplicateConstraint() );
+        SigmoidConstraint *sigmoid2 = dynamic_cast<SigmoidConstraint *>( sigmoid->duplicateConstraint() );
         TS_ASSERT_THROWS_NOTHING( participatingVariables = sigmoid2->getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
-        it = participatingVariables.begin();
+        auto it = participatingVariables.begin();
         TS_ASSERT_EQUALS( *it, b );
         ++it;
         TS_ASSERT_EQUALS( *it, f );
@@ -93,13 +113,16 @@ public:
         TS_ASSERT( !sigmoid2->participatingVariable( 5 ) );
 
         // eliminate variable b
-        sigmoid.eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+        sigmoid->eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
 
         // sigmoid is obsolete now
-        TS_ASSERT( sigmoid.constraintObsolete() );
+        TS_ASSERT( sigmoid->constraintObsolete() );
 
         // sigmoid2 is not obsolete
         TS_ASSERT( !sigmoid2->constraintObsolete() );
+
+        TS_ASSERT_THROWS_NOTHING( delete sigmoid );
+        TS_ASSERT_THROWS_NOTHING( delete sigmoid2 );
     }
 
     void test_sigmoid_notify_bounds()
