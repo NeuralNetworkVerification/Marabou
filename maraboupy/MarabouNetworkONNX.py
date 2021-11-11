@@ -1,6 +1,7 @@
 '''
 Top contributors (to current version):
     - Kyle Julian
+    - Teruhiro Tagomori
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS

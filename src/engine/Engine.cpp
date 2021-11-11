@@ -1215,10 +1215,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 }
         });
 
-    // // TODO: Remove this block after getting ready to support sigmoid with MILP.
-    // if ( _exitCode != Engine::UNSAT && inputQuery.getTranscendentalConstraints().size() > 0 )   // TG: may move it to solve method
-    //     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid except some UNSAT cases yet." );
-
     _smtCore.storeDebuggingSolution( _preprocessedQuery._debuggingSolution );
     return true;
 }

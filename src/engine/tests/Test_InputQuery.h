@@ -148,6 +148,52 @@ public:
         TS_ASSERT( constraint->participatingVariable( 5 ) );
     }
 
+    void test_equality_operator_with_sigmoid()
+    {
+        SigmoidConstraint *sigmoid1 = new SigmoidConstraint( 3, 5 );
+
+        InputQuery *inputQuery = new InputQuery;
+
+        inputQuery->setNumberOfVariables( 5 );
+        inputQuery->setLowerBound( 2, -4 );
+        inputQuery->setUpperBound( 2, 55 );
+        inputQuery->addTranscendentalConstraint( sigmoid1 );
+
+        InputQuery inputQuery2 = *inputQuery;
+
+        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 2 ), 55 );
+
+        auto constraints = inputQuery2.getTranscendentalConstraints();
+
+        TS_ASSERT_EQUALS( constraints.size(), 1U );
+        SigmoidConstraint *constraint = (SigmoidConstraint *)*constraints.begin();
+
+        TS_ASSERT_DIFFERS( constraint, sigmoid1 ); // Different pointers
+
+        TS_ASSERT( constraint->participatingVariable( 3 ) );
+        TS_ASSERT( constraint->participatingVariable( 5 ) );
+
+        inputQuery2 = *inputQuery; // Repeat the assignment
+
+        delete inputQuery;
+
+        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 2 ), 55 );
+
+        constraints = inputQuery2.getTranscendentalConstraints();
+
+        TS_ASSERT_EQUALS( constraints.size(), 1U );
+        constraint = (SigmoidConstraint *)*constraints.begin();
+
+        TS_ASSERT_DIFFERS( constraint, sigmoid1 ); // Different pointers
+
+        TS_ASSERT( constraint->participatingVariable( 3 ) );
+        TS_ASSERT( constraint->participatingVariable( 5 ) );
+    }
+
     void test_infinite_bounds()
     {
         InputQuery *inputQuery = new InputQuery;

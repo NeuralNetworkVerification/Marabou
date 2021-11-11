@@ -258,7 +258,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
 
     // Setting tsConstraints
     for ( const auto &constraint : other._tsConstraints )
-    _tsConstraints.append( constraint->duplicateConstraint() );
+        _tsConstraints.append( constraint->duplicateConstraint() );
 
     // Setting plConstraints and topological order
     if ( !other._networkLevelReasoner )
@@ -325,6 +325,11 @@ void InputQuery::freeConstraintsIfNeeded()
         delete it;
 
     _plConstraints.clear();
+
+    for ( auto &it : _tsConstraints )
+        delete it;
+
+    _tsConstraints.clear();
 }
 
 const Map<unsigned, double> &InputQuery::getLowerBounds() const
