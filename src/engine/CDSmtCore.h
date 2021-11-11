@@ -13,48 +13,53 @@
  ** The CDSmtCore distinguishes between: **decisions** and **implications**.
  **
  ** Decision is a case of PiecewiseLinearConstraint asserted on the trail.
- ** Decision implies that the PiecewiseLinearConstraint has at least one other
- ** feasible case. Decisions represent nodes/search-states in the search tree.
+ ** A decision is a choice between multiple feasible cases of a
+ ** PiecewiseLinearConstraint and represents nodes in the search tree.
  **
- ** Implication is a case of PiecewiseLinearConstraint asserted on the trail.
- ** Implication is the last feasible case of a PiecewiseLinearConstraint.
+ ** Implication is the last feasible case of a PiecewiseLinearConstraint and as
+ ** soon as it is detected it is asserted on the trail.
  **
  ** Case splitting on a PiecewiseLinearConstraint performs a decision.
- ** Fixing  a case of a PiecewiseLinearConstraint (e.g., via bound propagation)
- ** performs an implication.
+ ** Fixing a case of a PiecewiseLinearConstraint (e.g., via bound propagation or
+ ** by exhausting all other cases) performs an implication.
  **
- ** The overall search state is stored in a distributed way: the CDSmtCore
- ** stores the current search state while the PiecewiseLinearConstraints'
- ** infeasible cases enumerates all the explored states w.r.t to the
- ** chronological order on the _trail.
+ ** The overall search state is stored in a distributed way:
+ ** - CDSmtCore::_trail is the current search state in a chronological order
+ ** - PiecewiseLinearConstraints' infeasible cases enumerate all the explored
+ ** states w.r.t to the chronological order on the _trail.
  **
  ** _trail is a chronological list of cases of PiecewiseLinearConstraints
- ** asserted to hold (represented using TrailEntry) - both decisions and
- ** implications. _decisions is a chronological list of decisions stored on the
- ** trail. _trail and _decisions are both context dependent and will synchronize
- ** in unison with the context object.
+ ** asserted to hold (as TrailEntries) - both decisions and implications.
+ ** _decisions is a chronological list of decisions stored on the trail.
+ ** _trail and _decisions are both context dependent and will synchronize in
+ ** unison with the _context object.
  **
- ** When a search state is found to be infeasible, CDSmtCore backtracks lazily
- ** to the last decision and continues the search.
+ ** When a search state is found to be infeasible, CDSmtCore backtracks to the
+ ** last decision and continues the search.
  **
- ** Context management is done automatically when a new decision is pushed and a
- ** decision level is popped. Popping a decision will cause all related context
- ** dependent data structures to backtrack in sync with the _trail. This will
- ** effectively backtrack the entire search state via PiecewiseLinearConstraints
- ** and _boundManager. The only exception is the state of basic/non-basic
- ** variables in the tableau, which may need to be recalculated. However, no
- ** additional memory overhead is incurred in this process.
+ ** PushDecision advances the decision level and context level.
+ ** popDecisionLevel backtracks the last decision and context level.
+ **
+ ** Advancing a context level creates a synchronization point to which all
+ ** context dependent members can backtrack in unison.
+ ** Backtracking a context level restores all context dependent members to the
+ ** state of the last synchronization point. This operation is O(1) complexity.
+ **
+ ** Since the entire search state is context dependent, backtracking the context
+ ** (via popDecisionLevel) backtracks the entire Marabou search state.
+ ** The only exception is the labeling of basic/non-basic variables in the tableau,
+ ** which may need to be recalculated.
  **
  ** Implementation relies on:
  **
- ** * _context is a unique Context object from which all the context-dependent
+ ** - _context is a unique Context object from which all the context-dependent
  ** structures are obtained.
  **
- ** * PiecewiseLinearConstraint class stores its search state in a
+ ** - PiecewiseLinearConstraint class stores its search state in a
  ** context-dependent manner and exposes it using nextFeasibleCase() and
  ** markInfeasible() methods.
  **
- ** * Using BoundManager class to store bounds in a context-dependent manner
+ ** - Using BoundManager class to store bounds in a context-dependent manner
  **/
 
 #ifndef __CDSmtCore_h__
@@ -151,8 +156,8 @@ public:
     bool popSplit();
 
     /*
-      Pop a context level, lazily backtracking trail, bounds, etc. Return true
-      if successful, false if the stack is empty.
+      Pop a context level - lazily backtracking trail, bounds, etc.
+      Return true if successful, false if the stack is empty.
     */
     bool popDecisionLevel( TrailEntry &lastDecision );
 
