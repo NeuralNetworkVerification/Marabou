@@ -91,6 +91,8 @@ public:
         }
     }
 
+    void postContextPopHook() {};
+
     mutable EngineState *lastStoredState;
     void storeState( EngineState &state, bool /* storeAlsoTableauState */ ) const
     {

@@ -454,6 +454,13 @@ public:
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
 
+    /*
+       Hook that is invoked after Context pop, to update context independent
+       data. After backtracking assignments satisfy bounds, but the
+       basic/non-basic status may be out of date, so it is recomputed.
+     */
+    void postContextPopHook() { computeBasicStatus(); };
+
 private:
     /*
       Variable watchers
