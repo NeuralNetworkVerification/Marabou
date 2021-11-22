@@ -31,8 +31,8 @@ Statistics::Statistics()
     , _timeMainLoopMicro( 0 )
     , _timeConstraintFixingStepsMicro( 0 )
     , _numConstraintFixingSteps( 0 )
-    , _currentStackDepth( 0 )
-    , _maxStackDepth( 0 )
+    , _currentDecisionLevel( 0 )
+    , _maxDecisionLevel( 0 )
     , _numSplits( 0 )
     , _numPops( 0 )
     , _numVisitedTreeStates( 1 )
@@ -248,12 +248,12 @@ void Statistics::print()
 
     printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
-            , _currentStackDepth
+            , _currentDecisionLevel
             , _numVisitedTreeStates
             , _numSplits
             , _numPops );
     printf( "\tMax stack depth: %u\n"
-            , _maxStackDepth );
+            , _maxDecisionLevel );
 
     printf( "\t--- Bound Tightening Statistics ---\n" );
     printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
@@ -365,17 +365,17 @@ unsigned long long Statistics::getNumMainLoopIterations() const
     return _numMainLoopIterations;
 }
 
-void Statistics::setCurrentStackDepth( unsigned depth )
+void Statistics::setCurrentDecisionLevel( unsigned decisionLevel )
 {
-    _currentStackDepth = depth;
+    _currentDecisionLevel = decisionLevel;
 
-    if ( _currentStackDepth > _maxStackDepth )
-        _maxStackDepth = _currentStackDepth;
+    if ( _currentDecisionLevel > _maxDecisionLevel )
+        _maxDecisionLevel = _currentDecisionLevel;
 }
 
-unsigned Statistics::getMaxStackDepth() const
+unsigned Statistics::getMaxDecisionLevel() const
 {
-    return _maxStackDepth;
+    return _maxDecisionLevel;
 }
 
 void Statistics::incNumSplits()

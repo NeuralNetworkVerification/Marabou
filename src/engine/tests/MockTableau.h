@@ -582,6 +582,7 @@ public:
                                double &coefficient,
                                double &inverseCoefficient )
     {
+
         lastLinearlyDependentX1 = x1;
         lastLinearlyDependentX2 = x2;
 
@@ -595,6 +596,8 @@ public:
     {
         return 0;
     }
+
+    void postContextPopHook() {}
 };
 
 #endif // __MockTableau_h__

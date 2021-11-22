@@ -517,7 +517,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     eq.def("addAddend", &Equation::addAddend);
     eq.def("setScalar", &Equation::setScalar);
     py::class_<Statistics>(m, "Statistics")
-        .def("getMaxStackDepth", &Statistics::getMaxStackDepth)
+        .def("getMaxStackDepth", &Statistics::getMaxDecisionLevel)
         .def("getNumPops", &Statistics::getNumPops)
         .def("getNumVisitedTreeStates", &Statistics::getNumVisitedTreeStates)
         .def("getNumSplits", &Statistics::getNumSplits)

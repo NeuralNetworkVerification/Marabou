@@ -57,6 +57,11 @@ public:
     virtual void applySnCSplit( PiecewiseLinearCaseSplit split, String queryId ) = 0;
 
     /*
+      Hook invoked after context pop to update context independent data.
+    */
+    virtual void postContextPopHook() = 0;
+
+    /*
       Methods for storing and restoring the state of the engine.
     */
     virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
