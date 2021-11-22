@@ -421,6 +421,10 @@ void InputQuery::saveQuery( const String &fileName )
         ++i;
     }
 
+    // TODO: Remove this block after getting ready to support sigmoid with MILP.
+    if ( getTranscendentalConstraints().size() > 0 )
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid for solve yet." );
+
     // Constraints
     i = 0;
     for ( const auto &constraint : _plConstraints )

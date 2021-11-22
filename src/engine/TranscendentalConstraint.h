@@ -57,6 +57,12 @@ public:
     virtual void restoreState( const TranscendentalConstraint *state ) = 0;
 
     /*
+      Register/unregister the constraint with a talbeau.
+    */
+    virtual void registerAsWatcher( ITableau *tableau ) = 0;
+    virtual void unregisterAsWatcher( ITableau *tableau ) = 0;
+
+    /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
     virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}

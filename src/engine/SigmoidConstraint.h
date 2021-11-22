@@ -44,6 +44,12 @@ public:
     void restoreState( const TranscendentalConstraint *state ) override; 
 
     /*
+      Register/unregister the constraint with a talbeau.
+     */
+    void registerAsWatcher( ITableau *tableau ) override;
+    void unregisterAsWatcher( ITableau *tableau ) override;
+
+    /*
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */

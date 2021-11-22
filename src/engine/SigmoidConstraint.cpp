@@ -75,6 +75,18 @@ void SigmoidConstraint::restoreState( const TranscendentalConstraint *state )
     *this = *sigmoid;
 }
 
+void SigmoidConstraint::registerAsWatcher( ITableau *tableau )
+{
+    tableau->registerToWatchVariable( this, _b );
+    tableau->registerToWatchVariable( this, _f );
+}
+
+void SigmoidConstraint::unregisterAsWatcher( ITableau *tableau )
+{
+    tableau->unregisterToWatchVariable( this, _b );
+    tableau->unregisterToWatchVariable( this, _f );
+}
+
 void SigmoidConstraint::notifyVariableValue( unsigned variable, double value )
 {
     ASSERT( variable == _b || variable == _f );

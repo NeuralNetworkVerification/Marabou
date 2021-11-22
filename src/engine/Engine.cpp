@@ -1110,6 +1110,13 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         constraint->setStatistics( &_statistics );
     }
 
+    _tsConstraints = _preprocessedQuery.getTranscendentalConstraints();
+    for ( const auto &constraint : _tsConstraints )
+    {
+        constraint->registerAsWatcher( _tableau );
+        constraint->setStatistics( &_statistics );
+    }
+
     _tableau->initializeTableau( initialBasis );
 
     _costFunctionManager->initialize();

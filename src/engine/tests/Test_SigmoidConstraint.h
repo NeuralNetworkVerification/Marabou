@@ -284,6 +284,58 @@ public:
         TS_ASSERT_EQUALS( it2->_value, 0.731 );
     }
 
+    void test_register_as_watcher()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        MockTableau tableau;
+
+        SigmoidConstraint sigmoid( b, f );
+
+        TS_ASSERT_THROWS_NOTHING( sigmoid.registerAsWatcher( &tableau ) );
+
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &sigmoid ) );
+        TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &sigmoid ) );
+
+        tableau.lastRegisteredVariableToWatcher.clear();
+
+        TS_ASSERT_THROWS_NOTHING( sigmoid.unregisterAsWatcher( &tableau ) );
+
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &sigmoid ) );
+        TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &sigmoid ) );
+    }
+
+    void test_sigmoid_entailed_tightenings()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        SigmoidConstraint sigmoid( b, f );
+
+        sigmoid.notifyLowerBound( b, -1.0 );
+        sigmoid.notifyLowerBound( f, 0.268 );
+        sigmoid.notifyUpperBound( b, 1.0 );
+        sigmoid.notifyUpperBound( f, 0.731 );
+
+        List<Tightening> entailedTightenings;
+        sigmoid.getEntailedTightenings( entailedTightenings );
+
+        TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0.731, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, 1.0, Tightening::UB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0.268, Tightening::LB ) ) );
+        TS_ASSERT( entailedTightenings.exists( Tightening( b, -1.0, Tightening::LB ) ) );
+    }
+
     void test_sigmoid_serialize()
     {
         unsigned b = 0;
