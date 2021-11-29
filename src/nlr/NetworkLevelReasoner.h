@@ -196,6 +196,7 @@ private:
     void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );

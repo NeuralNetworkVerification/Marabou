@@ -145,6 +145,10 @@ void Engine::exportInputQueryWithError( String errorMessage )
 
 bool Engine::solve( unsigned timeoutInSeconds )
 {
+    // TODO: Remove this block after getting ready to support sigmoid with MILP.
+    if ( _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid for solve yet." );
+
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -1106,6 +1110,13 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         constraint->setStatistics( &_statistics );
     }
 
+    _tsConstraints = _preprocessedQuery.getTranscendentalConstraints();
+    for ( const auto &constraint : _tsConstraints )
+    {
+        constraint->registerAsWatcher( _tableau );
+        constraint->setStatistics( &_statistics );
+    }
+
     _tableau->initializeTableau( initialBasis );
 
     _costFunctionManager->initialize();
@@ -1182,6 +1193,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            throw InfeasibleQueryException();
+        }
+
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -1213,6 +1231,12 @@ void Engine::performMILPSolverBoundedTightening()
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         _networkLevelReasoner->obtainCurrentBounds();
+
+        // TODO: Remove this block after getting ready to support sigmoid with MILP.
+        if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
+            && _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                "Marabou doesn't support sigmoid with MILP" );
 
         switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {

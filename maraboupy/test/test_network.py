@@ -79,6 +79,19 @@ def test_disjunction_constraint():
     for var in network.inputVars[0]:
         assert(abs(vals1[var] - 1) < 0.0000001 or abs(vals1[var]) < 0.0000001)
 
+def test_sigmoid_constraint():
+    """
+    Tests the sigmoid constraint.
+    """
+    filename =  "fc_2-2sigmoids-3.onnx"
+
+    network = loadNetworkInONNX(filename)
+
+    assert len(network.sigmoidList) == 2
+
+    for sigmoid in network.sigmoidList:
+        assert network.lowerBounds[sigmoid[1]] == 0
+        assert network.upperBounds[sigmoid[1]] == 1
 
 def test_local_robustness_unsat():
     """

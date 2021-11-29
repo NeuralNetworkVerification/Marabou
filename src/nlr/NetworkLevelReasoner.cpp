@@ -16,6 +16,7 @@
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "IterativePropagator.h"
 #include "LPFormulator.h"
@@ -384,6 +385,10 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
         generateInputQueryForReluLayer( inputQuery, layer );
         break;
 
+    case Layer::SIGMOID:
+        generateInputQueryForSigmoidLayer( inputQuery, layer );
+        break;
+
     case Layer::SIGN:
         generateInputQueryForSignLayer( inputQuery, layer );
         break;
@@ -411,6 +416,17 @@ void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuer
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
         ReluConstraint *relu = new ReluConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addPiecewiseLinearConstraint( relu );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        SigmoidConstraint *sigmoid = new SigmoidConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addTranscendentalConstraint( sigmoid );
     }
 }
 

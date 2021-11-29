@@ -25,6 +25,7 @@
 #include "MaxConstraint.h"
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
+#include "SigmoidConstraint.h"
 #include "SignConstraint.h"
 #include "Vector.h"
 

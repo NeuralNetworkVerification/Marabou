@@ -223,6 +223,11 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
+      The existing transcendental constraints.
+    */
+    List<TranscendentalConstraint *> _tsConstraints;
+
+    /*
       Piecewise linear constraints that are currently violated.
     */
     List<PiecewiseLinearConstraint *> _violatedPlConstraints;

@@ -42,7 +42,9 @@
 #include "ReluConstraint.h"
 #include "Set.h"
 #include "SnCDivideStrategy.h"
+#include "SigmoidConstraint.h"
 #include "SignConstraint.h"
+#include "TranscendentalConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -92,6 +94,11 @@ void restoreOutputStream(int outputStream)
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addTranscendentalConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -208,7 +215,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
-    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit );
+    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit ); 
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -430,6 +437,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
             var1 (int): Input variable to Relu constraint
             var2 (int): Output variable to Relu constraint
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
+        Add a Sigmoid constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Sigmoid constraint
+            var2 (int): Output variable to Sigmoid constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
     m.def("addSignConstraint", &addSignConstraint, R"pbdoc(

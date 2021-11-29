@@ -30,7 +30,6 @@
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
-#include "PiecewiseLinearConstraint.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
