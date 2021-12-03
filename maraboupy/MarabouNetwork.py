@@ -335,14 +335,15 @@ class MarabouNetwork:
             self.setUpperBound(flattenInputVars[i], flattenInput[i] + epsilon)
         
         maxClass = None
+        outputStartIndex = self.outputVars[0][0]
 
         if targetClass is None:
-            outputStartIndex = self.outputVars[0][0]
             outputLayerSize = len(self.outputVars[0])
             # loop for all of output classes except for original class
             for outputLayerIndex in range(outputLayerSize):
                 if outputLayerIndex != originalClass:
-                    self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), outputLayerIndex)
+                    self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), 
+                        outputStartIndex + outputLayerIndex)
                     vals, stats = self.solve(options = options)
                     if (stats.hasTimedOut()):
                         break
@@ -350,7 +351,7 @@ class MarabouNetwork:
                         maxClass = outputLayerIndex
                         break
         else:
-            self.addMaxConstraint(set(self.outputVars[0]), targetClass)
+            self.addMaxConstraint(set(self.outputVars[0]), outputStartIndex + targetClass)
             vals, stats = self.solve(options = options)
             if verbose:
                 if not stats.hasTimedOut() and len(vals) > 0:
