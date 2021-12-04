@@ -40,8 +40,9 @@ public:
         UNSAT = 0,
         SAT = 1,
         ERROR = 2,
-        TIMEOUT = 3,
-        QUIT_REQUESTED = 4,
+        UNKNOWN = 3,
+        TIMEOUT = 4,
+        QUIT_REQUESTED = 5,
 
         NOT_DONE = 999,
     };

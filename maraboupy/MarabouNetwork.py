@@ -276,10 +276,13 @@ class MarabouNetwork:
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
-        vals, stats = MarabouCore.solve(ipq, options, str(filename))
+        vals, stats, exitCode = MarabouCore.solve(ipq, options, str(filename))
+        print(type(exitCode))
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
+            elif exitCode == MarabouCore.Engine.ExitCode.UNKNOWN:
+                print("unknown")
             elif len(vals)==0:
                 print("unsat")
             else:
@@ -335,14 +338,15 @@ class MarabouNetwork:
             self.setUpperBound(flattenInputVars[i], flattenInput[i] + epsilon)
         
         maxClass = None
+        outputStartIndex = self.outputVars[0][0]
 
         if targetClass is None:
-            outputStartIndex = self.outputVars[0][0]
             outputLayerSize = len(self.outputVars[0])
             # loop for all of output classes except for original class
             for outputLayerIndex in range(outputLayerSize):
                 if outputLayerIndex != originalClass:
-                    self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), outputLayerIndex)
+                    self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), 
+                        outputStartIndex + outputLayerIndex)
                     vals, stats = self.solve(options = options)
                     if (stats.hasTimedOut()):
                         break
@@ -350,7 +354,7 @@ class MarabouNetwork:
                         maxClass = outputLayerIndex
                         break
         else:
-            self.addMaxConstraint(set(self.outputVars[0]), targetClass)
+            self.addMaxConstraint(set(self.outputVars[0]), outputStartIndex + targetClass)
             vals, stats = self.solve(options = options)
             if verbose:
                 if not stats.hasTimedOut() and len(vals) > 0:
@@ -411,7 +415,7 @@ class MarabouNetwork:
 
         if options == None:
             options = MarabouCore.Options()
-        outputDict, _ = MarabouCore.solve(ipq, options, str(filename))
+        outputDict, _, _ = MarabouCore.solve(ipq, options, str(filename))
 
         # When the query is UNSAT an empty dictionary is returned
         if outputDict == {}:

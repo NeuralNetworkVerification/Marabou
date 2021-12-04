@@ -18,7 +18,7 @@ def test_solve_partial_arguments():
     """
     ipq = define_ipq(-2.0)
     # Test partial arguments to solve
-    vals, stats = MarabouCore.solve(ipq, OPT)
+    vals, stats, _ = MarabouCore.solve(ipq, OPT)
     # Assert that Marabou returned UNSAT
     assert not stats.hasTimedOut()
     assert len(vals) == 0
@@ -36,7 +36,7 @@ def test_dump_query():
     assert ipq.getUpperBound(2) > LARGE
 
     # Solve
-    vals, stats = MarabouCore.solve(ipq, OPT, "")
+    vals, stats, _ = MarabouCore.solve(ipq, OPT, "")
 
     # Test dump
     ipq.dump()

@@ -2,7 +2,7 @@
 /*! \file MILPEncoder.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Wu
+ **   Andrew Wu, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -87,6 +87,11 @@ private:
       a_i \in {0, 1} (i = 1 ~ m)
     */
     void encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max );
+
+    /*
+      Encode a Sigmoid constraint
+    */
+    void encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid );
 };
 
 #endif // __MILPEncoder_h__

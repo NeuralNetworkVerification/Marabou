@@ -247,3 +247,8 @@ double SigmoidConstraint::sigmoidInverse( double y ) const
     ASSERT( y != 1 );
     return log( y / ( 1 - y ) );
 }
+
+double SigmoidConstraint::sigmoidDerivative( double x ) const
+{
+    return sigmoid( x ) * ( 1 - sigmoid( x ) );
+}
