@@ -117,8 +117,8 @@ def test_local_robustness_sat():
     network = loadNetwork(filename)
     options = Marabou.createOptions(verbosity = 0)
 
-    input = np.array([1, 0])
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=1.0, originalClass=0, options=options, targetClass=None)
+    input = np.array([1, -2])
+    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=0.1, originalClass=0, options=options, targetClass=None)
 
     # should be not local robustness
     assert(len(vals) > 0)
@@ -162,9 +162,9 @@ def test_local_robustness_sat_with_target_class():
     network = loadNetworkInONNX(filename)
     options = Marabou.createOptions(verbosity = 0)
 
-    input = np.array([1, 0])
+    input = np.array([1, -2])
     targetClass = 1
-    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=1.0, originalClass=0, options=options, targetClass=targetClass)
+    vals, stats, maxClass = network.evaluateLocalRobustness(input=input, epsilon=0.1, originalClass=0, options=options, targetClass=targetClass)
 
     # should be not local robustness
     assert(len(vals) > 0)
