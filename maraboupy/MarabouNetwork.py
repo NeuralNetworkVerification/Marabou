@@ -277,7 +277,6 @@ class MarabouNetwork:
         if options == None:
             options = MarabouCore.Options()
         vals, stats, exitCode = MarabouCore.solve(ipq, options, str(filename))
-        print(type(exitCode))
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
