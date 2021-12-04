@@ -2,7 +2,7 @@
 /*! \file Test_QueryLoader.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Kyle Julian
+ **   Kyle Julian, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -56,20 +56,24 @@ public:
     {
         // Set up simple query as a test
         InputQuery inputQuery;
-        inputQuery.setNumberOfVariables( 6 );
+        inputQuery.setNumberOfVariables( 10 );
 
         // Input layer with one variable
         inputQuery.markInputVariable( 0, 0 );
         inputQuery.setLowerBound( 0, 0.0 );
         inputQuery.setUpperBound( 0, 1.0 );
 
-        // Hidden layer with two nodes
+        // First hidden layer with two nodes
         inputQuery.setLowerBound( 3, 0.0 );
         inputQuery.setLowerBound( 4, 0.0 );
 
+        // Second hidden layer with two nodes
+        inputQuery.setLowerBound( 7, 0.0 );
+        inputQuery.setLowerBound( 8, 0.0 );
+
         // Output layer with one variable
-        inputQuery.markOutputVariable( 5, 0 );
-        inputQuery.setUpperBound( 5, 3.0 );
+        inputQuery.markOutputVariable( 9, 0 );
+        inputQuery.setUpperBound( 9, 3.0 );
 
         // Equations
         // First equation, input to first ReLU
@@ -90,13 +94,33 @@ public:
         inputQuery.addPiecewiseLinearConstraint( new ReluConstraint( 1, 3 ) );
         inputQuery.addPiecewiseLinearConstraint( new ReluConstraint( 2, 4 ) );
 
-        // Third equation, hidden layer to output
+        // Third equation, first hidden layer to first node of second hidden layer
         Equation equation2;
         equation2.addAddend( -1.0, 5 ); // Equation output
         equation2.addAddend( -1.0, 3 ); // Weighted equation input
         equation2.addAddend( 1.0, 4 );  // Weighted equation input
         equation2.setScalar( 0.5 );     // Equation bias
         inputQuery.addEquation( equation2 );
+
+        // Forth equation, first hidden layer to second node of second hidden layer
+        Equation equation3;
+        equation3.addAddend( -1.0, 6 ); // Equation output
+        equation3.addAddend( -1.0, 3 ); // Weighted equation input
+        equation3.addAddend( 1.0, 4 );  // Weighted equation input
+        equation3.setScalar( 0.5 );     // Equation bias
+        inputQuery.addEquation( equation3 );
+
+        // Sigmoid Constraints
+        inputQuery.addTranscendentalConstraint( new SigmoidConstraint( 5, 7 ) );
+        inputQuery.addTranscendentalConstraint( new SigmoidConstraint( 6, 8 ) );
+
+        // Fifth equation, second hidden layer to output
+        Equation equation4;
+        equation4.addAddend( -1.0, 9 ); // Equation output
+        equation4.addAddend( -1.0, 7 ); // Weighted equation input
+        equation4.addAddend( 1.0, 8 );  // Weighted equation input
+        equation4.setScalar( 0.5 );     // Equation bias
+        inputQuery.addEquation( equation4 );
 
         // Save the query and then reload the query
         inputQuery.saveQuery( QUERY_TEST_FILE );

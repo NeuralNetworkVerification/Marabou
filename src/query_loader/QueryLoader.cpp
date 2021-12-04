@@ -2,7 +2,7 @@
 /*! \file QueryLoader.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Christopher Lazarus, Kyle Julian
+ **   Christopher Lazarus, Kyle Julian, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -42,12 +42,14 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     unsigned numUpperBounds = atoi( input->readLine().trim().ascii() );
     unsigned numEquations = atoi( input->readLine().trim().ascii() );
     unsigned numConstraints = atoi( input->readLine().trim().ascii() );
+    unsigned numTsConstraints = atoi( input->readLine().trim().ascii() );
 
     QL_LOG( Stringf( "Number of variables: %u\n", numVars ).ascii() );
     QL_LOG( Stringf( "Number of lower bounds: %u\n", numLowerBounds ).ascii() );
     QL_LOG( Stringf( "Number of upper bounds: %u\n", numUpperBounds ).ascii() );
     QL_LOG( Stringf( "Number of equations: %u\n", numEquations ).ascii() );
-    QL_LOG( Stringf( "Number of constraints: %u\n", numConstraints ).ascii() );
+    QL_LOG( Stringf( "Number of picewise-linear constraints: %u\n", numConstraints ).ascii() );
+    QL_LOG( Stringf( "Number of transcendental constraints: %u\n", numTsConstraints ).ascii() );
 
     inputQuery.setNumberOfVariables( numVars );
 
