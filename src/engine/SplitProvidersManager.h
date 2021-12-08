@@ -37,6 +37,15 @@ public:
     Optional<PiecewiseLinearCaseSplit> alternativeSplitsFromProviders() const;
 
     void letProvidersThinkForAlternatives( SmtStack const& stack );
+
+    template <class Func>
+    void forEachProvider(Func&& func)
+    {
+        for(auto& provider : _splitProviders)
+        {
+            std::forward<Func>(func)(provider.get());
+        }
+    }
 };
 
 

@@ -71,6 +71,9 @@ Engine2::Engine2( std::shared_ptr<SplitProvidersManager> const& splitProvidersMa
     _statistics.stampStartingTime();
 
     _splitProvidersManager->subscribeSplitProvider( _smtCoreSplitProvider );
+    _splitProvidersManager->forEachProvider( [this]( ISmtSplitProvider *provider ) {
+        provider->setStatistics( &_statistics );
+    } );
 }
 
 Engine2::~Engine2()

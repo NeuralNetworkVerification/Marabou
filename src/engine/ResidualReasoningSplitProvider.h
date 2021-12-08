@@ -24,7 +24,6 @@ public:
 
     GammaUnsat gammaUnsat() const;
 private:
-    IEngine* _engine;
     GammaUnsat _gammaUnsat;
     // list of splits that were already activated/inactivated
     List<PiecewiseLinearCaseSplit> _pastSplits;

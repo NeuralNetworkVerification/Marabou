@@ -475,6 +475,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     py::class_<Statistics>( m, "Statistics" )
         .def( "getMaxStackDepth", &Statistics::getMaxStackDepth )
         .def( "getNumPops", &Statistics::getNumPops )
+        .def( "getNumResidualReasoningSplits", &Statistics::getNumResidualReasoningSplits )
         .def( "getNumVisitedTreeStates", &Statistics::getNumVisitedTreeStates )
         .def( "getNumSplits", &Statistics::getNumSplits )
         .def( "getTotalTime", &Statistics::getTotalTime )

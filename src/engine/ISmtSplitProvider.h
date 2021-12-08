@@ -28,6 +28,10 @@ public:
     virtual void onSplitPerformed( SplitInfo const& ) = 0;
     virtual void onStackPopPerformed( PopInfo const& ) = 0;
     virtual void onUnsatReceived( List<SmtStackEntry *> const &stack ) = 0;
+    void setStatistics( Statistics* statistics ); 
+
+protected:
+    Statistics* _statistics;
 };
 
 inline PopInfo::PopInfo( List<PiecewiseLinearCaseSplit> const& splitsSoFar, PiecewiseLinearCaseSplit const& thePoppedSplit )
@@ -38,5 +42,9 @@ inline PopInfo::PopInfo( List<PiecewiseLinearCaseSplit> const& splitsSoFar, Piec
 inline SplitInfo::SplitInfo( PiecewiseLinearCaseSplit const& theSplit )
     : theSplit( theSplit )
 { }
+
+inline void ISmtSplitProvider::setStatistics( Statistics* statistics ) {
+    _statistics = statistics;
+}
 
 #endif // __ISMTSPLITPROVIDER_H__

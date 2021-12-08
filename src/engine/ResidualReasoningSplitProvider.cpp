@@ -4,6 +4,7 @@
 #include "TimeUtils.h"
 #include "GlobalConfiguration.h"
 #include "Options.h"
+#include "Statistics.h"
 #include "PiecewiseLinearCaseSplitUtils.h"
 
 ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( GammaUnsat gammaUnsat )
@@ -41,6 +42,7 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
     {
         printf("residual reasoning split!\n");
         _required_splits.popBack();
+        _statistics->incNumResidualReasoningSplits();
     }
     if ( !splitInfo.theSplit.reluRawData() )
     {

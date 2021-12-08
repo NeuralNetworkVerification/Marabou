@@ -101,6 +101,8 @@ public:
     List<Map<unsigned, bool>> getGammaUnsatSplitSequences() const;
     void appendGammaUnsatSplitSequence(Map<unsigned, bool>);
     unsigned getNumSplits() const;
+    unsigned getNumResidualReasoningSplits();
+    void incNumResidualReasoningSplits();
     unsigned long long getTotalTime() const;
 
     /*
@@ -199,6 +201,9 @@ private:
 
     // Total number of pops so far
     unsigned _numPops;
+
+    // total amount of residual reasoning based splits
+    unsigned _numResidualReasoningSplits;
 
     // Total number of states in the search tree visited so far
     unsigned _numVisitedTreeStates;
