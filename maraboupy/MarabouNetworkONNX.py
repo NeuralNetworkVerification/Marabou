@@ -171,6 +171,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         :meta private:
         """
         node = self.getNode(nodeName)
+
         if node.op_type == 'Constant':
             self.constant(node)
         elif node.op_type == 'Identity': 
