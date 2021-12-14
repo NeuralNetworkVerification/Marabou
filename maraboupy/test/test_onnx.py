@@ -118,7 +118,15 @@ def test_multiInput_add(tmpdir):
         # Catch ONNX errors when not all input values are given to the graph
         with pytest.raises(RuntimeError, match = r"There are.*inputs to network"):
             network_oneIn.evaluateWithoutMarabou([testInput[0]])
-    
+
+def test_batch_norm():
+    """
+    Test a network exported from pytorch
+    Uses nn.Linear(2, 3), nn.BatchNorm1d(3), and nn.Linear(3, 1)
+    """
+    filename =  "linear2-3_bn1-linear3-1.onnx"
+    evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
+
 def test_errors():
     """
     This function tests that the ONNX parser catches errors.
