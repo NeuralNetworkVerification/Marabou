@@ -93,6 +93,26 @@ def test_sigmoid_constraint():
         assert network.lowerBounds[sigmoid[1]] == 0
         assert network.upperBounds[sigmoid[1]] == 1
 
+def test_batch_norm():
+    """
+    Tests a batch normalization.
+    """
+    filename =  "linear2-3_bn1-linear3-1.onnx"
+
+    network = loadNetworkInONNX(filename)
+    options = Marabou.createOptions(verbosity = 0)
+
+    inputVars = network.inputVars[0][0]
+    outputVars = network.outputVars[0]
+
+    network.setLowerBound(inputVars[0], 1)
+    network.setUpperBound(inputVars[0], 1)
+    network.setLowerBound(inputVars[1], 1)
+    network.setUpperBound(inputVars[1], 1)
+
+    vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0]] - 9.9999799728) < TOL
+
 def test_local_robustness_unsat():
     """
     Tests local robustness of an nnet network. (UNSAT)

@@ -171,7 +171,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         :meta private:
         """
         node = self.getNode(nodeName)
-        
         if node.op_type == 'Constant':
             self.constant(node)
         elif node.op_type == 'Identity': 
@@ -184,6 +183,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.flatten(node)
         elif node.op_type == "Transpose":
             self.transpose(node)
+        elif node.op_type == "BatchNormalization":
+            self.batchNorm(node)
         elif node.op_type == "MaxPool":
             self.maxpoolEquations(node, makeEquations)
         elif node.op_type == "Conv":
@@ -413,7 +414,47 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.varMap[nodeName] = np.transpose(self.varMap[node.input[0]], perm)
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
-    
+
+    def batchNorm(self, node):
+        """Function to generate equations for a BatchNormalization
+
+        Args:
+            node (node): ONNX node representing the BatchNormalization operation
+
+        :meta private
+        """
+
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName] 
+
+        # Get attributes
+        epsilon = None
+        for attr in node.attribute:
+            if attr.name == "epsilon":
+                epsilon = get_attribute_value(attr)
+
+        # Get inputs
+        scales = self.constantMap[node.input[1]].reshape(-1)
+        biases = self.constantMap[node.input[2]].reshape(-1)
+        input_means = self.constantMap[node.input[3]].reshape(-1)
+        input_vars = self.constantMap[node.input[4]].reshape(-1)
+
+        # Get variables
+        inputVars = self.varMap[inputName].reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        assert len(inputVars) == len(outputVars)
+
+        for i in range(len(inputVars)):
+            # Add equation
+            # To know this computation, 
+            # refer to https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization.
+            e = MarabouUtils.Equation()
+            e.addAddend(-1, outputVars[i])
+            e.addAddend(1 / np.sqrt(input_vars[i] + epsilon) * scales[i], inputVars[i])
+            e.setScalar(input_means[i] / np.sqrt(input_vars[i] + epsilon) * scales[i] - biases[i])
+            self.addEquation(e)      
+
     def maxpoolEquations(self, node, makeEquations):
         """Function to generate maxpooling equations
 
