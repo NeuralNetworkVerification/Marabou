@@ -1852,6 +1852,7 @@ List<unsigned> Engine2::getInputVariables() const
 void Engine2::addSplitProvider( std::shared_ptr<ISmtSplitProvider> const& splitProvider )
 {
     _splitProvidersManager->subscribeSplitProvider( splitProvider );
+    splitProvider->setStatistics(&_statistics);
 }
 
 void Engine2::performSymbolicBoundTightening()
