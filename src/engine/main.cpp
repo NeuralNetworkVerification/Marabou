@@ -57,7 +57,7 @@ void printHelpMessage()
 int main( int argc, char **argv )
 {
     printf("STARTED\n");
-     Marabou().run();
+    Marabou().run();
     printf("FINISHED\n");
     return 0;
     try
