@@ -249,11 +249,12 @@ void Statistics::print()
             , _currentTableauN );
 
     printf( "\t--- SMT Core Statistics ---\n" );
-    printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
+    printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of Residual Reasoning Splits: %u. Number of pops: %u\n"
             , _currentStackDepth
             , _numVisitedTreeStates
             , _numSplits
-            , _numPops );
+            , _numPops
+            , _numResidualReasoningSplits );
     printf( "\tMax stack depth: %u\n"
             , _maxStackDepth );
 
