@@ -7,6 +7,9 @@
 #include "Statistics.h"
 #include "PiecewiseLinearCaseSplitUtils.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( GammaUnsat gammaUnsat )
     : _gammaUnsat( gammaUnsat ),
     _pastSplits(),
@@ -40,9 +43,12 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
 {
     if ( splitInfo.theSplit == _required_splits.back() )
     {
+        printf("before inc: incNumResidualReasoningSplits=%d\n", _statistics->getNumResidualReasoningSplits());
         printf("residual reasoning split!\n");
         _required_splits.popBack();
+        printf("after _required_splits.popBack()\n");
         _statistics->incNumResidualReasoningSplits();
+        printf("incNumResidualReasoningSplits:%d\n", _statistics->getNumResidualReasoningSplits());
     }
     if ( !splitInfo.theSplit.reluRawData() )
     {
@@ -55,6 +61,7 @@ void ResidualReasoningSplitProvider::onSplitPerformed( SplitInfo const& splitInf
     unsigned int loop_counter = 0;
     while ( continue_deriving )
     {
+        // printf("in while ( continue_deriving )\n");
         loop_counter += 1;
         List<PLCaseSplitRawData> requiredSplits = deriveRequiredSplits();
         if ( requiredSplits.empty() )
@@ -122,6 +129,7 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
     // activation will be added to the result
     // TBD: use watch literals
 
+    // printf("in deriveRequiredSplits\n");
     List<PLCaseSplitRawData> pastSplitsRaw;
     for ( auto const& split : _pastSplits )
     {
@@ -167,17 +175,26 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
         if ( maybeDerivedSplit ) {
             ActivationType opposeActivation = maybeDerivedSplit->_activation == ActivationType::ACTIVE ? ActivationType::INACTIVE : ActivationType::ACTIVE;
             PLCaseSplitRawData requiredSplit = PLCaseSplitRawData( maybeDerivedSplit->_b, maybeDerivedSplit->_f, opposeActivation );
+            PLCaseSplitRawData opposeSplit = PLCaseSplitRawData( maybeDerivedSplit->_b, maybeDerivedSplit->_f, maybeDerivedSplit->_activation );
             // avoid duplicated derived splits
             bool doNotAppend = false;
             for ( auto const& split : _pastSplits )
             {
                 doNotAppend |= requiredSplit == *split.reluRawData();
+                doNotAppend |= opposeSplit == *split.reluRawData();
             }
             for ( auto const& split : _required_splits )
             {
                 doNotAppend |= requiredSplit == *split.reluRawData();
+                doNotAppend |= opposeSplit == *split.reluRawData();
+            }
+            for ( auto const& split : derived )
+            {
+                doNotAppend |= requiredSplit == split;
+                doNotAppend |= opposeSplit == split;
             }
             if ( !doNotAppend ) {
+                printf("split: b=%d, f=%d, a=%d add to derived\n", requiredSplit._b, requiredSplit._f, requiredSplit._activation);
                 derived.append( requiredSplit );
             }
             // printf( "required from clause %d: variable=%u, activation=%s\n", clause_index,
@@ -273,3 +290,5 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits() 
     // }
     // return derived;
 }
+
+#pragma GCC pop_options
