@@ -47,7 +47,7 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
         while ( true )
         {
             String line = propertyFile.readLine().trim();
-            if (line.substring(0,2) != "--")
+            if ( line.substring(0,2) != "--" )
             {
                 processSingleLine( line, inputQuery );
             }
