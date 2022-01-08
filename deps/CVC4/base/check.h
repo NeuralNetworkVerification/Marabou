@@ -206,7 +206,7 @@ class AssertArgumentException : public Exception
 
 #define Unimplemented() CVC4_FATAL() << "Unimplemented code encountered"
 
-#define InternalError() CVC4_FATAL() << "Internal error detected"
+//#define InternalError() CVC4_FATAL() << "Internal error detected"
 
 #define IllegalArgument(arg, msg, ...)    \
   throw ::CVC4::IllegalArgumentException( \

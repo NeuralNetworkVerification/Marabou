@@ -1,6 +1,7 @@
 set(MPS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mps_example)
 set(ACAS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/acas_example)
 set(BERKELEY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/berkeley_example)
+set(ONNX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/onnx_example)
 
 set(PARSERS_OUT_DIR ${CMAKE_BINARY_DIR}/input_parsers)
 
@@ -30,5 +31,7 @@ add_custom_command(TARGET ${MPS_PARSER} POST_BUILD
 
 marabou_parser(${BERKELEY_PARSER} ${BERKELEY_DIR})
 marabou_parser(${ACAS_PARSER} ${ACAS_DIR})
+marabou_parser(${ONNX_PARSER} ${ONNX_DIR})
+
 # set_target_properties(${MPS_PARSER} PROPERTIES RUNTIME_OUTPUT_DIRECTORY  ${PARSERS_OUT_DIR})
 

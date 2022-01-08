@@ -17,6 +17,7 @@
 #define __Marabou_h__
 
 #include "AcasParser.h"
+#include "OnnxParser.h"
 #include "Engine.h"
 #include "InputQuery.h"
 
@@ -65,6 +66,11 @@ private:
       ACAS network parser
     */
     AcasParser *_acasParser;
+
+    /*
+      ACAS network parser
+    */
+    OnnxParser *_onnxParser;
 
     /*
       The solver
