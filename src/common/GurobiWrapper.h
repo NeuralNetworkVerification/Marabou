@@ -71,7 +71,7 @@ public:
     // Add a new EQ constraint, e.g. 3x + 4y = -5
     void addEqConstraint( const List<Term> &terms, double scalar );
 
-    // Add a new LEQ indicator constraint
+    // Add a new LEQ indicator constraint 
     void addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
 
     // Add a new GEQ indicator constraint
