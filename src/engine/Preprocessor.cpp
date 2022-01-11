@@ -593,13 +593,18 @@ void Preprocessor::collectFixedValues()
 {
     // Compute all used variables:
     //   1. Variables that appear in equations
-    //   2. Variables that participate in PL constraints
+    //   2. Variables that participate in PL and transcendental constraints
     //   3. Variables that have been merged (and hence, previously
     //      appeared in an equation)
     Set<unsigned> usedVariables;
     for ( const auto &equation : _preprocessed.getEquations() )
         usedVariables += equation.getParticipatingVariables();
     for ( const auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    {
+        for ( const auto &var : constraint->getParticipatingVariables() )
+            usedVariables.insert( var );
+    }
+    for ( const auto &constraint : _preprocessed.getTranscendentalConstraints() )
     {
         for ( const auto &var : constraint->getParticipatingVariables() )
             usedVariables.insert( var );
@@ -810,6 +815,45 @@ void Preprocessor::eliminateVariables()
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
+        }
+	}
+
+    // Let the transcendental constraints know of any eliminated variables, and remove
+    // the constraints themselves if they become obsolete.
+    List<TranscendentalConstraint *> &tsConstraints( _preprocessed.getTranscendentalConstraints() );
+    List<TranscendentalConstraint *>::iterator tsConstraint = tsConstraints.begin();
+    while ( tsConstraint != tsConstraints.end() )
+    {
+        List<unsigned> participatingVariables = (*tsConstraint)->getParticipatingVariables();
+        for ( unsigned variable : participatingVariables )
+        {
+            if ( _fixedVariables.exists( variable ) )
+            {
+                (*tsConstraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
+            }
+        }
+
+        if ( (*tsConstraint)->constraintObsolete() )
+        {
+            if ( _statistics )
+                _statistics->ppIncNumConstraintsRemoved();
+
+            delete *tsConstraint;
+            *tsConstraint = NULL;
+            tsConstraint = tsConstraints.erase( tsConstraint );
+        }
+        else
+            ++tsConstraint;
+	}
+
+    // Let the remaining transcendental constraints know of any changes in indices.
+    for ( const auto &tsConstraint : tsConstraints )
+	{
+		List<unsigned> participatingVariables = tsConstraint->getParticipatingVariables();
+        for ( unsigned variable : participatingVariables )
+        {
+            if ( _oldIndexToNewIndex.at( variable ) != variable )
+                tsConstraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
 	}
 

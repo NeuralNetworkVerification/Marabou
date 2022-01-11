@@ -720,6 +720,16 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
             plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
     }
+
+    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    {
+        List<unsigned> variables = tsConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            tsConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            tsConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+        }
+    }
 }
 
 void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
@@ -2359,15 +2369,15 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         // Apply bound tightening before handing to Gurobi
         if ( _tableau->basisMatrixAvailable() )
         {
-	    explicitBasisBoundTightening();
-	    applyAllBoundTightenings();
-	    applyAllValidConstraintCaseSplits();
-	}
-	do
-	{
-	    performSymbolicBoundTightening();
-	}
-	while ( applyAllValidConstraintCaseSplits() );
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+	    }
+    do
+    {
+        performSymbolicBoundTightening();
+    }
+    while ( applyAllValidConstraintCaseSplits() );
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -2389,11 +2399,13 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 
     if ( _gurobi->haveFeasibleSolution() )
     {
-        // Return UNKNOWN if the model has transcendental constratints.
+        // Return UNKNOWN if input query has transcendental constratints.
         if ( _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
         {
-            _exitCode = IEngine::UNKNOWN;
-            return false;
+            // TODO: Return UNKNOW exitCode insted of throwing Error after implementing python interface to support UNKNOWN.
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "UNKNOWN (Marabou doesn't support UNKNOWN cases with exitCode yet.)" );
+            // _exitCode = IEngine::UNKNOWN;
+            // return false;
         }
         _exitCode = IEngine::SAT;
         return true;

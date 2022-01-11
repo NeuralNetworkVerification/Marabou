@@ -276,12 +276,10 @@ class MarabouNetwork:
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
-        vals, stats, exitCode = MarabouCore.solve(ipq, options, str(filename))
+        vals, stats = MarabouCore.solve(ipq, options, str(filename))
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
-            elif exitCode == MarabouCore.Engine.ExitCode.UNKNOWN:
-                print("unknown")
             elif len(vals)==0:
                 print("unsat")
             else:
@@ -414,7 +412,7 @@ class MarabouNetwork:
 
         if options == None:
             options = MarabouCore.Options()
-        outputDict, _, _ = MarabouCore.solve(ipq, options, str(filename))
+        outputDict, _ = MarabouCore.solve(ipq, options, str(filename))
 
         # When the query is UNSAT an empty dictionary is returned
         if outputDict == {}:
@@ -458,4 +456,3 @@ class MarabouNetwork:
         outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
         err = np.abs(outMar - outNotMar)
         return err
-
