@@ -426,12 +426,11 @@ public:
 
 	void test_variable_elimination_for_ts_constraints()
 	{
-        // TG: シナリオ
         // x0 + x1 = 1
-        // x2 = simogid(x1) // x1 is fixed => x2 should be fixed... この時、x2のinputQuery 上の値は fixed ではなくてもこうなるのが正しいか？
+        // x2 = simogid(x1) // x1 is fixed => x2 should be fixed...
         // x3 = simoid(x2) // x2 is fixed, so x3 should be fixed...
         // x3 + x4 = 2
-		InputQuery inputQuery;
+        InputQuery inputQuery;
 
         inputQuery.setNumberOfVariables( 10 );
         inputQuery.setLowerBound( 0, 1 ); // fixed
@@ -463,14 +462,14 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-		// x7 + x8 = 12
-		Equation equation2;
-		equation2.addAddend( 1, 7 );
-		equation2.addAddend( 1, 8 );
-		equation2.setScalar( 12 );
-		inputQuery.addEquation( equation2 );
+        // x7 + x8 = 12
+        Equation equation2;
+        equation2.addAddend( 1, 7 );
+        equation2.addAddend( 1, 8 );
+        equation2.setScalar( 12 );
+        inputQuery.addEquation( equation2 );
 
-		InputQuery processed = Preprocessor().preprocess( inputQuery, true );
+        InputQuery processed = Preprocessor().preprocess( inputQuery, true );
 
         // Variables 2, 4, 5 and 9 are unused and should be eliminated.
         // Variables 0, 3 and 6 were fixed and should be eliminated.
@@ -491,7 +490,7 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, 1U );
 
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
-	}
+    }
 
     void test_all_equations_become_equalities()
     {
