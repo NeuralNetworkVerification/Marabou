@@ -15,6 +15,7 @@
  **/
 
 #include "FloatUtils.h"
+#include "GurobiWrapper.h"
 #include "MILPEncoder.h"
 
 MILPEncoder::MILPEncoder( const ITableau &tableau )
