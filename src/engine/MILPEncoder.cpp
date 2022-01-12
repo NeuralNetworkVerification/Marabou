@@ -206,8 +206,6 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
 
 void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid )
 {
-    ASSERT( &gurobi );
-
     unsigned sourceVariable = sigmoid->getB();  // x_b
     unsigned targetVariable = sigmoid->getF();  // x_f
     double sourceLb = _tableau.getLowerBound( sourceVariable );
