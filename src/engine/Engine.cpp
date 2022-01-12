@@ -2372,12 +2372,12 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
             explicitBasisBoundTightening();
             applyAllBoundTightenings();
             applyAllValidConstraintCaseSplits();
-	    }
-    do
-    {
-        performSymbolicBoundTightening();
-    }
-    while ( applyAllValidConstraintCaseSplits() );
+        }
+        do
+        {
+            performSymbolicBoundTightening();
+        }
+        while ( applyAllValidConstraintCaseSplits() );
     }
     catch ( const InfeasibleQueryException & )
     {

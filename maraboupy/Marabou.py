@@ -102,7 +102,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
     """
     if options is None:
         options = createOptions()
-    vals, stats, _ = MarabouCore.solve(ipq, options, filename)
+    vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
             print ("TO")
