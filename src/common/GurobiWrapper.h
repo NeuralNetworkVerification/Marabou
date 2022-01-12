@@ -172,6 +172,9 @@ public:
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
+    void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
+    void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
+    void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void setCost( const List<Term> & ) {}
     void setObjective( const List<Term> & ) {}
     void setCutoff( double ) {};
