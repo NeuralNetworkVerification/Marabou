@@ -34,6 +34,7 @@ jobs:
 
       - name: Create Build Environment
         run: cmake -E make_directory build
+        run: rm -fr build/*
 
       # ---------------------------- CACHING ----------------------------------
       # GitHub actions currently does not support modifying an already existing
