@@ -150,8 +150,33 @@ public:
         // Equations unchanged
         TS_ASSERT( inputQuery.getEquations() == inputQuery2.getEquations() );
 
-        // Constraints unchanged
-        TS_ASSERT( inputQuery.getPiecewiseLinearConstraints() == inputQuery.getPiecewiseLinearConstraints() );
+        // Piecewise Constraints unchanged
+        TS_ASSERT( inputQuery.getPiecewiseLinearConstraints().size() == 2U );
+        TS_ASSERT( inputQuery2.getPiecewiseLinearConstraints().size() == 2U );
+        auto it = inputQuery.getPiecewiseLinearConstraints().begin();
+        ReluConstraint *constraint = (ReluConstraint *)*it;
+        auto it2 = inputQuery2.getPiecewiseLinearConstraints().begin();
+        ReluConstraint *constraint2 = (ReluConstraint *)*it2;
+        TS_ASSERT( constraint->serializeToString() == constraint2->serializeToString() );
+        ++it;
+        ++it2;
+        constraint = (ReluConstraint *)*it;
+        constraint2 = (ReluConstraint *)*it2;
+        TS_ASSERT( constraint->serializeToString() == constraint2->serializeToString() );
+
+        // Transcendental Constraints unchanged
+        TS_ASSERT( inputQuery.getTranscendentalConstraints().size() == 2U );
+        TS_ASSERT( inputQuery2.getTranscendentalConstraints().size() == 2U );
+        auto tsIt = inputQuery.getTranscendentalConstraints().begin();
+        SigmoidConstraint *tsConstraint = (SigmoidConstraint *)*tsIt;
+        auto tsIt2 = inputQuery2.getTranscendentalConstraints().begin();
+        SigmoidConstraint *tsConstraint2 = (SigmoidConstraint *)*tsIt2;
+        TS_ASSERT( tsConstraint->serializeToString() == tsConstraint2->serializeToString() );
+        ++tsIt;
+        ++tsIt2;
+        tsConstraint = (SigmoidConstraint *)*tsIt;
+        tsConstraint2 = (SigmoidConstraint *)*tsIt2;
+        TS_ASSERT( tsConstraint->serializeToString() == tsConstraint2->serializeToString() );
     }
 };
 

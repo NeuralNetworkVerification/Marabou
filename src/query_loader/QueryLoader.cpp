@@ -48,7 +48,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     QL_LOG( Stringf( "Number of lower bounds: %u\n", numLowerBounds ).ascii() );
     QL_LOG( Stringf( "Number of upper bounds: %u\n", numUpperBounds ).ascii() );
     QL_LOG( Stringf( "Number of equations: %u\n", numEquations ).ascii() );
-    QL_LOG( Stringf( "Number of picewise-linear constraints: %u\n", numConstraints ).ascii() );
+    QL_LOG( Stringf( "Number of picewise constraints: %u\n", numConstraints ).ascii() );
     QL_LOG( Stringf( "Number of transcendental constraints: %u\n", numTsConstraints ).ascii() );
 
     inputQuery.setNumberOfVariables( numVars );
@@ -182,7 +182,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         inputQuery.addEquation( equation );
     }
 
-    // Constraints
+    // Piecewise Constraints
     for ( unsigned i = 0; i < numConstraints; ++i )
     {
         String line = input->readLine();
@@ -202,7 +202,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         serializeConstraint = serializeConstraint.substring( 0, serializeConstraint.length() - 1 );
 
         PiecewiseLinearConstraint *constraint = NULL;
-        QL_LOG( Stringf( "Constraint: %u, Type: %s \n", i, coType.ascii() ).ascii() );
+        QL_LOG( Stringf( "Piecewise Constraint: %u, Type: %s \n", i, coType.ascii() ).ascii() );
         QL_LOG( Stringf( "\tserialized:\t%s \n", serializeConstraint.ascii() ).ascii() );
         if ( coType == "relu" )
         {
@@ -227,6 +227,41 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
         ASSERT( constraint );
         inputQuery.addPiecewiseLinearConstraint( constraint );
+    }
+
+    // Transcendental Constraints
+    for ( unsigned i = 0; i < numTsConstraints; ++i )
+    {
+        String line = input->readLine();
+
+        List<String> tokens = line.tokenize( "," );
+        auto it = tokens.begin();
+
+        // Skip constraint number
+        ++it;
+        String coType = *it;
+        String serializeConstraint;
+        // include type in serializeConstraint as well
+        while ( it != tokens.end() ) {
+            serializeConstraint += *it + String( "," );
+            it++;
+        }
+        serializeConstraint = serializeConstraint.substring( 0, serializeConstraint.length() - 1 );
+
+        TranscendentalConstraint *constraint = NULL;
+        QL_LOG( Stringf( "Transcendental Constraint: %u, Type: %s \n", i, coType.ascii() ).ascii() );
+        QL_LOG( Stringf( "\tserialized:\t%s \n", serializeConstraint.ascii() ).ascii() );
+        if ( coType == "sigmoid" )
+        {
+            constraint = new SigmoidConstraint( serializeConstraint );
+        }
+        else
+        {
+            throw MarabouError( MarabouError::UNSUPPORTED_TRANSCENDENTAL_CONSTRAINT, Stringf( "Unsupported transcendental constraint: %s\n", coType.ascii() ).ascii() );
+        }
+
+        ASSERT( constraint );
+        inputQuery.addTranscendentalConstraint( constraint );
     }
 
     inputQuery.constructNetworkLevelReasoner();
