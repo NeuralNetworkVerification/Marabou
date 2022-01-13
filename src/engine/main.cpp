@@ -56,10 +56,10 @@ void printHelpMessage()
 
 int main( int argc, char **argv )
 {
-    printf("STARTED\n");
-    Marabou().run();
-    printf("FINISHED\n");
-    return 0;
+    // printf("STARTED\n");
+    // Marabou().run();
+    // printf("FINISHED\n");
+    // return 0;
     try
     {
         Options *options = Options::get();
