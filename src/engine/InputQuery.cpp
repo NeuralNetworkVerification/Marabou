@@ -362,18 +362,14 @@ void InputQuery::saveQuery( const String &fileName )
     // Number of Equations
     queryFile->write( Stringf( "%u\n", _equations.size() ) );
 
-    // Number of Piecewise-Liner Constraints
-    queryFile->write( Stringf( "%u\n", _plConstraints.size() ) );
-
-    // Number of Transcendental Constraints
-    queryFile->write( Stringf( "%u", _tsConstraints.size() ) );
+    // Number of Non-linear Constraints
+    queryFile->write( Stringf( "%u", _plConstraints.size() + _tsConstraints.size() ) );
 
     printf( "Number of variables: %u\n", _numberOfVariables );
     printf( "Number of lower bounds: %u\n", _lowerBounds.size() );
     printf( "Number of upper bounds: %u\n", _upperBounds.size() );
     printf( "Number of equations: %u\n", _equations.size() );
-    printf( "Number of piecewise-linear constraints: %u\n", _plConstraints.size() );
-    printf( "Number of transcendental constraints: %u\n", _tsConstraints.size() );
+    printf( "Number of non-linear constraints: %u\n", _plConstraints.size() + _tsConstraints.size() );
 
     // Number of Input Variables
     queryFile->write( Stringf( "\n%u", getNumInputVariables() ) );

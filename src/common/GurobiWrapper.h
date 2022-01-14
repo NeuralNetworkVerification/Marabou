@@ -132,6 +132,7 @@ private:
     double _timeoutInSeconds;
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
+    // Add a new indicator constraint
     void addIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar, char sense );
 
     void freeModelIfNeeded();
