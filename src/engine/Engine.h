@@ -188,6 +188,8 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
 private:
+    friend class EngineTestSuite;
+
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,
@@ -410,8 +412,9 @@ private:
     /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
+      Return true only if the current assignment is optimal.
     */
-    void performSimplexStep();
+    bool performSimplexStep();
 
     /*
       Perform a constraint-fixing step: select a violated piece-wise
@@ -600,6 +603,16 @@ private:
       Extract the satisfying assignment from the MILP solver
     */
     void extractSolutionFromGurobi( InputQuery &inputQuery );
+
+    /*
+      Minimize the cost function with respect to the current set of linear constraints.
+    */
+    void minimizeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+
+    /*
+      Compute the cost function with the current assignment.
+    */
+    double computeHeuristicCost( const Map<unsigned, double> &heuristicCost );
 };
 
 #endif // __Engine_h__

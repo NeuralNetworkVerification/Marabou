@@ -121,15 +121,16 @@ void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double>
                                                     &heuristicCost )
 {
     /*
-      A heuristic-based cost function is computed by computing the core
-      cost function and adding to it the provided heuristic cost.
-
       The heuristic cost may include variables that are basic and variables
       that are non-basic. The basic variables are added to the vector of basic
       costs, which is normally used in computing the core cost fuction.
       Afterwards, once the modified core cost function has been computed,
       the remaining, non-basic variables are added.
     */
+
+    // This method assumes that we are in optimization mode.
+    ASSERT( !_tableau->existsBasicOutOfBounds() );
+    ASSERT( _tableau->isOptimizing() );
 
     // Reset cost function
     std::fill( _costFunction, _costFunction + _n - _m, 0.0 );

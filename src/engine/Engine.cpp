@@ -427,7 +427,7 @@ void Engine::performConstraintFixingStep()
     _statistics.addTimeConstraintFixingSteps( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::performSimplexStep()
+bool Engine::performSimplexStep()
 {
     // Statistics
     _statistics.incNumSimplexSteps();
@@ -555,7 +555,7 @@ void Engine::performSimplexStep()
             _tableau->computeAssignment();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            return;
+            return false;
         }
         else if ( !_costFunctionManager->costFunctionJustComputed() )
         {
@@ -565,14 +565,20 @@ void Engine::performSimplexStep()
             _costFunctionManager->invalidateCostFunction();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            return;
+            return false;
         }
         else
         {
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            throw InfeasibleQueryException();
+            if ( _tableau->isOptimizing() )
+            {
+                // The current solution is optimal.
+                return true;
+            }
+            else
+                throw InfeasibleQueryException();
         }
     }
 
@@ -595,7 +601,7 @@ void Engine::performSimplexStep()
         if ( !_tableau->basisMatrixAvailable() )
         {
             _tableau->refreshBasisFactorization();
-            return;
+            return false;
         }
 
         _statistics.incNumSimplexUnstablePivots();
@@ -614,6 +620,7 @@ void Engine::performSimplexStep()
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+    return false;
 }
 
 void Engine::fixViolatedPlConstraintIfPossible()
@@ -2456,4 +2463,78 @@ bool Engine::preprocessingEnabled() const
 const Preprocessor *Engine::getPreprocessor()
 {
     return &_preprocessor;
+}
+
+void Engine::minimizeHeuristicCost( const Map<unsigned, double>
+                                    &heuristicCost )
+{
+    ASSERT( _tableau->isOptimizing() );
+
+    ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost..." );
+    bool localOptimaReached = false;
+    while ( !localOptimaReached )
+    {
+        DEBUG({
+                ENGINE_LOG
+                    ( Stringf( "Current heuristic cost: %f",
+                               computeHeuristicCost( heuristicCost ) ).ascii() );
+            });
+
+        DEBUG( _tableau->verifyInvariants() );
+
+        mainLoopStatistics();
+        if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
+             GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            _statistics.print();
+
+        // If the basis has become malformed, we need to restore it
+        if ( basisRestorationNeeded() )
+        {
+            if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+            {
+                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+            }
+            else
+            {
+                performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+                _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+            }
+
+            _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
+            _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+            continue;
+        }
+
+        // Restoration is not required
+        _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+
+        // Possible restoration due to preceision degradation
+        if ( shouldCheckDegradation() && highDegradation() )
+        {
+            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+            continue;
+        }
+
+        checkAllVariblesInBound();
+
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            throw InfeasibleQueryException();
+        }
+        localOptimaReached = performSimplexStep();
+    }
+    ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
+}
+
+double Engine::computeHeuristicCost( const Map<unsigned, double> &heuristicCost )
+{
+    double cost = 0;
+    for ( const auto &pair : _heuristicCost )
+    {
+        double value = _tableau->getValue( pair.first );
+        cost += pair.second * value;
+    }
+    return cost;
 }
