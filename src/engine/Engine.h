@@ -405,6 +405,7 @@ private:
      */
     String _queryId;
 
+    Map<unsigned, double> _heuristicCost;
 
     /*
       Perform a simplex step: compute the cost function, pick the

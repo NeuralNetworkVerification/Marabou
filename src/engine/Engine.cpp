@@ -444,6 +444,8 @@ void Engine::performSimplexStep()
          next-best entering variable.
     */
 
+    if ( _tableau->isOptimizing() )
+        _costFunctionManager->computeGivenCostFunction( _heuristicCost );
     if ( _costFunctionManager->costFunctionInvalid() )
         _costFunctionManager->computeCoreCostFunction();
     else

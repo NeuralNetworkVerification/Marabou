@@ -117,6 +117,44 @@ void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heur
     computeReducedCosts();
 }
 
+void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double>
+                                                    &heuristicCost )
+{
+    /*
+      A heuristic-based cost function is computed by computing the core
+      cost function and adding to it the provided heuristic cost.
+
+      The heuristic cost may include variables that are basic and variables
+      that are non-basic. The basic variables are added to the vector of basic
+      costs, which is normally used in computing the core cost fuction.
+      Afterwards, once the modified core cost function has been computed,
+      the remaining, non-basic variables are added.
+    */
+
+    // Reset cost function
+    std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
+
+    // Iterate over the heuristic costs. Add any basic variables to the basic
+    // cost vector, and the rest directly to the cost function.
+    for ( const auto &variableCost : heuristicCost )
+    {
+        unsigned variable = variableCost.first;
+        double cost = variableCost.second;
+        unsigned variableIndex = _tableau->variableToIndex( variable );
+        if ( _tableau->isBasic( variable ) )
+            _basicCosts[variableIndex] += cost;
+        else
+            _costFunction[variableIndex] += cost;
+    }
+
+    // Complete the calculation of the modified core cost function
+    computeMultipliers();
+    computeReducedCosts();
+
+    // So that it doesn't count as "fresh" for declaring UNSAT
+    _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
+}
+
 void CostFunctionManager::computeCoreCostFunction()
 {
     /*

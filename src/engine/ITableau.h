@@ -189,7 +189,7 @@ public:
     void notOptimizing() { _optimizing = false; }
 
 protected:
-    bool _optimizing;
+    bool _optimizing = false;
 };
 
 #endif // __ITableau_h__
