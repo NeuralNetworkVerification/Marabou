@@ -66,6 +66,16 @@ public:
     bool solve( unsigned timeoutInSeconds = 0 );
 
     /*
+      Minimize the cost function with respect to the current set of linear constraints.
+    */
+    void minimizeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+
+    /*
+      Compute the cost function with the current assignment.
+    */
+    double computeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+
+    /*
       Process the input query and pass the needed information to the
       underlying tableau. Return false if query is found to be infeasible,
       true otherwise.
@@ -188,7 +198,6 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
 private:
-    friend class LpTestSuite;
 
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
@@ -603,16 +612,6 @@ private:
       Extract the satisfying assignment from the MILP solver
     */
     void extractSolutionFromGurobi( InputQuery &inputQuery );
-
-    /*
-      Minimize the cost function with respect to the current set of linear constraints.
-    */
-    void minimizeHeuristicCost( const Map<unsigned, double> &heuristicCost );
-
-    /*
-      Compute the cost function with the current assignment.
-    */
-    double computeHeuristicCost( const Map<unsigned, double> &heuristicCost );
 };
 
 #endif // __Engine_h__

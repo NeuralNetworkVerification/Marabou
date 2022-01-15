@@ -76,8 +76,6 @@ public:
         heuristicCost[0] = 1;
         heuristicCost[1] = -1;
 
-        TS_ASSERT_THROWS_NOTHING( engine._tableau->optimizing() );
-
         TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( heuristicCost ) );
 
         engine.extractSolution( inputQuery );
