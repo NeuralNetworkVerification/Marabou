@@ -478,20 +478,20 @@ bool Preprocessor::processConstraints()
 {
     bool tighterBoundFound = false;
 
-	for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
-	{
-		for ( unsigned variable : constraint->getParticipatingVariables() )
-		{
-			constraint->notifyLowerBound( variable, getLowerBound( variable ) );
-			constraint->notifyUpperBound( variable, getUpperBound( variable ) );
-		}
+    for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
+    {
+        for ( unsigned variable : constraint->getParticipatingVariables() )
+        {
+            constraint->notifyLowerBound( variable, getLowerBound( variable ) );
+            constraint->notifyUpperBound( variable, getUpperBound( variable ) );
+        }
 
         List<Tightening> tightenings;
         constraint->getEntailedTightenings( tightenings );
 
         for ( const auto &tightening : tightenings )
-		{
-			if ( ( tightening._type == Tightening::LB ) &&
+        {
+            if ( ( tightening._type == Tightening::LB ) &&
                  ( FloatUtils::gt( tightening._value, getLowerBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
@@ -846,7 +846,7 @@ void Preprocessor::eliminateVariables()
     // Let the remaining piecewise-lienar constraints know of any changes in indices.
     for ( const auto &constraint : constraints )
 	{
-		List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+            List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
