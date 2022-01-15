@@ -44,6 +44,7 @@ public:
     double getUpperBound( unsigned variable ) const;
     const Map<unsigned, double> &getLowerBounds() const;
     const Map<unsigned, double> &getUpperBounds() const;
+    void clearBounds();
 
     const List<Equation> &getEquations() const;
     List<Equation> &getEquations();

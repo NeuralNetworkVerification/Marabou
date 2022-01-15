@@ -28,6 +28,8 @@ class Preprocessor
 public:
     Preprocessor();
 
+    ~Preprocessor();
+
     /*
       Main method of this class: preprocess the input query
     */
@@ -56,6 +58,29 @@ public:
     unsigned getNewIndex( unsigned oldIndex ) const;
 
 private:
+
+    void freeMemoryIfNeeded();
+
+    inline double getLowerBound( unsigned var )
+    {
+        return _lowerBounds[var];
+    }
+
+    inline double getUpperBound( unsigned var )
+    {
+        return _upperBounds[var];
+    }
+
+    inline void setLowerBound( unsigned var, double value )
+    {
+        _lowerBounds[var] = value;
+    }
+
+    inline void setUpperBound( unsigned var, double value )
+    {
+        _upperBounds[var] = value;
+    }
+
     /*
       Transform all equations of type GE or LE to type EQ.
     */
@@ -119,6 +144,12 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Used to store the bounds during the preprocessing.
+    */
+    double *_lowerBounds;
+    double *_upperBounds;
 
     /*
       Variables that have become fixed during preprocessing, and the
