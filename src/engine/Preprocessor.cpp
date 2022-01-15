@@ -31,7 +31,28 @@
 
 Preprocessor::Preprocessor()
     : _statistics( NULL )
+    , _lowerBounds( NULL )
+    , _upperBounds( NULL )
 {
+}
+
+Preprocessor::~Preprocessor()
+{
+    freeMemoryIfNeeded();
+}
+
+void Preprocessor::freeMemoryIfNeeded()
+{
+    if ( _lowerBounds != NULL )
+    {
+        delete[] _lowerBounds;
+        _lowerBounds = NULL;
+    }
+    if ( _upperBounds != NULL )
+    {
+        delete[] _upperBounds;
+        _upperBounds = NULL;
+    }
 }
 
 InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
@@ -84,6 +105,18 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     setMissingBoundsToInfinity();
 
     /*
+      Store the bounds locally for more efficient access.
+    */
+    _lowerBounds = new double[_preprocessed.getNumberOfVariables()];
+    _upperBounds = new double[_preprocessed.getNumberOfVariables()];
+
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        _lowerBounds[i] = _preprocessed.getLowerBound( i );
+        _upperBounds[i] = _preprocessed.getUpperBound( i );
+    }
+
+    /*
       Do the preprocessing steps:
 
       Until saturation:
@@ -111,6 +144,14 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     if ( attemptVariableElimination )
         eliminateVariables();
 
+    /*
+      Update the bounds.
+    */
+    for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
+    {
+        _preprocessed.setLowerBound( i, getLowerBound( i ) );
+        _preprocessed.setUpperBound( i, getUpperBound( i ) );
+    }
     return _preprocessed;
 }
 
@@ -229,8 +270,8 @@ bool Preprocessor::processEquations()
 
             ciSign[xi] = ci > 0 ? POSITIVE : NEGATIVE;
 
-            xiLB = _preprocessed.getLowerBound( xi );
-            xiUB = _preprocessed.getUpperBound( xi );
+            xiLB = getLowerBound( xi );
+            xiUB = getUpperBound( xi );
 
             if ( FloatUtils::isFinite( xiLB ) )
             {
@@ -341,12 +382,12 @@ bool Preprocessor::processEquations()
 
                 if (
                     FloatUtils::gt(
-                        lowerBound, _preprocessed.getLowerBound( xi ), epsilon
+                        lowerBound, getLowerBound( xi ), epsilon
                     )
                 )
                 {
                     tighterBoundFound = true;
-                    _preprocessed.setLowerBound( xi, lowerBound );
+                    setLowerBound( xi, lowerBound );
                 }
             }
 
@@ -369,17 +410,17 @@ bool Preprocessor::processEquations()
 
                 if (
                     FloatUtils::lt(
-                        upperBound, _preprocessed.getUpperBound( xi ), epsilon
+                        upperBound, getUpperBound( xi ), epsilon
                     )
                 )
                 {
                     tighterBoundFound = true;
-                    _preprocessed.setUpperBound( xi, upperBound );
+                    setUpperBound( xi, upperBound );
                 }
             }
 
-            if ( FloatUtils::gt( _preprocessed.getLowerBound( xi ),
-                                 _preprocessed.getUpperBound( xi ),
+            if ( FloatUtils::gt( getLowerBound( xi ),
+                                 getUpperBound( xi ),
                                  GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
                 delete[] ciTimesLb;
@@ -403,11 +444,11 @@ bool Preprocessor::processEquations()
         for ( const auto &addend : equation->_addends )
         {
             unsigned var = addend._variable;
-            double lb = _preprocessed.getLowerBound( var );
-            double ub = _preprocessed.getUpperBound( var );
+            double lb = getLowerBound( var );
+            double ub = getUpperBound( var );
 
             if ( FloatUtils::areEqual( lb, ub, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-                _preprocessed.setUpperBound( var, _preprocessed.getLowerBound( var ) );
+                setUpperBound( var, getLowerBound( var ) );
             else
                 allFixed = false;
         }
@@ -420,7 +461,7 @@ bool Preprocessor::processEquations()
         {
             double sum = 0;
             for ( const auto &addend : equation->_addends )
-                sum += addend._coefficient * _preprocessed.getLowerBound( addend._variable );
+                sum += addend._coefficient * getLowerBound( addend._variable );
 
             if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
@@ -441,8 +482,8 @@ bool Preprocessor::processConstraints()
 	{
 		for ( unsigned variable : constraint->getParticipatingVariables() )
 		{
-			constraint->notifyLowerBound( variable, _preprocessed.getLowerBound( variable ) );
-			constraint->notifyUpperBound( variable, _preprocessed.getUpperBound( variable ) );
+			constraint->notifyLowerBound( variable, getLowerBound( variable ) );
+			constraint->notifyUpperBound( variable, getUpperBound( variable ) );
 		}
 
         List<Tightening> tightenings;
@@ -451,27 +492,27 @@ bool Preprocessor::processConstraints()
         for ( const auto &tightening : tightenings )
 		{
 			if ( ( tightening._type == Tightening::LB ) &&
-                 ( FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) ) )
+                 ( FloatUtils::gt( tightening._value, getLowerBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
-                _preprocessed.setLowerBound( tightening._variable, tightening._value );
+                setLowerBound( tightening._variable, tightening._value );
             }
 
             else if ( ( tightening._type == Tightening::UB ) &&
-                      ( FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) ) )
+                      ( FloatUtils::lt( tightening._value, getUpperBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
-                _preprocessed.setUpperBound( tightening._variable, tightening._value );
+                setUpperBound( tightening._variable, tightening._value );
             }
 
-            if ( FloatUtils::areEqual( _preprocessed.getLowerBound( tightening._variable ),
-                                       _preprocessed.getUpperBound( tightening._variable ),
+            if ( FloatUtils::areEqual( getLowerBound( tightening._variable ),
+                                       getUpperBound( tightening._variable ),
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-                _preprocessed.setUpperBound( tightening._variable,
-                                             _preprocessed.getLowerBound( tightening._variable ) );
+                setUpperBound( tightening._variable,
+                                             getLowerBound( tightening._variable ) );
 
-            if ( FloatUtils::gt( _preprocessed.getLowerBound( tightening._variable ),
-                                 _preprocessed.getUpperBound( tightening._variable ),
+            if ( FloatUtils::gt( getLowerBound( tightening._variable ),
+                                 getUpperBound( tightening._variable ),
                                  GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
                 throw InfeasibleQueryException();
@@ -483,8 +524,8 @@ bool Preprocessor::processConstraints()
 	{
 		for ( unsigned variable : constraint->getParticipatingVariables() )
 		{
-			constraint->notifyLowerBound( variable, _preprocessed.getLowerBound( variable ) );
-			constraint->notifyUpperBound( variable, _preprocessed.getUpperBound( variable ) );
+			constraint->notifyLowerBound( variable, getLowerBound( variable ) );
+			constraint->notifyUpperBound( variable, getUpperBound( variable ) );
 		}
 
         List<Tightening> tightenings;
@@ -493,27 +534,27 @@ bool Preprocessor::processConstraints()
         for ( const auto &tightening : tightenings )
 		{
 			if ( ( tightening._type == Tightening::LB ) &&
-                 ( FloatUtils::gt( tightening._value, _preprocessed.getLowerBound( tightening._variable ) ) ) )
+                 ( FloatUtils::gt( tightening._value, getLowerBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
-                _preprocessed.setLowerBound( tightening._variable, tightening._value );
+                setLowerBound( tightening._variable, tightening._value );
             }
 
             else if ( ( tightening._type == Tightening::UB ) &&
-                      ( FloatUtils::lt( tightening._value, _preprocessed.getUpperBound( tightening._variable ) ) ) )
+                      ( FloatUtils::lt( tightening._value, getUpperBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
-                _preprocessed.setUpperBound( tightening._variable, tightening._value );
+                setUpperBound( tightening._variable, tightening._value );
             }
 
-            if ( FloatUtils::areEqual( _preprocessed.getLowerBound( tightening._variable ),
-                                       _preprocessed.getUpperBound( tightening._variable ),
+            if ( FloatUtils::areEqual( getLowerBound( tightening._variable ),
+                                       getUpperBound( tightening._variable ),
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-                _preprocessed.setUpperBound( tightening._variable,
-                                             _preprocessed.getLowerBound( tightening._variable ) );
+                setUpperBound( tightening._variable,
+                                             getLowerBound( tightening._variable ) );
 
-            if ( FloatUtils::gt( _preprocessed.getLowerBound( tightening._variable ),
-                                 _preprocessed.getUpperBound( tightening._variable ),
+            if ( FloatUtils::gt( getLowerBound( tightening._variable ),
+                                 getUpperBound( tightening._variable ),
                                  GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
                 throw InfeasibleQueryException();
@@ -567,19 +608,19 @@ bool Preprocessor::processIdenticalVariables()
         found = true;
 
         double bestLowerBound =
-            _preprocessed.getLowerBound( v1 ) > _preprocessed.getLowerBound( v2 ) ?
-            _preprocessed.getLowerBound( v1 ) :
-            _preprocessed.getLowerBound( v2 );
+            getLowerBound( v1 ) > getLowerBound( v2 ) ?
+            getLowerBound( v1 ) :
+            getLowerBound( v2 );
 
         double bestUpperBound =
-            _preprocessed.getUpperBound( v1 ) < _preprocessed.getUpperBound( v2 ) ?
-            _preprocessed.getUpperBound( v1 ) :
-            _preprocessed.getUpperBound( v2 );
+            getUpperBound( v1 ) < getUpperBound( v2 ) ?
+            getUpperBound( v1 ) :
+            getUpperBound( v2 );
 
         equation = equations.erase( equation );
 
-        _preprocessed.setLowerBound( v2, bestLowerBound );
-        _preprocessed.setUpperBound( v2, bestUpperBound );
+        setLowerBound( v2, bestLowerBound );
+        setUpperBound( v2, bestUpperBound );
 
         _preprocessed.mergeIdenticalVariables( v1, v2 );
 
@@ -611,9 +652,9 @@ void Preprocessor::collectFixedValues()
     // which are unused
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
     {
-        if ( FloatUtils::areEqual( _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) ) )
+        if ( FloatUtils::areEqual( getLowerBound( i ), getUpperBound( i ) ) )
         {
-            _fixedVariables[i] = _preprocessed.getLowerBound( i );
+            _fixedVariables[i] = getLowerBound( i );
         }
         else if ( !usedVariables.exists( i ) )
         {
@@ -622,23 +663,23 @@ void Preprocessor::collectFixedValues()
             // bounds are infinite for this variable, set them
             // arbitrarily as well.
             if ( _preprocessed._debuggingSolution.exists( i ) &&
-                 _preprocessed._debuggingSolution[i] >= _preprocessed.getLowerBound( i ) &&
-                 _preprocessed._debuggingSolution[i] <= _preprocessed.getUpperBound( i ) )
+                 _preprocessed._debuggingSolution[i] >= getLowerBound( i ) &&
+                 _preprocessed._debuggingSolution[i] <= getUpperBound( i ) )
             {
                 _fixedVariables[i] = _preprocessed._debuggingSolution[i];
             }
             else
             {
-                if ( FloatUtils::isFinite( _preprocessed.getLowerBound( i ) ) )
-                    _fixedVariables[i] = _preprocessed.getLowerBound( i );
-                else if ( FloatUtils::isFinite( _preprocessed.getUpperBound( i ) ) )
-                    _fixedVariables[i] = _preprocessed.getUpperBound( i );
+                if ( FloatUtils::isFinite( getLowerBound( i ) ) )
+                    _fixedVariables[i] = getLowerBound( i );
+                else if ( FloatUtils::isFinite( getUpperBound( i ) ) )
+                    _fixedVariables[i] = getUpperBound( i );
                 else
                     _fixedVariables[i] = 0;
             }
 
-            _preprocessed.setLowerBound( i, _fixedVariables[i] );
-            _preprocessed.setUpperBound( i, _fixedVariables[i] );
+            setLowerBound( i, _fixedVariables[i] );
+            setUpperBound( i, _fixedVariables[i] );
         }
     }
 }
@@ -826,8 +867,8 @@ void Preprocessor::eliminateVariables()
 
         ASSERT( _oldIndexToNewIndex.at( i ) <= i );
 
-        _preprocessed.setLowerBound( _oldIndexToNewIndex.at( i ), _preprocessed.getLowerBound( i ) );
-        _preprocessed.setUpperBound( _oldIndexToNewIndex.at( i ), _preprocessed.getUpperBound( i ) );
+        setLowerBound( _oldIndexToNewIndex.at( i ), getLowerBound( i ) );
+        setUpperBound( _oldIndexToNewIndex.at( i ), getUpperBound( i ) );
 	}
 
     // Adjust variable indices in the debugging solution
@@ -914,7 +955,7 @@ void Preprocessor::dumpAllBounds( const String &message )
 
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
     {
-        printf( "\tx%u: [%5.2lf, %5.2lf]\n", i, _preprocessed.getLowerBound( i ), _preprocessed.getUpperBound( i ) );
+        printf( "\tx%u: [%5.2lf, %5.2lf]\n", i, getLowerBound( i ), getUpperBound( i ) );
     }
 
     printf( "\n" );
