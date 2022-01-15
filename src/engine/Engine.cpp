@@ -2470,6 +2470,8 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
 {
     ASSERT( _tableau->isOptimizing() );
 
+    _heuristicCost = heuristicCost;
+
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost..." );
     bool localOptimaReached = false;
     while ( !localOptimaReached )
@@ -2478,6 +2480,7 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
                 ENGINE_LOG
                     ( Stringf( "Current heuristic cost: %f",
                                computeHeuristicCost( heuristicCost ) ).ascii() );
+                ASSERT( allVarsWithinBounds() );
             });
 
         DEBUG( _tableau->verifyInvariants() );
@@ -2516,13 +2519,6 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
             continue;
         }
 
-        checkAllVariblesInBound();
-
-        if ( !_tableau->allBoundsValid() )
-        {
-            // Some variable bounds are invalid, so the query is unsat
-            throw InfeasibleQueryException();
-        }
         localOptimaReached = performSimplexStep();
     }
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
@@ -2531,7 +2527,7 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
 double Engine::computeHeuristicCost( const Map<unsigned, double> &heuristicCost )
 {
     double cost = 0;
-    for ( const auto &pair : _heuristicCost )
+    for ( const auto &pair : heuristicCost )
     {
         double value = _tableau->getValue( pair.first );
         cost += pair.second * value;

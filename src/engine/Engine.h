@@ -188,7 +188,7 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
 private:
-    friend class EngineTestSuite;
+    friend class LpTestSuite;
 
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
