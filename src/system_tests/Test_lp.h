@@ -84,27 +84,27 @@ public:
                                          ( heuristicCost ), -0.5 ) );
 
         heuristicCost.clear();
-        heuristicCost[0] = -1;
+        heuristicCost[0] = -2;
         heuristicCost[1] = 1;
-        heuristicCost[3] = -1;
+        heuristicCost[3] = 2;
 
         TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( heuristicCost ) );
 
         engine.extractSolution( inputQuery );
 
         TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( heuristicCost ), -1/3 ) );
+                                         ( heuristicCost ), -0.25 ) );
 
         heuristicCost.clear();
-        heuristicCost[0] = -3;
-        heuristicCost[1] = 2;
+        heuristicCost[1] = -2;
+        heuristicCost[2] = 1;
 
         TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( heuristicCost ) );
 
         engine.extractSolution( inputQuery );
 
         TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( heuristicCost ), -2/3 ) );
+                                         ( heuristicCost ), -1 ) );
     }
 
     void test_fesiablbe()
