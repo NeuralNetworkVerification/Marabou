@@ -342,6 +342,12 @@ const Map<unsigned, double> &InputQuery::getUpperBounds() const
     return _upperBounds;
 }
 
+void InputQuery::clearBounds()
+{
+    _lowerBounds.clear();
+    _upperBounds.clear();
+}
+
 void InputQuery::storeDebuggingSolution( unsigned variable, double value )
 {
     _debuggingSolution[variable] = value;
