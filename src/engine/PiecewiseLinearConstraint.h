@@ -2,7 +2,7 @@
 /*! \file PiecewiseLinearConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Aleksandar Zeljic, Derek Huang
+ **   Guy Katz, Aleksandar Zeljic, Derek Huang, Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -52,6 +52,7 @@
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
@@ -253,6 +254,37 @@ public:
       equation should then lead to the constraint being "closer to satisfied".
     */
     virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function.
+      Nothing should be added when the constraint is fixed or inactive.
+      Minimizing the added term should lead to the constraint being
+      "closer to satisfied" in the given phase status.
+    */
+    virtual void addCostFunctionComponent( Map<unsigned, double> &/* cost */,
+                                           PhaseStatus /* phase */ ) const {}
+
+    /*
+      Compute the error of the current assignment with respect to the cost compoenent
+      corresponding to the given phase.
+    */
+    virtual double computeCostFunctionComponent( PhaseStatus & /* phase */ ) const
+    {
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                            "Sum-of-Infeasibilities for the current constraint type"
+                            " is not supported." );
+    }
+
+    /*
+      Ask the piecewise linear constraint to remove the cost term corresponding
+      to the given phase from the cost function.
+      The method does not check whether the cost term has been previously added.
+      This is done in the HeuristicCostManager class, which maintains/updates the
+      SoI function.
+    */
+    virtual void removeCostFunctionComponent( Map<unsigned, double> &/* cost */,
+                                              PhaseStatus /* phase */ ) const {}
 
     /*
       Produce string representation of the piecewise linear constraint.

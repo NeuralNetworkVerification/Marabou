@@ -173,6 +173,13 @@ public:
     */
     virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const override;
 
+    virtual void addCostFunctionComponent( Map<unsigned, double> &cost,
+                                           PhaseStatus phase ) const override;
+
+    virtual double computeCostFunctionComponent( PhaseStatus &phase ) const override;
+
+    virtual void removeCostFunctionComponent( Map<unsigned, double> &cost,
+                                              PhaseStatus phase ) const override;
     /*
       Returns string with shape: relu, _f, _b
     */

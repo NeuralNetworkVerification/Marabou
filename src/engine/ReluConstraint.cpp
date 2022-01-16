@@ -868,6 +868,80 @@ void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) con
     return;
 }
 
+void ReluConstraint::addCostFunctionComponent( Map<unsigned, double> &cost,
+                                               PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    // This should not be called when the linear constraints have
+    // not been satisfied
+    ASSERT( !haveOutOfBoundVariables() );
+
+    ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
+
+    // The soundness of the SoI component assumes that the constraints f >= b and
+    // f >= 0 is added.
+    ASSERT( FloatUtils::gte( _assignment.get( _f ), _assignment.get( _b ) )
+            && FloatUtils::gte( getLowerBound( _f ), 0 ) );
+
+    if ( phase == RELU_PHASE_INACTIVE )
+    {
+        // The cost term corresponding to the inactive phase is just f,
+        // since the ReLU is inactive and satisfied iff f is 0 and minimal.
+        if ( !cost.exists( _f ) )
+            cost[_f] = 0;
+        cost[_f] = cost[_f] + 1;
+    }
+    else
+    {
+        // The cost term corresponding to the inactive phase is f - b,
+        // since the ReLU is active and satisfied iff f - b is 0 and minimal.
+        // Note that this is true only when we added the constraint that f >= b.
+        if ( !cost.exists( _f ) )
+            cost[_f] = 0;
+        if ( !cost.exists( _b ) )
+            cost[_b] = 0;
+        cost[_f] = cost[_f] + 1;
+        cost[_b] = cost[_b] - 1;
+    }
+}
+
+double ReluConstraint::computeCostFunctionComponent( PhaseStatus
+                                                     &phase ) const
+{
+    ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
+    if ( phase == RELU_PHASE_INACTIVE )
+    {
+        // The cost term corresponding to the inactive phase is f.
+        return _assignment.get( _f );
+    }
+    else
+    {
+        // The cost term corresponding to the inactive phase is f - b.
+        return _assignment.get( _f ) - _assignment.get( _b );
+    }
+}
+
+void ReluConstraint::removeCostFunctionComponent( Map<unsigned, double> &cost,
+                                                  PhaseStatus phase ) const
+{
+    ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
+
+    if ( phase == RELU_PHASE_INACTIVE )
+    {
+        ASSERT( cost.exists( _f ) );
+        cost[_f] = cost[_f] - 1;
+    }
+    else
+    {
+        ASSERT( cost.exists( _f ) && cost.exists( _b ) );
+        cost[_f] = cost[_f] - 1;
+        cost[_b] = cost[_b] + 1;
+    }
+}
+
 bool ReluConstraint::haveOutOfBoundVariables() const
 {
     double bValue = _assignment.get( _b );

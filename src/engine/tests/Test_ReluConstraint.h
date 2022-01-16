@@ -1481,4 +1481,57 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete relu1 );
     }
+
+    void test_add_cost_function_component()
+    {
+        Context context;
+        unsigned b = 0;
+        unsigned f = 1;
+
+        // The relu is fixed, do not add cost term.
+        ReluConstraint relu1 = ReluConstraint( b, f );
+        TS_ASSERT_THROWS_NOTHING( relu1.initializeCDOs( &context ) );
+        Map<unsigned, double> cost1;
+        relu1.notifyLowerBound( f, 1 );
+        relu1.addCostFunctionComponent( cost1, RELU_PHASE_ACTIVE );
+        TS_ASSERT( relu1.phaseFixed() );
+        TS_ASSERT_EQUALS( cost1.size(), 0u );
+
+        // The relu is not fixed and add active cost term
+        ReluConstraint relu2 = ReluConstraint( b, f );
+        TS_ASSERT_THROWS_NOTHING( relu2.initializeCDOs( &context ) );
+        Map<unsigned, double> cost2;
+        relu2.notifyLowerBound( b, -1 );
+        relu2.notifyLowerBound( f, 0 );
+        TS_ASSERT( !relu2.phaseFixed() );
+        relu2.addCostFunctionComponent( cost2, RELU_PHASE_ACTIVE );
+        TS_ASSERT_EQUALS( cost2.size(), 2u );
+        TS_ASSERT_EQUALS( cost2[b], -1 );
+        TS_ASSERT_EQUALS( cost2[f], 1 );
+
+        // The relu is not fixed and add inactive cost term
+        ReluConstraint relu3 = ReluConstraint( b, f );
+        TS_ASSERT_THROWS_NOTHING( relu3.initializeCDOs( &context ) );
+        Map<unsigned, double> cost3;
+        relu3.notifyLowerBound( b, -1 );
+        relu3.notifyLowerBound( f, 0 );
+        TS_ASSERT( !relu3.phaseFixed() );
+        relu2.addCostFunctionComponent( cost3, RELU_PHASE_INACTIVE );
+        TS_ASSERT_EQUALS( cost3.size(), 1u );
+        TS_ASSERT_EQUALS( cost3[f], 1 );
+
+        // Add the cost term for another relu
+        unsigned b2 = 2;
+        unsigned f2 = 3;
+        ReluConstraint relu4 = ReluConstraint( b2, f2 );
+        TS_ASSERT_THROWS_NOTHING( relu4.initializeCDOs( &context ) );
+        relu4.notifyLowerBound( b2, -1 );
+        relu4.notifyLowerBound( f2, 0 );
+        TS_ASSERT( !relu4.phaseFixed() );
+        relu2.addCostFunctionComponent( cost3, RELU_PHASE_ACTIVE );
+        TS_ASSERT_EQUALS( cost3.size(), 3u );
+        TS_ASSERT_EQUALS( cost3[f], 1 );
+        TS_ASSERT_EQUALS( cost3[b2], -1 );
+        TS_ASSERT_EQUALS( cost3[f2], 1 );
+    }
 };
