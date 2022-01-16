@@ -2468,7 +2468,7 @@ const Preprocessor *Engine::getPreprocessor()
 void Engine::minimizeHeuristicCost( const Map<unsigned, double>
                                     &heuristicCost )
 {
-    _tableau->optimizing();
+    _tableau->toggleOptimization( true );
 
     _heuristicCost = heuristicCost;
 
@@ -2521,17 +2521,12 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
 
         localOptimaReached = performSimplexStep();
     }
-    _tableau->notOptimizing();
+    _tableau->toggleOptimization( false );
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
 }
 
 double Engine::computeHeuristicCost( const Map<unsigned, double> &heuristicCost )
 {
-    double cost = 0;
-    for ( const auto &pair : heuristicCost )
-    {
-        double value = _tableau->getValue( pair.first );
-        cost += pair.second * value;
-    }
-    return cost;
+    return _costFunctionManager->
+        computeGivenCostFunctionDirectly( heuristicCost );
 }

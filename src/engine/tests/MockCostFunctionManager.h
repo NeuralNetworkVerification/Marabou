@@ -89,6 +89,11 @@ public:
     {
     }
 
+    double computeGivenCostFunctionDirectly( const Map<unsigned, double> &/* heuristicCost */ )
+    {
+        return 0;
+    }
+
     double *nextCostFunction;
     const double *getCostFunction() const
     {

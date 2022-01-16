@@ -185,8 +185,11 @@ public:
     {
         return _optimizing;
     }
-    void optimizing() { _optimizing = true; }
-    void notOptimizing() { _optimizing = false; }
+
+    void toggleOptimization( bool optimizing )
+    {
+        _optimizing = optimizing;
+    }
 
 protected:
     bool _optimizing = false;

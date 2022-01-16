@@ -209,7 +209,7 @@ public:
         tableau.nextAColumn[0] = columnZero;
         tableau.nextAColumn[2] = columnTwo;
 
-        // We have 3 basic variables. One is too high, one too low, one within bounds.
+        // We have 3 basic variables, all within bounds.
         tableau.nextBasicIndexToVariable[0] = 5;
         tableau.nextBasicIndexToVariable[1] = 6;
         tableau.nextBasicIndexToVariable[2] = 7;
@@ -221,6 +221,8 @@ public:
         tableau.lowerBounds[7] = 0;
         tableau.upperBounds[7] = 1;
 
+        tableau.nextValues[2] = 0.5;
+        tableau.nextValues[3] = 2;
         tableau.nextValues[5] = 1;
         tableau.nextValues[6] = 0;
         tableau.nextValues[7] = 0.5;
@@ -241,7 +243,7 @@ public:
         tableau.nextVariableToIndex[3] = 1;
         heuristicCost[3] = 4;
 
-        tableau.optimizing();
+        tableau.toggleOptimization( true );
         TS_ASSERT_THROWS_NOTHING( manager->computeGivenCostFunction( heuristicCost ) );
 
         // Each entry of the cost function is a negated dot product of the multiplier vector
@@ -252,6 +254,9 @@ public:
         TS_ASSERT_EQUALS( costFucntion[0], -( 0 + 2 + 0 ) );
         // Entry 1: multipliers * columnZero + heuristic cost
         TS_ASSERT_EQUALS( costFucntion[1], -( 0 - 2 - 6 ) + 4 );
+
+        TS_ASSERT_EQUALS( manager->computeGivenCostFunctionDirectly( heuristicCost ),
+                          8.5 );
 
         TS_ASSERT_THROWS_NOTHING( delete manager );
     }

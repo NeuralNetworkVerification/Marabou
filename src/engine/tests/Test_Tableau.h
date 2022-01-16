@@ -1582,7 +1582,7 @@ public:
         // Minimize x6 - x1
         // x6 - x1 = 117 - x0 - 2x1 - x2 - x3
 
-        tableau->optimizing();
+        tableau->toggleOptimization( true );
 
         costFunctionManager.nextCostFunction = new double[4];
         costFunctionManager.nextCostFunction[0] = -1;

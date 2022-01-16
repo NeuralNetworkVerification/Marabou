@@ -152,8 +152,19 @@ void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double>
     computeMultipliers();
     computeReducedCosts();
 
-    // So that it doesn't count as "fresh" for declaring UNSAT
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
+}
+
+double CostFunctionManager::computeGivenCostFunctionDirectly( const Map<unsigned, double>
+                                                              &heuristicCost )
+{
+    double cost = 0;
+    for ( const auto &pair : heuristicCost )
+        {
+            double value = _tableau->getValue( pair.first );
+            cost += pair.second * value;
+        }
+    return cost;
 }
 
 void CostFunctionManager::computeCoreCostFunction()
