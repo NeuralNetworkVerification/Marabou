@@ -97,8 +97,15 @@ public:
 
 private:
 
+    // The current heuristic cost (which corresponds to an activation pattern)
+    // Mapping variable to its coefficient
     Map<unsigned, double> _heuristicCost;
+
+    // The lastest proposed update to the heuristic cost.
     Map<unsigned, double> _lastProposal;
+
+    Statistics *_statistics;
+
 };
 
 #endif // __SumOfInfeasibilitiesManager_h__
