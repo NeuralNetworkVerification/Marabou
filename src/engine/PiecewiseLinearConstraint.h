@@ -269,7 +269,7 @@ public:
       Compute the error of the current assignment with respect to the cost compoenent
       corresponding to the given phase.
     */
-    virtual double computeCostFunctionComponent( PhaseStatus & /* phase */ ) const
+    virtual double computeCostFunctionComponent( PhaseStatus /* phase */ ) const
     {
         throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                             "Sum-of-Infeasibilities for the current constraint type"

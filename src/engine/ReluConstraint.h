@@ -176,7 +176,7 @@ public:
     virtual void addCostFunctionComponent( Map<unsigned, double> &cost,
                                            PhaseStatus phase ) const override;
 
-    virtual double computeCostFunctionComponent( PhaseStatus &phase ) const override;
+    virtual double computeCostFunctionComponent( PhaseStatus phase ) const override;
 
     virtual void removeCostFunctionComponent( Map<unsigned, double> &cost,
                                               PhaseStatus phase ) const override;

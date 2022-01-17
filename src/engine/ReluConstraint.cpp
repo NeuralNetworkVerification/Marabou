@@ -908,8 +908,7 @@ void ReluConstraint::addCostFunctionComponent( Map<unsigned, double> &cost,
     }
 }
 
-double ReluConstraint::computeCostFunctionComponent( PhaseStatus
-                                                     &phase ) const
+double ReluConstraint::computeCostFunctionComponent( PhaseStatus phase ) const
 {
     ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
     if ( phase == RELU_PHASE_INACTIVE )
