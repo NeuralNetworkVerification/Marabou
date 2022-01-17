@@ -42,6 +42,18 @@ public:
     void computeCoreCostFunction();
 
     /*
+      Compute the given cost function without adding the core cost function.
+    */
+    void computeGivenCostFunction( const Map<unsigned, double> &heuristicCost );
+
+    /*
+      Directly compute the given heuristicCost with respect to the current
+      assignment in the tableau.
+    */
+    double computeGivenCostFunctionDirectly( const Map<unsigned, double>
+                                             &heuristicCost );
+
+    /*
       Get the current cost function.
     */
     const double *getCostFunction() const;
