@@ -39,6 +39,7 @@
 #include "SmtCore.h"
 #include "SnCDivideStrategy.h"
 #include "Statistics.h"
+#include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 
 #include <atomic>

@@ -242,6 +242,7 @@ public:
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
     static const bool NETWORK_LEVEL_REASONER_LOGGING;
     static const bool MPS_PARSER_LOGGING;
+    static const bool SUM_OF_INFEASIBILITIES_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

@@ -22,6 +22,8 @@
 #include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
+#include "SoIInitializationStrategy.h"
+#include "SoISearchStrategy.h"
 #include "SymbolicBoundTighteningType.h"
 
 #include "boost/program_options.hpp"
@@ -75,6 +77,9 @@ public:
 
         // The number of simulations
         NUMBER_OF_SIMULATIONS,
+
+        // The random seed used throughout the execution.
+        SEED,
     };
 
     enum FloatOptions{
@@ -86,6 +91,10 @@ public:
 
         // Engine's Preprocessor options
         PREPROCESSOR_BOUND_TOLERANCE,
+
+        // The beta parameter used in converting the soi f to a probability
+        // exp(−beta · f)
+        PROBABILITY_DENSITY_PARAMETER,
     };
 
     enum StringOptions {
@@ -98,6 +107,11 @@ public:
         SYMBOLIC_BOUND_TIGHTENING_TYPE,
         MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
+
+        // The strategy used for soi minimization
+        SOI_SEARCH_STRATEGY,
+        // The strategy used for initializing the soi
+        SOI_INITIALIZATION_STRATEGY,
     };
 
     /*
@@ -126,6 +140,8 @@ public:
     SnCDivideStrategy getSnCDivideStrategy() const;
     SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
+    SoIInitializationStrategy getSoIInitializationStrategy() const;
+    SoISearchStrategy getSoISearchStrategy() const;
 
     /*
       Retrieve the value of the various options, by type
