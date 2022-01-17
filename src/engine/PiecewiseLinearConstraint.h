@@ -280,7 +280,7 @@ public:
       Ask the piecewise linear constraint to remove the cost term corresponding
       to the given phase from the cost function.
       The method does not check whether the cost term has been previously added.
-      This is done in the HeuristicCostManager class, which maintains/updates the
+      This is done in the SumOfInfeasibilitiesManager class, which maintains/updates the
       SoI function.
     */
     virtual void removeCostFunctionComponent( Map<unsigned, double> &/* cost */,
