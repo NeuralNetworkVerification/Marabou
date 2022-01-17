@@ -822,53 +822,7 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     _auxVarInUse = true;
 }
 
-void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost ) const
-{
-    // This should not be called for inactive constraints
-    ASSERT( isActive() );
-
-    // If the constraint is satisfied, fixed or has OOB components,
-    // it contributes nothing
-    if ( satisfied() || phaseFixed() || haveOutOfBoundVariables() )
-        return;
-
-    // Both variables are within bounds and the constraint is not
-    // satisfied or fixed.
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
-
-    if ( !cost.exists( _f ) )
-        cost[_f] = 0;
-
-    // Case 1: b is non-positive, f is not zero. Cost: f
-    if ( !FloatUtils::isPositive( bValue ) )
-    {
-        ASSERT( !FloatUtils::isZero( fValue ) );
-        cost[_f] = cost[_f] + 1;
-        return;
-    }
-
-    ASSERT( !FloatUtils::isNegative( bValue ) );
-    ASSERT( !FloatUtils::isNegative( fValue ) );
-
-    if ( !cost.exists( _b ) )
-        cost[_b] = 0;
-
-    // Case 2: both non-negative, not equal, b > f. Cost: b - f
-    if ( FloatUtils::gt( bValue, fValue ) )
-    {
-        cost[_b] = cost[_b] + 1;
-        cost[_f] = cost[_f] - 1;
-        return;
-    }
-
-    // Case 3: both non-negative, not equal, f > b. Cost: f - b
-    cost[_b] = cost[_b] - 1;
-    cost[_f] = cost[_f] + 1;
-    return;
-}
-
-void ReluConstraint::addCostFunctionComponent( Map<unsigned, double> &cost,
+void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost,
                                                PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
@@ -920,24 +874,6 @@ double ReluConstraint::computeCostFunctionComponent( PhaseStatus phase ) const
     {
         // The cost term corresponding to the inactive phase is f - b.
         return _assignment.get( _f ) - _assignment.get( _b );
-    }
-}
-
-void ReluConstraint::removeCostFunctionComponent( Map<unsigned, double> &cost,
-                                                  PhaseStatus phase ) const
-{
-    ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
-
-    if ( phase == RELU_PHASE_INACTIVE )
-    {
-        ASSERT( cost.exists( _f ) );
-        cost[_f] = cost[_f] - 1;
-    }
-    else
-    {
-        ASSERT( cost.exists( _f ) && cost.exists( _b ) );
-        cost[_f] = cost[_f] - 1;
-        cost[_b] = cost[_b] + 1;
     }
 }
 

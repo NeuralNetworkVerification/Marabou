@@ -243,10 +243,6 @@ void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ 
 {
 }
 
-void DisjunctionConstraint::getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const
-{
-}
-
 String DisjunctionConstraint::serializeToString() const
 {
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,

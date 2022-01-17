@@ -1499,7 +1499,7 @@ public:
 
         TS_ASSERT( relu1.phaseFixed() );
         Map<unsigned, double> cost1;
-        TS_ASSERT_THROWS_NOTHING( relu1.addCostFunctionComponent( cost1, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( relu1.getCostFunctionComponent( cost1, RELU_PHASE_ACTIVE ) );
         TS_ASSERT_EQUALS( cost1.size(), 0u );
         TS_ASSERT_EQUALS( relu1.computeCostFunctionComponent( RELU_PHASE_ACTIVE ),
                           0.5 ); // f - b = 2 - 1.5
@@ -1517,7 +1517,7 @@ public:
         relu2.notifyVariableValue( b, -1 );
         relu2.notifyVariableValue( f, 1 );
         TS_ASSERT( !relu2.phaseFixed() );
-        TS_ASSERT_THROWS_NOTHING( relu2.addCostFunctionComponent( cost2, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( relu2.getCostFunctionComponent( cost2, RELU_PHASE_ACTIVE ) );
         TS_ASSERT_EQUALS( cost2.size(), 2u );
         TS_ASSERT_EQUALS( cost2[b], -1 );
         TS_ASSERT_EQUALS( cost2[f], 1 );
@@ -1534,7 +1534,7 @@ public:
         relu3.notifyLowerBound( b, -1 );
         relu3.notifyLowerBound( f, 0 );
         TS_ASSERT( !relu3.phaseFixed() );
-        relu2.addCostFunctionComponent( cost3, RELU_PHASE_INACTIVE );
+        TS_ASSERT_THROWS_NOTHING( relu3.getCostFunctionComponent( cost3, RELU_PHASE_INACTIVE ) );
         TS_ASSERT_EQUALS( cost3.size(), 1u );
         TS_ASSERT_EQUALS( cost3[f], 1 );
 
@@ -1550,23 +1550,10 @@ public:
         relu4.notifyVariableValue( f2, 1 );
 
         TS_ASSERT( !relu4.phaseFixed() );
-        relu4.addCostFunctionComponent( cost3, RELU_PHASE_ACTIVE );
+        TS_ASSERT_THROWS_NOTHING( relu4.getCostFunctionComponent( cost3, RELU_PHASE_ACTIVE ) );
         TS_ASSERT_EQUALS( cost3.size(), 3u );
         TS_ASSERT_EQUALS( cost3[f], 1 );
         TS_ASSERT_EQUALS( cost3[b2], -1 );
         TS_ASSERT_EQUALS( cost3[f2], 1 );
-
-
-        TS_ASSERT_THROWS_NOTHING( relu3.removeCostFunctionComponent
-                                  ( cost3, RELU_PHASE_INACTIVE ) );
-        TS_ASSERT_EQUALS( cost3[f], 0 );
-        TS_ASSERT_EQUALS( cost3[b2], -1 );
-        TS_ASSERT_EQUALS( cost3[f2], 1 );
-        TS_ASSERT_THROWS_NOTHING( relu4.removeCostFunctionComponent
-                                  ( cost3, RELU_PHASE_ACTIVE ) );
-        TS_ASSERT_EQUALS( cost3.size(), 3u );
-        TS_ASSERT_EQUALS( cost3[f], 0 );
-        TS_ASSERT_EQUALS( cost3[b2], 0 );
-        TS_ASSERT_EQUALS( cost3[f2], 0 );
     }
 };

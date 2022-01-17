@@ -248,26 +248,18 @@ public:
     virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
-    */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
-
-    /*
       Ask the piecewise linear constraint to add its cost term corresponding to
       the given phase to the cost function.
       Nothing should be added when the constraint is fixed or inactive.
       Minimizing the added term should lead to the constraint being
       "closer to satisfied" in the given phase status.
     */
-    virtual void addCostFunctionComponent( Map<unsigned, double> &/* cost */,
+    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */,
                                            PhaseStatus /* phase */ ) const {}
 
     /*
-      Compute the error of the current assignment with respect to the cost compoenent
-      corresponding to the given phase.
+      Compute the error of the current assignment with respect to the cost
+      compoenent corresponding to the given phase.
     */
     virtual double computeCostFunctionComponent( PhaseStatus /* phase */ ) const
     {
@@ -275,16 +267,6 @@ public:
                             "Sum-of-Infeasibilities for the current constraint type"
                             " is not supported." );
     }
-
-    /*
-      Ask the piecewise linear constraint to remove the cost term corresponding
-      to the given phase from the cost function.
-      The method does not check whether the cost term has been previously added.
-      This is done in the SumOfInfeasibilitiesManager class, which maintains/updates the
-      SoI function.
-    */
-    virtual void removeCostFunctionComponent( Map<unsigned, double> &/* cost */,
-                                              PhaseStatus /* phase */ ) const {}
 
     /*
       Produce string representation of the piecewise linear constraint.
