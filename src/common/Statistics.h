@@ -178,7 +178,7 @@ public:
      TOTAL_TIME_SMT_CORE_MICRO,
     };
 
-    enum StatisticsLongAttribute
+    enum StatisticsDoubleAttribute
     {
      // Degradation and restorations
      CURRENT_DEGRADATION,
@@ -206,13 +206,13 @@ public:
 
     inline void incUnsignedAttribute( StatisticsUnsignedAttribute attr )
     {
-        ++_unsignedAttributeibutes[attr];
+        ++_unsignedAttributes[attr];
     }
 
     inline void incUnsignedAttribute( StatisticsUnsignedAttribute attr,
                                       unsigned value )
     {
-        _unsignedAttributeibutes[attr] += value;
+        _unsignedAttributes[attr] += value;
     }
 
     inline void setLongAttribute( StatisticsLongAttribute attr,
@@ -223,12 +223,12 @@ public:
 
     inline void incLongAttribute( StatisticsLongAttribute attr )
     {
-        ++_longAttributeibutes[attr];
+        ++_longAttributes[attr];
     }
 
     inline void incLongAttribute( StatisticsLongAttribute attr, unsigned long long value )
     {
-        _longAttributeibutes[attr] += value;
+        _longAttributes[attr] += value;
     }
 
     inline void setDoubleAttribute( StatisticsDoubleAttribute attr, double value )
@@ -238,7 +238,7 @@ public:
 
     inline void incDoubleAttribute( StatisticsDoubleAttribute attr, double value )
     {
-        _doubleAttributeibutes[attr] += value;
+        _doubleAttributes[attr] += value;
     }
 
     /*
@@ -246,17 +246,17 @@ public:
     */
     inline unsigned getUnsignedAttribute( StatisticsUnsignedAttribute attr ) const
     {
-        return _unsignedAttributeibutes[attr];
+        return _unsignedAttributes[attr];
     }
 
     inline unsigned long long  getLongAttribute( StatisticsLongAttribute attr ) const
     {
-        return _longAttributeibutes[attr];
+        return _longAttributes[attr];
     }
 
     inline double getDoubleAttribute( StatisticsDoubleAttribute attr ) const
     {
-        return _doubleAttributeibutes[attr];
+        return _doubleAttributes[attr];
     }
 
     /*
