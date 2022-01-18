@@ -18,64 +18,72 @@
 #include "TimeUtils.h"
 
 Statistics::Statistics()
-    : _numMainLoopIterations( 0 )
-    , _numPlConstraints( 0 )
-    , _numActivePlConstraints( 0 )
-    , _numPlValidSplits( 0 )
-    , _numPlSmtOriginatedSplits( 0 )
-    , _currentDegradation( 0.0 )
-    , _maxDegradation( 0.0 )
-    , _numPrecisionRestorations( 0 )
-    , _numSimplexSteps( 0 )
-    , _timeSimplexStepsMicro( 0 )
-    , _timeMainLoopMicro( 0 )
-    , _timeConstraintFixingStepsMicro( 0 )
-    , _numConstraintFixingSteps( 0 )
-    , _currentDecisionLevel( 0 )
-    , _maxDecisionLevel( 0 )
-    , _numSplits( 0 )
-    , _numPops( 0 )
-    , _numVisitedTreeStates( 1 )
-    , _numTableauPivots( 0 )
-    , _numTableauDegeneratePivots( 0 )
-    , _numTableauDegeneratePivotsByRequest( 0 )
-    , _timePivotsMicro( 0 )
-    , _numSimplexPivotSelectionsIgnoredForStability( 0 )
-    , _numSimplexUnstablePivots( 0 )
-    , _numAddedRows( 0 )
-    , _numMergedColumns( 0 )
-    , _currentTableauM( 0 )
-    , _currentTableauN( 0 )
-    , _numTableauBoundHopping( 0 )
-    , _numTightenedBounds( 0 )
-    , _numTighteningsFromSymbolicBoundTightening( 0 )
-    , _numRowsExaminedByRowTightener( 0 )
-    , _numTighteningsFromRows( 0 )
-    , _numBoundTighteningsOnExplicitBasis( 0 )
-    , _numTighteningsFromExplicitBasis( 0 )
-    , _numBoundNotificationsToPlConstraints( 0 )
-    , _numBoundsProposedByPlConstraints( 0 )
-    , _numBoundTighteningsOnConstraintMatrix( 0 )
-    , _numTighteningsFromConstraintMatrix( 0 )
-    , _numBasisRefactorizations( 0 )
-    , _pseNumIterations( 0 )
-    , _pseNumResetReferenceSpace( 0 )
-    , _ppNumEliminatedVars( 0 )
-    , _ppNumTighteningIterations( 0 )
-    , _ppNumConstraintsRemoved( 0 )
-    , _ppNumEquationsRemoved( 0 )
-    , _totalTimePerformingValidCaseSplitsMicro( 0 )
-    , _totalTimePerformingSymbolicBoundTightening( 0 )
-    , _totalTimeHandlingStatisticsMicro( 0 )
-    , _totalNumberOfValidCaseSplits( 0 )
-    , _totalTimeExplicitBasisBoundTighteningMicro( 0 )
-    , _totalTimeDegradationChecking( 0 )
-    , _totalTimePrecisionRestoration( 0 )
-    , _totalTimeConstraintMatrixBoundTighteningMicro( 0 )
-    , _totalTimeApplyingStoredTighteningsMicro( 0 )
-    , _totalTimeSmtCoreMicro( 0 )
     , _timedOut( false )
 {
+    _unsignedAttributes[NUM_PL_CONSTRAINTS] = 0;
+    _unsignedAttributes[NUM_ACTIVE_PL_CONSTRAINTS] = 0;
+    _unsignedAttributes[NUM_PL_VALID_SPLITS] = 0;
+    _unsignedAttributes[NUM_PL_SMT_ORIGINATED_SPLITS] = 0;
+    _unsignedAttributes[NUM_PRECISION_RESTORATIONS] = 0;
+    _unsignedAttributes[CURRENT_DECISION_LEVEL] = 0;
+    _unsignedAttributes[MAX_DECISION_LEVEL] = 0;
+    _unsignedAttributes[NUM_SPLITS] = 0;
+    _unsignedAttributes[NUM_POPS] = 0;
+    _unsignedAttributes[NUM_VISITED_TREE_STATES] = 1;
+    _unsignedAttributes[CURRENT_TABLEAU_M] = 0;
+    _unsignedAttributes[CURRENT_TABLEAU_N] = 0;
+    _unsignedAttributes[PP_NUM_ELIMINATED_VARS] = 0;
+    _unsignedAttributes[PP_NUM_TIGHTENING_ITERATIONS] = 0;
+    _unsignedAttributes[PP_NUM_CONSTRAINTS_REMOVED] = 0;
+    _unsignedAttributes[PP_NUM_EQUATIONS_REMOVED] = 0;
+    _unsignedAttributes[TOTAL_NUMBER_OF_VALID_CASE_SPLITS] = 0;
+
+    _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
+    _longAttributes[NUM_SIMPLEX_STEPS] = 0;
+    _longAttributes[TIME_SIMPLEX_STEPS_MICRO] = 0;
+    _longAttributes[TIME_MAIN_LOOP_MICRO] = 0;
+    _longAttributes[TIME_CONSTRAINT_FIXING_STEPS_MICRO] = 0;
+    _longAttributes[NUM_CONSTRAINT_FIXING_STEPS] = 0;
+    _longAttributes[NUM_TABLEAU_PIVOTS] = 0;
+    _longAttributes[NUM_TABLEAU_DEGENERATE_PIVOTS] = 0;
+    _longAttributes[NUM_TABLEAU_DEGENERATE_PIVOTS_BY_REQUEST] = 0;
+    _longAttributes[TIME_PIVOTS_MICRO] = 0;
+    _longAttributes[NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY] = 0;
+    _longAttributes[NUM_SIMPLEX_UNSTABLE_PIVOTS] = 0;
+    _longAttributes[NUM_ADDED_ROWS] = 0;
+    _longAttributes[NUM_MERGED_COLUMNS] = 0;
+    _longAttributes[NUM_TABLEAU_BOUND_HOPPING] = 0;
+    _longAttributes[NUM_TIGHTENED_BOUNDS] = 0;
+    _longAttributes[NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING] = 0;
+    _longAttributes[NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER] = 0;
+    _longAttributes[NUM_TIGHTENINGS_FROM_ROWS] = 0;
+    _longAttributes[NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS] = 0;
+    _longAttributes[NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS] = 0;
+    _longAttributes[NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS] = 0;
+    _longAttributes[NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS] = 0;
+    _longAttributes[NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS] = 0;
+    _longAttributes[NUM_BOUND_TIGHTENINGS_ON_CONSTRAINT_MATRIX] = 0;
+    _longAttributes[NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX] = 0;
+    _longAttributes[NUM_BASIS_REFACTORIZATIONS] = 0;
+    _longAttributes[PSE_NUM_ITERATIONS] = 0;
+    _longAttributes[PSE_NUM_RESET_REFERENCE_SPACE] = 0;
+    _longAttributes[TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING] = 0;
+    _longAttributes[TOTAL_TIME_HANDLING_STATISTICS_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_DEGRADATION_CHECKING] = 0;
+    _longAttributes[TOTAL_TIME_PRECISION_RESTORATION] = 0;
+    _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_SMT_CORE_MICRO] = 0;
+
+    _doubleAttributes[CURRENT_DEGRADATION] = 0.0;
+    _doubleAttributes[MAX_DEGRADATION] = 0.0;
+}
+
+void Statistics::stampStartingTime()
+{
+    _startTime = TimeUtils::sampleMicro();
 }
 
 void Statistics::print()
@@ -289,367 +297,6 @@ void Statistics::print()
     printf( "\tNumber of tightened bounds: %llu\n", _numTighteningsFromSymbolicBoundTightening );
 }
 
-double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
-{
-    if ( total == 0 )
-        return 0;
-
-    return 100.0 * part / total;
-}
-
-double Statistics::printAverage( unsigned long long part, unsigned long long total ) const
-{
-    if ( total == 0 )
-        return 0;
-
-    return (double)part / total;
-}
-
-void Statistics::incNumMainLoopIterations()
-{
-    ++_numMainLoopIterations;
-}
-
-void Statistics::setNumPlConstraints( unsigned numberOfConstraints )
-{
-    _numPlConstraints = numberOfConstraints;
-}
-
-void Statistics::setNumActivePlConstraints( unsigned numberOfConstraints )
-{
-    _numActivePlConstraints = numberOfConstraints;
-}
-
-void Statistics::setNumPlValidSplits( unsigned numberOfSplits )
-{
-    _numPlValidSplits = numberOfSplits;
-}
-
-void Statistics::setNumPlSMTSplits( unsigned numberOfSplits )
-{
-    _numPlSmtOriginatedSplits = numberOfSplits;
-}
-
-void Statistics::incNumSimplexSteps()
-{
-    ++_numSimplexSteps;
-}
-
-void Statistics::incNumPrecisionRestorations()
-{
-    ++_numPrecisionRestorations;
-}
-
-void Statistics::addTimeSimplexSteps( unsigned long long time )
-{
-    _timeSimplexStepsMicro += time;
-}
-
-void Statistics::addTimeMainLoop( unsigned long long time )
-{
-    _timeMainLoopMicro += time;
-}
-
-void Statistics::addTimeConstraintFixingSteps( unsigned long long time )
-{
-    _timeConstraintFixingStepsMicro += time;
-}
-
-void Statistics::incNumConstraintFixingSteps()
-{
-    ++_numConstraintFixingSteps;
-}
-
-unsigned long long Statistics::getNumMainLoopIterations() const
-{
-    return _numMainLoopIterations;
-}
-
-void Statistics::setCurrentDecisionLevel( unsigned decisionLevel )
-{
-    _currentDecisionLevel = decisionLevel;
-
-    if ( _currentDecisionLevel > _maxDecisionLevel )
-        _maxDecisionLevel = _currentDecisionLevel;
-}
-
-unsigned Statistics::getMaxDecisionLevel() const
-{
-    return _maxDecisionLevel;
-}
-
-void Statistics::incNumSplits()
-{
-    ++_numSplits;
-}
-
-void Statistics::incNumPops()
-{
-    ++_numPops;
-}
-
-unsigned Statistics::getNumPops() const
-{
-    return _numPops;
-}
-
-void Statistics::incNumTableauPivots()
-{
-    ++_numTableauPivots;
-}
-
-void Statistics::incNumTableauBoundHopping()
-{
-    ++_numTableauBoundHopping;
-}
-
-void Statistics::incNumTableauDegeneratePivots()
-{
-    ++_numTableauDegeneratePivots;
-}
-
-void Statistics::incNumTableauDegeneratePivotsByRequest()
-{
-    ++_numTableauDegeneratePivotsByRequest;
-}
-
-void Statistics::addTimePivots( unsigned long long time )
-{
-    _timePivotsMicro += time;
-}
-
-unsigned Statistics::getAveragePivotTimeInMicro() const
-{
-    if ( _numTableauPivots == 0 )
-        return 0;
-
-    return _timePivotsMicro / _numTableauPivots;
-}
-
-void Statistics::incNumSimplexPivotSelectionsIgnoredForStability()
-{
-    ++_numSimplexPivotSelectionsIgnoredForStability;
-}
-
-void Statistics::incNumSimplexUnstablePivots()
-{
-    ++_numSimplexUnstablePivots;
-}
-
-void Statistics::incNumAddedRows()
-{
-    ++_numAddedRows;
-}
-
-void Statistics::incNumMergedColumns()
-{
-    ++_numMergedColumns;
-}
-
-void Statistics::setCurrentTableauDimension( unsigned m, unsigned n )
-{
-    _currentTableauM = m;
-    _currentTableauN = n;
-}
-
-void Statistics::incNumTightenedBounds()
-{
-    ++_numTightenedBounds;
-}
-
-void Statistics::incNumRowsExaminedByRowTightener()
-{
-    ++_numRowsExaminedByRowTightener;
-}
-
-void Statistics::incNumTighteningsFromRows( unsigned increment )
-{
-    _numTighteningsFromRows += increment;
-}
-
-void Statistics::incNumBoundTighteningsOnExplicitBasis()
-{
-    ++_numBoundTighteningsOnExplicitBasis;
-}
-
-void Statistics::incNumTighteningsFromExplicitBasis( unsigned increment )
-{
-    _numTighteningsFromExplicitBasis += increment;
-}
-
-void Statistics::incNumBoundNotificationsPlConstraints()
-{
-    ++_numBoundNotificationsToPlConstraints;
-}
-
-void Statistics::incNumBoundNotificationsTranscendentalConstraints()
-{
-    ++_numBoundNotificationsToTranscendentalConstraints;
-}
-
-void Statistics::incNumBoundsProposedByPlConstraints()
-{
-    ++_numBoundsProposedByPlConstraints;
-}
-
-void Statistics::incNumBoundTighteningOnConstraintMatrix()
-{
-    ++_numBoundTighteningsOnConstraintMatrix;
-}
-
-void Statistics::incNumTighteningsFromConstraintMatrix( unsigned increment )
-{
-    _numTighteningsFromConstraintMatrix += increment;
-}
-
-void Statistics::incNumBasisRefactorizations()
-{
-    ++_numBasisRefactorizations;
-}
-
-void Statistics::pseIncNumIterations()
-{
-    ++_pseNumIterations;
-}
-
-void Statistics::pseIncNumResetReferenceSpace()
-{
-    ++_pseNumResetReferenceSpace;
-}
-
-void Statistics::setCurrentDegradation( double degradation )
-{
-    _currentDegradation = degradation;
-    if ( FloatUtils::gt( _currentDegradation, _maxDegradation ) )
-        _maxDegradation = _currentDegradation;
-}
-
-void Statistics::setPreprocessingTime( unsigned long long micro )
-{
-    _preprocessingTimeMicro = micro;
-}
-
-void Statistics::stampStartingTime()
-{
-    _startTime = TimeUtils::sampleMicro();
-}
-
-void Statistics::ppSetNumEliminatedVars( unsigned eliminatedVars )
-{
-    _ppNumEliminatedVars = eliminatedVars;
-}
-
-void Statistics::ppIncNumTighteningIterations()
-{
-    ++_ppNumTighteningIterations;
-}
-
-void Statistics::ppIncNumConstraintsRemoved()
-{
-    ++_ppNumConstraintsRemoved;
-}
-
-void Statistics::ppIncNumEquationsRemoved()
-{
-    ++_ppNumEquationsRemoved;
-}
-
-void Statistics::addTimeForValidCaseSplit( unsigned long long time )
-{
-    _totalTimePerformingValidCaseSplitsMicro += time;
-    ++_totalNumberOfValidCaseSplits;
-}
-
-void Statistics::addTimeForSymbolicBoundTightening( unsigned long long time )
-{
-    _totalTimePerformingSymbolicBoundTightening += time;
-}
-
-void Statistics::addTimeForStatistics( unsigned long long time )
-{
-    _totalTimeHandlingStatisticsMicro += time;
-}
-
-void Statistics::addTimeForExplicitBasisBoundTightening( unsigned long long time )
-{
-    _totalTimeExplicitBasisBoundTighteningMicro += time;
-}
-
-void Statistics::addTimeForDegradationChecking( unsigned long long time )
-{
-    _totalTimeDegradationChecking += time;
-}
-
-void Statistics::addTimeForPrecisionRestoration( unsigned long long time )
-{
-    _totalTimePrecisionRestoration += time;
-}
-
-void Statistics::addTimeForConstraintMatrixBoundTightening( unsigned long long time )
-{
-    _totalTimeConstraintMatrixBoundTighteningMicro += time;
-}
-
-void Statistics::addTimeForApplyingStoredTightenings( unsigned long long time )
-{
-    _totalTimeApplyingStoredTighteningsMicro += time;
-}
-
-void Statistics::addTimeSmtCore( unsigned long long time )
-{
-    _totalTimeSmtCoreMicro += time;
-}
-
-void Statistics::incNumVisitedTreeStates()
-{
-    ++_numVisitedTreeStates;
-}
-
-unsigned Statistics::getNumVisitedTreeStates() const
-{
-    return _numVisitedTreeStates;
-}
-
-unsigned Statistics::getNumSplits() const
-{
-    return _numSplits;
-}
-
-unsigned long long Statistics::getNumTableauPivots() const
-{
-    return _numTableauPivots;
-}
-
-double Statistics::getMaxDegradation() const
-{
-    return _maxDegradation;
-}
-
-unsigned Statistics::getNumPrecisionRestorations() const
-{
-    return _numPrecisionRestorations;
-}
-
-unsigned long long Statistics::getTimeSimplexStepsMicro() const
-{
-    return _timeSimplexStepsMicro;
-}
-
-unsigned long long Statistics::getNumConstraintFixingSteps() const
-{
-    return _numConstraintFixingSteps;
-}
-
-unsigned long long Statistics::getNumSimplexPivotSelectionsIgnoredForStability() const
-{
-    return _numSimplexPivotSelectionsIgnoredForStability;
-}
-
-unsigned long long Statistics::getNumSimplexUnstablePivots() const
-{
-    return _numSimplexUnstablePivots;
-}
-
 unsigned long long Statistics::getTotalTime() const
 {
     unsigned long long total =
@@ -685,15 +332,18 @@ void Statistics::printStartingIteration( unsigned long long iteration, String me
         printf( "DBG_PRINT: %s\n", message.ascii() );
 }
 
-void Statistics::incNumTighteningsFromSymbolicBoundTightening( unsigned increment )
+double Statistics::printPercents( unsigned long long part, unsigned long long total ) const
 {
-    _numTighteningsFromSymbolicBoundTightening += increment;
+    if ( total == 0 )
+        return 0;
+
+    return 100.0 * part / total;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+double Statistics::printAverage( unsigned long long part, unsigned long long total ) const
+{
+    if ( total == 0 )
+        return 0;
+
+    return (double)part / total;
+}
