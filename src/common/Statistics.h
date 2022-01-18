@@ -241,7 +241,7 @@ public:
     }
 
     /*
-      Get the total runtime in milliseconds.
+      Get the total runtime in microseconds.
     */
     unsigned long long getTotalTime() const;
 

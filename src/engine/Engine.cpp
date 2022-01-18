@@ -2035,15 +2035,11 @@ void Engine::performSymbolicBoundTightening()
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
 {
-    enum {
-        MILLISECONDS_TO_SECONDS = 1000,
-    };
-
     // A timeout value of 0 means no time limit
     if ( timeout == 0 )
         return false;
 
-    return _statistics.getTotalTime() / MILLISECONDS_TO_SECONDS > timeout;
+    return _statistics.getTotalTime() / MICROSECONDS_TO_SECONDS > timeout;
 }
 
 void Engine::reset()
