@@ -241,6 +241,11 @@ public:
     }
 
     /*
+      Get the total runtime in milliseconds.
+    */
+    unsigned long long getTotalTime() const;
+
+    /*
       Report a timeout, or check whether a timeout has occurred
     */
     void timeout();
