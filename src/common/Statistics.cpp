@@ -299,21 +299,7 @@ void Statistics::print()
 
 unsigned long long Statistics::getTotalTime() const
 {
-    unsigned long long total =
-        _timeSimplexStepsMicro +
-        _timeConstraintFixingStepsMicro +
-        _totalTimePerformingValidCaseSplitsMicro +
-        _totalTimeHandlingStatisticsMicro +
-        _totalTimeExplicitBasisBoundTighteningMicro +
-        _totalTimeDegradationChecking +
-        _totalTimePrecisionRestoration +
-        _totalTimeConstraintMatrixBoundTighteningMicro +
-        _totalTimeApplyingStoredTighteningsMicro +
-        _totalTimeSmtCoreMicro +
-        _totalTimePerformingSymbolicBoundTightening;
-
-    // Total is in micro seconds, and we need to return milliseconds
-    return total / 1000;
+    return TimeUtils::timePassed( _startTime, TimeUtils::sampleMicro() );
 }
 
 void Statistics::timeout()
