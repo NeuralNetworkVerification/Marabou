@@ -195,26 +195,35 @@ public:
     */
     void stampStartingTime();
 
+    /*
+      Setters for unsigned, unsigned long long, and double attributes
+    */
     inline void setUnsignedAttribute( StatisticsUnsignedAttribute attr,
                                       unsigned value )
     {
         _unsignedAttributes[attr] = value;
     }
 
-    inline void setUnsignedAttribute( StatisticsLongAttribute attr,
-                                      unsigned long long value )
+    inline void incUnsignedAttribute( StatisticsUnsignedAttribute attr )
+    {
+        ++_unsignedAttributeibutes[attr];
+    }
+
+    inline void incUnsignedAttribute( StatisticsUnsignedAttribute attr,
+                                      unsigned value )
+    {
+        _unsignedAttributeibutes[attr] += value;
+    }
+
+    inline void setLongAttribute( StatisticsLongAttribute attr,
+                                  unsigned long long value )
     {
         _longAttributes[attr] = value;
     }
 
-    inline void setDoubleAttribute( StatisticsDoubleAttribute attr, double value )
+    inline void incLongAttribute( StatisticsLongAttribute attr )
     {
-        _doubleAttributes[attr] = value;
-    }
-
-    inline void incUnsignedAttribute( StatisticsUnsignedAttribute attr, unsigned value )
-    {
-        _unsignedAttributeibutes[attr] += value;
+        ++_longAttributeibutes[attr];
     }
 
     inline void incLongAttribute( StatisticsLongAttribute attr, unsigned long long value )
@@ -222,11 +231,19 @@ public:
         _longAttributeibutes[attr] += value;
     }
 
+    inline void setDoubleAttribute( StatisticsDoubleAttribute attr, double value )
+    {
+        _doubleAttributes[attr] = value;
+    }
+
     inline void incDoubleAttribute( StatisticsDoubleAttribute attr, double value )
     {
         _doubleAttributeibutes[attr] += value;
     }
 
+    /*
+      Getters for unsigned, unsigned long long, and double attributes
+    */
     inline unsigned getUnsignedAttribute( StatisticsUnsignedAttribute attr ) const
     {
         return _unsignedAttributeibutes[attr];
