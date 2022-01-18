@@ -140,7 +140,7 @@ void MaxConstraint::notifyVariableValue( unsigned variable, double value )
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( existsLowerBound( variable ) && !FloatUtils::gt( value, getLowerBound( variable ) ) )
         return;
@@ -198,7 +198,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( existsUpperBound( variable ) && !FloatUtils::lt( value, getUpperBound( variable ) ) )
         return;

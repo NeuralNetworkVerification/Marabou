@@ -105,7 +105,8 @@ void ProjectedSteepestEdgeRule::resetReferenceSpace( const ITableau &tableau )
     _errorInGamma = 0.0;
 
     if ( _statistics )
-        _statistics->pseIncNumResetReferenceSpace();
+        _statistics->incLongAttribute
+            ( Statistics::PSE_NUM_RESET_REFERENCE_SPACE );
 }
 
 bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
@@ -170,7 +171,7 @@ bool ProjectedSteepestEdgeRule::select( ITableau &tableau,
     tableau.setEnteringVariableIndex( bestCandidate );
 
     if ( _statistics )
-        _statistics->pseIncNumIterations();
+        _statistics->incLongAttribute( Statistics::PSE_NUM_ITERATIONS );
 
     return true;
 }

@@ -99,7 +99,7 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )
-        _statistics->incLongAttribute( NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
     if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
@@ -120,7 +120,7 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )
-        _statistics->incLongAttribute( NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
     if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;

@@ -18,7 +18,7 @@
 #include "TimeUtils.h"
 
 Statistics::Statistics()
-    , _timedOut( false )
+    _timedOut( false )
 {
     _unsignedAttributes[NUM_PL_CONSTRAINTS] = 0;
     _unsignedAttributes[NUM_ACTIVE_PL_CONSTRAINTS] = 0;
@@ -338,9 +338,18 @@ void Statistics::print()
             getLongAttribute( NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING ) );
 }
 
-unsigned long long Statistics::getTotalTime() const
+unsigned long long Statistics::getTotalTimeInMicro() const
 {
     return TimeUtils::timePassed( _startTime, TimeUtils::sampleMicro() );
+}
+
+unsigned Statistics::getAveragePivotTimeInMicro() const
+{
+    if ( _longAttributes[NUM_TABLEAU_PIVOTS] == 0 )
+        return 0;
+
+    return  _longAttributes[TIME_PIVOTS_MICRO] /
+        _longAttributes[NUM_TABLEAU_PIVOTS];
 }
 
 void Statistics::timeout()

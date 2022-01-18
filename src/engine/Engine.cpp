@@ -170,7 +170,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     while ( true )
     {
         struct timespec mainLoopEnd = TimeUtils::sampleMicro();
-        _statistics.incLongAttribute( TIME_MAIN_LOOP_MICRO,
+        _statistics.incLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO,
                                       TimeUtils::timePassed( mainLoopStart,
                                                              mainLoopEnd ) );
         mainLoopStart = mainLoopEnd;
@@ -207,7 +207,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
             DEBUG( _tableau->verifyInvariants() );
 
             mainLoopStatistics();
-            if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
+            if ( _verbosity > 1 &&
+                 _statistics.getLongAttribute
+                 ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
                  GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
                 _statistics.print();
 
@@ -228,7 +230,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                     _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
                 }
 
-                _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
+                _numVisitedStatesAtPreviousRestoration =
+                    _statistics.getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
                 _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
                 continue;
             }
@@ -339,7 +342,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
             {
-                if ( _numVisitedStatesAtPreviousRestoration != _statistics.getNumVisitedTreeStates() )
+                if ( _numVisitedStatesAtPreviousRestoration !=
+                     _statistics.getUnsignedAttribute
+                     ( Statistics::NUM_VISITED_TREE_STATES ) )
                 {
                     // We've tried a strong restoration before, and it didn't work. Do a weak restoration
                     _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
@@ -396,25 +401,25 @@ void Engine::mainLoopStatistics()
         if ( constraint->isActive() )
             ++activeConstraints;
 
-    _statistics.setUnsignedAttribute( NUM_ACTIVE_PL_CONSTRAINTS,
+    _statistics.setUnsignedAttribute( Statistics::NUM_ACTIVE_PL_CONSTRAINTS,
                                       activeConstraints );
-    _statistics.setUnsignedAttribute( NUM_PL_VALID_SPLITS,
+    _statistics.setUnsignedAttribute( Statistics::NUM_PL_VALID_SPLITS,
                                       _numPlConstraintsDisabledByValidSplits );
-    _statistics.setUnsignedAttribute( NUM_PL_SMT_ORIGINATED_SPLITS,
+    _statistics.setUnsignedAttribute( Statistics::NUM_PL_SMT_ORIGINATED_SPLITS,
                                       _plConstraints.size() - activeConstraints
                                       - _numPlConstraintsDisabledByValidSplits );
 
-    _statistics.incLongAttribute( NUM_MAIN_LOOP_ITERATIONS );
+    _statistics.incLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS );
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TOTAL_TIME_HANDLING_STATISTICS_MICRO,
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_HANDLING_STATISTICS_MICRO,
                                   TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::performConstraintFixingStep()
 {
     // Statistics
-    _statistics.incLongAttribute( NUM_CONSTRAINT_FIXING_STEPS );
+    _statistics.incLongAttribute( Statistics::NUM_CONSTRAINT_FIXING_STEPS );
     struct timespec start = TimeUtils::sampleMicro();
 
     // Select a violated constraint as the target
@@ -427,14 +432,14 @@ void Engine::performConstraintFixingStep()
     fixViolatedPlConstraintIfPossible();
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TIME_CONSTRAINT_FIXING_STEPS_MICRO,
+    _statistics.incLongAttribute( Statistics::TIME_CONSTRAINT_FIXING_STEPS_MICRO,
                                   TimeUtils::timePassed( start, end ) );
 }
 
 bool Engine::performSimplexStep()
 {
     // Statistics
-    _statistics.incLongAttribute( NUM_SIMPLEX_STEPS );
+    _statistics.incLongAttribute( Statistics::NUM_SIMPLEX_STEPS );
     struct timespec start = TimeUtils::sampleMicro();
 
     /*
@@ -548,7 +553,7 @@ bool Engine::performSimplexStep()
             break;
         else
             _statistics.incLongAttribute
-                ( NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY );
+                ( Statistics::NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY );
     }
 
     // If we don't have any candidates, this simplex step has failed.
@@ -559,7 +564,7 @@ bool Engine::performSimplexStep()
             // This failure might have resulted from a corrupt basic assignment.
             _tableau->computeAssignment();
             struct timespec end = TimeUtils::sampleMicro();
-            _statistics.incLongAttribute( TIME_SIMPLEX_STEPS_MICRO,
+            _statistics.incLongAttribute( Statistics::TIME_SIMPLEX_STEPS_MICRO,
                                           TimeUtils::timePassed( start, end ) );
             return false;
         }
@@ -570,7 +575,7 @@ bool Engine::performSimplexStep()
                     ICostFunctionManager::COST_FUNCTION_UPDATED );
             _costFunctionManager->invalidateCostFunction();
             struct timespec end = TimeUtils::sampleMicro();
-            _statistics.incLongAttribute( TIME_SIMPLEX_STEPS_MICRO,
+            _statistics.incLongAttribute( Statistics::TIME_SIMPLEX_STEPS_MICRO,
                                           TimeUtils::timePassed( start, end ) );
             return false;
         }
@@ -578,7 +583,7 @@ bool Engine::performSimplexStep()
         {
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
-            _statistics.incLongAttribute( TIME_SIMPLEX_STEPS_MICRO,
+            _statistics.incLongAttribute( Statistics::TIME_SIMPLEX_STEPS_MICRO,
                                           TimeUtils::timePassed( start, end ) );
             if ( _tableau->isOptimizing() )
             {
@@ -612,7 +617,7 @@ bool Engine::performSimplexStep()
             return false;
         }
 
-        _statistics.incLongAttribute( NUM_SIMPLEX_UNSTABLE_PIVOTS );
+        _statistics.incLongAttribute( Statistics::NUM_SIMPLEX_UNSTABLE_PIVOTS );
     }
 
     if ( !fakePivot )
@@ -627,7 +632,7 @@ bool Engine::performSimplexStep()
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TIME_SIMPLEX_STEPS_MICRO, TimeUtils::timePassed( start, end ) );
+    _statistics.incLongAttribute( Statistics::TIME_SIMPLEX_STEPS_MICRO, TimeUtils::timePassed( start, end ) );
     return false;
 }
 
@@ -1150,7 +1155,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     _tableau->registerCostFunctionManager( _costFunctionManager );
     _activeEntryStrategy->initialize( _tableau );
 
-    _statistics.setUnsignedAttribute( NUM_PL_CONSTRAINTS,
+    _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
                                       _plConstraints.size() );
 }
 
@@ -1220,7 +1225,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         }
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics.setLongAttribute( PREPROCESSING_TIME_MICRO,
+        _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
         if ( !_tableau->allBoundsValid() )
@@ -1235,7 +1240,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         ENGINE_LOG( "processInputQuery done\n" );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics.setLongAttribute( PREPROCESSING_TIME_MICRO,
+        _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
         _exitCode = Engine::UNSAT;
@@ -1719,7 +1724,7 @@ void Engine::applyAllConstraintTightenings()
 
     for ( const auto &tightening : entailedTightenings )
     {
-        _statistics.incLongAttribute( NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS );
+        _statistics.incLongAttribute( Statistics::NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS );
 
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
@@ -1736,7 +1741,7 @@ void Engine::applyAllBoundTightenings()
     applyAllConstraintTightenings();
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO,
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO,
                                   TimeUtils::timePassed( start, end ) );
 }
 
@@ -1750,7 +1755,7 @@ bool Engine::applyAllValidConstraintCaseSplits()
             appliedSplit = true;
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO,
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO,
                                   TimeUtils::timePassed( start, end ) );
 
     return appliedSplit;
@@ -1779,7 +1784,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
 
 bool Engine::shouldCheckDegradation()
 {
-    return _statistics.getNumMainLoopIterations() %
+    return _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
         GlobalConfiguration::DEGRADATION_CHECKING_FREQUENCY == 0 ;
 }
 
@@ -1788,12 +1793,12 @@ bool Engine::highDegradation()
     struct timespec start = TimeUtils::sampleMicro();
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
-    _statistics.setDoubleAttribute( CURRENT_DEGRADATION, degradation );
+    _statistics.setDoubleAttribute( Statistics::CURRENT_DEGRADATION, degradation );
 
     bool result = FloatUtils::gt( degradation, GlobalConfiguration::DEGRADATION_THRESHOLD );
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TOTAL_TIME_DEGRADATION_CHECKING,
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_DEGRADATION_CHECKING,
                                   TimeUtils::timePassed( start, end ) );
 
     // Debug
@@ -1808,17 +1813,17 @@ void Engine::tightenBoundsOnConstraintMatrix()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( _statistics.getNumMainLoopIterations() %
+    if ( _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
          GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY == 0 )
     {
         _rowBoundTightener->examineConstraintMatrix( true );
         _statistics.incLongAttribute
-            ( NUM_BOUND_TIGHTENINGS_ON_CONSTRAINT_MATRIX );
+            ( Statistics::NUM_BOUND_TIGHTENINGS_ON_CONSTRAINT_MATRIX );
     }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute
-        ( TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO,
+        ( Statistics::TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO,
           TimeUtils::timePassed( start, end ) );
 }
 
@@ -1828,7 +1833,7 @@ void Engine::explicitBasisBoundTightening()
 
     bool saturation = GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
-    _statistics.incLongAttribute( NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS );
+    _statistics.incLongAttribute( Statistics::NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS );
 
     switch ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )
     {
@@ -1846,7 +1851,7 @@ void Engine::explicitBasisBoundTightening()
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute
-        ( TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO,
+        ( Statistics::TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO,
           TimeUtils::timePassed( start, end ) );
 }
 
@@ -1860,10 +1865,10 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore, restoreBasics );
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TOTAL_TIME_PRECISION_RESTORATION,
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                   TimeUtils::timePassed( start, end ) );
 
-    _statistics.incUnsignedAttribute( NUM_PRECISION_RESTORATIONS );
+    _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
     _rowBoundTightener->clear();
     _constraintBoundTightener->resetBounds();
 
@@ -1883,9 +1888,9 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _precisionRestorer.restorePrecision( *this, *_tableau, _smtCore,
                                              PrecisionRestorer::DO_NOT_RESTORE_BASICS );
         end = TimeUtils::sampleMicro();
-        _statistics.incLongAttribute( TOTAL_TIME_PRECISION_RESTORATION,
+        _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                       TimeUtils::timePassed( start, end ) );
-        _statistics.incUnsignedAttribute( NUM_PRECISION_RESTORATIONS );
+        _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
 
         _rowBoundTightener->clear();
         _constraintBoundTightener->resetBounds();
@@ -2053,9 +2058,9 @@ void Engine::performSymbolicBoundTightening()
     }
 
     struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING,
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING,
                                   TimeUtils::timePassed( start, end ) );
-    _statistics.incLongAttribute( NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING );
+    _statistics.incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING );
 }
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
@@ -2064,7 +2069,7 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     if ( timeout == 0 )
         return false;
 
-    return _statistics.getTotalTime() / MICROSECONDS_TO_SECONDS > timeout;
+    return _statistics.getTotalTimeInMicro() / MICROSECONDS_TO_SECONDS > timeout;
 }
 
 void Engine::reset()
@@ -2169,14 +2174,16 @@ void Engine::warmStart()
 void Engine::checkOverallProgress()
 {
     // Get fresh statistics
-    unsigned numVisitedStates = _statistics.getNumVisitedTreeStates();
-    unsigned long long currentIteration = _statistics.getNumMainLoopIterations();
+    unsigned numVisitedStates =
+        _statistics.getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES);
+    unsigned long long currentIteration = _statistics.getLongAttribute
+        ( Statistics::NUM_MAIN_LOOP_ITERATIONS );
 
     if ( numVisitedStates > _lastNumVisitedStates )
     {
         // Progress has been made
         _lastNumVisitedStates = numVisitedStates;
-        _lastIterationWithProgress = _statistics.getNumMainLoopIterations();
+        _lastIterationWithProgress = currentIteration;
     }
     else
     {
@@ -2521,8 +2528,9 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
         DEBUG( _tableau->verifyInvariants() );
 
         mainLoopStatistics();
-        if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
-             GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+        if ( _verbosity > 1 &&
+             _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS )
+             % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
 
         // If the basis has become malformed, we need to restore it
@@ -2539,7 +2547,8 @@ void Engine::minimizeHeuristicCost( const Map<unsigned, double>
                 _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
             }
 
-            _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
+            _numVisitedStatesAtPreviousRestoration =
+                _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS );
             _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
             continue;
         }
