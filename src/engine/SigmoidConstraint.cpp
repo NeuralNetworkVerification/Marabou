@@ -130,9 +130,9 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _constraintBoundTightener )
     {
         if ( variable == _f )
-            _constraintBoundTightener->registerTighterLowerBound( _b, sigmoidInverse(bound) );
+            _constraintBoundTightener->registerTighterUpperBound( _b, sigmoidInverse(bound) );
         else if ( variable == _b )
-            _constraintBoundTightener->registerTighterLowerBound( _f, sigmoid(bound) );
+            _constraintBoundTightener->registerTighterUpperBound( _f, sigmoid(bound) );
     }
 }
 
