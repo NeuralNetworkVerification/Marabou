@@ -213,7 +213,7 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
         newBoundsLearned = onePassOverInvertedBasisRows();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->incLongAttribute( NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+            _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
                                            newBoundsLearned );
 
         --maxNumberOfIterations;
@@ -276,7 +276,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
                 _statistics->
-                    incLongAttribute( NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+                    incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
                                       newBoundsLearned );
 
             --maxNumberOfIterations;
@@ -487,7 +487,7 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
             _statistics->
-                incLongAttribute( NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX,
+                incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX,
                                   newBoundsLearned );
 
         --maxNumberOfIterations;
@@ -646,13 +646,13 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 void RowBoundTightener::examinePivotRow()
 {
 	if ( _statistics )
-        _statistics->incLongAttribute( NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER );
+        _statistics->incLongAttribute( Statistics::NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER );
 
     const TableauRow &row( *_tableau.getPivotRow() );
     unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )
-        _statistics->incLongAttribute( NUM_TIGHTENINGS_FROM_ROWS,
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_ROWS,
                                        newBoundsLearned );
 }
 

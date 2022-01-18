@@ -17,6 +17,7 @@
 #define __Statistics_h__
 
 #include "List.h"
+#include "Map.h"
 #include "TimeUtils.h"
 
 class Statistics
@@ -259,10 +260,9 @@ public:
         return _doubleAttributes[attr];
     }
 
-    /*
-      Get the total runtime in microseconds.
-    */
-    unsigned long long getTotalTime() const;
+    unsigned long long getTotalTimeInMicro() const;
+
+    unsigned getAveragePivotTimeInMicro() const;
 
     /*
       Report a timeout, or check whether a timeout has occurred
