@@ -102,12 +102,14 @@ void Statistics::print()
     printf( "\tTotal time elapsed: %llu milli (%02u:%02u:%02u)\n",
             totalElapsed / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
+    unsigned long long timeMainLoopMicro = getLongAttr( TIME_MAIN_LOOP_MICRO );
     seconds = _timeMainLoopMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
     printf( "\t\tMain loop: %llu milli (%02u:%02u:%02u)\n",
-            _timeMainLoopMicro / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
+            timeMainLoopMicro / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
+    unsigned long long timePreprocessingMicro = getLongAttr( TIME_PREPROCESSING_MICRO );
     seconds = _preprocessingTimeMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
@@ -123,178 +125,217 @@ void Statistics::print()
             totalUnknown / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
     printf( "\tBreakdown for main loop:\n" );
+    unsigned long long timeSimplexStepsMicro = getLongAttr(TIME_SIMPLEX_STEPS_MICRO );
+    unsigned long long timeMainLoopMicro = getLongAttr(TIME_MAIN_LOOP_MICRO );
     printf( "\t\t[%.2lf%%] Simplex steps: %llu milli\n"
-            , printPercents( _timeSimplexStepsMicro, _timeMainLoopMicro )
-            , _timeSimplexStepsMicro / 1000
+            , printPercents( timeSimplexStepsMicro, timeMainLoopMicro )
+            , timeSimplexStepsMicro / 1000
             );
+    unsigned long long totalTimeExplicitBasisBoundTighteningMicro =
+        getLongAttr(TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO );
     printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
-            , printPercents( _totalTimeExplicitBasisBoundTighteningMicro, _timeMainLoopMicro )
-            , _totalTimeExplicitBasisBoundTighteningMicro / 1000
+            , printPercents( totalTimeExplicitBasisBoundTighteningMicro, timeMainLoopMicro )
+            , totalTimeExplicitBasisBoundTighteningMicro / 1000
             );
+    unsigned long long totalTimeConstraintMatrixBoundTighteningMicro =
+        getLongAttr(TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO );
     printf( "\t\t[%.2lf%%] Constraint-matrix bound tightening: %llu milli\n"
-            , printPercents( _totalTimeConstraintMatrixBoundTighteningMicro, _timeMainLoopMicro )
-            , _totalTimeConstraintMatrixBoundTighteningMicro / 1000
+            , printPercents( totalTimeConstraintMatrixBoundTighteningMicro, timeMainLoopMicro )
+            , totalTimeConstraintMatrixBoundTighteningMicro / 1000
             );
+    unsigned long long totalTimeDegradationChecking =
+        getLongAttr( TOTAL_TIME_DEGRADATION_CHECKING );
     printf( "\t\t[%.2lf%%] Degradation checking: %llu milli\n"
-            , printPercents( _totalTimeDegradationChecking, _timeMainLoopMicro )
-            , _totalTimeDegradationChecking / 1000
+            , printPercents( totalTimeDegradationChecking, timeMainLoopMicro )
+            , totalTimeDegradationChecking / 1000
             );
+    unsigned long long totalTimePrecisionRestoration =
+        getLongAttr( TOTAL_TIME_PRECISION_RESTORATION );
     printf( "\t\t[%.2lf%%] Precision restoration: %llu milli\n"
-            , printPercents( _totalTimePrecisionRestoration, _timeMainLoopMicro )
-            , _totalTimePrecisionRestoration / 1000
+            , printPercents( totalTimePrecisionRestoration, timeMainLoopMicro )
+            , totalTimePrecisionRestoration / 1000
             );
+    unsigned long long totalTimeHandlingStatisticsMicro =
+        getLongAttr( TOTAL_TIME_HANDLING_STATISTICS_MICRO );
     printf( "\t\t[%.2lf%%] Statistics handling: %llu milli\n"
-            , printPercents( _totalTimeHandlingStatisticsMicro, _timeMainLoopMicro )
-            , _totalTimeHandlingStatisticsMicro / 1000
+            , printPercents( totalTimeHandlingStatisticsMicro, timeMainLoopMicro )
+            , totalTimeHandlingStatisticsMicro / 1000
             );
+    unsigned long long timeConstraintFixingStepsMicro =
+        getLongAttr( TIME_CONSTRAINT_FIXING_STEPS_MICRO );
     printf( "\t\t[%.2lf%%] Constraint-fixing steps: %llu milli\n"
-            , printPercents( _timeConstraintFixingStepsMicro, _timeMainLoopMicro )
-            , _timeConstraintFixingStepsMicro / 1000
+            , printPercents( timeConstraintFixingStepsMicro, timeMainLoopMicro )
+            , timeConstraintFixingStepsMicro / 1000
             );
+    unsigned long long totalTimePerformingValidCaseSplitsMicro =
+        getLongAttr( TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO );
+    unsigned long long totalNumberOfValidCaseSplits =
+        getLongAttr( TOTAL_NUMBER_OF_VALID_CASE_SPLITS );
     printf( "\t\t[%.2lf%%] Valid case splits: %llu milli. Average per split: %.2lf milli\n"
-            , printPercents( _totalTimePerformingValidCaseSplitsMicro, _timeMainLoopMicro )
-            , _totalTimePerformingValidCaseSplitsMicro / 1000
-            , printAverage( _totalTimePerformingValidCaseSplitsMicro / 1000,
-                            _totalNumberOfValidCaseSplits )
+            , printPercents( totalTimePerformingValidCaseSplitsMicro, timeMainLoopMicro )
+            , totalTimePerformingValidCaseSplitsMicro / 1000
+            , printAverage( totalTimePerformingValidCaseSplitsMicro / 1000,
+                            totalNumberOfValidCaseSplits )
             );
+    unsigned long long totalTimeApplyingStoredTighteningsMicro =
+        getLongAttr( TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO );
     printf( "\t\t[%.2lf%%] Applying stored bound-tightening: %llu milli\n"
-            , printPercents( _totalTimeApplyingStoredTighteningsMicro, _timeMainLoopMicro )
-            , _totalTimeApplyingStoredTighteningsMicro / 1000
+            , printPercents( totalTimeApplyingStoredTighteningsMicro, timeMainLoopMicro )
+            , totalTimeApplyingStoredTighteningsMicro / 1000
             );
-
+    unsigned long long totalTimeSmtCoreMicro =
+        getLongAttr( TOTAL_TIME_SMT_CORE_MICRO );
     printf( "\t\t[%.2lf%%] SMT core: %llu milli\n"
-            , printPercents( _totalTimeSmtCoreMicro, _timeMainLoopMicro )
-            , _totalTimeSmtCoreMicro / 1000
+            , printPercents( totalTimeSmtCoreMicro, timeMainLoopMicro )
+            , totalTimeSmtCoreMicro / 1000
             );
-
+    unsigned long long totalTimePerformingSymbolicBoundTightening =
+        getLongAttr( TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING );
     printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n"
-            , printPercents( _totalTimePerformingSymbolicBoundTightening, _timeMainLoopMicro )
-            , _totalTimePerformingSymbolicBoundTightening / 1000
+            , printPercents( totalTimePerformingSymbolicBoundTightening, timeMainLoopMicro )
+            , totalTimePerformingSymbolicBoundTightening / 1000
             );
 
     unsigned long long total =
-        _timeSimplexStepsMicro +
-        _timeConstraintFixingStepsMicro +
-        _totalTimePerformingValidCaseSplitsMicro +
-        _totalTimeHandlingStatisticsMicro +
-        _totalTimeExplicitBasisBoundTighteningMicro +
-        _totalTimeDegradationChecking +
-        _totalTimePrecisionRestoration +
-        _totalTimeConstraintMatrixBoundTighteningMicro +
-        _totalTimeApplyingStoredTighteningsMicro +
-        _totalTimeSmtCoreMicro +
-        _totalTimePerformingSymbolicBoundTightening;
+        timeSimplexStepsMicro +
+        timeConstraintFixingStepsMicro +
+        totalTimePerformingValidCaseSplitsMicro +
+        totalTimeHandlingStatisticsMicro +
+        totalTimeExplicitBasisBoundTighteningMicro +
+        totalTimeDegradationChecking +
+        totalTimePrecisionRestoration +
+        totalTimeConstraintMatrixBoundTighteningMicro +
+        totalTimeApplyingStoredTighteningsMicro +
+        totalTimeSmtCoreMicro +
+        totalTimePerformingSymbolicBoundTightening;
 
     printf( "\t\t[%.2lf%%] Unaccounted for: %llu milli\n"
-            , printPercents( _timeMainLoopMicro - total, _timeMainLoopMicro )
-            , _timeMainLoopMicro > total ? ( _timeMainLoopMicro - total ) / 1000 : 0
+            , printPercents( timeMainLoopMicro - total, timeMainLoopMicro )
+            , timeMainLoopMicro > total ? ( timeMainLoopMicro - total ) / 1000 : 0
             );
 
     printf( "\t--- Preprocessor Statistics ---\n" );
     printf( "\tNumber of preprocessor bound-tightening loop iterations: %u\n",
-            _ppNumTighteningIterations );
+            getUnsignedAttr( PP_NUM_TIGHTENING_ITERATIONS ) );
     printf( "\tNumber of eliminated variables: %u\n",
-            _ppNumEliminatedVars );
+            getUnsignedAttr( PP_NUM_ELIMINATED_VARS ) );
     printf( "\tNumber of constraints removed due to variable elimination: %u\n",
-            _ppNumConstraintsRemoved );
+            getUnsignedAttr( PP_NUM_CONSTRAINTS_REMOVED ) );
     printf( "\tNumber of equations removed due to variable elimination: %u\n",
-            _ppNumEquationsRemoved );
+            getUnsignedAttr( PP_NUM_EQUATIONS_REMOVED ) );
+
+    unsigned long long numSimplexSteps = getLongAttr( NUM_SIMPLIEX_STEPS );
+    unsigned long long numConstraintFixingSteps =
+        getLongAttr( NUM_CONSTRAINT_FIXING_STEPS );
 
     printf( "\t--- Engine Statistics ---\n" );
     printf( "\tNumber of main loop iterations: %llu\n"
             "\t\t%llu iterations were simplex steps. Total time: %llu milli. Average: %.2lf milli.\n"
             "\t\t%llu iterations were constraint-fixing steps. "
             "Total time: %llu milli. Average: %.2lf milli\n"
-            , _numMainLoopIterations
-            , _numSimplexSteps
-            , _timeSimplexStepsMicro / 1000
-            , printAverage( _timeSimplexStepsMicro / 1000, _numSimplexSteps )
-            , _numConstraintFixingSteps
-            , _timeConstraintFixingStepsMicro / 1000
-            , printAverage( _timeConstraintFixingStepsMicro / 1000, _numConstraintFixingSteps )
+            , getLongAttr( NUM_MAIN_LOOP_ITERATIONS ),
+            , numSimplexSteps
+            , timeSimplexStepsMicro / 1000
+            , printAverage( timeSimplexStepsMicro / 1000, numSimplexSteps )
+            , numConstraintFixingSteps
+            , timeConstraintFixingStepsMicro / 1000
+            , printAverage( timeConstraintFixingStepsMicro / 1000,
+                            numConstraintFixingSteps )
             );
     printf( "\tNumber of active piecewise-linear constraints: %u / %u\n"
             "\t\tConstraints disabled by valid splits: %u. "
             "By SMT-originated splits: %u\n"
-            , _numActivePlConstraints
-            , _numPlConstraints
-            , _numPlValidSplits
-            , _numPlSmtOriginatedSplits
+            , getUnsignedAttr( NUM_ACTIVE_PL_CONSTRAINTS )
+            , getUnsignedAttr( NUM_PL_CONSTRAINTS )
+            , getUnsignedAttr( NUM_PL_VALID_SPLITS )
+            , getUnsignedAttr( NUM_PL_SMT_ORIGINATED_SPLITS )
             );
     printf( "\tLast reported degradation: %.10lf. Max degradation so far: %.10lf. "
             "Restorations so far: %u\n"
-            , _currentDegradation
-            , _maxDegradation
-            , _numPrecisionRestorations
+            , getDoubleAttr( CURRENT_DEGRADATION )
+            , getDoubleAttr( MAX_DEGRADATION )
+            , getDoubleAttr( NUM_PRECISION_RESTORATIONS )
             );
     printf( "\tNumber of simplex pivots we attempted to skip because of instability: %llu.\n"
             "\tUnstable pivots performed anyway: %llu\n"
-            , _numSimplexPivotSelectionsIgnoredForStability
-            , _numSimplexUnstablePivots );
+            , getLongAttr( NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY )
+            , getLongAttr( NUM_SIMPLEX_UNSTABLE_PIVOTS ) );
 
+    unsigned long long numTableauPivots = getLongAttr(NUM_TABLEAU_PIVOTS );
+    unsigned long long numTableauDegeneratePivots =
+        getLongAttr(NUM_TABLEAU_DEGENERATE_PIVOTS );
     printf( "\t--- Tableau Statistics ---\n" );
-    printf( "\tTotal number of pivots performed: %llu\n", _numTableauPivots );
+    printf( "\tTotal number of pivots performed: %llu\n", numTableauPivots );
     printf( "\t\tReal pivots: %llu. Degenerate: %llu (%.2lf%%)\n"
-            , _numTableauPivots - _numTableauDegeneratePivots
-            , _numTableauDegeneratePivots
-            , printPercents( _numTableauDegeneratePivots, _numTableauPivots ) );
+            , numTableauPivots - numTableauDegeneratePivots
+            , numTableauDegeneratePivots
+            , printPercents( numTableauDegeneratePivots, numTableauPivots ) );
 
+    unsigned long long numTableauDegeneratePivotsByRequest =
+        getLongAttr(NUM_TABLEAU_DEGENERATE_PIVOTS_BY_REQUEST );
     printf( "\t\tDegenerate pivots by request (e.g., to fix a PL constraint): %llu (%.2lf%%)\n"
-            , _numTableauDegeneratePivotsByRequest
-            , printPercents( _numTableauDegeneratePivotsByRequest, _numTableauDegeneratePivots ) );
+            , numTableauDegeneratePivotsByRequest
+            , printPercents( numTableauDegeneratePivotsByRequest, numTableauDegeneratePivots ) );
 
     printf( "\t\tAverage time per pivot: %.2lf milli\n",
-            printAverage( _timePivotsMicro / 1000, _numTableauPivots ) );
+            printAverage( getLongAttr( TIME_PIVOTS_MICRO ) / 1000,
+                          numTableauPivots ) );
 
-    printf( "\tTotal number of fake pivots performed: %llu\n", _numTableauBoundHopping );
+    printf( "\tTotal number of fake pivots performed: %llu\n",
+            getLongAttr( NUM_TABLEAU_BOUND_HOPPING ) );
     printf( "\tTotal number of rows added: %llu. Number of merged columns: %llu\n"
-            , _numAddedRows
-            , _numMergedColumns );
+            , getLongAttr( NUM_ADDED_ROWS )
+            , getLongAttr( NUM_MERGED_COLUMNS ) );
     printf( "\tCurrent tableau dimensions: M = %u, N = %u\n"
-            , _currentTableauM
-            , _currentTableauN );
+            , getUnsignedAttr( CURRENT_TABLEAU_M )
+            , getUnsignedAttr( CURRENT_TABLEAU_N ) );
 
     printf( "\t--- SMT Core Statistics ---\n" );
     printf( "\tTotal depth is %u. Total visited states: %u. Number of splits: %u. Number of pops: %u\n"
-            , _currentDecisionLevel
-            , _numVisitedTreeStates
-            , _numSplits
-            , _numPops );
+            , getUnsignedAttr( CURRENT_DECISION_LEVEL )
+            , getUnsignedAttr( NUM_VISITED_TREE_STATES )
+            , getUnsignedAttr( NUM_SPLITS )
+            , getUnsignedAttr( NUM_POPS ) );
     printf( "\tMax stack depth: %u\n"
-            , _maxDecisionLevel );
+            , getUnsignedAttr( MAX_DECISION_LEVEL ) );
 
     printf( "\t--- Bound Tightening Statistics ---\n" );
-    printf( "\tNumber of tightened bounds: %llu.\n", _numTightenedBounds );
+    printf( "\tNumber of tightened bounds: %llu.\n",
+            getLongAttr( NUM_TIGHTENED_BOUNDS ) );
     printf( "\t\tNumber of rows examined by row tightener: %llu. Consequent tightenings: %llu\n"
-            , _numRowsExaminedByRowTightener
-            , _numTighteningsFromRows );
+            , getLongAttr( NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER )
+            , getLongAttr( NUM_TIGHTENINGS_FROM_ROWS ) );
 
     printf( "\t\tNumber of explicit basis matrices examined by row tightener: %llu. Consequent tightenings: %llu\n"
-            , _numBoundTighteningsOnExplicitBasis
-            , _numTighteningsFromExplicitBasis );
+            , getLongAttr( NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS )
+            , getLongAttr( NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS ) );
 
     printf( "\t\tNumber of bound tightening rounds on the entire constraint matrix: %llu. "
             "Consequent tightenings: %llu\n"
-            , _numBoundTighteningsOnConstraintMatrix
-            , _numTighteningsFromConstraintMatrix );
+            , getLongAttr( NUM_BOUND_TIGHTENINGS_ON_CONSTRAINT_MATRIX )
+            , getLongAttr( NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX ) );
 
     printf( "\t\tNumber of bound notifications sent to PL constraints: %llu. Tightenings proposed: %llu\n"
-            , _numBoundNotificationsToPlConstraints
-            , _numBoundsProposedByPlConstraints );
+            , getLongAttr( NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS )
+            , getLongAttr( NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS ) );
 
     printf( "\t--- Basis Factorization statistics ---\n" );
     printf( "\tNumber of basis refactorizations: %llu\n",
-            _numBasisRefactorizations );
+            getLongAttr( NUM_BASIS_REFACTORIZATIONS ) );
 
+    unsigned long long pseNumIterations = getLongAttr( PSE_NUM_ITERATIONS );
+    unsigned long long pseNumResetReferenceSpace =
+        getLongAttr( PSE_NUM_RESET_REFERENCE_SPACE );
     printf( "\t--- Projected Steepest Edge Statistics ---\n" );
-    printf( "\tNumber of iterations: %llu.\n", _pseNumIterations );
+    printf( "\tNumber of iterations: %llu.\n", pseNumIterations );
     printf( "\tNumber of resets to reference space: %llu. Avg. iterations per reset: %u\n"
-            , _pseNumResetReferenceSpace
-            , _pseNumResetReferenceSpace > 0 ?
-            (unsigned)((double)_pseNumIterations / _pseNumResetReferenceSpace) : 0 );
+            , pseNumResetReferenceSpace
+            , pseNumResetReferenceSpace > 0 ?
+            (unsigned)((double)pseNumIterations / pseNumResetReferenceSpace) : 0 );
 
     printf( "\t--- SBT ---\n" );
-    printf( "\tNumber of tightened bounds: %llu\n", _numTighteningsFromSymbolicBoundTightening );
+    printf( "\tNumber of tightened bounds: %llu\n",
+            getLongAttr( NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING ) );
 }
 
 unsigned long long Statistics::getTotalTime() const
