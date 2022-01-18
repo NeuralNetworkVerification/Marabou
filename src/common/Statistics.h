@@ -24,7 +24,7 @@ class Statistics
 public:
     Statistics();
 
-    enum StatisticsUnsignedAttr
+    enum StatisticsUnsignedAttribute
     {
      // Number of piecewise linear constraints (active, total, and
      // reason for split)
@@ -64,7 +64,7 @@ public:
      TOTAL_NUMBER_OF_VALID_CASE_SPLITS,
     };
 
-    enum StatisticsLongAttr
+    enum StatisticsLongAttribute
     {
      // Preprocessing time
      PREPROCESSING_TIME_MICRO,
@@ -178,7 +178,7 @@ public:
      TOTAL_TIME_SMT_CORE_MICRO,
     };
 
-    enum StatisticsDoubleAttr
+    enum StatisticsLongAttribute
     {
      // Degradation and restorations
      CURRENT_DEGRADATION,
@@ -195,49 +195,51 @@ public:
     */
     void stampStartingTime();
 
-    inline void setUnsignedAttr( StatisticsUnsignedAttr attr, unsigned value )
+    inline void setUnsignedAttribute( StatisticsUnsignedAttribute attr,
+                                      unsigned value )
     {
         _unsignedAttributes[attr] = value;
     }
 
-    inline void setLongAttr( StatisticsLongAttr attr, unsigned long long value )
+    inline void setUnsignedAttribute( StatisticsLongAttribute attr,
+                                      unsigned long long value )
     {
         _longAttributes[attr] = value;
     }
 
-    inline void setDoubleAttr( StatisticsDoubleAttr attr, double value )
+    inline void setDoubleAttribute( StatisticsDoubleAttribute attr, double value )
     {
         _doubleAttributes[attr] = value;
     }
 
-    inline void incUnsignedAttr( StatisticsUnsignedAttr attr, unsigned value )
+    inline void incUnsignedAttribute( StatisticsUnsignedAttribute attr, unsigned value )
     {
-        _unsignedAttributes[attr] += value;
+        _unsignedAttributeibutes[attr] += value;
     }
 
-    inline void incLongAttr( StatisticsLongAttr attr, unsigned long long value )
+    inline void incLongAttribute( StatisticsLongAttribute attr, unsigned long long value )
     {
-        _longAttributes[attr] += value;
+        _longAttributeibutes[attr] += value;
     }
 
-    inline void incDoubleAttr( StatisticsDoubleAttr attr, double value )
+    inline void incDoubleAttribute( StatisticsDoubleAttribute attr, double value )
     {
-        _doubleAttributes[attr] += value;
+        _doubleAttributeibutes[attr] += value;
     }
 
-    inline unsigned getUnsignedAttr( StatisticsUnsignedAttr attr ) const
+    inline unsigned getUnsignedAttribute( StatisticsUnsignedAttribute attr ) const
     {
-        return _unsignedAttributes[attr];
+        return _unsignedAttributeibutes[attr];
     }
 
-    inline unsigned long long  getLongAttr( StatisticsLongAttr attr ) const
+    inline unsigned long long  getLongAttribute( StatisticsLongAttribute attr ) const
     {
-        return _longAttributes[attr];
+        return _longAttributeibutes[attr];
     }
 
-    inline double getDoubleAttr( StatisticsDoubleAttr attr ) const
+    inline double getDoubleAttribute( StatisticsDoubleAttribute attr ) const
     {
-        return _doubleAttributes[attr];
+        return _doubleAttributeibutes[attr];
     }
 
     /*
@@ -260,11 +262,11 @@ private:
     // Initial timestamp
     struct timespec _startTime;
 
-    Map<StatisticsUnsignedAttr, unsigned> _unsignedAttributes;
+    Map<StatisticsUnsignedAttribute, unsigned> _unsignedAttributes;
 
-    Map<StatisticsLongAttr, unsigned long long> _longAttributes;
+    Map<StatisticsLongAttribute, unsigned long long> _longAttributes;
 
-    Map<StatisticsDoubleAttr, double> _doubleAttributes;
+    Map<StatisticsDoubleAttribute, double> _doubleAttributes;
 
     // Whether the engine quitted with a timeout
     bool _timedOut;
