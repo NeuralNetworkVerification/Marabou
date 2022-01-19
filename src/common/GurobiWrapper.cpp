@@ -2,7 +2,7 @@
 /*! \file GurobiWrapper.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Haoze Andrew Wu
+ **   Guy Katz, Haoze Andrew Wu, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -175,6 +175,45 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
         }
 
         _model->addConstr( constraint, sense, scalar );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
+}
+
+void GurobiWrapper::addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+{
+    addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_LESS_EQUAL );
+}
+
+void GurobiWrapper::addGeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+{
+    addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_GREATER_EQUAL );
+}
+
+void GurobiWrapper::addEqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+{
+    addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_EQUAL );
+}
+
+void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar, char sense )
+{
+    try
+    {
+        GRBLinExpr constraint;
+
+        for ( const auto &term : terms )
+        {
+            ASSERT( _nameToVariable.exists( term._variable ) );
+            constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+        }
+
+        ASSERT( _nameToVariable.exists( binVarName ) );
+        _model->addGenConstrIndicator( *_nameToVariable[binVarName], binVal, constraint, sense, scalar );
     }
     catch ( GRBException e )
     {

@@ -424,6 +424,74 @@ public:
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
 	}
 
+	void test_variable_elimination_for_ts_constraints()
+	{
+        // x0 + x1 = 1
+        // x2 = simogid(x1) // x1 is fixed => x2 should be fixed...
+        // x3 = simoid(x2) // x2 is fixed, so x3 should be fixed...
+        // x3 + x4 = 2
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 10 );
+        inputQuery.setLowerBound( 0, 1 ); // fixed
+        inputQuery.setUpperBound( 0, 1 );
+        inputQuery.setLowerBound( 1, 0 ); // normal
+        inputQuery.setUpperBound( 1, 5 );
+        inputQuery.setLowerBound( 2, 2 ); // unused
+        inputQuery.setUpperBound( 2, 3 );
+        inputQuery.setLowerBound( 3, 5 ); // fixed
+        inputQuery.setUpperBound( 3, 5 );
+        inputQuery.setLowerBound( 4, 0 ); // unused
+        inputQuery.setUpperBound( 4, 10 );
+        inputQuery.setLowerBound( 5, 0 );  // unused
+        inputQuery.setUpperBound( 5, 10 );
+        inputQuery.setLowerBound( 6, 5 ); // fxied
+        inputQuery.setUpperBound( 6, 5 );
+        inputQuery.setLowerBound( 7, 0 ); // normal
+        inputQuery.setUpperBound( 7, 9 );
+        inputQuery.setLowerBound( 8, 0 ); // normal
+        inputQuery.setUpperBound( 8, 9 );
+        inputQuery.setLowerBound( 9, 0 ); // unused
+        inputQuery.setUpperBound( 9, 9 );
+
+        // x0 + x1 + x3 = 10
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( 1, 1 );
+        equation1.addAddend( 1, 3 );
+        equation1.setScalar( 10 );
+        inputQuery.addEquation( equation1 );
+
+        // x7 + x8 = 12
+        Equation equation2;
+        equation2.addAddend( 1, 7 );
+        equation2.addAddend( 1, 8 );
+        equation2.setScalar( 12 );
+        inputQuery.addEquation( equation2 );
+
+        InputQuery processed = Preprocessor().preprocess( inputQuery, true );
+
+        // Variables 2, 4, 5 and 9 are unused and should be eliminated.
+        // Variables 0, 3 and 6 were fixed and should be eliminated.
+        // Because of equation1 variable 1 should become fixed at 4 and be eliminated too.
+        // This only leaves variables 7 and 8.
+        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 2U );
+
+        // Equation 1 should have been eliminated
+        TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+
+        // Check that equation 2 has been updated as needed
+        Equation preprocessedEquation = *processed.getEquations().begin();
+        List<Equation::Addend>::iterator addend = preprocessedEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 0U );
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1U );
+
+        TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
+    }
+
     void test_all_equations_become_equalities()
     {
         InputQuery inputQuery;

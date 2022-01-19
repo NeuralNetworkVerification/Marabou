@@ -109,6 +109,11 @@ public:
     */
     double sigmoidInverse( double y ) const;
 
+    /*
+      Compute the derivative of the sigmoid function.
+    */
+    double sigmoidDerivative( double x ) const;
+
 private:
     unsigned _b, _f; 
     bool _haveEliminatedVariables;

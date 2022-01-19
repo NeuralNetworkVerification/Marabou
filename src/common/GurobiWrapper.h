@@ -2,7 +2,7 @@
 /*! \file GurobiWrapper.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -71,6 +71,15 @@ public:
     // Add a new EQ constraint, e.g. 3x + 4y = -5
     void addEqConstraint( const List<Term> &terms, double scalar );
 
+    // Add a new LEQ indicator constraint 
+    void addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+
+    // Add a new GEQ indicator constraint
+    void addGeqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+
+    // Add a new EQ indicator constraint
+    void addEqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+
     // A cost function to minimize, or an objective function to maximize
     void setCost( const List<Term> &terms );
     void setObjective( const List<Term> &terms );
@@ -123,6 +132,8 @@ private:
     double _timeoutInSeconds;
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
+    // Add a new indicator constraint
+    void addIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar, char sense );
 
     void freeModelIfNeeded();
     void freeMemoryIfNeeded();
@@ -162,6 +173,9 @@ public:
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
+    void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
+    void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
+    void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void setCost( const List<Term> & ) {}
     void setObjective( const List<Term> & ) {}
     void setCutoff( double ) {};

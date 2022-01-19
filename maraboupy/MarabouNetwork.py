@@ -456,4 +456,3 @@ class MarabouNetwork:
         outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
         err = np.abs(outMar - outNotMar)
         return err
-
