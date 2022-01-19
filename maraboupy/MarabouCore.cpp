@@ -584,6 +584,6 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("getUnsignedAttribute", &Statistics::getUnsignedAttribute)
         .def("getLongAttribute", &Statistics::getLongAttribute)
         .def("getDoubleAttribute", &Statistics::getDoubleAttribute)
-        .def("getTotalTime", &Statistics::getTotalTime)
+        .def("getTotalTimeInMicro", &Statistics::getTotalTimeInMicro)
         .def("hasTimedOut", &Statistics::hasTimedOut);
 }
