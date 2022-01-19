@@ -59,7 +59,7 @@ vals1, stats1 = net1.solve()
 
 # %%
 # Example statistics
-stats1.getNumSplits()
+stats1.getUnsignedAttribute("NUM_SPLITS")
 stats1.getTotalTime()
 
 
