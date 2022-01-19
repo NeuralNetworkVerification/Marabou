@@ -151,19 +151,27 @@ public:
     void test_equality_operator_with_sigmoid()
     {
         SigmoidConstraint *sigmoid1 = new SigmoidConstraint( 3, 5 );
+        sigmoid1->notifyLowerBound( 3, 0.1 );
+        sigmoid1->notifyLowerBound( 5, 0.2 );
+        sigmoid1->notifyUpperBound( 3, 0.3 );
+        sigmoid1->notifyUpperBound( 5, 0.4 );
 
         InputQuery *inputQuery = new InputQuery;
 
-        inputQuery->setNumberOfVariables( 5 );
-        inputQuery->setLowerBound( 2, -4 );
-        inputQuery->setUpperBound( 2, 55 );
+        inputQuery->setNumberOfVariables( 6 );
+        inputQuery->setLowerBound( 3, 0.1 );
+        inputQuery->setLowerBound( 5, 0.2 );
+        inputQuery->setUpperBound( 3, 0.3 );
+        inputQuery->setUpperBound( 5, 0.4 );
         inputQuery->addTranscendentalConstraint( sigmoid1 );
 
         InputQuery inputQuery2 = *inputQuery;
 
-        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
-        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
-        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 2 ), 55 );
+        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 6U );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 3 ), 0.1 );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 5 ), 0.2 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 3 ), 0.3 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 5 ), 0.4 );
 
         auto constraints = inputQuery2.getTranscendentalConstraints();
 
@@ -179,9 +187,11 @@ public:
 
         delete inputQuery;
 
-        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 5U );
-        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 2 ), -4 );
-        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 2 ), 55 );
+        TS_ASSERT_EQUALS( inputQuery2.getNumberOfVariables(), 6U );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 3 ), 0.1 );
+        TS_ASSERT_EQUALS( inputQuery2.getLowerBound( 5 ), 0.2 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 3 ), 0.3 );
+        TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 5 ), 0.4 );
 
         constraints = inputQuery2.getTranscendentalConstraints();
 

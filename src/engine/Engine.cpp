@@ -145,9 +145,6 @@ void Engine::exportInputQueryWithError( String errorMessage )
 
 bool Engine::solve( unsigned timeoutInSeconds )
 {
-    // TODO: Remove this block after getting ready to support sigmoid with MILP.
-    if ( _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
-        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid for solve yet." );
 
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -732,6 +729,16 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
             plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
     }
+
+    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    {
+        List<unsigned> variables = tsConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            tsConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            tsConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+        }
+    }
 }
 
 void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
@@ -1241,11 +1248,11 @@ void Engine::performMILPSolverBoundedTightening()
     {
         _networkLevelReasoner->obtainCurrentBounds();
 
-        // TODO: Remove this block after getting ready to support sigmoid with MILP.
+        // TODO: Remove this block after getting ready to support sigmoid with MILP Bound Tightening.
         if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
             && _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
-                "Marabou doesn't support sigmoid with MILP" );
+                "Marabou doesn't support sigmoid with MILP Bound Tightening" );
 
         switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
@@ -2371,15 +2378,15 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         // Apply bound tightening before handing to Gurobi
         if ( _tableau->basisMatrixAvailable() )
         {
-	    explicitBasisBoundTightening();
-	    applyAllBoundTightenings();
-	    applyAllValidConstraintCaseSplits();
-	}
-	do
-	{
-	    performSymbolicBoundTightening();
-	}
-	while ( applyAllValidConstraintCaseSplits() );
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+        do
+        {
+            performSymbolicBoundTightening();
+        }
+        while ( applyAllValidConstraintCaseSplits() );
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -2397,11 +2404,18 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
                                 : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
     _gurobi->setTimeLimit( timeoutForGurobi );
-
     _gurobi->solve();
 
     if ( _gurobi->haveFeasibleSolution() )
     {
+        // Return UNKNOWN if input query has transcendental constratints.
+        if ( _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+        {
+            // TODO: Return UNKNOW exitCode insted of throwing Error after implementing python interface to support UNKNOWN.
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "UNKNOWN (Marabou doesn't support UNKNOWN cases with exitCode yet.)" );
+            // _exitCode = IEngine::UNKNOWN;
+            // return false;
+        }
         _exitCode = IEngine::SAT;
         return true;
     }

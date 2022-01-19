@@ -368,14 +368,14 @@ void InputQuery::saveQuery( const String &fileName )
     // Number of Equations
     queryFile->write( Stringf( "%u\n", _equations.size() ) );
 
-    // Number of Constraints
-    queryFile->write( Stringf( "%u", _plConstraints.size() ) );
+    // Number of Non-linear Constraints
+    queryFile->write( Stringf( "%u", _plConstraints.size() + _tsConstraints.size() ) );
 
     printf( "Number of variables: %u\n", _numberOfVariables );
     printf( "Number of lower bounds: %u\n", _lowerBounds.size() );
     printf( "Number of upper bounds: %u\n", _upperBounds.size() );
     printf( "Number of equations: %u\n", _equations.size() );
-    printf( "Number of constraints: %u\n", _plConstraints.size() );
+    printf( "Number of non-linear constraints: %u\n", _plConstraints.size() + _tsConstraints.size() );
 
     // Number of Input Variables
     queryFile->write( Stringf( "\n%u", getNumInputVariables() ) );
@@ -427,13 +427,19 @@ void InputQuery::saveQuery( const String &fileName )
         ++i;
     }
 
-    // TODO: Remove this block after getting ready to support sigmoid with MILP.
-    if ( getTranscendentalConstraints().size() > 0 )
-        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "Marabou doesn't support sigmoid for solve yet." );
-
-    // Constraints
+    // Piecewise-Linear Constraints
     i = 0;
     for ( const auto &constraint : _plConstraints )
+    {
+        // Constraint number
+        queryFile->write( Stringf( "\n%u,", i ) );
+        queryFile->write( constraint->serializeToString() );
+        ++i;
+    }
+
+    // Transcendental Constraints
+    i = 0;
+    for ( const auto &constraint : _tsConstraints )
     {
         // Constraint number
         queryFile->write( Stringf( "\n%u,", i ) );
