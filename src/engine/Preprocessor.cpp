@@ -889,7 +889,8 @@ void Preprocessor::eliminateVariables()
         if ( (*tsConstraint)->constraintObsolete() )
         {
             if ( _statistics )
-                _statistics->ppIncNumConstraintsRemoved();
+                _statistics->incUnsignedAttribute
+                    ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
             delete *tsConstraint;
             *tsConstraint = NULL;
