@@ -148,7 +148,13 @@ void SmtCore::performSplit()
     _stack.append( stackEntry );
     if ( _statistics )
     {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, getStackDepth() );
+        unsigned level = getStackDepth();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
@@ -226,7 +232,13 @@ bool SmtCore::popSplit()
 
     if ( _statistics )
     {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, getStackDepth() );
+        unsigned level = getStackDepth();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
@@ -429,7 +441,13 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
 
     if ( _statistics )
     {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, getStackDepth() );
+        unsigned level = getStackDepth();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }

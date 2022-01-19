@@ -1794,6 +1794,11 @@ bool Engine::highDegradation()
 
     double degradation = _degradationChecker.computeDegradation( *_tableau );
     _statistics.setDoubleAttribute( Statistics::CURRENT_DEGRADATION, degradation );
+    if ( FloatUtils::gt( degradation,
+                         _statistics.getDoubleAttribute
+                         ( Statistics::MAX_DEGRADATION ) ) )
+        _statistics.setDoubleAttribute( Statistics::MAX_DEGRADATION,
+                                        degradation );
 
     bool result = FloatUtils::gt( degradation, GlobalConfiguration::DEGRADATION_THRESHOLD );
 

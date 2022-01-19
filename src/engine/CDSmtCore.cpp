@@ -151,7 +151,14 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
 
     if ( _statistics )
     {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, _context.getLevel() );
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
@@ -240,7 +247,13 @@ bool CDSmtCore::backtrackAndContinueSearch()
 
     if ( _statistics )
     {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, getDecisionLevel() );
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
