@@ -81,6 +81,8 @@ void Options::initializeDefaultValues()
     _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
     _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
+    _stringOptions[GAMMA_UNSAT_INPUT_FILE] = "";
+    _stringOptions[GAMMA_UNSAT_OUTPUT_FILE] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )

@@ -286,23 +286,23 @@ void test5()
 
 void Marabou::run()
 {
-    printf( "**** start test1 ****\n" );
-    test1();
-    printf( "\n\n" );
-    printf( "**** start test2 ****\n" );
-    test2();
-    printf( "\n\n" );
-    printf( "**** start test3 ****\n" );
-    test3();
-    printf( "\n\n" );
-    printf( "**** start test4 ****\n" );
-    test4();
-    printf( "\n\n" );
-    printf( "**** start test5 ****\n" );
-    test5();
-    printf( "\n\n" );
+    // printf( "**** start test1 ****\n" );
+    // test1();
+    // printf( "\n\n" );
+    // printf( "**** start test2 ****\n" );
+    // test2();
+    // printf( "\n\n" );
+    // printf( "**** start test3 ****\n" );
+    // test3();
+    // printf( "\n\n" );
+    // printf( "**** start test4 ****\n" );
+    // test4();
+    // printf( "\n\n" );
+    // printf( "**** start test5 ****\n" );
+    // test5();
+    // printf( "\n\n" );
     
-    return;
+    // return;
 
     struct timespec start = TimeUtils::sampleMicro();
 

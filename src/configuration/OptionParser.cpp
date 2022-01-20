@@ -103,9 +103,15 @@ void OptionParser::initialize()
         ( "version",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::VERSION]) ),
           "Prints the version number")
-         ( "preprocessor-bound-tolerance",
+        ( "preprocessor-bound-tolerance",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) ),
           "epsilon for preprocessor bound tightening comparisons" )
+        ( "gamma-unsat-input",
+          boost::program_options::value<std::string>( &( ( *_stringOptions )[Options::GAMMA_UNSAT_INPUT_FILE] ) ),
+          "Path to Gamma-UNSAT input, for residual-reasoning" )
+        ( "gamma-unsat-output",
+          boost::program_options::value<std::string>( &( ( *_stringOptions )[Options::GAMMA_UNSAT_OUTPUT_FILE] ) ),
+          "Path to Gamma-UNSAT output, for residual-reasoning" )
 #ifdef ENABLE_GUROBI
         ( "milp",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
