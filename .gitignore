@@ -23,6 +23,8 @@ tools/boost_1_68_0
 /tools/OpenBLASv0.3.9.tar.gz
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
+/vscode/**
+/vscode
 
 /* CMAKE */
 CMakeLists.txt.user
