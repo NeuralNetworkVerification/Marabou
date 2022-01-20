@@ -30,6 +30,7 @@
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
@@ -171,10 +172,8 @@ public:
         _f - _b for the active phase
         _f      for the inactive phase
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &cost,
+    virtual void getCostFunctionComponent( LinearExpression &cost,
                                            PhaseStatus phase ) const override;
-
-    virtual double computeCostFunctionComponent( PhaseStatus phase ) const override;
 
     /*
       Returns string with shape: relu, _f, _b

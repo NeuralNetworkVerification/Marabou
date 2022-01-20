@@ -50,6 +50,7 @@
 #include "BoundManager.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "MarabouError.h"
@@ -79,9 +80,9 @@ enum PhaseStatus : unsigned {
     SIGN_PHASE_NEGATIVE = 6,
 
     // SPECIAL VALUE FOR ELIMINATED MAX CASES
-    MAX_PHASE_ELIMINATED = 65534,
+    MAX_PHASE_ELIMINATED = 999999,
     // SENTINEL VALUE
-    CONSTRAINT_INFEASIBLE = 65535
+    CONSTRAINT_INFEASIBLE = 1000000,
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -254,19 +255,8 @@ public:
       Minimizing the added term should lead to the constraint being
       "closer to satisfied" in the given phase status.
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */,
+    virtual void getCostFunctionComponent( LinearExpression &/* cost */,
                                            PhaseStatus /* phase */ ) const {}
-
-    /*
-      Compute the error of the current assignment with respect to the cost
-      compoenent corresponding to the given phase.
-    */
-    virtual double computeCostFunctionComponent( PhaseStatus /* phase */ ) const
-    {
-        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
-                            "Sum-of-Infeasibilities for the current constraint type"
-                            " is not supported." );
-    }
 
     /*
       Produce string representation of the piecewise linear constraint.
@@ -485,7 +475,7 @@ protected:
     /*
        Method to get PhaseStatus of the constraint. Encapsulates both context
        dependent and context-less behavior.
-     */
+    */
     PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/

@@ -822,7 +822,7 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     _auxVarInUse = true;
 }
 
-void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost,
+void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
                                                PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
@@ -844,36 +844,21 @@ void ReluConstraint::getCostFunctionComponent( Map<unsigned, double> &cost,
     {
         // The cost term corresponding to the inactive phase is just f,
         // since the ReLU is inactive and satisfied iff f is 0 and minimal.
-        if ( !cost.exists( _f ) )
-            cost[_f] = 0;
-        cost[_f] = cost[_f] + 1;
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        cost._addends[_f] = cost._addends[_f] + 1;
     }
     else
     {
         // The cost term corresponding to the inactive phase is f - b,
         // since the ReLU is active and satisfied iff f - b is 0 and minimal.
         // Note that this is true only when we added the constraint that f >= b.
-        if ( !cost.exists( _f ) )
-            cost[_f] = 0;
-        if ( !cost.exists( _b ) )
-            cost[_b] = 0;
-        cost[_f] = cost[_f] + 1;
-        cost[_b] = cost[_b] - 1;
-    }
-}
-
-double ReluConstraint::computeCostFunctionComponent( PhaseStatus phase ) const
-{
-    ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
-    if ( phase == RELU_PHASE_INACTIVE )
-    {
-        // The cost term corresponding to the inactive phase is f.
-        return _assignment.get( _f );
-    }
-    else
-    {
-        // The cost term corresponding to the inactive phase is f - b.
-        return _assignment.get( _f ) - _assignment.get( _b );
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] = cost._addends[_f] + 1;
+        cost._addends[_b] = cost._addends[_b] - 1;
     }
 }
 
