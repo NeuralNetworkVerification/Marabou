@@ -146,6 +146,12 @@ public:
     void ppIncNumEquationsRemoved();
 
     /*
+      Residual Reasoning statistics.
+    */
+    void incNumResidualReasoningSplits();
+    unsigned int getNumResidualReasoningSplits() const;
+
+    /*
       For debugging purposes
     */
     void printStartingIteration( unsigned long long iteration, String message );
@@ -313,6 +319,9 @@ private:
 
     // Whether the engine quitted with a timeout
     bool _timedOut;
+
+    // Residual Reasoning num splits
+    unsigned _numResidualReasoningSplits;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

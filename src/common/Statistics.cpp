@@ -75,6 +75,7 @@ Statistics::Statistics()
     , _totalTimeApplyingStoredTighteningsMicro( 0 )
     , _totalTimeSmtCoreMicro( 0 )
     , _timedOut( false )
+    , _numResidualReasoningSplits( 0 )
 {
 }
 
@@ -552,6 +553,14 @@ void Statistics::ppIncNumConstraintsRemoved()
 void Statistics::ppIncNumEquationsRemoved()
 {
     ++_ppNumEquationsRemoved;
+}
+
+void Statistics::incNumResidualReasoningSplits() {
+    ++_numResidualReasoningSplits;
+}
+
+unsigned int Statistics::getNumResidualReasoningSplits() const {
+    return _numResidualReasoningSplits;
 }
 
 void Statistics::addTimeForValidCaseSplit( unsigned long long time )

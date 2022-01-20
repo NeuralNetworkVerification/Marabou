@@ -288,6 +288,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                         if ( impliedSplits.empty() ) break;
 
                         for ( const auto& split : impliedSplits ) {
+                            _statistics.incNumResidualReasoningSplits();
                             _smtCore.recordImpliedValidSplit( split );
                             this->applySplit( split );
                         }
