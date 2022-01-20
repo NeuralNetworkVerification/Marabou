@@ -307,6 +307,24 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
         Engine engine;
 
+        // hanlde residual reasoning
+        auto gammaUnsatInputFile = Options::get()->getString( Options::GAMMA_UNSAT_INPUT_FILE );
+        auto gammaUnsatOutputFile = Options::get()->getString( Options::GAMMA_UNSAT_OUTPUT_FILE );
+        bool const doResidualReasoning = gammaUnsatInputFile.length() > 0;
+        std::shared_ptr<ResidualReasoningSplitProvider> residualReasoner;
+        if ( doResidualReasoning ) {
+            if ( File::exists( gammaUnsatInputFile ) )
+            {
+                auto const gammaUnsat = GammaUnsat::readFromFile( gammaUnsatInputFile );
+                residualReasoner = std::make_shared<ResidualReasoningSplitProvider>( gammaUnsat );
+            }
+            else
+            {
+                residualReasoner = std::make_shared<ResidualReasoningSplitProvider>( GammaUnsat{} );
+            }
+            engine.addResidualReasoner( residualReasoner );
+        }
+
         if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
         if ( dnc )
         {
@@ -340,6 +358,10 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             retStats = *(engine.getStatistics());
             for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
                 ret[i] = inputQuery.getSolutionValue(i);
+        }
+
+        if ( doResidualReasoning && gammaUnsatOutputFile.length() > 0 ) {
+            residualReasoner->gammaUnsat().saveToFile( gammaUnsatOutputFile );
         }
     }
     catch(const MarabouError &e){

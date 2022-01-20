@@ -123,7 +123,10 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
                   tighteningStrategy="deeppoly", milpTightening="lp", milpSolverTimeout=0,
-                  numSimulations=10, skipLpTighteningAfterSplit=False):
+                  numSimulations=10, skipLpTighteningAfterSplit=False,
+                  gamma_unsat_input="", gamma_unsat_output="",
+                  **kwargs
+                  ):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -172,4 +175,6 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
     options._milpSolverTimeout = milpSolverTimeout
     options._numSimulations = numSimulations
     options._skipLpTighteningAfterSplit = skipLpTighteningAfterSplit
+    options._gammaUnsatInputFile = str(gamma_unsat_input)
+    options._gammaUnsatOutputFile = str(gamma_unsat_output)
     return options
