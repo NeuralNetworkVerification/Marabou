@@ -45,6 +45,7 @@
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
 #include "TranscendentalConstraint.h"
+#include "File.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
