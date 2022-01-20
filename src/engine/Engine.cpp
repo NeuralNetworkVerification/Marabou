@@ -75,8 +75,8 @@ Engine::Engine()
     _statistics.stampStartingTime();
 }
 
-void Engine::addResidualReasoner( std::unique_ptr<ResidualReasoningSplitProvider> residualResoner ) {
-    this->_residualReasoner = std::move( residualResoner );
+void Engine::addResidualReasoner( std::shared_ptr<ResidualReasoningSplitProvider> residualResoner ) {
+    this->_residualReasoner = residualResoner ;
 }
 
 Engine::~Engine()
@@ -274,23 +274,25 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _smtCore.needToSplit() )
             {
                 _smtCore.performSplit();
+                // do residual reasoning
+                if ( _residualReasoner )
+                {
+                    // check for more splits
+                    List<PiecewiseLinearCaseSplit> allSplitSoFar;
 
-                // check for more splits
-                List<PiecewiseLinearCaseSplit> allSplitSoFar;
+                    // option 1:
+                    // applt thoses splits
+                    while ( true ) {
+                        _smtCore.allSplitsSoFar( allSplitSoFar );
+                        const auto impliedSplits = _residualReasoner->getImpliedSplits( allSplitSoFar );
+                        if ( impliedSplits.empty() ) break;
 
-                // option 1:
-                // applt thoses splits
-                while ( true ) {
-                    _smtCore.allSplitsSoFar( allSplitSoFar );
-                    const auto impliedSplits = _residualReasoner->getImpliedSplits( allSplitSoFar );
-                    if ( impliedSplits.empty() ) break;
-
-                    for ( const auto& split : impliedSplits ) {
-                        _smtCore.recordImpliedValidSplit( split );
-                        this->applySplit( split );
+                        for ( const auto& split : impliedSplits ) {
+                            _smtCore.recordImpliedValidSplit( split );
+                            this->applySplit( split );
+                        }
                     }
                 }
-
                 splitJustPerformed = true;
                 continue;
             }
@@ -382,8 +384,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
             List<PiecewiseLinearCaseSplit> allSplitSoFar;
-            _smtCore.allSplitsSoFar(allSplitSoFar) ;
-            _residualReasoner->onUnsatReceived( allSplitSoFar );
+            _smtCore.allSplitsSoFar( allSplitSoFar );
+            if ( _residualReasoner )
+            {
+                _residualReasoner->onUnsatReceived( allSplitSoFar );
+            }
             if ( !_smtCore.popSplit() )
             {
                 if ( _verbosity > 0 )

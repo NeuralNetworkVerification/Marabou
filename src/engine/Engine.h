@@ -198,7 +198,7 @@ public:
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
-    void addResidualReasoner( std::unique_ptr<ResidualReasoningSplitProvider> residualResoner );
+    void addResidualReasoner( std::shared_ptr<ResidualReasoningSplitProvider> residualResoner );
 
 private:
 
@@ -421,7 +421,7 @@ private:
 
     Map<unsigned, double> _heuristicCost;
 
-    std::unique_ptr<ResidualReasoningSplitProvider> _residualReasoner;
+    std::shared_ptr<ResidualReasoningSplitProvider> _residualReasoner;
 
     /*
       Perform a simplex step: compute the cost function, pick the
