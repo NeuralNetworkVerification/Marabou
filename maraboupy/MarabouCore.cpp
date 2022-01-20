@@ -237,6 +237,8 @@ struct MarabouOptions {
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
     Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
+    Options::get()->setString( Options::GAMMA_UNSAT_INPUT_FILE, _gammaUnsatInputFile );
+    Options::get()->setString( Options::GAMMA_UNSAT_OUTPUT_FILE, _gammaUnsatOutputFile );
   }
 
     bool _snc;
@@ -259,6 +261,8 @@ struct MarabouOptions {
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
     std::string _milpTighteningString;
+    std::string _gammaUnsatInputFile;
+    std::string _gammaUnsatOutputFile;
 };
 
 
@@ -407,7 +411,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
+        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit)
+        .def_readwrite("_gammaUnsatInputFile", &MarabouOptions::_gammaUnsatInputFile )
+        .def_readwrite("_gammaUnsatOutputFile", &MarabouOptions::_gammaUnsatOutputFile );
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
