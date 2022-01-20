@@ -39,6 +39,7 @@
 #include "SnCDivideStrategy.h"
 #include "Statistics.h"
 #include "SymbolicBoundTighteningType.h"
+#include "ResidualReasoningSplitProvider.h"
 
 #include <atomic>
 
@@ -66,12 +67,25 @@ public:
     bool solve( unsigned timeoutInSeconds = 0 );
 
     /*
+      Minimize the cost function with respect to the current set of linear constraints.
+    */
+    void minimizeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+
+    /*
+      Compute the cost function with the current assignment.
+    */
+    double computeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+
+    /*
       Process the input query and pass the needed information to the
       underlying tableau. Return false if query is found to be infeasible,
       true otherwise.
      */
     bool processInputQuery( InputQuery &inputQuery );
     bool processInputQuery( InputQuery &inputQuery, bool preprocess );
+
+    InputQuery prepareSnCInputQuery( );
+    void exportInputQueryWithError( String errorMessage );
 
     /*
       If the query is feasiable and has been successfully solved, this
@@ -124,6 +138,11 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
+      Hook invoked after context pop to update context independent data.
+    */
+    void postContextPopHook() { _tableau->postContextPopHook(); };
+
+    /*
       Reset the state of the engine, before solving a new query
       (as part of DnC mode).
     */
@@ -174,7 +193,15 @@ public:
     void resetExitCode();
     void resetBoundTighteners();
 
+    /*
+       Register initial split when in SnC mode
+     */
+    void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
+
+    void addResidualReasoner( std::unique_ptr<ResidualReasoningSplitProvider> residualResoner );
+
 private:
+
     enum BasisRestorationRequired {
         RESTORATION_NOT_NEEDED = 0,
         STRONG_RESTORATION_NEEDED = 1,
@@ -208,6 +235,11 @@ private:
       The existing piecewise-linear constraints.
     */
     List<PiecewiseLinearConstraint *> _plConstraints;
+
+    /*
+      The existing transcendental constraints.
+    */
+    List<TranscendentalConstraint *> _tsConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -377,10 +409,27 @@ private:
     MILPSolverBoundTighteningType _milpSolverBoundTighteningType;
 
     /*
+      SnC Split
+     */
+    bool _sncMode;
+    PiecewiseLinearCaseSplit _sncSplit;
+
+    /*
+      Query Identifier
+     */
+    String _queryId;
+
+    Map<unsigned, double> _heuristicCost;
+
+    std::unique_ptr<ResidualReasoningSplitProvider> _residualReasoner;
+
+    /*
       Perform a simplex step: compute the cost function, pick the
       entering and leaving variables and perform a pivot.
+      Return true only if the current assignment is optimal
+      with respect to _heuristicCost.
     */
-    void performSimplexStep();
+    bool performSimplexStep();
 
     /*
       Perform a constraint-fixing step: select a violated piece-wise

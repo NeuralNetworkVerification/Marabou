@@ -21,10 +21,15 @@
 #include "MString.h"
 #include "Pair.h"
 #include "Tightening.h"
+#include "Optional.h"
+#include "PLCaseSplitRawData.h"
 
 class PiecewiseLinearCaseSplit
 {
 public:
+    void setReluRawData(PLCaseSplitRawData rawData);
+    Optional<PLCaseSplitRawData> reluRawData(void) const;
+
     /*
       Store information regarding a bound tightening.
     */
@@ -63,6 +68,11 @@ private:
       The equation that needs to be added.
     */
     List<Equation> _equations;
+
+    /*
+      raw data about variables and activation of the case split
+    */
+    Optional<PLCaseSplitRawData> _reluRawData;
 };
 
 #endif // __PiecewiseLinearCaseSplit_h__

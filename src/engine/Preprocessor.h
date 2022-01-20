@@ -28,6 +28,8 @@ class Preprocessor
 public:
     Preprocessor();
 
+    ~Preprocessor();
+
     /*
       Main method of this class: preprocess the input query
     */
@@ -56,6 +58,29 @@ public:
     unsigned getNewIndex( unsigned oldIndex ) const;
 
 private:
+
+    void freeMemoryIfNeeded();
+
+    inline double getLowerBound( unsigned var )
+    {
+        return _lowerBounds[var];
+    }
+
+    inline double getUpperBound( unsigned var )
+    {
+        return _upperBounds[var];
+    }
+
+    inline void setLowerBound( unsigned var, double value )
+    {
+        _lowerBounds[var] = value;
+    }
+
+    inline void setUpperBound( unsigned var, double value )
+    {
+        _upperBounds[var] = value;
+    }
+
     /*
       Transform all equations of type GE or LE to type EQ.
     */
@@ -67,15 +92,15 @@ private:
     */
     void setMissingBoundsToInfinity();
 
-	/*
+    /*
       Tighten bounds using the linear equations
-	*/
-	bool processEquations();
+    */
+    bool processEquations();
 
     /*
-      Tighten the bounds using the piecewise linear constraints
-	*/
-	bool processConstraints();
+      Tighten the bounds using the piecewise linear and transcendental constraints
+    */
+    bool processConstraints();
 
     /*
       If there exists an equation x = x', replace all instances of x with x'
@@ -97,8 +122,8 @@ private:
     /*
       Eliminate any variables that have become fixed or merged with an
       identical variable
-	*/
-	void eliminateVariables();
+    */
+    void eliminateVariables();
 
     /*
       Call on the PL constraints to add any auxiliary equations
@@ -119,6 +144,12 @@ private:
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      Used to store the bounds during the preprocessing.
+    */
+    double *_lowerBounds;
+    double *_upperBounds;
 
     /*
       Variables that have become fixed during preprocessing, and the

@@ -194,6 +194,17 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == SIGMOID )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = 1 / ( 1 + std::exp( -inputValue ) );
+        }
+    }
+
     else
     {
         printf( "Error! Neuron type %u unsupported\n", _type );
@@ -281,6 +292,16 @@ void Layer::computeSimulations()
             const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
             for ( unsigned j = 0; j < simulationSize; ++j )
                 _simulations[i][j] = FloatUtils::isNegative( simulations.get( j ) ) ? -1 : 1;
+        }
+    }
+    else if ( _type == SIGMOID )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = 1 / ( 1 + std::exp( -simulations.get( j ) ) );
         }
     }
     else
@@ -402,7 +423,7 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
+    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN || _type == SIGMOID );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -1698,6 +1719,10 @@ String Layer::typeToString( Type type )
         return "RELU";
         break;
 
+    case SIGMOID:
+        return "SIGMOID";
+        break;
+
     case ABSOLUTE_VALUE:
         return "ABSOLUTE_VALUE";
         break;
@@ -1767,6 +1792,7 @@ void Layer::dump() const
     case ABSOLUTE_VALUE:
     case MAX:
     case SIGN:
+    case SIGMOID:
 
         for ( unsigned i = 0; i < _size; ++i )
         {

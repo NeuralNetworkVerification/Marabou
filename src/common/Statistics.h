@@ -89,12 +89,12 @@ public:
     /*
       Smt core related statistics.
     */
-    void setCurrentStackDepth( unsigned depth );
+    void setCurrentDecisionLevel( unsigned depth );
     void incNumSplits();
     void incNumPops();
     void addTimeSmtCore( unsigned long long time );
     void incNumVisitedTreeStates();
-    unsigned getMaxStackDepth() const;
+    unsigned getMaxDecisionLevel() const;
     unsigned getNumPops() const;
     unsigned getNumVisitedTreeStates() const;
     unsigned getNumSplits() const;
@@ -121,6 +121,7 @@ public:
     void incNumTighteningsFromExplicitBasis( unsigned increment = 1 );
 
     void incNumBoundNotificationsPlConstraints();
+    void incNumBoundNotificationsTranscendentalConstraints();
     void incNumBoundsProposedByPlConstraints();
 
     void incNumTighteningsFromSymbolicBoundTightening( unsigned increment );
@@ -188,8 +189,8 @@ private:
     unsigned long long _numConstraintFixingSteps;
 
     // Current and max stack depth in the SMT core
-    unsigned _currentStackDepth;
-    unsigned _maxStackDepth;
+    unsigned _currentDecisionLevel;
+    unsigned _maxDecisionLevel;
 
     // Total number of splits so far
     unsigned _numSplits;
@@ -255,6 +256,9 @@ private:
 
     // Number of bound notifications sent to pl constraints
     unsigned long long _numBoundNotificationsToPlConstraints;
+
+    // Number of bound notification send to transcendental constraints
+    unsigned long long _numBoundNotificationsToTranscendentalConstraints;
 
     // Number of bound tightenings proposed by the pl constraints
     unsigned long long _numBoundsProposedByPlConstraints;

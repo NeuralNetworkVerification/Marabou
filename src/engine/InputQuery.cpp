@@ -160,6 +160,21 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
     return _plConstraints;
 }
 
+void InputQuery::addTranscendentalConstraint( TranscendentalConstraint *constraint )
+{
+    _tsConstraints.append( constraint );
+}
+
+List<TranscendentalConstraint *> &InputQuery::getTranscendentalConstraints()
+{
+    return _tsConstraints;
+}
+
+const List<TranscendentalConstraint *> &InputQuery::getTranscendentalConstraints() const
+{
+    return _tsConstraints;
+}
+
 unsigned InputQuery::countInfiniteBounds()
 {
     unsigned result = 0;
@@ -241,6 +256,10 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         }
     }
 
+    // Setting tsConstraints
+    for ( const auto &constraint : other._tsConstraints )
+        _tsConstraints.append( constraint->duplicateConstraint() );
+
     // Setting plConstraints and topological order
     if ( !other._networkLevelReasoner )
     {
@@ -251,6 +270,8 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
     {
         INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in input query: %u",
                                   other._plConstraints.size() ).ascii() );
+        INPUT_QUERY_LOG( Stringf( "Number of transcendental constraints in input query: %u",
+                                  other._tsConstraints.size() ).ascii() );
         INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in topological order %u",
                                   other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
 
@@ -304,6 +325,11 @@ void InputQuery::freeConstraintsIfNeeded()
         delete it;
 
     _plConstraints.clear();
+
+    for ( auto &it : _tsConstraints )
+        delete it;
+
+    _tsConstraints.clear();
 }
 
 const Map<unsigned, double> &InputQuery::getLowerBounds() const
@@ -314,6 +340,12 @@ const Map<unsigned, double> &InputQuery::getLowerBounds() const
 const Map<unsigned, double> &InputQuery::getUpperBounds() const
 {
     return _upperBounds;
+}
+
+void InputQuery::clearBounds()
+{
+    _lowerBounds.clear();
+    _upperBounds.clear();
 }
 
 void InputQuery::storeDebuggingSolution( unsigned variable, double value )
@@ -336,14 +368,14 @@ void InputQuery::saveQuery( const String &fileName )
     // Number of Equations
     queryFile->write( Stringf( "%u\n", _equations.size() ) );
 
-    // Number of Constraints
-    queryFile->write( Stringf( "%u", _plConstraints.size() ) );
+    // Number of Non-linear Constraints
+    queryFile->write( Stringf( "%u", _plConstraints.size() + _tsConstraints.size() ) );
 
     printf( "Number of variables: %u\n", _numberOfVariables );
     printf( "Number of lower bounds: %u\n", _lowerBounds.size() );
     printf( "Number of upper bounds: %u\n", _upperBounds.size() );
     printf( "Number of equations: %u\n", _equations.size() );
-    printf( "Number of constraints: %u\n", _plConstraints.size() );
+    printf( "Number of non-linear constraints: %u\n", _plConstraints.size() + _tsConstraints.size() );
 
     // Number of Input Variables
     queryFile->write( Stringf( "\n%u", getNumInputVariables() ) );
@@ -395,9 +427,19 @@ void InputQuery::saveQuery( const String &fileName )
         ++i;
     }
 
-    // Constraints
+    // Piecewise-Linear Constraints
     i = 0;
     for ( const auto &constraint : _plConstraints )
+    {
+        // Constraint number
+        queryFile->write( Stringf( "\n%u,", i ) );
+        queryFile->write( constraint->serializeToString() );
+        ++i;
+    }
+
+    // Transcendental Constraints
+    i = 0;
+    for ( const auto &constraint : _tsConstraints )
     {
         // Constraint number
         queryFile->write( Stringf( "\n%u,", i ) );
@@ -634,6 +676,7 @@ bool InputQuery::constructNetworkLevelReasoner()
             constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructSigmoidLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex )
             )
     {
@@ -836,6 +879,95 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::RELU, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        unsigned sourceLayer = handledVariableToLayer[newNeuron._sourceVariable];
+        unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( newNeuron._sourceVariable );
+
+        // Mark the layer dependency
+        nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        // Mark the activation connection
+        nlr->addActivationSource( sourceLayer,
+                                  sourceNeuron,
+                                  newLayerIndex,
+                                  newNeuron._neuron );
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
+                                     Map<unsigned, unsigned> &handledVariableToLayer,
+                                     unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct SigmoidLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable, unsigned neuron, unsigned sourceVariable )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariable( sourceVariable )
+        {
+        }
+
+        unsigned _variable;
+        unsigned _neuron;
+        unsigned _sourceVariable;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for Sigmoids where all b variables have already been handled
+    const List<TranscendentalConstraint *> &tsConstraints =
+        getTranscendentalConstraints();
+
+    for ( const auto &tsc : tsConstraints )
+    {
+        // Only consider Sigmoids
+        if ( tsc->getType() != SIGMOID )
+            continue;
+
+        const SigmoidConstraint *sigmoid = (const SigmoidConstraint *)tsc;
+
+        // Has the b variable been handled?
+        unsigned b = sigmoid->getB();
+        if ( !handledVariableToLayer.exists( b ) )
+            continue;
+
+        // If the f variable has also been handled, ignore this constraint
+        unsigned f = sigmoid->getF();
+        if ( handledVariableToLayer.exists( f ) )
+            continue;
+
+        // B has been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        // nlr->addConstraintInTopologicalOrder( tsc );
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::SIGMOID, newNeurons.size() );
 
     NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )

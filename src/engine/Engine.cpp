@@ -29,7 +29,7 @@
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
-#include "Vector.h" 
+#include "Vector.h"
 
 #include <random>
 
@@ -60,6 +60,8 @@ Engine::Engine()
     , _isGurobyEnabled( Options::get()->gurobiEnabled() )
     , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
     , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
+    , _sncMode( false )
+    , _queryId( "" )
 {
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -71,6 +73,10 @@ Engine::Engine()
     _activeEntryStrategy->setStatistics( &_statistics );
 
     _statistics.stampStartingTime();
+}
+
+void Engine::addResidualReasoner( std::unique_ptr<ResidualReasoningSplitProvider> residualResoner ) {
+    this->_residualReasoner = std::move( residualResoner );
 }
 
 Engine::~Engine()
@@ -100,8 +106,50 @@ void Engine::adjustWorkMemorySize()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Engine::work" );
 }
 
+
+void Engine::applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId )
+{
+  _sncMode = true;
+  _sncSplit = sncSplit;
+  _queryId = queryId;
+  applySplit( sncSplit );
+}
+
+InputQuery Engine::prepareSnCInputQuery()
+{
+    List<Tightening> bounds = _sncSplit.getBoundTightenings();
+    List<Equation> equations = _sncSplit.getEquations();
+
+    InputQuery sncIPQ = _preprocessedQuery;
+    for ( auto &equation : equations )
+        sncIPQ.addEquation( equation );
+
+    for ( auto &bound : bounds )
+    {
+        switch ( bound._type )
+        {
+        case Tightening::LB:
+          sncIPQ.setLowerBound( bound._variable, bound._value ); break;
+
+        case Tightening::UB:
+          sncIPQ.setUpperBound( bound._variable, bound._value );
+        }
+    }
+
+    return sncIPQ;
+}
+
+void Engine::exportInputQueryWithError( String errorMessage )
+{
+    String ipqFileName = ( _queryId.length() > 0 ) ? _queryId + ".ipq" : "failedMarabouQuery.ipq";
+    prepareSnCInputQuery().saveQuery( ipqFileName );
+    printf( "Engine: %s!\nInput query has been saved as %s. Please attach the input query when you open the issue on GitHub.\n", errorMessage.ascii(), ipqFileName.ascii() );
+}
+
+
 bool Engine::solve( unsigned timeoutInSeconds )
 {
+
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -226,6 +274,23 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _smtCore.needToSplit() )
             {
                 _smtCore.performSplit();
+
+                // check for more splits
+                List<PiecewiseLinearCaseSplit> allSplitSoFar;
+
+                // option 1:
+                // applt thoses splits
+                while ( true ) {
+                    _smtCore.allSplitsSoFar( allSplitSoFar );
+                    const auto impliedSplits = _residualReasoner->getImpliedSplits( allSplitSoFar );
+                    if ( impliedSplits.empty() ) break;
+
+                    for ( const auto& split : impliedSplits ) {
+                        _smtCore.recordImpliedValidSplit( split );
+                        this->applySplit( split );
+                    }
+                }
+
                 splitJustPerformed = true;
                 continue;
             }
@@ -307,8 +372,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
             else
             {
-                printf( "Engine: Cannot restore tableau!\n" );
                 _exitCode = Engine::ERROR;
+                exportInputQueryWithError( "Cannot restore tableau" );
                 return false;
             }
         }
@@ -316,6 +381,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
+            List<PiecewiseLinearCaseSplit> allSplitSoFar;
+            _smtCore.allSplitsSoFar(allSplitSoFar) ;
+            _residualReasoner->onUnsatReceived( allSplitSoFar );
             if ( !_smtCore.popSplit() )
             {
                 if ( _verbosity > 0 )
@@ -335,7 +403,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
-            printf( "Engine: Unknown error!\n" );
+            exportInputQueryWithError( "Unknown error" );
             return false;
         }
     }
@@ -380,7 +448,7 @@ void Engine::performConstraintFixingStep()
     _statistics.addTimeConstraintFixingSteps( TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::performSimplexStep()
+bool Engine::performSimplexStep()
 {
     // Statistics
     _statistics.incNumSimplexSteps();
@@ -397,6 +465,8 @@ void Engine::performSimplexStep()
          next-best entering variable.
     */
 
+    if ( _tableau->isOptimizing() )
+        _costFunctionManager->computeGivenCostFunction( _heuristicCost );
     if ( _costFunctionManager->costFunctionInvalid() )
         _costFunctionManager->computeCoreCostFunction();
     else
@@ -506,7 +576,7 @@ void Engine::performSimplexStep()
             _tableau->computeAssignment();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            return;
+            return false;
         }
         else if ( !_costFunctionManager->costFunctionJustComputed() )
         {
@@ -516,14 +586,20 @@ void Engine::performSimplexStep()
             _costFunctionManager->invalidateCostFunction();
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            return;
+            return false;
         }
         else
         {
             // Cost function is fresh --- failure is real.
             struct timespec end = TimeUtils::sampleMicro();
             _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
-            throw InfeasibleQueryException();
+            if ( _tableau->isOptimizing() )
+            {
+                // The current solution is optimal.
+                return true;
+            }
+            else
+                throw InfeasibleQueryException();
         }
     }
 
@@ -546,7 +622,7 @@ void Engine::performSimplexStep()
         if ( !_tableau->basisMatrixAvailable() )
         {
             _tableau->refreshBasisFactorization();
-            return;
+            return false;
         }
 
         _statistics.incNumSimplexUnstablePivots();
@@ -565,6 +641,7 @@ void Engine::performSimplexStep()
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.addTimeSimplexSteps( TimeUtils::timePassed( start, end ) );
+    return false;
 }
 
 void Engine::fixViolatedPlConstraintIfPossible()
@@ -674,6 +751,16 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
         {
             plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
             plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+        }
+    }
+
+    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    {
+        List<unsigned> variables = tsConstraint->getParticipatingVariables();
+        for ( unsigned variable : variables )
+        {
+            tsConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            tsConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
     }
 }
@@ -1063,6 +1150,13 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         constraint->setStatistics( &_statistics );
     }
 
+    _tsConstraints = _preprocessedQuery.getTranscendentalConstraints();
+    for ( const auto &constraint : _tsConstraints )
+    {
+        constraint->registerAsWatcher( _tableau );
+        constraint->setStatistics( &_statistics );
+    }
+
     _tableau->initializeTableau( initialBasis );
 
     _costFunctionManager->initialize();
@@ -1139,6 +1233,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setPreprocessingTime( TimeUtils::timePassed( start, end ) );
+
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            throw InfeasibleQueryException();
+        }
+
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -1170,6 +1271,12 @@ void Engine::performMILPSolverBoundedTightening()
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         _networkLevelReasoner->obtainCurrentBounds();
+
+        // TODO: Remove this block after getting ready to support sigmoid with MILP Bound Tightening.
+        if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
+            && _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                "Marabou doesn't support sigmoid with MILP Bound Tightening" );
 
         switch ( Options::get()->getMILPSolverBoundTighteningType() )
         {
@@ -1208,6 +1315,7 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
             && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
         _networkLevelReasoner->obtainCurrentBounds();
+        _networkLevelReasoner->clearConstraintTightenings();
 
         switch ( _milpSolverBoundTighteningType )
         {
@@ -1891,7 +1999,7 @@ void Engine::performSimulation()
     for ( unsigned i = 0; i < _networkLevelReasoner->getLayer( 0 )->getSize(); ++i )
     {
         std::uniform_real_distribution<double> distribution( _networkLevelReasoner->getLayer( 0 )->getLb( i ),
-                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) ); 
+                                                                _networkLevelReasoner->getLayer( 0 )->getUb( i ) );
         Vector<double> simulationInput( _simulationSize );
 
         for ( unsigned j = 0; j < _simulationSize; ++j )
@@ -2294,22 +2402,22 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         // Apply bound tightening before handing to Gurobi
         if ( _tableau->basisMatrixAvailable() )
         {
-	    explicitBasisBoundTightening();
-	    applyAllBoundTightenings();
-	    applyAllValidConstraintCaseSplits();
-	}
-	do
-	{
-	    performSymbolicBoundTightening();
-	}
-	while ( applyAllValidConstraintCaseSplits() );
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+        do
+        {
+            performSymbolicBoundTightening();
+        }
+        while ( applyAllValidConstraintCaseSplits() );
     }
     catch ( const InfeasibleQueryException & )
     {
         _exitCode = Engine::UNSAT;
         return false;
     }
-    
+
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
@@ -2320,11 +2428,18 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
                                 : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
     _gurobi->setTimeLimit( timeoutForGurobi );
-
     _gurobi->solve();
 
     if ( _gurobi->haveFeasibleSolution() )
     {
+        // Return UNKNOWN if input query has transcendental constratints.
+        if ( _preprocessedQuery.getTranscendentalConstraints().size() > 0 )
+        {
+            // TODO: Return UNKNOW exitCode insted of throwing Error after implementing python interface to support UNKNOWN.
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "UNKNOWN (Marabou doesn't support UNKNOWN cases with exitCode yet.)" );
+            // _exitCode = IEngine::UNKNOWN;
+            // return false;
+        }
         _exitCode = IEngine::SAT;
         return true;
     }
@@ -2386,4 +2501,70 @@ bool Engine::preprocessingEnabled() const
 const Preprocessor *Engine::getPreprocessor()
 {
     return &_preprocessor;
+}
+
+void Engine::minimizeHeuristicCost( const Map<unsigned, double>
+                                    &heuristicCost )
+{
+    _tableau->toggleOptimization( true );
+
+    _heuristicCost = heuristicCost;
+
+    ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost..." );
+    bool localOptimaReached = false;
+    while ( !localOptimaReached )
+    {
+        DEBUG({
+                ENGINE_LOG
+                    ( Stringf( "Current heuristic cost: %f",
+                               computeHeuristicCost( heuristicCost ) ).ascii() );
+                ASSERT( allVarsWithinBounds() );
+            });
+
+        DEBUG( _tableau->verifyInvariants() );
+
+        mainLoopStatistics();
+        if ( _verbosity > 1 &&  _statistics.getNumMainLoopIterations() %
+             GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            _statistics.print();
+
+        // If the basis has become malformed, we need to restore it
+        if ( basisRestorationNeeded() )
+        {
+            if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+            {
+                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+                _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+            }
+            else
+            {
+                performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+                _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+            }
+
+            _numVisitedStatesAtPreviousRestoration = _statistics.getNumVisitedTreeStates();
+            _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+            continue;
+        }
+
+        // Restoration is not required
+        _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+
+        // Possible restoration due to preceision degradation
+        if ( shouldCheckDegradation() && highDegradation() )
+        {
+            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+            continue;
+        }
+
+        localOptimaReached = performSimplexStep();
+    }
+    _tableau->toggleOptimization( false );
+    ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
+}
+
+double Engine::computeHeuristicCost( const Map<unsigned, double> &heuristicCost )
+{
+    return _costFunctionManager->
+        computeGivenCostFunctionDirectly( heuristicCost );
 }

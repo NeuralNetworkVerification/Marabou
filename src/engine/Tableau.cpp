@@ -53,6 +53,7 @@ Tableau::Tableau()
     , _nonBasicAssignment( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
+    , _boundManager( nullptr )
     , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
@@ -470,7 +471,10 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
 void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    _lowerBounds[variable] = value;
+    if ( _boundManager !=  nullptr )
+        _boundManager->setLowerBound( variable, value );
+    else
+        _lowerBounds[variable] = value;
     notifyLowerBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -478,7 +482,10 @@ void Tableau::setLowerBound( unsigned variable, double value )
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    _upperBounds[variable] = value;
+    if ( _boundManager !=  nullptr )
+        _boundManager->setUpperBound( variable, value );
+    else
+        _upperBounds[variable] = value;
     notifyUpperBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -486,13 +493,15 @@ void Tableau::setUpperBound( unsigned variable, double value )
 double Tableau::getLowerBound( unsigned variable ) const
 {
     ASSERT( variable < _n );
-    return _lowerBounds[variable];
+    return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( variable )
+                                        : _lowerBounds[variable];
 }
 
 double Tableau::getUpperBound( unsigned variable ) const
 {
     ASSERT( variable < _n );
-    return _upperBounds[variable];
+    return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( variable )
+                                        : _upperBounds[variable];
 }
 
 const double *Tableau::getLowerBounds() const
@@ -877,7 +886,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
     {
         // Basic variable is decreasing
         double actualLowerBound;
-        if ( basicCost > 0 )
+        if ( isOptimizing() )
+        {
+            ASSERT( !existsBasicOutOfBounds() );
+            actualLowerBound = _lowerBounds[basic];
+        }
+        else if ( basicCost > 0 )
         {
             actualLowerBound = _upperBounds[basic];
         }
@@ -910,7 +924,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
     {
         // Basic variable is increasing
         double actualUpperBound;
-        if ( basicCost < 0 )
+        if ( isOptimizing() )
+        {
+            ASSERT( !existsBasicOutOfBounds() );
+            actualUpperBound = _upperBounds[basic];
+        }
+        else if ( basicCost < 0 )
         {
             actualUpperBound = _lowerBounds[basic];
         }
@@ -1108,7 +1127,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic decreases, basic increases
                 double actualUpperBound;
-                if ( basicCost > 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualUpperBound = _upperBounds[basic];
+                }
+                else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
                     actualUpperBound = _lowerBounds[basic];
@@ -1127,7 +1151,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic decreases, basic decreases
                 double actualLowerBound;
-                if ( basicCost < 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualLowerBound = _lowerBounds[basic];
+                }
+                else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
                     actualLowerBound = _upperBounds[basic];
@@ -1172,7 +1201,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic increases, basic decreases
                 double actualLowerBound;
-                if ( basicCost < 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualLowerBound = _lowerBounds[basic];
+                }
+                else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
                     actualLowerBound = _upperBounds[basic];
@@ -1191,7 +1225,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic increases, basic increases
                 double actualUpperBound;
-                if ( basicCost > 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualUpperBound = _upperBounds[basic];
+                }
+                else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
                     actualUpperBound = _lowerBounds[basic];
@@ -1259,7 +1298,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic decreases, basic increases
                 double actualUpperBound;
-                if ( basicCost > 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualUpperBound = _upperBounds[basic];
+                }
+                else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
                     actualUpperBound = _lowerBounds[basic];
@@ -1272,7 +1316,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic decreases, basic decreases
                 double actualLowerBound;
-                if ( basicCost < 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualLowerBound = _lowerBounds[basic];
+                }
+                else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
                     actualLowerBound = _upperBounds[basic];
@@ -1320,7 +1369,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic increases, basic decreases
                 double actualLowerBound;
-                if ( basicCost < 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualLowerBound = _lowerBounds[basic];
+                }
+                else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
                     actualLowerBound = _upperBounds[basic];
@@ -1333,7 +1387,12 @@ void Tableau::harrisRatioTest( double *changeColumn )
             {
                 // Nonbasic decreases, basic decreases
                 double actualUpperBound;
-                if ( basicCost > 0 )
+                if ( isOptimizing() )
+                {
+                    ASSERT( !existsBasicOutOfBounds() );
+                    actualUpperBound = _upperBounds[basic];
+                }
+                else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
                     actualUpperBound = _lowerBounds[basic];

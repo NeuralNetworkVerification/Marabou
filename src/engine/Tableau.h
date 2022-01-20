@@ -16,6 +16,7 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
+#include "BoundManager.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
 #include "MString.h"
@@ -453,6 +454,13 @@ public:
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
 
+    /*
+       Hook that is invoked after Context pop, to update context independent
+       data. After backtracking assignments satisfy bounds, but the
+       basic/non-basic status may be out of date, so it is recomputed.
+     */
+    void postContextPopHook() { computeBasicStatus(); };
+
 private:
     /*
       Variable watchers
@@ -548,6 +556,12 @@ private:
     */
     double *_lowerBounds;
     double *_upperBounds;
+
+    /*
+       BoundManager object stores bounds of all variables.
+       NOT YET IN USE
+     */
+    BoundManager *_boundManager;
 
     /*
       Whether all variables have valid bounds (l <= u).

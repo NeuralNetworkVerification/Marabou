@@ -17,7 +17,7 @@
  ** RELU_PHASE_ACTIVE   : b > 0 and f > 0
  ** RELU_PHASE_INACTIVE : b <=0 and f = 0
  **
- ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** The constraint is implemented as PiecewiseLinearConstraint
  ** and operates in two modes:
  **   * pre-processing mode, which stores bounds locally, and
  **   * context dependent mode, used during the search.
@@ -30,14 +30,13 @@
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
-#include "ContextDependentPiecewiseLinearConstraint.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 
 #include <cmath>
 
-class ReluConstraint : public ContextDependentPiecewiseLinearConstraint
+class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
     /*
@@ -55,7 +54,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -217,6 +216,8 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
+    PiecewiseLinearCaseSplit getInactiveSplit() const;
+    PiecewiseLinearCaseSplit getActiveSplit() const;
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
@@ -227,9 +228,6 @@ private:
       And which phase status to repair a relu into.
     */
     PhaseStatus _direction;
-
-    PiecewiseLinearCaseSplit getInactiveSplit() const;
-    PiecewiseLinearCaseSplit getActiveSplit() const;
 
     bool _haveEliminatedVariables;
 

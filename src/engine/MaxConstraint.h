@@ -18,7 +18,7 @@
  ** local member _maxValueOfEliminated, and its phase is a reserved value
  ** PhaseStatus::MAX_PHASE_ELIMINATED.
  **
- ** The constraint is implemented as ContextDependentPiecewiseLinearConstraint
+ ** The constraint is implemented as PiecewiseLinearConstraint
  ** and operates in two modes:
  **   * pre-processing mode, which stores bounds locally, and
  **   * context dependent mode, used during the search.
@@ -31,12 +31,12 @@
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
-#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "PiecewiseLinearConstraint.h"
 #include "Map.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
 
-class MaxConstraint : public ContextDependentPiecewiseLinearConstraint
+class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
     ~MaxConstraint();
@@ -56,7 +56,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.

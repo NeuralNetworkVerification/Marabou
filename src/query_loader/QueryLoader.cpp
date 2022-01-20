@@ -2,7 +2,7 @@
 /*! \file QueryLoader.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Christopher Lazarus, Kyle Julian
+ **   Christopher Lazarus, Kyle Julian, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -47,7 +47,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     QL_LOG( Stringf( "Number of lower bounds: %u\n", numLowerBounds ).ascii() );
     QL_LOG( Stringf( "Number of upper bounds: %u\n", numUpperBounds ).ascii() );
     QL_LOG( Stringf( "Number of equations: %u\n", numEquations ).ascii() );
-    QL_LOG( Stringf( "Number of constraints: %u\n", numConstraints ).ascii() );
+    QL_LOG( Stringf( "Number of non-linear constraints: %u\n", numConstraints ).ascii() );
 
     inputQuery.setNumberOfVariables( numVars );
 
@@ -180,7 +180,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         inputQuery.addEquation( equation );
     }
 
-    // Constraints
+    // Non-Linear(Piecewise and Transcendental) Constraints
     for ( unsigned i = 0; i < numConstraints; ++i )
     {
         String line = input->readLine();
@@ -199,32 +199,32 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         serializeConstraint = serializeConstraint.substring( 0, serializeConstraint.length() - 1 );
 
-        PiecewiseLinearConstraint *constraint = NULL;
-        QL_LOG( Stringf( "Constraint: %u, Type: %s \n", i, coType.ascii() ).ascii() );
+        QL_LOG( Stringf( "Non-Linear Constraint: %u, Type: %s \n", i, coType.ascii() ).ascii() );
         QL_LOG( Stringf( "\tserialized:\t%s \n", serializeConstraint.ascii() ).ascii() );
         if ( coType == "relu" )
         {
-            constraint = new ReluConstraint( serializeConstraint );
+            inputQuery.addPiecewiseLinearConstraint( new ReluConstraint( serializeConstraint ) );
         }
         else if ( coType == "max" )
         {
-            constraint = new MaxConstraint( serializeConstraint );
+            inputQuery.addPiecewiseLinearConstraint( new MaxConstraint( serializeConstraint ) );
         }
         else if ( coType == "absoluteValue" )
         {
-            constraint = new AbsoluteValueConstraint( serializeConstraint );
+            inputQuery.addPiecewiseLinearConstraint( new AbsoluteValueConstraint( serializeConstraint ) );
         }
         else if ( coType == "sign" )
         {
-            constraint = new SignConstraint( serializeConstraint );
+            inputQuery.addPiecewiseLinearConstraint( new SignConstraint( serializeConstraint ) );
+        }
+        else if ( coType == "sigmoid")
+        {
+            inputQuery.addTranscendentalConstraint( new SigmoidConstraint( serializeConstraint ) );
         }
         else
         {
-            throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT, Stringf( "Unsupported piecewise constraint: %s\n", coType.ascii() ).ascii() );
+            throw MarabouError( MarabouError::UNSUPPORTED_NON_LINEAR_CONSTRAINT, Stringf( "Unsupported non-linear constraint: %s\n", coType.ascii() ).ascii() );
         }
-
-        ASSERT( constraint );
-        inputQuery.addPiecewiseLinearConstraint( constraint );
     }
 
     inputQuery.constructNetworkLevelReasoner();

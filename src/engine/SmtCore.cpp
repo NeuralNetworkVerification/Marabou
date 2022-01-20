@@ -148,7 +148,7 @@ void SmtCore::performSplit()
     _stack.append( stackEntry );
     if ( _statistics )
     {
-        _statistics->setCurrentStackDepth( getStackDepth() );
+        _statistics->setCurrentDecisionLevel( getStackDepth() );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
@@ -226,7 +226,7 @@ bool SmtCore::popSplit()
 
     if ( _statistics )
     {
-        _statistics->setCurrentStackDepth( getStackDepth() );
+        _statistics->setCurrentDecisionLevel( getStackDepth() );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }
@@ -242,7 +242,7 @@ void SmtCore::resetReportedViolations()
     _needToSplit = false;
 }
 
-void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
+void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit const& validSplit )
 {
     if ( _stack.empty() )
         _impliedValidSplitsAtRoot.append( validSplit );
@@ -429,7 +429,7 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
 
     if ( _statistics )
     {
-        _statistics->setCurrentStackDepth( getStackDepth() );
+        _statistics->setCurrentDecisionLevel( getStackDepth() );
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
     }

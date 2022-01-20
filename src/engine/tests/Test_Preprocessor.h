@@ -424,6 +424,74 @@ public:
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
 	}
 
+	void test_variable_elimination_for_ts_constraints()
+	{
+        // x0 + x1 = 1
+        // x2 = simogid(x1) // x1 is fixed => x2 should be fixed...
+        // x3 = simoid(x2) // x2 is fixed, so x3 should be fixed...
+        // x3 + x4 = 2
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 10 );
+        inputQuery.setLowerBound( 0, 1 ); // fixed
+        inputQuery.setUpperBound( 0, 1 );
+        inputQuery.setLowerBound( 1, 0 ); // normal
+        inputQuery.setUpperBound( 1, 5 );
+        inputQuery.setLowerBound( 2, 2 ); // unused
+        inputQuery.setUpperBound( 2, 3 );
+        inputQuery.setLowerBound( 3, 5 ); // fixed
+        inputQuery.setUpperBound( 3, 5 );
+        inputQuery.setLowerBound( 4, 0 ); // unused
+        inputQuery.setUpperBound( 4, 10 );
+        inputQuery.setLowerBound( 5, 0 );  // unused
+        inputQuery.setUpperBound( 5, 10 );
+        inputQuery.setLowerBound( 6, 5 ); // fxied
+        inputQuery.setUpperBound( 6, 5 );
+        inputQuery.setLowerBound( 7, 0 ); // normal
+        inputQuery.setUpperBound( 7, 9 );
+        inputQuery.setLowerBound( 8, 0 ); // normal
+        inputQuery.setUpperBound( 8, 9 );
+        inputQuery.setLowerBound( 9, 0 ); // unused
+        inputQuery.setUpperBound( 9, 9 );
+
+        // x0 + x1 + x3 = 10
+        Equation equation1;
+        equation1.addAddend( 1, 0 );
+        equation1.addAddend( 1, 1 );
+        equation1.addAddend( 1, 3 );
+        equation1.setScalar( 10 );
+        inputQuery.addEquation( equation1 );
+
+        // x7 + x8 = 12
+        Equation equation2;
+        equation2.addAddend( 1, 7 );
+        equation2.addAddend( 1, 8 );
+        equation2.setScalar( 12 );
+        inputQuery.addEquation( equation2 );
+
+        InputQuery processed = Preprocessor().preprocess( inputQuery, true );
+
+        // Variables 2, 4, 5 and 9 are unused and should be eliminated.
+        // Variables 0, 3 and 6 were fixed and should be eliminated.
+        // Because of equation1 variable 1 should become fixed at 4 and be eliminated too.
+        // This only leaves variables 7 and 8.
+        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 2U );
+
+        // Equation 1 should have been eliminated
+        TS_ASSERT_EQUALS( processed.getEquations().size(), 1U );
+
+        // Check that equation 2 has been updated as needed
+        Equation preprocessedEquation = *processed.getEquations().begin();
+        List<Equation::Addend>::iterator addend = preprocessedEquation._addends.begin();
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 0U );
+        ++addend;
+        TS_ASSERT_EQUALS( addend->_coefficient, 1.0 );
+        TS_ASSERT_EQUALS( addend->_variable, 1U );
+
+        TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
+    }
+
     void test_all_equations_become_equalities()
     {
         InputQuery inputQuery;
@@ -759,6 +827,86 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs2, &output ) );
         TS_ASSERT_EQUALS( output, 1 );
+    }
+
+    void test_construction_of_network_level_reasoner_with_sigmoid()
+    {
+        /*
+              2      S       1
+          x0 --- x2 ---> x4 --- x6
+            \    /              /
+           1 \  /              /
+              \/           -1 /
+              /\             /
+           3 /  \           /
+            /    \   S     /
+          x1 --- x3 ---> x5
+              1
+        */
+        InputQuery inputQuery;
+
+        inputQuery.setNumberOfVariables( 7 );
+
+        // Mark inputs and outputs
+        inputQuery.markInputVariable( 0, 0 );
+        inputQuery.markInputVariable( 1, 1 );
+        inputQuery.markOutputVariable( 6, 0 );
+
+        // Specify bounds for all variables
+        for ( unsigned i = 0; i < 7; ++i )
+        {
+            inputQuery.setLowerBound( i, -10 );
+            inputQuery.setUpperBound( i, 10 );
+        }
+
+        // Specify activation functions
+        SigmoidConstraint *sigmoid1 = new SigmoidConstraint( 2, 4 );
+        SigmoidConstraint *sigmoid2 = new SigmoidConstraint( 3, 5 );
+        inputQuery.addTranscendentalConstraint( sigmoid1 );
+        inputQuery.addTranscendentalConstraint( sigmoid2 );
+        sigmoid1->notifyLowerBound( 4, 0 );
+        sigmoid2->notifyLowerBound( 5, 0 );
+        sigmoid1->notifyUpperBound( 4, 1 );
+        sigmoid2->notifyUpperBound( 5, 1 );
+
+        // Specify equations
+        Equation equation1;
+        equation1.addAddend( 2, 0 );
+        equation1.addAddend( 3, 1 );
+        equation1.addAddend( -1, 2 );
+        equation1.setScalar( 0 );
+        inputQuery.addEquation( equation1 );
+
+        Equation equation2;
+        equation2.addAddend( 1, 0 );
+        equation2.addAddend( 1, 1 );
+        equation2.addAddend( -1, 3 );
+        equation2.setScalar( 0 );
+        inputQuery.addEquation( equation2 );
+
+        Equation equation3;
+        equation3.addAddend( 1, 4 );
+        equation3.addAddend( -1, 5 );
+        equation3.addAddend( -1, 6 );
+        equation3.setScalar( 0 );
+        inputQuery.addEquation( equation3 );
+
+        // Invoke preprocessor
+        TS_ASSERT( !inputQuery._networkLevelReasoner );
+        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        TS_ASSERT( processed._networkLevelReasoner );
+
+        NLR::NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
+
+        double inputs1[2] = { 0, 0 };
+        double inputs2[2] = { 1, -1 };
+        double output = 0;
+
+        TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs1, &output ) );
+        TS_ASSERT_EQUALS( output, 0 );
+
+        TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs2, &output ) );
+        TS_ASSERT( FloatUtils::areEqual( output, -0.2310586, 0.0001 ) );
     }
 
     void test_todo()

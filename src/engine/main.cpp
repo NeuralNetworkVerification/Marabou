@@ -60,6 +60,10 @@ int main( int argc, char **argv )
         Options *options = Options::get();
         options->parseOptions( argc, argv );
 
+        Marabou().run();
+
+        return 0;
+
         if ( options->getBool( Options::HELP ) )
         {
             printHelpMessage();

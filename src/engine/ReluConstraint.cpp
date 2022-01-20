@@ -15,7 +15,7 @@
 #include "ReluConstraint.h"
 
 #include "ConstraintBoundTightener.h"
-#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "PiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -33,7 +33,7 @@
 #endif
 
 ReluConstraint::ReluConstraint( unsigned b, unsigned f )
-    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
     , _b( b )
     , _f( f )
     , _auxVarInUse( false )
@@ -81,7 +81,7 @@ PiecewiseLinearFunctionType ReluConstraint::getType() const
     return PiecewiseLinearFunctionType::RELU;
 }
 
-ContextDependentPiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
+PiecewiseLinearConstraint *ReluConstraint::duplicateConstraint() const
 {
     ReluConstraint *clone = new ReluConstraint( _b, _f );
     *clone = *this;
@@ -523,6 +523,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getInactiveSplit() const
     PiecewiseLinearCaseSplit inactivePhase;
     inactivePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::UB ) );
     inactivePhase.storeBoundTightening( Tightening( _f, 0.0, Tightening::UB ) );
+    inactivePhase.setReluRawData(PLCaseSplitRawData(_b, _f, ActivationType::INACTIVE));
     return inactivePhase;
 }
 
@@ -531,6 +532,7 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     // Active phase: b >= 0, b - f = 0
     PiecewiseLinearCaseSplit activePhase;
     activePhase.storeBoundTightening( Tightening( _b, 0.0, Tightening::LB ) );
+    activePhase.setReluRawData(PLCaseSplitRawData(_b, _f, ActivationType::ACTIVE));
 
     if ( _auxVarInUse )
     {
