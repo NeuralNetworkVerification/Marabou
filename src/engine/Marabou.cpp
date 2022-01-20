@@ -51,6 +51,7 @@ void test2();
 void test3();
 void test4();
 void test5();
+
 char const* activationStr( ActivationType activation )
 {
     switch ( activation )
@@ -93,8 +94,8 @@ void test1()
     // return;
 
     // activate split1: variable = 1, lb = 0;
-    List<PiecewiseLinearCaseSplit> allSplitsSoFar;
     PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
+    List<PiecewiseLinearCaseSplit> allSplitsSoFar;
     allSplitsSoFar.append( split1 );
     {
         auto res = provider.getImpliedSplits( allSplitsSoFar );
@@ -110,7 +111,6 @@ void test1()
             printSplit( split );
         }
     }
-
     printf("PASS\n");
 }
 
@@ -138,7 +138,6 @@ void test2()
     // activate split1: variable = 1, lb = 0;
     PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
     allSplitsSoFar.append( split1 );
-
     {
         auto res = provider.getImpliedSplits( allSplitsSoFar );
         const auto shouldBeASplit2 = !res.empty();
@@ -152,7 +151,6 @@ void test2()
             printSplit( split );
         }
     }
-
     printf("PASS\n");
 }
 
@@ -195,121 +193,96 @@ void test3()
             printSplit( split );
         }
     }
-
     printf("PASS\n");
 }
 
-// void test4()
-// {
-//     /*
-//     sequential derivation (at first c1:1 -> c2:-1)
-//     gammaUnsat = [{c1:1, c2:1}, {c2:-1,c1:1}] and
-//     _pastSplits = {c1:1}
-//     then only 1 split from: ({c2:-1}, {c2:-1}) is derived, and {c1:-1} are not derived
-//     */
-//     GammaUnsat gamma = GammaUnsat();
-//     GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
-//     seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
-//     seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
-//     gamma.addUnsatSequence( seq1 );
-//     GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
-//     seq2.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
-//     seq2.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
-//     gamma.addUnsatSequence( seq2 );
+void test4()
+{
+    /*
+    sequential derivation (at first c1:1 -> c2:-1)
+    gammaUnsat = [{c1:1, c2:1}, {c2:-1,c1:1}] and
+    _pastSplits = {c1:1}
+    then only 1 split from: ({c2:-1}, {c2:1}) is derived, and {c1:-1} is not derived
+    */
+    GammaUnsat gamma = GammaUnsat();
+    GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
+    seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
+    gamma.addUnsatSequence( seq1 );
+    GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
+    seq2.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    gamma.addUnsatSequence( seq2 );
 
-//     ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
+    ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
 
-//     // at start - no need to split
-//     if ( provider.needToSplit() ) {
-//         printf( "at start, provider.needToSplit() != nullpoint\n" );
-//         return;
-//     }
-//     // activate split1: variable = 1, lb = 0;
-//     PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
-//     provider.onSplitPerformed( SplitInfo( split1 ) );
+    // activate split1: variable = 1, lb = 0;
+    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
+    
+    List<PiecewiseLinearCaseSplit> allSplitsSoFar;
+    allSplitsSoFar.append( split1 );
+    {
+        auto res = provider.getImpliedSplits( allSplitsSoFar );
+        const auto shouldBeASplit2 = !res.empty();
+        if ( !shouldBeASplit2 )
+        {
+            printf( "no split. a bug\n" );
+            return;
+        }
+        // print splits
+        for ( const auto &split : res )
+        {
+            printSplit( split );
+        }
+    }
+    printf("PASS\n");
+}
 
-//     const auto shouldBeASplit2 = provider.needToSplit();
-//     if ( !shouldBeASplit2 )
-//     {
-//         printf( "no split. a bug\n" );
-//         return;
-//     }
-//     printf( "split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
-//     provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
+void test5()
+{
+    /*
+    sequential derivation (at first c1:1 -> c2:-1, then c2:-1 -> c3:1, then c3:1 -> c4:1)
+    gammaUnsat = [{c1:1, c2:1}, {c2:-1,c3:-1}, {c3:1,c4:-1}] and
+    _pastSplits = {c1:1}
+    then 3 splits: {c2:-1, c3:1, c4:1} are derived from the 2 first clauses
+    */
+    GammaUnsat gamma = GammaUnsat();
+    GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
+    seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
+    seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
+    gamma.addUnsatSequence( seq1 );
+    GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
+    seq2.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
+    seq2.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq2 );
+    GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
+    seq3.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::ACTIVE ) );
+    seq3.activations.append( PLCaseSplitRawData( 4, 20, ActivationType::INACTIVE ) );
+    gamma.addUnsatSequence( seq3 );
 
-//     if ( provider.needToSplit() ) {
-//         printf( "at end, provider.needToSplit() != nullpoint" );
-//         return;
-//     }
-//     printf("PASS\n");
-// }
+    ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
 
-// void test5()
-// {
-//     /*
-//     sequential derivation (at first c1:1 -> c2:-1, then c2:-1 -> c3:1, then c3:1 -> c4:1)
-//     gammaUnsat = [{c1:1, c2:1}, {c2:-1,c3:-1}, {c3:1,c4:-1}] and
-//     _pastSplits = {c1:1}
-//     then 3 splits: {c2:-1, c3:1, c4:1} are derived from the 2 first clauses
-//     */
-//     GammaUnsat gamma = GammaUnsat();
-//     GammaUnsat::UnsatSequence seq1 = GammaUnsat::UnsatSequence();
-//     seq1.activations.append( PLCaseSplitRawData( 1, 10, ActivationType::ACTIVE ) );
-//     seq1.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::ACTIVE ) );
-//     gamma.addUnsatSequence( seq1 );
-//     GammaUnsat::UnsatSequence seq2 = GammaUnsat::UnsatSequence();
-//     seq2.activations.append( PLCaseSplitRawData( 2, 20, ActivationType::INACTIVE ) );
-//     seq2.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::INACTIVE ) );
-//     gamma.addUnsatSequence( seq2 );
-//     GammaUnsat::UnsatSequence seq3 = GammaUnsat::UnsatSequence();
-//     seq3.activations.append( PLCaseSplitRawData( 3, 30, ActivationType::ACTIVE ) );
-//     seq3.activations.append( PLCaseSplitRawData( 4, 20, ActivationType::INACTIVE ) );
-//     gamma.addUnsatSequence( seq3 );
+    // activate split1: variable = 1, lb = 0;
+    PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
+    List<PiecewiseLinearCaseSplit> allSplitsSoFar;
+    allSplitsSoFar.append( split1 );
+    {
+        auto res = provider.getImpliedSplits( allSplitsSoFar );
+        const auto shouldBeASplit2 = !res.empty();
+        if ( !shouldBeASplit2 )
+        {
+            printf( "no split. a bug\n" );
+            return;
+        }
+        // print splits
+        for ( const auto &split : res )
+        {
+            printSplit( split );
+        }
+    }
 
-//     ResidualReasoningSplitProvider provider = ResidualReasoningSplitProvider( gamma );
-
-//     // at start - no need to split
-//     if ( provider.needToSplit() ) {
-//         printf( "at start, provider.needToSplit() != nullpoint\n" );
-//         return;
-//     }
-//     // activate split1: variable = 1, lb = 0;
-//     PiecewiseLinearCaseSplit split1 = ReluConstraint( 1, 10 ).getActiveSplit();
-//     provider.onSplitPerformed( SplitInfo( split1 ) );
-
-//     const auto shouldBeASplit2 = provider.needToSplit();
-//     if ( !shouldBeASplit2 )
-//     {
-//         printf( "no split. a bug\n" );
-//         return;
-//     }
-//     printf( "split on %d activation=%s\n", shouldBeASplit2->reluRawData()->_b, activationStr( shouldBeASplit2->reluRawData()->_activation ) );
-//     provider.onSplitPerformed( SplitInfo( *shouldBeASplit2 ) );
-
-//     const auto shouldBeASplit3 = provider.needToSplit();
-//     if ( !shouldBeASplit3 )
-//     {
-//         printf( "no split. a bug\n" );
-//         return;
-//     }
-//     printf( "split on %d activation=%s\n", shouldBeASplit3->reluRawData()->_b, activationStr( shouldBeASplit3->reluRawData()->_activation ) );
-//     provider.onSplitPerformed( SplitInfo( *shouldBeASplit3 ) );
-
-//     const auto shouldBeASplit4 = provider.needToSplit();
-//     if ( !shouldBeASplit4 )
-//     {
-//         printf( "no split. a bug\n" );
-//         return;
-//     }
-//     printf( "split on %d activation=%s\n", shouldBeASplit4->reluRawData()->_b, activationStr( shouldBeASplit4->reluRawData()->_activation ) );
-//     provider.onSplitPerformed( SplitInfo( *shouldBeASplit4 ) );
-
-//     if ( provider.needToSplit() ) {
-//         printf( "at end, provider.needToSplit() != nullpoint" );
-//         return;
-//     }
-//     printf("PASS\n");
-// }
+    printf("PASS\n");
+}
 
 void Marabou::run()
 {
@@ -322,12 +295,12 @@ void Marabou::run()
     printf( "**** start test3 ****\n" );
     test3();
     printf( "\n\n" );
-    // printf( "**** start test4 ****\n" );
-    // test4();
-    // printf( "\n\n" );
-    // printf( "**** start test5 ****\n" );
-    // test5();
-    // printf( "\n\n" );
+    printf( "**** start test4 ****\n" );
+    test4();
+    printf( "\n\n" );
+    printf( "**** start test5 ****\n" );
+    test5();
+    printf( "\n\n" );
     
     return;
  
