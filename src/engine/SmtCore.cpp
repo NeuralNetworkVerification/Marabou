@@ -242,7 +242,7 @@ void SmtCore::resetReportedViolations()
     _needToSplit = false;
 }
 
-void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
+void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit const& validSplit )
 {
     if ( _stack.empty() )
         _impliedValidSplitsAtRoot.append( validSplit );

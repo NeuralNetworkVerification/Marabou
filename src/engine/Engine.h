@@ -39,6 +39,7 @@
 #include "SnCDivideStrategy.h"
 #include "Statistics.h"
 #include "SymbolicBoundTighteningType.h"
+#include "ResidualReasoningSplitProvider.h"
 
 #include <atomic>
 
@@ -196,6 +197,8 @@ public:
        Register initial split when in SnC mode
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
+
+    void addResidualReasoner( std::unique_ptr<ResidualReasoningSplitProvider> residualResoner );
 
 private:
 
@@ -417,6 +420,8 @@ private:
     String _queryId;
 
     Map<unsigned, double> _heuristicCost;
+
+    std::unique_ptr<ResidualReasoningSplitProvider> _residualReasoner;
 
     /*
       Perform a simplex step: compute the cost function, pick the

@@ -88,7 +88,7 @@ public:
     /*
       Let the smt core know of an implied valid case split that was discovered.
     */
-    void recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit );
+    void recordImpliedValidSplit( PiecewiseLinearCaseSplit const& validSplit );
 
     /*
       Return a list of all splits performed so far, both SMT-originating and valid ones,
