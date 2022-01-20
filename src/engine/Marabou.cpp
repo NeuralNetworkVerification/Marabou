@@ -303,13 +303,35 @@ void Marabou::run()
     printf( "\n\n" );
     
     return;
- 
+
     struct timespec start = TimeUtils::sampleMicro();
+
+    // handle residual reasoning
+    auto gammaUnsatInputFile = Options::get()->getString( Options::GAMMA_UNSAT_INPUT_FILE );
+    auto gammaUnsatOutputFile = Options::get()->getString( Options::GAMMA_UNSAT_OUTPUT_FILE );
+    bool const doResidualReasoning = gammaUnsatInputFile.length() > 0;
+    std::shared_ptr<ResidualReasoningSplitProvider> residualReasoner;
+    if ( doResidualReasoning ) {
+        if ( File::exists( gammaUnsatInputFile ) )
+        {
+            auto const gammaUnsat = GammaUnsat::readFromFile( gammaUnsatInputFile );
+            residualReasoner = std::make_shared<ResidualReasoningSplitProvider>( gammaUnsat );
+        }
+        else
+        {
+            residualReasoner = std::make_shared<ResidualReasoningSplitProvider>( GammaUnsat{} );
+        }
+        _engine.addResidualReasoner( residualReasoner );
+    }
 
     prepareInputQuery();
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
+
+    if ( doResidualReasoning && gammaUnsatOutputFile.length() > 0 ) {
+        residualReasoner->gammaUnsat().saveToFile( gammaUnsatOutputFile );
+    }
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
