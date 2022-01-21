@@ -17,7 +17,7 @@
 #define __SumOfInfeasibilitiesManager_h__
 
 #include "GlobalConfiguration.h"
-#include "IEngine.h"
+#include "InputQuery.h"
 #include "LinearExpression.h"
 #include "List.h"
 #include "NetworkLevelReasoner.h"
@@ -36,8 +36,7 @@ class SumOfInfeasibilitiesManager
 {
 public:
 
-    SumOfInfeasibilitiesManager( const List<PiecewiseLinearConstraint *>
-                                 &plConstraints );
+    SumOfInfeasibilitiesManager( const InputQuery &inputQuery );
 
     /*
       Obtain the actual phase pattern from _currentPhasepattern
@@ -99,6 +98,7 @@ public:
 
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
+    const NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     SoIInitializationStrategy _initializationStrategy;
     SoISearchStrategy _searchStrategy;

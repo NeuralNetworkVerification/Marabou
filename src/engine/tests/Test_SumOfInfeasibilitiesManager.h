@@ -53,6 +53,8 @@ public:
             ipq.setUpperBound( i, 2 );
         }
 
+        ipq.constructNetworkLevelReasoner();
+
         List<PiecewiseLinearConstraint *> plConstraints = {relu1, relu2, relu3, max1};
 
         for ( const auto &c : plConstraints )
@@ -71,7 +73,7 @@ public:
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
-              ( new SumOfInfeasibilitiesManager( plConstraints ) ) );
+              ( new SumOfInfeasibilitiesManager( ipq ) ) );
 
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );

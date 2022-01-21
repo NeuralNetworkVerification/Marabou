@@ -16,9 +16,10 @@
 #include "Options.h"
 #include "SumOfInfeasibilitiesManager.h"
 
-SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager
-( const List<PiecewiseLinearConstraint *> &plConstraints )
-    : _plConstraints( plConstraints )
+SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
+                                                          &inputQuery )
+    : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
+    , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )
     , _initializationStrategy( Options::get()->getSoIInitializationStrategy() )
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
 {}
