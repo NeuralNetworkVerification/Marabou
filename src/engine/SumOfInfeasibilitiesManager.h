@@ -18,6 +18,7 @@
 
 #include "GlobalConfiguration.h"
 #include "IEngine.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "PiecewiseLinearConstraint.h"
 #include "SoIInitializationStrategy.h"
@@ -43,7 +44,7 @@ public:
 
     /*
       Called at the beginning of the local search (DeepSoI).
-      Initialize the SoI function by heuristically taking a cost term
+      Choose the first phase pattern by heuristically taking a cost term
       from each unfixed activation function.
     */
     void initializeHeuristicCost();
@@ -51,25 +52,27 @@ public:
     /*
       Called when the previous heuristic cost cannot be minimized to 0 (i.e., no
       satisfying assignment found for the previous activation pattern).
-      In this case, we need to try a new heuristic cost. We achieve this by
-      propose an update to the previous heuristic cost (e.g., by using a different
-      cost term for certain ReLU).
+      In this case, we need to try a new phase pattern. We achieve this by
+      propose an update to the previous phase pattern,
+      stored in _currentProposal.
     */
     void proposeHeuristicCostUpdate();
 
     /*
-      We have computed the minimal value of the previous heuristic cost (previousCost),
-      as well as the minimal value of the currently proposed heuristic cost (currentCost).
-      This method decides whether we accept this proposal or reject this proposal.
-      In the latter case, we need to undo the last proposal and revert the _heuristicCost
-      back to the previous one (using the undoLastProposal method).
+      Given the minimal value of the proposed new phase pattern
+      (_currentPhasepattern + _currentProposal). Returns true if we are going
+      to accept this proposal.
+      The acceptance heuristic is standard: if the newCost is less than
+      _costOfCurrentphasepattern, we always accept. Otherwise, the probability
+      to accept the proposal is reversely proportional to the difference between
+      the newCost and the _costOfcurrentphasepattern.
     */
-    bool acceptLastProposal( double previousCost, double currentCost );
+    bool decideOnCurrentProposal( double newCost );
 
     /*
-      Undo the last proposal. By subtracting _lastProposal from _heuristicCost
+      Set the _currentPhasePattern to be _currentPhasePattern + _currentProposal.
     */
-    void undoLastProposal();
+    void acceptCurrentProposal();
 
     // Go through each PLConstraint, check whether it is satisfied by the
     // current assignment but the cost term is not zero. In that case,
@@ -97,12 +100,18 @@ public:
 
 private:
 
-    // The current heuristic cost (which corresponds to an activation pattern)
-    // Mapping variable to its coefficient
-    Map<unsigned, double> _heuristicCost;
+    // The current heuristic cost.
+    // If it can be minimized to 0 w.r.t. the convex relaxation (the current set
+    // of linear constraints), then a satisfying assignment is found.
+    LinearExpression _currentPhasePattern;
 
-    // The lastest proposed update to the heuristic cost.
-    Map<unsigned, double> _lastProposal;
+    // The lastest proposed update to obtain the _currentPhasePattern
+    // _newPhasePattern = _currentPhasePattern + _currentProposal
+    LinearExpression _currentProposal;
+
+    // The minimal value of _currentPhasePattern. Updated after the convex solver
+    // call on the _currentPhasePattern.
+    double _costOfCurrentPhasePattern;
 
     Statistics *_statistics;
 
