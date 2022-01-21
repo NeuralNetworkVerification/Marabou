@@ -53,5 +53,5 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
 
 void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignment()
 {
-
+    ASSERT( _networkLevelReasoner );
 }

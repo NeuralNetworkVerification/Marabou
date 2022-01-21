@@ -115,6 +115,34 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
+void NetworkLevelReasoner::concretizeInputAssignment( double *output )
+{
+    if ( !_tableau )
+        return;
+
+    Layer *inputLayer = _layerIndexToLayer[0];
+    ASSERT( inputLayer->getLayerType() == Layer::INPUT );
+
+    unsigned inputLayerSize = inputLayer->getSize();
+    ASSERT( inputLayerSize > 0 );
+
+    double *input = new double[inputLayerSize];
+
+    for ( unsigned index = 0; index < inputLayerSize; ++index )
+    {
+        if ( !inputLayer->neuronEliminated( index ) )
+        {
+            unsigned variable = inputLayer->neuronToVariable( index );
+            input[index] = _tableau->getValue( variable );
+        }
+        else
+            input[index] = inputLayer->getEliminatedNeuronValue( index );
+    }
+
+    evaluate( input, output );
+    delete[] input;
+}
+
 void NetworkLevelReasoner::simulate( Vector<Vector<double>> *input )
 {
     _layerIndexToLayer[0]->setSimulations( input );

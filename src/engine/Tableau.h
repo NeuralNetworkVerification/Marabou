@@ -113,7 +113,7 @@ public:
     /*
       Get the assignment of a variable, either basic or non-basic
     */
-    double getValue( unsigned variable );
+    double getValue( unsigned variable ) const;
 
     /*
       Given an index of a non-basic variable in the range [0,n-m),

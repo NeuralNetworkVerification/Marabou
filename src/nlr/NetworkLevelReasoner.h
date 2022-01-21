@@ -75,6 +75,12 @@ public:
     void evaluate( double *input , double *output );
 
     /*
+      Perform an evaluation of the network for the current input variable
+      assignment.
+    */
+    void concretizeInputAssignment( double *output );
+
+    /*
       Perform a simulation of the network for a specific input
     */
    void simulate( Vector<Vector<double>> *input );
