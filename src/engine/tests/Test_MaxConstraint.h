@@ -3291,6 +3291,12 @@ public:
         TS_ASSERT_EQUALS( cost2._addends[1], 1 );
         TS_ASSERT_EQUALS( cost2._constant, -1 );
 
+        TS_ASSERT_THROWS_NOTHING( max2.getCostFunctionComponent
+                                  ( cost2, MAX_PHASE_ELIMINATED ) );
+        TS_ASSERT_EQUALS( cost2._addends.size(), 1u );
+        TS_ASSERT_EQUALS( cost2._addends[1], 2 );
+        TS_ASSERT_EQUALS( cost2._constant, -2 );
+
         LinearExpression cost3;
         List<PhaseStatus> phases;
         TS_ASSERT_THROWS_NOTHING( phases = max2.getAllCases() );

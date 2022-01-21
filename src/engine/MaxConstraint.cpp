@@ -797,7 +797,7 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
         if ( !cost._addends.exists( _f ) )
             cost._addends[_f] = 0;
         cost._addends[_f] = cost._addends[_f] + 1;
-        cost._constant = - _maxValueOfEliminated;
+        cost._constant -= _maxValueOfEliminated;
     }
     else
     {

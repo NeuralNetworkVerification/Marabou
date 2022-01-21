@@ -1553,5 +1553,11 @@ public:
         TS_ASSERT_EQUALS( cost3._addends[f], 1 );
         TS_ASSERT_EQUALS( cost3._addends[b2], -1 );
         TS_ASSERT_EQUALS( cost3._addends[f2], 1 );
+
+        TS_ASSERT_THROWS_NOTHING( relu4.getCostFunctionComponent( cost3, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 3u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b2], -2 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], 2 );
     }
 };
