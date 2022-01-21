@@ -13,10 +13,22 @@
 
 **/
 
-
+#include "Options.h"
 #include "SumOfInfeasibilitiesManager.h"
 
 SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager
 ( const List<PiecewiseLinearConstraint *> &plConstraints )
     : _plConstraints( plConstraints )
+    , _initializationStrategy( Options::get()->getSoIInitializationStrategy() )
+    , _searchStrategy( Options::get()->getSoISearchStrategy() )
 {}
+
+LinearExpression SumOfInfeasibilitiesManager::getHeuristicCost() const
+{
+    return LinearExpression();
+}
+
+
+void SumOfInfeasibilitiesManager::initializePhasePattern()
+{
+}

@@ -39,9 +39,10 @@ public:
     SumOfInfeasibilitiesManager( const List<PiecewiseLinearConstraint *>
                                  &plConstraints );
 
-    void setPLConstraints( List<PiecewiseLinearConstraint *> &plConstraints );
-
-    const LinearExpression &getHeuristicCost() const;
+    /*
+      Obtain the actual phase pattern from _currentPhasepattern
+    */
+    LinearExpression getHeuristicCost() const;
 
     /*
       Called at the beginning of the local search (DeepSoI).
@@ -86,7 +87,7 @@ public:
     // from the heuristic cost.
     void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint *constraint );
 
-    // Compute _currentPatternPhase from the current variable assignment.
+    // Compute _currentPhasePattern from the current variable assignment.
     double computeHeuristicCost();
 
     void setStatistics( Statistics *statistics );
@@ -99,7 +100,10 @@ public:
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
 
-    Map<PiecewiseLinearConstraint *, PhaseStatus> _currentPatternPhase;
+    SoIInitializationStrategy _initializationStrategy;
+    SoISearchStrategy _searchStrategy;
+
+    Map<PiecewiseLinearConstraint *, PhaseStatus> _currentPhasePattern;
     Map<PiecewiseLinearConstraint *, PhaseStatus> _currentProposal;
 
     Statistics *_statistics;

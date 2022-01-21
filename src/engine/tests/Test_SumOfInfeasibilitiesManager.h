@@ -16,8 +16,9 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
-#include "ReluConstraint.h"
 #include "MaxConstraint.h"
+#include "Options.h"
+#include "ReluConstraint.h"
 #include "SumOfInfeasibilitiesManager.h"
 
 class SumOfInfeasibilitiesManagerTestSuite : public CxxTest::TestSuite
@@ -32,7 +33,7 @@ public:
     {
     }
 
-    void test_get_heuristic_cost()
+    void test_initialize_phase_pattern()
     {
         InputQuery ipq;
         ipq.setNumberOfVariables(6);
@@ -63,10 +64,16 @@ public:
             }
         }
 
+        Options::get()->setString
+            ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
+
         std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
               ( new SumOfInfeasibilitiesManager( plConstraints ) ) );
+
+        TS_ASSERT_THROWS_NOTHING
+            (soiManager->initializePhasePattern() );
     }
 };
