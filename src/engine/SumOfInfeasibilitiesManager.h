@@ -20,6 +20,7 @@
 #include "IEngine.h"
 #include "LinearExpression.h"
 #include "List.h"
+#include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
 #include "SoIInitializationStrategy.h"
 #include "SoISearchStrategy.h"
@@ -29,25 +30,25 @@
 #include <memory>
 #include <random>
 
-#define SOI_LOG( x, ... ) LOG( GlobalConfiguration::SUM_OF_INFEASIBILITIES_LOGGING, "SoIManager: %s\n", x )
+#define SOI_LOG( x, ... ) LOG( GlobalConfiguration::SOI_LOGGING, "SoIManager: %s\n", x )
 
 class SumOfInfeasibilitiesManager
 {
 public:
 
-    SumOfInfeasibilitiesManager( IEngine *engine );
+    SumOfInfeasibilitiesManager( const List<PiecewiseLinearConstraint *>
+                                 &plConstraints );
 
-    inline const Map<unsigned, double> &getHeuristicCost() const
-    {
-        return _heuristicCost;
-    }
+    void setPLConstraints( List<PiecewiseLinearConstraint *> &plConstraints );
+
+    const LinearExpression &getHeuristicCost() const;
 
     /*
       Called at the beginning of the local search (DeepSoI).
       Choose the first phase pattern by heuristically taking a cost term
       from each unfixed activation function.
     */
-    void initializeHeuristicCost();
+    void initializePhasePattern();
 
     /*
       Called when the previous heuristic cost cannot be minimized to 0 (i.e., no
@@ -56,21 +57,20 @@ public:
       propose an update to the previous phase pattern,
       stored in _currentProposal.
     */
-    void proposeHeuristicCostUpdate();
+    void proposePhasePatternUpdate();
 
     /*
-      Given the minimal value of the proposed new phase pattern
-      (_currentPhasepattern + _currentProposal). Returns true if we are going
-      to accept this proposal.
       The acceptance heuristic is standard: if the newCost is less than
       _costOfCurrentphasepattern, we always accept. Otherwise, the probability
       to accept the proposal is reversely proportional to the difference between
       the newCost and the _costOfcurrentphasepattern.
     */
-    bool decideOnCurrentProposal( double newCost );
+    bool decideToAcceptCurrentProposal( double costOfCurrentPhasePattern,
+                                        double costOfProposedPhasePattern );
 
     /*
       Set the _currentPhasePattern to be _currentPhasePattern + _currentProposal.
+      Then clear the _currentProposal.
     */
     void acceptCurrentProposal();
 
@@ -78,7 +78,7 @@ public:
     // current assignment but the cost term is not zero. In that case,
     // we use the cost term corresponding to the phase of the current assignment
     // for that PLConstraint. This way, the cost term is trivially minimized.
-    void updateCostTermsForSatisfiedPLConstraints();
+    void updateCurrentPhasePatternForSatisfiedPLConstraints();
 
     // During the Simplex execution, the phase of a piecewise linear constraint
     // might be fixed due to additional tightening.
@@ -86,12 +86,10 @@ public:
     // from the heuristic cost.
     void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint *constraint );
 
-    // Compute the heuristic cost from the current assignment.
+    // Compute _currentPatternPhase from the current variable assignment.
     double computeHeuristicCost();
 
     void setStatistics( Statistics *statistics );
-
-    void setPLConstraints( List<PiecewiseLinearConstraint *> &plConstraints );
 
     void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *networkLevelReasoner );
 
@@ -99,19 +97,10 @@ public:
     void dumpHeuristicCost();
 
 private:
+    const List<PiecewiseLinearConstraint *> &_plConstraints;
 
-    // The current heuristic cost.
-    // If it can be minimized to 0 w.r.t. the convex relaxation (the current set
-    // of linear constraints), then a satisfying assignment is found.
-    LinearExpression _currentPhasePattern;
-
-    // The lastest proposed update to obtain the _currentPhasePattern
-    // _newPhasePattern = _currentPhasePattern + _currentProposal
-    LinearExpression _currentProposal;
-
-    // The minimal value of _currentPhasePattern. Updated after the convex solver
-    // call on the _currentPhasePattern.
-    double _costOfCurrentPhasePattern;
+    Map<PiecewiseLinearConstraint *, PhaseStatus> _currentPatternPhase;
+    Map<PiecewiseLinearConstraint *, PhaseStatus> _currentProposal;
 
     Statistics *_statistics;
 
