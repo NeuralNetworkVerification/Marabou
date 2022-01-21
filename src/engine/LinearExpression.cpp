@@ -1,0 +1,65 @@
+/*********************                                                        */
+/*! \file LinearExpression.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Haoze (Andrew) Wu
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** [[ Add lengthier description here ]]
+
+ **/
+
+#include "LinearExpression.h"
+#include "FloatUtils.h"
+#include "MStringf.h"
+
+LinearExpression::LinearExpression()
+  : _constant( 0 )
+{
+}
+
+LinearExpression::LinearExpression( Map<unsigned, double> &addends )
+  : _addends( addends )
+  , _constant( 0 )
+{
+}
+
+LinearExpression::LinearExpression( Map<unsigned, double> &addends,
+                                    double constant )
+  : _addends( addends )
+  , _constant( constant )
+{
+}
+
+bool LinearExpression::operator==( const LinearExpression &other ) const
+{
+    return
+        ( _addends == other._addends ) &&
+        ( _constant == other._constant );
+}
+
+void LinearExpression::dump() const
+{
+    String output = "";
+    for ( const auto &addend : _addends )
+    {
+        if ( FloatUtils::isZero( addend.second ) )
+            continue;
+
+        if ( FloatUtils::isPositive( addend.second ) )
+            output += String( "+" );
+
+        output += Stringf( "%.2lfx%u ", addend.second, addend.first );
+    }
+
+    if ( FloatUtils::isPositive( _constant ) )
+        output += String( "+" );
+
+    output += Stringf( "%.2lf ", _constant );
+
+    printf( "%s", output.ascii() );
+}

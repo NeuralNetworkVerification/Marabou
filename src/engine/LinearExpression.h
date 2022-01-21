@@ -25,26 +25,20 @@
    sum( coefficient * variable ) + constant
 */
 
-struct LinearExpression
+class LinearExpression
 {
 public:
 
-    LinearExpression()
-      : _constant( 0 )
-    {
-    };
+    LinearExpression();
+    LinearExpression( Map<unsigned, double> &addends );
+    LinearExpression( Map<unsigned, double> &addends, double constant );
 
-    LinearExpression( Map<unsigned, double> &addends )
-      : _addends( addends )
-      , _constant( 0 )
-    {
-    };
+    bool operator==( const LinearExpression &other ) const;
 
-    LinearExpression( Map<unsigned, double> &addends, double constant )
-        : _addends( addends )
-        , _constant( constant )
-    {
-    };
+    /*
+      For debugging
+    */
+    void dump() const;
 
     Map<unsigned, double> _addends; // a mapping from variable to coefficient
     double _constant;
