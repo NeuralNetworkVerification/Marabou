@@ -19,7 +19,7 @@
 #include "Map.h"
 
 /*
-   A struct representing a single linear expression.
+   A class representing a single linear expression.
    A linear expression is interpreted as:
 
    sum( coefficient * variable ) + constant
