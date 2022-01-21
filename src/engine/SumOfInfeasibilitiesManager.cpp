@@ -23,11 +23,15 @@ SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
 {}
 
-LinearExpression SumOfInfeasibilitiesManager::getHeuristicCost() const
+LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
 {
-    return LinearExpression();
+    LinearExpression cost;
+    for ( const auto &pair : _currentPhasePattern )
+    {
+        pair.first->getCostFunctionComponent( cost, pair.second );
+    }
+    return cost;
 }
-
 
 void SumOfInfeasibilitiesManager::initializePhasePattern()
 {

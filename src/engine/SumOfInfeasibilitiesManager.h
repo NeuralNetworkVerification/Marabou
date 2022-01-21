@@ -42,7 +42,7 @@ public:
     /*
       Obtain the actual phase pattern from _currentPhasepattern
     */
-    LinearExpression getHeuristicCost() const;
+    LinearExpression getSoIPhasePattern() const;
 
     /*
       Called at the beginning of the local search (DeepSoI).
