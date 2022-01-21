@@ -16,10 +16,14 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "LinearExpression.h"
 #include "MaxConstraint.h"
+#include "MockTableau.h"
 #include "Options.h"
 #include "ReluConstraint.h"
 #include "SumOfInfeasibilitiesManager.h"
+
+#include "Vector.h"
 
 class SumOfInfeasibilitiesManagerTestSuite : public CxxTest::TestSuite
 {
@@ -33,14 +37,21 @@ public:
     {
     }
 
-    void test_initialize_phase_pattern()
+    void createInputQuery( InputQuery &ipq,
+                           Vector<PiecewiseLinearConstraint *> &plConstraints )
     {
-        InputQuery ipq;
+        /*  R
+          0 -- 1
+            R      \
+          2 -- 3 ---  6
+            R      /
+          4 -- 5
+        */
         ipq.setNumberOfVariables(6);
         ReluConstraint *relu1 = new ReluConstraint(0,1);
         ReluConstraint *relu2 = new ReluConstraint(2,3);
         ReluConstraint *relu3 = new ReluConstraint(4,5);
-        MaxConstraint *max1 = new MaxConstraint(4, {1,3,5});
+        MaxConstraint *max1 = new MaxConstraint(6, {1,3,5});
 
         ipq.addPiecewiseLinearConstraint(relu1);
         ipq.addPiecewiseLinearConstraint(relu2);
@@ -53,9 +64,15 @@ public:
             ipq.setUpperBound( i, 2 );
         }
 
-        ipq.constructNetworkLevelReasoner();
+        ipq.setLowerBound( 1, 0 );
+        ipq.setLowerBound( 3, 0 );
+        ipq.setLowerBound( 5, 0 );
 
-        List<PiecewiseLinearConstraint *> plConstraints = {relu1, relu2, relu3, max1};
+        ipq.markInputVariable( 0, 0 );
+        ipq.markInputVariable( 2, 1 );
+        ipq.markInputVariable( 4, 2 );
+
+        plConstraints = {relu1, relu2, relu3, max1};
 
         for ( const auto &c : plConstraints )
         {
@@ -65,6 +82,20 @@ public:
                 c->notifyUpperBound( var, 2 );
             }
         }
+        relu1->notifyLowerBound( 1, 0 );
+        relu2->notifyLowerBound( 3, 0 );
+        relu3->notifyLowerBound( 5, 0 );
+
+        TS_ASSERT( ipq.constructNetworkLevelReasoner() );
+    }
+
+    void test_initialize_phase_pattern_with_input_assignment()
+    {
+        InputQuery ipq;
+        Vector<PiecewiseLinearConstraint *> plConstraints;
+        createInputQuery( ipq, plConstraints );
+
+        MockTableau tableau;
 
         Options::get()->setString
             ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -73,9 +104,37 @@ public:
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
-              ( new SumOfInfeasibilitiesManager( ipq ) ) );
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
+        tableau.nextValues[0] = -1;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[4] = 2;
+        plConstraints[0]->notifyVariableValue( 0, -1 );
+        plConstraints[0]->notifyVariableValue( 1, 0 );
+        plConstraints[1]->notifyVariableValue( 2, 1 );
+        plConstraints[1]->notifyVariableValue( 3, 1 );
+        plConstraints[2]->notifyVariableValue( 4, 2 );
+        plConstraints[2]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 1, 0 );
+        plConstraints[3]->notifyVariableValue( 3, 1 );
+        plConstraints[3]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 6, 2 );
+
+        // The input assignment is [-1, 1, 2], the output of the max should be 2
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );
+
+        LinearExpression cost;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_ACTIVE ) );
+        List<PhaseStatus> phases = plConstraints[3]->getAllCases();
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost, *( phases.end() ) ) );
+        cost.dump();
+        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
     }
 };

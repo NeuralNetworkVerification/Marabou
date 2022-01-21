@@ -13,12 +13,15 @@
 
 **/
 
+#include "MarabouError.h"
 #include "Options.h"
 #include "SumOfInfeasibilitiesManager.h"
 
 SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
-                                                          &inputQuery )
+                                                          &inputQuery, const
+                                                          ITableau &tableau )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
+    , _tableau( tableau )
     , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )
     , _initializationStrategy( Options::get()->getSoIInitializationStrategy() )
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
@@ -36,4 +39,19 @@ LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
 
 void SumOfInfeasibilitiesManager::initializePhasePattern()
 {
+    if ( _initializationStrategy == SoIInitializationStrategy::INPUT_ASSIGNMENT
+         && _networkLevelReasoner )
+    {
+        initializePhasePatternWithCurrentInputAssignment();
+    }
+    else
+    {
+        throw MarabouError
+            ( MarabouError::UNABLE_TO_INITIALIZATION_PHASE_PATTERN );
+    }
+}
+
+void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignment()
+{
+
 }

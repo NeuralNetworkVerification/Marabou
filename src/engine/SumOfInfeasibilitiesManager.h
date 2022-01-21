@@ -18,6 +18,7 @@
 
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
+#include "ITableau.h"
 #include "LinearExpression.h"
 #include "List.h"
 #include "NetworkLevelReasoner.h"
@@ -36,7 +37,8 @@ class SumOfInfeasibilitiesManager
 {
 public:
 
-    SumOfInfeasibilitiesManager( const InputQuery &inputQuery );
+    SumOfInfeasibilitiesManager( const InputQuery &inputQuery,
+                                 const ITableau &tableau );
 
     /*
       Obtain the actual phase pattern from _currentPhasepattern
@@ -97,7 +99,10 @@ public:
     void dumpHeuristicCost();
 
 private:
+    friend class Test_SumOfInfeasibilitiesManager;
+
     const List<PiecewiseLinearConstraint *> &_plConstraints;
+    const ITableau &_tableau;
     const NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     SoIInitializationStrategy _initializationStrategy;
@@ -107,6 +112,11 @@ private:
     Map<PiecewiseLinearConstraint *, PhaseStatus> _currentProposal;
 
     Statistics *_statistics;
+
+    /*
+      Set _currentPhasePattern according to the current input assignment.
+    */
+    void initializePhasePatternWithCurrentInputAssignment();
 
 };
 
