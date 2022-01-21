@@ -133,7 +133,7 @@ public:
                                   ( cost, RELU_PHASE_ACTIVE ) );
         List<PhaseStatus> phases = plConstraints[3]->getAllCases();
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
-                                  ( cost, *( phases.end() ) ) );
+                                  ( cost, *( ++( ++phases.begin() ) ) ) );
         cost.dump();
         TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
     }
