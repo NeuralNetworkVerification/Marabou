@@ -18,6 +18,7 @@
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "LinearExpression.h"
 
 class LpTestSuite : public CxxTest::TestSuite
 {
@@ -75,8 +76,9 @@ public:
         Map<unsigned, double> heuristicCost;
         heuristicCost[0] = 1;
         heuristicCost[1] = -1;
+        LinearExpression cost = LinearExpression( heuristicCost );
 
-        TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( heuristicCost ) );
+        TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( cost ) );
 
         engine.extractSolution( inputQuery );
 
@@ -87,24 +89,27 @@ public:
         heuristicCost[0] = -2;
         heuristicCost[1] = 1;
         heuristicCost[3] = 2;
+        cost = LinearExpression( heuristicCost );
 
-        TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( heuristicCost ) );
+        TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( cost ) );
 
         engine.extractSolution( inputQuery );
 
         TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( heuristicCost ), -0.25 ) );
+                                         ( cost ), -0.25 ) );
 
         heuristicCost.clear();
         heuristicCost[1] = -2;
         heuristicCost[2] = 1;
+        cost = LinearExpression( heuristicCost );
+        cost._constant = -5;
 
-        TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( heuristicCost ) );
+        TS_ASSERT_THROWS_NOTHING( engine.minimizeHeuristicCost( cost ) );
 
         engine.extractSolution( inputQuery );
 
         TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( heuristicCost ), -1 ) );
+                                         ( cost ), -6 ) );
     }
 
     void test_fesiablbe()

@@ -29,6 +29,7 @@
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "InputQuery.h"
+#include "LinearExpression.h"
 #include "Map.h"
 #include "MILPEncoder.h"
 #include "Options.h"
@@ -68,12 +69,12 @@ public:
     /*
       Minimize the cost function with respect to the current set of linear constraints.
     */
-    void minimizeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+    void minimizeHeuristicCost( const LinearExpression &heuristicCost );
 
     /*
       Compute the cost function with the current assignment.
     */
-    double computeHeuristicCost( const Map<unsigned, double> &heuristicCost );
+    double computeHeuristicCost( const LinearExpression &heuristicCost );
 
     /*
       Process the input query and pass the needed information to the
@@ -416,7 +417,7 @@ private:
      */
     String _queryId;
 
-    Map<unsigned, double> _heuristicCost;
+    LinearExpression _heuristicCost;
 
     /*
       Perform a simplex step: compute the cost function, pick the
