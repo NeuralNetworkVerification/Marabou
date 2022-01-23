@@ -21,7 +21,7 @@ import numpy as np
 
 # sys.path.append('/home/USER/git/Marabou')
 from maraboupy import Marabou
-
+from maraboupy.MarabouCore import StatisticsUnsignedAttribute
 
 # %%
 # Path to NNet file
@@ -39,8 +39,8 @@ vals1, stats1 = net1.solve()
 
 # %%
 # Example statistics
-stats1.getNumSplits()
-stats1.getTotalTime()
+stats1.getUnsignedAttribute(StatisticsUnsignedAttribute.NUM_SPLITS)
+stats1.getTotalTimeInMicro()
 
 
 # %%

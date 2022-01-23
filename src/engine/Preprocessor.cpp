@@ -135,7 +135,8 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
             continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
-            _statistics->ppIncNumTighteningIterations();
+            _statistics->
+                incUnsignedAttribute( Statistics::PP_NUM_TIGHTENING_ITERATIONS );
     }
 
     collectFixedValues();
@@ -703,7 +704,9 @@ void Preprocessor::eliminateVariables()
         return;
 
     if ( _statistics )
-        _statistics->ppSetNumEliminatedVars( _fixedVariables.size() + _mergedVariables.size() );
+        _statistics->setUnsignedAttribute( Statistics::PP_NUM_ELIMINATED_VARS,
+                                           _fixedVariables.size() +
+                                           _mergedVariables.size() );
 
     // Check and remove any fixed variables from the debugging solution
     for ( unsigned i = 0; i < _preprocessed.getNumberOfVariables(); ++i )
@@ -814,7 +817,8 @@ void Preprocessor::eliminateVariables()
         if ( equation->_addends.empty() )
         {
             if ( _statistics )
-                _statistics->ppIncNumEquationsRemoved();
+                _statistics->incUnsignedAttribute
+                    ( Statistics::PP_NUM_EQUATIONS_REMOVED );
 
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
@@ -842,7 +846,8 @@ void Preprocessor::eliminateVariables()
         if ( (*constraint)->constraintObsolete() )
         {
             if ( _statistics )
-                _statistics->ppIncNumConstraintsRemoved();
+                _statistics->incUnsignedAttribute
+                    ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
             if ( _preprocessed._networkLevelReasoner )
                 _preprocessed._networkLevelReasoner->
@@ -884,7 +889,8 @@ void Preprocessor::eliminateVariables()
         if ( (*tsConstraint)->constraintObsolete() )
         {
             if ( _statistics )
-                _statistics->ppIncNumConstraintsRemoved();
+                _statistics->incUnsignedAttribute
+                    ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
             delete *tsConstraint;
             *tsConstraint = NULL;
