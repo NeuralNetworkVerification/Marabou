@@ -78,7 +78,7 @@ public:
       Perform an evaluation of the network for the current input variable
       assignment.
     */
-    void concretizeInputAssignment( double *output );
+    void concretizeInputAssignment();
 
     /*
       Perform a simulation of the network for a specific input

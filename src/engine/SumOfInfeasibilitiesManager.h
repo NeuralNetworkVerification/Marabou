@@ -103,7 +103,7 @@ private:
 
     const List<PiecewiseLinearConstraint *> &_plConstraints;
     const ITableau &_tableau;
-    const NLR::NetworkLevelReasoner *_networkLevelReasoner;
+    NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     SoIInitializationStrategy _initializationStrategy;
     SoISearchStrategy _searchStrategy;
@@ -112,6 +112,11 @@ private:
     Map<PiecewiseLinearConstraint *, PhaseStatus> _currentProposal;
 
     Statistics *_statistics;
+
+    /*
+      Clear _currentPhasePattern and _currentProposal
+    */
+    void resetPhasePattern();
 
     /*
       Set _currentPhasePattern according to the current input assignment.

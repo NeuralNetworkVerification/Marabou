@@ -1980,34 +1980,32 @@ public:
 
         populateNetwork( nlr );
 
-        double output[2];
-
         // With ReLUs, Inputs are zeros, only biases count
         tableau.nextValues[0] = 0;
         tableau.nextValues[1] = 0;
 
-        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( output ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment() );
 
-        TS_ASSERT( FloatUtils::areEqual( output[0], 1 ) );
-        TS_ASSERT( FloatUtils::areEqual( output[1], 4 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 4 ) );
 
         // With ReLUs, case 1
         tableau.nextValues[0] = 1;
         tableau.nextValues[1] = 1;
 
-        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( output ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment() );
 
-        TS_ASSERT( FloatUtils::areEqual( output[0], 1 ) );
-        TS_ASSERT( FloatUtils::areEqual( output[1], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 1 ) );
 
         // With ReLUs, case 2
         tableau.nextValues[0] = 1;
         tableau.nextValues[1] = 2;
 
-        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( output ) );
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment() );
 
-        TS_ASSERT( FloatUtils::areEqual( output[0], 0 ) );
-        TS_ASSERT( FloatUtils::areEqual( output[1], 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 0 ) );
     }
 
 };

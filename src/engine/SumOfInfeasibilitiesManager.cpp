@@ -27,6 +27,12 @@ SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
 {}
 
+void SumOfInfeasibilitiesManager::resetPhasePattern()
+{
+    _currentPhasePattern.clear();
+    _currentProposal.clear();
+}
+
 LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
 {
     LinearExpression cost;
@@ -39,6 +45,7 @@ LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
 
 void SumOfInfeasibilitiesManager::initializePhasePattern()
 {
+    resetPhasePattern();
     if ( _initializationStrategy == SoIInitializationStrategy::INPUT_ASSIGNMENT
          && _networkLevelReasoner )
     {
@@ -54,4 +61,13 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
 void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignment()
 {
     ASSERT( _networkLevelReasoner );
+    _networkLevelReasoner->concretizeInputAssignment();
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        ASSERT( !_currentPhasePattern.exists( plConstraint ) );
+        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        {
+            _currentPhasePattern[plConstraint] = PHASE_NOT_FIXED;
+        }
+    }
 }
