@@ -833,7 +833,6 @@ String MaxConstraint::serializeToString() const
     return output;
 }
 
-
 bool MaxConstraint::haveOutOfBoundVariables() const
 {
     double fValue = _assignment.get( _f );
