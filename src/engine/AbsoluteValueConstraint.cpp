@@ -126,7 +126,7 @@ void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double val
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incNumBoundNotificationsPlConstraints();
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( existsLowerBound( variable ) &&
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
@@ -177,7 +177,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
 void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incNumBoundNotificationsPlConstraints();
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
