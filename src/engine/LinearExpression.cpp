@@ -58,8 +58,8 @@ void LinearExpression::dump() const
 
     if ( FloatUtils::isPositive( _constant ) )
         output += String( "+" );
-
-    output += Stringf( "%.2lf ", _constant );
+    if ( !FloatUtils::isZero( _constant ) )
+        output += Stringf( "%.2lf ", _constant );
 
     printf( "%s", output.ascii() );
 }

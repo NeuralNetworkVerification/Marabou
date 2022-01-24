@@ -787,9 +787,9 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
             }
             if ( _eliminatedVariables )
                 ASSERT( FloatUtils::gte( _assignment.get( _f ),
-                                         _assignment.get
-                                         ( _maxValueOfEliminated ) ) );
+                                         _maxValueOfEliminated ) );
         });
+
 
     if ( phase == MAX_PHASE_ELIMINATED )
     {

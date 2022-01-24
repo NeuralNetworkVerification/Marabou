@@ -90,7 +90,7 @@ public:
         ipq.getNetworkLevelReasoner()->dumpTopology();
     }
 
-    void test_initialize_phase_pattern_with_input_assignment()
+    void test_initialize_phase_pattern_with_input_assignment1()
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
@@ -135,6 +135,60 @@ public:
         List<PhaseStatus> phases = plConstraints[3]->getAllCases();
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
                                   ( cost, *( ++( ++phases.begin() ) ) ) );
+        cost.dump();
+        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
+    }
+
+    void test_initialize_phase_pattern_with_input_assignment2()
+    {
+        InputQuery ipq;
+        Vector<PiecewiseLinearConstraint *> plConstraints;
+        createInputQuery( ipq, plConstraints );
+        MockTableau tableau;
+        ipq.getNetworkLevelReasoner()->setTableau( &tableau );
+
+        Options::get()->setString
+            ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
+
+        std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
+        TS_ASSERT_THROWS_NOTHING
+            ( soiManager =
+              std::unique_ptr<SumOfInfeasibilitiesManager>
+              ( new SumOfInfeasibilitiesManager( ipq ) ) );
+
+        tableau.nextValues[0] = 1;
+        tableau.nextValues[2] = 2;
+        tableau.nextValues[4] = -1;
+        plConstraints[0]->notifyVariableValue( 0, 1 );
+        plConstraints[0]->notifyVariableValue( 1, 1 );
+
+        // Phase is fixed, won't add the second relu to SoI
+        plConstraints[1]->notifyLowerBound( 2, 2 );
+        plConstraints[1]->notifyVariableValue( 2, 2 );
+        plConstraints[1]->notifyVariableValue( 3, 2 );
+
+        plConstraints[2]->notifyVariableValue( 4, -1 );
+        plConstraints[2]->notifyVariableValue( 5, 0 );
+
+        // Eliminate the variable from the max constraint
+        plConstraints[3]->eliminateVariable( 3, 2 );
+        ipq.getNetworkLevelReasoner()->eliminateVariable( 3, 2 );
+
+        plConstraints[3]->notifyVariableValue( 1, 1 );
+        plConstraints[3]->notifyVariableValue( 5, 0 );
+        plConstraints[3]->notifyVariableValue( 6, 2 );
+
+        // The input assignment is [-1, 1, 2], the output of the max should be 2
+        TS_ASSERT_THROWS_NOTHING
+            (soiManager->initializePhasePattern() );
+
+        LinearExpression cost;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost, MAX_PHASE_ELIMINATED ) );
         cost.dump();
         TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
     }
