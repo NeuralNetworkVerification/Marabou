@@ -242,6 +242,11 @@ void SumOfInfeasibilitiesManager::obtainCurrentAssignment()
         _currentAssignment[i] = _tableau.getValue( i );
 }
 
+void SumOfInfeasibilitiesManager::setStatistics( Statistics *statistics )
+{
+    _statistics = statistics;
+}
+
 void SumOfInfeasibilitiesManager::getReducedCost( PiecewiseLinearConstraint *
                                                   plConstraint, double
                                                   &reducedCost, PhaseStatus

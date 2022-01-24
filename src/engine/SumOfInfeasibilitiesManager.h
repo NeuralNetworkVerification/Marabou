@@ -101,9 +101,6 @@ public:
 
     void setStatistics( Statistics *statistics );
 
-    /* Debug only */
-    void dumpHeuristicCost();
-
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
     // Used for the heuristic initialization of the phase pattern.
@@ -174,8 +171,6 @@ private:
 
     void getReducedCost( PiecewiseLinearConstraint *plConstraint, double
                          &reducedCost, PhaseStatus &phaseOfReducedCost ) const;
-
-
 };
 
 #endif // __SumOfInfeasibilitiesManager_h__
