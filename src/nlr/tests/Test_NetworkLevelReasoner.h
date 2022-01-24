@@ -1991,6 +1991,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 4 ) );
 
+        TS_ASSERT( assignment.size() == 14 );
         TS_ASSERT( FloatUtils::areEqual( assignment[12], 1 ) );
         TS_ASSERT( FloatUtils::areEqual( assignment[13], 4 ) );
 

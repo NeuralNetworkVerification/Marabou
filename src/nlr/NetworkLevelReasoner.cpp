@@ -118,9 +118,6 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
 void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
                                                       &assignment )
 {
-    if ( !_tableau )
-        return;
-
     Layer *inputLayer = _layerIndexToLayer[0];
     ASSERT( inputLayer->getLayerType() == Layer::INPUT );
 

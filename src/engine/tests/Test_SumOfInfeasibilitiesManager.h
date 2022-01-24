@@ -87,6 +87,7 @@ public:
         relu3->notifyLowerBound( 5, 0 );
 
         TS_ASSERT( ipq.constructNetworkLevelReasoner() );
+        ipq.getNetworkLevelReasoner()->dumpTopology();
     }
 
     void test_initialize_phase_pattern_with_input_assignment()
@@ -94,8 +95,8 @@ public:
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
         createInputQuery( ipq, plConstraints );
-
         MockTableau tableau;
+        ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString
             ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -104,7 +105,7 @@ public:
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
-              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
+              ( new SumOfInfeasibilitiesManager( ipq ) ) );
 
         tableau.nextValues[0] = -1;
         tableau.nextValues[2] = 1;

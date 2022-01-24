@@ -18,10 +18,8 @@
 #include "SumOfInfeasibilitiesManager.h"
 
 SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
-                                                          &inputQuery, const
-                                                          ITableau &tableau )
+                                                          &inputQuery )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
-    , _tableau( tableau )
     , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )
     , _initializationStrategy( Options::get()->getSoIInitializationStrategy() )
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
@@ -63,12 +61,17 @@ void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignme
     ASSERT( _networkLevelReasoner );
     Map<unsigned, double> assignment;
     _networkLevelReasoner->concretizeInputAssignment( assignment );
+    std::cout << "Assignment: " << std::endl;
+    for ( const auto pair : assignment )
+        std::cout << pair.first << " " << pair.second << std::endl;
+
     for ( const auto &plConstraint : _plConstraints )
     {
         ASSERT( !_currentPhasePattern.exists( plConstraint ) );
         if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
-            _currentPhasePattern[plConstraint] = PHASE_NOT_FIXED;
+            _currentPhasePattern[plConstraint] =
+                plConstraint->getPhaseStatusInAssignment( assignment );
         }
     }
 }

@@ -37,8 +37,7 @@ class SumOfInfeasibilitiesManager
 {
 public:
 
-    SumOfInfeasibilitiesManager( const InputQuery &inputQuery,
-                                 const ITableau &tableau );
+    SumOfInfeasibilitiesManager( const InputQuery &inputQuery );
 
     /*
       Obtain the actual phase pattern from _currentPhasepattern
@@ -102,7 +101,6 @@ private:
     friend class Test_SumOfInfeasibilitiesManager;
 
     const List<PiecewiseLinearConstraint *> &_plConstraints;
-    const ITableau &_tableau;
     NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     SoIInitializationStrategy _initializationStrategy;
