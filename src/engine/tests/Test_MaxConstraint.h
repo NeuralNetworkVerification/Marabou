@@ -3306,6 +3306,13 @@ public:
         TS_ASSERT_EQUALS( cost3._addends[1], 1 );
         TS_ASSERT_EQUALS( cost3._addends[3], -1 );
         TS_ASSERT_EQUALS( cost3._constant, 0 );
+
+        // Each case returned by getAllCases() should be eligible as a term in
+        // the SoI.
+        for ( const auto &phase : phases )
+            TS_ASSERT_THROWS_NOTHING( max2.getCostFunctionComponent
+                                      ( cost3, phase ) );
+
     }
 
     void test_get_phase_in_assignment()

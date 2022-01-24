@@ -105,7 +105,7 @@ public:
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
-              ( new SumOfInfeasibilitiesManager( ipq ) ) );
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         tableau.nextValues[0] = -1;
         tableau.nextValues[2] = 1;
@@ -156,7 +156,7 @@ public:
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
-              ( new SumOfInfeasibilitiesManager( ipq ) ) );
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         tableau.nextValues[0] = 1;
         tableau.nextValues[2] = 2;
@@ -213,7 +213,7 @@ public:
         TS_ASSERT_THROWS_NOTHING
             ( soiManager =
               std::unique_ptr<SumOfInfeasibilitiesManager>
-              ( new SumOfInfeasibilitiesManager( ipq ) ) );
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         tableau.nextValues[0] = 1;
         tableau.nextValues[2] = 2;

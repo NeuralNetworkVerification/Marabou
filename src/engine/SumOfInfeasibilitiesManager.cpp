@@ -20,11 +20,16 @@
 #include "Set.h"
 
 SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
-                                                          &inputQuery )
+                                                          &inputQuery,
+                                                          const ITableau
+                                                          &tableau )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
     , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )
+    , _tableau( tableau )
     , _initializationStrategy( Options::get()->getSoIInitializationStrategy() )
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
+    , _probabilityDensityParameter( Options::get()->getFloat
+                                    ( Options::PROBABILITY_DENSITY_PARAMETER ) )
 {}
 
 void SumOfInfeasibilitiesManager::resetPhasePattern()
@@ -58,7 +63,7 @@ LinearExpression SumOfInfeasibilitiesManager::getProposedSoIPhasePattern() const
         pair.first->getCostFunctionComponent( cost, pair.second );
 
     for ( const auto &pair : _currentPhasePattern )
-        if ( _currentProposal.exists( pair.first ) )
+        if ( !_currentProposal.exists( pair.first ) )
             pair.first->getCostFunctionComponent( cost, pair.second );
 
     return cost;
@@ -118,6 +123,8 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
 void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
 {
     DEBUG({
+            // _plConstraintsInCurrentPhasePattern should contain the same
+            // plConstraints in _currentPhasePattern
             ASSERT( _plConstraintsInCurrentPhasePattern.size() ==
                     _currentPhasePattern.size() );
             for ( const auto &pair : _currentPhasePattern )
@@ -155,6 +162,23 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
+bool SumOfInfeasibilitiesManager::decideToAcceptCurrentProposal
+( double costOfCurrentPhasePattern, double costOfProposedPhasePattern )
+{
+    if ( costOfProposedPhasePattern < costOfCurrentPhasePattern )
+        return true;
+    else
+    {
+        // The smaller the difference between the proposed phase pattern and the
+        // current phase pattern, the more likely to accept the proposal.
+        double prob = exp( -_probabilityDensityParameter *
+                           ( costOfProposedPhasePattern -
+                             costOfCurrentPhasePattern ) );
+        return ( (float) rand() / RAND_MAX ) < prob;
+    }
+}
+
+
 void SumOfInfeasibilitiesManager::acceptCurrentProposal()
 {
     // We update _currentPhasePattern with entries in _currentProposal
@@ -162,6 +186,13 @@ void SumOfInfeasibilitiesManager::acceptCurrentProposal()
     {
         _currentPhasePattern[pair.first] = pair.second;
     }
+}
+
+void SumOfInfeasibilitiesManager::updateCurrentPhasePatternForSatisfiedPLConstraints()
+{
+    //for ( const auto &pair : _currentPhasePattern )
+    //   {
+    //      if ( pair.first->satisfied() )
 }
 
 void SumOfInfeasibilitiesManager::removeCostComponentFromHeuristicCost
@@ -173,4 +204,14 @@ void SumOfInfeasibilitiesManager::removeCostComponentFromHeuristicCost
         ASSERT( _plConstraintsInCurrentPhasePattern.exists( constraint ) );
         _plConstraintsInCurrentPhasePattern.erase( constraint );
     }
+}
+
+void SumOfInfeasibilitiesManager::getReducedCost( double &reducedCost,
+                                                  PhaseStatus
+                                                  &phaseOfReducedCost ) const
+{
+    //List<PhaseStatus> allPhases = plConstraintToUpdate->getAllCases();
+    //allPhases.erase( currentPhase );
+    reducedCost = 0;
+    phaseOfReducedCost = PHASE_NOT_FIXED;
 }

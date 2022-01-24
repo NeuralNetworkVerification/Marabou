@@ -18,6 +18,7 @@
 
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
+#include "ITableau.h"
 #include "LinearExpression.h"
 #include "List.h"
 #include "NetworkLevelReasoner.h"
@@ -36,7 +37,8 @@ class SumOfInfeasibilitiesManager
 {
 public:
 
-    SumOfInfeasibilitiesManager( const InputQuery &inputQuery );
+    SumOfInfeasibilitiesManager( const InputQuery &inputQuery, const ITableau
+                                 &tableau );
 
     /*
       Returns the actual current phase pattern from _currentPhasePattern
@@ -67,7 +69,7 @@ public:
 
     /*
       The acceptance heuristic is standard: if the newCost is less than
-      _costOfCurrentphasepattern, we always accept. Otherwise, the probability
+      the current cost, we always accept. Otherwise, the probability
       to accept the proposal is reversely proportional to the difference between
       the newCost and the _costOfcurrentphasepattern.
     */
@@ -82,7 +84,7 @@ public:
     // Go through each PLConstraint, check whether it is satisfied by the
     // current assignment but the cost term is not zero. In that case,
     // we use the cost term corresponding to the phase of the current assignment
-    // for that PLConstraint. This way, the cost term is trivially minimized.
+    // for that PLConstraint. This way, the overall SoI cost is reduced for free.
     void updateCurrentPhasePatternForSatisfiedPLConstraints();
 
     // During the Simplex execution, the phase of a piecewise linear constraint
@@ -92,9 +94,6 @@ public:
     void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint
                                                *constraint );
 
-    // Compute _currentPhasePattern from the current variable assignment.
-    double computeHeuristicCost();
-
     void setStatistics( Statistics *statistics );
 
     /* Debug only */
@@ -102,10 +101,15 @@ public:
 
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
+    // Used for the heuristic initialization of the phase pattern.
     NLR::NetworkLevelReasoner *_networkLevelReasoner;
+    // Used for accessing the current variable assignment.
+    const ITableau &_tableau;
 
+    // Parameters that controls the local search heuristics
     SoIInitializationStrategy _initializationStrategy;
     SoISearchStrategy _searchStrategy;
+    double _probabilityDensityParameter;
 
     /*
       The representation of the current phase pattern (one linear phase of the
@@ -155,6 +159,10 @@ private:
       fall back to proposePhasePatternUpdateRandomly()
     */
     void proposePhasePatternUpdateWalksat();
+
+    void getReducedCost( double &reducedCost,
+                         PhaseStatus &phaseOfReducedCost ) const;
+
 
 };
 
