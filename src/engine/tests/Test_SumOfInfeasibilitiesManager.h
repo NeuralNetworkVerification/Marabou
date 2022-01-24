@@ -125,6 +125,8 @@ public:
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );
 
+        // So the cost compoenents in the SoI should be:
+        // relu1: inactive, relu2: active, relu3: active, max: third max input
         LinearExpression cost;
         TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
                                   ( cost, RELU_PHASE_INACTIVE ) );
@@ -178,7 +180,10 @@ public:
         plConstraints[3]->notifyVariableValue( 5, 0 );
         plConstraints[3]->notifyVariableValue( 6, 2 );
 
-        // The input assignment is [-1, 1, 2], the output of the max should be 2
+        // The input assignment is [1, 2, -1], the output of the max constraint
+        // should be 2
+        // So the cost compoenents in the SoI should be:
+        // relu1: active, relu3: inactive, max: PHASE_ELIMINATED
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );
 
