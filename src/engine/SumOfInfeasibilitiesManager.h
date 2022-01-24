@@ -85,14 +85,17 @@ public:
     // might be fixed due to additional tightening.
     // In that case, we remove the cost term for that piecewise linear constraint
     // from the heuristic cost.
-    void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint *constraint );
+    inline void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint
+                                                      *constraint )
+    {
+        if ( _currentPhasePattern.exists( constraint ) )
+            _currentPhasePattern.erase( constraint );
+    }
 
     // Compute _currentPhasePattern from the current variable assignment.
     double computeHeuristicCost();
 
     void setStatistics( Statistics *statistics );
-
-    void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *networkLevelReasoner );
 
     /* Debug only */
     void dumpHeuristicCost();
