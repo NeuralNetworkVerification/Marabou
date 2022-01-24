@@ -213,7 +213,8 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
         newBoundsLearned = onePassOverInvertedBasisRows();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+            _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+                                           newBoundsLearned );
 
         --maxNumberOfIterations;
     }
@@ -274,7 +275,9 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
             newBoundsLearned = onePassOverInvertedBasisRows();
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
-                _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+                _statistics->
+                    incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+                                      newBoundsLearned );
 
             --maxNumberOfIterations;
         }
@@ -483,7 +486,9 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
         newBoundsLearned = onePassOverConstraintMatrix();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->incNumTighteningsFromConstraintMatrix( newBoundsLearned );
+            _statistics->
+                incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX,
+                                  newBoundsLearned );
 
         --maxNumberOfIterations;
     }
@@ -641,13 +646,14 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 void RowBoundTightener::examinePivotRow()
 {
 	if ( _statistics )
-        _statistics->incNumRowsExaminedByRowTightener();
+        _statistics->incLongAttribute( Statistics::NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER );
 
     const TableauRow &row( *_tableau.getPivotRow() );
     unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )
-        _statistics->incNumTighteningsFromRows( newBoundsLearned );
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_ROWS,
+                                       newBoundsLearned );
 }
 
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const

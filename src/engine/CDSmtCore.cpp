@@ -137,8 +137,8 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
 
     if ( _statistics )
     {
-        _statistics->incNumSplits();
-        _statistics->incNumVisitedTreeStates();
+        _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
     }
 
     if ( !constraint->isFeasible() )
@@ -151,9 +151,16 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
 
     if ( _statistics )
     {
-        _statistics->setCurrentDecisionLevel( _context.getLevel() );
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
+
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
     SMT_LOG( "Performing a ReLU split - DONE" );
 }
@@ -230,7 +237,7 @@ bool CDSmtCore::backtrackAndContinueSearch()
     ASSERT( feasibleDecision.isFeasible() );
 
     if ( _statistics )
-        _statistics->incNumVisitedTreeStates();
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
 
     PiecewiseLinearConstraint *pwlc = feasibleDecision._pwlConstraint;
     if ( pwlc->isImplication() )
@@ -240,9 +247,15 @@ bool CDSmtCore::backtrackAndContinueSearch()
 
     if ( _statistics )
     {
-        _statistics->setCurrentDecisionLevel( getDecisionLevel() );
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
 
     checkSkewFromDebuggingSolution();

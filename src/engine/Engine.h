@@ -58,6 +58,10 @@ class String;
 class Engine : public IEngine, public SignalHandler::Signalable
 {
 public:
+    enum {
+          MICROSECONDS_TO_SECONDS = 1000000,
+    };
+
     Engine();
     ~Engine();
 

@@ -313,7 +313,10 @@ void Tableau::setDimensions( unsigned m, unsigned n )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
 
     if ( _statistics )
-        _statistics->setCurrentTableauDimension( _m, _n );
+    {
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
+    }
 }
 
 void Tableau::setConstraintMatrix( const double *A )
@@ -731,7 +734,7 @@ void Tableau::performPivot()
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
-            _statistics->incNumTableauBoundHopping();
+            _statistics->incLongAttribute( Statistics::NUM_TABLEAU_BOUND_HOPPING );
 
         double enteringReducedCost = _costFunctionManager->getCostFunction()[_enteringVariable];
 
@@ -758,7 +761,7 @@ void Tableau::performPivot()
     if ( _statistics )
     {
         pivotStart = TimeUtils::sampleMicro();
-        _statistics->incNumTableauPivots();
+        _statistics->incLongAttribute( Statistics::NUM_TABLEAU_PIVOTS );
     }
 
     unsigned currentBasic = _basicIndexToVariable[_leavingVariable];
@@ -803,7 +806,7 @@ void Tableau::performPivot()
 
     // Check if the pivot is degenerate and update statistics
     if ( FloatUtils::isZero( _changeRatio ) && _statistics )
-        _statistics->incNumTableauDegeneratePivots();
+        _statistics->incLongAttribute( Statistics::NUM_TABLEAU_DEGENERATE_PIVOTS );
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
@@ -814,7 +817,7 @@ void Tableau::performPivot()
     if ( _statistics )
     {
         struct timespec pivotEnd = TimeUtils::sampleMicro();
-        _statistics->addTimePivots( TimeUtils::timePassed( pivotStart, pivotEnd ) );
+        _statistics->incLongAttribute( Statistics::TIME_PIVOTS_MICRO, TimeUtils::timePassed( pivotStart, pivotEnd ) );
     }
 }
 
@@ -824,9 +827,9 @@ void Tableau::performDegeneratePivot()
     if ( _statistics )
     {
         pivotStart = TimeUtils::sampleMicro();
-        _statistics->incNumTableauPivots();
-        _statistics->incNumTableauDegeneratePivots();
-        _statistics->incNumTableauDegeneratePivotsByRequest();
+        _statistics->incLongAttribute( Statistics::NUM_TABLEAU_PIVOTS );
+        _statistics->incLongAttribute( Statistics::NUM_TABLEAU_DEGENERATE_PIVOTS );
+        _statistics->incLongAttribute( Statistics::NUM_TABLEAU_DEGENERATE_PIVOTS_BY_REQUEST );
     }
 
     ASSERT( _enteringVariable < _n - _m );
@@ -863,7 +866,7 @@ void Tableau::performDegeneratePivot()
     if ( _statistics )
     {
         struct timespec pivotEnd = TimeUtils::sampleMicro();
-        _statistics->addTimePivots( TimeUtils::timePassed( pivotStart, pivotEnd ) );
+        _statistics->incLongAttribute( Statistics::TIME_PIVOTS_MICRO, TimeUtils::timePassed( pivotStart, pivotEnd ) );
     }
 }
 
@@ -1735,7 +1738,10 @@ void Tableau::restoreState( const TableauState &state )
     computeCostFunction();
 
     if ( _statistics )
-        _statistics->setCurrentTableauDimension( _m, _n );
+    {
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
+    }
 }
 
 void Tableau::checkBoundsValid()
@@ -1811,7 +1817,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
         return;
 
     if ( _statistics )
-        _statistics->incNumTightenedBounds();
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENED_BOUNDS );
 
     setLowerBound( variable, value );
 
@@ -1826,7 +1832,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
         return;
 
     if ( _statistics )
-        _statistics->incNumTightenedBounds();
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENED_BOUNDS );
 
     setUpperBound( variable, value );
 
@@ -2128,8 +2134,9 @@ void Tableau::addRow()
 
     if ( _statistics )
     {
-        _statistics->incNumAddedRows();
-        _statistics->setCurrentTableauDimension( _m, _n );
+        _statistics->incLongAttribute( Statistics::NUM_ADDED_ROWS );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
     }
 }
 
@@ -2586,7 +2593,7 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
     computeCostFunction();
 
     if ( _statistics )
-        _statistics->incNumMergedColumns();
+        _statistics->incLongAttribute( Statistics::NUM_MERGED_COLUMNS );
 }
 
 bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient )
