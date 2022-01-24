@@ -37,6 +37,8 @@ public:
 
     bool operator==( const LinearExpression &other ) const;
 
+    double evaluate( const Map<unsigned, double> &assignment );
+
     /*
       For debugging
     */

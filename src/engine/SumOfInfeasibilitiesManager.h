@@ -94,6 +94,11 @@ public:
     void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint
                                                *constraint );
 
+    /*
+      Obtain the current variable assignment from the Tableau.
+    */
+    void obtainCurrentAssignment();
+
     void setStatistics( Statistics *statistics );
 
     /* Debug only */
@@ -103,6 +108,7 @@ private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
     // Used for the heuristic initialization of the phase pattern.
     NLR::NetworkLevelReasoner *_networkLevelReasoner;
+    unsigned _numberOfVariables;
     // Used for accessing the current variable assignment.
     const ITableau &_tableau;
 
@@ -132,6 +138,12 @@ private:
     */
     Vector<PiecewiseLinearConstraint *> _plConstraintsInCurrentPhasePattern;
 
+    /*
+      A local copy of the current variable assignment, which is refreshed via
+      the obtainCurrentAssignment() method.
+    */
+    Map<unsigned, double> _currentAssignment;
+
     Statistics *_statistics;
 
     /*
@@ -160,8 +172,8 @@ private:
     */
     void proposePhasePatternUpdateWalksat();
 
-    void getReducedCost( double &reducedCost,
-                         PhaseStatus &phaseOfReducedCost ) const;
+    void getReducedCost( PiecewiseLinearConstraint *plConstraint, double
+                         &reducedCost, PhaseStatus &phaseOfReducedCost ) const;
 
 
 };

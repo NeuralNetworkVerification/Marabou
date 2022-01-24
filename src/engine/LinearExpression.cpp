@@ -42,6 +42,20 @@ bool LinearExpression::operator==( const LinearExpression &other ) const
         ( _constant == other._constant );
 }
 
+double LinearExpression::evaluate( const Map<unsigned, double> &assignment )
+{
+    double sum = 0;
+    for ( const auto &addend : _addends )
+    {
+        if ( FloatUtils::isZero( addend.second ) )
+            continue;
+        else
+            sum += addend.second * assignment[addend.first];
+    }
+    sum += _constant;
+    return sum;
+}
+
 void LinearExpression::dump() const
 {
     String output = "";

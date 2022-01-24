@@ -13,6 +13,7 @@
 
 **/
 
+#include "FloatUtils.h"
 #include "MarabouError.h"
 #include "Options.h"
 #include "SumOfInfeasibilitiesManager.h"
@@ -25,6 +26,7 @@ SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
                                                           &tableau )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
     , _networkLevelReasoner( inputQuery.getNetworkLevelReasoner() )
+    , _numberOfVariables( inputQuery.getNumberOfVariables() )
     , _tableau( tableau )
     , _initializationStrategy( Options::get()->getSoIInitializationStrategy() )
     , _searchStrategy( Options::get()->getSoISearchStrategy() )
@@ -91,9 +93,6 @@ void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignme
     ASSERT( _networkLevelReasoner );
     Map<unsigned, double> assignment;
     _networkLevelReasoner->concretizeInputAssignment( assignment );
-    std::cout << "Assignment: " << std::endl;
-    for ( const auto pair : assignment )
-        std::cout << pair.first << " " << pair.second << std::endl;
 
     for ( const auto &plConstraint : _plConstraints )
     {
@@ -159,7 +158,31 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
 
 void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
 {
-    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+    // Flip the cost term that reduces the cost by the most
+    PiecewiseLinearConstraint *plConstraintToUpdate = NULL;
+    PhaseStatus updatedPhase = PHASE_NOT_FIXED;
+    double maxReducedCost = 0;
+    for ( const auto &plConstraint : _plConstraintsInCurrentPhasePattern )
+    {
+        double reducedCost = 0;
+        PhaseStatus phaseStatusOfReducedCost = PHASE_NOT_FIXED;
+        getReducedCost( plConstraint, reducedCost, phaseStatusOfReducedCost );
+
+        if ( reducedCost > maxReducedCost )
+        {
+            plConstraintToUpdate = plConstraint;
+            updatedPhase = phaseStatusOfReducedCost;
+        }
+    }
+
+    if ( plConstraintToUpdate )
+    {
+        _currentProposal[plConstraintToUpdate] = updatedPhase;
+    }
+    else
+    {
+        proposePhasePatternUpdateRandomly();
+    }
 }
 
 bool SumOfInfeasibilitiesManager::decideToAcceptCurrentProposal
@@ -190,9 +213,15 @@ void SumOfInfeasibilitiesManager::acceptCurrentProposal()
 
 void SumOfInfeasibilitiesManager::updateCurrentPhasePatternForSatisfiedPLConstraints()
 {
-    //for ( const auto &pair : _currentPhasePattern )
-    //   {
-    //      if ( pair.first->satisfied() )
+    for ( const auto &pair : _currentPhasePattern )
+    {
+        if ( pair.first->satisfied() )
+        {
+            PhaseStatus satisfiedPhaseStatus =
+                pair.first->getPhaseStatusInAssignment( _currentAssignment );
+            _currentPhasePattern[pair.first] = satisfiedPhaseStatus;
+        }
+    }
 }
 
 void SumOfInfeasibilitiesManager::removeCostComponentFromHeuristicCost
@@ -206,12 +235,43 @@ void SumOfInfeasibilitiesManager::removeCostComponentFromHeuristicCost
     }
 }
 
-void SumOfInfeasibilitiesManager::getReducedCost( double &reducedCost,
-                                                  PhaseStatus
+void SumOfInfeasibilitiesManager::obtainCurrentAssignment()
+{
+    _currentAssignment.clear();
+    for ( unsigned i = 0; i < _numberOfVariables; ++i )
+        _currentAssignment[i] = _tableau.getValue( i );
+}
+
+void SumOfInfeasibilitiesManager::getReducedCost( PiecewiseLinearConstraint *
+                                                  plConstraint, double
+                                                  &reducedCost, PhaseStatus
                                                   &phaseOfReducedCost ) const
 {
-    //List<PhaseStatus> allPhases = plConstraintToUpdate->getAllCases();
-    //allPhases.erase( currentPhase );
-    reducedCost = 0;
+    ASSERT( _currentPhasePattern.exists( plConstraint ) );
+
+    PhaseStatus currentPhase = _currentPhasePattern[plConstraint];
+    List<PhaseStatus> allPhases = plConstraint->getAllCases();
+    allPhases.erase( currentPhase );
+    ASSERT( allPhases.size() > 0 ); // Otherwise, the constraint must be fixed.
+
+    LinearExpression costComponent;
+    plConstraint->getCostFunctionComponent( costComponent, currentPhase );
+    double currentCost = costComponent.evaluate( _currentAssignment );
+
+    reducedCost = FloatUtils::infinity();
     phaseOfReducedCost = PHASE_NOT_FIXED;
+    for ( const auto &phase : allPhases )
+    {
+        LinearExpression otherCostComponent;
+        plConstraint->getCostFunctionComponent( otherCostComponent, phase );
+        double otherCost = otherCostComponent.evaluate( _currentAssignment );
+        double currentReducedCost = currentCost - otherCost;
+        if ( FloatUtils::lt( currentReducedCost, reducedCost ) )
+        {
+            reducedCost = currentReducedCost;
+            phaseOfReducedCost = phase;
+        }
+    }
+    ASSERT( reducedCost != FloatUtils::infinity() &&
+            phaseOfReducedCost != PHASE_NOT_FIXED );
 }
