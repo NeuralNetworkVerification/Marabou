@@ -862,6 +862,15 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
     }
 }
 
+PhaseStatus ReluConstraint::getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                        &assignment ) const
+{
+    ASSERT( assignment.exists( _b ) );
+    return FloatUtils::isNegative( assignment[_b] ) ?
+        RELU_PHASE_INACTIVE : RELU_PHASE_ACTIVE;
+}
+
+
 bool ReluConstraint::haveOutOfBoundVariables() const
 {
     double bValue = _assignment.get( _b );

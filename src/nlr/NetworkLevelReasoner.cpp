@@ -115,7 +115,8 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
-void NetworkLevelReasoner::concretizeInputAssignment()
+void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
+                                                      &assignment )
 {
     if ( !_tableau )
         return;
@@ -133,7 +134,9 @@ void NetworkLevelReasoner::concretizeInputAssignment()
         if ( !inputLayer->neuronEliminated( index ) )
         {
             unsigned variable = inputLayer->neuronToVariable( index );
-            input[index] = _tableau->getValue( variable );
+            double value = _tableau->getValue( variable );
+            input[index] = value;
+            assignment[variable] = value;
         }
         else
             input[index] = inputLayer->getEliminatedNeuronValue( index );
@@ -142,7 +145,16 @@ void NetworkLevelReasoner::concretizeInputAssignment()
     _layerIndexToLayer[0]->setAssignment( input );
 
     for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
-        _layerIndexToLayer[i]->computeAssignment();
+    {
+        Layer *currentLayer = _layerIndexToLayer[i];
+        currentLayer->computeAssignment();
+        for ( unsigned index = 0; index < currentLayer->getSize(); ++index )
+        {
+            if ( !currentLayer->neuronEliminated( index ) )
+                assignment[currentLayer->neuronToVariable( index )] =
+                    currentLayer->getAssignment( index );
+        }
+    }
 
     delete[] input;
 }

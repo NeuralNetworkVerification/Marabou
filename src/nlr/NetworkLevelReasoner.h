@@ -76,9 +76,9 @@ public:
 
     /*
       Perform an evaluation of the network for the current input variable
-      assignment.
+      assignment and store the resulting variable assignment in the assignment.
     */
-    void concretizeInputAssignment();
+    void concretizeInputAssignment( Map<unsigned, double> &assignment );
 
     /*
       Perform a simulation of the network for a specific input

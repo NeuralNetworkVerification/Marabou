@@ -61,7 +61,8 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
 void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignment()
 {
     ASSERT( _networkLevelReasoner );
-    _networkLevelReasoner->concretizeInputAssignment();
+    Map<unsigned, double> assignment;
+    _networkLevelReasoner->concretizeInputAssignment( assignment );
     for ( const auto &plConstraint : _plConstraints )
     {
         ASSERT( !_currentPhasePattern.exists( plConstraint ) );

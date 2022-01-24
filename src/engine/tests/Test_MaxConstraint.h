@@ -3307,4 +3307,37 @@ public:
         TS_ASSERT_EQUALS( cost3._addends[3], -1 );
         TS_ASSERT_EQUALS( cost3._constant, 0 );
     }
+
+    void test_get_phase_in_assignment()
+    {
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 5; ++i )
+            elements.insert( i );
+
+        MaxConstraint max( f, elements );
+
+        max.eliminateVariable( 2, 1 );
+
+        max.notifyVariableValue( 1, 1 );
+        max.notifyVariableValue( 3, 1.5 );
+        max.notifyVariableValue( 4, 1.8 );
+
+        Map<unsigned, double> assignment;
+        assignment[1] = 2;
+        assignment[3] = 2;
+        assignment[4] = 1;
+        List<PhaseStatus> phases;
+        TS_ASSERT_THROWS_NOTHING( phases = max.getAllCases() );
+        TS_ASSERT_EQUALS( max.getPhaseStatusInAssignment( assignment ),
+                          *phases.begin() );
+
+        assignment[1] = 1;
+        assignment[3] = 0.9;
+        assignment[4] = 0.8;
+        TS_ASSERT_EQUALS( max.getPhaseStatusInAssignment( assignment ),
+                          MAX_PHASE_ELIMINATED );
+    }
+
 };
