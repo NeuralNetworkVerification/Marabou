@@ -18,7 +18,6 @@
 
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
-#include "ITableau.h"
 #include "LinearExpression.h"
 #include "List.h"
 #include "NetworkLevelReasoner.h"
@@ -40,9 +39,15 @@ public:
     SumOfInfeasibilitiesManager( const InputQuery &inputQuery );
 
     /*
-      Obtain the actual phase pattern from _currentPhasepattern
+      Returns the actual current phase pattern from _currentPhasePattern
     */
     LinearExpression getSoIPhasePattern() const;
+
+    /*
+      Returns the actual proposed phase pattern from _currentPhasePattern
+      and _currentProposal
+    */
+    LinearExpression getProposedSoIPhasePattern() const;
 
     /*
       Called at the beginning of the local search (DeepSoI).
@@ -70,8 +75,7 @@ public:
                                         double costOfProposedPhasePattern );
 
     /*
-      Set the _currentPhasePattern to be _currentPhasePattern + _currentProposal.
-      Then clear the _currentProposal.
+      Update _currentPhasePattern with _currentProposal.
     */
     void acceptCurrentProposal();
 
@@ -85,12 +89,8 @@ public:
     // might be fixed due to additional tightening.
     // In that case, we remove the cost term for that piecewise linear constraint
     // from the heuristic cost.
-    inline void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint
-                                                      *constraint )
-    {
-        if ( _currentPhasePattern.exists( constraint ) )
-            _currentPhasePattern.erase( constraint );
-    }
+    void removeCostComponentFromHeuristicCost( PiecewiseLinearConstraint
+                                               *constraint );
 
     // Compute _currentPhasePattern from the current variable assignment.
     double computeHeuristicCost();
@@ -101,16 +101,32 @@ public:
     void dumpHeuristicCost();
 
 private:
-    friend class Test_SumOfInfeasibilitiesManager;
-
     const List<PiecewiseLinearConstraint *> &_plConstraints;
     NLR::NetworkLevelReasoner *_networkLevelReasoner;
 
     SoIInitializationStrategy _initializationStrategy;
     SoISearchStrategy _searchStrategy;
 
+    /*
+      The representation of the current phase pattern (one linear phase of the
+      non-linear SoI function) as a mapping from PLConstraints to phase patterns.
+      We do not keep the concrete LinearExpression explicitly but will concretize
+      it on the fly. This makes it cheap to update the phase pattern.
+    */
     Map<PiecewiseLinearConstraint *, PhaseStatus> _currentPhasePattern;
+
+    /*
+      The proposed update to the current phase pattern. For instance, it can
+      contain one of the ReLUConstraint in the _currentPhasePattern
+      with PhaseStatus flipped.
+    */
     Map<PiecewiseLinearConstraint *, PhaseStatus> _currentProposal;
+
+    /*
+      The constraints in the current phase pattern (i.e., participating in the
+      SoI) stored in a Vector for ease of random access.
+    */
+    Vector<PiecewiseLinearConstraint *> _plConstraintsInCurrentPhasePattern;
 
     Statistics *_statistics;
 
@@ -123,6 +139,22 @@ private:
       Set _currentPhasePattern according to the current input assignment.
     */
     void initializePhasePatternWithCurrentInputAssignment();
+
+    /*
+      Choose one piecewise linear constraint in the current phase pattern
+      and set it to a uniform-randomly chosen alternative phase status (for ReLU
+      this means we just flip the phase status).
+    */
+    void proposePhasePatternUpdateRandomly();
+
+    /*
+      Iterate over the piecewise linear constraints in the current phase pattern
+      to find one with the largest "reduced cost", which is the reduction in the
+      cost (wrt the current assignment) if we use a different phase status.
+      If no constraint has positive reduced cost (we are at a local optima), we
+      fall back to proposePhasePatternUpdateRandomly()
+    */
+    void proposePhasePatternUpdateWalksat();
 
 };
 

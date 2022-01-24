@@ -17,6 +17,8 @@
 #include "Options.h"
 #include "SumOfInfeasibilitiesManager.h"
 
+#include "Set.h"
+
 SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
                                                           &inputQuery )
     : _plConstraints( inputQuery.getPiecewiseLinearConstraints() )
@@ -29,6 +31,7 @@ void SumOfInfeasibilitiesManager::resetPhasePattern()
 {
     _currentPhasePattern.clear();
     _currentProposal.clear();
+    _plConstraintsInCurrentPhasePattern.clear();
 }
 
 LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
@@ -38,6 +41,26 @@ LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
     {
         pair.first->getCostFunctionComponent( cost, pair.second );
     }
+    return cost;
+}
+
+LinearExpression SumOfInfeasibilitiesManager::getProposedSoIPhasePattern() const
+{
+    DEBUG({
+            // Check that the constraints in the proposal is a subset of those
+            // in the currentPhasePattern
+            ASSERT( Set<PiecewiseLinearConstraint *>::containedIn
+                    ( _currentProposal.keys(), _currentPhasePattern.keys() ) );
+        });
+
+    LinearExpression cost;
+    for ( const auto &pair : _currentProposal )
+        pair.first->getCostFunctionComponent( cost, pair.second );
+
+    for ( const auto &pair : _currentPhasePattern )
+        if ( _currentProposal.exists( pair.first ) )
+            pair.first->getCostFunctionComponent( cost, pair.second );
+
     return cost;
 }
 
@@ -54,6 +77,8 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
         throw MarabouError
             ( MarabouError::UNABLE_TO_INITIALIZATION_PHASE_PATTERN );
     }
+    for ( const auto &pair : _currentPhasePattern )
+        _plConstraintsInCurrentPhasePattern.append( pair.first );
 }
 
 void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignment()
@@ -73,5 +98,79 @@ void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignme
             _currentPhasePattern[plConstraint] =
                 plConstraint->getPhaseStatusInAssignment( assignment );
         }
+    }
+}
+
+void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
+{
+    _currentProposal.clear();
+    if ( _searchStrategy == SoISearchStrategy::MCMC )
+    {
+        proposePhasePatternUpdateRandomly();
+    }
+    else
+    {
+        // Walksat
+        proposePhasePatternUpdateWalksat();
+    }
+}
+
+void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
+{
+    DEBUG({
+            ASSERT( _plConstraintsInCurrentPhasePattern.size() ==
+                    _currentPhasePattern.size() );
+            for ( const auto &pair : _currentPhasePattern )
+                ASSERT( _plConstraintsInCurrentPhasePattern.exists
+                        ( pair.first ) );
+        });
+
+    unsigned index = ( unsigned ) rand() %
+                       _plConstraintsInCurrentPhasePattern.size();
+    PiecewiseLinearConstraint *plConstraintToUpdate =
+        _plConstraintsInCurrentPhasePattern[index];
+    PhaseStatus currentPhase = _currentPhasePattern[plConstraintToUpdate];
+    List<PhaseStatus> allPhases = plConstraintToUpdate->getAllCases();
+    allPhases.erase( currentPhase );
+    if ( allPhases.size() == 1 )
+    {
+        // There are only two possible phases. So we just flip the phase.
+        _currentProposal[plConstraintToUpdate] = *( allPhases.begin() );
+    }
+    else
+    {
+        auto it = allPhases.begin();
+        unsigned index =  ( unsigned ) rand() % allPhases.size();
+        while ( index > 0 )
+        {
+            ++it;
+            --index;
+        }
+        _currentProposal[plConstraintToUpdate] = *it;
+    }
+}
+
+void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
+{
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+}
+
+void SumOfInfeasibilitiesManager::acceptCurrentProposal()
+{
+    // We update _currentPhasePattern with entries in _currentProposal
+    for ( const auto &pair : _currentProposal )
+    {
+        _currentPhasePattern[pair.first] = pair.second;
+    }
+}
+
+void SumOfInfeasibilitiesManager::removeCostComponentFromHeuristicCost
+( PiecewiseLinearConstraint *constraint )
+{
+    if ( _currentPhasePattern.exists( constraint ) )
+    {
+        _currentPhasePattern.erase( constraint );
+        ASSERT( _plConstraintsInCurrentPhasePattern.exists( constraint ) );
+        _plConstraintsInCurrentPhasePattern.erase( constraint );
     }
 }
