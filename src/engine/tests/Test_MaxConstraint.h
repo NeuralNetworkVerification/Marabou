@@ -3232,4 +3232,79 @@ public:
 
         TS_ASSERT_EQUALS( max.getPhaseStatus(), PHASE_NOT_FIXED );
     }
+
+    void test_get_cost_function_component()
+    {
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 5; ++i )
+            elements.insert( i );
+
+        MaxConstraint max1( f, elements );
+
+        max1.notifyLowerBound( 1, 1 );
+        max1.notifyUpperBound( 1, 2 );
+        max1.notifyLowerBound( 3, 1 );
+        max1.notifyUpperBound( 3, 2 );
+        max1.notifyLowerBound( 2, 0 );
+        max1.notifyUpperBound( 2, 0.9 );
+        max1.notifyLowerBound( 4, 0 );
+        max1.notifyUpperBound( 4, 0.9 );
+
+        max1.notifyVariableValue( 1, 2 );
+        max1.notifyVariableValue( 2, 0 );
+        max1.notifyVariableValue( 3, 1.5 );
+        max1.notifyVariableValue( 4, 0.5 );
+
+        // Phase fixed, should not add any cost terms.
+        TS_ASSERT( max1.phaseFixed() );
+        LinearExpression cost1;
+        TS_ASSERT_THROWS_NOTHING( max1.getCostFunctionComponent
+                                  ( cost1, MAX_PHASE_ELIMINATED ) );
+        TS_ASSERT_EQUALS( cost1._addends.size(), 0u );
+        TS_ASSERT_EQUALS( cost1._constant, 0 );
+
+        MaxConstraint max2( f, elements );
+
+        max2.notifyLowerBound( 1, 1 );
+        max2.notifyUpperBound( 1, 2 );
+        max2.notifyLowerBound( 2, 1 );
+        max2.notifyUpperBound( 2, 1 );
+        max2.notifyLowerBound( 3, 1 );
+        max2.notifyUpperBound( 3, 2 );
+        max2.notifyLowerBound( 4, 1 );
+        max2.notifyUpperBound( 4, 2 );
+
+        max2.eliminateVariable( 2, 1 );
+
+        max2.notifyVariableValue( 1, 2 );
+        max2.notifyVariableValue( 3, 1.5 );
+        max2.notifyVariableValue( 4, 1.8 );
+
+        // Phase not fixed, can add cost terms to eligible phases.
+        TS_ASSERT( !max2.phaseFixed() );
+        LinearExpression cost2;
+        TS_ASSERT_THROWS_NOTHING( max2.getCostFunctionComponent
+                                  ( cost2, MAX_PHASE_ELIMINATED ) );
+        TS_ASSERT_EQUALS( cost2._addends.size(), 1u );
+        TS_ASSERT_EQUALS( cost2._addends[1], 1 );
+        TS_ASSERT_EQUALS( cost2._constant, -1 );
+
+        TS_ASSERT_THROWS_NOTHING( max2.getCostFunctionComponent
+                                  ( cost2, MAX_PHASE_ELIMINATED ) );
+        TS_ASSERT_EQUALS( cost2._addends.size(), 1u );
+        TS_ASSERT_EQUALS( cost2._addends[1], 2 );
+        TS_ASSERT_EQUALS( cost2._constant, -2 );
+
+        LinearExpression cost3;
+        List<PhaseStatus> phases;
+        TS_ASSERT_THROWS_NOTHING( phases = max2.getAllCases() );
+        TS_ASSERT_THROWS_NOTHING( max2.getCostFunctionComponent
+                                  ( cost3, *(phases.begin()) ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 2u );
+        TS_ASSERT_EQUALS( cost3._addends[1], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[3], -1 );
+        TS_ASSERT_EQUALS( cost3._constant, 0 );
+    }
 };

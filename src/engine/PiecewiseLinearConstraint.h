@@ -2,7 +2,7 @@
 /*! \file PiecewiseLinearConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Aleksandar Zeljic, Derek Huang
+ **   Guy Katz, Aleksandar Zeljic, Derek Huang, Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -50,8 +50,10 @@
 #include "BoundManager.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
@@ -78,9 +80,9 @@ enum PhaseStatus : unsigned {
     SIGN_PHASE_NEGATIVE = 6,
 
     // SPECIAL VALUE FOR ELIMINATED MAX CASES
-    MAX_PHASE_ELIMINATED = 65534,
+    MAX_PHASE_ELIMINATED = 999999,
     // SENTINEL VALUE
-    CONSTRAINT_INFEASIBLE = 65535
+    CONSTRAINT_INFEASIBLE = 1000000,
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -247,12 +249,14 @@ public:
     virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function.
+      Nothing should be added when the constraint is fixed or inactive.
+      Minimizing the added term should lead to the constraint being
+      "closer to satisfied" in the given phase status.
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
+    virtual void getCostFunctionComponent( LinearExpression &/* cost */,
+                                           PhaseStatus /* phase */ ) const {}
 
     /*
       Produce string representation of the piecewise linear constraint.
@@ -471,7 +475,7 @@ protected:
     /*
        Method to get PhaseStatus of the constraint. Encapsulates both context
        dependent and context-less behavior.
-     */
+    */
     PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/

@@ -158,14 +158,6 @@ public:
     void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
-    */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const override;
-
-    /*
       Returns string with shape: disjunction, _f, _b
     */
     String serializeToString() const override;

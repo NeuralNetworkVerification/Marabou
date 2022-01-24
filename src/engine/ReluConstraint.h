@@ -30,6 +30,7 @@
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
@@ -166,12 +167,13 @@ public:
     void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for ReLU is:
+        _f - _b for the active phase
+        _f      for the inactive phase
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const override;
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
 
     /*
       Returns string with shape: relu, _f, _b

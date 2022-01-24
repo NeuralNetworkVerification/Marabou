@@ -512,11 +512,10 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
 
 List<PhaseStatus> MaxConstraint::getAllCases() const
 {
-    if ( _phaseStatus != PHASE_NOT_FIXED )
+    if ( phaseFixed() )
         throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
 
     List<PhaseStatus> cases;
-
     if ( !_elements.exists( _f ) )
     {
         for ( unsigned element : _elements )
@@ -767,6 +766,54 @@ void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     }
 }
 
+void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                              PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    // This should not be called when the linear constraints have
+    // not been satisfied
+    ASSERT( !haveOutOfBoundVariables() );
+
+    // The soundness of the SoI component assumes that the constraints
+    // f >= element is added.
+    DEBUG({
+            for ( const auto &element : _elements )
+            {
+                ASSERT( FloatUtils::gte( _assignment.get( _f ),
+                                         _assignment.get( element ) ) );
+            }
+            if ( _eliminatedVariables )
+                ASSERT( FloatUtils::gte( _assignment.get( _f ),
+                                         _assignment.get
+                                         ( _maxValueOfEliminated ) ) );
+        });
+
+    if ( phase == MAX_PHASE_ELIMINATED )
+    {
+        // The cost term corresponding to this phase is f - maxValueOfEliminated.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        cost._addends[_f] = cost._addends[_f] + 1;
+        cost._constant -= _maxValueOfEliminated;
+    }
+    else
+    {
+        unsigned element = phaseToVariable( phase );
+        // The cost term corresponding to this phase is f - element.
+        // If this term can be minimized to 0, the Max constraint must be
+        // satisfied (we have the constraint that f is larger than all elements).
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( element ) )
+            cost._addends[element] = 0;
+        cost._addends[_f] = cost._addends[_f] + 1;
+        cost._addends[element] = cost._addends[element] - 1;
+    }
+}
+
 String MaxConstraint::serializeToString() const
 {
     // Output format: max,f,element_1,element_2,element_3,...
@@ -784,4 +831,21 @@ String MaxConstraint::serializeToString() const
         output += Stringf( ",%u", 0 );
 
     return output;
+}
+
+bool MaxConstraint::haveOutOfBoundVariables() const
+{
+    double fValue = _assignment.get( _f );
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) ||
+         FloatUtils::lt( getUpperBound( _f ), fValue ) )
+        return true;
+
+    for ( const auto &element : _elements )
+    {
+        double value = _assignment.get( element );
+        if ( FloatUtils::gt( getLowerBound( element ), value ) ||
+             FloatUtils::lt( getUpperBound( element ), value ) )
+        return true;
+    }
+    return false;
 }

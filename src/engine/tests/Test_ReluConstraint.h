@@ -2,7 +2,7 @@
 /*! \file Test_ReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Parth Shah, Duligur Ibeling
+ **   Guy Katz, Parth Shah, Duligur Ibeling, Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "LinearExpression.h"
 #include "MarabouError.h"
 #include "MockConstraintBoundTightener.h"
 #include "MockErrno.h"
@@ -1448,7 +1449,6 @@ public:
         TS_ASSERT( relu1->isFeasible() );
         TS_ASSERT( !relu1->isImplication() );
 
-
         // L1 - Feasible, an implication, nextFeasibleCase returns a new case
         TS_ASSERT_THROWS_NOTHING( context.push() );
         TS_ASSERT_THROWS_NOTHING( relu1->markInfeasible( phase1 ) );
@@ -1480,5 +1480,84 @@ public:
         TS_ASSERT_EQUALS( phase1, relu1->nextFeasibleCase() );
 
         TS_ASSERT_THROWS_NOTHING( delete relu1 );
+    }
+
+    void test_get_cost_function_component()
+    {
+        /* Test the add cost function component methods */
+
+        unsigned b = 0;
+        unsigned f = 1;
+
+        // The relu is fixed, do not add cost term.
+        ReluConstraint relu1 = ReluConstraint( b, f );
+        relu1.notifyLowerBound( b, 1 );
+        relu1.notifyLowerBound( f, 1 );
+        relu1.notifyUpperBound( b, 2 );
+        relu1.notifyUpperBound( f, 2 );
+        relu1.notifyVariableValue( b, 1.5 );
+        relu1.notifyVariableValue( f, 2 );
+
+        TS_ASSERT( relu1.phaseFixed() );
+        LinearExpression cost1;
+        TS_ASSERT_THROWS_NOTHING( relu1.getCostFunctionComponent( cost1, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_EQUALS( cost1._addends.size(), 0u );
+        TS_ASSERT_EQUALS( cost1._constant, 0 );
+
+
+        // The relu is not fixed and add active cost term
+        ReluConstraint relu2 = ReluConstraint( b, f );
+        LinearExpression cost2;
+        relu2.notifyLowerBound( b, -1 );
+        relu2.notifyLowerBound( f, 0 );
+        relu2.notifyUpperBound( b, 2 );
+        relu2.notifyUpperBound( f, 2 );
+        relu2.notifyVariableValue( b, -1 );
+        relu2.notifyVariableValue( f, 1 );
+        TS_ASSERT( !relu2.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu2.getCostFunctionComponent( cost2, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_EQUALS( cost2._addends.size(), 2u );
+        TS_ASSERT_EQUALS( cost2._addends[b], -1 );
+        TS_ASSERT_EQUALS( cost2._addends[f], 1 );
+
+        // The relu is not fixed and add inactive cost term
+        ReluConstraint relu3 = ReluConstraint( b, f );
+        LinearExpression cost3;
+        relu3.notifyLowerBound( b, -1 );
+        relu3.notifyLowerBound( f, 0 );
+        relu3.notifyUpperBound( b, 2 );
+        relu3.notifyUpperBound( f, 2 );
+        relu3.notifyVariableValue( b, -1 );
+        relu3.notifyVariableValue( f, 1 );
+        relu3.notifyLowerBound( b, -1 );
+        relu3.notifyLowerBound( f, 0 );
+        TS_ASSERT( !relu3.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu3.getCostFunctionComponent( cost3, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 1u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+
+        // Add the cost term for another relu
+        unsigned b2 = 2;
+        unsigned f2 = 3;
+        ReluConstraint relu4 = ReluConstraint( b2, f2 );
+        relu4.notifyLowerBound( b2, -1 );
+        relu4.notifyLowerBound( f2, 0 );
+        relu4.notifyUpperBound( b2, 2 );
+        relu4.notifyUpperBound( f2, 2 );
+        relu4.notifyVariableValue( b2, -1 );
+        relu4.notifyVariableValue( f2, 1 );
+
+        TS_ASSERT( !relu4.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( relu4.getCostFunctionComponent( cost3, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 3u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b2], -1 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], 1 );
+
+        TS_ASSERT_THROWS_NOTHING( relu4.getCostFunctionComponent( cost3, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 3u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b2], -2 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], 2 );
     }
 };

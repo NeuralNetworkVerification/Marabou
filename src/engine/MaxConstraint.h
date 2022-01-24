@@ -32,6 +32,7 @@
 #define __MaxConstraint_h__
 
 #include "PiecewiseLinearConstraint.h"
+#include "LinearExpression.h"
 #include "Map.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
@@ -165,6 +166,14 @@ public:
     void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Max is:
+      _f - element_i for each element
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
       Returns string with shape:
       max, _f, element_1, element_2, ... , element_n
     */
@@ -241,6 +250,11 @@ private:
                  ? MAX_PHASE_ELIMINATED
                  : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
+
+    /*
+      Return true iff f or the elements are not all within bounds.
+    */
+    bool haveOutOfBoundVariables() const;
 };
 
 #endif // __MaxConstraint_h__
