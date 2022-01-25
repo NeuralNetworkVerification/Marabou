@@ -76,6 +76,10 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
     _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO] = 0;
+    _longAttributes[NUM_PROPOSED_PHASE_PATTERN_UPDATE] = 0;
+    _longAttributes[NUM_ACCEPTED_PHASE_PATTERN_UPDATE] = 0;
+    _longAttributes[TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO] = 0;
 
     _doubleAttributes[CURRENT_DEGRADATION] = 0.0;
     _doubleAttributes[MAX_DEGRADATION] = 0.0;

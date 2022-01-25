@@ -177,6 +177,16 @@ public:
 
      // Total amount of time spent within the SMT core
      TOTAL_TIME_SMT_CORE_MICRO,
+
+     // Total time heuristically updating the SoI phase pattern
+     TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO,
+
+     // Number of proposed/accepted update to the SoI phase pattern.
+     NUM_PROPOSED_PHASE_PATTERN_UPDATE,
+     NUM_ACCEPTED_PHASE_PATTERN_UPDATE,
+
+     // Total time obtaining the current variable assignment from the tableau.
+     TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO,
     };
 
     enum StatisticsDoubleAttribute

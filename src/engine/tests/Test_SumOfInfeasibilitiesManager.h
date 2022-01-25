@@ -25,16 +25,40 @@
 
 #include "Vector.h"
 
+#include "MockErrno.h"
+
+class MockForSoI :
+    public T::Base_rand
+{
+public:
+    MockForSoI()
+    {
+        randWasCalled = 0;
+    }
+
+    unsigned randWasCalled;
+    int nextRandValue;
+
+    int rand()
+    {
+        ++randWasCalled;
+        return nextRandValue;
+    }
+};
+
 class SumOfInfeasibilitiesManagerTestSuite : public CxxTest::TestSuite
 {
 public:
+    MockForSoI *mock; // random
 
     void setUp()
     {
+        TS_ASSERT( mock = new MockForSoI );
     }
 
     void tearDown()
     {
+        TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
     void createInputQuery( InputQuery &ipq,
@@ -47,7 +71,7 @@ public:
             R      /
           4 -- 5
         */
-        ipq.setNumberOfVariables(6);
+        ipq.setNumberOfVariables(7);
         ReluConstraint *relu1 = new ReluConstraint(0,1);
         ReluConstraint *relu2 = new ReluConstraint(2,3);
         ReluConstraint *relu3 = new ReluConstraint(4,5);
@@ -58,10 +82,10 @@ public:
         ipq.addPiecewiseLinearConstraint(relu3);
         ipq.addPiecewiseLinearConstraint(max1);
 
-        for ( unsigned i = 0; i < 6; ++i )
+        for ( unsigned i = 0; i <= 6; ++i )
         {
-            ipq.setLowerBound( i, -2 );
-            ipq.setUpperBound( i, 2 );
+            ipq.setLowerBound( i, -3 );
+            ipq.setUpperBound( i, 3 );
         }
 
         ipq.setLowerBound( 1, 0 );
@@ -78,8 +102,8 @@ public:
         {
             for ( const auto &var : c->getParticipatingVariables() )
             {
-                c->notifyLowerBound( var, -2 );
-                c->notifyUpperBound( var, 2 );
+                c->notifyLowerBound( var, -3 );
+                c->notifyUpperBound( var, 3 );
             }
         }
         relu1->notifyLowerBound( 1, 0 );
@@ -139,6 +163,8 @@ public:
                                   ( cost, *( ++( ++phases.begin() ) ) ) );
         cost.dump();
         TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
+        // No proposal yet.
+        TS_ASSERT_EQUALS( cost, soiManager->getProposedSoIPhasePattern() );
     }
 
     void test_initialize_phase_pattern_with_input_assignment2()
@@ -196,9 +222,252 @@ public:
                                   ( cost, MAX_PHASE_ELIMINATED ) );
         cost.dump();
         TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
+
+        // No proposal yet.
+        TS_ASSERT_EQUALS( cost, soiManager->getProposedSoIPhasePattern() );
     }
 
-    void test_propose_phase_pattern_update()
+    void test_propose_phase_pattern_update_randomly()
+    {
+        InputQuery ipq;
+        Vector<PiecewiseLinearConstraint *> plConstraints;
+        createInputQuery( ipq, plConstraints );
+        MockTableau tableau;
+        ipq.getNetworkLevelReasoner()->setTableau( &tableau );
+        tableau.nextValues[0] = -1;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[4] = 2;
+        plConstraints[0]->notifyVariableValue( 0, -1 );
+        plConstraints[0]->notifyVariableValue( 1, 1 );
+        plConstraints[1]->notifyVariableValue( 2, 1 );
+        plConstraints[1]->notifyVariableValue( 3, 2 );
+        plConstraints[2]->notifyVariableValue( 4, 2 );
+        plConstraints[2]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 1, 0 );
+        plConstraints[3]->notifyVariableValue( 3, 2 );
+        plConstraints[3]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 6, 2 );
+
+        Options::get()->setString
+            ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
+        Options::get()->setString
+            ( Options::SOI_SEARCH_STRATEGY, "mcmc" );
+
+        std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
+        TS_ASSERT_THROWS_NOTHING
+            ( soiManager =
+              std::unique_ptr<SumOfInfeasibilitiesManager>
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
+
+        TS_ASSERT_THROWS_NOTHING( soiManager->initializePhasePattern() );
+
+        for ( const auto &plConstraint : plConstraints )
+        {
+            soiManager->setPhaseStatusInCurrentPhasePattern
+                ( plConstraint, *( plConstraint->getAllCases().begin() ) );
+        }
+
+        mock->randWasCalled = 0;
+        mock->nextRandValue = 1;
+        TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
+        TS_ASSERT_EQUALS( mock->randWasCalled, 1u );
+
+        soiManager->getSoIPhasePattern().dump();
+        soiManager->getProposedSoIPhasePattern().dump();
+
+        // The cost term of the second relu is flipped.
+        LinearExpression cost1;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost1, *( plConstraints[0]->
+                                             getAllCases().begin() ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost1, *(++( plConstraints[1]->
+                                                getAllCases().begin() ) ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost1, *( plConstraints[2]->
+                                             getAllCases().begin() ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost1, *( plConstraints[3]->
+                                             getAllCases().begin() ) ) );
+
+        TS_ASSERT_EQUALS( cost1, soiManager->getProposedSoIPhasePattern() );
+
+        mock->nextRandValue = 7;
+        TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
+        TS_ASSERT_EQUALS( mock->randWasCalled, 3u );
+
+        // The cost term of the third constraint (max) is updated,
+        // because 7 % 4 = 3. The updated phase status corresponds to the third
+        // input variable to max, because there are two alternative phase
+        // statuses and 7 % 2 = 1.
+
+        LinearExpression cost2;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost2, *( plConstraints[0]->
+                                             getAllCases().begin() ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost2, *( plConstraints[1]->
+                                              getAllCases().begin() ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost2, *( plConstraints[2]->
+                                             getAllCases().begin() ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost2, *(++(++( plConstraints[3]->
+                                                    getAllCases().begin() ) ) ) ) );
+
+        TS_ASSERT_EQUALS( cost2, soiManager->getProposedSoIPhasePattern() );
+
+        TS_ASSERT_THROWS_NOTHING( soiManager->acceptCurrentProposal() );
+
+        TS_ASSERT_EQUALS( cost2, soiManager->getSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost2, soiManager->getProposedSoIPhasePattern() );
+    }
+
+    void test_propose_phase_pattern_update_walksat()
+    {
+        InputQuery ipq;
+        Vector<PiecewiseLinearConstraint *> plConstraints;
+        createInputQuery( ipq, plConstraints );
+        MockTableau tableau;
+        ipq.getNetworkLevelReasoner()->setTableau( &tableau );
+        tableau.nextValues[0] = -2;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[4] = 2;
+        plConstraints[0]->notifyVariableValue( 0, -2 );
+        plConstraints[0]->notifyVariableValue( 1, 0.5 );
+        plConstraints[1]->notifyVariableValue( 2, 1 );
+        plConstraints[1]->notifyVariableValue( 3, 2 );
+        plConstraints[2]->notifyVariableValue( 4, 2 );
+        plConstraints[2]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 1, 0.5 );
+        plConstraints[3]->notifyVariableValue( 3, 2 );
+        plConstraints[3]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 6, 2.5 );
+
+        tableau.nextValues[0] = -2;
+        tableau.nextValues[1] = 0.5;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[3] = 2;
+        tableau.nextValues[4] = 2;
+        tableau.nextValues[5] = 2;
+        tableau.nextValues[6] = 2.5;
+
+        Options::get()->setString
+            ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
+        Options::get()->setString
+            ( Options::SOI_SEARCH_STRATEGY, "walksat" );
+
+        std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
+        TS_ASSERT_THROWS_NOTHING
+            ( soiManager =
+              std::unique_ptr<SumOfInfeasibilitiesManager>
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
+
+        TS_ASSERT_THROWS_NOTHING( soiManager->initializePhasePattern() );
+        TS_ASSERT_THROWS_NOTHING( soiManager->obtainCurrentAssignment() );
+
+        soiManager->setPhaseStatusInCurrentPhasePattern
+            ( plConstraints[0], RELU_PHASE_ACTIVE );
+        soiManager->setPhaseStatusInCurrentPhasePattern
+            ( plConstraints[1], RELU_PHASE_INACTIVE );
+        soiManager->setPhaseStatusInCurrentPhasePattern
+            ( plConstraints[2], RELU_PHASE_ACTIVE );
+        soiManager->setPhaseStatusInCurrentPhasePattern
+            ( plConstraints[3], *( plConstraints[3]->
+                                   getAllCases().begin() ) );
+
+        // Reduced cost for relu1: 2, for relu2: 1, for relu3: -2,
+        // for max: 1.5. So pick relu1.
+        TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
+
+        // The cost term of the second relu is flipped.
+        LinearExpression cost1;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost1, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost1, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost1, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost1, *( plConstraints[3]->
+                                             getAllCases().begin() ) ) );
+
+        TS_ASSERT_EQUALS( cost1, soiManager->getProposedSoIPhasePattern() );
+
+        plConstraints[0]->notifyVariableValue( 0, 0 );
+        tableau.nextValues[0] = 0;
+        TS_ASSERT_THROWS_NOTHING( soiManager->obtainCurrentAssignment() );
+
+        // Reduced cost for relu1: 0, for relu2: 1, for relu3: -2,
+        // for max: 1.5. So pick max with phase corresponding to the second input.
+        TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
+
+        // The cost term of the second relu is flipped.
+        LinearExpression cost2;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost2, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost2, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost2, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost2, *( ++plConstraints[3]->
+                                              getAllCases().begin() ) ) );
+
+        TS_ASSERT_EQUALS( cost2, soiManager->getProposedSoIPhasePattern() );
+    }
+
+    void test_decide_to_accept_current_proposal()
+    {
+        InputQuery ipq;
+        MockTableau tableau;
+
+        // Set beta to 5.
+        Options::get()->setFloat
+            ( Options::PROBABILITY_DENSITY_PARAMETER, 5 );
+
+        std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
+        TS_ASSERT_THROWS_NOTHING
+            ( soiManager =
+              std::unique_ptr<SumOfInfeasibilitiesManager>
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
+
+        mock->randWasCalled = 0;
+        // Only accept if the probability to accept is larger than 80%.
+        mock->nextRandValue = (int) RAND_MAX * 0.8;
+        double costOfCurrentPhasePattern = 10;
+        double costOfProposedPhasePattern = 9;
+        TS_ASSERT( soiManager->decideToAcceptCurrentProposal
+                   ( costOfCurrentPhasePattern,
+                     costOfProposedPhasePattern ) );
+        // Always accept if the new cost is lower.
+        TS_ASSERT_EQUALS( mock->randWasCalled, 0u );
+
+        costOfProposedPhasePattern = 10.1;
+        // Prob. to accept is e^( -beta * (10.5 - 10)) ~= 60%, thus rejected.
+        TS_ASSERT( !soiManager->decideToAcceptCurrentProposal
+                   ( costOfCurrentPhasePattern,
+                     costOfProposedPhasePattern ) );
+        TS_ASSERT_EQUALS( mock->randWasCalled, 1u );
+
+        // Only accept if the probability to accept is larger than 40%.
+        mock->nextRandValue = (int) RAND_MAX * 0.4;
+
+        // Prob. to accept is still ~60%, thus accepted.
+        TS_ASSERT( soiManager->decideToAcceptCurrentProposal
+                   ( costOfCurrentPhasePattern,
+                     costOfProposedPhasePattern ) );
+        TS_ASSERT_EQUALS( mock->randWasCalled, 2u );
+
+        costOfProposedPhasePattern = 10.5;
+        // Accept with prob. e^( -beta * (10.5 - 10)) ~= 8.2%, thus rejected.
+        TS_ASSERT( !soiManager->decideToAcceptCurrentProposal
+                   ( costOfCurrentPhasePattern,
+                     costOfProposedPhasePattern ) );
+        TS_ASSERT_EQUALS( mock->randWasCalled, 3u );
+    }
+
+    void test_update_current_phase_pattern_for_satisfied_pl_constraints()
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
@@ -215,43 +484,117 @@ public:
               std::unique_ptr<SumOfInfeasibilitiesManager>
               ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
-        tableau.nextValues[0] = 1;
-        tableau.nextValues[2] = 2;
-        tableau.nextValues[4] = -1;
-        plConstraints[0]->notifyVariableValue( 0, 1 );
-        plConstraints[0]->notifyVariableValue( 1, 1 );
+        // relu1, relu2 satisfied, relu3 not satisfied, max not satisfied.
+        plConstraints[0]->notifyVariableValue( 0, -1 );
+        plConstraints[0]->notifyVariableValue( 1, 0 );
+        plConstraints[1]->notifyVariableValue( 2, 1 );
+        plConstraints[1]->notifyVariableValue( 3, 1 );
+        plConstraints[2]->notifyVariableValue( 4, 1 );
+        plConstraints[2]->notifyVariableValue( 5, 1.5 );
+        plConstraints[3]->notifyVariableValue( 1, 0 );
+        plConstraints[3]->notifyVariableValue( 3, 1 );
+        plConstraints[3]->notifyVariableValue( 5, 1.5 );
+        plConstraints[3]->notifyVariableValue( 6, 2.5 );
 
-        // Phase is fixed, won't add the second relu to SoI
-        plConstraints[1]->notifyLowerBound( 2, 2 );
-        plConstraints[1]->notifyVariableValue( 2, 2 );
-        plConstraints[1]->notifyVariableValue( 3, 2 );
+        tableau.nextValues[0] = -1;
+        tableau.nextValues[1] = 0;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[3] = 1;
+        tableau.nextValues[4] = 1;
+        tableau.nextValues[5] = 1.5;
+        tableau.nextValues[6] = 2.5;
 
-        plConstraints[2]->notifyVariableValue( 4, -1 );
-        plConstraints[2]->notifyVariableValue( 5, 0 );
-
-        // Eliminate the variable from the max constraint
-        plConstraints[3]->eliminateVariable( 3, 2 );
-        ipq.getNetworkLevelReasoner()->eliminateVariable( 3, 2 );
-
-        plConstraints[3]->notifyVariableValue( 1, 1 );
-        plConstraints[3]->notifyVariableValue( 5, 0 );
-        plConstraints[3]->notifyVariableValue( 6, 2 );
-
-        // The input assignment is [1, 2, -1], the output of the max constraint
-        // should be 2
-        // So the cost compoenents in the SoI should be:
-        // relu1: active, relu3: inactive, max: PHASE_ELIMINATED
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );
 
+        for ( const auto &plConstraint : plConstraints )
+        {
+            soiManager->setPhaseStatusInCurrentPhasePattern
+                ( plConstraint, *( plConstraint->getAllCases().begin() ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING
+            (soiManager->obtainCurrentAssignment() );
+
+        TS_ASSERT_THROWS_NOTHING
+            (soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints() );
+
         LinearExpression cost;
         TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
                                   ( cost, RELU_PHASE_ACTIVE ) );
         TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
-                                  ( cost, RELU_PHASE_INACTIVE ) );
+                                  ( cost, *( plConstraints[2]->
+                                             getAllCases().begin() ) ) );
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
-                                  ( cost, MAX_PHASE_ELIMINATED ) );
-        cost.dump();
+                                  ( cost, *( plConstraints[3]->
+                                             getAllCases().begin() ) ) );
+
         TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
     }
+
+    void test_remove_cost_component_from_heuristic_cost()
+    {
+        InputQuery ipq;
+        Vector<PiecewiseLinearConstraint *> plConstraints;
+        createInputQuery( ipq, plConstraints );
+        MockTableau tableau;
+        ipq.getNetworkLevelReasoner()->setTableau( &tableau );
+
+        Options::get()->setString
+            ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
+
+        std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
+        TS_ASSERT_THROWS_NOTHING
+            ( soiManager =
+              std::unique_ptr<SumOfInfeasibilitiesManager>
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
+
+        // relu1, relu2 satisfied, relu3 not satisfied, max not satisfied.
+        plConstraints[0]->notifyVariableValue( 0, -1 );
+        plConstraints[0]->notifyVariableValue( 1, 0 );
+        plConstraints[1]->notifyVariableValue( 2, 1 );
+        plConstraints[1]->notifyVariableValue( 3, 1 );
+        plConstraints[2]->notifyVariableValue( 4, 1 );
+        plConstraints[2]->notifyVariableValue( 5, 1.5 );
+        plConstraints[3]->notifyVariableValue( 1, 0 );
+        plConstraints[3]->notifyVariableValue( 3, 1 );
+        plConstraints[3]->notifyVariableValue( 5, 1.5 );
+        plConstraints[3]->notifyVariableValue( 6, 2.5 );
+
+        tableau.nextValues[0] = -1;
+        tableau.nextValues[1] = 0;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[3] = 1;
+        tableau.nextValues[4] = 1;
+        tableau.nextValues[5] = 1.5;
+        tableau.nextValues[6] = 2.5;
+
+        TS_ASSERT_THROWS_NOTHING
+            (soiManager->initializePhasePattern() );
+
+        for ( const auto &plConstraint : plConstraints )
+        {
+            soiManager->setPhaseStatusInCurrentPhasePattern
+                ( plConstraint, *( plConstraint->getAllCases().begin() ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( soiManager->removeCostComponentFromHeuristicCost
+                                  ( plConstraints[0] ) );
+        TS_ASSERT_THROWS_NOTHING( soiManager->removeCostComponentFromHeuristicCost
+                                  ( plConstraints[3] ) );
+
+
+        LinearExpression cost;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost, *( plConstraints[1]->
+                                             getAllCases().begin() ) ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost, *( plConstraints[2]->
+                                             getAllCases().begin() ) ) );
+        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
+    }
+
+
 };

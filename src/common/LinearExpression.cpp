@@ -75,5 +75,5 @@ void LinearExpression::dump() const
     if ( !FloatUtils::isZero( _constant ) )
         output += Stringf( "%.2lf ", _constant );
 
-    printf( "%s", output.ascii() );
+    printf( "%s\n", output.ascii() );
 }

@@ -28,8 +28,7 @@
 #include "Statistics.h"
 #include "Vector.h"
 
-#include <memory>
-#include <random>
+#include "T/stdlib.h"
 
 #define SOI_LOG( x, ... ) LOG( GlobalConfiguration::SOI_LOGGING, "SoIManager: %s\n", x )
 
@@ -101,6 +100,10 @@ public:
 
     void setStatistics( Statistics *statistics );
 
+    /* For debug use */
+    void setPhaseStatusInCurrentPhasePattern( PiecewiseLinearConstraint
+                                              *constraint, PhaseStatus phase );
+
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
     // Used for the heuristic initialization of the phase pattern.
@@ -162,13 +165,23 @@ private:
 
     /*
       Iterate over the piecewise linear constraints in the current phase pattern
-      to find one with the largest "reduced cost", which is the reduction in the
-      cost (wrt the current assignment) if we use a different phase status.
+      to find one with the largest "reduced cost". See the "getReducedCost"
+      method below.
       If no constraint has positive reduced cost (we are at a local optima), we
       fall back to proposePhasePatternUpdateRandomly()
     */
     void proposePhasePatternUpdateWalksat();
 
+    /*
+      This method computes the reduced cost of a plConstraint participating
+      in the phase pattern. The reduced cost is the largest value by which the
+      cost (w.r.t. the current assignment) will decrease if we choose a
+      different phase for the plConstraint in the phase pattern. This value is
+      stored in reducedCost. The phase corresponding to the largest reduction
+      is stored in phaseOfReducedCost.
+      Note that the phase can be negative, which means the current phase is
+      (locally) optimal.
+    */
     void getReducedCost( PiecewiseLinearConstraint *plConstraint, double
                          &reducedCost, PhaseStatus &phaseOfReducedCost ) const;
 };
