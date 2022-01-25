@@ -242,7 +242,6 @@ bool SumOfInfeasibilitiesManager::decideToAcceptCurrentProposal
     }
 }
 
-
 void SumOfInfeasibilitiesManager::acceptCurrentProposal()
 {
     // We update _currentPhasePattern with entries in _currentProposal
