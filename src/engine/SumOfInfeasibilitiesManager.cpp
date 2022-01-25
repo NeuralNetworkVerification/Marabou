@@ -238,7 +238,7 @@ bool SumOfInfeasibilitiesManager::decideToAcceptCurrentProposal
         double prob = exp( -_probabilityDensityParameter *
                            ( costOfProposedPhasePattern -
                              costOfCurrentPhasePattern ) );
-        return ( (float) T::rand() / RAND_MAX ) < prob;
+        return ( (double) T::rand() / RAND_MAX ) < prob;
     }
 }
 
