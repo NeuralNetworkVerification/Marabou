@@ -259,8 +259,10 @@ public:
                                            PhaseStatus /* phase */ ) const {}
 
     /*
-      Return the phase status corresponding to the values of the *input*
-      variables in the given assignment.
+      Return the phase status corresponding to the values of the input
+      variables in the given assignment. For instance, for ReLU, if the input
+      variable's assignment is positive, then the method returns 
+      RELU_PHASE_ACTIVE. Otherwise, it returns RELU_PHASE_INACTIVE.
     */
     virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
                                                     &/* assignment */ ) const
