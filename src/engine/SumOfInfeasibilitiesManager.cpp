@@ -165,7 +165,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
                         ( pair.first ) );
         });
 
-    // First, pick a pl constraints whose cost component we will update.
+    // First, pick a pl constraint whose cost component we will update.
     unsigned index = ( unsigned ) T::rand() %
                        _plConstraintsInCurrentPhasePattern.size();
     PiecewiseLinearConstraint *plConstraintToUpdate =
