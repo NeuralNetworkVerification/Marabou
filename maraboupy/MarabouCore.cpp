@@ -579,7 +579,6 @@ PYBIND11_MODULE(MarabouCore, m) {
         .value("NUM_PROPOSED_PHASE_PATTERN_UPDATE", Statistics::StatisticsLongAttribute::NUM_PROPOSED_PHASE_PATTERN_UPDATE)
         .value("NUM_ACCEPTED_PHASE_PATTERN_UPDATE", Statistics::StatisticsLongAttribute::NUM_ACCEPTED_PHASE_PATTERN_UPDATE)
         .value("TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO)
-
         .export_values();
     py::enum_<Statistics::StatisticsDoubleAttribute>(m, "StatisticsDoubleAttribute")
         .value("MAX_DEGRADATION", Statistics::StatisticsDoubleAttribute::MAX_DEGRADATION)
