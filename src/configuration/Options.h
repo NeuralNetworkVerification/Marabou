@@ -93,7 +93,6 @@ public:
         PREPROCESSOR_BOUND_TOLERANCE,
 
         // The beta parameter used in converting the soi f to a probability
-        // exp(−beta · f)
         PROBABILITY_DENSITY_PARAMETER,
     };
 
