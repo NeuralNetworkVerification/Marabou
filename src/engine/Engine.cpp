@@ -2595,6 +2595,10 @@ bool Engine::performLocalSearch()
     bool lastProposalAccepted = true;
     while ( !_smtCore.needToSplit() )
     {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.incLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO,
+                                      TimeUtils::timePassed( start, end ) );
+
         if ( lastProposalAccepted )
         {
             collectViolatedPlConstraints();
@@ -2624,9 +2628,6 @@ bool Engine::performLocalSearch()
             lastProposalAccepted = false;
     }
     printf( "Performing local search - done" );
-    struct timespec end = TimeUtils::sampleMicro();
-    _statistics.incLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO,
-                                  TimeUtils::timePassed( start, end ) );
 
     return false;
 }
