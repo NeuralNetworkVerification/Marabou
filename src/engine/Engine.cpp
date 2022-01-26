@@ -2602,6 +2602,7 @@ bool Engine::performLocalSearch()
     minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
+    // Always accept the first phase pattern.
     _soiManager->acceptCurrentPhasePattern();
     double costOfLastAcceptedPhasePattern = computeHeuristicCost
         ( _soiManager->getCurrentSoIPhasePattern() );
@@ -2643,8 +2644,8 @@ bool Engine::performLocalSearch()
         else
             lastProposalAccepted = false;
     }
-    printf( "Performing local search - done" );
 
+    ENGINE_LOG( "Performing local search - done" );
     return false;
 }
 
