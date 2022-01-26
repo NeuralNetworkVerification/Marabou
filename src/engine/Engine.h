@@ -654,6 +654,11 @@ private:
       Extract the satisfying assignment from the MILP solver
     */
     void extractSolutionFromGurobi( InputQuery &inputQuery );
+
+    /*
+      Perform SoI-based stochastic local search
+    */
+    bool performLocalSearch();
 };
 
 #endif // __Engine_h__
