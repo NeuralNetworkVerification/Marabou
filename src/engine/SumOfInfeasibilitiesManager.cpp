@@ -44,17 +44,37 @@ void SumOfInfeasibilitiesManager::resetPhasePattern()
 
 LinearExpression SumOfInfeasibilitiesManager::getCurrentSoIPhasePattern() const
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     LinearExpression cost;
     for ( const auto &pair : _currentPhasePattern )
         pair.first->getCostFunctionComponent( cost, pair.second );
+
+    if ( _statistics )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute
+            ( Statistics::TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO,
+              TimeUtils::timePassed( start, end ) );
+    }
     return cost;
 }
 
 LinearExpression SumOfInfeasibilitiesManager::getLastAcceptedSoIPhasePattern() const
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     LinearExpression cost;
     for ( const auto &pair : _lastAcceptedPhasePattern )
         pair.first->getCostFunctionComponent( cost, pair.second );
+
+    if ( _statistics )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute
+            ( Statistics::TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO,
+              TimeUtils::timePassed( start, end ) );
+    }
     return cost;
 }
 
@@ -238,11 +258,19 @@ bool SumOfInfeasibilitiesManager::decideToAcceptCurrentProposal
 
 void SumOfInfeasibilitiesManager::acceptCurrentPhasePattern()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     _lastAcceptedPhasePattern = _currentPhasePattern;
 
     if ( _statistics )
+    {
         _statistics->incLongAttribute
             ( Statistics::NUM_ACCEPTED_PHASE_PATTERN_UPDATE );
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics->incLongAttribute
+            ( Statistics::TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO,
+              TimeUtils::timePassed( start, end ) );
+    }
 }
 
 void SumOfInfeasibilitiesManager::updateCurrentPhasePatternForSatisfiedPLConstraints()
