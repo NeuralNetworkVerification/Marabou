@@ -1206,9 +1206,12 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     _tableau->initializeTableau( initialBasis );
 
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+    {
         _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
             ( new SumOfInfeasibilitiesManager( _preprocessedQuery,
                                                *_tableau ) );
+        _soiManager->setStatistics( &_statistics );
+    }
 
     _costFunctionManager->initialize();
     _tableau->registerCostFunctionManager( _costFunctionManager );
@@ -2575,6 +2578,7 @@ const Preprocessor *Engine::getPreprocessor()
 bool Engine::performLocalSearch()
 {
     ENGINE_LOG( "Performing local search..." );
+    struct timespec start = TimeUtils::sampleMicro();
     ASSERT( allVarsWithinBounds() );
 
     // All the linear constraints have been satisfied at this point.
@@ -2620,6 +2624,10 @@ bool Engine::performLocalSearch()
             lastProposalAccepted = false;
     }
     printf( "Performing local search - done" );
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.incLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO,
+                                  TimeUtils::timePassed( start, end ) );
+
     return false;
 }
 
