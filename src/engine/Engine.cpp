@@ -385,7 +385,9 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
         return false;
     }
     else
-        return false;
+    {
+        return performLocalSearch();
+    }
 }
 
 bool Engine::performPrecisionRestorationIfNeeded()
@@ -2552,6 +2554,63 @@ bool Engine::preprocessingEnabled() const
 const Preprocessor *Engine::getPreprocessor()
 {
     return &_preprocessor;
+}
+
+bool Engine::performLocalSearch()
+{
+    ENGINE_LOG( "Performing local search..." );
+    ASSERT( allVarsWithinBounds() );
+
+    // All the linear constraints have been satisfied at this point.
+    // Update the cost function
+    _soiManager->initializePhasePattern();
+    minimizeHeuristicCost( _soiManager->getSoIPhasePattern() );
+    ASSERT( allVarsWithinBounds() );
+
+    _soiManager->obtainCurrentAssignment();
+    _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
+    double costOfLastAcceptedPhasePattern = computeHeuristicCost
+        ( _soiManager->getSoIPhasePattern() );
+
+    double costOfProposedPhasePattern = FloatUtils::infinity();
+    bool lastProposalAccepted = true;
+    while ( !_smtCore.needToSplit() )
+    {
+        if ( lastProposalAccepted )
+        {
+            collectViolatedPlConstraints();
+            if ( allPlConstraintsHold() )
+            {
+                ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+                ENGINE_LOG( "Performing local search - done" );
+                return true;
+            }
+            ASSERT( !FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+        }
+
+        _soiManager->proposePhasePatternUpdate();
+        minimizeHeuristicCost( _soiManager->getSoIPhasePattern() );
+        _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
+        costOfProposedPhasePattern = computeHeuristicCost
+            ( _soiManager->getSoIPhasePattern() );
+
+        if ( !_soiManager->decideToAcceptCurrentProposal
+             ( costOfLastAcceptedPhasePattern, costOfProposedPhasePattern ) )
+        {
+            _soiManager->rejectLastProposal();
+            lastProposalAccepted = false;
+        }
+        else
+        {
+            costOfLastAcceptedPhasePattern = costOfProposedPhasePattern;
+            lastProposalAccepted = true;
+            _statistics.setDoubleAttribute
+                ( Statistics::COST_OF_CURRENT_PHASE_PATTERN,
+                  costOfLastAcceptedPhasePattern );
+        }
+    }
+    printf( "Performing local search - done" );
+    return false;
 }
 
 void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
