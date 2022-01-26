@@ -1205,6 +1205,11 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 
     _tableau->initializeTableau( initialBasis );
 
+    if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+        _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
+            ( new SumOfInfeasibilitiesManager( _preprocessedQuery,
+                                               *_tableau ) );
+
     _costFunctionManager->initialize();
     _tableau->registerCostFunctionManager( _costFunctionManager );
     _activeEntryStrategy->initialize( _tableau );
@@ -2643,8 +2648,11 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
              % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
 
-        if ( performPrecisionRestorationIfNeeded() )
+        if ( shouldCheckDegradation() && highDegradation() )
+        {
+            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
             continue;
+        }
 
         localOptimaReached = performSimplexStep();
     }
