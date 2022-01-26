@@ -39,6 +39,7 @@
 #include "SmtCore.h"
 #include "SnCDivideStrategy.h"
 #include "Statistics.h"
+#include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 
 #include <atomic>
@@ -401,8 +402,13 @@ private:
     std::unique_ptr<MILPEncoder> _milpEncoder;
 
     /*
+      Manager of the SoI cost function.
+    */
+    std::unique_ptr<SumOfInfeasibilitiesManager> _soiManager;
+
+    /*
       Stored options
-      Do this since Options object is not thread safe and 
+      Do this since Options object is not thread safe and
       there is a chance that multiple Engine object be accessing the Options object.
     */
     unsigned _simulationSize;
@@ -496,10 +502,36 @@ private:
     void mainLoopStatistics();
 
     /*
+      Perform bound tightening after performing a case split.
+    */
+    void performBoundTighteningAfterCaseSplit();
+
+    /*
+      Called after a satisfying assignment is found for the linear constraints.
+      Now we try to satisfy the piecewise linear constraints with
+      "local" search (either with Reluplex-styled constraint fixing
+      or SoI-based stochastic search).
+      Return true iff a true satisfying assignment is found.
+    */
+    bool handleSatisfyingAssignmentToConvexRelaxation();
+
+    /*
+      Perform precision restoration if needed. Return true iff precision
+      restoration is performed.
+    */
+    bool performPrecisionRestorationIfNeeded();
+
+    /*
       Check if the current degradation is high
     */
     bool shouldCheckDegradation();
     bool highDegradation();
+
+    /*
+      Handle malformed basis exception. Return false if unable to restore
+      precision.
+    */
+    bool handleMalformedBasisException();
 
     /*
       Perform bound tightening on the constraint matrix A.

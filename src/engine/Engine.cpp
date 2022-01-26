@@ -56,6 +56,7 @@ Engine::Engine()
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
+    , _soiManager( nullptr )
     , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
     , _isGurobyEnabled( Options::get()->gurobiEnabled() )
     , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
@@ -142,10 +143,8 @@ void Engine::exportInputQueryWithError( String errorMessage )
     printf( "Engine: %s!\nInput query has been saved as %s. Please attach the input query when you open the issue on GitHub.\n", errorMessage.ascii(), ipqFileName.ascii() );
 }
 
-
 bool Engine::solve( unsigned timeoutInSeconds )
 {
-
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -213,38 +212,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
                  GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
                 _statistics.print();
 
-            // Check whether progress has been made recently
-            checkOverallProgress();
-
-            // If the basis has become malformed, we need to restore it
-            if ( basisRestorationNeeded() )
-            {
-                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
-                {
-                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
-                }
-                else
-                {
-                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
-                }
-
-                _numVisitedStatesAtPreviousRestoration =
-                    _statistics.getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+            if ( performPrecisionRestorationIfNeeded() )
                 continue;
-            }
-
-            // Restoration is not required
-            _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
-
-            // Possible restoration due to preceision degradation
-            if ( shouldCheckDegradation() && highDegradation() )
-            {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                continue;
-            }
 
             if ( _tableau->basisMatrixAvailable() )
             {
@@ -253,21 +222,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 applyAllValidConstraintCaseSplits();
             }
 
-            // If true, enter a new subproblem
+            // If true, we just entered a new subproblem
             if ( splitJustPerformed )
             {
-                // Tighten bounds of a first hidden layer with MILP solver
-                performMILPSolverBoundedTighteningForSingleLayer( 1 );
-                do
-                {
-                    performSymbolicBoundTightening();
-                }
-                while ( applyAllValidConstraintCaseSplits() );
-
-                // Tighten bounds of an output layer with MILP solver
-                if ( _networkLevelReasoner )    // to avoid failing of system test.
-                    performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
-
+                performBoundTighteningAfterCaseSplit();
                 splitJustPerformed = false;
             }
 
@@ -289,45 +247,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
-                collectViolatedPlConstraints();
-
-                // If all constraints are satisfied, we are possibly done
-                if ( allPlConstraintsHold() )
-                {
-                    if ( _tableau->getBasicAssignmentStatus() !=
-                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
-                    {
-                        if ( _verbosity > 0 )
-                        {
-                            printf( "Before declaring sat, recomputing...\n" );
-                        }
-                        // Make sure that the assignment is precise before declaring success
-                        _tableau->computeAssignment();
-                        continue;
-                    }
-                    if ( _verbosity > 0 )
-                    {
-                        printf( "\nEngine::solve: sat assignment found\n" );
-                        _statistics.print();
-                    }
-                    _exitCode = Engine::SAT;
+                bool solutionFound =
+                    handleSatisfyingAssignmentToConvexRelaxation();
+                if ( solutionFound )
                     return true;
-                }
-
-                // We have violated piecewise-linear constraints.
-                performConstraintFixingStep();
-
-                // Finally, take this opporunity to tighten any bounds
-                // and perform any valid case splits.
-                tightenBoundsOnConstraintMatrix();
-                applyAllBoundTightenings();
-                // For debugging purposes
-                checkBoundCompliancyWithDebugSolution();
-
-                while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening();
-
-                continue;
+                else
+                    continue;
             }
 
             // We have out-of-bounds variables.
@@ -336,27 +261,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         }
         catch ( const MalformedBasisException & )
         {
-            // Debug
-            printf( "MalformedBasisException caught!\n" );
-            //
-
-            if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
-            {
-                if ( _numVisitedStatesAtPreviousRestoration !=
-                     _statistics.getUnsignedAttribute
-                     ( Statistics::NUM_VISITED_TREE_STATES ) )
-                {
-                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
-                    _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
-                }
-                else
-                {
-                    _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
-                }
-            }
-            else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
-                _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
-            else
+            if ( !handleMalformedBasisException() )
             {
                 _exitCode = Engine::ERROR;
                 exportInputQueryWithError( "Cannot restore tableau" );
@@ -414,6 +319,139 @@ void Engine::mainLoopStatistics()
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TOTAL_TIME_HANDLING_STATISTICS_MICRO,
                                   TimeUtils::timePassed( start, end ) );
+}
+
+void Engine::performBoundTighteningAfterCaseSplit()
+{
+    // Tighten bounds of a first hidden layer with MILP solver
+    performMILPSolverBoundedTighteningForSingleLayer( 1 );
+    do
+    {
+        performSymbolicBoundTightening();
+    }
+    while ( applyAllValidConstraintCaseSplits() );
+
+    // Tighten bounds of an output layer with MILP solver
+    if ( _networkLevelReasoner )    // to avoid failing of system test.
+        performMILPSolverBoundedTighteningForSingleLayer
+            ( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+}
+
+
+bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
+{
+    collectViolatedPlConstraints();
+
+    // If all constraints are satisfied, we are possibly done
+    if ( allPlConstraintsHold() )
+    {
+        if ( _tableau->getBasicAssignmentStatus() !=
+             ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "Before declaring sat, recomputing...\n" );
+            }
+            // Make sure that the assignment is precise before declaring success
+            _tableau->computeAssignment();
+            // If we actually have a real satisfying assignment,
+            return false;
+        }
+        else
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\nEngine::solve: sat assignment found\n" );
+                _statistics.print();
+            }
+            _exitCode = Engine::SAT;
+            return true;
+        }
+    }
+    else
+    {
+        // We have violated piecewise-linear constraints.
+        performConstraintFixingStep();
+
+        // Finally, take this opporunity to tighten any bounds
+        // and perform any valid case splits.
+        tightenBoundsOnConstraintMatrix();
+        applyAllBoundTightenings();
+        // For debugging purposes
+        checkBoundCompliancyWithDebugSolution();
+
+        while ( applyAllValidConstraintCaseSplits() )
+            performSymbolicBoundTightening();
+        return false;
+    }
+}
+
+bool Engine::performPrecisionRestorationIfNeeded()
+{
+    // Check whether progress has been made recently
+        checkOverallProgress();
+
+    // If the basis has become malformed, we need to restore it
+    if ( basisRestorationNeeded() )
+    {
+        if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+        {
+            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+            _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+        }
+        else
+        {
+            performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+            _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+        }
+
+        _numVisitedStatesAtPreviousRestoration =
+            _statistics.getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+        _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+        return true;
+    }
+
+    // Restoration is not required
+    _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+
+    // Possible restoration due to preceision degradation
+    if ( shouldCheckDegradation() && highDegradation() )
+    {
+        performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+        return true;
+    }
+
+    return false;
+}
+
+bool Engine::handleMalformedBasisException()
+{
+    // Debug
+    printf( "MalformedBasisException caught!\n" );
+    //
+
+    if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
+    {
+        if ( _numVisitedStatesAtPreviousRestoration !=
+             _statistics.getUnsignedAttribute
+             ( Statistics::NUM_VISITED_TREE_STATES ) )
+        {
+            // We've tried a strong restoration before, and it didn't work. Do a weak restoration
+            _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+        }
+        else
+        {
+            _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+        }
+        return true;
+    }
+    else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
+    {
+        _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+        return true;
+    }
+    else
+        return false;
 }
 
 void Engine::performConstraintFixingStep()
