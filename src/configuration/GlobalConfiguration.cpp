@@ -18,6 +18,10 @@
 #include "MString.h"
 #include <cstdio>
 
+// Whether to use SoI instead of Reluplex for local search for satisfying assignments
+//to non-linear constraint.
+const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+
 // Use the polarity metrics to decide which branch to take first in a case split
 // and how to repair a ReLU constraint.
 const bool GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS = true;

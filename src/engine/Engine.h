@@ -511,6 +511,10 @@ private:
       Now we try to satisfy the piecewise linear constraints with
       "local" search (either with Reluplex-styled constraint fixing
       or SoI-based stochastic search).
+
+      The method also has the side effect of making progress towards the
+      branching condition.
+
       Return true iff a true satisfying assignment is found.
     */
     bool handleSatisfyingAssignmentToConvexRelaxation();
