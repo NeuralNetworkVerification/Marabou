@@ -29,6 +29,7 @@
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "VariableOutOfBoundDuringOptimizationException.h"
 #include "Vector.h"
 
 #include <random>
@@ -250,7 +251,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 bool solutionFound =
                     handleSatisfyingAssignmentToConvexRelaxation();
                 if ( solutionFound )
+                {
+                    struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+                    _statistics.incLongAttribute
+                        ( Statistics::TIME_MAIN_LOOP_MICRO,
+                          TimeUtils::timePassed( mainLoopStart,
+                                                 mainLoopEnd ) );
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "\nEngine::solve: sat assignment found\n" );
+                        _statistics.print();
+                    }
+                    _exitCode = Engine::SAT;
+
                     return true;
+                }
                 else
                     continue;
             }
@@ -265,6 +280,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 _exitCode = Engine::ERROR;
                 exportInputQueryWithError( "Cannot restore tableau" );
+                struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+                _statistics.incLongAttribute
+                    ( Statistics::TIME_MAIN_LOOP_MICRO,
+                      TimeUtils::timePassed( mainLoopStart,
+                                             mainLoopEnd ) );
                 return false;
             }
         }
@@ -274,6 +294,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
+                struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+                _statistics.incLongAttribute
+                    ( Statistics::TIME_MAIN_LOOP_MICRO,
+                      TimeUtils::timePassed( mainLoopStart,
+                                             mainLoopEnd ) );
                 if ( _verbosity > 0 )
                 {
                     printf( "\nEngine::solve: unsat query\n" );
@@ -286,12 +311,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 splitJustPerformed = true;
             }
-
+        }
+        catch ( const VariableOutOfBoundDuringOptimizationException & )
+        {
+            _tableau->toggleOptimization( false );
+            continue;
         }
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
             exportInputQueryWithError( "Unknown error" );
+            struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+            _statistics.incLongAttribute
+                ( Statistics::TIME_MAIN_LOOP_MICRO,
+                  TimeUtils::timePassed( mainLoopStart,
+                                         mainLoopEnd ) );
             return false;
         }
     }
@@ -358,15 +392,7 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
             return false;
         }
         else
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\nEngine::solve: sat assignment found\n" );
-                _statistics.print();
-            }
-            _exitCode = Engine::SAT;
             return true;
-        }
     }
     else if ( !GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {
@@ -386,18 +412,7 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
     }
     else
     {
-        if ( performLocalSearch() )
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\nEngine::solve: sat assignment found\n" );
-                _statistics.print();
-            }
-            _exitCode = Engine::SAT;
-            return true;
-        }
-        else
-            return false;
+        return performLocalSearch();
     }
 }
 
@@ -2598,6 +2613,7 @@ bool Engine::performLocalSearch()
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.incLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO,
                                       TimeUtils::timePassed( start, end ) );
+        start = end;
 
         if ( lastProposalAccepted )
         {
@@ -2651,16 +2667,9 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
         DEBUG( _tableau->verifyInvariants() );
 
         mainLoopStatistics();
-        if ( _verbosity > 1 &&
-             _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS )
-             % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-            _statistics.print();
 
         if ( !allVarsWithinBounds() )
-        {
-            _tableau->toggleOptimization( false );
-            throw MalformedBasisException();
-        }
+            throw VariableOutOfBoundDuringOptimizationException();
 
         // Possible restoration due to preceision degradation
         if ( shouldCheckDegradation() && highDegradation() )
