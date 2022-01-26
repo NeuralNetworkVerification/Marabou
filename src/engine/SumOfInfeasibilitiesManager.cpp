@@ -120,8 +120,6 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
     struct timespec start = TimeUtils::sampleMicro();
 
     _currentPhasePattern = _lastAcceptedPhasePattern;
-    getCurrentSoIPhasePattern().dump();
-
 
     if ( _searchStrategy == SoISearchStrategy::MCMC )
     {
@@ -134,8 +132,6 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
     }
 
     ASSERT( _currentPhasePattern != _lastAcceptedPhasePattern );
-
-    getCurrentSoIPhasePattern().dump();
 
     if ( _statistics )
     {
