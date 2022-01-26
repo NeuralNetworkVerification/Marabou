@@ -20,7 +20,7 @@
 
 // Whether to use SoI instead of Reluplex for local search for satisfying assignments
 //to non-linear constraint.
-const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = true;
 
 // Use the polarity metrics to decide which branch to take first in a case split
 // and how to repair a ReLU constraint.
