@@ -2637,7 +2637,6 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
                 ENGINE_LOG
                     ( Stringf( "Current heuristic cost: %f",
                                computeHeuristicCost( heuristicCost ) ).ascii() );
-                ASSERT( allVarsWithinBounds() );
             });
 
         DEBUG( _tableau->verifyInvariants() );
@@ -2648,11 +2647,20 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
              % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
 
+        if ( !allVarsWithinBounds() )
+        {
+            _tableau->toggleOptimization( false );
+            throw MalformedBasisException();
+        }
+
+        // Possible restoration due to preceision degradation
         if ( shouldCheckDegradation() && highDegradation() )
         {
             performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
             continue;
         }
+
+        ASSERT( allVarsWithinBounds() );
 
         localOptimaReached = performSimplexStep();
     }
