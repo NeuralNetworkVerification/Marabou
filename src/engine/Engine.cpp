@@ -368,7 +368,7 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
             return true;
         }
     }
-    else
+    else if ( !GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {
         // We have violated piecewise-linear constraints.
         performConstraintFixingStep();
@@ -384,6 +384,8 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
             performSymbolicBoundTightening();
         return false;
     }
+    else
+        return false;
 }
 
 bool Engine::performPrecisionRestorationIfNeeded()

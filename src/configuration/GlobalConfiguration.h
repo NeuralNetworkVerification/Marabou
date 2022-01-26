@@ -23,6 +23,8 @@ class GlobalConfiguration
 public:
     static void print();
 
+    static const bool USE_DEEPSOI_LOCAL_SEARCH;
+
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;
 
     // The default epsilon used for comparing doubles
