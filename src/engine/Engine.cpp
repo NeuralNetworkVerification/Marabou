@@ -386,7 +386,16 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
     }
     else
     {
-        return performLocalSearch();
+        if ( performLocalSearch() )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "\nEngine::solve: sat assignment found\n" );
+                _statistics.print();
+            }
+            _exitCode = Engine::SAT;
+            return true;
+        }
     }
 }
 
@@ -2564,13 +2573,12 @@ bool Engine::performLocalSearch()
     // All the linear constraints have been satisfied at this point.
     // Update the cost function
     _soiManager->initializePhasePattern();
-    minimizeHeuristicCost( _soiManager->getSoIPhasePattern() );
+    minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
     ASSERT( allVarsWithinBounds() );
-
-    _soiManager->obtainCurrentAssignment();
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
+    _soiManager->acceptCurrentPhasePattern();
     double costOfLastAcceptedPhasePattern = computeHeuristicCost
-        ( _soiManager->getSoIPhasePattern() );
+        ( _soiManager->getCurrentSoIPhasePattern() );
 
     double costOfProposedPhasePattern = FloatUtils::infinity();
     bool lastProposalAccepted = true;
@@ -2589,25 +2597,20 @@ bool Engine::performLocalSearch()
         }
 
         _soiManager->proposePhasePatternUpdate();
-        minimizeHeuristicCost( _soiManager->getSoIPhasePattern() );
+        minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
         _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
         costOfProposedPhasePattern = computeHeuristicCost
-            ( _soiManager->getSoIPhasePattern() );
+            ( _soiManager->getCurrentSoIPhasePattern() );
 
-        if ( !_soiManager->decideToAcceptCurrentProposal
+        if ( _soiManager->decideToAcceptCurrentProposal
              ( costOfLastAcceptedPhasePattern, costOfProposedPhasePattern ) )
         {
-            _soiManager->rejectLastProposal();
-            lastProposalAccepted = false;
-        }
-        else
-        {
+            _soiManager->acceptCurrentPhasePattern();
             costOfLastAcceptedPhasePattern = costOfProposedPhasePattern;
             lastProposalAccepted = true;
-            _statistics.setDoubleAttribute
-                ( Statistics::COST_OF_CURRENT_PHASE_PATTERN,
-                  costOfLastAcceptedPhasePattern );
         }
+        else
+            lastProposalAccepted = false;
     }
     printf( "Performing local search - done" );
     return false;
