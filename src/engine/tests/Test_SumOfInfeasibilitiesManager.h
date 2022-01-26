@@ -111,7 +111,6 @@ public:
         relu3->notifyLowerBound( 5, 0 );
 
         TS_ASSERT( ipq.constructNetworkLevelReasoner() );
-        ipq.getNetworkLevelReasoner()->dumpTopology();
     }
 
     void test_initialize_phase_pattern_with_input_assignment1()
@@ -161,10 +160,8 @@ public:
         List<PhaseStatus> phases = plConstraints[3]->getAllCases();
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
                                   ( cost, *( ++( ++phases.begin() ) ) ) );
-        cost.dump();
-        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
-        // No proposal yet.
-        TS_ASSERT_EQUALS( cost, soiManager->getProposedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost, soiManager->getLastAcceptedSoIPhasePattern() );
     }
 
     void test_initialize_phase_pattern_with_input_assignment2()
@@ -221,10 +218,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
                                   ( cost, MAX_PHASE_ELIMINATED ) );
         cost.dump();
-        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
-
-        // No proposal yet.
-        TS_ASSERT_EQUALS( cost, soiManager->getProposedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
     }
 
     void test_propose_phase_pattern_update_randomly()
@@ -263,7 +257,7 @@ public:
 
         for ( const auto &plConstraint : plConstraints )
         {
-            soiManager->setPhaseStatusInCurrentPhasePattern
+            soiManager->setPhaseStatusInLastAcceptedPhasePattern
                 ( plConstraint, *( plConstraint->getAllCases().begin() ) );
         }
 
@@ -271,9 +265,6 @@ public:
         mock->nextRandValue = 1;
         TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
         TS_ASSERT_EQUALS( mock->randWasCalled, 1u );
-
-        soiManager->getSoIPhasePattern().dump();
-        soiManager->getProposedSoIPhasePattern().dump();
 
         // The cost term of the second relu is flipped.
         LinearExpression cost1;
@@ -290,7 +281,8 @@ public:
                                   ( cost1, *( plConstraints[3]->
                                              getAllCases().begin() ) ) );
 
-        TS_ASSERT_EQUALS( cost1, soiManager->getProposedSoIPhasePattern() );
+        cost1.dump();
+        TS_ASSERT_EQUALS( cost1, soiManager->getCurrentSoIPhasePattern() );
 
         mock->nextRandValue = 7;
         TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
@@ -315,12 +307,12 @@ public:
                                   ( cost2, *(++(++( plConstraints[3]->
                                                     getAllCases().begin() ) ) ) ) );
 
-        TS_ASSERT_EQUALS( cost2, soiManager->getProposedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost2, soiManager->getCurrentSoIPhasePattern() );
 
-        TS_ASSERT_THROWS_NOTHING( soiManager->acceptCurrentProposal() );
+        TS_ASSERT_THROWS_NOTHING( soiManager->acceptCurrentPhasePattern() );
 
-        TS_ASSERT_EQUALS( cost2, soiManager->getSoIPhasePattern() );
-        TS_ASSERT_EQUALS( cost2, soiManager->getProposedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost2, soiManager->getLastAcceptedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost2, soiManager->getCurrentSoIPhasePattern() );
     }
 
     void test_propose_phase_pattern_update_walksat()
@@ -366,13 +358,13 @@ public:
         TS_ASSERT_THROWS_NOTHING( soiManager->initializePhasePattern() );
         TS_ASSERT_THROWS_NOTHING( soiManager->obtainCurrentAssignment() );
 
-        soiManager->setPhaseStatusInCurrentPhasePattern
+        soiManager->setPhaseStatusInLastAcceptedPhasePattern
             ( plConstraints[0], RELU_PHASE_ACTIVE );
-        soiManager->setPhaseStatusInCurrentPhasePattern
+        soiManager->setPhaseStatusInLastAcceptedPhasePattern
             ( plConstraints[1], RELU_PHASE_INACTIVE );
-        soiManager->setPhaseStatusInCurrentPhasePattern
+        soiManager->setPhaseStatusInLastAcceptedPhasePattern
             ( plConstraints[2], RELU_PHASE_ACTIVE );
-        soiManager->setPhaseStatusInCurrentPhasePattern
+        soiManager->setPhaseStatusInLastAcceptedPhasePattern
             ( plConstraints[3], *( plConstraints[3]->
                                    getAllCases().begin() ) );
 
@@ -392,11 +384,10 @@ public:
                                   ( cost1, *( plConstraints[3]->
                                              getAllCases().begin() ) ) );
 
-        TS_ASSERT_EQUALS( cost1, soiManager->getProposedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost1, soiManager->getCurrentSoIPhasePattern() );
 
         plConstraints[0]->notifyVariableValue( 0, 0 );
         tableau.nextValues[0] = 0;
-        TS_ASSERT_THROWS_NOTHING( soiManager->obtainCurrentAssignment() );
 
         // Reduced cost for relu1: 0, for relu2: 1, for relu3: -2,
         // for max: 1.5. So pick max with phase corresponding to the second input.
@@ -414,7 +405,7 @@ public:
                                   ( cost2, *( ++plConstraints[3]->
                                               getAllCases().begin() ) ) );
 
-        TS_ASSERT_EQUALS( cost2, soiManager->getProposedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost2, soiManager->getCurrentSoIPhasePattern() );
     }
 
     void test_decide_to_accept_current_proposal()
@@ -435,10 +426,10 @@ public:
         mock->randWasCalled = 0;
         // Only accept if the probability to accept is larger than 80%.
         mock->nextRandValue = (int) RAND_MAX * 0.8;
-        double costOfCurrentPhasePattern = 10;
+        double costOfLastAcceptedPhasePattern = 10;
         double costOfProposedPhasePattern = 9;
         TS_ASSERT( soiManager->decideToAcceptCurrentProposal
-                   ( costOfCurrentPhasePattern,
+                   ( costOfLastAcceptedPhasePattern,
                      costOfProposedPhasePattern ) );
         // Always accept if the new cost is lower.
         TS_ASSERT_EQUALS( mock->randWasCalled, 0u );
@@ -446,7 +437,7 @@ public:
         costOfProposedPhasePattern = 10.1;
         // Prob. to accept is e^( -beta * (10.5 - 10)) ~= 60%, thus rejected.
         TS_ASSERT( !soiManager->decideToAcceptCurrentProposal
-                   ( costOfCurrentPhasePattern,
+                   ( costOfLastAcceptedPhasePattern,
                      costOfProposedPhasePattern ) );
         TS_ASSERT_EQUALS( mock->randWasCalled, 1u );
 
@@ -455,14 +446,14 @@ public:
 
         // Prob. to accept is still ~60%, thus accepted.
         TS_ASSERT( soiManager->decideToAcceptCurrentProposal
-                   ( costOfCurrentPhasePattern,
+                   ( costOfLastAcceptedPhasePattern,
                      costOfProposedPhasePattern ) );
         TS_ASSERT_EQUALS( mock->randWasCalled, 2u );
 
         costOfProposedPhasePattern = 10.5;
         // Accept with prob. e^( -beta * (10.5 - 10)) ~= 8.2%, thus rejected.
         TS_ASSERT( !soiManager->decideToAcceptCurrentProposal
-                   ( costOfCurrentPhasePattern,
+                   ( costOfLastAcceptedPhasePattern,
                      costOfProposedPhasePattern ) );
         TS_ASSERT_EQUALS( mock->randWasCalled, 3u );
     }
@@ -514,9 +505,6 @@ public:
         }
 
         TS_ASSERT_THROWS_NOTHING
-            (soiManager->obtainCurrentAssignment() );
-
-        TS_ASSERT_THROWS_NOTHING
             (soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints() );
 
         LinearExpression cost;
@@ -531,7 +519,7 @@ public:
                                   ( cost, *( plConstraints[3]->
                                              getAllCases().begin() ) ) );
 
-        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
     }
 
     void test_remove_cost_component_from_heuristic_cost()
@@ -593,8 +581,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
                                   ( cost, *( plConstraints[2]->
                                              getAllCases().begin() ) ) );
-        TS_ASSERT_EQUALS( cost, soiManager->getSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
     }
-
-
 };

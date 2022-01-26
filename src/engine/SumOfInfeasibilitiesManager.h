@@ -42,13 +42,12 @@ public:
     /*
       Returns the actual current phase pattern from _currentPhasePattern
     */
-    LinearExpression getSoIPhasePattern() const;
+    LinearExpression getCurrentSoIPhasePattern() const;
 
     /*
-      Returns the actual proposed phase pattern from _currentPhasePattern
-      and _currentProposal
+      Returns the actual current phase pattern from _lastAcceptedPhasePattern
     */
-    LinearExpression getProposedSoIPhasePattern() const;
+    LinearExpression getLastAcceptedSoIPhasePattern() const;
 
     /*
       Called at the beginning of the local search (DeepSoI).
@@ -76,9 +75,9 @@ public:
                                         double costOfProposedPhasePattern );
 
     /*
-      Update _currentPhasePattern with _currentProposal.
+      Set _lastAcceptedPhasePattern to be _currentPhasePattern
     */
-    void acceptCurrentProposal();
+    void acceptCurrentPhasePattern();
 
     // Go through each PLConstraint, check whether it is satisfied by the
     // current assignment but the cost term is not zero. In that case,
@@ -101,8 +100,13 @@ public:
     void setStatistics( Statistics *statistics );
 
     /* For debug use */
+    void setPhaseStatusInLastAcceptedPhasePattern( PiecewiseLinearConstraint
+                                                   *constraint,
+                                                   PhaseStatus phase );
+
     void setPhaseStatusInCurrentPhasePattern( PiecewiseLinearConstraint
                                               *constraint, PhaseStatus phase );
+
 
 private:
     const List<PiecewiseLinearConstraint *> &_plConstraints;
@@ -130,7 +134,7 @@ private:
       contain one of the ReLUConstraint in the _currentPhasePattern
       with PhaseStatus flipped.
     */
-    Map<PiecewiseLinearConstraint *, PhaseStatus> _currentProposal;
+    Map<PiecewiseLinearConstraint *, PhaseStatus> _lastAcceptedPhasePattern;
 
     /*
       The constraints in the current phase pattern (i.e., participating in the

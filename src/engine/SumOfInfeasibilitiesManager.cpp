@@ -38,37 +38,23 @@ SumOfInfeasibilitiesManager::SumOfInfeasibilitiesManager( const InputQuery
 void SumOfInfeasibilitiesManager::resetPhasePattern()
 {
     _currentPhasePattern.clear();
-    _currentProposal.clear();
+    _lastAcceptedPhasePattern.clear();
     _plConstraintsInCurrentPhasePattern.clear();
 }
 
-LinearExpression SumOfInfeasibilitiesManager::getSoIPhasePattern() const
+LinearExpression SumOfInfeasibilitiesManager::getCurrentSoIPhasePattern() const
 {
     LinearExpression cost;
     for ( const auto &pair : _currentPhasePattern )
-    {
         pair.first->getCostFunctionComponent( cost, pair.second );
-    }
     return cost;
 }
 
-LinearExpression SumOfInfeasibilitiesManager::getProposedSoIPhasePattern() const
+LinearExpression SumOfInfeasibilitiesManager::getLastAcceptedSoIPhasePattern() const
 {
-    DEBUG({
-            // Check that the constraints in the proposal is a subset of those
-            // in the currentPhasePattern
-            ASSERT( Set<PiecewiseLinearConstraint *>::containedIn
-                    ( _currentProposal.keys(), _currentPhasePattern.keys() ) );
-        });
-
     LinearExpression cost;
-    for ( const auto &pair : _currentProposal )
+    for ( const auto &pair : _lastAcceptedPhasePattern )
         pair.first->getCostFunctionComponent( cost, pair.second );
-
-    for ( const auto &pair : _currentPhasePattern )
-        if ( !_currentProposal.exists( pair.first ) )
-            pair.first->getCostFunctionComponent( cost, pair.second );
-
     return cost;
 }
 
@@ -92,6 +78,9 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
     // Store constraints participating in the SoI
     for ( const auto &pair : _currentPhasePattern )
         _plConstraintsInCurrentPhasePattern.append( pair.first );
+
+    // The first phase pattern is always accepted.
+    _lastAcceptedPhasePattern = _currentPhasePattern;
 
     if ( _statistics )
     {
@@ -130,7 +119,10 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    _currentProposal.clear();
+    _currentPhasePattern = _lastAcceptedPhasePattern;
+    getCurrentSoIPhasePattern().dump();
+
+
     if ( _searchStrategy == SoISearchStrategy::MCMC )
     {
         proposePhasePatternUpdateRandomly();
@@ -140,6 +132,10 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
         // Walksat
         proposePhasePatternUpdateWalksat();
     }
+
+    ASSERT( _currentPhasePattern != _lastAcceptedPhasePattern );
+
+    getCurrentSoIPhasePattern().dump();
 
     if ( _statistics )
     {
@@ -178,7 +174,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
     if ( allPhases.size() == 1 )
     {
         // There are only two possible phases. So we just flip the phase.
-        _currentProposal[plConstraintToUpdate] = *( allPhases.begin() );
+        _currentPhasePattern[plConstraintToUpdate] = *( allPhases.begin() );
     }
     else
     {
@@ -189,7 +185,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
             ++it;
             --index;
         }
-        _currentProposal[plConstraintToUpdate] = *it;
+        _currentPhasePattern[plConstraintToUpdate] = *it;
     }
     SOI_LOG( "Proposing phase pattern update randomly - done" );
 }
@@ -197,6 +193,8 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
 void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
 {
     SOI_LOG( "Proposing phase pattern update with Walksat-based strategy..." );
+    obtainCurrentAssignment();
+
     // Flip to the cost term that reduces the cost by the most
     PiecewiseLinearConstraint *plConstraintToUpdate = NULL;
     PhaseStatus updatedPhase = PHASE_NOT_FIXED;
@@ -217,7 +215,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
 
     if ( plConstraintToUpdate )
     {
-        _currentProposal[plConstraintToUpdate] = updatedPhase;
+        _currentPhasePattern[plConstraintToUpdate] = updatedPhase;
     }
     else
     {
@@ -242,13 +240,10 @@ bool SumOfInfeasibilitiesManager::decideToAcceptCurrentProposal
     }
 }
 
-void SumOfInfeasibilitiesManager::acceptCurrentProposal()
+void SumOfInfeasibilitiesManager::acceptCurrentPhasePattern()
 {
-    // We update _currentPhasePattern with entries in _currentProposal
-    for ( const auto &pair : _currentProposal )
-    {
-        _currentPhasePattern[pair.first] = pair.second;
-    }
+    _lastAcceptedPhasePattern = _currentPhasePattern;
+
     if ( _statistics )
         _statistics->incLongAttribute
             ( Statistics::NUM_ACCEPTED_PHASE_PATTERN_UPDATE );
@@ -256,6 +251,7 @@ void SumOfInfeasibilitiesManager::acceptCurrentProposal()
 
 void SumOfInfeasibilitiesManager::updateCurrentPhasePatternForSatisfiedPLConstraints()
 {
+    obtainCurrentAssignment();
     for ( const auto &pair : _currentPhasePattern )
     {
         if ( pair.first->satisfied() )
@@ -298,6 +294,14 @@ void SumOfInfeasibilitiesManager::obtainCurrentAssignment()
 void SumOfInfeasibilitiesManager::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void SumOfInfeasibilitiesManager::setPhaseStatusInLastAcceptedPhasePattern
+( PiecewiseLinearConstraint *constraint, PhaseStatus phase )
+{
+    ASSERT( _lastAcceptedPhasePattern.exists( constraint ) &&
+            _plConstraintsInCurrentPhasePattern.exists( constraint ) );
+    _lastAcceptedPhasePattern[constraint] = phase;
 }
 
 void SumOfInfeasibilitiesManager::setPhaseStatusInCurrentPhasePattern
