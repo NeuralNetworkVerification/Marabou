@@ -396,6 +396,8 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
             _exitCode = Engine::SAT;
             return true;
         }
+        else
+            return false;
     }
 }
 
@@ -2641,35 +2643,8 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
              % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
 
-        // If the basis has become malformed, we need to restore it
-        if ( basisRestorationNeeded() )
-        {
-            if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
-            {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
-            }
-            else
-            {
-                performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
-                _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
-            }
-
-            _numVisitedStatesAtPreviousRestoration =
-                _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS );
-            _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+        if ( performPrecisionRestorationIfNeeded() )
             continue;
-        }
-
-        // Restoration is not required
-        _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
-
-        // Possible restoration due to preceision degradation
-        if ( shouldCheckDegradation() && highDegradation() )
-        {
-            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-            continue;
-        }
 
         localOptimaReached = performSimplexStep();
     }
