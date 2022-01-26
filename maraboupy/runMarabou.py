@@ -14,6 +14,7 @@ import argparse
 import numpy as np
 import os
 import sys
+import tempfile
 
 import pathlib
 sys.path.insert(0, os.path.join(str(pathlib.Path(__file__).parent.absolute()), "../"))
@@ -21,13 +22,11 @@ from maraboupy import Marabou
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
 
+import subprocess
+
 def main():
-        args = arguments().parse_args()
-        print(args)
+        args, unknown = arguments().parse_known_args()
         query, network = createQuery(args)
-        if (args.query_dump_file != ""):
-                MarabouCore.saveQuery(query, args.query_dump_file)
-                exit()
         if query == None:
             print("Unable to create an input query!")
             print("There are three options to define the benchmark:\n"
@@ -36,24 +35,18 @@ def main():
                   "3. Provide a network, a dataset (--dataset), an epsilon (-e), "
                   "target label (-t), and the index of the point in the test set (-i).")
             exit(1)
-        options = createOptions(args)
-        vals, stats = MarabouCore.solve(query, options)
-        if stats.hasTimedOut():
-            print ("TIMEOUT")
-        elif len(vals)==0:
-            print("unsat")
-        else:
-            for i in range(query.getNumInputVariables()):
-                print("x{} = {}".format(i, vals[query.inputVariableByIndex(i)]))
-            if network:
-                outputs = network.evaluateWithoutMarabou(np.array([[vals[query.inputVariableByIndex(i)] for i in range(query.getNumInputVariables())]]))
-                for i, output in enumerate(list(outputs.flatten())):
-                    print("y{} = {}".format(i, output))
-            else:
-                for i in range(query.getNumOutputVariables()):
-                    print("y{} = {}".format(i, vals[query.outputVariableByIndex(i)]))
 
-            print("sat")
+        marabou_binary = args.marabou_binary
+        if not os.access(marabou_binary, os.X_OK):
+            sys.exit('"{}" does not exist or is not executable'.format(marabou_binary))
+
+        temp = tempfile.NamedTemporaryFile(dir=args.temp_dir, delete=False)
+        name = temp.name
+        MarabouCore.saveQuery(query, name)
+
+        print("Running Marabou with the following arguments: ", unknown)
+        subprocess.run([marabou_binary] + ["--input-query={}".format(name)] + unknown )
+        os.remove(name)
 
 def createQuery(args):
     if args.input_query:
@@ -112,14 +105,14 @@ def encode_cifar10_linf(network, index, epsilon, target_label):
     lb = np.zeros(3072)
     ub = np.zeros(3072)
     for i in range(1024):
-        lb[i] = (max(0, point[i] - epsilon) - 0.485) / 0.225
-        ub[i] = (min(1, point[i] + epsilon) - 0.485) / 0.225
+        lb[i] = max(0, point[i] - epsilon)
+        ub[i] = min(1, point[i] + epsilon)
     for i in range(1024):
-        lb[1024 + i] = (max(0, point[1024 + i] - epsilon) - 0.456) / 0.225
-        ub[1024 + i] = (min(1, point[1024 + i] + epsilon) - 0.456) / 0.225
+        lb[1024 + i] = max(0, point[1024 + i] - epsilon)
+        ub[1024 + i] = min(1, point[1024 + i] + epsilon)
     for i in range(1024):
-        lb[2048 + i] = (max(0, point[2048 + i] - epsilon) - 0.406) / 0.225
-        ub[2048 + i] = (min(1, point[2048 + i] + epsilon) - 0.406) / 0.225
+        lb[2048 + i] = max(0, point[2048 + i] - epsilon)
+        ub[2048 + i] = min(1, point[2048 + i] + epsilon)
     print("correct label: {}, target label: {}".format(y, target_label))
     for i in range(3072):
         network.setLowerBound(i, lb[i])
@@ -130,28 +123,6 @@ def encode_cifar10_linf(network, index, epsilon, target_label):
                                    network.outputVars[0][target_label]],
                                   [1, -1], 0)
     return
-
-def createOptions(args):
-    options = MarabouCore.Options()
-    options._numWorkers = args.num_workers
-    options._initialTimeout = args.initial_timeout
-    options._initialDivides = args.initial_divides
-    options._onlineDivides = args.num_online_divides
-    options._timeoutInSeconds = args.timeout
-    options._timeoutFactor = args.timeout_factor
-    options._verbosity = args.verbosity
-    options._snc = args.snc
-    options._splittingStrategy = args.branch
-    options._sncSplittingStrategy = args.split_strategy
-    options._splitThreshold = args.split_threshold
-    options._solveWithMILP = args.milp
-    options._preprocessorBoundTolerance = args.preprocessor_bound_tolerance
-    options._dumpBounds = args.dump_bounds
-    options._tighteningStrategy = args.tightening_strategy
-    options._milpTighteningStrategy = args.milp_tightening
-    options._milpTimeout = args.milp_timeout
-
-    return options
 
 def arguments():
     ################################ Arguments parsing ##############################
@@ -171,48 +142,13 @@ def arguments():
                         help='The target of the adversarial attack')
     parser.add_argument('-i,', '--index', type=int, default=0,
                         help='The index of the point in the test set')
+    parser.add_argument('--temp-dir', type=str, default="/tmp/",
+                        help='Temporary directory')
+    marabou_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()),
+                                "../build/Marabou" )
+    parser.add_argument('--marabou-binary', type=str, default=marabou_path,
+                        help='The path to Marabou binary')
 
-    parser.add_argument('--query-dump-file', type=str, default="",
-                        help='Dump the query to a file')
-
-    options = MarabouCore.Options()
-    # runtime options
-    parser.add_argument('--snc', action="store_true",
-                        help='Use the split-and-conquer solving mode.')
-    parser.add_argument("--dump-bounds", action="store_true",
-                        help="Dump the bounds after preprocessing" )
-    parser.add_argument( "--num-workers", type=int, default=options._numWorkers,
-                         help="(SnC) Number of workers" )
-    parser.add_argument( "--split-strategy", type=str, default=options._sncSplittingStrategy,
-                         help="(SnC) The splitting strategy" )
-    parser.add_argument( "--tightening-strategy", type=str, default=options._tighteningStrategy,
-                         help="type of bound tightening technique to use: sbt/deeppoly/none. default: deeppoly" )
-    parser.add_argument( "--initial-divides", type=int, default=options._initialDivides,
-                         help="(SnC) Number of times to initially bisect the input region" )
-    parser.add_argument( "--initial-timeout", type=int, default=options._initialTimeout,
-                         help="(SnC) The initial timeout" )
-    parser.add_argument( "--num-online-divides", type=int, default=options._onlineDivides,
-                         help="(SnC) Number of times to further bisect a sub-region when a timeout occurs" )
-    parser.add_argument( "--timeout", type=int, default=options._timeoutInSeconds,
-                         help="Global timeout" )
-    parser.add_argument( "--verbosity", type=int, default=options._verbosity,
-                         help="Verbosity of engine::solve(). 0: does not print anything (for SnC), 1: print"
-                         "out statistics in the beginning and end, 2: print out statistics during solving." )
-    parser.add_argument( "--split-threshold", type=int, default=options._splitThreshold,
-                         help="Max number of tries to repair a relu before splitting" )
-    parser.add_argument( "--timeout-factor", type=float, default=options._timeoutFactor,
-                         help="(SnC) The timeout factor" )
-    parser.add_argument( "--preprocessor-bound-tolerance", type=float, default=options._preprocessorBoundTolerance,
-                          help="epsilon for preprocessor bound tightening comparisons" )
-    parser.add_argument( "--milp", action="store_true", default=options._solveWithMILP,
-                         help="Use a MILP solver to solve the input query" )
-    parser.add_argument( "--milp-tightening", type=str, default=options._milpTighteningStrategy,
-                         help="The MILP solver bound tightening type:"
-                         "lp/lp-inc/milp/milp-inc/iter-prop/none. default: lp" )
-    parser.add_argument( "--milp-timeout", type=float, default=options._milpTimeout,
-                         help="Per-ReLU timeout for iterative propagation" )
-    parser.add_argument( "--branch", type=str, default=options._splittingStrategy,
-                         help="The branching strategy" )
     return parser
 
 if __name__ == "__main__":
