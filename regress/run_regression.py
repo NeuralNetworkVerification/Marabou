@@ -119,6 +119,32 @@ def run_mpsparser(mps_binary, network_path, expected_result, arguments=None):
 
     return analyze_process_result(out, err, exit_status, expected_result)
 
+def run_input_query(marabou_binary, input_query_path, expected_result, timeout=DEFAULT_TIMEOUT, arguments=None):
+    '''
+    Run marabou and assert the result is according to the expected_result
+    :param marabou_binary: path to marabou executable
+    :param network_path: path to nnet file to pass too marabou
+    :param property_path: path to property file to pass to marabou to verify
+    :param expected_result: sat / unsat
+    :param arguments list of arguments to pass to Marabou (for example DnC mode)
+    :return: True / False if test pass or not
+    '''
+    if not os.access(marabou_binary, os.X_OK):
+        sys.exit(
+            '"{}" does not exist or is not executable'.format(marabou_binary))
+    if not os.path.isfile(network_path):
+        sys.exit('"{}" does not exist or is not a file'.format(network_path))
+    if not os.path.isfile(property_path):
+        sys.exit('"{}" does not exist or is not a file'.format(property_path))
+    if expected_result not in {'sat', 'unsat'}:
+        sys.exit('"{}" is not a marabou supported result'.format(expected_result))
+
+    args = [marabou_binary, "--input-query", network_path]
+    if isinstance(arguments, list):
+        args += arguments
+    out, err, exit_status = run_process(args, os.curdir, timeout)
+
+    return analyze_process_result(out, err, exit_status, expected_result)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -129,10 +155,9 @@ def main():
     parser.add_argument('network_file')
     parser.add_argument('property_file', nargs='?', default='')
     parser.add_argument('expected_result', choices=EXPECTED_RESULT_OPTIONS)
-    parser.add_argument('--snc', action='store_true')
     parser.add_argument('--timeout', nargs='?', const=DEFAULT_TIMEOUT, type=int)
 
-    args = parser.parse_args()
+    args, unknown = parser.parse_known_args()
 
     binary = args.marabou_binary
     network_file = os.path.abspath(args.network_file)
@@ -141,16 +166,15 @@ def main():
     if args.network_file.endswith('nnet'):
         property_file = os.path.abspath(args.property_file)
 
-    marabou_args = []
-    if args.snc:
-        marabou_args += ['--snc']
+    marabou_args = unknown
     if args.network_file.endswith('nnet'):
         return run_marabou(binary, network_file, property_file, expected_result, args.timeout, marabou_args)
     elif args.network_file.endswith('mps'):
         return run_mpsparser(binary, network_file, expected_result, marabou_args)
+    if args.network_file.endswith('ipq'):
+        return run_ipq(binary, network_file, expected_result, marabou_args)
     else:
-        raise NotImplementedError('supporting only nnet and mps file format')
-
+        raise NotImplementedError('supporting only nnet, ipq, and mps file format')
 
 if __name__ == "__main__":
     if main():

@@ -64,6 +64,20 @@ macro(marabou_add_regress_mps_test level net_file result arguments
     ${result} ${test_properties}")
 endmacro()
 
+macro(marabou_add_input_query_test level ipq_file result arguments
+    test_properties)
+  get_filename_component(net_name ${ipq_file} NAME)
+  set(test_name "${ipq_file}")
+  add_test(${test_name}
+    ${PYTHON_EXECUTABLE} ${run_regress_script}
+    ${MARABOU_EXE_PATH}
+    "${CMAKE_SOURCE_DIR}/regress/regress"$level"/input_queries/${ipq_file}"
+    ${result}
+    ${arguments})
+  set_tests_properties(${test_name} PROPERTIES LABELS "regress${level}
+    ${result} ${test_properties}")
+endmacro()
+
 add_subdirectory(regress0)
 add_subdirectory(regress1)
 add_subdirectory(regress2)

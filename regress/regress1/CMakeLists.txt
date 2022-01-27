@@ -21,9 +21,6 @@ marabou_add_mnist_test(1 "mnist10x10.nnet" "image3_target4_epsilon0.005.txt" uns
 marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_5_7.nnet" "3" unsat)
 marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_4_7.nnet" "4" unsat)
 
-
-
-
 marabou_add_coav_test(1 "reluBenchmark0.453322172165s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.30711388588s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.00512099266052s_UNSAT.nnet" unsat)
@@ -117,3 +114,13 @@ marabou_add_coav_test(1 "reluBenchmark0.213079929352s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark1.81178617477s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.956095933914s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.00601387023926s_UNSAT.nnet" unsat)
+
+file(GLOB sat_ipqs "input_queries/*_sat.ipq")
+foreach(file ${sat_ipqs})
+  marabou_add_input_query_test(1 ${file} sat)
+endforeach()
+
+file(GLOB unsat_ipqs "input_queries/*_unsat.ipq")
+foreach(file ${unsat_ipqs})
+  marabou_add_input_query_test(1 ${file} unsat)
+endforeach()
