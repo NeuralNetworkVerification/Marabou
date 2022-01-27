@@ -71,7 +71,7 @@ macro(marabou_add_input_query_test level ipq_file result arguments
   add_test(${test_name}
     ${PYTHON_EXECUTABLE} ${run_regress_script}
     ${MARABOU_EXE_PATH}
-    "${CMAKE_SOURCE_DIR}/regress/regress"$level"/input_queries/${ipq_file}"
+    "${CMAKE_SOURCE_DIR}/regress/regress${level}/input_queries/${ipq_file}"
     ${result}
     ${arguments})
   set_tests_properties(${test_name} PROPERTIES LABELS "regress${level}
@@ -91,4 +91,3 @@ add_custom_target(regress
   COMMAND
     ctest --output-on-failure -L "regress0" -j${CTEST_NTHREADS} $$ARGS
   DEPENDS build-regress)
- 

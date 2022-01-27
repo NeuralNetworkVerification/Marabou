@@ -132,14 +132,12 @@ def run_input_query(marabou_binary, input_query_path, expected_result, timeout=D
     if not os.access(marabou_binary, os.X_OK):
         sys.exit(
             '"{}" does not exist or is not executable'.format(marabou_binary))
-    if not os.path.isfile(network_path):
+    if not os.path.isfile(input_query_path):
         sys.exit('"{}" does not exist or is not a file'.format(network_path))
-    if not os.path.isfile(property_path):
-        sys.exit('"{}" does not exist or is not a file'.format(property_path))
     if expected_result not in {'sat', 'unsat'}:
         sys.exit('"{}" is not a marabou supported result'.format(expected_result))
 
-    args = [marabou_binary, "--input-query", network_path]
+    args = [marabou_binary, "--input-query", input_query_path]
     if isinstance(arguments, list):
         args += arguments
     out, err, exit_status = run_process(args, os.curdir, timeout)
@@ -172,7 +170,7 @@ def main():
     elif args.network_file.endswith('mps'):
         return run_mpsparser(binary, network_file, expected_result, marabou_args)
     if args.network_file.endswith('ipq'):
-        return run_ipq(binary, network_file, expected_result, marabou_args)
+        return run_input_query(binary, network_file, expected_result, args.timeout, marabou_args)
     else:
         raise NotImplementedError('supporting only nnet, ipq, and mps file format')
 
