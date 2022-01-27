@@ -16,6 +16,7 @@
 #ifndef __PLConstraintScoreTracker_h__
 #define __PLConstraintScoreTracker_h__
 
+#include "Debug.h"
 #include "List.h"
 #include "MStringf.h"
 #include "PiecewiseLinearConstraint.h"
@@ -48,33 +49,51 @@ typedef std::set<ScoreEntry> Scores;
 class PLConstraintScoreTracker
 {
 public:
-    PLConstraintScoreTracker();
+    virtual ~PLConstraintScoreTracker() = default;
 
+    /*
+      Initialize the scores for all constraints to 0.
+    */
     void initialize( List<PiecewiseLinearConstraint *> &plConstraints );
 
-    void reset();
+    /*
+      Update the score of a constraint.
+    */
+    virtual void updateScore( PiecewiseLinearConstraint *constraint,
+                              double score ) = 0;
 
-    void updateScore( PiecewiseLinearConstraint *constraint, double score );
+    /*
+      Among active and unfixed constraints, return the one with the largest
+      score.
+    */
+    PiecewiseLinearConstraint *topUnfixed();
 
-    PiecewiseLinearConstraint *topUnfixed()
+    /*
+      Return the constraint with the largest score.
+    */
+    inline PiecewiseLinearConstraint *top()
     {
-        for ( const auto &entry : _scores )
-        {
-            if ( entry._constraint->isActive() && !entry._constraint->phaseFixed()
-                 && _candidatePlConstraints.exists( entry._constraint ) )
-            {
-                COST_TRACKER_LOG( Stringf( "Score of top unfixed plConstraint: %.2f",
-                                           entry._score ).ascii() );
-                return entry._constraint;
-            }
-        }
-        ASSERT( false );
-        return NULL;
+        return _scores.begin()->_constraint;
     }
 
-    List<PiecewiseLinearConstraint *> _candidatePlConstraints;
+    /*
+      Get the score of the PLConstraint
+    */
+    inline double getScore( PiecewiseLinearConstraint *constraint )
+    {
+        DEBUG({
+                ASSERT( _plConstraintToScore.exists( constraint ) );
+                ASSERT( _scores.find
+                        ( ScoreEntry( constraint,
+                                      _plConstraintToScore[constraint] ) ) !=
+                        _scores.end() );
+            });
+        return _plConstraintToScore[constraint];
+    }
 
-private:
+protected:
+    void reset();
+
     Scores _scores;
     Map<PiecewiseLinearConstraint *, double> _plConstraintToScore;
 };
