@@ -18,66 +18,19 @@
 
 #include "List.h"
 #include "MStringf.h"
-#include "PiecewiseLinearConstraint.h"
+#include "PLConstraintScoreTracker.h"
 #include "Statistics.h"
 
-#include <set>
-
-#define COST_TRACKER_LOG(x, ...) LOG(GlobalConfiguration::SOI_LOGGING, "PseudoImpactTracker: %s\n", x)
-
-struct ScoreEntry
-{
-    ScoreEntry( PiecewiseLinearConstraint *constraint, double score )
-        : _constraint( constraint )
-        , _score( score )
-    {};
-
-    bool operator<(const ScoreEntry& other ) const
-    {
-        if ( _score == other._score )
-            return _constraint > other._constraint;
-        else
-            return _score > other._score;
-    }
-
-    PiecewiseLinearConstraint *_constraint;
-    double _score;
-};
-
-typedef std::set<ScoreEntry> Scores;
-
-class PseudoImpactTracker
+class PseudoImpactTracker : public PLConstraintScoreTracker
 {
 public:
     PseudoImpactTracker();
 
-    void initialize( List<PiecewiseLinearConstraint *> &plConstraints );
-
-    void reset();
-
-    void updateScore( PiecewiseLinearConstraint *constraint, double score );
-
-    PiecewiseLinearConstraint *topUnfixed()
-    {
-        for ( const auto &entry : _scores )
-        {
-            if ( entry._constraint->isActive() && !entry._constraint->phaseFixed()
-                 && _candidatePlConstraints.exists( entry._constraint ) )
-            {
-                COST_TRACKER_LOG( Stringf( "Score of top unfixed plConstraint: %.2f",
-                                           entry._score ).ascii() );
-                return entry._constraint;
-            }
-        }
-        ASSERT( false );
-        return NULL;
-    }
-
-    List<PiecewiseLinearConstraint *> _candidatePlConstraints;
-
-private:
-    Scores _scores;
-    Map<PiecewiseLinearConstraint *, double> _plConstraintToScore;
+    /*
+      New score is the moving average of the input score and the previous score.
+    */
+    virtual void updateScore( PiecewiseLinearConstraint *constraint,
+                              double score ) override;
 };
 
 #endif // __PseudoImpactTracker_h__

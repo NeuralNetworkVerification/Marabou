@@ -19,16 +19,6 @@
 PseudoImpactTracker::PseudoImpactTracker()
 {}
 
-void PseudoImpactTracker::initialize( List<PiecewiseLinearConstraint *> &plConstraints )
-{
-    reset();
-    for ( const auto &constraint : plConstraints )
-    {
-        _scores.insert( { constraint, 0 } );
-        _plConstraintToScore[constraint] = 0;
-    }
-}
-
 void PseudoImpactTracker::updateScore( PiecewiseLinearConstraint *constraint,
                                        double score )
 {
@@ -42,18 +32,4 @@ void PseudoImpactTracker::updateScore( PiecewiseLinearConstraint *constraint,
     _scores.erase( ScoreEntry( constraint, oldScore ) );
     _scores.insert( ScoreEntry( constraint, newScore ) );
     _plConstraintToScore[constraint] = newScore;
-}
-
-PiecewiseLinearConstraint *topUnfixed()
-{
-    for ( const auto &entry : _scores )
-        if ( entry._constraint->isActive() && !entry._constraint->phaseFixed()
-             && _candidatePlConstraints.exists( entry._constraint ) )
-            {
-                COST_TRACKER_LOG( Stringf( "Score of top unfixed plConstraint: %.2f",
-                                           entry._score ).ascii() );
-                return entry._constraint;
-            }
-    ASSERT( false );
-    return NULL;
 }

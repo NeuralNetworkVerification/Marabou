@@ -23,6 +23,8 @@ class GlobalConfiguration
 public:
     static void print();
 
+    static const double EXPONENTIAL_MOVING_AVERAGE_ALPHA;
+
     static const bool USE_DEEPSOI_LOCAL_SEARCH;
 
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;
@@ -245,6 +247,7 @@ public:
     static const bool NETWORK_LEVEL_REASONER_LOGGING;
     static const bool MPS_PARSER_LOGGING;
     static const bool SOI_LOGGING;
+    static const bool SCORE_TRACKER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__
