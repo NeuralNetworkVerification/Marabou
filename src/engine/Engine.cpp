@@ -52,7 +52,6 @@ Engine::Engine()
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _splittingStrategy( Options::get()->getDivideStrategy() )
     , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
@@ -233,6 +232,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
+                _smtCore.pickBranchingPLConstraint();
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -1293,13 +1293,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
 
-        if ( _splittingStrategy == DivideStrategy::Auto )
-        {
-            _splittingStrategy =
-                ( _preprocessedQuery.getInputVariables().size() <
-                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
-                DivideStrategy::LargestInterval : DivideStrategy::ReLUViolation;
-        }
+        decideBranchingHeuristics();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
@@ -2291,6 +2285,30 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
+void Engine::decideBranchingHeuristics()
+{
+    DivideStrategy divideStrategy = Options::get()->getBranchingHeuristics();
+    if ( divideStrategy == DivideStrategy::Auto )
+    {
+
+        if ( _preprocessedQuery.getInputVariables().size() <
+             GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+        {
+            divideStrategy = DivideStrategy::LargestInterval;
+        }
+        else
+        {
+            if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+                divideStrategy = DivideStrategy::PseudoImpact;
+            else
+                divideStrategy = DivideStrategy::ReLUViolation;
+        }
+    }
+    ASSERT( divideStrategy != DivideStrategy::Auto );
+    _smtCore.setBranchingHeuristics( divideStrategy );
+    _smtCore.initializeScoreTracker( _plConstraints );
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
@@ -2384,24 +2402,26 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
     }
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
+                                                          strategy )
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( _splittingStrategy == DivideStrategy::Polarity )
+    if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
-    else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
+    else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
+    else if ( strategy == DivideStrategy::LargestInterval &&
               _smtCore.getStackDepth() %
               GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+    {
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
+    }
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
                            "Picked..." :
                            "Unable to pick using the current strategy..." ) ).ascii() );
-
     return candidatePLConstraint;
 }
 

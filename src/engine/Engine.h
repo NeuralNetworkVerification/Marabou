@@ -182,7 +182,7 @@ public:
     /*
       Pick the piecewise linear constraint for splitting
     */
-    PiecewiseLinearConstraint *pickSplitPLConstraint();
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
 
     /*
       Call-back from QueryDividers
@@ -370,11 +370,6 @@ private:
     */
     unsigned _lastNumVisitedStates;
     unsigned long long _lastIterationWithProgress;
-
-    /*
-      Strategy used for internal splitting
-    */
-    DivideStrategy _splittingStrategy;
 
     /*
       Type of symbolic bound tightening
@@ -628,6 +623,11 @@ private:
       to handle case splits
     */
     void updateDirections();
+
+    /*
+      Decide which branch heuristics to use.
+    */
+    void decideBranchingHeuristics();
 
     /*
       Among the earliest K ReLUs, pick the one with Polarity closest to 0.

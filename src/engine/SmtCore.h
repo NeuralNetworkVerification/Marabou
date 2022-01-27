@@ -16,8 +16,10 @@
 #ifndef __SmtCore_h__
 #define __SmtCore_h__
 
+#include "DivideStrategy.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PLConstraintScoreTracker.h"
 #include "SmtState.h"
 #include "Stack.h"
 #include "SmtStackEntry.h"
@@ -48,8 +50,11 @@ public:
     void reset();
 
     /*
-      Inform the SMT core that a PL constraint is violated.
+      Initialize the score tracker with the given list of pl constraints.
     */
+    void initializeScoreTracker( const List<PiecewiseLinearConstraint *>
+                                 &plConstraints );
+
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
     /*
@@ -62,6 +67,21 @@ public:
       Reset all reported violation counts.
     */
     void resetReportedViolations();
+
+    /*
+      Update the score of the constraint with the given score in the costTracker.
+    */
+    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
+                                  double score )
+    {
+        ASSERT( _scoreTracker != nullptr );
+        _scoreTracker->updateScore( constraint, score );
+    }
+
+    /*
+      Pick the PLConstraint to branch on next.
+    */
+    void pickBranchingPLConstraint();
 
     /*
       Returns true iff the SMT core wants to perform a case split.
@@ -119,11 +139,10 @@ public:
     */
     void storeSmtState( SmtState &smtState );
 
-    /*
-      Pick the piecewise linear constraint for splitting, returns true
-      if a constraint for splitting is successfully picked
-    */
-    bool pickSplitPLConstraint();
+    inline void setBranchingHeuristics( DivideStrategy strategy )
+    {
+        _branchingHeuristic = strategy;
+    }
 
     /*
       For debugging purposes only - store a correct possible solution
@@ -160,11 +179,6 @@ private:
     PiecewiseLinearConstraint *_constraintForSplitting;
 
     /*
-      Count how many times each constraint has been violated.
-    */
-    Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
-
-    /*
       For debugging purposes only
     */
     Map<unsigned, double> _debuggingSolution;
@@ -179,14 +193,26 @@ private:
       Split when some relu has been violated for this many times
     */
     unsigned _constraintViolationThreshold;
+
+    /*
+      The strategy to pick the piecewise linear constraint to branch on.
+    */
+    DivideStrategy _branchingHeuristic;
+
+    /*
+      Heap to store the scores of each PLConstraint.
+    */
+    std::unique_ptr<PLConstraintScoreTracker> _scoreTracker;
+
+    /*
+      Reset the score tracker unless we are using PseudoImpact branching.
+    */
+    void resetScoresIfNeeded();
+
+    /*
+      Set the constraint score to 0 unless we are using PseudoImpact branching.
+    */
+    void resetScoreIfNeeded( PiecewiseLinearConstraint *constraint );
 };
 
 #endif // __SmtCore_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
