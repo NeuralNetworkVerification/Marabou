@@ -88,12 +88,15 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     for x in np.array(network.inputVars).flatten():
         network.setLowerBound(x, max(0, point[x] - epsilon))
         network.setUpperBound(x, min(1, point[x] + epsilon))
-    outputVars = network.outputVars.flatten()
-    for i in range(10):
-        if i != target_label:
-            network.addInequality([outputVars[i],
-                                   outputVars[target_label]],
-                                  [1, -1], 0)
+    if target_label == -1:
+        print("No output constraint!")
+    else:
+        outputVars = network.outputVars.flatten()
+        for i in range(10):
+            if i != target_label:
+                network.addInequality([outputVars[i],
+                                       outputVars[target_label]],
+                                      [1, -1], 0)
     return
 
 def encode_cifar10_linf(network, index, epsilon, target_label):
@@ -113,15 +116,18 @@ def encode_cifar10_linf(network, index, epsilon, target_label):
     for i in range(1024):
         lb[2048 + i] = max(0, point[2048 + i] - epsilon)
         ub[2048 + i] = min(1, point[2048 + i] + epsilon)
-    print("correct label: {}, target label: {}".format(y, target_label))
-    for i in range(3072):
-        network.setLowerBound(i, lb[i])
-        network.setUpperBound(i, ub[i])
-    for i in range(10):
-        if i != target_label:
-            network.addInequality([network.outputVars[0][i],
-                                   network.outputVars[0][target_label]],
-                                  [1, -1], 0)
+    print("correct label: {}".format(y))
+    if target_label == -1:
+        print("No output constraint!")
+    else:
+        for i in range(3072):
+            network.setLowerBound(i, lb[i])
+            network.setUpperBound(i, ub[i])
+        for i in range(10):
+            if i != target_label:
+                network.addInequality([network.outputVars[0][i],
+                                       network.outputVars[0][target_label]],
+                                      [1, -1], 0)
     return
 
 def arguments():
@@ -138,7 +144,7 @@ def arguments():
                         help="the dataset (mnist,cifar10)")
     parser.add_argument('-e', '--epsilon', type=float, default=0,
                         help='The epsilon for L_infinity perturbation')
-    parser.add_argument('-t', '--target-label', type=int, default=0,
+    parser.add_argument('-t', '--target-label', type=int, default=-1,
                         help='The target of the adversarial attack')
     parser.add_argument('-i,', '--index', type=int, default=0,
                         help='The index of the point in the test set')
