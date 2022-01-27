@@ -67,7 +67,7 @@ endmacro()
 macro(marabou_add_input_query_test level ipq_file result arguments
     test_properties)
   get_filename_component(net_name ${ipq_file} NAME)
-  set(test_name "${ipq_file}")
+  set(test_name "${ipq_file}%${arguments}")
   add_test(${test_name}
     ${PYTHON_EXECUTABLE} ${run_regress_script}
     ${MARABOU_EXE_PATH}
