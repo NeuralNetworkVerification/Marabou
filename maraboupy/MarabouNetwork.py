@@ -276,7 +276,7 @@ class MarabouNetwork:
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
-        vals, stats = MarabouCore.solve(ipq, options, str(filename))
+        res, vals, stats = MarabouCore.solve(ipq, options, str(filename))
         if verbose:
             if stats.hasTimedOut():
                 print("TO")
@@ -291,7 +291,7 @@ class MarabouNetwork:
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
-        return [vals, stats]
+        return [res, vals, stats]
 
     def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
         """Function evaluating a specific input is a local robustness within the scope of epslion

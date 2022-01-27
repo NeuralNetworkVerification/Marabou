@@ -295,22 +295,21 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
-std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
+std::tuple<IEngine::ExitCode, std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
                                                    std::string redirect=""){
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::map<int, double> ret;
     Statistics retStats;
     int output=-1;
+    Engine engine;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-
         options.setOptions();
 
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
 
-        Engine engine;
 
         // hanlde residual reasoning
         auto gammaUnsatInputFile = Options::get()->getString( Options::GAMMA_UNSAT_INPUT_FILE );
@@ -330,7 +329,7 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             engine.addResidualReasoner( residualReasoner );
         }
 
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.processInputQuery(inputQuery)) return std::make_tuple(engine.getExitCode(), ret, *(engine.getStatistics()));
         if ( dnc )
         {
             auto dncManager = std::unique_ptr<DnCManager>( new DnCManager( &inputQuery ) );
@@ -348,15 +347,15 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, retStats );
+                return std::make_tuple(engine.getExitCode(), ret, retStats );
             }
             default:
-                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+                return std::make_tuple(engine.getExitCode(), ret, Statistics() ); // TODO: meaningful DnCStatistics
             }
         } else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+            if(!engine.solve(timeoutInSeconds)) return std::make_tuple(engine.getExitCode(), ret, *(engine.getStatistics()));
 
             if (engine.getExitCode() == Engine::SAT)
                 engine.extractSolution(inputQuery);
@@ -371,11 +370,11 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return std::make_pair(ret, retStats);
+        return std::make_tuple(engine.getExitCode(), ret, retStats);
     }
     if(output != -1)
         restoreOutputStream(output);
-    return std::make_pair(ret, retStats);
+    return std::make_tuple(engine.getExitCode(), ret, retStats);
 }
 
 void saveQuery(InputQuery& inputQuery, std::string filename){
@@ -390,6 +389,24 @@ InputQuery loadQuery(std::string filename){
 // Describes which classes and functions are exposed to API
 PYBIND11_MODULE(MarabouCore, m) {
     m.doc() = "Maraboupy bindings to the C++ Marabou via pybind11";
+enum ExitCode {
+        UNSAT = 0,
+        SAT = 1,
+        ERROR = 2,
+        UNKNOWN = 3,
+        TIMEOUT = 4,
+        QUIT_REQUESTED = 5,
+        NOT_DONE = 999,
+    };
+    py::enum_<IEngine::ExitCode>(m, "ExitCode")
+        .value("UNSAT", IEngine::ExitCode::UNSAT)
+        .value("SAT", IEngine::ExitCode::SAT)
+        .value("ERROR", IEngine::ExitCode::ERROR)
+        .value("UNKNOWN", IEngine::ExitCode::UNKNOWN)
+        .value("TIMEOUT", IEngine::ExitCode::TIMEOUT)
+        .value("QUIT_REQUESTED", IEngine::ExitCode::QUIT_REQUESTED)
+        .value("NOT_DONE", IEngine::ExitCode::NOT_DONE)
+        .export_values();
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
