@@ -187,6 +187,12 @@ public:
 
      // Total time obtaining the current variable assignment from the tableau.
      TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO,
+
+     // Total time performing SoI-based local search
+     TOTAL_TIME_LOCAL_SEARCH_MICRO,
+
+     // Total time getting the SoI phase pattern
+     TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO,
     };
 
     enum StatisticsDoubleAttribute
@@ -194,6 +200,10 @@ public:
      // Degradation and restorations
      CURRENT_DEGRADATION,
      MAX_DEGRADATION,
+
+     // How close we are to the minimum of the SoI (0).
+     COST_OF_CURRENT_PHASE_PATTERN,
+     MIN_COST_OF_PHASE_PATTERN,
     };
 
     /*
