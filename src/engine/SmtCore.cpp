@@ -13,6 +13,7 @@
 
  **/
 
+#include "ConstraintViolationTracker.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "EngineState.h"
@@ -22,6 +23,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Options.h"
+#include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
 
@@ -32,6 +34,8 @@ SmtCore::SmtCore( IEngine *engine )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+    , _branchingHeuristic( Options::get()->getBranchingHeuristics() )
+    , _scoreTracker( nullptr )
 {
 }
 
@@ -58,33 +62,55 @@ void SmtCore::reset()
     _needToSplit = false;
     _constraintForSplitting = NULL;
     _stateId = 0;
-    _constraintToViolationCount.clear();
+    resetScoresIfNeeded();
+}
+
+void SmtCore::initializeScoreTracker( const List<PiecewiseLinearConstraint *>
+                                      &plConstraints )
+{
+    SMT_LOG( "Initializing score tracker... " );
+    if ( _branchingHeuristic == DivideStrategy::PseudoImpact )
+    {
+        _scoreTracker = std::unique_ptr<PseudoImpactTracker>
+            ( new PseudoImpactTracker() );
+        SMT_LOG( "\tTracking Pseudo Impact..." );
+    }
+    else
+    {
+        _scoreTracker = std::unique_ptr<ConstraintViolationTracker>
+            ( new ConstraintViolationTracker() );
+        SMT_LOG( "\tTracking constraint violation... " );
+    }
+
+    _scoreTracker->initialize( plConstraints );
+
+    SMT_LOG( "Initializing score tracker - done " );
 }
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
-    if ( !_constraintToViolationCount.exists( constraint ) )
-        _constraintToViolationCount[constraint] = 0;
+    updatePLConstraintScore( constraint, 1 );
 
-    ++_constraintToViolationCount[constraint];
-
-    if ( _constraintToViolationCount[constraint] >=
+    if ( _scoreTracker->getScore( constraint ) >=
          _constraintViolationThreshold )
-    {
         _needToSplit = true;
-        if ( !pickSplitPLConstraint() )
-            // If pickSplitConstraint failed to pick one, use the native
-            // relu-violation based splitting heuristic.
-            _constraintForSplitting = constraint;
+}
+
+void SmtCore::pickBranchingPLConstraint()
+{
+    if ( _branchingHeuristic == DivideStrategy::ReLUViolation ||
+         _branchingHeuristic == DivideStrategy::PseudoImpact )
+    {
+        _constraintForSplitting = _scoreTracker->topUnfixed();
     }
+    else
+        _constraintForSplitting = _engine->pickSplitPLConstraint
+            ( _branchingHeuristic );
 }
 
 unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
 {
-    if ( !_constraintToViolationCount.exists( constraint ) )
-        return 0;
-
-    return _constraintToViolationCount[constraint];
+    return _scoreTracker->getScore( constraint );
 }
 
 bool SmtCore::needToSplit() const
@@ -97,10 +123,10 @@ void SmtCore::performSplit()
     ASSERT( _needToSplit );
 
     // Maybe the constraint has already become inactive - if so, ignore
-    if ( !_constraintForSplitting->isActive() )
+    if ( !_constraintForSplitting || !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
-        _constraintToViolationCount[_constraintForSplitting] = 0;
+        resetScoreIfNeeded( _constraintForSplitting );
         _constraintForSplitting = NULL;
         return;
     }
@@ -250,7 +276,7 @@ bool SmtCore::popSplit()
 
 void SmtCore::resetReportedViolations()
 {
-    _constraintToViolationCount.clear();
+    resetScoresIfNeeded();
     _needToSplit = false;
 }
 
@@ -463,9 +489,14 @@ void SmtCore::storeSmtState( SmtState &smtState )
     smtState._stateId = _stateId;
 }
 
-bool SmtCore::pickSplitPLConstraint()
+void SmtCore::resetScoresIfNeeded()
 {
-    if ( _needToSplit )
-        _constraintForSplitting = _engine->pickSplitPLConstraint();
-    return _constraintForSplitting != NULL;
+    if ( _branchingHeuristic != DivideStrategy::PseudoImpact )
+        _scoreTracker->reset();
+}
+
+void SmtCore::resetScoreIfNeeded( PiecewiseLinearConstraint *constraint )
+{
+    if ( constraint && _branchingHeuristic != DivideStrategy::PseudoImpact )
+        _scoreTracker->setScore( constraint, 0 );
 }

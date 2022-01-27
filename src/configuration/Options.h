@@ -135,7 +135,7 @@ public:
     int getInt( unsigned option ) const;
     float getFloat( unsigned option ) const;
     String getString( unsigned option ) const;
-    DivideStrategy getDivideStrategy() const;
+    DivideStrategy getBranchingHeuristics() const;
     SnCDivideStrategy getSnCDivideStrategy() const;
     SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;

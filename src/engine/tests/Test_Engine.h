@@ -337,13 +337,12 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
-        Options::get()->setString( Options::SPLITTING_STRATEGY, "polarity" );
         Engine engine;
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
-        constraintToSplit = engine.pickSplitPLConstraint();
+        constraintToSplit = engine.pickSplitPLConstraint(DivideStrategy::Polarity );
         constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity );
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
@@ -439,13 +438,12 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
-        Options::get()->setString( Options::SPLITTING_STRATEGY, "earliest-relu" );
         Engine engine;
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
-        constraintToSplit = engine.pickSplitPLConstraint();
+        constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::EarliestReLU );
         constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::EarliestReLU );
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
@@ -545,7 +543,7 @@ public:
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
-        constraintToSplit = engine.pickSplitPLConstraint();
+        constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::LargestInterval );
 
         PiecewiseLinearCaseSplit interval1;
         interval1.storeBoundTightening( Tightening( 1, 0.5, Tightening::UB ) );

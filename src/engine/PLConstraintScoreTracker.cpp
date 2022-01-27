@@ -21,7 +21,7 @@ void PLConstraintScoreTracker::reset()
     _plConstraintToScore.clear();
 }
 
-void PLConstraintScoreTracker::initialize( List<PiecewiseLinearConstraint *>
+void PLConstraintScoreTracker::initialize( const List<PiecewiseLinearConstraint *>
                                            &plConstraints )
 {
     reset();
@@ -30,6 +30,20 @@ void PLConstraintScoreTracker::initialize( List<PiecewiseLinearConstraint *>
         _scores.insert( { constraint, 0 } );
         _plConstraintToScore[constraint] = 0;
     }
+}
+
+void PLConstraintScoreTracker::setScore( PiecewiseLinearConstraint *constraint,
+                                         double score )
+{
+    ASSERT( _plConstraintToScore.exists( constraint ) );
+
+    double oldScore = _plConstraintToScore[constraint];
+
+    ASSERT( _scores.find( ScoreEntry( constraint, oldScore ) ) != _scores.end() );
+
+    _scores.erase( ScoreEntry( constraint, oldScore ) );
+    _scores.insert( ScoreEntry( constraint, score ) );
+    _plConstraintToScore[constraint] = score;
 }
 
 PiecewiseLinearConstraint *PLConstraintScoreTracker::topUnfixed()
@@ -43,6 +57,5 @@ PiecewiseLinearConstraint *PLConstraintScoreTracker::topUnfixed()
             return entry._constraint;
         }
     }
-    ASSERT( false );
     return NULL;
 }

@@ -136,18 +136,20 @@ void Options::setString( unsigned option, std::string value )
     _stringOptions[option] = value;
 }
 
-DivideStrategy Options::getDivideStrategy() const
+DivideStrategy Options::getBranchingHeuristics() const
 {
     String strategyString = String( _stringOptions.get
                                     ( Options::SPLITTING_STRATEGY ) );
     if ( strategyString == "polarity" )
         return DivideStrategy::Polarity;
-    if ( strategyString == "earliest-relu" )
+    else if ( strategyString == "earliest-relu" )
         return DivideStrategy::EarliestReLU;
-    if ( strategyString == "relu-violation" )
+    else if ( strategyString == "relu-violation" )
         return DivideStrategy::ReLUViolation;
     else if ( strategyString == "largest-interval" )
         return DivideStrategy::LargestInterval;
+    else if ( strategyString == "pseudo-impact" )
+        return DivideStrategy::PseudoImpact;
     else
         return DivideStrategy::Auto;
 }

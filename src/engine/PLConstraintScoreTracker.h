@@ -54,13 +54,23 @@ public:
     /*
       Initialize the scores for all constraints to 0.
     */
-    void initialize( List<PiecewiseLinearConstraint *> &plConstraints );
+    void initialize( const List<PiecewiseLinearConstraint *> &plConstraints );
+
+    /*
+      Empty the local variables.
+    */
+    void reset();
 
     /*
       Update the score of a constraint.
     */
     virtual void updateScore( PiecewiseLinearConstraint *constraint,
                               double score ) = 0;
+
+    /*
+      Set the score of a constraint.
+    */
+    void setScore( PiecewiseLinearConstraint *constraint, double score );
 
     /*
       Among active and unfixed constraints, return the one with the largest
@@ -92,8 +102,6 @@ public:
     }
 
 protected:
-    void reset();
-
     Scores _scores;
     Map<PiecewiseLinearConstraint *, double> _plConstraintToScore;
 };
