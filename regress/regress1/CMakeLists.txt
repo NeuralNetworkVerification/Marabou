@@ -115,6 +115,8 @@ marabou_add_coav_test(1 "reluBenchmark1.81178617477s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.956095933914s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.00601387023926s_UNSAT.nnet" unsat)
 
+# Add all input query files in regress1/input_queries/ as tests.
+
 file(GLOB sat_ipqs "input_queries/*_sat.ipq")
 foreach(file ${sat_ipqs})
   get_filename_component(basename ${file} NAME [CACHE])
