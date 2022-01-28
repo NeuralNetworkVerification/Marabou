@@ -1845,6 +1845,8 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
+        if ( _soiManager )
+            _soiManager->removeCostComponentFromHeuristicCost( constraint );
         ++_numPlConstraintsDisabledByValidSplits;
 
         return true;

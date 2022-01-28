@@ -50,6 +50,15 @@ public:
     LinearExpression getLastAcceptedSoIPhasePattern() const;
 
     /*
+      Return the list of constraints updated in the last proposal.
+      This list is updated during proposePhasePatternUpdate().
+    */
+    inline const List<PiecewiseLinearConstraint *> &getConstraintsUpdatedInLastProposal() const
+    {
+        return _constraintsUpdatedInLastProposal;
+    }
+
+    /*
       Called at the beginning of the local search (DeepSoI).
       Choose the first phase pattern by heuristically taking a cost term
       from each unfixed activation function.
@@ -147,6 +156,12 @@ private:
       the obtainCurrentAssignment() method.
     */
     Map<unsigned, double> _currentAssignment;
+
+    /*
+      The constraints whose cost terms were changed in the last proposal.
+      We keep track of this for the PseudoImpact branching heuristics.
+    */
+    List<PiecewiseLinearConstraint *> _constraintsUpdatedInLastProposal;
 
     Statistics *_statistics;
 
