@@ -426,7 +426,8 @@ PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing( List<Pi
 bool CDSmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
-        _constraintForSplitting = _engine->pickSplitPLConstraint();
+        _constraintForSplitting = _engine->pickSplitPLConstraint
+            ( Options::get()->getBranchingHeuristics() );
     return _constraintForSplitting != NULL;
 }
 
