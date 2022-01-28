@@ -2,7 +2,7 @@
 /*! \file CDSmtCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Aleksandar Zeljic, Haoze Wu, Parth Shah
+ **   Guy Katz, Aleksandar Zeljic, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -14,7 +14,6 @@
 
 #include "CDSmtCore.h"
 
-#include "ConstraintViolationTracker.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "EngineState.h"
@@ -23,7 +22,6 @@
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
-#include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
 
 using namespace CVC4::context;
@@ -38,8 +36,6 @@ CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
     , _constraintForSplitting( NULL )
     , _constraintViolationThreshold
       ( Options::CONSTRAINT_VIOLATION_THRESHOLD )
-    , _branchingHeuristic( Options::get()->getBranchingHeuristics() )
-    , _scoreTracker( nullptr )
 {
 }
 
@@ -47,53 +43,34 @@ CDSmtCore::~CDSmtCore()
 {
 }
 
-void CDSmtCore::initializeScoreTracker( const List<PiecewiseLinearConstraint *>
-                                        &plConstraints )
-{
-    SMT_LOG( "Initializing score tracker... " );
-    if ( _branchingHeuristic == DivideStrategy::PseudoImpact )
-        {
-            _scoreTracker = std::unique_ptr<PseudoImpactTracker>
-                ( new PseudoImpactTracker() );
-            SMT_LOG( "\tTracking Pseudo Impact..." );
-        }
-    else
-        {
-            _scoreTracker = std::unique_ptr<ConstraintViolationTracker>
-                ( new ConstraintViolationTracker() );
-            SMT_LOG( "\tTracking constraint violation... " );
-        }
-
-    _scoreTracker->initialize( plConstraints );
-
-    SMT_LOG( "Initializing score tracker - done " );
-}
-
 void CDSmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     ASSERT( !constraint->phaseFixed() );
 
-    updatePLConstraintScore( constraint, 1 );
+    if ( !_constraintToViolationCount.exists( constraint ) )
+        _constraintToViolationCount[constraint] = 0;
 
-    if ( _scoreTracker->getScore( constraint ) >=
+    ++_constraintToViolationCount[constraint];
+
+    if ( _constraintToViolationCount[constraint] >=
          _constraintViolationThreshold )
+    {
         _needToSplit = true;
-}
-
-void CDSmtCore::pickBranchingPLConstraint()
-{
-    if ( _branchingHeuristic == DivideStrategy::ReLUViolation ||
-         _branchingHeuristic == DivideStrategy::PseudoImpact )
-        _constraintForSplitting = _scoreTracker->topUnfixed();
-    else
-        _constraintForSplitting = _engine->pickSplitPLConstraint
-            ( _branchingHeuristic );
-    ASSERT( !_constraintForSplitting->phaseFixed() );
+        if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+             DivideStrategy::ReLUViolation || !pickSplitPLConstraint() )
+            // If pickSplitConstraint failed to pick one, use the native
+            // relu-violation based splitting heuristic.
+            _constraintForSplitting = constraint;
+        ASSERT( !_constraintForSplitting->phaseFixed() );
+    }
 }
 
 unsigned CDSmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) const
 {
-    return _scoreTracker->getScore( constraint );
+    if ( !_constraintToViolationCount.exists( constraint ) )
+        return 0;
+
+    return _constraintToViolationCount[constraint];
 }
 
 bool CDSmtCore::needToSplit() const
@@ -142,7 +119,7 @@ void CDSmtCore::decide()
     if ( !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
-        resetScoreIfNeeded( _constraintForSplitting );
+        _constraintToViolationCount[_constraintForSplitting] = 0;
         _constraintForSplitting = nullptr;
         return;
     }
@@ -287,7 +264,7 @@ bool CDSmtCore::backtrackAndContinueSearch()
 
 void CDSmtCore::resetReportedViolations()
 {
-    resetScoresIfNeeded();
+    _constraintToViolationCount.clear();
     _needToSplit = false;
 }
 
@@ -446,23 +423,26 @@ PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing( List<Pi
     return candidate;
 }
 
+bool CDSmtCore::pickSplitPLConstraint()
+{
+    if ( _needToSplit )
+        _constraintForSplitting = _engine->pickSplitPLConstraint();
+    return _constraintForSplitting != NULL;
+}
+
 void CDSmtCore::reset()
 {
     _context.popto( 0 );
     _engine->postContextPopHook();
     _needToSplit = false;
     _constraintForSplitting = NULL;
-    resetScoresIfNeeded();
+    _constraintToViolationCount.clear();
 }
 
-void CDSmtCore::resetScoresIfNeeded()
-{
-    if ( _branchingHeuristic != DivideStrategy::PseudoImpact )
-        _scoreTracker->reset();
-}
-
-void CDSmtCore::resetScoreIfNeeded( PiecewiseLinearConstraint *constraint )
-{
-    if ( constraint && _branchingHeuristic != DivideStrategy::PseudoImpact )
-        _scoreTracker->setScore( constraint, 0 );
-}
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

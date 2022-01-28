@@ -24,7 +24,7 @@ const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
 
 // Whether to use SoI instead of Reluplex for local search for satisfying assignments
 //to non-linear constraint.
-const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = true;
+const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
 
 // Use the polarity metrics to decide which branch to take first in a case split
 // and how to repair a ReLU constraint.
@@ -116,7 +116,7 @@ const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = false;
 const bool GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING = false;
 const bool GlobalConfiguration::MPS_PARSER_LOGGING= false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
-const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = true
+const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false
     ;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
