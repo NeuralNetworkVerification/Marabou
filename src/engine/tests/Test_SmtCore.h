@@ -117,10 +117,9 @@ public:
             return List<PhaseStatus>();
         }
 
-        bool nextPhaseFixed;
         bool phaseFixed() const
         {
-            return nextPhaseFixed;
+            return true;
         }
 
         PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus /*caseId*/ ) const
@@ -190,8 +189,6 @@ public:
         ReluConstraint constraint2( 3, 4 );
 
         SmtCore smtCore( engine );
-        smtCore.setBranchingHeuristics( DivideStrategy::ReLUViolation );
-        smtCore.initializeScoreTracker( { &constraint1, &constraint2 } );
 
         for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) - 1; ++i )
         {
@@ -208,13 +205,8 @@ public:
     void test_perform_split()
     {
         SmtCore smtCore( engine );
-        smtCore.setBranchingHeuristics( DivideStrategy::ReLUViolation );
 
         MockConstraint constraint;
-        constraint.nextIsActive = true;
-        constraint.nextPhaseFixed = false;
-
-        smtCore.initializeScoreTracker( { &constraint } );
 
         // Split 1
         PiecewiseLinearCaseSplit split1;
@@ -267,7 +259,6 @@ public:
         TS_ASSERT( smtCore.needToSplit() );
         TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
         TS_ASSERT( !constraint.setActiveWasCalled );
-        TS_ASSERT_THROWS_NOTHING( smtCore.pickBranchingPLConstraint() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( constraint.setActiveWasCalled );
         TS_ASSERT( !smtCore.needToSplit() );
@@ -361,10 +352,8 @@ public:
     void test_perform_split__inactive_constraint()
     {
         SmtCore smtCore( engine );
-        MockConstraint constraint;
 
-        smtCore.setBranchingHeuristics( DivideStrategy::ReLUViolation );
-        smtCore.initializeScoreTracker( { &constraint } );
+        MockConstraint constraint;
 
         // Split 1
         PiecewiseLinearCaseSplit split1;
@@ -414,7 +403,6 @@ public:
         constraint.nextIsActive = false;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.pickBranchingPLConstraint() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( !smtCore.needToSplit() );
 
@@ -431,9 +419,6 @@ public:
         SmtCore smtCore( engine );
 
         MockConstraint constraint;
-
-        smtCore.setBranchingHeuristics( DivideStrategy::ReLUViolation );
-        smtCore.initializeScoreTracker( { &constraint } );
 
         // Split 1
         PiecewiseLinearCaseSplit split1;
@@ -472,10 +457,8 @@ public:
             smtCore.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = true;
-        constraint.nextPhaseFixed = false;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.pickBranchingPLConstraint() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( !smtCore.needToSplit() );
 
@@ -490,8 +473,6 @@ public:
         // Do another real split
 
         MockConstraint constraint2;
-
-        smtCore.initializeScoreTracker( { &constraint, &constraint2 } );
 
         // Split 4
         PiecewiseLinearCaseSplit split4;
@@ -509,10 +490,8 @@ public:
             smtCore.reportViolatedConstraint( &constraint2 );
 
         constraint2.nextIsActive = true;
-        constraint2.nextPhaseFixed = false;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.pickBranchingPLConstraint() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( !smtCore.needToSplit() );
 
@@ -545,8 +524,6 @@ public:
         ReluConstraint relu2 = ReluConstraint( 2, 3 );
 
         SmtCore smtCore( engine );
-        smtCore.setBranchingHeuristics( DivideStrategy::ReLUViolation );
-        smtCore.initializeScoreTracker( { &relu1, &relu2 } );
 
         PiecewiseLinearCaseSplit split1;
         Tightening bound1( 1, 0.5, Tightening::LB );
@@ -557,7 +534,6 @@ public:
             smtCore.reportViolatedConstraint( &relu1 );
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.pickBranchingPLConstraint() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( !smtCore.needToSplit() );
 
@@ -570,7 +546,6 @@ public:
             smtCore.reportViolatedConstraint( &relu2 );
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.pickBranchingPLConstraint() );
         TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
         TS_ASSERT( !smtCore.needToSplit() );
 

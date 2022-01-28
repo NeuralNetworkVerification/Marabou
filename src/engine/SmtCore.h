@@ -55,6 +55,24 @@ public:
     void initializeScoreTracker( const List<PiecewiseLinearConstraint *>
                                  &plConstraints );
 
+    /*
+      Inform the SMT core that a SoI phase pattern proposal is rejected.
+    */
+    void reportRejectedPhasePatternProposal();
+
+    /*
+      Update the score of the constraint with the given score in the costTracker.
+    */
+    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
+                                         double score )
+    {
+        ASSERT( _scoreTracker != nullptr );
+        _scoreTracker->updateScore( constraint, score );
+    }
+
+    /*
+      Inform the SMT core that a PL constraint is violated.
+    */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
 
     /*
@@ -64,24 +82,10 @@ public:
     unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
 
     /*
-      Reset all reported violation counts.
+      Reset all reported violation counts and the number of rejected SoI
+      phase pattern proposal.
     */
-    void resetReportedViolations();
-
-    /*
-      Update the score of the constraint with the given score in the costTracker.
-    */
-    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
-                                  double score )
-    {
-        ASSERT( _scoreTracker != nullptr );
-        _scoreTracker->updateScore( constraint, score );
-    }
-
-    /*
-      Pick the PLConstraint to branch on next.
-    */
-    void pickBranchingPLConstraint();
+    void resetSplitConditions();
 
     /*
       Returns true iff the SMT core wants to perform a case split.
@@ -129,6 +133,11 @@ public:
 
     void setConstraintViolationThreshold( unsigned threshold );
 
+    inline void setBranchingHeuristics( DivideStrategy strategy )
+    {
+        _branchingHeuristic = strategy;
+    }
+
     /*
       Replay a stackEntry
     */
@@ -139,10 +148,11 @@ public:
     */
     void storeSmtState( SmtState &smtState );
 
-    inline void setBranchingHeuristics( DivideStrategy strategy )
-    {
-        _branchingHeuristic = strategy;
-    }
+    /*
+      Pick the piecewise linear constraint for splitting, returns true
+      if a constraint for splitting is successfully picked
+    */
+    bool pickSplitPLConstraint();
 
     /*
       For debugging purposes only - store a correct possible solution
@@ -179,6 +189,11 @@ private:
     PiecewiseLinearConstraint *_constraintForSplitting;
 
     /*
+      Count how many times each constraint has been violated.
+    */
+    Map<PiecewiseLinearConstraint *, unsigned> _constraintToViolationCount;
+
+    /*
       For debugging purposes only
     */
     Map<unsigned, double> _debuggingSolution;
@@ -194,6 +209,7 @@ private:
     */
     unsigned _constraintViolationThreshold;
 
+
     /*
       The strategy to pick the piecewise linear constraint to branch on.
     */
@@ -205,14 +221,18 @@ private:
     std::unique_ptr<PLConstraintScoreTracker> _scoreTracker;
 
     /*
-      Reset the score tracker unless we are using PseudoImpact branching.
+      Number of times the phase pattern proposal has been rejected at the
+      current search state.
     */
-    void resetScoresIfNeeded();
-
-    /*
-      Set the constraint score to 0 unless we are using PseudoImpact branching.
-    */
-    void resetScoreIfNeeded( PiecewiseLinearConstraint *constraint );
+    unsigned _rejectedPhasePatternProposal;
 };
 
 #endif // __SmtCore_h__
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

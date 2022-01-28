@@ -232,7 +232,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                _smtCore.pickBranchingPLConstraint();
                 _smtCore.performSplit();
                 splitJustPerformed = true;
                 continue;
@@ -1549,7 +1548,7 @@ void Engine::restoreState( const EngineState &state )
     _costFunctionManager->initialize();
 
     // Reset the violation counts in the SMT core
-    _smtCore.resetReportedViolations();
+    _smtCore.resetSplitConditions();
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
@@ -2183,6 +2182,7 @@ void Engine::clearViolatedPLConstraints()
 void Engine::resetSmtCore()
 {
     _smtCore.reset();
+    _smtCore.initializeScoreTracker( _plConstraints );
 }
 
 void Engine::resetExitCode()
@@ -2667,7 +2667,10 @@ bool Engine::performLocalSearch()
             lastProposalAccepted = true;
         }
         else
+        {
             lastProposalAccepted = false;
+            _smtCore.reportRejectedPhasePatternProposal();
+        }
     }
 
     ENGINE_LOG( "Performing local search - done" );
