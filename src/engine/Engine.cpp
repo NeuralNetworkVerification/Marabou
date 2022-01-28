@@ -2656,6 +2656,9 @@ bool Engine::performLocalSearch()
         costOfProposedPhasePattern = computeHeuristicCost
             ( _soiManager->getCurrentSoIPhasePattern() );
 
+        updatePseudoImpact( costOfLastAcceptedPhasePattern,
+                            costOfProposedPhasePattern );
+
         if ( _soiManager->decideToAcceptCurrentProposal
              ( costOfLastAcceptedPhasePattern, costOfProposedPhasePattern ) )
         {
@@ -2714,4 +2717,25 @@ double Engine::computeHeuristicCost( const LinearExpression &heuristicCost )
     return ( _costFunctionManager->
              computeGivenCostFunctionDirectly( heuristicCost._addends ) +
              heuristicCost._constant );
+}
+
+void Engine::updatePseudoImpact( double costOfLastAcceptedPhasePattern,
+                                 double costOfProposedPhasePattern )
+{
+    ASSERT( _soiManager );
+
+    const List<PiecewiseLinearConstraint *> &constraintsUpdated =
+        _soiManager->getConstraintsUpdatedInLastProposal();
+    // Score is divided by the number of updated constraints in the last
+    // proposal. In the Sum of Infeasibilities paper, only one constraint
+    // is updated each time. But we might consider alternative proposal
+    // strategy in the future.
+    double score = ( fabs( costOfLastAcceptedPhasePattern -
+                           costOfProposedPhasePattern )
+                     / constraintsUpdated.size() );
+
+    ASSERT( constraintsUpdated.size() > 0 );
+    // Update the Pseudo-Impact estimation.
+    for ( const auto &constraint : constraintsUpdated )
+        _smtCore.updatePLConstraintScore( constraint, score );
 }

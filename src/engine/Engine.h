@@ -659,6 +659,18 @@ private:
       Perform SoI-based stochastic local search
     */
     bool performLocalSearch();
+
+    /*
+      Update the pseudo impact of the PLConstraints according to the cost of the
+      phase patterns. For example, if the minimum of the last accepted phase
+      pattern is 0.5, the minimum of the last proposed phase pattern is 0.2.
+      And the two phase patterns differ by the cost term of a PLConstaint f.
+      Then the Pseudo Impact of f is updated by |0.5 - 0.2| using exponential
+      moving average.
+    */
+    void updatePseudoImpact( double costOfLastAcceptedPhasePattern,
+                             double costOfProposedPhasePattern );
+
 };
 
 #endif // __Engine_h__
