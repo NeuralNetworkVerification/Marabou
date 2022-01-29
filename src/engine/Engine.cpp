@@ -2301,7 +2301,11 @@ void Engine::decideBranchingHeuristics()
         else
         {
             if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+            {
                 divideStrategy = DivideStrategy::PseudoImpact;
+                _smtCore.setConstraintViolationThreshold
+                    ( GlobalConfiguration::DEEP_SOI_REJECTION_THRESHOLD );
+            }
             else
                 divideStrategy = DivideStrategy::ReLUViolation;
         }

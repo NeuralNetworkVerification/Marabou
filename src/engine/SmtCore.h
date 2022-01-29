@@ -131,7 +131,10 @@ public:
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
-    void setConstraintViolationThreshold( unsigned threshold );
+    inline void setConstraintViolationThreshold( unsigned threshold )
+    {
+        _constraintViolationThreshold = threshold;
+    }
 
     inline void setBranchingHeuristics( DivideStrategy strategy )
     {
