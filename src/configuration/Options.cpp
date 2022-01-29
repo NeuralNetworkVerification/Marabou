@@ -60,6 +60,7 @@ void Options::initializeDefaultValues()
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
+    _intOptions[SEED] = 1;
 
     /*
       Float options
