@@ -95,7 +95,7 @@ unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) co
 void SmtCore::initializeScoreTracker( const List<PiecewiseLinearConstraint *>
                                       &plConstraints )
 {
-    if ( _branchingHeuristic == DivideStrategy::PseudoImpact )
+    if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {
         _scoreTracker = std::unique_ptr<PseudoImpactTracker>
             ( new PseudoImpactTracker() );
