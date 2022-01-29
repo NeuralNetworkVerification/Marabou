@@ -24,7 +24,10 @@ const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
 
 // Whether to use SoI instead of Reluplex for local search for satisfying assignments
 //to non-linear constraint.
-const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = true;
+
+// How many proposal to reject during the DeepSoI before perform case splitting.
+const unsigned GlobalConfiguration::DEEP_SOI_REJECTION_THRESHOLD = 2;
 
 // Use the polarity metrics to decide which branch to take first in a case split
 // and how to repair a ReLU constraint.
