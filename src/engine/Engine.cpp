@@ -2687,12 +2687,6 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
     bool localOptimaReached = false;
     while ( !localOptimaReached )
     {
-        DEBUG({
-                ENGINE_LOG
-                    ( Stringf( "Current heuristic cost: %f",
-                               computeHeuristicCost( heuristicCost ) ).ascii() );
-            });
-
         DEBUG( _tableau->verifyInvariants() );
 
         mainLoopStatistics();
@@ -2711,6 +2705,9 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
 
         localOptimaReached = performSimplexStep();
     }
+    ENGINE_LOG
+        ( Stringf( "Current heuristic cost: %f",
+                   computeHeuristicCost( heuristicCost ) ).ascii() );
     _tableau->toggleOptimization( false );
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
 }

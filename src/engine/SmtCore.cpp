@@ -113,7 +113,10 @@ void SmtCore::reportRejectedPhasePatternProposal()
          _constraintViolationThreshold )
     {
         _needToSplit = true;
-        pickSplitPLConstraint();
+        if ( !pickSplitPLConstraint() )
+            // If pickSplitConstraint failed to pick one, use the native
+            // relu-violation based splitting heuristic.
+            _constraintForSplitting = _scoreTracker->topUnfixed();
     }
 }
 
