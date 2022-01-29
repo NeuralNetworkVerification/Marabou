@@ -73,6 +73,7 @@ Engine::Engine()
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
 
+    std::srand( Options::get()->getInt( Options::SEED ) );
     _statistics.stampStartingTime();
 }
 
@@ -2414,13 +2415,17 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( strategy == DivideStrategy::Polarity )
+    if ( ( strategy == DivideStrategy::Polarity ) ||
+         ( strategy == DivideStrategy::PseudoImpact &&
+           _smtCore.getStackDepth() < 3 ) )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( strategy == DivideStrategy::LargestInterval &&
-              _smtCore.getStackDepth() %
-              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+    else if ( ( strategy == DivideStrategy::LargestInterval &&
+                _smtCore.getStackDepth() %
+                GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 ) ||
+              ( strategy == DivideStrategy::PseudoImpact &&
+                _smtCore.getStackDepth() < 3 ) )
     {
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
