@@ -67,8 +67,8 @@ def createQuery(args):
 
     if  args.prop != None:
         query = network.getMarabouQuery()
-        if MarabouCore.loadProperty(query, args.prop):
-            return query, network
+        MarabouCore.loadProperty(query, args.prop)
+        return query, network
 
     if args.dataset == 'mnist':
         encode_mnist_linf(network, args.index, args.epsilon, args.target_label)
