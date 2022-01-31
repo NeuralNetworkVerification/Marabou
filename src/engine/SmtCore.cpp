@@ -502,13 +502,8 @@ bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
     {
-        if ( _branchingHeuristic == DivideStrategy::PseudoImpact )
-        {
-            _constraintForSplitting = _scoreTracker->topUnfixed();
-        }
-        else
-            _constraintForSplitting = _engine->pickSplitPLConstraint
-                ( _branchingHeuristic );
+        _constraintForSplitting = _engine->pickSplitPLConstraint
+            ( _branchingHeuristic );
     }
     return _constraintForSplitting != NULL;
 }

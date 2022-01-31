@@ -71,6 +71,14 @@ public:
     }
 
     /*
+      Get the constraint in the score tracker with the highest score
+    */
+    inline PiecewiseLinearConstraint *getConstraintsWithHighestScore() const
+    {
+        return _scoreTracker->topUnfixed();
+    }
+
+    /*
       Inform the SMT core that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
