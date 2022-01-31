@@ -2435,7 +2435,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
-        candidatePLConstraint = pxickSplitPLConstraintBasedOnTopology();
+        candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
               ( _smtCore.getStackDepth() %
                 GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
