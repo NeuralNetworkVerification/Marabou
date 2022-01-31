@@ -2293,11 +2293,12 @@ void Engine::decideBranchingHeuristics()
     DivideStrategy divideStrategy = Options::get()->getBranchingHeuristics();
     if ( divideStrategy == DivideStrategy::Auto )
     {
-
         if ( _preprocessedQuery.getInputVariables().size() <
              GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
             divideStrategy = DivideStrategy::LargestInterval;
+            if ( _verbosity >= 2 )
+                printf("Branching heuristics set to LargestInterval\n");
         }
         else
         {
@@ -2306,9 +2307,15 @@ void Engine::decideBranchingHeuristics()
                 divideStrategy = DivideStrategy::PseudoImpact;
                 _smtCore.setConstraintViolationThreshold
                     ( GlobalConfiguration::DEEP_SOI_REJECTION_THRESHOLD );
+                if ( _verbosity >= 2 )
+                    printf("Branching heuristics set to PseudoImpact\n");
             }
             else
+            {
                 divideStrategy = DivideStrategy::ReLUViolation;
+                if ( _verbosity >= 2 )
+                    printf("Branching heuristics set to ReLUViolation\n");
+            }
         }
     }
     ASSERT( divideStrategy != DivideStrategy::Auto );
@@ -2428,10 +2435,11 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
-        candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
+        candidatePLConstraint = pxickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
-              _smtCore.getStackDepth() %
-              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+              ( _smtCore.getStackDepth() %
+                GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+              )
     {
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
