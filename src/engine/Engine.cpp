@@ -2435,7 +2435,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == DivideStrategy::EarliestReLU )
-        candidatePLConstraint = pxickSplitPLConstraintBasedOnTopology();
+        candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
               ( _smtCore.getStackDepth() %
                 GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
@@ -2713,6 +2713,11 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
         DEBUG( _tableau->verifyInvariants() );
 
         mainLoopStatistics();
+        if ( _verbosity > 1 &&
+             _statistics.getLongAttribute
+             ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
+             GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+            _statistics.print();
 
         if ( !allVarsWithinBounds() )
             throw VariableOutOfBoundDuringOptimizationException();
