@@ -59,9 +59,9 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
-    _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 3;
+    _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 4;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
-    _intOptions[SEED] = 2022;
+    _intOptions[SEED] = 1;
 
     /*
       Float options
