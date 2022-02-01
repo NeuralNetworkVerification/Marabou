@@ -92,8 +92,9 @@ unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) co
     return _constraintToViolationCount[constraint];
 }
 
-void SmtCore::initializeScoreTracker( const List<PiecewiseLinearConstraint *>
-                                      &plConstraints )
+void SmtCore::initializeScoreTrackerIfNeeded( const
+                                              List<PiecewiseLinearConstraint *>
+                                              &plConstraints )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {

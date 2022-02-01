@@ -52,8 +52,8 @@ public:
     /*
       Initialize the score tracker with the given list of pl constraints.
     */
-    void initializeScoreTracker( const List<PiecewiseLinearConstraint *>
-                                 &plConstraints );
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *>
+                                         &plConstraints );
 
     /*
       Inform the SMT core that a SoI phase pattern proposal is rejected.

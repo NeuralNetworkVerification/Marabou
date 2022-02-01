@@ -73,7 +73,7 @@ Engine::Engine()
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
 
-    std::srand( Options::get()->getInt( Options::SEED ) );
+    srand( Options::get()->getInt( Options::SEED ) );
     _statistics.stampStartingTime();
 }
 
@@ -2183,7 +2183,7 @@ void Engine::clearViolatedPLConstraints()
 void Engine::resetSmtCore()
 {
     _smtCore.reset();
-    _smtCore.initializeScoreTracker( _plConstraints );
+    _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
 void Engine::resetExitCode()
@@ -2320,7 +2320,7 @@ void Engine::decideBranchingHeuristics()
     }
     ASSERT( divideStrategy != DivideStrategy::Auto );
     _smtCore.setBranchingHeuristics( divideStrategy );
-    _smtCore.initializeScoreTracker( _plConstraints );
+    _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
