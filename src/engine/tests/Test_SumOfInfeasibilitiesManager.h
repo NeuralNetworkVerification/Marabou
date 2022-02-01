@@ -387,7 +387,7 @@ public:
         // for max: 1.5. So pick relu1.
         TS_ASSERT_THROWS_NOTHING( soiManager->proposePhasePatternUpdate() );
 
-        // The cost term of the first relu is flipped.
+        // The cost term of the second relu is flipped.
         LinearExpression cost1;
         TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
                                   ( cost1, RELU_PHASE_INACTIVE ) );
@@ -626,6 +626,5 @@ public:
                                   ( plConstraints[3] ) );
 
         TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
-
     }
 };
