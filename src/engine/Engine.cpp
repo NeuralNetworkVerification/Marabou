@@ -2663,6 +2663,16 @@ bool Engine::performLocalSearch()
 
         if ( lastProposalAccepted )
         {
+            /*
+              Check whether the optimal solution to the last accepted phase
+              is a real solution. We only check this when the last proposal
+              was accepted, because rejected phase pattern must have resulted in
+              increase in the SoI cost.
+
+              HW: Another option is to only do this check when
+              costOfLastAcceptedPhasePattern is 0, but this might be too strict.
+              The overhead is low anyway.
+            */
             collectViolatedPlConstraints();
             if ( allPlConstraintsHold() )
             {
@@ -2673,15 +2683,21 @@ bool Engine::performLocalSearch()
             ASSERT( !FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
         }
 
+        // No satisfying assignment found for the last accepted phase pattern,
+        // propose an update to it.
         _soiManager->proposePhasePatternUpdate();
         minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
         _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
         costOfProposedPhasePattern = computeHeuristicCost
             ( _soiManager->getCurrentSoIPhasePattern() );
 
+        // We have the "local" effect of change the cost term of some
+        // PLConstraints in the phase pattern. Use this information to influence
+        // the branching decision.
         updatePseudoImpact( costOfLastAcceptedPhasePattern,
                             costOfProposedPhasePattern );
 
+        // Decide whether to accept the last proposal.
         if ( _soiManager->decideToAcceptCurrentProposal
              ( costOfLastAcceptedPhasePattern, costOfProposedPhasePattern ) )
         {
@@ -2691,8 +2707,8 @@ bool Engine::performLocalSearch()
         }
         else
         {
-            lastProposalAccepted = false;
             _smtCore.reportRejectedPhasePatternProposal();
+            lastProposalAccepted = false;
         }
     }
 
