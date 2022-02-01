@@ -236,7 +236,7 @@ private:
       Number of times the phase pattern proposal has been rejected at the
       current search state.
     */
-    unsigned _rejectedPhasePatternProposal;
+    unsigned _numRejectedPhasePatternProposal;
 };
 
 #endif // __SmtCore_h__

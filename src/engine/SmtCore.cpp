@@ -36,7 +36,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
     , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
-    , _rejectedPhasePatternProposal( 0 )
+    , _numRejectedPhasePatternProposal( 0 )
 {
 }
 
@@ -64,7 +64,7 @@ void SmtCore::reset()
     _constraintForSplitting = NULL;
     _stateId = 0;
     _constraintToViolationCount.clear();
-    _rejectedPhasePatternProposal = 0;
+    _numRejectedPhasePatternProposal = 0;
 }
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
@@ -109,9 +109,9 @@ void SmtCore::initializeScoreTrackerIfNeeded( const
 
 void SmtCore::reportRejectedPhasePatternProposal()
 {
-    ++_rejectedPhasePatternProposal;
+    ++_numRejectedPhasePatternProposal;
 
-    if ( _rejectedPhasePatternProposal >=
+    if ( _numRejectedPhasePatternProposal >=
          _deepSoIRejectionThreshold )
     {
         _needToSplit = true;
@@ -131,7 +131,7 @@ void SmtCore::performSplit()
 {
     ASSERT( _needToSplit );
 
-    _rejectedPhasePatternProposal = 0;
+    _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
     if ( !_constraintForSplitting->isActive() )
     {
@@ -287,7 +287,7 @@ bool SmtCore::popSplit()
 void SmtCore::resetSplitConditions()
 {
     _constraintToViolationCount.clear();
-    _rejectedPhasePatternProposal = 0;
+    _numRejectedPhasePatternProposal = 0;
     _needToSplit = false;
 }
 
