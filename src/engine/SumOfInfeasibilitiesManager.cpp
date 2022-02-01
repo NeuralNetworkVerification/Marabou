@@ -219,7 +219,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
     {
         double reducedCost = 0;
         PhaseStatus phaseStatusOfReducedCost = PHASE_NOT_FIXED;
-        getReducedCost( plConstraint, reducedCost, phaseStatusOfReducedCost );
+        getCostReduction( plConstraint, reducedCost, phaseStatusOfReducedCost );
 
         if ( reducedCost > maxReducedCost )
         {
@@ -336,10 +336,10 @@ void SumOfInfeasibilitiesManager::setPhaseStatusInCurrentPhasePattern
     _currentPhasePattern[constraint] = phase;
 }
 
-void SumOfInfeasibilitiesManager::getReducedCost( PiecewiseLinearConstraint *
-                                                  plConstraint, double
-                                                  &reducedCost, PhaseStatus
-                                                  &phaseOfReducedCost ) const
+void SumOfInfeasibilitiesManager::getCostReduction( PiecewiseLinearConstraint *
+                                                    plConstraint, double
+                                                    &reducedCost, PhaseStatus
+                                                    &phaseOfReducedCost ) const
 {
     ASSERT( _currentPhasePattern.exists( plConstraint ) );
     SOI_LOG( "Computing reduced cost for the current constraint..." );
