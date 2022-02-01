@@ -69,8 +69,8 @@ public:
       Called when the previous heuristic cost cannot be minimized to 0 (i.e., no
       satisfying assignment found for the previous activation pattern).
       In this case, we need to try a new phase pattern. We achieve this by
-      propose an update to the previous phase pattern,
-      stored in _currentProposal.
+      proposing an update to the previous phase pattern,
+      stored in _currentPhasePattern.
     */
     void proposePhasePatternUpdate();
 
@@ -78,7 +78,7 @@ public:
       The acceptance heuristic is standard: if the newCost is less than
       the current cost, we always accept. Otherwise, the probability
       to accept the proposal is reversely proportional to the difference between
-      the newCost and the _costOfcurrentphasepattern.
+      the newCost and the _costOfCurrentPhasePattern.
     */
     bool decideToAcceptCurrentProposal( double costOfCurrentPhasePattern,
                                         double costOfProposedPhasePattern );
@@ -139,9 +139,7 @@ private:
     Map<PiecewiseLinearConstraint *, PhaseStatus> _currentPhasePattern;
 
     /*
-      The proposed update to the current phase pattern. For instance, it can
-      contain one of the ReLUConstraint in the _currentPhasePattern
-      with PhaseStatus flipped.
+      The most recently accepted phase pattern.
     */
     Map<PiecewiseLinearConstraint *, PhaseStatus> _lastAcceptedPhasePattern;
 
@@ -166,7 +164,8 @@ private:
     Statistics *_statistics;
 
     /*
-      Clear _currentPhasePattern and _currentProposal
+      Clear _currentPhasePattern, _lastAcceptedPhasePattern and
+      _plConstraintsInCurrentPhasePattern.
     */
     void resetPhasePattern();
 
@@ -184,16 +183,16 @@ private:
 
     /*
       Iterate over the piecewise linear constraints in the current phase pattern
-      to find one with the largest "reduced cost". See the "getReducedCost"
+      to find one with the largest "cost reduction". See the "getCostReduction"
       method below.
-      If no constraint has positive reduced cost (we are at a local optima), we
+      If no constraint has positive cost reduction (we are at a local optima), we
       fall back to proposePhasePatternUpdateRandomly()
     */
     void proposePhasePatternUpdateWalksat();
 
     /*
-      This method computes the reduced cost of a plConstraint participating
-      in the phase pattern. The reduced cost is the largest value by which the
+      This method computes the cost reuduction of a plConstraint participating
+      in the phase pattern. The cost reduction is the largest value by which the
       cost (w.r.t. the current assignment) will decrease if we choose a
       different phase for the plConstraint in the phase pattern. This value is
       stored in reducedCost. The phase corresponding to the largest reduction
@@ -201,8 +200,8 @@ private:
       Note that the phase can be negative, which means the current phase is
       (locally) optimal.
     */
-    void getReducedCost( PiecewiseLinearConstraint *plConstraint, double
-                         &reducedCost, PhaseStatus &phaseOfReducedCost ) const;
+    void getCostReduction( PiecewiseLinearConstraint *plConstraint, double
+                           &reducedCost, PhaseStatus &phaseOfReducedCost ) const;
 };
 
 #endif // __SumOfInfeasibilitiesManager_h__
