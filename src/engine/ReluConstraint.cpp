@@ -870,7 +870,6 @@ PhaseStatus ReluConstraint::getPhaseStatusInAssignment( const Map<unsigned, doub
         RELU_PHASE_INACTIVE : RELU_PHASE_ACTIVE;
 }
 
-
 bool ReluConstraint::haveOutOfBoundVariables() const
 {
     double bValue = _assignment.get( _b );
