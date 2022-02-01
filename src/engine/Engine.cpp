@@ -2290,7 +2290,7 @@ void Engine::updateDirections()
 
 void Engine::decideBranchingHeuristics()
 {
-    DivideStrategy divideStrategy = Options::get()->getBranchingHeuristics();
+    DivideStrategy divideStrategy = Options::get()->getDivideStrategy();
     if ( divideStrategy == DivideStrategy::Auto )
     {
         if ( _preprocessedQuery.getInputVariables().size() <

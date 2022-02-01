@@ -427,7 +427,7 @@ bool CDSmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
         _constraintForSplitting = _engine->pickSplitPLConstraint
-            ( Options::get()->getBranchingHeuristics() );
+            ( Options::get()->getDivideStrategy() );
     return _constraintForSplitting != NULL;
 }
 

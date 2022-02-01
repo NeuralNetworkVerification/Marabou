@@ -33,7 +33,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
-    , _branchingHeuristic( Options::get()->getBranchingHeuristics() )
+    , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
     , _rejectedPhasePatternProposal( 0 )
 {

@@ -137,7 +137,7 @@ void Options::setString( unsigned option, std::string value )
     _stringOptions[option] = value;
 }
 
-DivideStrategy Options::getBranchingHeuristics() const
+DivideStrategy Options::getDivideStrategy() const
 {
     String strategyString = String( _stringOptions.get
                                     ( Options::SPLITTING_STRATEGY ) );
