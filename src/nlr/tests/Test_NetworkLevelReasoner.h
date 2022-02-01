@@ -1971,4 +1971,53 @@ public:
             TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 4 ) );
         }
     }
+
+    void test_concretize_input_assignment()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+
+        populateNetwork( nlr );
+
+        // With ReLUs, Inputs are zeros, only biases count
+        tableau.nextValues[0] = 0;
+        tableau.nextValues[1] = 0;
+
+        Map<unsigned, double> assignment;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 4 ) );
+
+        TS_ASSERT( assignment.size() == 14 );
+        TS_ASSERT( FloatUtils::areEqual( assignment[12], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( assignment[13], 4 ) );
+
+        // With ReLUs, case 1
+        tableau.nextValues[0] = 1;
+        tableau.nextValues[1] = 1;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 1 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( assignment[12], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( assignment[13], 1 ) );
+
+        // With ReLUs, case 2
+        tableau.nextValues[0] = 1;
+        tableau.nextValues[1] = 2;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 0 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( assignment[12], 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( assignment[13], 0 ) );
+    }
+
 };

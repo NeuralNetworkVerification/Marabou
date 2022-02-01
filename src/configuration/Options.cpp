@@ -68,6 +68,7 @@ void Options::initializeDefaultValues()
     _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
     _floatOptions[PREPROCESSOR_BOUND_TOLERANCE] = \
         GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    _floatOptions[PROBABILITY_DENSITY_PARAMETER] = 10;
 
     /*
       String options
@@ -81,6 +82,8 @@ void Options::initializeDefaultValues()
     _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
     _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "";
     _stringOptions[QUERY_DUMP_FILE] = "";
+    _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
+    _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -198,6 +201,28 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
     {
         return MILPSolverBoundTighteningType::NONE;
     }
+}
+
+SoISearchStrategy Options::getSoISearchStrategy() const
+{
+    String strategyString = String( _stringOptions.get
+                                    ( Options::SOI_SEARCH_STRATEGY ) );
+    if ( strategyString == "mcmc" )
+        return SoISearchStrategy::MCMC;
+    else if ( strategyString == "walksat" )
+        return SoISearchStrategy::WALKSAT;
+    else
+        return SoISearchStrategy::MCMC;
+}
+
+SoIInitializationStrategy Options::getSoIInitializationStrategy() const
+{
+    String strategyString = String( _stringOptions.get
+                                    ( Options::SOI_INITIALIZATION_STRATEGY ) );
+    if ( strategyString == "input-assignment" )
+        return SoIInitializationStrategy::INPUT_ASSIGNMENT;
+    else
+        return SoIInitializationStrategy::INPUT_ASSIGNMENT;
 }
 
 //

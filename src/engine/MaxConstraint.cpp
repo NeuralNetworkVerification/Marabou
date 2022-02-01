@@ -787,8 +787,7 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
             }
             if ( _eliminatedVariables )
                 ASSERT( FloatUtils::gte( _assignment.get( _f ),
-                                         _assignment.get
-                                         ( _maxValueOfEliminated ) ) );
+                                         _maxValueOfEliminated ) );
         });
 
     if ( phase == MAX_PHASE_ELIMINATED )
@@ -812,6 +811,21 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
         cost._addends[_f] = cost._addends[_f] + 1;
         cost._addends[element] = cost._addends[element] - 1;
     }
+}
+
+PhaseStatus MaxConstraint::getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                       &assignment ) const
+{
+    auto byAssignment = [&](const unsigned& a, const unsigned& b) {
+                            return assignment[a] < assignment[b];
+                        };
+    unsigned largestVariable =  *std::max_element( _elements.begin(),
+                                                   _elements.end(),
+                                                   byAssignment );
+    if ( FloatUtils::lt( assignment[largestVariable], assignment[_f] ) )
+        return MAX_PHASE_ELIMINATED;
+    else
+        return variableToPhase( largestVariable );
 }
 
 String MaxConstraint::serializeToString() const

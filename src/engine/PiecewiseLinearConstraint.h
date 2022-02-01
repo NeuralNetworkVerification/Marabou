@@ -259,6 +259,18 @@ public:
                                            PhaseStatus /* phase */ ) const {}
 
     /*
+      Return the phase status corresponding to the values of the input
+      variables in the given assignment. For instance, for ReLU, if the input
+      variable's assignment is positive, then the method returns 
+      RELU_PHASE_ACTIVE. Otherwise, it returns RELU_PHASE_INACTIVE.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &/* assignment */ ) const
+    {
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+    }
+
+    /*
       Produce string representation of the piecewise linear constraint.
       This representation contains only the information necessary to reproduce it
       but does not account for state or change in state during execution. Additionally

@@ -76,9 +76,17 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO] = 0;
     _longAttributes[TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO] = 0;
     _longAttributes[TOTAL_TIME_SMT_CORE_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO] = 0;
+    _longAttributes[NUM_PROPOSED_PHASE_PATTERN_UPDATE] = 0;
+    _longAttributes[NUM_ACCEPTED_PHASE_PATTERN_UPDATE] = 0;
+    _longAttributes[TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_LOCAL_SEARCH_MICRO] = 0;
+    _longAttributes[TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO] = 0;
 
     _doubleAttributes[CURRENT_DEGRADATION] = 0.0;
     _doubleAttributes[MAX_DEGRADATION] = 0.0;
+    _doubleAttributes[COST_OF_CURRENT_PHASE_PATTERN] = FloatUtils::infinity();
+    _doubleAttributes[MIN_COST_OF_PHASE_PATTERN] = FloatUtils::infinity();
 }
 
 void Statistics::stampStartingTime()
@@ -196,6 +204,12 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n"
             , printPercents( totalTimePerformingSymbolicBoundTightening, timeMainLoopMicro )
             , totalTimePerformingSymbolicBoundTightening / 1000
+            );
+    unsigned long long totalTimePerformingLocalSearch =
+        getLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO );
+    printf( "\t\t[%.2lf%%] SoI-based local search: %llu milli\n"
+            , printPercents( totalTimePerformingLocalSearch, timeMainLoopMicro )
+            , totalTimePerformingLocalSearch / 1000
             );
 
     unsigned long long total =
@@ -339,6 +353,36 @@ void Statistics::print()
     printf( "\t--- SBT ---\n" );
     printf( "\tNumber of tightened bounds: %llu\n",
             getLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING ) );
+
+    printf( "\t--- SoI-based local search ---\n" );
+    unsigned long long num_proposed_phase_pattern_update =
+        getLongAttribute( Statistics::NUM_PROPOSED_PHASE_PATTERN_UPDATE );
+    unsigned long long num_accepted_phase_pattern_update =
+        getLongAttribute( Statistics::NUM_ACCEPTED_PHASE_PATTERN_UPDATE );
+    printf( "\tNumber of proposed phase pattern update: %llu. "
+            "Number of accepted update: %llu [%.2lf%%]\n"
+            , num_proposed_phase_pattern_update
+            , num_accepted_phase_pattern_update
+            , printPercents( num_accepted_phase_pattern_update,
+                             num_proposed_phase_pattern_update ) );
+    unsigned long long totalTimeUpdatingSoIPatternPattern =
+        getLongAttribute( Statistics::TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO );
+    printf( "\tTotal time (%% of local search time) updating SoI phase pattern : %llu milli [%.2lf%%]\n"
+            , totalTimeUpdatingSoIPatternPattern
+            , printPercents( totalTimeUpdatingSoIPatternPattern,
+                             totalTimePerformingLocalSearch ) );
+    unsigned long long totalTimeObtainCurrentAssignmentMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO );
+    printf( "\tTotal time obtaining current assignment: %llu milli [%.2lf%%]\n"
+            , totalTimeObtainCurrentAssignmentMicro
+            , printPercents( totalTimeObtainCurrentAssignmentMicro,
+                             totalTimePerformingLocalSearch ) );
+    unsigned long long totalTimeGettingSoIPhasePatternMicro =
+        getLongAttribute( Statistics::TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO );
+    printf( "\tTotal time getting SoI phase pattern : %llu milli [%.2lf%%]\n"
+            , totalTimeGettingSoIPhasePatternMicro
+            , printPercents( totalTimeGettingSoIPhasePatternMicro,
+                             timeMainLoopMicro ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const

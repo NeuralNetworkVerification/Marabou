@@ -173,6 +173,9 @@ public:
     virtual void getCostFunctionComponent( LinearExpression &cost,
                                            PhaseStatus phase ) const override;
 
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
+
     /*
       Returns string with shape:
       max, _f, element_1, element_2, ... , element_n

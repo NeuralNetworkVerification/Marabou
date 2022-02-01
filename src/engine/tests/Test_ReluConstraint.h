@@ -1560,4 +1560,24 @@ public:
         TS_ASSERT_EQUALS( cost3._addends[b2], -2 );
         TS_ASSERT_EQUALS( cost3._addends[f2], 2 );
     }
+
+    void test_get_phase_in_assignment()
+    {
+        unsigned b = 0;
+        unsigned f = 1;
+
+        // The relu is fixed, do not add cost term.
+        ReluConstraint relu = ReluConstraint( b, f );
+        relu.notifyVariableValue( b, 1.5 );
+        relu.notifyVariableValue( f, 2 );
+
+        Map<unsigned, double> assignment;
+        assignment[0] = -1;
+        TS_ASSERT_EQUALS( relu.getPhaseStatusInAssignment( assignment ),
+                          RELU_PHASE_INACTIVE );
+
+        assignment[0] = 15;
+        TS_ASSERT_EQUALS( relu.getPhaseStatusInAssignment( assignment ),
+                          RELU_PHASE_ACTIVE );
+    }
 };

@@ -517,7 +517,7 @@ const double *Tableau::getUpperBounds() const
     return _upperBounds;
 }
 
-double Tableau::getValue( unsigned variable )
+double Tableau::getValue( unsigned variable ) const
 {
     /*
       If this variable has been merged into another,

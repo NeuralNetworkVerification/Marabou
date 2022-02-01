@@ -575,6 +575,10 @@ PYBIND11_MODULE(MarabouCore, m) {
         .value("NUM_TABLEAU_BOUND_HOPPING", Statistics::StatisticsLongAttribute::NUM_TABLEAU_BOUND_HOPPING)
         .value("TOTAL_TIME_DEGRADATION_CHECKING", Statistics::StatisticsLongAttribute::TOTAL_TIME_DEGRADATION_CHECKING)
         .value("TIME_CONSTRAINT_FIXING_STEPS_MICRO", Statistics::StatisticsLongAttribute::TIME_CONSTRAINT_FIXING_STEPS_MICRO)
+        .value("TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO)
+        .value("NUM_PROPOSED_PHASE_PATTERN_UPDATE", Statistics::StatisticsLongAttribute::NUM_PROPOSED_PHASE_PATTERN_UPDATE)
+        .value("NUM_ACCEPTED_PHASE_PATTERN_UPDATE", Statistics::StatisticsLongAttribute::NUM_ACCEPTED_PHASE_PATTERN_UPDATE)
+        .value("TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO)
         .export_values();
     py::enum_<Statistics::StatisticsDoubleAttribute>(m, "StatisticsDoubleAttribute")
         .value("MAX_DEGRADATION", Statistics::StatisticsDoubleAttribute::MAX_DEGRADATION)

@@ -115,6 +115,49 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
+void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
+                                                      &assignment )
+{
+    Layer *inputLayer = _layerIndexToLayer[0];
+    ASSERT( inputLayer->getLayerType() == Layer::INPUT );
+
+    unsigned inputLayerSize = inputLayer->getSize();
+    ASSERT( inputLayerSize > 0 );
+
+    double *input = new double[inputLayerSize];
+    
+    // First obtain the input assignment from the _tableau
+    for ( unsigned index = 0; index < inputLayerSize; ++index )
+    {
+        if ( !inputLayer->neuronEliminated( index ) )
+        {
+            unsigned variable = inputLayer->neuronToVariable( index );
+            double value = _tableau->getValue( variable );
+            input[index] = value;
+            assignment[variable] = value;
+        }
+        else
+            input[index] = inputLayer->getEliminatedNeuronValue( index );
+    }
+
+    _layerIndexToLayer[0]->setAssignment( input );
+    
+    // Evaluate layers iteratively and store the results in "assignment"
+    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
+    {
+        Layer *currentLayer = _layerIndexToLayer[i];
+        currentLayer->computeAssignment();
+        for ( unsigned index = 0; index < currentLayer->getSize(); ++index )
+        {
+            if ( !currentLayer->neuronEliminated( index ) )
+                assignment[currentLayer->neuronToVariable( index )] =
+                    currentLayer->getAssignment( index );
+        }
+    }
+
+    delete[] input;
+}
+
 void NetworkLevelReasoner::simulate( Vector<Vector<double>> *input )
 {
     _layerIndexToLayer[0]->setSimulations( input );

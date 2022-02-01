@@ -16,7 +16,9 @@
 #ifndef __LinearExpression_h__
 #define __LinearExpression_h__
 
+#include "FloatUtils.h"
 #include "Map.h"
+#include "MStringf.h"
 
 /*
    A class representing a single linear expression.
@@ -34,6 +36,8 @@ public:
     LinearExpression( Map<unsigned, double> &addends, double constant );
 
     bool operator==( const LinearExpression &other ) const;
+
+    double evaluate( const Map<unsigned, double> &assignment );
 
     /*
       For debugging

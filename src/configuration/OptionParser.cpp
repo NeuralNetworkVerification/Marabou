@@ -66,6 +66,12 @@ void OptionParser::initialize()
         ( "query-dump-file",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::QUERY_DUMP_FILE]) ),
           "Query dump file" )
+        ( "soi-search-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_SEARCH_STRATEGY]) ),
+          "Strategy for stochastically minimizing the soi: mcmc/walksat. default: mcmc" )
+        ( "soi-init-strategy",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_INITIALIZATION_STRATEGY]) ),
+          "Strategy for initialize the soi function: input-assignment/random. default: input-assignment" )
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(SnC) Number of workers" )
@@ -94,6 +100,9 @@ void OptionParser::initialize()
         ( "split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
+        ( "seed",
+          boost::program_options::value<int>( &((*_intOptions)[Options::SEED]) ),
+          "The random seed." )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(SnC) The timeout factor" )
@@ -106,6 +115,9 @@ void OptionParser::initialize()
          ( "preprocessor-bound-tolerance",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) ),
           "epsilon for preprocessor bound tightening comparisons" )
+        ( "mcmc-beta",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::PROBABILITY_DENSITY_PARAMETER]) ),
+          "beta parameter in MCMC search." )
 #ifdef ENABLE_GUROBI
         ( "milp",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
