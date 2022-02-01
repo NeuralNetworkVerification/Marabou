@@ -22,6 +22,7 @@
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
 
 using namespace CVC4::context;

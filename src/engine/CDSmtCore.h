@@ -69,6 +69,7 @@
 #include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PLConstraintScoreTracker.h"
 #include "Stack.h"
 #include "Statistics.h"
 #include "TrailEntry.h"
