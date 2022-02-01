@@ -75,6 +75,10 @@ public:
 
         CONSTRAINT_VIOLATION_THRESHOLD,
 
+        // The number of rejected phase pattern proposal allowed before
+        // splitting at a search state.
+        DEEP_SOI_REJECTION_THRESHOLD,
+
         // The number of simulations
         NUMBER_OF_SIMULATIONS,
 

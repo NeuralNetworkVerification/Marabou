@@ -31,9 +31,6 @@ public:
     //to non-linear constraint.
     static const bool USE_DEEPSOI_LOCAL_SEARCH;
 
-    // How many proposal to reject during the DeepSoI before perform case splitting.
-    static const unsigned DEEP_SOI_REJECTION_THRESHOLD;
-
     // Use the polarity metrics to decide which branch to take first in a case split
     // and how to repair a ReLU constraint.
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;

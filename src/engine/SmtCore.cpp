@@ -33,6 +33,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
     , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+    , _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
     , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
     , _rejectedPhasePatternProposal( 0 )
@@ -111,7 +112,7 @@ void SmtCore::reportRejectedPhasePatternProposal()
     ++_rejectedPhasePatternProposal;
 
     if ( _rejectedPhasePatternProposal >=
-         _constraintViolationThreshold )
+         _deepSoIRejectionThreshold )
     {
         _needToSplit = true;
         if ( !pickSplitPLConstraint() )

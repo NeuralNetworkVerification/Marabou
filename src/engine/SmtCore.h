@@ -139,11 +139,6 @@ public:
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
-    inline void setConstraintViolationThreshold( unsigned threshold )
-    {
-        _constraintViolationThreshold = threshold;
-    }
-
     inline void setBranchingHeuristics( DivideStrategy strategy )
     {
         _branchingHeuristic = strategy;
@@ -216,10 +211,16 @@ private:
     unsigned _stateId;
 
     /*
-      Split when some relu has been violated for this many times
+      Split when some relu has been violated for this many times during the
+      Reluplex procedure
     */
     unsigned _constraintViolationThreshold;
 
+    /*
+      Split when there have been this many rejected phase pattern proposal
+      during the SoI-based local search.
+    */
+    unsigned _deepSoIRejectionThreshold;
 
     /*
       The strategy to pick the piecewise linear constraint to branch on.

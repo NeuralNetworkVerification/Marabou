@@ -97,9 +97,12 @@ void OptionParser::initialize()
           boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
           "Verbosity of engine::solve(). 0: does not print anything (for SnC), 1: print"
           "out statistics in the beginning and end, 2: print out statistics during solving." )
-        ( "split-threshold",
+        ( "reluplex-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
+        ( "soi-split-threshold",
+          boost::program_options::value<int>( &((*_intOptions)[Options::DEEP_SOI_REJECTION_THRESHOLD]) ),
+          "Max number of rejected phase pattern proposal before splitting" )
         ( "seed",
           boost::program_options::value<int>( &((*_intOptions)[Options::SEED]) ),
           "The random seed." )

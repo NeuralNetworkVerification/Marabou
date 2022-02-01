@@ -213,6 +213,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
                  GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
                 _statistics.print();
 
+            // Check whether progress has been made recently
+            checkOverallProgress();
+
             if ( performPrecisionRestorationIfNeeded() )
                 continue;
 
@@ -418,9 +421,6 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
 
 bool Engine::performPrecisionRestorationIfNeeded()
 {
-    // Check whether progress has been made recently
-        checkOverallProgress();
-
     // If the basis has become malformed, we need to restore it
     if ( basisRestorationNeeded() )
     {
@@ -2305,8 +2305,6 @@ void Engine::decideBranchingHeuristics()
             if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
             {
                 divideStrategy = DivideStrategy::PseudoImpact;
-                _smtCore.setConstraintViolationThreshold
-                    ( GlobalConfiguration::DEEP_SOI_REJECTION_THRESHOLD );
                 if ( _verbosity >= 2 )
                     printf("Branching heuristics set to PseudoImpact\n");
             }
@@ -2738,12 +2736,8 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
         if ( !allVarsWithinBounds() )
             throw VariableOutOfBoundDuringOptimizationException();
 
-        // Possible restoration due to preceision degradation
-        if ( shouldCheckDegradation() && highDegradation() )
-        {
-            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+        if ( performPrecisionRestorationIfNeeded() )
             continue;
-        }
 
         ASSERT( allVarsWithinBounds() );
 
