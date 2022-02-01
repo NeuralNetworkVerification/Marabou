@@ -790,7 +790,6 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
                                          _maxValueOfEliminated ) );
         });
 
-
     if ( phase == MAX_PHASE_ELIMINATED )
     {
         // The cost term corresponding to this phase is f - maxValueOfEliminated.
