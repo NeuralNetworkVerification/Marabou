@@ -837,8 +837,7 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     // The soundness of the SoI component assumes that the constraints f >= b and
     // f >= 0 is added.
-    ASSERT( FloatUtils::gte( _assignment.get( _f ), _assignment.get( _b ),
-                             GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
+    ASSERT( FloatUtils::gte( _assignment.get( _f ), _assignment.get( _b ) )
             && FloatUtils::gte( getLowerBound( _f ), 0 ) );
 
     if ( phase == RELU_PHASE_INACTIVE )
