@@ -61,7 +61,7 @@ void Options::initializeDefaultValues()
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
     _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 4;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
-    _intOptions[SEED] = 1;
+    _intOptions[SEED] = 217;
 
     /*
       Float options
