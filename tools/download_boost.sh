@@ -12,6 +12,11 @@ echo "unzipping boost"
 tar xzvf boost_1_68_0.tar.gz >> /dev/null
 echo "installing boost"
 cd boost_1_68_0;
+
+if [[ $OSTYPE == 'darwin'* ]]; then
+    export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+fi
+
 mkdir installed
 ./bootstrap.sh --prefix=`pwd`/installed --with-libraries=program_options,timer,chrono,thread >> /dev/null ;
 ./b2 cxxflags=-fPIC link=static install >> /dev/null
