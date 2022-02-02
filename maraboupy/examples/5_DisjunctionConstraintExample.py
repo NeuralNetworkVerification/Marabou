@@ -54,8 +54,7 @@ for var in net1.inputVars[0]:
 
 # %%
 # Solve Marabou query
-vals1, stats1 = net1.solve()
-
+exitCode1, vals1, stats1 = net1.solve()
 
 # %%
 # Example statistics

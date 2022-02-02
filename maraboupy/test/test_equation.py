@@ -30,7 +30,7 @@ def test_equality_output():
         network.addEquality([outputVar], [1.0], outputValue)
 
         # Call to Marabou solver
-        vals, _ = network.solve(options = OPT, verbose = False)
+        exitCode, vals, _ = network.solve(options = OPT, verbose = False)
         assert np.abs(vals[outputVar] - outputValue) < TOL
         
         # Remove inequality constraint, so that a new one can be applied in the next iteration
@@ -57,7 +57,7 @@ def test_equality_input():
     network.setLowerBound(outputVar, minOutputValue)
     
     # Call to Marabou solver
-    vals, _ = network.solve(options = OPT, verbose = False)
+    exitCode, vals, _ = network.solve(options = OPT, verbose = False)
     assert np.abs(np.dot([vals[inVar] for inVar in inputVars], weights) - averageInputValue) < TOL
     assert vals[outputVar] >= minOutputValue
 
@@ -77,7 +77,7 @@ def test_inequality_output():
         network.addInequality(outputVars, weights, outputValue)
 
         # Call to Marabou solver
-        vals, _ = network.solve(options = OPT, verbose = False)
+        exitCode, vals, _ = network.solve(options = OPT, verbose = False)
         assert np.dot([vals[outVar] for outVar in outputVars], weights) <= outputValue
         
         # Remove inequality constraint, so that a new one can be applied in the next iteration
@@ -104,7 +104,7 @@ def test_inequality_input():
     network.setLowerBound(outputVar, minOutputValue)
     
     # Call to Marabou solver
-    vals, _ = network.solve(options = OPT, verbose = False)
+    exitCode, vals, _ = network.solve(options = OPT, verbose = False)
     assert np.dot([vals[inVar] for inVar in inputVars], weights) <= averageInputValue
     assert vals[outputVar] >= minOutputValue
     

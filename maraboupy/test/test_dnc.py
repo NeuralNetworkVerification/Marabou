@@ -28,8 +28,8 @@ def test_dnc_unsat():
     network.setLowerBound(outVar, 0.1)
 
     # Expect UNSAT result
-    vals, stats = network.solve(options = OPT, filename = "", verbose=False)
-    assert len(vals) == 0
+    exitCode, vals, stats = network.solve(options = OPT, filename = "", verbose=False)
+    assert exitCode == "unsat"
     
 def test_dnc_sat():
     """
@@ -50,8 +50,8 @@ def test_dnc_sat():
     network.setLowerBound(outVar, 0.0)
 
     # Expect SAT result, which should return a dictionary with a value for every network variable
-    vals, stats = network.solve(options = OPT, filename = "", verbose=False)
-    assert len(vals) == network.numVars
+    exitCode, vals, stats = network.solve(options = OPT, filename = "", verbose=False)
+    assert exitCode == "sat" and len(vals) == network.numVars
 
 def test_dnc_eval():
     """

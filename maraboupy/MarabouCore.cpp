@@ -298,14 +298,36 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
     return *(engine.getInputQuery());
 }
 
-
+std::string exitCodeToString( IEngine::ExitCode code )
+{
+    switch ( code )
+    {
+    case IEngine::UNSAT:
+        return "unsat";
+    case IEngine::SAT:
+        return "sat";
+    case IEngine::ERROR:
+        return "ERROR";
+    case IEngine::UNKNOWN:
+        return "UNKNOWN";
+    case IEngine::TIMEOUT:
+        return "TIMEOUT";
+    case IEngine::QUIT_REQUESTED:
+        return "QUIT_REQUESTED";
+    default:
+        return "UNKNOWN";
+    }
+}
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
-std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
-                                                   std::string redirect=""){
+std::tuple<std::string, std::map<int, double>, Statistics>
+    solve(InputQuery &inputQuery, MarabouOptions &options,
+          std::string redirect="")
+{
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
+    std::string resultString = "";
     std::map<int, double> ret;
     Statistics retStats;
     int output=-1;
@@ -319,12 +341,15 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
 
         Engine engine;
 
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.processInputQuery(inputQuery))
+            return std::make_tuple(exitCodeToString(engine.getExitCode()),
+                                   ret, *(engine.getStatistics()));
         if ( dnc )
         {
             auto dncManager = std::unique_ptr<DnCManager>( new DnCManager( &inputQuery ) );
 
             dncManager->solve();
+            resultString = dncManager->getResultString().ascii();
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
@@ -337,30 +362,37 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, retStats );
+                return std::make_tuple( resultString, ret, retStats );
             }
             default:
-                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+                return std::make_tuple( resultString, ret, Statistics() ); // TODO: meaningful DnCStatistics
             }
         } else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+            engine.solve(timeoutInSeconds);
+
+            resultString = exitCodeToString(engine.getExitCode());
 
             if (engine.getExitCode() == Engine::SAT)
+            {
                 engine.extractSolution(inputQuery);
+                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
+                    ret[i] = inputQuery.getSolutionValue(i);
+            }
+
             retStats = *(engine.getStatistics());
-            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
-                ret[i] = inputQuery.getSolutionValue(i);
         }
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return std::make_pair(ret, retStats);
+        return std::make_tuple
+            ("ERROR",
+             ret, retStats);
     }
     if(output != -1)
         restoreOutputStream(output);
-    return std::make_pair(ret, retStats);
+    return std::make_tuple(resultString, ret, retStats);
 }
 
 void saveQuery(InputQuery& inputQuery, std::string filename){
@@ -421,6 +453,7 @@ PYBIND11_MODULE(MarabouCore, m) {
 
         Returns:
             (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
