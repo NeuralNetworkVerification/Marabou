@@ -499,7 +499,7 @@ private:
     /*
       Perform bound tightening after performing a case split.
     */
-    inline void performBoundTighteningAfterCaseSplit();
+    void performBoundTighteningAfterCaseSplit();
 
     /*
       Called after a satisfying assignment is found for the linear constraints.
@@ -512,13 +512,13 @@ private:
 
       Return true iff a true satisfying assignment is found.
     */
-    inline bool handleSatisfyingAssignmentToConvexRelaxation();
+    bool handleSatisfyingAssignmentToLinearConstraints();
 
     /*
       Perform precision restoration if needed. Return true iff precision
       restoration is performed.
     */
-    inline bool performPrecisionRestorationIfNeeded();
+    bool performPrecisionRestorationIfNeeded();
 
     /*
       Check if the current degradation is high
@@ -530,7 +530,7 @@ private:
       Handle malformed basis exception. Return false if unable to restore
       precision.
     */
-    inline bool handleMalformedBasisException();
+    bool handleMalformedBasisException();
 
     /*
       Perform bound tightening on the constraint matrix A.
@@ -658,7 +658,7 @@ private:
     /*
       Perform SoI-based stochastic local search
     */
-    bool performLocalSearch();
+    bool performDeepSoILocalSearch();
 
     /*
       Update the pseudo impact of the PLConstraints according to the cost of the
@@ -668,8 +668,8 @@ private:
       Then the Pseudo Impact of f is updated by |0.5 - 0.2| using exponential
       moving average.
     */
-    void updatePseudoImpact( double costOfLastAcceptedPhasePattern,
-                             double costOfProposedPhasePattern );
+    void updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePattern,
+                                         double costOfProposedPhasePattern );
 
 };
 

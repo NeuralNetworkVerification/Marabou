@@ -252,7 +252,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound =
-                    handleSatisfyingAssignmentToConvexRelaxation();
+                    handleSatisfyingAssignmentToLinearConstraints();
                 if ( solutionFound )
                 {
                     struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -358,7 +358,7 @@ void Engine::mainLoopStatistics()
                                   TimeUtils::timePassed( start, end ) );
 }
 
-inline void Engine::performBoundTighteningAfterCaseSplit()
+void Engine::performBoundTighteningAfterCaseSplit()
 {
     // Tighten bounds of a first hidden layer with MILP solver
     performMILPSolverBoundedTighteningForSingleLayer( 1 );
@@ -374,8 +374,7 @@ inline void Engine::performBoundTighteningAfterCaseSplit()
             ( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
 }
 
-
-inline bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
+bool Engine::handleSatisfyingAssignmentToLinearConstraints()
 {
     collectViolatedPlConstraints();
 
@@ -415,11 +414,11 @@ inline bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
     }
     else
     {
-        return performLocalSearch();
+        return performDeepSoILocalSearch();
     }
 }
 
-inline bool Engine::performPrecisionRestorationIfNeeded()
+bool Engine::performPrecisionRestorationIfNeeded()
 {
     // If the basis has become malformed, we need to restore it
     if ( basisRestorationNeeded() )
@@ -454,7 +453,7 @@ inline bool Engine::performPrecisionRestorationIfNeeded()
     return false;
 }
 
-inline bool Engine::handleMalformedBasisException()
+bool Engine::handleMalformedBasisException()
 {
     // Debug
     printf( "MalformedBasisException caught!\n" );
@@ -2633,7 +2632,7 @@ const Preprocessor *Engine::getPreprocessor()
     return &_preprocessor;
 }
 
-bool Engine::performLocalSearch()
+bool Engine::performDeepSoILocalSearch()
 {
     ENGINE_LOG( "Performing local search..." );
     struct timespec start = TimeUtils::sampleMicro();
@@ -2674,9 +2673,24 @@ bool Engine::performLocalSearch()
             collectViolatedPlConstraints();
             if ( allPlConstraintsHold() )
             {
-                ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
-                ENGINE_LOG( "Performing local search - done" );
-                return true;
+                if ( _tableau->getBasicAssignmentStatus() !=
+                     ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                {
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "Before declaring sat, recomputing...\n" );
+                    }
+                    // Make sure that the assignment is precise before declaring success
+                    _tableau->computeAssignment();
+                    // If we actually have a real satisfying assignment,
+                    return false;
+                }
+                else
+                {
+                    ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+                    ENGINE_LOG( "Performing local search - done" );
+                    return true;
+                }
             }
             ASSERT( !FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
         }
@@ -2692,8 +2706,8 @@ bool Engine::performLocalSearch()
         // We have the "local" effect of change the cost term of some
         // PLConstraints in the phase pattern. Use this information to influence
         // the branching decision.
-        updatePseudoImpact( costOfLastAcceptedPhasePattern,
-                            costOfProposedPhasePattern );
+        updatePseudoImpactWithSoICosts( costOfLastAcceptedPhasePattern,
+                                        costOfProposedPhasePattern );
 
         // Decide whether to accept the last proposal.
         if ( _soiManager->decideToAcceptCurrentProposal
@@ -2721,8 +2735,8 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
     _heuristicCost = heuristicCost;
 
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost..." );
-    bool localOptimaReached = false;
-    while ( !localOptimaReached )
+    bool localOptimumReached = false;
+    while ( !localOptimumReached )
     {
         DEBUG( _tableau->verifyInvariants() );
 
@@ -2741,7 +2755,7 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
 
         ASSERT( allVarsWithinBounds() );
 
-        localOptimaReached = performSimplexStep();
+        localOptimumReached = performSimplexStep();
     }
     ENGINE_LOG
         ( Stringf( "Current heuristic cost: %f",
@@ -2757,8 +2771,8 @@ double Engine::computeHeuristicCost( const LinearExpression &heuristicCost )
              heuristicCost._constant );
 }
 
-void Engine::updatePseudoImpact( double costOfLastAcceptedPhasePattern,
-                                 double costOfProposedPhasePattern )
+void Engine::updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePattern,
+                                            double costOfProposedPhasePattern )
 {
     ASSERT( _soiManager );
 

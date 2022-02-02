@@ -32,7 +32,7 @@ struct ScoreEntry
         , _score( score )
     {};
 
-    bool operator<(const ScoreEntry& other ) const
+    bool operator<( const ScoreEntry &other ) const
     {
         if ( _score == other._score )
             return _constraint > other._constraint;
