@@ -74,7 +74,7 @@ def test_disjunction_constraint():
         network.setLowerBound(var, 0)
         network.setUpperBound(var, 1)
 
-    vals1, stats1 = network.solve()
+    exitCode1, vals1, stats1 = network.solve()
 
     for var in network.inputVars[0]:
         assert(abs(vals1[var] - 1) < 0.0000001 or abs(vals1[var]) < 0.0000001)
@@ -110,7 +110,7 @@ def test_batch_norm():
     network.setLowerBound(inputVars[1], 1)
     network.setUpperBound(inputVars[1], 1)
 
-    vals, _ = network.solve(options = options)
+    exitCode, vals, _ = network.solve(options = options)
     assert abs(vals[outputVars[0]] - 9.9999799728) < TOL
 
 def test_local_robustness_unsat():

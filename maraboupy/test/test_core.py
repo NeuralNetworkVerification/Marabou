@@ -18,10 +18,11 @@ def test_solve_partial_arguments():
     """
     ipq = define_ipq(-2.0)
     # Test partial arguments to solve
-    vals, stats = MarabouCore.solve(ipq, OPT)
+    exitCode, vals, stats = MarabouCore.solve(ipq, OPT)
     # Assert that Marabou returned UNSAT
     assert not stats.hasTimedOut()
     assert len(vals) == 0
+    assert(exitCode == "unsat")
 
 def test_dump_query():
     """
@@ -36,7 +37,7 @@ def test_dump_query():
     assert ipq.getUpperBound(2) > LARGE
 
     # Solve
-    vals, stats = MarabouCore.solve(ipq, OPT, "")
+    exitCode, vals, stats = MarabouCore.solve(ipq, OPT, "")
 
     # Test dump
     ipq.dump()
@@ -48,6 +49,7 @@ def test_dump_query():
     for var in vals:
         assert vals[var] >= ipq.getLowerBound(var)
         assert vals[var] <= ipq.getUpperBound(var)
+    assert(exitCode == "sat")
 
     # Marabou should find tighter bounds than LARGE after bound propagation, including
     # for variable 2, where no upper bound was explicitly given

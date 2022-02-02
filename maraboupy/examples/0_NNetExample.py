@@ -34,7 +34,7 @@ net1.setLowerBound(net1.outputVars[0][0], .5)
 
 # %%
 # Solve Marabou query
-vals1, stats1 = net1.solve()
+exitCode, vals1, stats1 = net1.solve()
 
 
 # %%
