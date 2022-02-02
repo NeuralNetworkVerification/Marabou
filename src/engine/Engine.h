@@ -499,7 +499,7 @@ private:
     /*
       Perform bound tightening after performing a case split.
     */
-    void performBoundTighteningAfterCaseSplit();
+    inline void performBoundTighteningAfterCaseSplit();
 
     /*
       Called after a satisfying assignment is found for the linear constraints.
@@ -512,13 +512,13 @@ private:
 
       Return true iff a true satisfying assignment is found.
     */
-    bool handleSatisfyingAssignmentToConvexRelaxation();
+    inline bool handleSatisfyingAssignmentToConvexRelaxation();
 
     /*
       Perform precision restoration if needed. Return true iff precision
       restoration is performed.
     */
-    bool performPrecisionRestorationIfNeeded();
+    inline bool performPrecisionRestorationIfNeeded();
 
     /*
       Check if the current degradation is high
@@ -530,7 +530,7 @@ private:
       Handle malformed basis exception. Return false if unable to restore
       precision.
     */
-    bool handleMalformedBasisException();
+    inline bool handleMalformedBasisException();
 
     /*
       Perform bound tightening on the constraint matrix A.

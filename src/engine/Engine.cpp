@@ -358,7 +358,7 @@ void Engine::mainLoopStatistics()
                                   TimeUtils::timePassed( start, end ) );
 }
 
-void Engine::performBoundTighteningAfterCaseSplit()
+inline void Engine::performBoundTighteningAfterCaseSplit()
 {
     // Tighten bounds of a first hidden layer with MILP solver
     performMILPSolverBoundedTighteningForSingleLayer( 1 );
@@ -375,7 +375,7 @@ void Engine::performBoundTighteningAfterCaseSplit()
 }
 
 
-bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
+inline bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
 {
     collectViolatedPlConstraints();
 
@@ -419,7 +419,7 @@ bool Engine::handleSatisfyingAssignmentToConvexRelaxation()
     }
 }
 
-bool Engine::performPrecisionRestorationIfNeeded()
+inline bool Engine::performPrecisionRestorationIfNeeded()
 {
     // If the basis has become malformed, we need to restore it
     if ( basisRestorationNeeded() )
@@ -454,7 +454,7 @@ bool Engine::performPrecisionRestorationIfNeeded()
     return false;
 }
 
-bool Engine::handleMalformedBasisException()
+inline bool Engine::handleMalformedBasisException()
 {
     // Debug
     printf( "MalformedBasisException caught!\n" );
