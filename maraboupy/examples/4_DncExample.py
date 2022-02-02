@@ -30,5 +30,7 @@ net.setLowerBound(net.outputVars[0][0], .5)
 # %%
 # Solve the query with DNC mode turned on, which should return satisfying variable values
 options = Marabou.createOptions(snc=True, verbosity=0, initialSplits=2);
-vals, stats = net.solve(options=options)
+exitCode, vals, stats = net.solve(options=options)
+print(exitCode)
+assert(exitCode == "sat")
 assert len(vals) > 0

@@ -48,4 +48,4 @@ network.setUpperBound(outputVars[1], 210.0)
 
 # %%
 # Call to C++ Marabou solver
-vals, stats = network.solve("marabou.log")
+exitCode, vals, stats = network.solve("marabou.log")

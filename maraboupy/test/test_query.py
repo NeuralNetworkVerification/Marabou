@@ -36,8 +36,8 @@ def test_sat_query(tmpdir):
     # The result should be the same regardless of verbosity options used, or if a file redirect is used
     tempFile = tmpdir.mkdir("redirect").join("marabouRedirect.log").strpath
     opt = Marabou.createOptions(verbosity = 0)
-    vals_net, _ = network.solve(filename = tempFile)
-    vals_ipq, _ = Marabou.solve_query(ipq, filename = tempFile)
+    exitCode_net, vals_net, _ = network.solve(filename = tempFile)
+    exitCode_ipq, vals_ipq, _ = Marabou.solve_query(ipq, filename = tempFile)
     
     # The two value dictionaries should have the same number of variables, 
     # and the same keys
@@ -64,15 +64,16 @@ def test_unsat_query(tmpdir):
     
     # Solve the query loaded from the file and compare to the solution of the original query
     opt = Marabou.createOptions(verbosity = 0)
-    vals_net, stats_net = network.solve(options = opt)
-    vals_ipq, stats_ipq = Marabou.solve_query(ipq, options = opt)
+    exitCode_net, vals_net, stats_net = network.solve(options = opt)
+    exitCode_ipq, vals_ipq, stats_ipq = Marabou.solve_query(ipq, options = opt)
     
     # Assert the value dictionaries are both empty, and both queries have not timed out (unsat)
     assert len(vals_net) == 0
     assert len(vals_ipq) == 0
     assert not stats_net.hasTimedOut()
     assert not stats_ipq.hasTimedOut()
-    
+    assert(exitCode_net == "unsat" and exitCode_ipq == "unsat")
+
 def test_to_query(tmpdir):
     """
     Test that a query generated from Maraboupy can be saved and loaded correctly and return timeout.
@@ -94,13 +95,13 @@ def test_to_query(tmpdir):
     
     # Solve the query loaded from the file and compare to the solution of the original query
     opt = Marabou.createOptions(verbosity = 0, timeoutInSeconds = 1)
-    vals_net, stats_net = network.solve(options = opt)
-    vals_ipq, stats_ipq = Marabou.solve_query(ipq, options = opt)
+    exitCode_net, vals_net, stats_net = network.solve(options = opt)
+    exitCode_ipq, vals_ipq, stats_ipq = Marabou.solve_query(ipq, options = opt)
     
     # Assert timeout
     assert stats_net.hasTimedOut()
     assert stats_ipq.hasTimedOut()
-
+    assert(exitCode_net == "TIMEOUT" and exitCode_ipq == "TIMEOUT")
 
 def test_get_marabou_query(tmpdir):
     '''

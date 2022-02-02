@@ -97,12 +97,13 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 
     Returns:
         (tuple): tuple containing:
+            - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
             - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
             - stats (:class:`~maraboupy.MarabouCore.Statistics`, optional): A Statistics object to how Marabou performed
     """
     if options is None:
         options = createOptions()
-    vals, stats = MarabouCore.solve(ipq, options, filename)
+    exitCode, vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
             print ("TO")
@@ -115,7 +116,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
             for i in range(ipq.getNumOutputVariables()):
                 print("output {} = {}".format(i, vals[ipq.outputVariableByIndex(i)]))
 
-    return [vals, stats]
+    return [exitCode, vals, stats]
 
 def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=2,
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,

@@ -270,20 +270,17 @@ class MarabouNetwork:
 
         Returns:
             (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
-        vals, stats = MarabouCore.solve(ipq, options, str(filename))
+        exitCode, vals, stats = MarabouCore.solve(ipq, options, str(filename))
         if verbose:
-            if stats.hasTimedOut():
-                print("TO")
-            elif len(vals)==0:
-                print("unsat")
-            else:
-                print("sat")
+            print(exitCode)
+            if exitCode == "sat":
                 for j in range(len(self.inputVars)):
                     for i in range(self.inputVars[j].size):
                         print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
@@ -291,7 +288,7 @@ class MarabouNetwork:
                 for i in range(self.outputVars.size):
                     print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
 
-        return [vals, stats]
+        return [exitCode, vals, stats]
 
     def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
         """Function evaluating a specific input is a local robustness within the scope of epslion
@@ -344,7 +341,7 @@ class MarabouNetwork:
                 if outputLayerIndex != originalClass:
                     self.addMaxConstraint(set([outputStartIndex + outputLayerIndex, outputStartIndex + originalClass]), 
                         outputStartIndex + outputLayerIndex)
-                    vals, stats = self.solve(options = options)
+                    exitCode, vals, stats = self.solve(options = options)
                     if (stats.hasTimedOut()):
                         break
                     elif (len(vals) > 0):
@@ -352,7 +349,7 @@ class MarabouNetwork:
                         break
         else:
             self.addMaxConstraint(set(self.outputVars[0]), outputStartIndex + targetClass)
-            vals, stats = self.solve(options = options)
+            exitCode, vals, stats = self.solve(options = options)
             if verbose:
                 if not stats.hasTimedOut() and len(vals) > 0:
                     maxClass = targetClass
@@ -412,7 +409,7 @@ class MarabouNetwork:
 
         if options == None:
             options = MarabouCore.Options()
-        outputDict, _ = MarabouCore.solve(ipq, options, str(filename))
+        exitCode, outputDict, _ = MarabouCore.solve(ipq, options, str(filename))
 
         # When the query is UNSAT an empty dictionary is returned
         if outputDict == {}:

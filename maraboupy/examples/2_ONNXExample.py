@@ -55,7 +55,7 @@ network.setUpperBound(outputVars[1], 210.0)
 
 # %%
 # Call to Marabou solver
-vals, stats = network.solve(options = options)
+exitCode, vals, stats = network.solve(options = options)
 
 
 # %%
@@ -87,7 +87,8 @@ network.setLowerBound(outputVars[0], 6.0)
 # %%
 # Call to Marabou solver (should be SAT)
 print("Check query with less restrictive output constraint (Should be SAT)")
-vals, stats = network.solve(options = options)
+exitCode, vals, stats = network.solve(options = options)
+assert( exitCode == "sat")
 assert len(vals) > 0
 
 # %%
@@ -97,7 +98,8 @@ network.setLowerBound(outputVars[0], 7.0)
 # %%
 # Call to Marabou solver (should be UNSAT)
 print("Check query with more restrictive output constraint (Should be UNSAT)")
-vals, stats = network.solve(options = options)
+exitCode, vals, stats = network.solve(options = options)
+assert( exitCode == "unsat")
 assert len(vals) == 0
 
 
