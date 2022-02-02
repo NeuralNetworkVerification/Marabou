@@ -59,7 +59,7 @@ const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.0000
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
-const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00000001;
+const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = false;
 
 const bool GlobalConfiguration::WARM_START = false;
@@ -70,8 +70,8 @@ const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
-const double GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE = 0.00000001;
-const double GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE = 0.00000001;
+const double GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
+const double GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
 
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
