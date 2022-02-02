@@ -363,9 +363,11 @@ std::tuple<std::string, std::map<int, double>, Statistics>
             resultString = exitCodeToString(engine.getExitCode());
 
             if (engine.getExitCode() == Engine::SAT)
+            {
                 engine.extractSolution(inputQuery);
-            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
-                ret[i] = inputQuery.getSolutionValue(i);
+                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
+                    ret[i] = inputQuery.getSolutionValue(i);
+            }
 
             retStats = *(engine.getStatistics());
         }
