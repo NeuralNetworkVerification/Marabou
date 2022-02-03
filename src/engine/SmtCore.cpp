@@ -252,6 +252,16 @@ void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit const& validSpli
     checkSkewFromDebuggingSolution();
 }
 
+List<PiecewiseLinearCaseSplit> SmtCore::splitsWithoutImplied() const
+{
+    List<PiecewiseLinearCaseSplit> result;
+    for ( const auto &it : _stack )
+    {
+        result.append( it->_activeSplit );
+    }
+    return result;
+}
+
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 {
     result.clear();
