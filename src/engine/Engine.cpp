@@ -252,7 +252,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound =
-                    handleSatisfyingAssignmentToLinearConstraints();
+                    adjustAssignmentToSatisfyNonLinearConstraints();
                 if ( solutionFound )
                 {
                     struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -374,7 +374,7 @@ void Engine::performBoundTighteningAfterCaseSplit()
             ( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
 }
 
-bool Engine::handleSatisfyingAssignmentToLinearConstraints()
+bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
 {
     collectViolatedPlConstraints();
 
