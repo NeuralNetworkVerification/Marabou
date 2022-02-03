@@ -23,6 +23,16 @@ class GlobalConfiguration
 public:
     static void print();
 
+    // The exponential moving average is calculated as
+    //     ema = current * alpha + previous * (1 - alpha)
+    static const double EXPONENTIAL_MOVING_AVERAGE_ALPHA;
+
+    // Whether to use SoI instead of Reluplex for local search for satisfying assignments
+    //to non-linear constraint.
+    static const bool USE_DEEPSOI_LOCAL_SEARCH;
+
+    // Use the polarity metrics to decide which branch to take first in a case split
+    // and how to repair a ReLU constraint.
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;
 
     // The default epsilon used for comparing doubles
@@ -243,6 +253,7 @@ public:
     static const bool NETWORK_LEVEL_REASONER_LOGGING;
     static const bool MPS_PARSER_LOGGING;
     static const bool SOI_LOGGING;
+    static const bool SCORE_TRACKER_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

@@ -40,6 +40,7 @@ void SumOfInfeasibilitiesManager::resetPhasePattern()
     _currentPhasePattern.clear();
     _lastAcceptedPhasePattern.clear();
     _plConstraintsInCurrentPhasePattern.clear();
+    _constraintsUpdatedInLastProposal.clear();
 }
 
 LinearExpression SumOfInfeasibilitiesManager::getCurrentSoIPhasePattern() const
@@ -140,6 +141,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdate()
     struct timespec start = TimeUtils::sampleMicro();
 
     _currentPhasePattern = _lastAcceptedPhasePattern;
+    _constraintsUpdatedInLastProposal.clear();
 
     if ( _searchStrategy == SoISearchStrategy::MCMC )
     {
@@ -203,6 +205,8 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateRandomly()
         }
         _currentPhasePattern[plConstraintToUpdate] = *it;
     }
+
+    _constraintsUpdatedInLastProposal.append( plConstraintToUpdate );
     SOI_LOG( "Proposing phase pattern update randomly - done" );
 }
 
@@ -232,6 +236,7 @@ void SumOfInfeasibilitiesManager::proposePhasePatternUpdateWalksat()
     if ( plConstraintToUpdate )
     {
         _currentPhasePattern[plConstraintToUpdate] = updatedPhase;
+        _constraintsUpdatedInLastProposal.append( plConstraintToUpdate );
     }
     else
     {
@@ -261,6 +266,7 @@ void SumOfInfeasibilitiesManager::acceptCurrentPhasePattern()
     struct timespec start = TimeUtils::sampleMicro();
 
     _lastAcceptedPhasePattern = _currentPhasePattern;
+    _constraintsUpdatedInLastProposal.clear();
 
     if ( _statistics )
     {

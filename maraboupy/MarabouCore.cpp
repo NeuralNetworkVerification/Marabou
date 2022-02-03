@@ -118,6 +118,18 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
 
+void loadProperty(InputQuery &inputQuery, std::string propertyFilePath)
+{
+    String propertyFilePathM = String(propertyFilePath);
+    if ( propertyFilePath != "" )
+    {
+        printf( "Property: %s\n", propertyFilePathM.ascii() );
+        PropertyParser().parse( propertyFilePathM, inputQuery );
+    }
+    else
+        printf( "Property: None\n" );
+}
+
 bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   try{
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );
@@ -417,6 +429,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
         .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
+    m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.

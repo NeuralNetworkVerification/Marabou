@@ -59,7 +59,9 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
+    _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 4;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
+    _intOptions[SEED] = 217;
 
     /*
       Float options
@@ -142,12 +144,14 @@ DivideStrategy Options::getDivideStrategy() const
                                     ( Options::SPLITTING_STRATEGY ) );
     if ( strategyString == "polarity" )
         return DivideStrategy::Polarity;
-    if ( strategyString == "earliest-relu" )
+    else if ( strategyString == "earliest-relu" )
         return DivideStrategy::EarliestReLU;
-    if ( strategyString == "relu-violation" )
+    else if ( strategyString == "relu-violation" )
         return DivideStrategy::ReLUViolation;
     else if ( strategyString == "largest-interval" )
         return DivideStrategy::LargestInterval;
+    else if ( strategyString == "pseudo-impact" )
+        return DivideStrategy::PseudoImpact;
     else
         return DivideStrategy::Auto;
 }

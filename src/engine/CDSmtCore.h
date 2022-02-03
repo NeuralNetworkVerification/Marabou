@@ -2,7 +2,7 @@
 /*! \file CDSmtCore.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, AleksandarZeljic, Parth Shah
+ **   Guy Katz, AleksandarZeljic, Haoze Wu, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -69,6 +69,7 @@
 #include "Options.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PLConstraintScoreTracker.h"
 #include "Stack.h"
 #include "Statistics.h"
 #include "TrailEntry.h"
@@ -91,6 +92,35 @@ public:
       Clear the stack.
     */
     void freeMemory();
+
+    /*
+      Initialize the score tracker with the given list of pl constraints.
+    */
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *>
+                                         &plConstraints );
+
+    /*
+      Inform the SMT core that a SoI phase pattern proposal is rejected.
+    */
+    void reportRejectedPhasePatternProposal();
+
+    /*
+      Update the score of the constraint with the given score in the costTracker.
+    */
+    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
+                                         double score )
+    {
+        ASSERT( _scoreTracker != nullptr );
+        _scoreTracker->updateScore( constraint, score );
+    }
+
+    /*
+      Get the constraint in the score tracker with the highest score
+    */
+    inline PiecewiseLinearConstraint *getConstraintsWithHighestScore() const
+    {
+        return _scoreTracker->topUnfixed();
+    }
 
     /*
       Inform the SMT core that a PL constraint is violated.
@@ -202,6 +232,11 @@ public:
 
     void setConstraintViolationThreshold( unsigned threshold );
 
+    inline void setBranchingHeuristics( DivideStrategy strategy )
+    {
+        _branchingHeuristic = strategy;
+    }
+
     /*
       Pick the piecewise linear constraint for splitting, returns true
       if a constraint for splitting is successfully picked
@@ -265,10 +300,34 @@ private:
     */
     Map<unsigned, double> _debuggingSolution;
 
-   /*
-      Split when some relu has been violated for this many times
+    /*
+      Split when some relu has been violated for this many times during the
+      Reluplex procedure
     */
     unsigned _constraintViolationThreshold;
+
+    /*
+      Split when there have been this many rejected phase pattern proposal
+      during the SoI-based local search.
+    */
+    unsigned _deepSoIRejectionThreshold;
+
+    /*
+      The strategy to pick the piecewise linear constraint to branch on.
+    */
+    DivideStrategy _branchingHeuristic;
+
+    /*
+      Heap to store the scores of each PLConstraint.
+    */
+    std::unique_ptr<PLConstraintScoreTracker> _scoreTracker;
+
+    /*
+      Number of times the phase pattern proposal has been rejected at the
+      current search state.
+    */
+    unsigned _numRejectedPhasePatternProposal;
+
 };
 
 #endif // __CDSmtCore_h__

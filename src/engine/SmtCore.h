@@ -16,8 +16,10 @@
 #ifndef __SmtCore_h__
 #define __SmtCore_h__
 
+#include "DivideStrategy.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PLConstraintScoreTracker.h"
 #include "SmtState.h"
 #include "Stack.h"
 #include "SmtStackEntry.h"
@@ -48,6 +50,35 @@ public:
     void reset();
 
     /*
+      Initialize the score tracker with the given list of pl constraints.
+    */
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *>
+                                         &plConstraints );
+
+    /*
+      Inform the SMT core that a SoI phase pattern proposal is rejected.
+    */
+    void reportRejectedPhasePatternProposal();
+
+    /*
+      Update the score of the constraint with the given score in the costTracker.
+    */
+    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
+                                         double score )
+    {
+        ASSERT( _scoreTracker != nullptr );
+        _scoreTracker->updateScore( constraint, score );
+    }
+
+    /*
+      Get the constraint in the score tracker with the highest score
+    */
+    inline PiecewiseLinearConstraint *getConstraintsWithHighestScore() const
+    {
+        return _scoreTracker->topUnfixed();
+    }
+
+    /*
       Inform the SMT core that a PL constraint is violated.
     */
     void reportViolatedConstraint( PiecewiseLinearConstraint *constraint );
@@ -59,9 +90,10 @@ public:
     unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
 
     /*
-      Reset all reported violation counts.
+      Reset all reported violation counts and the number of rejected SoI
+      phase pattern proposal.
     */
-    void resetReportedViolations();
+    void resetSplitConditions();
 
     /*
       Returns true iff the SMT core wants to perform a case split.
@@ -107,7 +139,10 @@ public:
     */
     PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
-    void setConstraintViolationThreshold( unsigned threshold );
+    inline void setBranchingHeuristics( DivideStrategy strategy )
+    {
+        _branchingHeuristic = strategy;
+    }
 
     /*
       Replay a stackEntry
@@ -176,9 +211,32 @@ private:
     unsigned _stateId;
 
     /*
-      Split when some relu has been violated for this many times
+      Split when some relu has been violated for this many times during the
+      Reluplex procedure
     */
     unsigned _constraintViolationThreshold;
+
+    /*
+      Split when there have been this many rejected phase pattern proposal
+      during the SoI-based local search.
+    */
+    unsigned _deepSoIRejectionThreshold;
+
+    /*
+      The strategy to pick the piecewise linear constraint to branch on.
+    */
+    DivideStrategy _branchingHeuristic;
+
+    /*
+      Heap to store the scores of each PLConstraint.
+    */
+    std::unique_ptr<PLConstraintScoreTracker> _scoreTracker;
+
+    /*
+      Number of times the phase pattern proposal has been rejected at the
+      current search state.
+    */
+    unsigned _numRejectedPhasePatternProposal;
 };
 
 #endif // __SmtCore_h__

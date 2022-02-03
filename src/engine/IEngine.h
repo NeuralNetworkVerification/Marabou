@@ -100,7 +100,8 @@ public:
     /*
       Pick the piecewise linear constraint for internal splitting
     */
-    virtual PiecewiseLinearConstraint *pickSplitPLConstraint() = 0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy
+                                                              strategy ) = 0;
 
     /*
       Pick the piecewise linear constraint for SnC splitting

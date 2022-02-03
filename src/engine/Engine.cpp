@@ -29,6 +29,7 @@
 #include "Preprocessor.h"
 #include "TableauRow.h"
 #include "TimeUtils.h"
+#include "VariableOutOfBoundDuringOptimizationException.h"
 #include "Vector.h"
 
 #include <random>
@@ -51,11 +52,11 @@ Engine::Engine()
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
     , _lastNumVisitedStates( 0 )
     , _lastIterationWithProgress( 0 )
-    , _splittingStrategy( Options::get()->getDivideStrategy() )
     , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
+    , _soiManager( nullptr )
     , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
     , _isGurobyEnabled( Options::get()->gurobiEnabled() )
     , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
@@ -72,6 +73,7 @@ Engine::Engine()
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
 
+    srand( Options::get()->getInt( Options::SEED ) );
     _statistics.stampStartingTime();
 }
 
@@ -142,10 +144,8 @@ void Engine::exportInputQueryWithError( String errorMessage )
     printf( "Engine: %s!\nInput query has been saved as %s. Please attach the input query when you open the issue on GitHub.\n", errorMessage.ascii(), ipqFileName.ascii() );
 }
 
-
 bool Engine::solve( unsigned timeoutInSeconds )
 {
-
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -216,35 +216,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Check whether progress has been made recently
             checkOverallProgress();
 
-            // If the basis has become malformed, we need to restore it
-            if ( basisRestorationNeeded() )
-            {
-                if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
-                {
-                    performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
-                }
-                else
-                {
-                    performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
-                    _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
-                }
-
-                _numVisitedStatesAtPreviousRestoration =
-                    _statistics.getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-                _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+            if ( performPrecisionRestorationIfNeeded() )
                 continue;
-            }
-
-            // Restoration is not required
-            _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
-
-            // Possible restoration due to preceision degradation
-            if ( shouldCheckDegradation() && highDegradation() )
-            {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                continue;
-            }
 
             if ( _tableau->basisMatrixAvailable() )
             {
@@ -253,21 +226,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 applyAllValidConstraintCaseSplits();
             }
 
-            // If true, enter a new subproblem
+            // If true, we just entered a new subproblem
             if ( splitJustPerformed )
             {
-                // Tighten bounds of a first hidden layer with MILP solver
-                performMILPSolverBoundedTighteningForSingleLayer( 1 );
-                do
-                {
-                    performSymbolicBoundTightening();
-                }
-                while ( applyAllValidConstraintCaseSplits() );
-
-                // Tighten bounds of an output layer with MILP solver
-                if ( _networkLevelReasoner )    // to avoid failing of system test.
-                    performMILPSolverBoundedTighteningForSingleLayer( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
-
+                performBoundTighteningAfterCaseSplit();
                 splitJustPerformed = false;
             }
 
@@ -289,45 +251,26 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
-                collectViolatedPlConstraints();
-
-                // If all constraints are satisfied, we are possibly done
-                if ( allPlConstraintsHold() )
+                bool solutionFound =
+                    adjustAssignmentToSatisfyNonLinearConstraints();
+                if ( solutionFound )
                 {
-                    if ( _tableau->getBasicAssignmentStatus() !=
-                         ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
-                    {
-                        if ( _verbosity > 0 )
-                        {
-                            printf( "Before declaring sat, recomputing...\n" );
-                        }
-                        // Make sure that the assignment is precise before declaring success
-                        _tableau->computeAssignment();
-                        continue;
-                    }
+                    struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+                    _statistics.incLongAttribute
+                        ( Statistics::TIME_MAIN_LOOP_MICRO,
+                          TimeUtils::timePassed( mainLoopStart,
+                                                 mainLoopEnd ) );
                     if ( _verbosity > 0 )
                     {
                         printf( "\nEngine::solve: sat assignment found\n" );
                         _statistics.print();
                     }
                     _exitCode = Engine::SAT;
+
                     return true;
                 }
-
-                // We have violated piecewise-linear constraints.
-                performConstraintFixingStep();
-
-                // Finally, take this opporunity to tighten any bounds
-                // and perform any valid case splits.
-                tightenBoundsOnConstraintMatrix();
-                applyAllBoundTightenings();
-                // For debugging purposes
-                checkBoundCompliancyWithDebugSolution();
-
-                while ( applyAllValidConstraintCaseSplits() )
-                    performSymbolicBoundTightening();
-
-                continue;
+                else
+                    continue;
             }
 
             // We have out-of-bounds variables.
@@ -336,30 +279,15 @@ bool Engine::solve( unsigned timeoutInSeconds )
         }
         catch ( const MalformedBasisException & )
         {
-            // Debug
-            printf( "MalformedBasisException caught!\n" );
-            //
-
-            if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
-            {
-                if ( _numVisitedStatesAtPreviousRestoration !=
-                     _statistics.getUnsignedAttribute
-                     ( Statistics::NUM_VISITED_TREE_STATES ) )
-                {
-                    // We've tried a strong restoration before, and it didn't work. Do a weak restoration
-                    _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
-                }
-                else
-                {
-                    _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
-                }
-            }
-            else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
-                _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
-            else
+            if ( !handleMalformedBasisException() )
             {
                 _exitCode = Engine::ERROR;
                 exportInputQueryWithError( "Cannot restore tableau" );
+                struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+                _statistics.incLongAttribute
+                    ( Statistics::TIME_MAIN_LOOP_MICRO,
+                      TimeUtils::timePassed( mainLoopStart,
+                                             mainLoopEnd ) );
                 return false;
             }
         }
@@ -369,6 +297,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If we're at level 0, the whole query is unsat.
             if ( !_smtCore.popSplit() )
             {
+                struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+                _statistics.incLongAttribute
+                    ( Statistics::TIME_MAIN_LOOP_MICRO,
+                      TimeUtils::timePassed( mainLoopStart,
+                                             mainLoopEnd ) );
                 if ( _verbosity > 0 )
                 {
                     printf( "\nEngine::solve: unsat query\n" );
@@ -381,12 +314,21 @@ bool Engine::solve( unsigned timeoutInSeconds )
             {
                 splitJustPerformed = true;
             }
-
+        }
+        catch ( const VariableOutOfBoundDuringOptimizationException & )
+        {
+            _tableau->toggleOptimization( false );
+            continue;
         }
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
             exportInputQueryWithError( "Unknown error" );
+            struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+            _statistics.incLongAttribute
+                ( Statistics::TIME_MAIN_LOOP_MICRO,
+                  TimeUtils::timePassed( mainLoopStart,
+                                         mainLoopEnd ) );
             return false;
         }
     }
@@ -414,6 +356,131 @@ void Engine::mainLoopStatistics()
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TOTAL_TIME_HANDLING_STATISTICS_MICRO,
                                   TimeUtils::timePassed( start, end ) );
+}
+
+void Engine::performBoundTighteningAfterCaseSplit()
+{
+    // Tighten bounds of a first hidden layer with MILP solver
+    performMILPSolverBoundedTighteningForSingleLayer( 1 );
+    do
+    {
+        performSymbolicBoundTightening();
+    }
+    while ( applyAllValidConstraintCaseSplits() );
+
+    // Tighten bounds of an output layer with MILP solver
+    if ( _networkLevelReasoner )    // to avoid failing of system test.
+        performMILPSolverBoundedTighteningForSingleLayer
+            ( _networkLevelReasoner->getLayerIndexToLayer().size() - 1 );
+}
+
+bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
+{
+    collectViolatedPlConstraints();
+
+    // If all constraints are satisfied, we are possibly done
+    if ( allPlConstraintsHold() )
+    {
+        if ( _tableau->getBasicAssignmentStatus() !=
+             ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+        {
+            if ( _verbosity > 0 )
+            {
+                printf( "Before declaring sat, recomputing...\n" );
+            }
+            // Make sure that the assignment is precise before declaring success
+            _tableau->computeAssignment();
+            // If we actually have a real satisfying assignment,
+            return false;
+        }
+        else
+            return true;
+    }
+    else if ( !GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+    {
+        // We have violated piecewise-linear constraints.
+        performConstraintFixingStep();
+
+        // Finally, take this opporunity to tighten any bounds
+        // and perform any valid case splits.
+        tightenBoundsOnConstraintMatrix();
+        applyAllBoundTightenings();
+        // For debugging purposes
+        checkBoundCompliancyWithDebugSolution();
+
+        while ( applyAllValidConstraintCaseSplits() )
+            performSymbolicBoundTightening();
+        return false;
+    }
+    else
+    {
+        return performDeepSoILocalSearch();
+    }
+}
+
+bool Engine::performPrecisionRestorationIfNeeded()
+{
+    // If the basis has become malformed, we need to restore it
+    if ( basisRestorationNeeded() )
+    {
+        if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
+        {
+            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+            _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
+        }
+        else
+        {
+            performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
+            _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
+        }
+
+        _numVisitedStatesAtPreviousRestoration =
+            _statistics.getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
+        _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+        return true;
+    }
+
+    // Restoration is not required
+    _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+
+    // Possible restoration due to preceision degradation
+    if ( shouldCheckDegradation() && highDegradation() )
+    {
+        performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
+        return true;
+    }
+
+    return false;
+}
+
+bool Engine::handleMalformedBasisException()
+{
+    // Debug
+    printf( "MalformedBasisException caught!\n" );
+    //
+
+    if ( _basisRestorationPerformed == Engine::NO_RESTORATION_PERFORMED )
+    {
+        if ( _numVisitedStatesAtPreviousRestoration !=
+             _statistics.getUnsignedAttribute
+             ( Statistics::NUM_VISITED_TREE_STATES ) )
+        {
+            // We've tried a strong restoration before, and it didn't work. Do a weak restoration
+            _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+        }
+        else
+        {
+            _basisRestorationRequired = Engine::STRONG_RESTORATION_NEEDED;
+        }
+        return true;
+    }
+    else if ( _basisRestorationPerformed == Engine::PERFORMED_STRONG_RESTORATION )
+    {
+        _basisRestorationRequired = Engine::WEAK_RESTORATION_NEEDED;
+        return true;
+    }
+    else
+        return false;
 }
 
 void Engine::performConstraintFixingStep()
@@ -1152,6 +1219,14 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 
     _tableau->initializeTableau( initialBasis );
 
+    if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+    {
+        _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
+            ( new SumOfInfeasibilitiesManager( _preprocessedQuery,
+                                               *_tableau ) );
+        _soiManager->setStatistics( &_statistics );
+    }
+
     _costFunctionManager->initialize();
     _tableau->registerCostFunctionManager( _costFunctionManager );
     _activeEntryStrategy->initialize( _tableau );
@@ -1217,13 +1292,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
 
-        if ( _splittingStrategy == DivideStrategy::Auto )
-        {
-            _splittingStrategy =
-                ( _preprocessedQuery.getInputVariables().size() <
-                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ) ?
-                DivideStrategy::LargestInterval : DivideStrategy::ReLUViolation;
-        }
+        decideBranchingHeuristics();
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setLongAttribute( Statistics::PREPROCESSING_TIME_MICRO,
@@ -1479,7 +1548,7 @@ void Engine::restoreState( const EngineState &state )
     _costFunctionManager->initialize();
 
     // Reset the violation counts in the SMT core
-    _smtCore.resetReportedViolations();
+    _smtCore.resetSplitConditions();
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
@@ -1775,6 +1844,8 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
+        if ( _soiManager )
+            _soiManager->removeCostComponentFromHeuristicCost( constraint );
         ++_numPlConstraintsDisabledByValidSplits;
 
         return true;
@@ -2111,6 +2182,7 @@ void Engine::clearViolatedPLConstraints()
 void Engine::resetSmtCore()
 {
     _smtCore.reset();
+    _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
 }
 
 void Engine::resetExitCode()
@@ -2215,6 +2287,39 @@ void Engine::updateDirections()
                 constraint->updateDirection();
 }
 
+void Engine::decideBranchingHeuristics()
+{
+    DivideStrategy divideStrategy = Options::get()->getDivideStrategy();
+    if ( divideStrategy == DivideStrategy::Auto )
+    {
+        if ( _preprocessedQuery.getInputVariables().size() <
+             GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+        {
+            divideStrategy = DivideStrategy::LargestInterval;
+            if ( _verbosity >= 2 )
+                printf("Branching heuristics set to LargestInterval\n");
+        }
+        else
+        {
+            if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+            {
+                divideStrategy = DivideStrategy::PseudoImpact;
+                if ( _verbosity >= 2 )
+                    printf("Branching heuristics set to PseudoImpact\n");
+            }
+            else
+            {
+                divideStrategy = DivideStrategy::ReLUViolation;
+                if ( _verbosity >= 2 )
+                    printf("Branching heuristics set to ReLUViolation\n");
+            }
+        }
+    }
+    ASSERT( divideStrategy != DivideStrategy::Auto );
+    _smtCore.setBranchingHeuristics( divideStrategy );
+    _smtCore.initializeScoreTrackerIfNeeded( _plConstraints );
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
 {
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
@@ -2308,24 +2413,37 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
     }
 }
 
-PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
+                                                          strategy )
 {
     ENGINE_LOG( Stringf( "Picking a split PLConstraint..." ).ascii() );
 
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
-    if ( _splittingStrategy == DivideStrategy::Polarity )
+    if ( strategy == DivideStrategy::PseudoImpact )
+    {
+        if ( _smtCore.getStackDepth() > 3 )
+            candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
+        else if ( _preprocessedQuery.getInputVariables().size() <
+                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+            candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
+        else
+            candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
+    }
+    else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
-    else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
+    else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
-    else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
-              _smtCore.getStackDepth() %
-              GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+    else if ( strategy == DivideStrategy::LargestInterval &&
+              ( _smtCore.getStackDepth() %
+                GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
+              )
+    {
         // Conduct interval splitting periodically.
         candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
+    }
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?
                            "Picked..." :
                            "Unable to pick using the current strategy..." ) ).ascii() );
-
     return candidatePLConstraint;
 }
 
@@ -2514,6 +2632,102 @@ const Preprocessor *Engine::getPreprocessor()
     return &_preprocessor;
 }
 
+bool Engine::performDeepSoILocalSearch()
+{
+    ENGINE_LOG( "Performing local search..." );
+    struct timespec start = TimeUtils::sampleMicro();
+    ASSERT( allVarsWithinBounds() );
+
+    // All the linear constraints have been satisfied at this point.
+    // Update the cost function
+    _soiManager->initializePhasePattern();
+    minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
+    ASSERT( allVarsWithinBounds() );
+    _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
+    // Always accept the first phase pattern.
+    _soiManager->acceptCurrentPhasePattern();
+    double costOfLastAcceptedPhasePattern = computeHeuristicCost
+        ( _soiManager->getCurrentSoIPhasePattern() );
+
+    double costOfProposedPhasePattern = FloatUtils::infinity();
+    bool lastProposalAccepted = true;
+    while ( !_smtCore.needToSplit() )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.incLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO,
+                                      TimeUtils::timePassed( start, end ) );
+        start = end;
+
+        if ( lastProposalAccepted )
+        {
+            /*
+              Check whether the optimal solution to the last accepted phase
+              is a real solution. We only check this when the last proposal
+              was accepted, because rejected phase pattern must have resulted in
+              increase in the SoI cost.
+
+              HW: Another option is to only do this check when
+              costOfLastAcceptedPhasePattern is 0, but this might be too strict.
+              The overhead is low anyway.
+            */
+            collectViolatedPlConstraints();
+            if ( allPlConstraintsHold() )
+            {
+                if ( _tableau->getBasicAssignmentStatus() !=
+                     ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
+                {
+                    if ( _verbosity > 0 )
+                    {
+                        printf( "Before declaring sat, recomputing...\n" );
+                    }
+                    // Make sure that the assignment is precise before declaring success
+                    _tableau->computeAssignment();
+                    // If we actually have a real satisfying assignment,
+                    return false;
+                }
+                else
+                {
+                    ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+                    ENGINE_LOG( "Performing local search - done" );
+                    return true;
+                }
+            }
+            ASSERT( !FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+        }
+
+        // No satisfying assignment found for the last accepted phase pattern,
+        // propose an update to it.
+        _soiManager->proposePhasePatternUpdate();
+        minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
+        _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
+        costOfProposedPhasePattern = computeHeuristicCost
+            ( _soiManager->getCurrentSoIPhasePattern() );
+
+        // We have the "local" effect of change the cost term of some
+        // PLConstraints in the phase pattern. Use this information to influence
+        // the branching decision.
+        updatePseudoImpactWithSoICosts( costOfLastAcceptedPhasePattern,
+                                        costOfProposedPhasePattern );
+
+        // Decide whether to accept the last proposal.
+        if ( _soiManager->decideToAcceptCurrentProposal
+             ( costOfLastAcceptedPhasePattern, costOfProposedPhasePattern ) )
+        {
+            _soiManager->acceptCurrentPhasePattern();
+            costOfLastAcceptedPhasePattern = costOfProposedPhasePattern;
+            lastProposalAccepted = true;
+        }
+        else
+        {
+            _smtCore.reportRejectedPhasePatternProposal();
+            lastProposalAccepted = false;
+        }
+    }
+
+    ENGINE_LOG( "Performing local search - done" );
+    return false;
+}
+
 void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
 {
     _tableau->toggleOptimization( true );
@@ -2521,56 +2735,31 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
     _heuristicCost = heuristicCost;
 
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost..." );
-    bool localOptimaReached = false;
-    while ( !localOptimaReached )
+    bool localOptimumReached = false;
+    while ( !localOptimumReached )
     {
-        DEBUG({
-                ENGINE_LOG
-                    ( Stringf( "Current heuristic cost: %f",
-                               computeHeuristicCost( heuristicCost ) ).ascii() );
-                ASSERT( allVarsWithinBounds() );
-            });
-
         DEBUG( _tableau->verifyInvariants() );
 
         mainLoopStatistics();
         if ( _verbosity > 1 &&
-             _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS )
-             % GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+             _statistics.getLongAttribute
+             ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
+             GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
             _statistics.print();
 
-        // If the basis has become malformed, we need to restore it
-        if ( basisRestorationNeeded() )
-        {
-            if ( _basisRestorationRequired == Engine::STRONG_RESTORATION_NEEDED )
-            {
-                performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-                _basisRestorationPerformed = Engine::PERFORMED_STRONG_RESTORATION;
-            }
-            else
-            {
-                performPrecisionRestoration( PrecisionRestorer::DO_NOT_RESTORE_BASICS );
-                _basisRestorationPerformed = Engine::PERFORMED_WEAK_RESTORATION;
-            }
+        if ( !allVarsWithinBounds() )
+            throw VariableOutOfBoundDuringOptimizationException();
 
-            _numVisitedStatesAtPreviousRestoration =
-                _statistics.getLongAttribute( Statistics::NUM_MAIN_LOOP_ITERATIONS );
-            _basisRestorationRequired = Engine::RESTORATION_NOT_NEEDED;
+        if ( performPrecisionRestorationIfNeeded() )
             continue;
-        }
 
-        // Restoration is not required
-        _basisRestorationPerformed = Engine::NO_RESTORATION_PERFORMED;
+        ASSERT( allVarsWithinBounds() );
 
-        // Possible restoration due to preceision degradation
-        if ( shouldCheckDegradation() && highDegradation() )
-        {
-            performPrecisionRestoration( PrecisionRestorer::RESTORE_BASICS );
-            continue;
-        }
-
-        localOptimaReached = performSimplexStep();
+        localOptimumReached = performSimplexStep();
     }
+    ENGINE_LOG
+        ( Stringf( "Current heuristic cost: %f",
+                   computeHeuristicCost( heuristicCost ) ).ascii() );
     _tableau->toggleOptimization( false );
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
 }
@@ -2580,4 +2769,25 @@ double Engine::computeHeuristicCost( const LinearExpression &heuristicCost )
     return ( _costFunctionManager->
              computeGivenCostFunctionDirectly( heuristicCost._addends ) +
              heuristicCost._constant );
+}
+
+void Engine::updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePattern,
+                                            double costOfProposedPhasePattern )
+{
+    ASSERT( _soiManager );
+
+    const List<PiecewiseLinearConstraint *> &constraintsUpdated =
+        _soiManager->getConstraintsUpdatedInLastProposal();
+    // Score is divided by the number of updated constraints in the last
+    // proposal. In the Sum of Infeasibilities paper, only one constraint
+    // is updated each time. But we might consider alternative proposal
+    // strategy in the future.
+    double score = ( fabs( costOfLastAcceptedPhasePattern -
+                           costOfProposedPhasePattern )
+                     / constraintsUpdated.size() );
+
+    ASSERT( constraintsUpdated.size() > 0 );
+    // Update the Pseudo-Impact estimation.
+    for ( const auto &constraint : constraintsUpdated )
+        _smtCore.updatePLConstraintScore( constraint, score );
 }
