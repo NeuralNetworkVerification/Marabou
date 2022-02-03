@@ -1268,7 +1268,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
             for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
-                plConstraint->addAuxiliaryEquationsPostprocessing( _preprocessedQuery );
+                plConstraint->addAuxiliaryEquationsAfterPreprocessing
+                    ( _preprocessedQuery );
 
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );

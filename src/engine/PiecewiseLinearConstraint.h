@@ -252,7 +252,8 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsPostprocessing( InputQuery &/* inputQuery */ ) {}
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                          &/* inputQuery */ ) {}
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to

@@ -222,8 +222,8 @@ bool SignConstraint::phaseFixed() const
     return _phaseStatus != PHASE_NOT_FIXED;
 }
 
-void SignConstraint::addAuxiliaryEquationsPostprocessing( InputQuery
-                                                          &inputQuery )
+void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                              &inputQuery )
 {
     /*
       If the phase is not fixed, add _f <= -2/lb_b * _b + 1
@@ -233,11 +233,10 @@ void SignConstraint::addAuxiliaryEquationsPostprocessing( InputQuery
       _f - 2/ub_b * _b + aux2_lb = -1, -1 - ub_f + 2 * lb_b/ub_b  <= aux_lb <= 0
     */
 
-    if ( isActive() && !phaseFixed()
-         && existsLowerBound( _b ) && existsUpperBound( _b ) )
+    if ( isActive() && !phaseFixed() )
     {
-        double lowerBound = getLowerBound( _b );
-        double upperBound = getUpperBound( _b );
+        double lowerBound = inputQuery.getLowerBound( _b );
+        double upperBound = inputQuery.getUpperBound( _b );
 
         ASSERT( FloatUtils::lt( lowerBound, 0 ) &&
                 FloatUtils::gte( upperBound, 0 ) );

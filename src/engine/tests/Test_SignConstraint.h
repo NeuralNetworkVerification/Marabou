@@ -1361,7 +1361,13 @@ public:
         sign.notifyUpperBound( 4, 10 );
         sign.notifyUpperBound( 6, 1 );
 
-        TS_ASSERT_THROWS_NOTHING( sign.addAuxiliaryEquationsPostprocessing( query ) );
+        query.setLowerBound( 4, -10 );
+        query.setUpperBound( 4, 10 );
+        query.setLowerBound( 6, -1 );
+        query.setLowerBound( 6, 1 );
+
+        TS_ASSERT_THROWS_NOTHING( sign.addAuxiliaryEquationsAfterPreprocessing
+                                  ( query ) );
 
         const List<Equation> &equations( query.getEquations() );
 
