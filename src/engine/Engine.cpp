@@ -1266,8 +1266,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
 
-        for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
-            plConstraint->addAuxiliaryEquationsPostprocessing( _preprocessedQuery );
+        if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
+            for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+                plConstraint->addAuxiliaryEquationsPostprocessing( _preprocessedQuery );
 
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
