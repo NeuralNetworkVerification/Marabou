@@ -28,8 +28,6 @@
 #undef ERROR
 #endif
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 
 Marabou::Marabou()
     : _acasParser( NULL )

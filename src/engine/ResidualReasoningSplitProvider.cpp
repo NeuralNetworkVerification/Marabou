@@ -8,8 +8,6 @@
 #include "PiecewiseLinearCaseSplitUtils.h"
 #include "Optional.h"
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 
 ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( GammaUnsat gammaUnsat )
     : _gammaUnsat( gammaUnsat )
@@ -235,4 +233,3 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits( L
     // return derived;
 }
 
-#pragma GCC pop_options
