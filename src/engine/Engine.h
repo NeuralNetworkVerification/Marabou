@@ -512,7 +512,7 @@ private:
 
       Return true iff a true satisfying assignment is found.
     */
-    bool handleSatisfyingAssignmentToLinearConstraints();
+    bool adjustAssignmentToSatisfyNonLinearConstraints();
 
     /*
       Perform precision restoration if needed. Return true iff precision
