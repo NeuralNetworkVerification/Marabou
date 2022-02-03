@@ -1340,6 +1340,7 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
+	// Obtain from and store bounds into inputquery if it is not null.
         if ( inputQuery )
             _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
         else
@@ -1375,21 +1376,21 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
         if ( inputQuery )
         {
             for ( const auto &tightening : tightenings )
-                {
+            {
 
-                    if ( tightening._type == Tightening::LB &&
-                         FloatUtils::gt( tightening._value,
-                                         inputQuery->getLowerBound
-                                         ( tightening._variable ) ) )
-                        inputQuery->setLowerBound( tightening._variable,
-                                                   tightening._value );
-                    if ( tightening._type == Tightening::UB &&
-                         FloatUtils::lt( tightening._value,
-                                         inputQuery->getUpperBound
-                                         ( tightening._variable ) ) )
-                        inputQuery->setUpperBound( tightening._variable,
-                                                   tightening._value );
-                }
+                if ( tightening._type == Tightening::LB &&
+                     FloatUtils::gt( tightening._value,
+                                     inputQuery->getLowerBound
+                                     ( tightening._variable ) ) )
+                    inputQuery->setLowerBound( tightening._variable,
+					       tightening._value );
+                if ( tightening._type == Tightening::UB &&
+                     FloatUtils::lt( tightening._value,
+                                     inputQuery->getUpperBound
+                                     ( tightening._variable ) ) )
+                    inputQuery->setUpperBound( tightening._variable,
+                                               tightening._value );
+            }
         }
         else
         {
@@ -2135,6 +2136,7 @@ void Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
     // Step 1: tell the NLR about the current bounds
     if ( inputQuery )
     {
+	// Obtain from and store bounds into inputquery if it is not null.
         _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
     }
     else
