@@ -249,6 +249,12 @@ public:
     virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
 
     /*
+      Before solving: get additional auxiliary euqations (typically bound-dependent)
+      that this constraint would like to add to the equation pool.
+    */
+    virtual void addAuxiliaryEquationsPostprocessing( InputQuery &/* inputQuery */ ) {}
+
+    /*
       Ask the piecewise linear constraint to add its cost term corresponding to
       the given phase to the cost function.
       Nothing should be added when the constraint is fixed or inactive.
