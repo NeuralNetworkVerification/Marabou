@@ -661,6 +661,80 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     _auxVarsInUse = true;
 }
 
+void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                                        PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    // This should not be called when the linear constraints have
+    // not been satisfied
+    ASSERT( !haveOutOfBoundVariables() );
+
+    ASSERT( phase == ABS_PHASE_NEGATIVE || phase == ABS_PHASE_POSITIVE );
+
+    // The soundness of the SoI component assumes that the constraints f >= b and
+    // f >= -b is added.
+    ASSERT( FloatUtils::gte
+            ( _assignment.get( _f ), _assignment.get( _b ),
+              GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) &&
+            FloatUtils::gte
+            ( _assignment.get( _f ), -_assignment.get( _b ),
+              GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) );
+
+    if ( phase == ABS_PHASE_NEGATIVE )
+    {
+        // The cost term corresponding to the negative phase is f + b,
+        // since the Abs is negative and satisfied iff f + b is 0
+        // and minimal. This is true when we added the constraint
+        // that f >= b and f >= -b.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] += 1;
+        cost._addends[_b] += 1;
+    }
+    else
+    {
+        // The cost term corresponding to the positive phase is f - b,
+        // since the Abs is non-negative and satisfied iff f - b is 0 and
+        // minimal. This is true when we added the constraint
+        // that f >= b and f >= -b.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] += 1;
+        cost._addends[_b] -= 1;
+    }
+}
+
+PhaseStatus AbsoluteValueConstraint::getPhaseStatusInAssignment
+( const Map<unsigned, double> &assignment ) const
+{
+    ASSERT( assignment.exists( _b ) );
+    return FloatUtils::isNegative( assignment[_b] ) ?
+        ABS_PHASE_NEGATIVE : ABS_PHASE_POSITIVE;
+}
+
+bool AbsoluteValueConstraint::haveOutOfBoundVariables() const
+{
+    double bValue = _assignment.get( _b );
+    double fValue = _assignment.get( _f );
+
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue ) ||
+         FloatUtils::lt( getUpperBound( _b ), bValue ) )
+        return true;
+
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) ||
+         FloatUtils::lt( getUpperBound( _f ), fValue ) )
+        return true;
+
+    return false;
+}
+
 String AbsoluteValueConstraint::serializeToString() const
 {
     // Output format is: Abs,f,b,posAux,NegAux

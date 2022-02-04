@@ -2,7 +2,7 @@
 /*! \file SignConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Amir, Aleksandar Zeljic
+ **   Guy Amir, Aleksandar Zeljic, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,6 +18,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -299,6 +300,54 @@ String SignConstraint::serializeToString() const
 {
     // Output format is: sign,f,b
     return Stringf( "sign,%u,%u", _f, _b );
+}
+
+void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                               PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    // This should not be called when the linear constraints have
+    // not been satisfied
+    ASSERT( !haveOutOfBoundVariables() );
+
+    ASSERT( phase == SIGN_PHASE_NEGATIVE || phase == SIGN_PHASE_POSITIVE );
+
+    ASSERT( getLowerBound( _f ) >= -1 && getUpperBound( _f ) <= 1 );
+
+    // The SoI cost term is sound iff the aux equations are added.
+    ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
+
+    if ( phase == SIGN_PHASE_NEGATIVE )
+    {
+        // The cost term corresponding to the negative phase is 1 + f.
+        // The SignConstraint is satisfied iff 1 + f is minimal and 0.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        cost._addends[_f] += 1;
+        cost._constant += 1;
+    }
+    else
+    {
+        // The cost term corresponding to the negative phase is 1 - f.
+        // The Sign constraint is satisfied, iff 1 - f must be minimal
+        // and 0.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        cost._addends[_f] -= 1;
+        cost._constant += 1;
+    }
+}
+
+PhaseStatus SignConstraint::getPhaseStatusInAssignment( const
+                                                        Map<unsigned, double>
+                                                        &assignment ) const
+{
+    ASSERT( assignment.exists( _b ) );
+    return FloatUtils::isNegative( assignment[_b] ) ?
+        SIGN_PHASE_NEGATIVE : SIGN_PHASE_POSITIVE;
 }
 
 bool SignConstraint::haveOutOfBoundVariables() const
