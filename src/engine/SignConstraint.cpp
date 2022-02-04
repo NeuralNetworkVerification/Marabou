@@ -2,7 +2,7 @@
 /*! \file SignConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Amir, Haoze Wu, Aleksandar Zeljic 
+ **   Guy Amir, Haoze Wu, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -17,6 +17,7 @@
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
@@ -317,8 +318,8 @@ void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     ASSERT( getLowerBound( _f ) >= -1 && getUpperBound( _f ) <= 1 );
 
-    // TODO: The SoI cost term is sound iff the aux equations are added.
-    // ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
+    // The SoI cost term is sound iff the aux equations are added.
+    ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
 
     if ( phase == SIGN_PHASE_NEGATIVE )
     {
