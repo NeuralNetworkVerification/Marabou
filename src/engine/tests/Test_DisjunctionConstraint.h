@@ -581,12 +581,21 @@ public:
             split->dump();
             TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 2u );
             TS_ASSERT( split->getEquations().empty() );
+<<<<<<< HEAD
             Tightening t1( 7, 0, Tightening::LB ); // 5th aux
             Tightening t2( 8, 0, Tightening::UB ); // 6th aux
+=======
+            Tightening t1( 5, 0, Tightening::LB ); // Third aux
+            Tightening t2( 6, 0, Tightening::UB ); // Fourth aux
+>>>>>>> make all disjuncts bounds
             for ( const auto &t : {t1, t2} )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> make all disjuncts bounds
         // Check the linear constraints added.
         // 1 <= x0 <= 5, x1 = x0
         // 5 <= x0 , x1 = 2x2 + 5
@@ -603,6 +612,7 @@ public:
         ++equation;
         {
             Equation eq;
+<<<<<<< HEAD
             eq.addAddend( 1, 0 );
             eq.addAddend( -1, 1 );
             eq.addAddend( 1, 4 );
@@ -623,6 +633,11 @@ public:
             eq.addAddend( 1, 1 );
             eq.addAddend( -2, 2 );
             eq.addAddend( 1, 6 );
+=======
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -2, 2 );
+            eq.addAddend( 1, 4 );
+>>>>>>> make all disjuncts bounds
             eq.setScalar( 5 );
             TS_ASSERT_EQUALS( eq, *equation );
         }
@@ -631,7 +646,11 @@ public:
             Equation eq;
             eq.addAddend( 1, 1 );
             eq.addAddend( -1, 0 );
+<<<<<<< HEAD
             eq.addAddend( 1, 7 );
+=======
+            eq.addAddend( 1, 5 );
+>>>>>>> make all disjuncts bounds
             eq.setScalar( 1 );
             TS_ASSERT_EQUALS( eq, *equation );
         }
@@ -640,7 +659,11 @@ public:
             Equation eq;
             eq.addAddend( 1, 1 );
             eq.addAddend( 1, 2 );
+<<<<<<< HEAD
             eq.addAddend( 1, 8 );
+=======
+            eq.addAddend( 1, 6 );
+>>>>>>> make all disjuncts bounds
             eq.setScalar( 2 );
             TS_ASSERT_EQUALS( eq, *equation );
         }
