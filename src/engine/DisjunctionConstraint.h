@@ -145,6 +145,12 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
+      Transform the disjunction into a disjunction where each disjunct only
+      contains variable bounds.
+    */
+    void makeAllDisjunctsBounds( InputQuery &inputQuery );
+
+    /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const override;

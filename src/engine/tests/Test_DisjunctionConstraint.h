@@ -18,6 +18,7 @@
 #include "DisjunctionConstraint.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
+#include "InputQuery.h"
 
 class MockForDisjunctionConstraint
     : public MockErrno
@@ -499,5 +500,126 @@ public:
         dc.markInfeasible( dc.getPhaseStatus() );
         TS_ASSERT( !dc.isFeasible() );
         TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
+    }
+
+    void test_disjunction_make_all_disjuncts_bounds()
+    {
+        InputQuery inputQuery;
+
+        PiecewiseLinearCaseSplit cs4;
+
+        // x1 - x0 <= 1, x1 + x2 >= 2
+        Equation eq1;
+        eq1._type = Equation::LE;
+        eq1.addAddend( 1, 1 );
+        eq1.addAddend( -1, 0 );
+        eq1.setScalar( 1 );
+        cs4.addEquation( eq1 );
+        Equation eq2;
+        eq2._type = Equation::GE;
+        eq2.addAddend( 1, 1 );
+        eq2.addAddend( 1, 2 );
+        eq2.setScalar( 2 );
+        cs4.addEquation( eq2 );
+
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs2, *cs3, cs4 };
+        DisjunctionConstraint *disj = new DisjunctionConstraint( caseSplits );
+
+        inputQuery.setNumberOfVariables( 3 );
+        inputQuery.addPiecewiseLinearConstraint( disj );
+
+        List<PhaseStatus> casesBefore = disj->getAllCases();
+        List<PiecewiseLinearCaseSplit> splitsBefore = disj->getCaseSplits();
+        TS_ASSERT_THROWS_NOTHING( disj->makeAllDisjunctsBounds( inputQuery ) );
+        List<PhaseStatus> casesAfter = disj->getAllCases();
+        List<PiecewiseLinearCaseSplit> splitsAfter = disj->getCaseSplits();
+
+        TS_ASSERT_EQUALS( casesBefore.size(), casesAfter.size() );
+        TS_ASSERT_EQUALS( splitsBefore.size(), splitsAfter.size() );
+
+        // 1 <= x0 <= 5, x1 = x0
+        // 5 <= x0 , x1 = 2x2 + 5
+        // x1 - x0 <= 1, x1 + x2 >= 2
+
+        // In total there are 4 (in)equalities in all the disjuncts.
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 7u );
+        TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 4u );
+
+        // Check the disjuncts
+        auto split = splitsAfter.begin();
+        {
+            split->dump();
+            TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 4u );
+            TS_ASSERT( split->getEquations().empty() );
+            Tightening t1( 0, 1, Tightening::LB );
+            Tightening t2( 0, 5, Tightening::UB );
+            Tightening t3( 3, 0, Tightening::LB ); // First aux introduced here.
+            Tightening t4( 3, 0, Tightening::UB );
+            for ( const auto &t : {t1, t2, t3, t4} )
+                TS_ASSERT( split->getBoundTightenings().exists( t ) );
+        }
+        ++split;
+        {
+            split->dump();
+            TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 3u );
+            TS_ASSERT( split->getEquations().empty() );
+            Tightening t1( 0, 5, Tightening::LB );
+            Tightening t2( 4, 0, Tightening::LB ); // Second aux introduced here.
+            Tightening t3( 4, 0, Tightening::UB );
+            for ( const auto &t : {t1, t2, t3} )
+                TS_ASSERT( split->getBoundTightenings().exists( t ) );
+        }
+        ++split;
+        {
+            split->dump();
+            TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 2u );
+            TS_ASSERT( split->getEquations().empty() );
+            Tightening t1( 5, 0, Tightening::LB ); // Third aux
+            Tightening t2( 6, 0, Tightening::UB ); // Fourth aux
+            for ( const auto &t : {t1, t2} )
+                TS_ASSERT( split->getBoundTightenings().exists( t ) );
+        }
+
+
+        // Check the linear constraints added.
+        // 1 <= x0 <= 5, x1 = x0
+        // 5 <= x0 , x1 = 2x2 + 5
+        // x1 - x0 <= 1, x1 + x2 >= 2
+
+        auto equation = inputQuery.getEquations().begin();
+        {
+            Equation eq;
+            eq.addAddend( 1, 0 );
+            eq.addAddend( -1, 1 );
+            eq.addAddend( 1, 3 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -2, 2 );
+            eq.addAddend( 1, 4 );
+            eq.setScalar( 5 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -1, 0 );
+            eq.addAddend( 1, 5 );
+            eq.setScalar( 1 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( 1, 2 );
+            eq.addAddend( 1, 6 );
+            eq.setScalar( 2 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
     }
 };

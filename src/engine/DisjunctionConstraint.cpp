@@ -15,6 +15,7 @@
 #include "DisjunctionConstraint.h"
 
 #include "Debug.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Statistics.h"
@@ -180,6 +181,75 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getImpliedCaseSplit() const
 PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
 {
     return getImpliedCaseSplit();
+}
+
+void DisjunctionConstraint::makeAllDisjunctsBounds( InputQuery &inputQuery )
+{
+    Vector<PiecewiseLinearCaseSplit> newDisjuncts;
+    for ( const auto &disjunct : _disjuncts )
+    {
+        PiecewiseLinearCaseSplit newDisjunct;
+
+        // Store the bounds in the old disjunct
+        for ( const auto &bound : disjunct.getBoundTightenings() )
+            newDisjunct.storeBoundTightening( bound );
+
+        /*
+          Given a constraint AX = b in the disjunct
+          We introduce an auxiliary variable aux, add a new linear constraint
+          AX + aux = b to the inputQuery and change the constraint in the
+          disjunct to 0 <= aux <= 0
+
+          Given a constraint AX >= b in the disjunct
+          We add new linear constraints AX + aux = b and change the constraint
+          in the disjunct to aux <= 0
+
+          The LE case is symmetric.
+        */
+        for ( const auto &equation : disjunct.getEquations() )
+        {
+            unsigned aux = inputQuery.getNumberOfVariables();
+            inputQuery.setNumberOfVariables( aux + 1 );
+
+            // Equation in the disjunct is AX ? b, we want to add AX + aux = b
+            Equation newEquation = equation;
+            newEquation._type = Equation::EQ;
+            newEquation.addAddend( 1, aux );
+            inputQuery.addEquation( newEquation );
+
+            switch ( equation._type )
+            {
+                case Equation::EQ:
+                {
+                    newDisjunct.storeBoundTightening
+                        ( Tightening( aux, 0, Tightening::LB ) );
+                    newDisjunct.storeBoundTightening
+                        ( Tightening( aux, 0, Tightening::UB ) );
+                    break;
+                }
+                case Equation::GE:
+                {
+                    newDisjunct.storeBoundTightening
+                        ( Tightening( aux, 0, Tightening::UB ) );
+                    break;
+                }
+                case Equation::LE:
+                {
+                    newDisjunct.storeBoundTightening
+                        ( Tightening( aux, 0, Tightening::LB ) );
+                    break;
+                }
+            }
+        }
+        newDisjuncts.append( newDisjunct );
+    }
+
+    _disjuncts = newDisjuncts;
+
+    _feasibleDisjuncts.clear();
+    for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+        _feasibleDisjuncts.append( ind );
+    extractParticipatingVariables();
 }
 
 void DisjunctionConstraint::dump( String &output ) const

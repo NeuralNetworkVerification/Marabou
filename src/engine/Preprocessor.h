@@ -82,6 +82,12 @@ private:
     }
 
     /*
+      Make sure all disjuncts in all disjunctions contain only bounds and no
+      (in)equalities between variables.
+    */
+    void makeAllDisjunctsBounds();
+
+    /*
       Transform all equations of type GE or LE to type EQ.
     */
     void makeAllEquationsEqualities();
