@@ -318,13 +318,8 @@ void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     ASSERT( getLowerBound( _f ) >= -1 && getUpperBound( _f ) <= 1 );
 
-<<<<<<< HEAD
-    // TODO: The SoI cost term is sound iff the aux equations are added.
-    // ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
-=======
     // The SoI cost term is sound iff the aux equations are added.
     ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
->>>>>>> minor
 
     if ( phase == SIGN_PHASE_NEGATIVE )
     {
