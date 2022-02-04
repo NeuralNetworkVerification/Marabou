@@ -1347,4 +1347,101 @@ public:
         context.pop();
         TS_ASSERT_EQUALS( sign.getPhaseStatus(), PHASE_NOT_FIXED );
     }
+
+    void test_get_cost_function_component()
+    {
+        /* Test the add cost function component methods */
+
+        unsigned b = 0;
+        unsigned f = 1;
+
+        // The sign is fixed, do not add cost term.
+        SignConstraint sign1 = SignConstraint( b, f );
+        sign1.notifyLowerBound( b, 0.5 );
+        sign1.notifyLowerBound( f, 1 );
+        sign1.notifyUpperBound( b, 1 );
+        sign1.notifyUpperBound( f, 1 );
+        sign1.notifyVariableValue( b, 1.5 );
+        sign1.notifyVariableValue( f, 2 );
+
+        TS_ASSERT( sign1.phaseFixed() );
+        LinearExpression cost1;
+        TS_ASSERT_THROWS_NOTHING( sign1.getCostFunctionComponent( cost1, SIGN_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost1._addends.size(), 0u );
+        TS_ASSERT_EQUALS( cost1._constant, 0 );
+
+
+        // The sign is not fixed and add active cost term
+        SignConstraint sign2 = SignConstraint( b, f );
+        LinearExpression cost2;
+        sign2.notifyLowerBound( b, -1 );
+        sign2.notifyLowerBound( f, -1 );
+        sign2.notifyUpperBound( b, 2 );
+        sign2.notifyUpperBound( f, 1 );
+        sign2.notifyVariableValue( b, -1 );
+        sign2.notifyVariableValue( f, 1 );
+        TS_ASSERT( !sign2.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( sign2.getCostFunctionComponent( cost2, SIGN_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost2._addends.size(), 1u );
+        TS_ASSERT_EQUALS( cost2._addends[f], -1 );
+        TS_ASSERT_EQUALS( cost2._constant, 1 );
+
+        // The sign is not fixed and add inactive cost term
+        SignConstraint sign3 = SignConstraint( b, f );
+        LinearExpression cost3;
+        sign3.notifyLowerBound( b, -1 );
+        sign3.notifyLowerBound( f, -1 );
+        sign3.notifyUpperBound( b, 2 );
+        sign3.notifyUpperBound( f, 1 );
+        sign3.notifyVariableValue( b, -1 );
+        sign3.notifyVariableValue( f, 1 );
+        TS_ASSERT( !sign3.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( sign3.getCostFunctionComponent( cost3, SIGN_PHASE_NEGATIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 1u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._constant, 1 );
+
+        // Add the cost term for another sign
+        unsigned b2 = 2;
+        unsigned f2 = 3;
+        SignConstraint sign4 = SignConstraint( b2, f2 );
+        sign4.notifyLowerBound( b2, -1 );
+        sign4.notifyLowerBound( f2, -1 );
+        sign4.notifyUpperBound( b2, 5 );
+        sign4.notifyUpperBound( f2, 1 );
+        sign4.notifyVariableValue( b2, -1 );
+        sign4.notifyVariableValue( f2, 1 );
+
+        TS_ASSERT( !sign4.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( sign4.getCostFunctionComponent( cost3, SIGN_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 2u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], -1 );
+        TS_ASSERT_EQUALS( cost3._constant, 2 );
+
+        TS_ASSERT_THROWS_NOTHING( sign4.getCostFunctionComponent( cost3, SIGN_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 2u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], -2 );
+        TS_ASSERT_EQUALS( cost3._constant, 3 );
+    }
+
+    void test_get_phase_in_assignment()
+    {
+        unsigned b = 0;
+        unsigned f = 1;
+
+        SignConstraint sign = SignConstraint( b, f );
+        sign.notifyVariableValue( b, 1.5 );
+        sign.notifyVariableValue( f, 1 );
+
+        Map<unsigned, double> assignment;
+        assignment[0] = -1;
+        TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ),
+                          SIGN_PHASE_NEGATIVE );
+
+        assignment[0] = 15;
+        TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ),
+                          SIGN_PHASE_POSITIVE );
+    }
 };

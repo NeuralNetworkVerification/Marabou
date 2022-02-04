@@ -163,6 +163,23 @@ public:
     */
     void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Abs is:
+      _f - _b for the active phase
+      _f + _b for the inactive phase
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
+      Return the phase status corresponding to the values of the *input*
+      variables in the given assignment.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
+
     /*
       Returns string with shape: absoluteValue,_f,_b
      */
@@ -196,6 +213,11 @@ private:
     */
     PiecewiseLinearCaseSplit getPositiveSplit() const;
     PiecewiseLinearCaseSplit getNegativeSplit() const;
+
+    /*
+      Return true iff _b and _f are not both within bounds.
+    */
+    bool haveOutOfBoundVariables() const;
 };
 
 #endif // __AbsoluteValueConstraint_h__

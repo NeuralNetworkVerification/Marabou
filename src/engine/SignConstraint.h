@@ -159,6 +159,22 @@ public:
     void dump( String &output ) const override;
 
     /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Sign is:
+      1 - _f for the positive phase
+      1 + _f for the negative phase
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
+      Return the phase status corresponding to the values of the *input*
+      variables in the given assignment.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
+
+    /*
       Returns string with shape: sign, _f, _b
     */
     String serializeToString() const override;
@@ -182,17 +198,17 @@ public:
     We divide the sum by the width of the interval so that the polarity is
     always between -1 and 1. The closer it is to 0, the more symmetric the
     bound is.
-  */
-  double computePolarity() const;
+    */
+    double computePolarity() const;
 
-  /*
-    Update the preferred direction for fixing and handling case split
-  */
-  void updateDirection() override;
+    /*
+      Update the preferred direction for fixing and handling case split
+    */
+    void updateDirection() override;
 
-  PhaseStatus getDirection() const;
+    PhaseStatus getDirection() const;
 
-  void updateScoreBasedOnPolarity() override;
+    void updateScoreBasedOnPolarity() override;
 
 private:
     unsigned _b, _f;
