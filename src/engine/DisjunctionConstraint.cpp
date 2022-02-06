@@ -253,7 +253,6 @@ void DisjunctionConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
         for ( const auto &bound : disjunct.getBoundTightenings() )
             newDisjunct.storeBoundTightening( bound );
 
-        // Split equality into two inequalities for ease of SoI search.
         List<Equation> equationsToProcess;
         for ( const auto &equation : disjunct.getEquations() )
         {
@@ -381,79 +380,6 @@ void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tighten
 
 void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ )
 {
-}
-
-void DisjunctionConstraint::getCostFunctionComponent( LinearExpression &cost,
-                                                      PhaseStatus phase ) const
-{
-    // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
-        return;
-
-    unsigned index = phaseStatusToInd( phase );
-
-    if ( _feasibleDisjuncts.exists( index ) )
-    {
-        const PiecewiseLinearCaseSplit &disjunct = _disjuncts.get( index );
-        ASSERT( disjunct.getEquations().size() == 0 );
-        for ( const auto &tightening : disjunct.getBoundTightenings() )
-        {
-            unsigned variable = tightening._variable;
-            double bound = tightening._value;
-            if ( tightening._type == Tightening::LB )
-            {
-                // The constraint is x >= b, cost to minimize is b - x
-                if ( !cost._addends.exists( variable ) )
-                    cost._addends[variable] = 0;
-                cost._addends[variable] -= 1;
-                cost._constant += bound;
-            }
-            else
-            {
-                ASSERT( tightening._type == Tightening::UB );
-                // The constraint is x <= b, cost to minimize is x - b
-                if ( !cost._addends.exists( variable ) )
-                    cost._addends[variable] = 0;
-                cost._addends[variable] += 1;
-                cost._constant -= bound;
-            }
-        }
-    }
-    else
-    {
-        return;
-    }
-}
-
-PhaseStatus DisjunctionConstraint::getPhaseStatusInAssignment
-( const Map<unsigned, double> &assignment ) const
-{
-    unsigned index = 0;
-    for ( const auto &disjunct : _disjuncts )
-    {
-        bool disjunctSatisfied = true;
-        for ( const auto &bound : disjunct.getBoundTightenings() )
-        {
-            if ( bound._type == Tightening::LB &&
-                 ( assignment[bound._variable] < bound._value ) )
-            {
-                disjunctSatisfied = false;
-                break;
-            }
-            else if ( bound._type == Tightening::UB &&
-                      assignment[bound._variable] > bound._value )
-            {
-                disjunctSatisfied = false;
-                break;
-            }
-        }
-        ASSERT( disjunct.getEquations().size() == 0 );
-
-        if ( disjunctSatisfied )
-            return indToPhaseStatus( index );
-        ++index;
-    }
-    return PHASE_NOT_FIXED;
 }
 
 String DisjunctionConstraint::serializeToString() const
