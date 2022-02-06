@@ -240,6 +240,12 @@ public:
     */
     virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
+    /*
+      Transform the piecewise linear constraint into an equi-satisfiable
+      constraint if needed.
+    */
+    virtual void transformIfNeeded( InputQuery & ) {};
+
     void setStatistics( Statistics *statistics );
 
     /*

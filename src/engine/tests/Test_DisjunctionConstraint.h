@@ -530,7 +530,7 @@ public:
 
         List<PhaseStatus> casesBefore = disj->getAllCases();
         List<PiecewiseLinearCaseSplit> splitsBefore = disj->getCaseSplits();
-        TS_ASSERT_THROWS_NOTHING( disj->makeAllDisjunctsBounds( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( disj->transformIfNeeded( inputQuery ) );
         List<PhaseStatus> casesAfter = disj->getAllCases();
         List<PiecewiseLinearCaseSplit> splitsAfter = disj->getCaseSplits();
 

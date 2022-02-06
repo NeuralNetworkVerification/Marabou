@@ -82,10 +82,11 @@ private:
     }
 
     /*
-      Make sure all disjuncts in all disjunctions contain only bounds and no
-      (in)equalities between variables.
+      Transform the piecewise linear constraints if needed. For instance, this
+      will make sure all disjuncts in all disjunctions contain only bounds and
+      no (in)equalities between variables.
     */
-    void makeAllDisjunctsBounds();
+    void transformConstraintsIfNeeded();
 
     /*
       Transform all equations of type GE or LE to type EQ.

@@ -148,7 +148,7 @@ public:
       Transform the disjunction into a disjunction where each disjunct only
       contains variable bounds.
     */
-    void makeAllDisjunctsBounds( InputQuery &inputQuery );
+    void transformIfNeeded( InputQuery &inputQuery );
 
     /*
       Dump the current state of the constraint.

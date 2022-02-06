@@ -14,7 +14,6 @@
  **/
 
 #include "Debug.h"
-#include "DisjunctionConstraint.h"
 #include "Options.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
@@ -62,10 +61,10 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
-      Make sure all disjunctions are ones over variable bounds.
-      If not, turn them into one.
+      Transform the piecewise linear constraints if needed. For instance, this
+      will make sure all disjunctions are ones over variable bounds.
     */
-    makeAllDisjunctsBounds();
+    transformConstraintsIfNeeded();
 
     /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
@@ -201,12 +200,10 @@ void Preprocessor::separateMergedAndFixed()
           });
 }
 
-void Preprocessor::makeAllDisjunctsBounds()
+void Preprocessor::transformConstraintsIfNeeded()
 {
     for ( auto &plConstraint : _preprocessed.getPiecewiseLinearConstraints() )
-        if ( plConstraint->getType() == DISJUNCTION )
-            ( (DisjunctionConstraint *) plConstraint )->
-                makeAllDisjunctsBounds( _preprocessed );
+        plConstraint->transformIfNeeded( _preprocessed );
 }
 
 void Preprocessor::makeAllEquationsEqualities()
