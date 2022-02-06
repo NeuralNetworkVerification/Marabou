@@ -2,7 +2,7 @@
 /*! \file Preprocessor.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Derek Huang, Shantanu Thakoor
+ **   Guy Katz, Derek Huang, Shantanu Thakoor, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -20,6 +20,7 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "Map.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Preprocessor.h"
 #include "MarabouError.h"
 #include "Statistics.h"
@@ -58,6 +59,12 @@ void Preprocessor::freeMemoryIfNeeded()
 InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
 {
     _preprocessed = query;
+
+    /*
+      Transform the piecewise linear constraints if needed. For instance, this
+      will make sure all disjunctions are ones over variable bounds.
+    */
+    transformConstraintsIfNeeded();
 
     /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
@@ -191,6 +198,12 @@ void Preprocessor::separateMergedAndFixed()
             for ( const auto &fixed : _fixedVariables )
                 ASSERT( !_mergedVariables.exists( fixed.first ) );
           });
+}
+
+void Preprocessor::transformConstraintsIfNeeded()
+{
+    for ( auto &plConstraint : _preprocessed.getPiecewiseLinearConstraints() )
+        plConstraint->transformIfNeeded( _preprocessed );
 }
 
 void Preprocessor::makeAllEquationsEqualities()
