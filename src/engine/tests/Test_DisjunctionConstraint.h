@@ -542,8 +542,8 @@ public:
         // x1 - x0 <= 1, x1 + x2 >= 2
 
         // In total there are 4 (in)equalities in all the disjuncts.
-        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 7u );
-        TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 4u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 9u );
+        TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 6u );
 
         // Check the disjuncts
         auto split = splitsAfter.begin();
@@ -553,8 +553,8 @@ public:
             TS_ASSERT( split->getEquations().empty() );
             Tightening t1( 0, 1, Tightening::LB );
             Tightening t2( 0, 5, Tightening::UB );
-            Tightening t3( 3, 0, Tightening::LB ); // First aux introduced here.
-            Tightening t4( 3, 0, Tightening::UB );
+            Tightening t3( 3, 0, Tightening::UB ); // First aux introduced here.
+            Tightening t4( 4, 0, Tightening::LB ); // Second aux introduced here.
             for ( const auto &t : {t1, t2, t3, t4} )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
@@ -564,8 +564,8 @@ public:
             TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 3u );
             TS_ASSERT( split->getEquations().empty() );
             Tightening t1( 0, 5, Tightening::LB );
-            Tightening t2( 4, 0, Tightening::LB ); // Second aux introduced here.
-            Tightening t3( 4, 0, Tightening::UB );
+            Tightening t2( 5, 0, Tightening::UB ); // Third aux introduced here.
+            Tightening t3( 6, 0, Tightening::LB ); // Fourth aux
             for ( const auto &t : {t1, t2, t3} )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
@@ -574,12 +574,11 @@ public:
             split->dump();
             TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 2u );
             TS_ASSERT( split->getEquations().empty() );
-            Tightening t1( 5, 0, Tightening::LB ); // Third aux
-            Tightening t2( 6, 0, Tightening::UB ); // Fourth aux
+            Tightening t1( 7, 0, Tightening::LB ); // 5th aux
+            Tightening t2( 8, 0, Tightening::UB ); // 6th aux
             for ( const auto &t : {t1, t2} )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
-
 
         // Check the linear constraints added.
         // 1 <= x0 <= 5, x1 = x0
@@ -597,9 +596,26 @@ public:
         ++equation;
         {
             Equation eq;
+            eq.addAddend( 1, 0 );
+            eq.addAddend( -1, 1 );
+            eq.addAddend( 1, 4 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
             eq.addAddend( 1, 1 );
             eq.addAddend( -2, 2 );
-            eq.addAddend( 1, 4 );
+            eq.addAddend( 1, 5 );
+            eq.setScalar( 5 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -2, 2 );
+            eq.addAddend( 1, 6 );
             eq.setScalar( 5 );
             TS_ASSERT_EQUALS( eq, *equation );
         }
@@ -608,7 +624,7 @@ public:
             Equation eq;
             eq.addAddend( 1, 1 );
             eq.addAddend( -1, 0 );
-            eq.addAddend( 1, 5 );
+            eq.addAddend( 1, 7 );
             eq.setScalar( 1 );
             TS_ASSERT_EQUALS( eq, *equation );
         }
@@ -617,7 +633,7 @@ public:
             Equation eq;
             eq.addAddend( 1, 1 );
             eq.addAddend( 1, 2 );
-            eq.addAddend( 1, 6 );
+            eq.addAddend( 1, 8 );
             eq.setScalar( 2 );
             TS_ASSERT_EQUALS( eq, *equation );
         }

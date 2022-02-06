@@ -194,19 +194,32 @@ void DisjunctionConstraint::transformIfNeeded( InputQuery &inputQuery )
         for ( const auto &bound : disjunct.getBoundTightenings() )
             newDisjunct.storeBoundTightening( bound );
 
-        /*
-          Given a constraint AX = b in the disjunct
-          We introduce an auxiliary variable aux, add a new linear constraint
-          AX + aux = b to the inputQuery and change the constraint in the
-          disjunct to 0 <= aux <= 0
+        List<Equation> equationsToProcess;
+        for ( const auto &equation : disjunct.getEquations() )
+        {
+            if ( equation._type == Equation::EQ )
+            {
+                Equation equation1 = equation;
+                equation1._type = Equation::GE;
+                Equation equation2 = equation;
+                equation2._type = Equation::LE;
+                equationsToProcess.append( equation1 );
+                equationsToProcess.append( equation2 );
+            }
+            else
+            {
+                equationsToProcess.append( equation );
+            }
+        }
 
-          Given a constraint AX >= b in the disjunct
-          We add new linear constraints AX + aux = b and change the constraint
-          in the disjunct to aux <= 0
+        /*
+          Given a constraint AX >= b in the disjunct, we introduce an auxiliary
+          variable aux, add new linear constraints AX + aux = b and change the
+          constraint in the disjunct to aux <= 0
 
           The LE case is symmetric.
         */
-        for ( const auto &equation : disjunct.getEquations() )
+        for ( const auto &equation : equationsToProcess )
         {
             unsigned aux = inputQuery.getNumberOfVariables();
             inputQuery.setNumberOfVariables( aux + 1 );
@@ -221,10 +234,7 @@ void DisjunctionConstraint::transformIfNeeded( InputQuery &inputQuery )
             {
                 case Equation::EQ:
                 {
-                    newDisjunct.storeBoundTightening
-                        ( Tightening( aux, 0, Tightening::LB ) );
-                    newDisjunct.storeBoundTightening
-                        ( Tightening( aux, 0, Tightening::UB ) );
+                    ASSERT( false );
                     break;
                 }
                 case Equation::GE:
