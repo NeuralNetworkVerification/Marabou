@@ -294,6 +294,12 @@ void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> 
         layer.second->updateVariableIndices( oldIndexToNewIndex, mergedVariables );
 }
 
+void NetworkLevelReasoner::obtainCurrentBounds( const InputQuery &inputQuery )
+{
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->obtainCurrentBounds( inputQuery );
+}
+
 void NetworkLevelReasoner::obtainCurrentBounds()
 {
     ASSERT( _tableau );

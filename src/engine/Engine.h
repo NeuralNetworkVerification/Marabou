@@ -571,7 +571,7 @@ private:
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
     */
-    void performSymbolicBoundTightening();
+    void performSymbolicBoundTightening( InputQuery *inputQuery = nullptr );
 
     /*
       Perform a simulation which calculates concrete values of each layer with
@@ -611,7 +611,7 @@ private:
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
-    void performMILPSolverBoundedTightening();
+    void performMILPSolverBoundedTightening( InputQuery *inputQuery = nullptr );
 
     /*
       Call MILP bound tightening for a single layer.
