@@ -383,6 +383,42 @@ void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ 
 {
 }
 
+void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                              PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    unsigned index = phaseStatusToInd( phase );
+
+    if ( _feasibleDisjuncts.exists( index ) )
+    {
+        const PiecewiseLinearCaseSplit &disjunct;
+        ASSERT( disjunct.getEquations().size() == 0 );
+        for ( const auto &tightening : disjunct.getBoundTightenings() )
+        {
+            if ( tightening._type = Tightening::LB )
+            {
+
+            }
+            else
+            {
+            }
+                if ( !cost._addends.exists( _f ) )
+                cost._addends[_f] = 0;
+            if ( !cost._addends.exists( element ) )
+                cost._addends[element] = 0;
+            cost._addends[_f] = cost._addends[_f] + 1;
+            cost._addends[element] = cost._addends[element] - 1;
+        }
+    }
+    else
+    {
+        continue;
+    }
+}
+
 String DisjunctionConstraint::serializeToString() const
 {
     String s = "disj,";
