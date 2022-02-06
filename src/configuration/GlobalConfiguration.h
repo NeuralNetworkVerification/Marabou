@@ -86,6 +86,10 @@ public:
     // to add auxiliary variables and equations.
     static const bool PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS;
 
+    // Toggle whether or not PL constraints will be called upon
+    // to add auxiliary variables and equations after preprocessing.
+    static const bool PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING;
+
     // If the difference between a variable's lower and upper bounds is smaller than this
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;

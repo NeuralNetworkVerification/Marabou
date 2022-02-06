@@ -13,6 +13,7 @@
 
  **/
 
+#include "InputQuery.h"
 #include "Layer.h"
 #include "Options.h"
 #include "SymbolicBoundTighteningType.h"
@@ -457,6 +458,25 @@ void Layer::setNeuronVariable( unsigned neuron, unsigned variable )
 
     _neuronToVariable[neuron] = variable;
     _variableToNeuron[variable] = neuron;
+}
+
+void Layer::obtainCurrentBounds( const InputQuery &inputQuery )
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _neuronToVariable.exists( i ) )
+        {
+            unsigned variable = _neuronToVariable[i];
+            _lb[i] = inputQuery.getLowerBound( variable );
+            _ub[i] = inputQuery.getUpperBound( variable );
+        }
+        else
+        {
+            ASSERT( _eliminatedNeurons.exists( i ) );
+            _lb[i] = _eliminatedNeurons[i];
+            _ub[i] = _eliminatedNeurons[i];
+        }
+    }
 }
 
 void Layer::obtainCurrentBounds()
