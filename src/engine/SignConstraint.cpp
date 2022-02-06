@@ -18,6 +18,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
+#include "InputQuery.h"
 #include "ITableau.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -220,6 +221,59 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const
 bool SignConstraint::phaseFixed() const
 {
     return _phaseStatus != PHASE_NOT_FIXED;
+}
+
+void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                              &inputQuery )
+{
+    /*
+      If the phase is not fixed, add _f <= -2/lb_b * _b + 1
+      and  _f >= 2/ub_b * _b - 1
+      which becomes,
+      _f + 2/lb_b * _b + aux_ub = 1, 0 <= aux_ub <= 1 - lb_f - 2 * ub_b/lb_b
+      _f - 2/ub_b * _b + aux2_lb = -1, -1 - ub_f + 2 * lb_b/ub_b  <= aux_lb <= 0
+    */
+
+    if ( isActive() && !phaseFixed() )
+    {
+        double lowerBound = inputQuery.getLowerBound( _b );
+        double upperBound = inputQuery.getUpperBound( _b );
+
+        ASSERT( FloatUtils::lt( lowerBound, 0 ) &&
+                FloatUtils::gte( upperBound, 0 ) );
+
+        // Create the aux variable
+        unsigned auxUpper = inputQuery.getNumberOfVariables();
+        inputQuery.setNumberOfVariables( auxUpper + 1 );
+
+        // Create and add the equation
+        Equation equation( Equation::EQ );
+        equation.addAddend( 1.0, _f );
+        equation.addAddend( 2/lowerBound, _b );
+        equation.addAddend( 1.0, auxUpper );
+        equation.setScalar( 1 );
+        inputQuery.addEquation( equation );
+
+        inputQuery.setLowerBound( auxUpper, 0 );
+        inputQuery.setUpperBound( auxUpper, 2 - 2 * upperBound / lowerBound );
+
+        if ( FloatUtils::isPositive( upperBound ) )
+        {
+            // Create the aux variable
+            unsigned auxLower = inputQuery.getNumberOfVariables();
+            inputQuery.setNumberOfVariables( auxLower + 1 );
+            // Create and add the equation
+            Equation equation2( Equation::EQ );
+            equation2.addAddend( 1.0, _f );
+            equation2.addAddend( -2/upperBound, _b );
+            equation2.addAddend( 1.0, auxLower );
+            equation2.setScalar( -1 );
+            inputQuery.addEquation( equation2 );
+
+            inputQuery.setLowerBound( auxLower, -2 + 2 * lowerBound / upperBound );
+            inputQuery.setUpperBound( auxLower, 0 );
+        }
+    }
 }
 
 PiecewiseLinearCaseSplit SignConstraint::getImpliedCaseSplit() const

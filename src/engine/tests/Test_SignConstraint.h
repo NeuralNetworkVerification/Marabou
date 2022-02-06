@@ -1444,4 +1444,65 @@ public:
         TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ),
                           SIGN_PHASE_POSITIVE );
     }
+
+    void test_add_auxiliary_equations()
+    {
+        SignConstraint sign( 4, 6 );
+        InputQuery query;
+
+        query.setNumberOfVariables( 9 );
+
+        sign.notifyLowerBound( 4, -10 );
+        sign.notifyLowerBound( 6, -1 );
+
+        sign.notifyUpperBound( 4, 10 );
+        sign.notifyUpperBound( 6, 1 );
+
+        query.setLowerBound( 4, -10 );
+        query.setUpperBound( 4, 10 );
+        query.setLowerBound( 6, -1 );
+        query.setLowerBound( 6, 1 );
+
+        TS_ASSERT_THROWS_NOTHING( sign.addAuxiliaryEquationsAfterPreprocessing
+                                  ( query ) );
+
+        const List<Equation> &equations( query.getEquations() );
+
+        TS_ASSERT_EQUALS( equations.size(), 2U );
+        TS_ASSERT_EQUALS( query.getNumberOfVariables(), 11U );
+
+        unsigned auxUpper = 9;
+        TS_ASSERT_EQUALS( query.getLowerBound( auxUpper ), 0 );
+        TS_ASSERT_EQUALS( query.getUpperBound( auxUpper ), 4 );
+
+        unsigned auxLower = 10;
+        TS_ASSERT_EQUALS( query.getLowerBound( auxLower ), -4 );
+        TS_ASSERT_EQUALS( query.getUpperBound( auxLower ), 0 );
+
+        Equation eq = *equations.begin();
+
+        TS_ASSERT_EQUALS( eq._addends.size(), 3U );
+
+        eq.dump();
+        auto it = eq._addends.begin();
+        TS_ASSERT_EQUALS( *it, Equation::Addend( 1, 6 ) );
+        ++it;
+        TS_ASSERT_EQUALS( *it, Equation::Addend( -0.2, 4 ) );
+        ++it;
+        TS_ASSERT_EQUALS( *it, Equation::Addend( 1, auxUpper ) );
+
+        TS_ASSERT_EQUALS( eq._scalar, 1 );
+
+        eq = *(++ equations.begin());
+
+        TS_ASSERT_EQUALS( eq._addends.size(), 3U );
+
+        it = eq._addends.begin();
+        TS_ASSERT_EQUALS( *it, Equation::Addend( 1, 6 ) );
+        ++it;
+        TS_ASSERT_EQUALS( *it, Equation::Addend( -0.2, 4 ) );
+        ++it;
+        TS_ASSERT_EQUALS( *it, Equation::Addend( 1, auxLower ) );
+        TS_ASSERT_EQUALS( eq._scalar, -1 );
+    }
 };

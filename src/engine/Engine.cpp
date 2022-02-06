@@ -1255,6 +1255,22 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
+        initializeNetworkLevelReasoning();
+        if ( preprocess )
+        {
+            performSymbolicBoundTightening( &_preprocessedQuery );
+            performSimulation();
+            performMILPSolverBoundedTightening( &_preprocessedQuery );
+        }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
+
+        if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
+            for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+                plConstraint->addAuxiliaryEquationsAfterPreprocessing
+                    ( _preprocessedQuery );
+
         double *constraintMatrix = createConstraintMatrix();
         removeRedundantEquations( constraintMatrix );
 
@@ -1274,23 +1290,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         delete[] constraintMatrix;
         constraintMatrix = createConstraintMatrix();
 
-        initializeNetworkLevelReasoning();
         initializeTableau( constraintMatrix, initialBasis );
 
         if ( GlobalConfiguration::WARM_START )
             warmStart();
 
         delete[] constraintMatrix;
-
-        if ( preprocess )
-        {
-            performSymbolicBoundTightening();
-            performSimulation();
-            performMILPSolverBoundedTightening();
-        }
-
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-            _networkLevelReasoner->dumpBounds();
 
         decideBranchingHeuristics();
 
@@ -1331,11 +1336,15 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     return true;
 }
 
-void Engine::performMILPSolverBoundedTightening()
+void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
-        _networkLevelReasoner->obtainCurrentBounds();
+	// Obtain from and store bounds into inputquery if it is not null.
+        if ( inputQuery )
+            _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+        else
+            _networkLevelReasoner->obtainCurrentBounds();
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound Tightening.
         if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
@@ -1363,13 +1372,36 @@ void Engine::performMILPSolverBoundedTightening()
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-        for ( const auto &tightening : tightenings )
-        {
-            if ( tightening._type == Tightening::LB )
-                _tableau->tightenLowerBound( tightening._variable, tightening._value );
 
-            else if ( tightening._type == Tightening::UB )
-                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        if ( inputQuery )
+        {
+            for ( const auto &tightening : tightenings )
+            {
+
+                if ( tightening._type == Tightening::LB &&
+                     FloatUtils::gt( tightening._value,
+                                     inputQuery->getLowerBound
+                                     ( tightening._variable ) ) )
+                    inputQuery->setLowerBound( tightening._variable,
+					       tightening._value );
+                if ( tightening._type == Tightening::UB &&
+                     FloatUtils::lt( tightening._value,
+                                     inputQuery->getUpperBound
+                                     ( tightening._variable ) ) )
+                    inputQuery->setUpperBound( tightening._variable,
+                                               tightening._value );
+            }
+        }
+        else
+        {
+            for ( const auto &tightening : tightenings )
+            {
+                if ( tightening._type == Tightening::LB )
+                    _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+                else if ( tightening._type == Tightening::UB )
+                    _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            }
         }
     }
 }
@@ -2091,7 +2123,7 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-void Engine::performSymbolicBoundTightening()
+void Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) )
@@ -2102,7 +2134,16 @@ void Engine::performSymbolicBoundTightening()
     unsigned numTightenedBounds = 0;
 
     // Step 1: tell the NLR about the current bounds
-    _networkLevelReasoner->obtainCurrentBounds();
+    if ( inputQuery )
+    {
+	// Obtain from and store bounds into inputquery if it is not null.
+        _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+    }
+    else
+     {
+        // Get bounds from Tableau.
+        _networkLevelReasoner->obtainCurrentBounds();
+     }
 
     // Step 2: perform SBT
     if ( _symbolicBoundTighteningType ==
@@ -2116,21 +2157,50 @@ void Engine::performSymbolicBoundTightening()
     List<Tightening> tightenings;
     _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-    for ( const auto &tightening : tightenings )
+    if ( inputQuery )
     {
-
-        if ( tightening._type == Tightening::LB &&
-             FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+        for ( const auto &tightening : tightenings )
         {
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
-            ++numTightenedBounds;
+
+            if ( tightening._type == Tightening::LB &&
+                 FloatUtils::gt( tightening._value,
+                                 inputQuery->getLowerBound
+                                 ( tightening._variable ) ) )
+            {
+                inputQuery->setLowerBound( tightening._variable,
+                                           tightening._value );
+                ++numTightenedBounds;
+            }
+
+            if ( tightening._type == Tightening::UB &&
+                 FloatUtils::lt( tightening._value,
+                                 inputQuery->getUpperBound
+                                 ( tightening._variable ) ) )
+            {
+                inputQuery->setUpperBound( tightening._variable,
+                                           tightening._value );
+                ++numTightenedBounds;
+            }
         }
-
-        if ( tightening._type == Tightening::UB &&
-             FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+    }
+    else
+    {
+        for ( const auto &tightening : tightenings )
         {
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
-            ++numTightenedBounds;
+
+            if ( tightening._type == Tightening::LB &&
+                 FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            {
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+                ++numTightenedBounds;
+            }
+
+            if ( tightening._type == Tightening::UB &&
+                 FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            {
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+                ++numTightenedBounds;
+            }
         }
     }
 
