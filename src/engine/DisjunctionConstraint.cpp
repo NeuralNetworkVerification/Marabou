@@ -382,12 +382,18 @@ void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ 
 {
 }
 
+<<<<<<< HEAD
 String DisjunctionConstraint::serializeToString() const
+=======
+void DisjunctionConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                                      PhaseStatus phase ) const
+>>>>>>> soi for dijsunction
 {
     String s = "disj,";
     s += Stringf("%u,", _disjuncts.size());
     for ( const auto &disjunct : _disjuncts )
     {
+<<<<<<< HEAD
         s += Stringf("%u,", disjunct.getBoundTightenings().size());
         for ( const auto &bound : disjunct.getBoundTightenings() )
         {
@@ -403,17 +409,86 @@ String DisjunctionConstraint::serializeToString() const
                 s += Stringf("l,");
             else if ( equation._type == Equation::GE )
                 s += Stringf("g,");
+=======
+        const PiecewiseLinearCaseSplit &disjunct = _disjuncts.get( index );
+        ASSERT( disjunct.getEquations().size() == 0 );
+        for ( const auto &tightening : disjunct.getBoundTightenings() )
+        {
+            unsigned variable = tightening._variable;
+            double bound = tightening._value;
+            if ( tightening._type == Tightening::LB )
+            {
+                // The constraint is x >= b, cost to minimize is b - x
+                if ( !cost._addends.exists( variable ) )
+                    cost._addends[variable] = 0;
+                cost._addends[variable] -= 1;
+                cost._constant += bound;
+            }
+>>>>>>> soi for dijsunction
             else
                 s += Stringf("e,");
             s += Stringf("%u,", equation._addends.size());
             for ( const auto &addend : equation._addends )
             {
+<<<<<<< HEAD
                 s += Stringf("%f,%u,", addend._coefficient, addend._variable);
             }
             s += Stringf("%f,", equation._scalar );
         }
     }
     return s;
+=======
+                ASSERT( tightening._type == Tightening::UB );
+                // The constraint is x <= b, cost to minimize is x - b
+                if ( !cost._addends.exists( variable ) )
+                    cost._addends[variable] = 0;
+                cost._addends[variable] += 1;
+                cost._constant -= bound;
+            }
+        }
+    }
+    else
+    {
+        return;
+    }
+}
+
+PhaseStatus DisjunctionConstraint::getPhaseStatusInAssignment
+( const Map<unsigned, double> &assignment ) const
+{
+    unsigned index = 0;
+    for ( const auto &disjunct : _disjuncts )
+    {
+        bool disjunctSatisfied = true;
+        for ( const auto &bound : disjunct.getBoundTightenings() )
+        {
+            if ( bound._type == Tightening::LB &&
+                 ( assignment[bound._variable] < bound._value ) )
+            {
+                disjunctSatisfied = false;
+                break;
+            }
+            else if ( bound._type == Tightening::UB &&
+                      assignment[bound._variable] > bound._value )
+            {
+                disjunctSatisfied = false;
+                break;
+            }
+        }
+        ASSERT( disjunct.getEquations().size() == 0 );
+
+        if ( disjunctSatisfied )
+            return indToPhaseStatus( index );
+        ++index;
+    }
+    return PHASE_NOT_FIXED;
+}
+
+String DisjunctionConstraint::serializeToString() const
+{
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                        "Serialize DisjunctionConstraint to String" );
+>>>>>>> soi for dijsunction
 }
 
 void DisjunctionConstraint::extractParticipatingVariables()
