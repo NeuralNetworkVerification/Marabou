@@ -133,6 +133,16 @@ public:
     bool phaseFixed() const override;
 
     /*
+      If the phase is not fixed, add _f <= -2/lb_b * _b + 1
+      and  _f >= 2/ub_b * _b - 1
+      which becomes,
+      _f + 2/lb_b * _b + aux_ub = 1, 0 <= aux_ub <= 1 - lb_f - 2 * ub_b/lb_b
+      _f - 2/ub_b * _b + aux2_lb = -1, -1 - ub_f + 2 * lb_b/ub_b  <= aux_lb <= 0
+    */
+    void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                  &inputQuery ) override;
+
+    /*
       Preprocessing related functions, to inform that a variable has
       been eliminated completely because it was fixed to some value,
       or that a variable's index has changed (e.g., x4 is now called
@@ -182,17 +192,17 @@ public:
     We divide the sum by the width of the interval so that the polarity is
     always between -1 and 1. The closer it is to 0, the more symmetric the
     bound is.
-  */
-  double computePolarity() const;
+    */
+    double computePolarity() const;
 
-  /*
-    Update the preferred direction for fixing and handling case split
-  */
-  void updateDirection() override;
+    /*
+      Update the preferred direction for fixing and handling case split
+    */
+    void updateDirection() override;
 
-  PhaseStatus getDirection() const;
+    PhaseStatus getDirection() const;
 
-  void updateScoreBasedOnPolarity() override;
+    void updateScoreBasedOnPolarity() override;
 
 private:
     unsigned _b, _f;
