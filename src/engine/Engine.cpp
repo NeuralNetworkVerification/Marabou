@@ -2757,12 +2757,12 @@ bool Engine::performDeepSoILocalSearch()
                 }
                 else
                 {
-                    ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+                    ASSERT( FloatUtils::lte( costOfLastAcceptedPhasePattern, 0 ) );
                     ENGINE_LOG( "Performing local search - done" );
                     return true;
                 }
             }
-            ASSERT( !FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+            ASSERT( !FloatUtils::lte( costOfLastAcceptedPhasePattern, 0 ) );
         }
 
         // No satisfying assignment found for the last accepted phase pattern,

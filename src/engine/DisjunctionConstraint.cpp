@@ -325,8 +325,8 @@ void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ 
 {
 }
 
-void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
-                                              PhaseStatus phase ) const
+void DisjunctionConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                                      PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
     if( !isActive() || phaseFixed() )
@@ -336,29 +336,66 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     if ( _feasibleDisjuncts.exists( index ) )
     {
-        const PiecewiseLinearCaseSplit &disjunct;
+        const PiecewiseLinearCaseSplit &disjunct = _disjuncts.get( index );
         ASSERT( disjunct.getEquations().size() == 0 );
         for ( const auto &tightening : disjunct.getBoundTightenings() )
         {
-            if ( tightening._type = Tightening::LB )
+            unsigned variable = tightening._variable;
+            double bound = tightening._value;
+            if ( tightening._type == Tightening::LB )
             {
-
+                // The constraint is x >= b, cost to minimize is b - x
+                if ( !cost._addends.exists( variable ) )
+                    cost._addends[variable] = 0;
+                cost._addends[variable] -= 1;
+                cost._constant += bound;
             }
             else
             {
+                ASSERT( tightening._type == Tightening::UB );
+                // The constraint is x <= b, cost to minimize is x - b
+                if ( !cost._addends.exists( variable ) )
+                    cost._addends[variable] = 0;
+                cost._addends[variable] += 1;
+                cost._constant -= bound;
             }
-                if ( !cost._addends.exists( _f ) )
-                cost._addends[_f] = 0;
-            if ( !cost._addends.exists( element ) )
-                cost._addends[element] = 0;
-            cost._addends[_f] = cost._addends[_f] + 1;
-            cost._addends[element] = cost._addends[element] - 1;
         }
     }
     else
     {
-        continue;
+        return;
     }
+}
+
+PhaseStatus DisjunctionConstraint::getPhaseStatusInAssignment
+( const Map<unsigned, double> &assignment ) const
+{
+    unsigned index = 0;
+    for ( const auto &disjunct : _disjuncts )
+    {
+        bool disjunctSatisfied = true;
+        for ( const auto &bound : disjunct.getBoundTightenings() )
+        {
+            if ( bound._type == Tightening::LB &&
+                 ( assignment[bound._variable] < bound._value ) )
+            {
+                disjunctSatisfied = false;
+                break;
+            }
+            else if ( bound._type == Tightening::UB &&
+                      assignment[bound._variable] > bound._value )
+            {
+                disjunctSatisfied = false;
+                break;
+            }
+        }
+        ASSERT( disjunct.getEquations().size() == 0 );
+
+        if ( disjunctSatisfied )
+            return indToPhaseStatus( index );
+        ++index;
+    }
+    return PHASE_NOT_FIXED;
 }
 
 String DisjunctionConstraint::serializeToString() const
