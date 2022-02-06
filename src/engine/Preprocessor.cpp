@@ -14,7 +14,6 @@
  **/
 
 #include "Debug.h"
-#include "DisjunctionConstraint.h"
 #include "Options.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
@@ -201,19 +200,10 @@ void Preprocessor::separateMergedAndFixed()
           });
 }
 
-<<<<<<< HEAD
 void Preprocessor::transformConstraintsIfNeeded()
 {
     for ( auto &plConstraint : _preprocessed.getPiecewiseLinearConstraints() )
         plConstraint->transformToUseAuxVariablesIfNeeded( _preprocessed );
-=======
-void Preprocessor::makeAllDisjunctsBounds()
-{
-    for ( auto &plConstraint : _preprocessed.getPiecewiseLinearConstraints() )
-        if ( plConstraint->getType() == DISJUNCTION )
-            ( (DisjunctionConstraint *) plConstraint )->
-                makeAllDisjunctsBounds( _preprocessed );
->>>>>>> make all disjuncts bounds
 }
 
 void Preprocessor::makeAllEquationsEqualities()
