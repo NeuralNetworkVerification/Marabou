@@ -144,19 +144,6 @@ public:
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
-
-    /*
-      Ask the piecewise linear constraint to add its cost term corresponding to
-      the given phase to the cost function.
-      Each disjunct is a conjunction of bounds. For each upper bound x <= b,
-      we add x - b. For each lower bound x >= b, we add b - x.
-    */
-    virtual void getCostFunctionComponent( LinearExpression &cost,
-                                           PhaseStatus phase ) const override;
-
-    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
-                                                    &assignment ) const override;
-
     /*
       Whether the constraint can contribute the SoI cost function.
     */
@@ -164,6 +151,12 @@ public:
     {
         return false;
     }
+
+    /*
+      Transform the disjunction into a disjunction where each disjunct only
+      contains variable bounds.
+    */
+    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
     /*
       Dump the current state of the constraint.
@@ -176,7 +169,7 @@ public:
       case, this is an equation of the form aux = f - b, where aux is
       non-negative.
     */
-    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
+    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
       Returns string with shape: disjunction, _f, _b
