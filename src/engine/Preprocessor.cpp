@@ -14,7 +14,6 @@
  **/
 
 #include "Debug.h"
-#include "DisjunctionConstraint.h"
 #include "Options.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
