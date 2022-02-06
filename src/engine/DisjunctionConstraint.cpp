@@ -194,6 +194,7 @@ void DisjunctionConstraint::transformIfNeeded( InputQuery &inputQuery )
         for ( const auto &bound : disjunct.getBoundTightenings() )
             newDisjunct.storeBoundTightening( bound );
 
+        // Split equality into two inequalities for ease of SoI search.
         List<Equation> equationsToProcess;
         for ( const auto &equation : disjunct.getEquations() )
         {
