@@ -2762,7 +2762,6 @@ bool Engine::performDeepSoILocalSearch()
                     return true;
                 }
             }
-            ASSERT( !FloatUtils::lte( costOfLastAcceptedPhasePattern, 0 ) );
         }
 
         // No satisfying assignment found for the last accepted phase pattern,
