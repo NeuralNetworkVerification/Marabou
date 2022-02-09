@@ -2,7 +2,7 @@
 /*! \file DisjunctionConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -15,6 +15,7 @@
 #include "DisjunctionConstraint.h"
 
 #include "Debug.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "Statistics.h"
@@ -180,6 +181,86 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getImpliedCaseSplit() const
 PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
 {
     return getImpliedCaseSplit();
+}
+
+void DisjunctionConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
+                                                                &inputQuery )
+{
+    Vector<PiecewiseLinearCaseSplit> newDisjuncts;
+    for ( const auto &disjunct : _disjuncts )
+    {
+        PiecewiseLinearCaseSplit newDisjunct;
+
+        // Store the bounds in the old disjunct
+        for ( const auto &bound : disjunct.getBoundTightenings() )
+            newDisjunct.storeBoundTightening( bound );
+
+        List<Equation> equationsToProcess;
+        for ( const auto &equation : disjunct.getEquations() )
+        {
+            if ( equation._type == Equation::EQ )
+            {
+                Equation equation1 = equation;
+                equation1._type = Equation::GE;
+                Equation equation2 = equation;
+                equation2._type = Equation::LE;
+                equationsToProcess.append( equation1 );
+                equationsToProcess.append( equation2 );
+            }
+            else
+            {
+                equationsToProcess.append( equation );
+            }
+        }
+
+        /*
+          Given a constraint AX >= b in the disjunct, we introduce an auxiliary
+          variable aux, add new linear constraints AX + aux = b and change the
+          constraint in the disjunct to aux <= 0
+
+          The LE case is symmetric.
+        */
+        for ( const auto &equation : equationsToProcess )
+        {
+            unsigned aux = inputQuery.getNumberOfVariables();
+            inputQuery.setNumberOfVariables( aux + 1 );
+
+            // Equation in the disjunct is AX ? b, we want to add AX + aux = b
+            Equation newEquation = equation;
+            newEquation._type = Equation::EQ;
+            newEquation.addAddend( 1, aux );
+            inputQuery.addEquation( newEquation );
+
+            switch ( equation._type )
+            {
+                case Equation::EQ:
+                {
+                    ASSERT( false );
+                    break;
+                }
+                case Equation::GE:
+                {
+                    newDisjunct.storeBoundTightening
+                        ( Tightening( aux, 0, Tightening::UB ) );
+                    break;
+                }
+                case Equation::LE:
+                {
+                    newDisjunct.storeBoundTightening
+                        ( Tightening( aux, 0, Tightening::LB ) );
+                    break;
+                }
+            }
+        }
+        newDisjuncts.append( newDisjunct );
+    }
+
+    _disjuncts = newDisjuncts;
+
+    _feasibleDisjuncts.clear();
+    for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+        _feasibleDisjuncts.append( ind );
+    extractParticipatingVariables();
 }
 
 void DisjunctionConstraint::dump( String &output ) const

@@ -2,7 +2,7 @@
 /*! \file DisjunctionConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Duligur Ibeling, Christopher Lazarus
+ **   Guy Katz, Duligur Ibeling, Christopher Lazarus, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -143,6 +143,12 @@ public:
       Get the tightenings entailed by the constraint.
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
+
+    /*
+      Transform the disjunction into a disjunction where each disjunct only
+      contains variable bounds.
+    */
+    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
     /*
       Dump the current state of the constraint.
