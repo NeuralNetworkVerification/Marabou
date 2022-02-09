@@ -73,9 +73,15 @@ int main( int argc, char **argv )
         };
 
         if ( options->getBool( Options::DNC_MODE ) )
+	{
+	    openblas_set_num_threads(1);
             DnCMarabou().run();
+	}
         else
+	{
+	    openblas_set_num_threads( options->getInt( Options::NUM_BLAS_THREADS ) );
             Marabou().run();
+	}
     }
     catch ( const Error &e )
     {
