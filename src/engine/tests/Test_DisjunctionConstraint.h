@@ -528,7 +528,6 @@ public:
         inputQuery.setNumberOfVariables( 3 );
         inputQuery.addPiecewiseLinearConstraint( disj );
 
-        // In total there are 4 (in)equalities in all the disjuncts.
         TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
         TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 0u );
 
