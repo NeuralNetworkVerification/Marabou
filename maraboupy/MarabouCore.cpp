@@ -258,6 +258,7 @@ struct MarabouOptions {
     bool _dumpBounds;
     bool _skipLpTighteningAfterSplit;
     unsigned _numWorkers;
+    unsigned _numBlasThreads;
     unsigned _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
