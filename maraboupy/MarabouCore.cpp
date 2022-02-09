@@ -203,6 +203,7 @@ struct MarabouOptions {
         , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _dumpBounds( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
+        , _numBlasThreads( Options::get()->getInt( Options::NUM_BLAS_THREADS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
         , _onlineDivides( Options::get()->getInt( Options::NUM_ONLINE_DIVIDES ) )
@@ -231,6 +232,7 @@ struct MarabouOptions {
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
+    Options::get()->setInt( Options::NUM_BLAS_THREADS, _numBlasThreads );
     Options::get()->setInt( Options::INITIAL_TIMEOUT, _initialTimeout );
     Options::get()->setInt( Options::NUM_INITIAL_DIVIDES, _initialDivides );
     Options::get()->setInt( Options::NUM_ONLINE_DIVIDES, _onlineDivides );
@@ -410,6 +412,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
+        .def_readwrite("_numBlasThreads", &MarabouOptions::_numBlasThreads)
         .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
         .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
         .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
