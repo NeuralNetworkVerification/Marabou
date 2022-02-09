@@ -528,7 +528,6 @@ public:
         inputQuery.setNumberOfVariables( 3 );
         inputQuery.addPiecewiseLinearConstraint( disj );
 
-        // In total there are 4 (in)equalities in all the disjuncts.
         TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
         TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 0u );
 
@@ -547,7 +546,9 @@ public:
         // 5 <= x0 , x1 = 2x2 + 5
         // x1 - x0 <= 1, x1 + x2 >= 2
 
-        // In total there are 4 (in)equalities in all the disjuncts.
+        // In total there are 4 (in)equalities in all the disjuncts. The two
+        // equations are each split into 2 inequialities. So there are 6 new
+        // equations and 6 new variables.
         TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 9u );
         TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 6u );
 
