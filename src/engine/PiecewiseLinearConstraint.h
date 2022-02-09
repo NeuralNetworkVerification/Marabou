@@ -241,10 +241,10 @@ public:
     virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
     /*
-      Transform the piecewise linear constraint into an equi-satisfiable
-      constraint if needed.
+      Transform the piecewise linear constraint so that each disjunct contains
+      only bound constraints.
     */
-    virtual void transformIfNeeded( InputQuery & ) {};
+    virtual void transformToUseAuxVariablesIfNeeded( InputQuery & ) {};
 
     void setStatistics( Statistics *statistics );
 

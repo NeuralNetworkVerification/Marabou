@@ -203,7 +203,7 @@ void Preprocessor::separateMergedAndFixed()
 void Preprocessor::transformConstraintsIfNeeded()
 {
     for ( auto &plConstraint : _preprocessed.getPiecewiseLinearConstraints() )
-        plConstraint->transformIfNeeded( _preprocessed );
+        plConstraint->transformToUseAuxVariablesIfNeeded( _preprocessed );
 }
 
 void Preprocessor::makeAllEquationsEqualities()

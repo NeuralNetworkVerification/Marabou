@@ -528,15 +528,21 @@ public:
         inputQuery.setNumberOfVariables( 3 );
         inputQuery.addPiecewiseLinearConstraint( disj );
 
+        // In total there are 4 (in)equalities in all the disjuncts.
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
+        TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 0u );
+
         List<PhaseStatus> casesBefore = disj->getAllCases();
         List<PiecewiseLinearCaseSplit> splitsBefore = disj->getCaseSplits();
-        TS_ASSERT_THROWS_NOTHING( disj->transformIfNeeded( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( disj->transformToUseAuxVariablesIfNeeded
+                                  ( inputQuery ) );
         List<PhaseStatus> casesAfter = disj->getAllCases();
         List<PiecewiseLinearCaseSplit> splitsAfter = disj->getCaseSplits();
 
         TS_ASSERT_EQUALS( casesBefore.size(), casesAfter.size() );
         TS_ASSERT_EQUALS( splitsBefore.size(), splitsAfter.size() );
 
+        // The disjuncts are:
         // 1 <= x0 <= 5, x1 = x0
         // 5 <= x0 , x1 = 2x2 + 5
         // x1 - x0 <= 1, x1 + x2 >= 2

@@ -161,7 +161,7 @@ public:
       case, this is an equation of the form aux = f - b, where aux is
       non-negative.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
     /*
       Returns string with shape: disjunction, _f, _b
