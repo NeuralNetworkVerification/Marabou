@@ -17,6 +17,7 @@
 #include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "GlobalConfiguration.h"
 #include "ITableau.h"
