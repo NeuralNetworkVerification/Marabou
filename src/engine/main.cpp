@@ -18,6 +18,10 @@
 #include "Marabou.h"
 #include "Options.h"
 
+#ifdef ENABLE_OPENBLAS
+#include "cblas.h"
+#endif
+
 static std::string getCompiler() {
     std::stringstream ss;
 #ifdef __GNUC__
@@ -74,12 +78,16 @@ int main( int argc, char **argv )
 
         if ( options->getBool( Options::DNC_MODE ) )
 	{
+#ifdef ENABLE_OPENBLAS
 	    openblas_set_num_threads(1);
+#endif
             DnCMarabou().run();
 	}
         else
 	{
+#ifdef ENABLE_OPENBLAS
 	    openblas_set_num_threads( options->getInt( Options::NUM_BLAS_THREADS ) );
+#endif
             Marabou().run();
 	}
     }
