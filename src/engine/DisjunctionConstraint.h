@@ -166,12 +166,6 @@ public:
     }
 
     /*
-      Transform the disjunction into a disjunction where each disjunct only
-      contains variable bounds.
-    */
-    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
-
-    /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const override;
