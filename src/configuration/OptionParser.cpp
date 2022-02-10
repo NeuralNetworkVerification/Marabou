@@ -75,6 +75,9 @@ void OptionParser::initialize()
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(SnC) Number of workers" )
+        ( "blas-threads",
+          boost::program_options::value<int>( &((*_intOptions)[Options::NUM_BLAS_THREADS]) ),
+          "Number of threads to use for matrix multiplication with OpenBLAS" )
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
           "(SnC) The splitting strategy" )
