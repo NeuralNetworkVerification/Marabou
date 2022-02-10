@@ -198,7 +198,8 @@ private:
     Set<unsigned> _initialElements;
 
     bool _auxsInUse;
-    Map<unsigned, unsigned> _auxs;
+    Map<unsigned, unsigned> _auxToElement;
+    Map<unsigned, unsigned> _elementToAux;
 
     bool _obsolote;
 
@@ -242,6 +243,13 @@ private:
      * or not (False)
      */
     bool wereVariablesEliminated() const;
+
+    /*
+      For DEBUG only:
+      Return true if all the element in _elements are feasible
+      based on their bounds.
+    */
+    bool allInputElementsFeasible();
 };
 
 #endif // __MaxConstraint_h__
