@@ -135,7 +135,6 @@ public:
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
         engine.solve();
-        return;
         engine.extractSolution( inputQuery );
 
         bool correctSolution = true;
