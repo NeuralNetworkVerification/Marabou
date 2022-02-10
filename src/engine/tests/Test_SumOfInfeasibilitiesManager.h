@@ -77,6 +77,8 @@ public:
         ReluConstraint *relu3 = new ReluConstraint(4,5);
         MaxConstraint *max1 = new MaxConstraint(6, {1,3,5});
 
+        max1->transformToUseAuxVariablesIfNeeded( ipq );
+
         ipq.addPiecewiseLinearConstraint(relu1);
         ipq.addPiecewiseLinearConstraint(relu2);
         ipq.addPiecewiseLinearConstraint(relu3);
@@ -416,6 +418,9 @@ public:
         tableau.nextValues[4] = 2;
         tableau.nextValues[5] = 2;
         tableau.nextValues[6] = 2.5;
+        tableau.nextValues[7] = 2;
+        tableau.nextValues[8] = 0.5;
+        tableau.nextValues[9] = 0.5;
 
         Options::get()->setString
             ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -580,6 +585,10 @@ public:
         tableau.nextValues[4] = 1;
         tableau.nextValues[5] = 1.5;
         tableau.nextValues[6] = 2.5;
+        tableau.nextValues[7] = 2.5;
+        tableau.nextValues[8] = 1.5;
+        tableau.nextValues[9] = 1;
+
 
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );
