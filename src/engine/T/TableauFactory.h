@@ -16,6 +16,8 @@
 #ifndef __T__TableauFactory_h__
 #define __T__TableauFactory_h__
 
+#include "BoundManager.h"
+
 #include "cxxtest/Mock.h"
 
 class ITableau;
@@ -23,16 +25,16 @@ class ISelector;
 
 namespace T
 {
-	ITableau *createTableau();
+	ITableau *createTableau( BoundManager &BoundManager );
 	void discardTableau( ITableau *tableau );
 }
 
 CXXTEST_SUPPLY( createTableau,
 				ITableau *,
 				createTableau,
-				(),
+        ( BoundManager &boundManager ),
 				T::createTableau,
-				() );
+				( boundManager ) );
 
 CXXTEST_SUPPLY_VOID( discardTableau,
 					 discardTableau,

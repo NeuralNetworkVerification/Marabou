@@ -16,6 +16,8 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "BoundManager.h"
+#include "context/context.h"
 #include "Equation.h"
 #include "MockCostFunctionManager.h"
 #include "MockErrno.h"
@@ -25,6 +27,8 @@
 #include "TableauState.h"
 
 #include <string.h>
+
+using namespace CVC4::context;
 
 class MockForTableau
 {
@@ -111,9 +115,12 @@ public:
     void test_initialize_bounds()
     {
         Tableau *tableau = NULL;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -129,9 +136,12 @@ public:
     void test_initalize_basis_get_value()
     {
         Tableau *tableau = NULL;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -174,9 +184,12 @@ public:
     void test_watcher__value_changes()
     {
         Tableau *tableau = NULL;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -231,9 +244,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -283,9 +299,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -335,8 +354,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
@@ -446,9 +469,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -508,9 +534,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -586,9 +615,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -795,9 +827,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -996,9 +1031,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         // Initialization steps
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
@@ -1126,9 +1164,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1283,9 +1324,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1360,9 +1404,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1536,7 +1583,10 @@ public:
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
 
-        TS_ASSERT( tableau = new Tableau );
+        Context context;
+        BoundManager boundManager( context );
+
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
