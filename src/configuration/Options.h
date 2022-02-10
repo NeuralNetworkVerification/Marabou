@@ -84,6 +84,9 @@ public:
 
         // The random seed used throughout the execution.
         SEED,
+      
+        // The number of threads to use for OpenBLAS matrix multiplication.
+        NUM_BLAS_THREADS,
     };
 
     enum FloatOptions{
