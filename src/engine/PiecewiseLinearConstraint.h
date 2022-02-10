@@ -264,7 +264,7 @@ public:
     /*
       Whether the constraint can contribute the SoI cost function.
     */
-    virtual bool supportSoI() const = 0;
+    virtual bool supportSoI() const { return false; };
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to
