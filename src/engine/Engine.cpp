@@ -2768,7 +2768,7 @@ bool Engine::performDeepSoILocalSearch()
                 }
                 else
                 {
-                    ASSERT( FloatUtils::lte( costOfLastAcceptedPhasePattern, 0 ) );
+                    ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
                     ENGINE_LOG( "Performing local search - done" );
                     return true;
                 }
