@@ -320,7 +320,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
             _tableau->toggleOptimization( false );
             continue;
         }
-        /*
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
@@ -332,7 +331,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
                                          mainLoopEnd ) );
             return false;
         }
-        */
     }
 }
 

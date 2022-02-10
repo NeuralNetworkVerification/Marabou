@@ -56,7 +56,7 @@ double LinearExpression::evaluate( const Map<unsigned, double> &assignment )
     return sum;
 }
 
-bool LinearExpression::isZero()
+bool LinearExpression::isZero() const
 {
     for ( const auto &addend : _addends )
     {

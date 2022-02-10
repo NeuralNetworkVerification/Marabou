@@ -133,8 +133,8 @@ void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignme
     for ( const auto &plConstraint : _plConstraints )
     {
         ASSERT( !_currentPhasePattern.exists( plConstraint ) );
-        if ( plConstraint->isActive() && !plConstraint->phaseFixed() &&
-             plConstraint->getType() != DISJUNCTION )
+        if ( plConstraint->supportSoI() &&
+             plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
             // Set the phase status corresponding to the current assignment.
             _currentPhasePattern[plConstraint] =
@@ -150,8 +150,8 @@ void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentAssignment()
     for ( const auto &plConstraint : _plConstraints )
     {
         ASSERT( !_currentPhasePattern.exists( plConstraint ) );
-        if ( plConstraint->isActive() && !plConstraint->phaseFixed() &&
-             plConstraint->getType() != DISJUNCTION )
+        if ( plConstraint->supportSoI() && plConstraint->isActive()
+             && !plConstraint->phaseFixed() )
         {
             // Set the phase status corresponding to the current assignment.
             _currentPhasePattern[plConstraint] =
