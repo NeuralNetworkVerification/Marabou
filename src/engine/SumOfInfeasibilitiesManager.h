@@ -175,6 +175,11 @@ private:
     void initializePhasePatternWithCurrentInputAssignment();
 
     /*
+      Set _currentPhasePattern according to the current assignment.
+    */
+    void initializePhasePatternWithCurrentAssignment();
+
+    /*
       Choose one piecewise linear constraint in the current phase pattern
       and set it to a uniform-randomly chosen alternative phase status (for ReLU
       this means we just flip the phase status).

@@ -21,6 +21,9 @@ enum class SoIInitializationStrategy
     // When initialize the SoI function, add the cost term corresponding to the
     // activation pattern of the input assignment.
     INPUT_ASSIGNMENT,
+    // When initialize the SoI function, add the cost term corresponding to the
+    // activation pattern of the current assignment.
+    CURRENT_ASSIGNMENT,
 };
 
 #endif // __SoIInitializationStrategy_h__

@@ -222,6 +222,64 @@ public:
         TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
     }
 
+    void test_initialize_phase_pattern_with_current_assignment()
+    {
+        InputQuery ipq;
+        Vector<PiecewiseLinearConstraint *> plConstraints;
+        createInputQuery( ipq, plConstraints );
+        MockTableau tableau;
+        ipq.getNetworkLevelReasoner()->setTableau( &tableau );
+
+        Options::get()->setString
+            ( Options::SOI_INITIALIZATION_STRATEGY, "current-assignment" );
+
+        std::unique_ptr<SumOfInfeasibilitiesManager> soiManager;
+        TS_ASSERT_THROWS_NOTHING
+            ( soiManager =
+              std::unique_ptr<SumOfInfeasibilitiesManager>
+              ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
+
+        tableau.nextValues[0] = -1;
+        tableau.nextValues[1] = 0;
+        tableau.nextValues[2] = 1;
+        tableau.nextValues[3] = 3;
+        tableau.nextValues[4] = 2;
+        tableau.nextValues[5] = 2;
+        tableau.nextValues[6] = 2;
+
+        plConstraints[0]->notifyVariableValue( 0, -1 );
+        plConstraints[0]->notifyVariableValue( 1, 0 );
+        plConstraints[1]->notifyVariableValue( 2, 1 );
+        plConstraints[1]->notifyVariableValue( 3, 1 );
+        plConstraints[2]->notifyVariableValue( 4, 2 );
+        plConstraints[2]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 1, 0 );
+        plConstraints[3]->notifyVariableValue( 3, 1 );
+        plConstraints[3]->notifyVariableValue( 5, 2 );
+        plConstraints[3]->notifyVariableValue( 6, 2 );
+
+        // The input assignment is [-1, 1, 2], the output of the max should be 2
+        TS_ASSERT_THROWS_NOTHING
+            (soiManager->initializePhasePattern() );
+
+        // So the cost compoenents in the SoI should be:
+        // relu1: inactive, relu2: active, relu3: active, max: third max input
+        LinearExpression cost;
+        TS_ASSERT_THROWS_NOTHING( plConstraints[0]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[1]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_ACTIVE ) );
+        TS_ASSERT_THROWS_NOTHING( plConstraints[2]->getCostFunctionComponent
+                                  ( cost, RELU_PHASE_ACTIVE ) );
+        List<PhaseStatus> phases = plConstraints[3]->getAllCases();
+        TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
+                                  ( cost, *( ++phases.begin() ) ) );
+        TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
+        TS_ASSERT_EQUALS( cost, soiManager->getLastAcceptedSoIPhasePattern() );
+        TS_ASSERT_EQUALS( soiManager->getConstraintsUpdatedInLastProposal().size(),
+                          0u );
+    }
+
     void test_propose_phase_pattern_update_randomly()
     {
         InputQuery ipq;

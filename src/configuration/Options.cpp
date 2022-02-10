@@ -226,6 +226,8 @@ SoIInitializationStrategy Options::getSoIInitializationStrategy() const
                                     ( Options::SOI_INITIALIZATION_STRATEGY ) );
     if ( strategyString == "input-assignment" )
         return SoIInitializationStrategy::INPUT_ASSIGNMENT;
+    if ( strategyString == "current-assignment" )
+        return SoIInitializationStrategy::CURRENT_ASSIGNMENT;
     else
         return SoIInitializationStrategy::INPUT_ASSIGNMENT;
 }
