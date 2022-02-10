@@ -39,7 +39,7 @@ public:
 
     double evaluate( const Map<unsigned, double> &assignment );
 
-    bool isZero();
+    bool isZero() const;
 
     /*
       For debugging

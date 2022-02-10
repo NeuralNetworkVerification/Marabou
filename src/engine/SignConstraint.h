@@ -169,6 +169,14 @@ public:
     void dump( String &output ) const override;
 
     /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    inline bool supportSoI() const
+    {
+        return true;
+    }
+
+    /*
       Ask the piecewise linear constraint to add its cost term corresponding to
       the given phase to the cost function. The cost term for Sign is:
       1 - _f for the positive phase
