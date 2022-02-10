@@ -178,6 +178,7 @@ public:
       Represent the Max constraint using the aux variables.
     */
     void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
+<<<<<<< HEAD
 
     /*
       Whether the constraint can contribute the SoI cost function.
@@ -186,6 +187,8 @@ public:
     {
         return true;
     }
+=======
+>>>>>>> progress
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to
