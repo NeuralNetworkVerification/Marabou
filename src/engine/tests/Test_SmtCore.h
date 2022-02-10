@@ -165,6 +165,8 @@ public:
         {
         }
 
+        bool supportSoI() const { return false; };
+
         String serializeToString() const
         {
             return "";
