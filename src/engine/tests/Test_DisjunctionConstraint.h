@@ -645,4 +645,28 @@ public:
             TS_ASSERT_EQUALS( eq, *equation );
         }
     }
+
+    void test_serialize_and_unserialize()
+    {
+        // Disjuncts are:
+        // x0 <= 1, x1 = 2
+        // 1 <= x0 <= 5, x1 = x0
+        // 5 <= x0 , x1 = 2x2 + 5
+
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
+
+        String originalSerialized = disj.serializeToString();
+        DisjunctionConstraint recoveredDisj( originalSerialized );
+
+        TS_ASSERT_EQUALS( disj.serializeToString(),
+                          recoveredDisj.serializeToString() );
+
+        List<PiecewiseLinearCaseSplit> recoveredCaseSplits =
+            recoveredDisj.getCaseSplits();
+        auto split = recoveredCaseSplits.begin();
+        TS_ASSERT_EQUALS( *split++, *cs1);
+        TS_ASSERT_EQUALS( *split++, *cs2);
+        TS_ASSERT_EQUALS( *split, *cs3);
+    }
 };
