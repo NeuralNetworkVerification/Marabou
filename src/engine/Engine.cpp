@@ -2773,6 +2773,15 @@ bool Engine::performDeepSoILocalSearch()
                     return true;
                 }
             }
+            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) )
+            {
+                // Corner case: the SoI is minimal but there are still some PL
+                // constraints (those not in the SoI) unsatisfied.
+                // In this case, we might as well branch.
+                while ( !_smtCore.needToSplit() )
+                    _smtCore.reportRejectedPhasePatternProposal();
+                return false;
+            }
         }
 
         // No satisfying assignment found for the last accepted phase pattern,
