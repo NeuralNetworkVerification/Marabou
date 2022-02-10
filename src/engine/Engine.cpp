@@ -2777,7 +2777,9 @@ bool Engine::performDeepSoILocalSearch()
             {
                 // Corner case: the SoI is minimal but there are still some PL
                 // constraints (those not in the SoI) unsatisfied.
-                // In this case, we might as well branch.
+                // In this case, we bump up the score of PLConstraints not in
+                // the SoI with the hope to branch on them early.
+                bumpUpPseudoImpactOfPLConstraintsNotInSoI();
                 while ( !_smtCore.needToSplit() )
                     _smtCore.reportRejectedPhasePatternProposal();
                 return false;
@@ -2879,4 +2881,16 @@ void Engine::updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePatte
     // Update the Pseudo-Impact estimation.
     for ( const auto &constraint : constraintsUpdated )
         _smtCore.updatePLConstraintScore( constraint, score );
+}
+
+void Engine::bumpUpPseudoImpactOfPLConstraintsNotInSoI()
+{
+    ASSERT( _soiManager );
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->supportSoI() &&
+             !plConstraint->phaseFixed() && !plConstraint->satisfied() )
+            _smtCore.updatePLConstraintScore
+                ( plConstraint, GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI );
+    }
 }
