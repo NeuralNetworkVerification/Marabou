@@ -213,14 +213,14 @@ private:
     Map<unsigned, unsigned> _auxToElement;
     Map<unsigned, unsigned> _elementToAux;
 
-    bool _obsolote;
+    bool _obsolete;
 
     // We eagerly keep track of the max lower bound of the inputs.
     double _maxLowerBound;
 
     // We keep track of eliminated variables and the maximal value.
-    bool _hasFeasibleEliminatedVariables;
-    double _maxValueOfEliminatedVariables;
+    bool _haveFeasibleEliminatedPhases;
+    double _maxValueOfEliminatedPhases;
 
     /*
       Returns the phase where variable argMax has maximum value.
@@ -273,7 +273,7 @@ private:
       Return true if all the element in _elements are feasible
       based on their bounds.
     */
-    bool allInputElementsFeasible();
+    void checkAllInputElementsFeasible() const;
 };
 
 #endif // __MaxConstraint_h__
