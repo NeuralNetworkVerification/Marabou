@@ -2,7 +2,7 @@
 /*! \file MaxConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang, Guy Katz, Duligur Ibeling
+ **   Derek Huang, Guy Katz, Duligur Ibeling, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -190,13 +190,6 @@ public:
     */
     String serializeToString() const override;
 
-    /*
-     * Returns a boolean value indicating if at least one input variable was eliminated (True)
-     * or not (False)
-     */
-    bool wereVariablesEliminated() const;
-
-
     bool isImplication() const override;
 
 private:
@@ -204,40 +197,17 @@ private:
     Set<unsigned> _elements;
     Set<unsigned> _initialElements;
 
+    bool _auxsInUse;
+    Map<unsigned, unsigned> _auxs;
+
+    bool _obsolote;
+
+    // We eagerly keep track of the max lower bound of the inputs.
     double _maxLowerBound;
-    bool _obsolete;
-    bool _eliminatedVariables;
-    double _maxValueOfEliminated;
 
-    /*
-       Functions that abstract away _maxIndex and _maxIndexSet, and use the
-       refactored PhaseStatus to store this information.
-
-       Assumes that the total number of variables does not reach the value of
-       MAX_PHASE_ELIMINATED.
-     */
-    inline bool maxIndexSet() const
-    {
-        return getPhaseStatus() != PHASE_NOT_FIXED;
-    }
-
-    inline void setMaxIndex( unsigned variable )
-    {
-        setPhaseStatus( variableToPhase( variable ) );
-    }
-
-    inline unsigned getMaxIndex() const
-    {
-        ASSERT( maxIndexSet() );
-        return phaseToVariable( getPhaseStatus() );
-    }
-
-    inline void clearMaxIndex()
-    {
-        setPhaseStatus( PHASE_NOT_FIXED );
-    }
-
-    void resetMaxIndex();
+    // We keep track of eliminated variables and the maximal value.
+    bool _hasFeasibleEliminatedVariables;
+    double _maxValueOfEliminatedVariables;
 
     /*
       Returns the phase where variable argMax has maximum value.
@@ -266,6 +236,12 @@ private:
       Return true iff f or the elements are not all within bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    /*
+     * Returns a boolean value indicating if at least one input variable was eliminated (True)
+     * or not (False)
+     */
+    bool wereVariablesEliminated() const;
 };
 
 #endif // __MaxConstraint_h__
