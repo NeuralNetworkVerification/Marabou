@@ -153,6 +153,8 @@ public:
     const double *getLowerBounds() const;
     const double *getUpperBounds() const;
 
+    BoundManager &getBoundManager() const { return _boundManager; }
+
     /*
       Recomputes bound valid status for all variables.
     */
