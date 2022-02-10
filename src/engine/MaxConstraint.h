@@ -26,6 +26,12 @@
  ** Invoking initializeCDOs method activates the context dependent mode, and the
  ** MaxConstraint object synchronizes its state automatically with the central
  ** Context object.
+ **
+ ** Invariants to maintain in this class:
+ ** 1. _maxLowerBound keeps track of the maximal lower bound of the output of
+ **    the MaxConstraint;
+ ** 2. elements in _elements are feasible (wrt. variable bound);
+ ** 3. _f should not be in _element after transformToUseAuxVariables() was called.
  **/
 
 #ifndef __MaxConstraint_h__
@@ -160,8 +166,7 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      Represent the Max constraint using the aux variables.
     */
     void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
@@ -197,7 +202,6 @@ private:
     Set<unsigned> _elements;
     Set<unsigned> _initialElements;
 
-    bool _auxsInUse;
     Map<unsigned, unsigned> _auxToElement;
     Map<unsigned, unsigned> _elementToAux;
 
