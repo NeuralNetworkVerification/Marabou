@@ -166,7 +166,7 @@ public:
     /*
       Whether the constraint can contribute the SoI cost function.
     */
-    inline bool supportSoI() const
+    virtual inline bool supportSoI() const override
     {
         return true;
     }

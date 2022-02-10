@@ -165,7 +165,7 @@ public:
         {
         }
 
-        bool supportSoI() const { return false; };
+        virtual bool supportSoI() const override { return false; };
 
         String serializeToString() const
         {
