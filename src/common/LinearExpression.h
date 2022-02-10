@@ -39,6 +39,8 @@ public:
 
     double evaluate( const Map<unsigned, double> &assignment );
 
+    bool isZero();
+
     /*
       For debugging
     */

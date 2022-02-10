@@ -320,6 +320,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             _tableau->toggleOptimization( false );
             continue;
         }
+        /*
         catch ( ... )
         {
             _exitCode = Engine::ERROR;
@@ -331,6 +332,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
                                          mainLoopEnd ) );
             return false;
         }
+        */
     }
 }
 
@@ -2711,7 +2713,18 @@ bool Engine::performDeepSoILocalSearch()
     // All the linear constraints have been satisfied at this point.
     // Update the cost function
     _soiManager->initializePhasePattern();
-    minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
+
+    LinearExpression initialPhasePattern =
+        _soiManager->getCurrentSoIPhasePattern();
+
+    if ( initialPhasePattern.isZero() )
+    {
+        while ( !_smtCore.needToSplit() )
+            _smtCore.reportRejectedPhasePatternProposal();
+        return false;
+    }
+
+    minimizeHeuristicCost( initialPhasePattern );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
     // Always accept the first phase pattern.
