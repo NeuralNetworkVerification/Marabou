@@ -27,8 +27,9 @@ void PLConstraintScoreTracker::initialize( const List<PiecewiseLinearConstraint 
     reset();
     for ( const auto &constraint : plConstraints )
     {
-        _scores.insert( { constraint, 0 } );
-        _plConstraintToScore[constraint] = 0;
+        double score = ( constraint->supportSoI() ? 0 : 100 );
+        _scores.insert( { constraint, score } );
+        _plConstraintToScore[constraint] = score;
     }
 }
 
