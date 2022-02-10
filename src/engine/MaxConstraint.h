@@ -28,10 +28,18 @@
  ** Context object.
  **
  ** Invariants to maintain in this class:
- ** 1. _maxLowerBound keeps track of the maximal lower bound of the output of
+ ** 1. We are operating under the assumption that f >= element for each
+ **    element in _element, and f >= _maxValueofEliminatedVariables
+ ** 2. _maxLowerBound keeps track of the maximal lower bound of the output of
  **    the MaxConstraint;
- ** 2. elements in _elements are feasible (wrt. variable bound);
- ** 3. _f should not be in _element after transformToUseAuxVariables() was called.
+ ** 3. _phaseStatus is updated by notifyLowerBound(), notifyUpperBound(),
+       eliminateVariable();
+ ** 4. elements in _elements are feasible (wrt. variable bound) and
+ **    haveFeasibleEliminatedVariables are up-to-date. The size of _elements
+ **    and the haveFeasibleEliminatedVariables flag are updated only in
+ **    3 places: notifyLowerBound(), notifyUpperBound(), eliminateVariable().
+ ** 5. The constraint is _obsolete only when 1) all elements are eliminated
+ **     (handled by eliminateVariable()); 2) _f is eliminated.
  **/
 
 #ifndef __MaxConstraint_h__
@@ -235,6 +243,18 @@ private:
         return ( phase == MAX_PHASE_ELIMINATED )
                  ? MAX_PHASE_ELIMINATED
                  : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+    }
+
+    /*
+      Eliminate the case corresponding to the given input variable to Max.
+    */
+    inline void eliminateCase( unsigned variable )
+    {
+        ASSERT( _elements.exists( variable ) );
+        if ( _cdInfeasibleCases )
+            markInfeasible( variableToPhase( variable ) );
+        else
+            _elements.erase( variable );
     }
 
     /*
