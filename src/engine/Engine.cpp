@@ -2101,7 +2101,8 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSimulation()
 {
-    if ( _simulationSize == 0 || !_networkLevelReasoner )
+    if (  _simulationSize == 0 || !_networkLevelReasoner ||
+          _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE )
     {
         ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
         return;
