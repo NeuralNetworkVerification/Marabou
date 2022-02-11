@@ -64,7 +64,7 @@
 #include "context/context.h"
 
 class Equation;
-class IConstraintBoundTightener;
+class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
@@ -293,13 +293,6 @@ public:
     virtual String serializeToString() const = 0;
 
     /*
-      Register a constraint bound tightener. If a tightener is registered,
-      this piecewise linear constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
-
-    /*
       Return true if and only if this piecewise linear constraint supports
       the polarity metric
     */
@@ -347,10 +340,15 @@ public:
 
     /*
       Register a bound manager. If a bound manager is registered,
-      this piecewise linear constraint will inform the tightener whenever
+      the piecewise linear constraint will inform the manager whenever
       it discovers a tighter (entailed) bound.
     */
     void registerBoundManager( BoundManager *boundManager );
+
+    /*
+       Tableau replaces CBT until we can switch to the BM
+     */
+    void registerTableau( ITableau *tableau );
 
     /*
        Register context object. Necessary for lazy backtracking features - such
@@ -453,6 +451,8 @@ protected:
     Map<unsigned, double> _upperBounds;
 
     BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
 
@@ -473,8 +473,6 @@ protected:
       We pick the PL constraint with the highest score to branch.
      */
     double _score;
-
-    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection

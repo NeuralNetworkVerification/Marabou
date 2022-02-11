@@ -14,7 +14,6 @@
 
 #include "SigmoidConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "TranscendentalConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
@@ -106,12 +105,12 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
 
     setLowerBound( variable, bound );
 
-    if ( _constraintBoundTightener )
+    if ( _tableau )
     {
         if ( variable == _f )
-            _constraintBoundTightener->registerTighterLowerBound( _b, sigmoidInverse(bound) );
+            _tableau->tightenLowerBound( _b, sigmoidInverse(bound) );
         else if ( variable == _b )
-            _constraintBoundTightener->registerTighterLowerBound( _f, sigmoid(bound) );
+            _tableau->tightenLowerBound( _f, sigmoid(bound) );
     }
 }
 
@@ -127,12 +126,12 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
 
     setUpperBound( variable, bound );
 
-    if ( _constraintBoundTightener )
+    if ( _tableau )
     {
         if ( variable == _f )
-            _constraintBoundTightener->registerTighterUpperBound( _b, sigmoidInverse(bound) );
+            _tableau->tightenUpperBound( _b, sigmoidInverse(bound) );
         else if ( variable == _b )
-            _constraintBoundTightener->registerTighterUpperBound( _f, sigmoid(bound) );
+            _tableau->tightenUpperBound( _f, sigmoid(bound) );
     }
 }
 

@@ -115,7 +115,7 @@ public:
       this transcendental constraint will inform the tightener whenever
       it discovers a tighter (entailed) bound.
     */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
+    void registerTableau( ITableau *tableau );
 
 
     /**********************************************************************/
@@ -136,7 +136,7 @@ protected:
 
     BoundManager *_boundManager;
 
-    IConstraintBoundTightener *_constraintBoundTightener;
+    ITableau *_tableau;
 
     /*
       Statistics collection

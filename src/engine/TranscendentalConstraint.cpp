@@ -17,7 +17,7 @@
 
 TranscendentalConstraint::TranscendentalConstraint()
     : _boundManager( nullptr )
-    , _constraintBoundTightener( NULL )
+    , _tableau( nullptr )
     , _statistics( NULL )
 {
 }
@@ -34,7 +34,7 @@ void TranscendentalConstraint::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
-void TranscendentalConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
+void TranscendentalConstraint::registerTableau( ITableau *tableau )
 {
-    _constraintBoundTightener = tightener;
+    _tableau = tableau;
 }

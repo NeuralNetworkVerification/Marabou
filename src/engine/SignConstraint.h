@@ -72,7 +72,7 @@ public:
     void restoreState( const PiecewiseLinearConstraint *state ) override;
 
     /*
-      Register/unregister the constraint with a talbeau.
+      Register/unregister the constraint with a tableau.
      */
     void registerAsWatcher( ITableau *tableau ) override;
     void unregisterAsWatcher( ITableau *tableau ) override;

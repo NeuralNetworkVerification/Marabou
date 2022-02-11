@@ -49,7 +49,6 @@ Engine::Engine()
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
     , _exitCode( Engine::NOT_DONE )
-    , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
@@ -71,7 +70,7 @@ Engine::Engine()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
-    _constraintBoundTightener->setStatistics( &_statistics );
+    //TODO: newMeans of tracking CBT statistics
     _preprocessor.setStatistics( &_statistics );
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
@@ -1249,14 +1248,15 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
 
-    _tableau->registerToWatchAllVariables( _constraintBoundTightener );
-    _tableau->registerResizeWatcher( _constraintBoundTightener );
+    _tableau->registerToWatchAllVariables( _rowBoundTightener );
+    _tableau->registerResizeWatcher( _rowBoundTightener );
 
-    _constraintBoundTightener->setDimensions();
+    _rowBoundTightener->setDimensions();
 
-    // Register the constraint bound tightener to all the PL constraints
+    // Register the boundManager with all the PL constraints
     for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
-        plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
+      plConstraint->registerTableau( _tableau );
+      // TODO: transition to plConstraint->registerBoundManager( &_boundManager );
 
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
@@ -1660,7 +1660,6 @@ void Engine::restoreState( const EngineState &state )
     {
         // Make sure the data structures are initialized to the correct size
         _rowBoundTightener->setDimensions();
-        _constraintBoundTightener->setDimensions();
         adjustWorkMemorySize();
         _activeEntryStrategy->resizeHook( _tableau );
         _costFunctionManager->initialize();
@@ -1881,8 +1880,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         _rowBoundTightener->resetBounds();
     }
 
-    _constraintBoundTightener->resetBounds();
-
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
@@ -1917,21 +1914,22 @@ void Engine::applyAllRowTightenings()
     }
 }
 
+// This method becomes obsolete since bound updates should occur directly
 void Engine::applyAllConstraintTightenings()
 {
-    List<Tightening> entailedTightenings;
+    // List<Tightening> entailedTightenings;
 
-    _constraintBoundTightener->getConstraintTightenings( entailedTightenings );
+    // // _boundManager.getTightenings( entailedTightenings );
+    // // TODO: Meaningful pruning to take place
+    // for ( const auto &tightening : entailedTightenings )
+    // {
+    //     _statistics.incLongAttribute( Statistics::NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS );
 
-    for ( const auto &tightening : entailedTightenings )
-    {
-        _statistics.incLongAttribute( Statistics::NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS );
-
-        if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
-        else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
-    }
+    //     if ( tightening._type == Tightening::LB )
+    //         _tableau->tightenLowerBound( tightening._variable, tightening._value );
+    //     else
+    //         _tableau->tightenUpperBound( tightening._variable, tightening._value );
+    // }
 }
 
 void Engine::applyAllBoundTightenings()
@@ -2078,7 +2076,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
     _rowBoundTightener->clear();
-    _constraintBoundTightener->resetBounds();
+    //_constraintBoundTightener->resetBounds();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -2101,7 +2099,7 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
 
         _rowBoundTightener->clear();
-        _constraintBoundTightener->resetBounds();
+        //_constraintBoundTightener->resetBounds();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
@@ -2336,7 +2334,7 @@ void Engine::resetStatistics()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
-    _constraintBoundTightener->setStatistics( &_statistics );
+    //_constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
     _activeEntryStrategy->setStatistics( &_statistics );
 
@@ -2362,7 +2360,6 @@ void Engine::resetExitCode()
 
 void Engine::resetBoundTighteners()
 {
-    _constraintBoundTightener->resetBounds();
 
     if ( _lpSolverType == LPSolverType::NATIVE )
         _rowBoundTightener->resetBounds();
