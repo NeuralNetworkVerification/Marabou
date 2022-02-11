@@ -351,11 +351,25 @@ public:
 
         InputQuery ipq;
         ipq.setNumberOfVariables( 10 );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 10u );
+        TS_ASSERT_EQUALS( ipq.getEquations().size(), 0u );
         TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
                                   ( ipq ) );
-
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 18u );
+        TS_ASSERT_EQUALS( ipq.getEquations().size(), 8u ); // f >= x2...x9
 
+        auto equation = ipq.getEquations().begin();
+        for ( unsigned i = 0; i < 8; ++i )
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -1, i + 2); // max input
+            eq.addAddend( -1, 10 + i); // aux
+            eq._scalar = 0;
+            TS_ASSERT_EQUALS( eq, *equation );
+
+            ++equation;
+        }
         TS_ASSERT( max.constraintObsolete() );
     }
 
