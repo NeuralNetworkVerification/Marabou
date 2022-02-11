@@ -167,6 +167,14 @@ public:
     void addAuxiliaryEquations( InputQuery &inputQuery ) override;
 
     /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
+
+    /*
       Ask the piecewise linear constraint to add its cost term corresponding to
       the given phase to the cost function. The cost term for ReLU is:
         _f - _b for the active phase

@@ -145,6 +145,14 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return false;
+    }
+
+    /*
       Transform the disjunction into a disjunction where each disjunct only
       contains variable bounds.
     */

@@ -262,6 +262,11 @@ public:
                                                           &/* inputQuery */ ) {}
 
     /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual bool supportSoI() const { return false; };
+
+    /*
       Ask the piecewise linear constraint to add its cost term corresponding to
       the given phase to the cost function.
       Nothing should be added when the constraint is fixed or inactive.

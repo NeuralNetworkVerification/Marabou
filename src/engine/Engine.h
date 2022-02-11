@@ -671,6 +671,13 @@ private:
     void updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePattern,
                                          double costOfProposedPhasePattern );
 
+    /*
+      This is called when handling the case when the SoI is already 0 but
+      the PLConstraints not participating in the SoI are not satisfied.
+      In that case, we bump up the score of those non-participating
+      PLConstraints to promote them in the branching order.
+    */
+    void bumpUpPseudoImpactOfPLConstraintsNotInSoI();
 };
 
 #endif // __Engine_h__

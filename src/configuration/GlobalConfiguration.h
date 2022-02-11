@@ -31,6 +31,11 @@ public:
     //to non-linear constraint.
     static const bool USE_DEEPSOI_LOCAL_SEARCH;
 
+    // The quantity by which the score is bumped up for PLContraints not
+    // participating in the SoI. This promotes those constraints in the branching
+    // order.
+    static const double SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI;
+
     // Use the polarity metrics to decide which branch to take first in a case split
     // and how to repair a ReLU constraint.
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;

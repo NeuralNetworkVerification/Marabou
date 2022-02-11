@@ -90,6 +90,12 @@ void SumOfInfeasibilitiesManager::initializePhasePattern()
     {
         initializePhasePatternWithCurrentInputAssignment();
     }
+    else if ( _initializationStrategy
+              == SoIInitializationStrategy::CURRENT_ASSIGNMENT
+              || !_networkLevelReasoner )
+    {
+        initializePhasePatternWithCurrentAssignment();
+    }
     else
     {
         throw MarabouError
@@ -127,11 +133,29 @@ void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentInputAssignme
     for ( const auto &plConstraint : _plConstraints )
     {
         ASSERT( !_currentPhasePattern.exists( plConstraint ) );
-        if ( plConstraint->isActive() && !plConstraint->phaseFixed() )
+        if ( plConstraint->supportSoI() &&
+             plConstraint->isActive() && !plConstraint->phaseFixed() )
         {
             // Set the phase status corresponding to the current assignment.
             _currentPhasePattern[plConstraint] =
                 plConstraint->getPhaseStatusInAssignment( assignment );
+        }
+    }
+}
+
+void SumOfInfeasibilitiesManager::initializePhasePatternWithCurrentAssignment()
+{
+    obtainCurrentAssignment();
+
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        ASSERT( !_currentPhasePattern.exists( plConstraint ) );
+        if ( plConstraint->supportSoI() && plConstraint->isActive()
+             && !plConstraint->phaseFixed() )
+        {
+            // Set the phase status corresponding to the current assignment.
+            _currentPhasePattern[plConstraint] =
+                plConstraint->getPhaseStatusInAssignment( _currentAssignment );
         }
     }
 }
