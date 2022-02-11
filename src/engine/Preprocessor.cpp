@@ -494,7 +494,8 @@ bool Preprocessor::processConstraints()
 
     for ( auto &constraint : _preprocessed.getPiecewiseLinearConstraints() )
     {
-        for ( unsigned variable : constraint->getParticipatingVariables() )
+        auto participatingVars = constraint->getParticipatingVariables();
+        for ( unsigned variable : participatingVars )
         {
             constraint->notifyLowerBound( variable, getLowerBound( variable ) );
             constraint->notifyUpperBound( variable, getUpperBound( variable ) );
@@ -502,7 +503,6 @@ bool Preprocessor::processConstraints()
 
         List<Tightening> tightenings;
         constraint->getEntailedTightenings( tightenings );
-
         for ( const auto &tightening : tightenings )
         {
             if ( ( tightening._type == Tightening::LB ) &&
@@ -842,11 +842,17 @@ void Preprocessor::eliminateVariables()
     List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
     while ( constraint != constraints.end() )
     {
+        std::cout << "handling constraint" << std::endl;
         List<unsigned> participatingVariables = (*constraint)->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
+            std::cout << variable  << std::endl;
             if ( _fixedVariables.exists( variable ) )
+            {
+                std::cout << "need to eliminate"  << std::endl;
                 (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
+                std::cout << "eliminated"  << std::endl;
+            }
         }
 
         if ( (*constraint)->constraintObsolete() )
@@ -864,18 +870,18 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++constraint;
-	}
+    }
 
     // Let the remaining piecewise-lienar constraints know of any changes in indices.
     for ( const auto &constraint : constraints )
-	{
-            List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+    {
+        List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
-	}
+    }
 
     // Let the transcendental constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
@@ -904,18 +910,18 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++tsConstraint;
-	}
+    }
 
     // Let the remaining transcendental constraints know of any changes in indices.
     for ( const auto &tsConstraint : tsConstraints )
-	{
-		List<unsigned> participatingVariables = tsConstraint->getParticipatingVariables();
+    {
+        List<unsigned> participatingVariables = tsConstraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 tsConstraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
-	}
+    }
 
     // Let the NLR know of changes in indices and merged variables
     if ( _preprocessed._networkLevelReasoner )
