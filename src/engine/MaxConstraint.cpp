@@ -376,11 +376,11 @@ bool MaxConstraint::satisfied() const
     auto byAssignment = [&](const unsigned& a, const unsigned& b) {
                             return _assignment[a] < _assignment[b];
                         };
-    unsigned maxValue =  _assignment.get( *std::max_element( _elements.begin(),
-                                                             _elements.end(),
-                                                             byAssignment ) );
-    double fValue = _assignment.get( _f );
+    double maxValue =  _assignment.get( *std::max_element( _elements.begin(),
+                                                           _elements.end(),
+                                                           byAssignment ) );
     maxValue = FloatUtils::max( maxValue, _maxValueOfEliminatedPhases );
+    double fValue = _assignment.get( _f );
     return FloatUtils::areEqual( maxValue, fValue );
 }
 
@@ -672,15 +672,20 @@ void MaxConstraint::eliminateCase( unsigned variable )
 {
     ASSERT( _elements.exists( variable ) );
 
-    _elements.erase( variable );
-    if ( _elementToAux.exists( variable ) )
-    {
-        unsigned aux = _elementToAux[variable];
-        _elementToAux.erase( variable );
-        _auxToElement.erase( aux );
-    }
     if ( _cdInfeasibleCases )
+    {
         markInfeasible( variableToPhase( variable ) );
+    }
+    else
+    {
+        _elements.erase( variable );
+        if ( _elementToAux.exists( variable ) )
+        {
+            unsigned aux = _elementToAux[variable];
+            _elementToAux.erase( variable );
+            _auxToElement.erase( aux );
+        }
+    }
 }
 
 

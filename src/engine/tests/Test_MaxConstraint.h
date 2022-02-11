@@ -1564,7 +1564,6 @@ public:
 
     void test_get_entailed_tightenings_with_elimination()
     {
-        return;
         unsigned f = 1;
         Set<unsigned> elements;
 
@@ -1573,11 +1572,16 @@ public:
         elements.insert( 4 );
 
         MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 5 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
 
         // Eliminate variable x_4 = 2.5
-        //TS_ASSERT( !max.wereVariablesEliminated() );
+        TS_ASSERT( !max.getAllCases().exists( MAX_PHASE_ELIMINATED ) );
         max.eliminateVariable( 4, 2.5 );
-        ////TS_ASSERT( max.wereVariablesEliminated() );
+        TS_ASSERT( max.getAllCases().exists( MAX_PHASE_ELIMINATED ) );
 
         max.notifyLowerBound( 2, 1 );
         max.notifyUpperBound( 2, 8 );
@@ -1602,56 +1606,10 @@ public:
         TS_ASSERT_EQUALS( it->_variable, 1U );
         TS_ASSERT_EQUALS( it->_value, 2.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-
-        // From here, the test is going to run tests for the case that f is included in elements.
-        // also here - with a value eliminated
-
-        Set<unsigned> elements2;
-        elements2.insert( 1 );
-        elements2.insert( 2 );
-        elements2.insert( 3 );
-        // add variable to be eliminated
-        elements2.insert( 4 );
-
-        MaxConstraint max2( f, elements2 );
-
-        // No lower bound for 1
-        max2.notifyUpperBound( 1, 7 );
-
-        max2.notifyLowerBound( 2, 1 );
-        max2.notifyUpperBound( 2, 8 );
-
-        // No lower bound for 3
-        max2.notifyUpperBound( 3, 6 );
-
-        // Eliminate variable x_4 = 9.5
-        //TS_ASSERT( !max2.wereVariablesEliminated() );
-        max2.eliminateVariable( 4, 9.5 );
-        //TS_ASSERT( max2.wereVariablesEliminated() );
-
-        List<Tightening> tightenings2;
-        TS_ASSERT_THROWS_NOTHING( max2.getEntailedTightenings( tightenings2 ) );
-
-        // Expect f to be in the range [1, 7], x2 to be in the range [1, 7]
-        TS_ASSERT_EQUALS( tightenings2.size(), 2U );
-        it = tightenings2.begin();
-
-        // Update X_2_UB = 7
-        TS_ASSERT_EQUALS( it->_variable, 2U );
-        TS_ASSERT_EQUALS( it->_value, 7 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-
-        ++it;
-
-        // Update f_LB = 9.5
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT_EQUALS( it->_value, 9.5 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
     }
 
     void test_get_entailed_tightenings_with_elimination_with_bound_manager()
     {
-        return;
         unsigned f = 1;
         Set<unsigned> elements;
 
@@ -1660,15 +1618,21 @@ public:
         elements.insert( 4 );
 
         MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 5 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
+
         Context context;
         BoundManager boundManager( context );
         boundManager.initialize( 11 );
         max.registerBoundManager( &boundManager );
 
         // Eliminate variable x_4 = 2.5
-        //TS_ASSERT( !max.wereVariablesEliminated() );
+        TS_ASSERT( !max.getAllCases().exists( MAX_PHASE_ELIMINATED ) );
         max.eliminateVariable( 4, 2.5 );
-        ////TS_ASSERT( max.wereVariablesEliminated() );
+        TS_ASSERT( max.getAllCases().exists( MAX_PHASE_ELIMINATED ) );
 
         max.notifyLowerBound( 2, 1 );
         max.notifyUpperBound( 2, 8 );
@@ -1693,60 +1657,10 @@ public:
         TS_ASSERT_EQUALS( it->_variable, 1U );
         TS_ASSERT_EQUALS( it->_value, 2.5 );
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-
-        // From here, the test is going to run tests for the case that f is included in elements.
-        // also here - with a value eliminated
-
-        Set<unsigned> elements2;
-        elements2.insert( 1 );
-        elements2.insert( 2 );
-        elements2.insert( 3 );
-        // add variable to be eliminated
-        elements2.insert( 4 );
-
-        MaxConstraint max2( f, elements2 );
-        BoundManager boundManager2( context );
-        boundManager2.initialize( 11 );
-        max2.registerBoundManager( &boundManager2 );
-
-
-        // No lower bound for 1
-        max2.notifyUpperBound( 1, 7 );
-
-        max2.notifyLowerBound( 2, 1 );
-        max2.notifyUpperBound( 2, 8 );
-
-        // No lower bound for 3
-        max2.notifyUpperBound( 3, 6 );
-
-        // Eliminate variable x_4 = 9.5
-        ////TS_ASSERT( !max2.wereVariablesEliminated() );
-        max2.eliminateVariable( 4, 9.5 );
-        ////TS_ASSERT( max2.wereVariablesEliminated() );
-
-        List<Tightening> tightenings2;
-        TS_ASSERT_THROWS_NOTHING( max2.getEntailedTightenings( tightenings2 ) );
-
-        // Expect f to be in the range [1, 7], x2 to be in the range [1, 7]
-        TS_ASSERT_EQUALS( tightenings2.size(), 2U );
-        it = tightenings2.begin();
-
-        // Update X_2_UB = 7
-        TS_ASSERT_EQUALS( it->_variable, 2U );
-        TS_ASSERT_EQUALS( it->_value, 7 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-
-        ++it;
-
-        // Update f_LB = 9.5
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT_EQUALS( it->_value, 9.5 );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
     }
 
     void test_constraint_satisfied_after_elimination()
     {
-        return;
         unsigned f = 1;
         Set<unsigned> elements;
 
@@ -1754,10 +1668,15 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 10 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 18u );
 
         List<unsigned> participatingVariables;
         TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticipatingVariables() );
-        TS_ASSERT_EQUALS( participatingVariables.size(), 9U );
+        TS_ASSERT_EQUALS( participatingVariables.size(), 17U );
 
         auto it = participatingVariables.begin();
         for ( unsigned i = 1; i < 10; ++i, ++it )
@@ -1768,13 +1687,13 @@ public:
 
         // Constraint not satisfied
         TS_ASSERT( !max.satisfied() );
-
         // Eliminate variable x_4 = 9.5
-        ////TS_ASSERT( !max.wereVariablesEliminated() );
+        TS_ASSERT( !max.getAllCases().exists( MAX_PHASE_ELIMINATED ) );
         max.eliminateVariable( 4, 9.5 );
-        //////TS_ASSERT( max.wereVariablesEliminated() );
+        TS_ASSERT( max.getAllCases().exists( MAX_PHASE_ELIMINATED ) );
 
         // Constraint not satisfied
+        TS_ASSERT( !max.satisfied() );
         max.notifyVariableValue( f, 9 );
         TS_ASSERT( !max.satisfied() );
 
@@ -1785,7 +1704,6 @@ public:
 
     void test_initialization_of_CDOs()
     {
-        return;
         Context context;
         unsigned f = 1;
         Set<unsigned> elements;
@@ -1794,6 +1712,10 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 10 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
 
         TS_ASSERT_EQUALS( max.getContext(), static_cast<Context*>( nullptr ) );
         TS_ASSERT_EQUALS( max.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
@@ -1822,7 +1744,6 @@ public:
      */
     void test_max_get_cases()
     {
-        return;
         unsigned f = 1;
         Set<unsigned> elements;
 
@@ -1830,15 +1751,14 @@ public:
             elements.insert( i );
 
         MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 10 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
 
         List<PhaseStatus> cases = max.getAllCases();
 
         TS_ASSERT_EQUALS( cases.size(), elements.size() );
-
-        for ( auto e : elements )
-        {
-            TS_ASSERT_DIFFERS( std::find( elements.begin(), elements.end(), e ), elements.end() );
-        }
 
         List<PiecewiseLinearCaseSplit> splits = max.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), elements.size() );
@@ -1847,9 +1767,8 @@ public:
         for ( auto c : cases )
         {
             split = max.getCaseSplit( c );
-            TS_ASSERT_DIFFERS( std::find( splits.begin(), splits.end(), split ), splits.end() );
+            TS_ASSERT( splits.exists( split ) );
         }
-
 
         // TODO: Test cases when variables are eliminated
     }
@@ -1859,7 +1778,6 @@ public:
      */
     void test_max_context_dependent_state()
     {
-        return;
         Context context;
 
         unsigned f = 1;
@@ -1870,9 +1788,11 @@ public:
 
         TestMaxConstraint max( f, elements );
 
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 5 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
 
-        // During pre-processing we eliminate some variables
-        // max.eliminateVariable( 5, 4 );
 
         // In search phase, we initialize context-dependent structures
         max.initializeCDOs( &context );
@@ -1918,7 +1838,6 @@ public:
 
     void test_max_context_dependent_state_with_elimination()
     {
-        return;
         // Case 2 - with eliminated variables during pre-processing
         Context context;
 
@@ -1929,8 +1848,14 @@ public:
             elements.insert( i );
 
         TestMaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 6 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 10u );
+
         BoundManager bm( context );
-        bm.initialize( 7 );
+        bm.initialize( 10 );
         max.registerBoundManager( &bm );
 
         // During pre-processing we eliminate some variables
