@@ -558,7 +558,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
 void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 {
     bool fInInput = false;
-    for ( auto element : _elements )
+    for ( const auto &element : _elements )
     {
         // If element is equal to _f, skip this step.
         // The reason is to avoid adding equations like `1.00x00 -1.00x00 -1.00x01 = 0.00`.
@@ -567,7 +567,6 @@ void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
             fInInput = true;
             continue;
         }
-
         // Create an aux variable
         unsigned auxVariable = inputQuery.getNumberOfVariables();
         inputQuery.setNumberOfVariables( auxVariable + 1 );
@@ -588,9 +587,15 @@ void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
     }
     if ( fInInput )
     {
+        List<unsigned> toRemove;
         for ( const auto &element : _elements )
-            if ( element != _f )
-                eliminateCase( element );
+        {
+            if ( element == _f )
+                continue;
+            toRemove.append( element );
+        }
+        for ( const auto &element : toRemove )
+            eliminateCase( element );
         _obsolete = true;
     }
 }
