@@ -164,7 +164,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         if ( FloatUtils::isPositive( value ) )
             eliminateCase( _auxToElement[variable] );
     }
-    else
+    else if ( _f == variable || _elements.exists( variable ) )
     {
         // If the variable is either in _element or _f. The only case that this is
         // going to eliminate case is that the new lowerBound is greater than the
