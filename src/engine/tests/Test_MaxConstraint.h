@@ -2041,4 +2041,27 @@ public:
                           MAX_PHASE_ELIMINATED );
     }
 
+    void test_get_all_cases()
+    {
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 5; ++i )
+            elements.insert( i );
+
+        MaxConstraint max( f, elements );
+
+        for ( unsigned i = 1; i < 5; ++i )
+        {
+            max.notifyLowerBound( i, 1 );
+            max.notifyUpperBound( i, 2 );
+        }
+
+        List<PhaseStatus> phases;
+        TS_ASSERT_THROWS_NOTHING( phases = max.getAllCases() );
+
+        max.notifyVariableValue( 4, 1.8 );
+
+        TS_ASSERT_THROWS_NOTHING( phases = max.getAllCases() );
+    }
 };
