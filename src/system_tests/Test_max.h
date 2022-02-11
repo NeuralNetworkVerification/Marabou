@@ -166,7 +166,7 @@ public:
 		inputQuery.addPiecewiseLinearConstraint( max2 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, false ) )
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, true ) )
 
         TS_ASSERT_THROWS_NOTHING ( engine.solve() );
 
