@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "FloatUtils.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
 #include "MockTableau.h"
@@ -2063,5 +2064,94 @@ public:
         max.notifyVariableValue( 4, 1.8 );
 
         TS_ASSERT_THROWS_NOTHING( phases = max.getAllCases() );
+    }
+
+    void test_tightening_from_eliminated_variable1()
+    {
+        // Elimination of input variable should update the lower bound of
+        // the output variable.
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 5; ++i )
+            elements.insert( i );
+
+        MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 5 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
+
+        for ( unsigned i = 2; i < 5; ++i )
+        {
+            max.notifyLowerBound( i, 1 );
+            max.notifyUpperBound( i, 2 );
+        }
+
+        List<Tightening> tightenings;
+        max.getEntailedTightenings( tightenings );
+        double lowerBound = FloatUtils::negativeInfinity();
+        for ( const auto &t : tightenings )
+            if ( t._variable == f && t._type == Tightening::LB &&
+                 t._value > lowerBound )
+                lowerBound = t._value;
+        TS_ASSERT_EQUALS( lowerBound, 1 );
+
+        tightenings.clear();
+        // Eliminate some input variable.
+        TS_ASSERT_THROWS_NOTHING( max.eliminateVariable( 2, 1.5 ) );
+        max.getEntailedTightenings( tightenings );
+
+        lowerBound = FloatUtils::negativeInfinity();
+        for ( const auto &t : tightenings )
+            if ( t._variable == f && t._type == Tightening::LB &&
+                 t._value > lowerBound )
+                lowerBound = t._value;
+        TS_ASSERT_EQUALS( lowerBound, 1.5 );
+    }
+
+    void test_tightening_from_eliminated_variable2()
+    {
+        // Elimination of input variable should *not* update the upper bound of
+        // the output variable.
+        unsigned f = 1;
+        Set<unsigned> elements;
+
+        for ( unsigned i = 2; i < 5; ++i )
+            elements.insert( i );
+
+        MaxConstraint max( f, elements );
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 5 );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded
+                                  ( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
+
+        for ( unsigned i = 2; i < 5; ++i )
+        {
+            max.notifyLowerBound( i, 1 );
+            max.notifyUpperBound( i, 2 );
+        }
+
+        List<Tightening> tightenings;
+        max.getEntailedTightenings( tightenings );
+        double upperBound = FloatUtils::infinity();
+        for ( const auto &t : tightenings )
+            if ( t._variable == f && t._type == Tightening::UB &&
+                 t._value < upperBound )
+                upperBound = t._value;
+        TS_ASSERT_EQUALS( upperBound, 2 );
+
+        tightenings.clear();
+        // Eliminate some input variable.
+        TS_ASSERT_THROWS_NOTHING( max.eliminateVariable( 2, 1.5 ) );
+        max.getEntailedTightenings( tightenings );
+
+        for ( const auto &t : tightenings )
+            if ( t._variable == f && t._type == Tightening::UB &&
+                 t._value < upperBound )
+                upperBound = t._value;
+        TS_ASSERT_EQUALS( upperBound, 2 );
     }
 };
