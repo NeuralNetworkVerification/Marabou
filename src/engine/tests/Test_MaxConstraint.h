@@ -358,6 +358,8 @@ public:
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 18u );
         TS_ASSERT_EQUALS( ipq.getEquations().size(), 8u ); // f >= x2...x9
 
+        // Check that correct equations are added to input query
+        // And aux variables have correct lower bounds (0)
         auto equation = ipq.getEquations().begin();
         for ( unsigned i = 0; i < 8; ++i )
         {
@@ -367,9 +369,11 @@ public:
             eq.addAddend( -1, 10 + i); // aux
             eq._scalar = 0;
             TS_ASSERT_EQUALS( eq, *equation );
+            TS_ASSERT_EQUALS( ipq.getLowerBound( 10 + i ), 0 );
 
             ++equation;
         }
+
         TS_ASSERT( max.constraintObsolete() );
     }
 
