@@ -28,16 +28,17 @@
  ** Context object.
  **
  ** Invariants to maintain in this class:
- ** 1. We are operating under the assumption that f >= element for each
+ ** 1. All methods called after transformToUseAuxVariablesIfNeeded
+ **    are operating under the assumption that f >= element for each
  **    element in _element, and f >= _maxValueofEliminatedVariables
  ** 2. _maxLowerBound keeps track of the maximal lower bound of the output of
- **    the MaxConstraint;
+ **    the MaxConstraint, it can be updated by notifyLowerBound(),
+ **    notifyUpperBound(), eliminateVariable()
  ** 3. _phaseStatus is updated by notifyLowerBound(), notifyUpperBound(),
-       eliminateVariable();
- ** 4. elements in _elements are feasible (wrt. variable bound) and
- **    haveFeasibleEliminatedVariables are up-to-date. The size of _elements
- **    and the haveFeasibleEliminatedVariables flag are updated only in
- **    3 places: notifyLowerBound(), notifyUpperBound(), eliminateVariable().
+       eliminateVariable().
+ ** 4. elements in _elements are feasible (wrt. current variable bounds) and
+ **    _haveFeasibleEliminatedVariables are up-to-date. They are updated by
+ **     notifyLowerBound(), notifyUpperBound(), eliminateVariable().
  ** 5. The constraint is _obsolete only when 1) all elements are eliminated
  **     (handled by eliminateVariable()); 2) _f is eliminated.
  **/
