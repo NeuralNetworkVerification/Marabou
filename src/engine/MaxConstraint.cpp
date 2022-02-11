@@ -113,10 +113,11 @@ void MaxConstraint::restoreState( const PiecewiseLinearConstraint *state )
 void MaxConstraint::registerAsWatcher( ITableau *tableau )
 {
     for ( unsigned element : _elements )
+    {
         tableau->registerToWatchVariable( this, element );
-
-    for ( unsigned element : _elements )
-        tableau->registerToWatchVariable( this, _elementToAux[element] );
+        if ( _elementToAux.exists( element ) )
+            tableau->registerToWatchVariable( this, _elementToAux[element] );
+    }
 
     if ( !_elements.exists( _f ) )
         tableau->registerToWatchVariable( this, _f );
@@ -125,10 +126,11 @@ void MaxConstraint::registerAsWatcher( ITableau *tableau )
 void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     for ( unsigned element : _initialElements )
+    {
         tableau->unregisterToWatchVariable( this, element );
-
-    for ( unsigned element : _initialElements )
-        tableau->unregisterToWatchVariable( this, _elementToAux[element] );
+        if ( _elementToAux.exists( element ) )
+            tableau->unregisterToWatchVariable( this, _elementToAux[element] );
+    }
 
     if ( !_initialElements.exists( _f ) )
         tableau->unregisterToWatchVariable( this, _f );
@@ -243,15 +245,17 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         {
             for ( const auto &element : _elements )
                 if ( element != variable )
-                    _elements.erase( _auxToElement[variable] );
+                    eliminateCase( _auxToElement[variable] );
 
             _haveFeasibleEliminatedPhases = false;
         }
     }
-    else
+    else if ( _elements.exists( variable ) )
     {
-        // _f and every element in _elements should
-        // be greater than _maxLowerBound, so no case can be eliminated
+        // If the upper bound of this variable is below the _maxLowerBound,
+        // this case is infeasible.
+        if ( FloatUtils::lt( value, _maxLowerBound ) )
+            eliminateCase( variable );
     }
 
     if ( phaseFixed() )
@@ -397,9 +401,6 @@ List<PiecewiseLinearConstraint::Fix> MaxConstraint::getSmartFixes( ITableau * ) 
 
 List<PhaseStatus> MaxConstraint::getAllCases() const
 {
-    if ( phaseFixed() )
-        throw MarabouError( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
-
     List<PhaseStatus> cases;
     for ( unsigned element : _elements )
         cases.append( variableToPhase( element ) );
@@ -412,10 +413,6 @@ List<PhaseStatus> MaxConstraint::getAllCases() const
 
 List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 {
-    if ( phaseFixed() )
-        throw MarabouError
-            ( MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
-
     List<PiecewiseLinearCaseSplit> splits;
 
     for ( const auto &phase : getAllCases() )
@@ -442,10 +439,6 @@ PiecewiseLinearCaseSplit MaxConstraint::getImpliedCaseSplit() const
     PhaseStatus phase = getPhaseStatus();
 
     ASSERT( phase != PHASE_NOT_FIXED );
-
-    if ( phase == MAX_PHASE_ELIMINATED )
-    {
-    }
 
     return getCaseSplit( phase );
 }
@@ -524,10 +517,9 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
     else if ( _elements.exists( var ) )
     {
-        _elements.erase( var );
-        unsigned aux = _elementToAux[var];
-        _elementToAux.erase( var );
-        _auxToElement.erase( aux );
+        eliminateCase( var );
+
+        _maxLowerBound = FloatUtils::max( value, _maxLowerBound );
 
         _maxValueOfEliminatedPhases = FloatUtils::max
             ( value, _maxValueOfEliminatedPhases );
@@ -547,9 +539,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         }
         else
         {
-            _elements.erase( currentElement );
-            _elementToAux.erase( currentElement );
-            _auxToElement.erase( var );
+            // The case corresponding to aux is infeasible.
+            eliminateCase( currentElement );
         }
     }
 
@@ -564,13 +555,14 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
 
 void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 {
+    bool fInInput = false;
     for ( auto element : _elements )
     {
         // If element is equal to _f, skip this step.
         // The reason is to avoid adding equations like `1.00x00 -1.00x00 -1.00x01 = 0.00`.
         if ( element == _f )
         {
-            _obsolete = true;
+            fInInput = true;
             continue;
         }
 
@@ -591,6 +583,13 @@ void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 
         _elementToAux[element] = auxVariable;
         _auxToElement[auxVariable] = element;
+    }
+    if ( fInInput )
+    {
+        for ( const auto &element : _elements )
+            if ( element != _f )
+                eliminateCase( element );
+        _obsolete = true;
     }
 }
 
@@ -668,6 +667,22 @@ String MaxConstraint::serializeToString() const
 
     return output;
 }
+
+void MaxConstraint::eliminateCase( unsigned variable )
+{
+    ASSERT( _elements.exists( variable ) );
+
+    _elements.erase( variable );
+    if ( _elementToAux.exists( variable ) )
+    {
+        unsigned aux = _elementToAux[variable];
+        _elementToAux.erase( variable );
+        _auxToElement.erase( aux );
+    }
+    if ( _cdInfeasibleCases )
+        markInfeasible( variableToPhase( variable ) );
+}
+
 
 bool MaxConstraint::haveOutOfBoundVariables() const
 {

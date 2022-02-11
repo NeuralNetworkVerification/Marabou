@@ -248,14 +248,7 @@ private:
     /*
       Eliminate the case corresponding to the given input variable to Max.
     */
-    inline void eliminateCase( unsigned variable )
-    {
-        ASSERT( _elements.exists( variable ) );
-        if ( _cdInfeasibleCases )
-            markInfeasible( variableToPhase( variable ) );
-        else
-            _elements.erase( variable );
-    }
+    void eliminateCase( unsigned variable );
 
     /*
       Return true iff f or the elements are not all within bounds.
