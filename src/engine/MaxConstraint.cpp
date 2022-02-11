@@ -243,9 +243,10 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         */
         if ( FloatUtils::isZero( value ) )
         {
+            unsigned currentElement = _auxToElement[variable];
             for ( const auto &element : _elements )
-                if ( element != variable )
-                    eliminateCase( _auxToElement[variable] );
+                if ( element != currentElement )
+                    eliminateCase( element );
 
             _haveFeasibleEliminatedPhases = false;
         }
@@ -492,6 +493,9 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _elementToAux.erase( oldIndex );
         _elementToAux[newIndex] = auxVar;
         _auxToElement[auxVar] = newIndex;
+
+        if ( _phaseStatus == variableToPhase( oldIndex ) )
+            _phaseStatus = variableToPhase( newIndex ) ;
     }
     else
     {
@@ -527,11 +531,9 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _haveFeasibleEliminatedPhases =
             FloatUtils::gte( _maxValueOfEliminatedPhases, _maxLowerBound );
     }
-    else
+    else if ( _auxToElement.exists( var ) )
     {
-        // Must be aux var
-        ASSERT( _auxToElement.exists( var ) &&
-                FloatUtils::gte( value, 0 ) );
+        // Aux var
         unsigned currentElement = _auxToElement[var];
         if ( FloatUtils::isZero( value ) )
         {
@@ -670,8 +672,6 @@ String MaxConstraint::serializeToString() const
 
 void MaxConstraint::eliminateCase( unsigned variable )
 {
-    ASSERT( _elements.exists( variable ) );
-
     if ( _cdInfeasibleCases )
     {
         markInfeasible( variableToPhase( variable ) );
