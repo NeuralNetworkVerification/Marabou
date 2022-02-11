@@ -904,18 +904,18 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++constraint;
-	}
+    }
 
     // Let the remaining piecewise-lienar constraints know of any changes in indices.
     for ( const auto &constraint : constraints )
-	{
-            List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+    {
+        List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
-	}
+    }
 
     // Let the transcendental constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
@@ -944,7 +944,7 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++tsConstraint;
-	}
+    }
 
     // Let the remaining transcendental constraints know of any changes in indices.
     for ( const auto &tsConstraint : tsConstraints )
