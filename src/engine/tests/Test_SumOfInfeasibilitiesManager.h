@@ -248,6 +248,9 @@ public:
         tableau.nextValues[4] = 2;
         tableau.nextValues[5] = 2;
         tableau.nextValues[6] = 2;
+        tableau.nextValues[7] = 2;
+        tableau.nextValues[8] = 1;
+        tableau.nextValues[9] = 0;
 
         plConstraints[0]->notifyVariableValue( 0, -1 );
         plConstraints[0]->notifyVariableValue( 1, 0 );
