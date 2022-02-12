@@ -35,7 +35,10 @@
 #include <random>
 
 Engine::Engine()
-    : _rowBoundTightener( *_tableau )
+    : _context()
+    , _boundManager( _context )
+    , _tableau( _boundManager )
+    , _rowBoundTightener( *_tableau )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )

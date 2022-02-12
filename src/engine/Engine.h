@@ -22,6 +22,7 @@
 #include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
 #include "BlandsRule.h"
+#include "BoundManager.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
@@ -42,7 +43,9 @@
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 
+#include <context/context.h>
 #include <atomic>
+
 
 #ifdef _WIN32
 #undef ERROR
@@ -54,6 +57,9 @@ class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
 class String;
+
+
+using CVC4::context::Context;
 
 class Engine : public IEngine, public SignalHandler::Signalable
 {
@@ -223,6 +229,19 @@ private:
       access to the explicit basis matrix.
     */
     void explicitBasisBoundTightening();
+
+    /*
+       Context is the central object that manages memory and back-tracking
+       across context-dependent components - SMTCore,
+       PiecewiseLinearConstraints, BoundManager, etc.
+     */
+    Context _context;
+
+    /*
+       BoundManager is the centralized context-dependent object that stores
+       derived bounds.
+     */
+    BoundManager _boundManager;
 
     /*
       Collect and print various statistics.
@@ -615,7 +634,7 @@ private:
 
     /*
       Call MILP bound tightening for a single layer.
-    */    
+    */
     void performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex );
 
     /*
@@ -681,11 +700,3 @@ private:
 };
 
 #endif // __Engine_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

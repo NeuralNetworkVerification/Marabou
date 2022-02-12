@@ -16,6 +16,8 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include "BoundManager.h"
+#include "context/context.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
@@ -45,6 +47,9 @@ public:
         lastCostFunctionManager = NULL;
 
         nextLinearlyDependentResult = false;
+
+        CVC4::context::Context ctx;
+        _boundManager = new BoundManager( ctx );
     }
 
     ~MockTableau()
@@ -78,10 +83,15 @@ public:
             delete[] nextCostFunction;
             nextCostFunction = NULL;
         }
+
+        if ( _boundManager )
+        {
+            delete _boundManager;
+        }
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
     List<unsigned> mockCandidates;
     unsigned mockEnteringVariable;
@@ -95,18 +105,18 @@ public:
         mockEnteringVariable = nonBasic;
     }
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     bool setDimensionsCalled;
     unsigned lastM;
@@ -598,6 +608,12 @@ public:
     }
 
     void postContextPopHook() {}
+
+    BoundManager *_boundManager;
+    BoundManager &getBoundManager() const
+    {
+        return *_boundManager;
+    }
 };
 
 #endif // __MockTableau_h__

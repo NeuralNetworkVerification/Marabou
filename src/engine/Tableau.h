@@ -37,7 +37,7 @@ class TableauState;
 class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
-    Tableau();
+    Tableau( BoundManager &boundManager );
     ~Tableau();
 
     /*
@@ -152,6 +152,8 @@ public:
     */
     const double *getLowerBounds() const;
     const double *getUpperBounds() const;
+
+    BoundManager &getBoundManager() const { return _boundManager; }
 
     /*
       Recomputes bound valid status for all variables.
@@ -461,6 +463,11 @@ public:
      */
     void postContextPopHook() { computeBasicStatus(); };
 
+    /*
+       Enables use of BoundManager to store Tableau bounds
+     */
+    void enableBoundManager() { _useBoundManager = true; };
+
 private:
     /*
       Variable watchers
@@ -473,6 +480,18 @@ private:
       Resize watchers
     */
     List<ResizeWatcher *> _resizeWatchers;
+
+    /*
+       BoundManager object stores bounds of all variables.
+     */
+    BoundManager &_boundManager;
+
+    /*
+       Flag to indicate whether the BoundManager should be used to manage
+       bounds. Temporary flag to enable updating class signatures without using
+       the features until they are ready
+     */
+    bool _useBoundManager; 
 
     /*
       The dimensions of matrix A
@@ -556,12 +575,6 @@ private:
     */
     double *_lowerBounds;
     double *_upperBounds;
-
-    /*
-       BoundManager object stores bounds of all variables.
-       NOT YET IN USE
-     */
-    BoundManager *_boundManager;
 
     /*
       Whether all variables have valid bounds (l <= u).

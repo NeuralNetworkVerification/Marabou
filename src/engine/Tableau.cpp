@@ -32,9 +32,11 @@
 
 #include <string.h>
 
-Tableau::Tableau()
-    : _n( 0 )
-    , _m( 0 )
+Tableau::Tableau( BoundManager &boundManager )
+    : _boundManager( boundManager )
+    , _useBoundManager( false )
+    , _n ( 0 )
+    , _m ( 0 )
     , _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _sparseRowsOfA( NULL )
@@ -53,7 +55,6 @@ Tableau::Tableau()
     , _nonBasicAssignment( NULL )
     , _lowerBounds( NULL )
     , _upperBounds( NULL )
-    , _boundManager( nullptr )
     , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
@@ -474,8 +475,8 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
 void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    if ( _boundManager !=  nullptr )
-        _boundManager->setLowerBound( variable, value );
+    if ( _useBoundManager )
+        _boundManager.setLowerBound( variable, value );
     else
         _lowerBounds[variable] = value;
     notifyLowerBound( variable, value );
@@ -485,8 +486,8 @@ void Tableau::setLowerBound( unsigned variable, double value )
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    if ( _boundManager !=  nullptr )
-        _boundManager->setUpperBound( variable, value );
+    if ( _useBoundManager )
+        _boundManager.setUpperBound( variable, value );
     else
         _upperBounds[variable] = value;
     notifyUpperBound( variable, value );
@@ -496,14 +497,14 @@ void Tableau::setUpperBound( unsigned variable, double value )
 double Tableau::getLowerBound( unsigned variable ) const
 {
     ASSERT( variable < _n );
-    return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( variable )
+    return ( _useBoundManager ) ? _boundManager.getLowerBound( variable )
                                         : _lowerBounds[variable];
 }
 
 double Tableau::getUpperBound( unsigned variable ) const
 {
     ASSERT( variable < _n );
-    return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( variable )
+    return ( _useBoundManager ) ? _boundManager.getUpperBound( variable )
                                         : _upperBounds[variable];
 }
 
@@ -2645,11 +2646,3 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
 
     return true;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
