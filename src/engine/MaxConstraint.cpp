@@ -657,7 +657,9 @@ PhaseStatus MaxConstraint::getPhaseStatusInAssignment( const Map<unsigned, doubl
     unsigned largestVariable =  *std::max_element( _elements.begin(),
                                                    _elements.end(),
                                                    byAssignment );
-    if ( FloatUtils::lt( assignment[largestVariable], assignment[_f] ) )
+    double value = assignment[largestVariable];
+    if ( _haveFeasibleEliminatedPhases &&
+         FloatUtils::lt( value, _maxValueOfEliminatedPhases ) )
         return MAX_PHASE_ELIMINATED;
     else
         return variableToPhase( largestVariable );
