@@ -112,6 +112,13 @@ public:
         relu2->notifyLowerBound( 3, 0 );
         relu3->notifyLowerBound( 5, 0 );
 
+        // Aux vars are 7, 8, 9
+        for ( unsigned aux = 7; aux <= 9; ++aux )
+        {
+            max1->notifyLowerBound( aux, 0 );
+            max1->notifyUpperBound( aux, 3 );
+        }
+
         TS_ASSERT( ipq.constructNetworkLevelReasoner() );
     }
 
@@ -145,6 +152,10 @@ public:
         plConstraints[3]->notifyVariableValue( 3, 1 );
         plConstraints[3]->notifyVariableValue( 5, 2 );
         plConstraints[3]->notifyVariableValue( 6, 2 );
+        plConstraints[3]->notifyVariableValue( 7, 2 );
+        plConstraints[3]->notifyVariableValue( 8, 1 );
+        plConstraints[3]->notifyVariableValue( 9, 0 );
+
 
         // The input assignment is [-1, 1, 2], the output of the max should be 2
         TS_ASSERT_THROWS_NOTHING
@@ -206,6 +217,9 @@ public:
         plConstraints[3]->notifyVariableValue( 1, 1 );
         plConstraints[3]->notifyVariableValue( 5, 0 );
         plConstraints[3]->notifyVariableValue( 6, 2 );
+        plConstraints[3]->notifyVariableValue( 7, 1 );
+        plConstraints[3]->notifyVariableValue( 9, 0 );
+
 
         // The input assignment is [1, 2, -1], the output of the max constraint
         // should be 2
@@ -262,6 +276,10 @@ public:
         plConstraints[3]->notifyVariableValue( 3, 1 );
         plConstraints[3]->notifyVariableValue( 5, 2 );
         plConstraints[3]->notifyVariableValue( 6, 2 );
+        plConstraints[3]->notifyVariableValue( 7, 2 );
+        plConstraints[3]->notifyVariableValue( 8, 1 );
+        plConstraints[3]->notifyVariableValue( 9, 0 );
+
 
         // The input assignment is [-1, 1, 2], the output of the max should be 2
         TS_ASSERT_THROWS_NOTHING
@@ -305,6 +323,9 @@ public:
         plConstraints[3]->notifyVariableValue( 3, 2 );
         plConstraints[3]->notifyVariableValue( 5, 2 );
         plConstraints[3]->notifyVariableValue( 6, 2 );
+        plConstraints[3]->notifyVariableValue( 7, 2 );
+        plConstraints[3]->notifyVariableValue( 8, 0 );
+        plConstraints[3]->notifyVariableValue( 9, 0 );
 
         Options::get()->setString
             ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -413,6 +434,9 @@ public:
         plConstraints[3]->notifyVariableValue( 3, 2 );
         plConstraints[3]->notifyVariableValue( 5, 2 );
         plConstraints[3]->notifyVariableValue( 6, 2.5 );
+        plConstraints[3]->notifyVariableValue( 7, 2 );
+        plConstraints[3]->notifyVariableValue( 8, 0.5 );
+        plConstraints[3]->notifyVariableValue( 9, 0.5 );
 
         tableau.nextValues[0] = -2;
         tableau.nextValues[1] = 0.5;
@@ -580,6 +604,9 @@ public:
         plConstraints[3]->notifyVariableValue( 3, 1 );
         plConstraints[3]->notifyVariableValue( 5, 1.5 );
         plConstraints[3]->notifyVariableValue( 6, 2.5 );
+        plConstraints[3]->notifyVariableValue( 7, 2.5 );
+        plConstraints[3]->notifyVariableValue( 8, 1.5 );
+        plConstraints[3]->notifyVariableValue( 9, 1 );
 
         tableau.nextValues[0] = -1;
         tableau.nextValues[1] = 0;
@@ -648,6 +675,10 @@ public:
         plConstraints[3]->notifyVariableValue( 3, 1 );
         plConstraints[3]->notifyVariableValue( 5, 1.5 );
         plConstraints[3]->notifyVariableValue( 6, 2.5 );
+        plConstraints[3]->notifyVariableValue( 7, 2.5 );
+        plConstraints[3]->notifyVariableValue( 8, 1.5 );
+        plConstraints[3]->notifyVariableValue( 9, 1 );
+
 
         tableau.nextValues[0] = -1;
         tableau.nextValues[1] = 0;
