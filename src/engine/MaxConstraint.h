@@ -178,17 +178,6 @@ public:
       Represent the Max constraint using the aux variables.
     */
     void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
-<<<<<<< HEAD
-
-    /*
-      Whether the constraint can contribute the SoI cost function.
-    */
-    virtual inline bool supportSoI() const override
-    {
-        return true;
-    }
-=======
->>>>>>> progress
 
     /*
       Whether the constraint can contribute the SoI cost function.
