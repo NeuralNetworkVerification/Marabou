@@ -90,9 +90,6 @@ PiecewiseLinearConstraint *MaxConstraint::duplicateConstraint() const
 {
     MaxConstraint *clone = new MaxConstraint( _f, _elements );
     *clone = *this;
-    clone->_haveFeasibleEliminatedPhases
-        = _haveFeasibleEliminatedPhases;
-    clone->_maxValueOfEliminatedPhases = _maxValueOfEliminatedPhases;
     this->initializeDuplicateCDOs( clone );
     return clone;
 }
@@ -164,7 +161,7 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         if ( FloatUtils::isPositive( value ) )
             eliminateCase( _auxToElement[variable] );
     }
-    else if ( _f == variable || _elements.exists( variable ) )
+    else if ( variable == _f || _elements.exists( variable ) )
     {
         // If the variable is either in _element or _f. The only case that this is
         // going to eliminate case is that the new lowerBound is greater than the
@@ -371,15 +368,25 @@ unsigned MaxConstraint::getF() const
 
 bool MaxConstraint::satisfied() const
 {
-    if ( !( _assignment.exists( _f ) && _assignment.size() > 0 ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+    DEBUG({
+            if ( !( _assignment.exists( _f ) ) )
+                throw MarabouError
+                    ( MarabouError::PARTICIPATING_VARIABLES_ABSENT,
+                      Stringf( "f(x%u) assignment missing.", _f ).ascii() );
+            for ( const auto &element : _elements )
+                if ( !( _assignment.exists( element ) ) )
+                    throw MarabouError
+                        ( MarabouError::PARTICIPATING_VARIABLES_ABSENT,
+                          Stringf( "input(x%u) assignment missing.",
+                                   element ).ascii() );
+        });
 
-    auto byAssignment = [&](const unsigned& a, const unsigned& b) {
+    auto byAssignment = [&]( const unsigned &a, const unsigned &b ) {
                             return _assignment[a] < _assignment[b];
                         };
-    double maxValue =  _assignment.get( *std::max_element( _elements.begin(),
-                                                           _elements.end(),
-                                                           byAssignment ) );
+    double maxValue = _assignment.get( *std::max_element( _elements.begin(),
+                                                          _elements.end(),
+                                                          byAssignment ) );
     maxValue = FloatUtils::max( maxValue, _maxValueOfEliminatedPhases );
     double fValue = _assignment.get( _f );
     return FloatUtils::areEqual( maxValue, fValue );
@@ -693,7 +700,6 @@ void MaxConstraint::eliminateCase( unsigned variable )
     }
 }
 
-
 bool MaxConstraint::haveOutOfBoundVariables() const
 {
     double fValue = _assignment.get( _f );
@@ -707,6 +713,12 @@ bool MaxConstraint::haveOutOfBoundVariables() const
         if ( FloatUtils::gt( getLowerBound( element ), value ) ||
              FloatUtils::lt( getUpperBound( element ), value ) )
         return true;
+        unsigned aux = _elementToAux[element];
+        double auxValue = _assignment.get( aux );
+        if ( FloatUtils::gt( getLowerBound( aux ), auxValue ) ||
+             FloatUtils::lt( getUpperBound( aux ), auxValue ) )
+            return true;
+
     }
     return false;
 }

@@ -1936,19 +1936,31 @@ public:
                                   ( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 8u );
 
+        // element to aux: 2: 5, 3: 6, 4: 7.
+
         TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 1, 1 ) );
         TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 1, 2 ) );
-        TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 3, 1 ) );
-        TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 3, 2 ) );
         TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 2, 0 ) );
         TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 2, 0.9 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 3, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 3, 2 ) );
         TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 4, 0 ) );
         TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 4, 0.9 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 5, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 5, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 6, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 6, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyLowerBound( 7, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( max1.notifyUpperBound( 7, 2 ) );
+
 
         max1.notifyVariableValue( 1, 2 );
         max1.notifyVariableValue( 2, 0 );
         max1.notifyVariableValue( 3, 1.5 );
         max1.notifyVariableValue( 4, 0.5 );
+        max1.notifyVariableValue( 5, 2 );
+        max1.notifyVariableValue( 6, 0.5 );
+        max1.notifyVariableValue( 7, 1.5 );
 
         // Phase fixed, should not add any cost terms.
         TS_ASSERT( max1.phaseFixed() );
@@ -1962,6 +1974,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( max2.transformToUseAuxVariablesIfNeeded
                                   ( ipq ) );
         TS_ASSERT_EQUALS( ipq.getNumberOfVariables(), 11u );
+        // element to aux: 2: 8, 3: 9, 4: 10.
 
         max2.notifyLowerBound( 1, 1 );
         max2.notifyUpperBound( 1, 2 );
@@ -1971,12 +1984,20 @@ public:
         max2.notifyUpperBound( 3, 2 );
         max2.notifyLowerBound( 4, 1 );
         max2.notifyUpperBound( 4, 2 );
+        max2.notifyLowerBound( 8, 0 );
+        max2.notifyUpperBound( 8, 1 );
+        max2.notifyLowerBound( 9, 0 );
+        max2.notifyUpperBound( 9, 1 );
+        max2.notifyLowerBound( 10, 0 );
+        max2.notifyUpperBound( 10, 1 );
 
         max2.eliminateVariable( 2, 1 );
 
         max2.notifyVariableValue( 1, 2 );
         max2.notifyVariableValue( 3, 1.5 );
         max2.notifyVariableValue( 4, 1.8 );
+        max2.notifyVariableValue( 9, 0.5 );
+        max2.notifyVariableValue( 10, 0.2 );
 
         // Phase not fixed, can add cost terms to eligible phases.
         TS_ASSERT( !max2.phaseFixed() );
