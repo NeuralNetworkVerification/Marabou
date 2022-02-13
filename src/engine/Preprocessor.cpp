@@ -712,9 +712,49 @@ void Preprocessor::collectFixedValues()
 
 void Preprocessor::eliminateVariables()
 {
-    // If there's nothing to eliminate, we're done
+    // If there's nothing to eliminate, we just eliminate obsolete constraints.
     if ( _fixedVariables.empty() && _mergedVariables.empty() )
+    {
+        List<PiecewiseLinearConstraint *> &constraints( _preprocessed.getPiecewiseLinearConstraints() );
+        List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
+        while ( constraint != constraints.end() )
+        {
+            if ( (*constraint)->constraintObsolete() )
+            {
+                if ( _statistics )
+                    _statistics->incUnsignedAttribute
+                        ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
+
+                if ( _preprocessed._networkLevelReasoner )
+                    _preprocessed._networkLevelReasoner->
+                        removeConstraintFromTopologicalOrder( *constraint );
+                delete *constraint;
+                *constraint = NULL;
+                constraint = constraints.erase( constraint );
+            }
+            else
+                ++constraint;
+        }
+
+        List<TranscendentalConstraint *> &tsConstraints( _preprocessed.getTranscendentalConstraints() );
+        List<TranscendentalConstraint *>::iterator tsConstraint = tsConstraints.begin();
+        while ( tsConstraint != tsConstraints.end() )
+        {
+            if ( (*tsConstraint)->constraintObsolete() )
+            {
+                if ( _statistics )
+                    _statistics->incUnsignedAttribute
+                        ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
+
+                delete *tsConstraint;
+                *tsConstraint = NULL;
+                tsConstraint = tsConstraints.erase( tsConstraint );
+            }
+            else
+                ++tsConstraint;
+        }
         return;
+    }
 
     if ( _statistics )
         _statistics->setUnsignedAttribute( Statistics::PP_NUM_ELIMINATED_VARS,
@@ -871,18 +911,18 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++constraint;
-	}
+    }
 
     // Let the remaining piecewise-lienar constraints know of any changes in indices.
     for ( const auto &constraint : constraints )
-	{
-            List<unsigned> participatingVariables = constraint->getParticipatingVariables();
+    {
+        List<unsigned> participatingVariables = constraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 constraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
-	}
+    }
 
     // Let the transcendental constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
@@ -911,7 +951,7 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++tsConstraint;
-	}
+    }
 
     // Let the remaining transcendental constraints know of any changes in indices.
     for ( const auto &tsConstraint : tsConstraints )

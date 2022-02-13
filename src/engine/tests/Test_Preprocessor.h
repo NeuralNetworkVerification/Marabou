@@ -36,21 +36,21 @@ public:
 class PreprocessorTestSuite : public CxxTest::TestSuite
 {
 public:
-	MockForPreprocessor *mock;
+    MockForPreprocessor *mock;
 
-	void setUp()
-	{
-		TS_ASSERT( mock = new MockForPreprocessor );
-	}
+    void setUp()
+    {
+        TS_ASSERT( mock = new MockForPreprocessor );
+    }
 
-	void tearDown()
-	{
-		TS_ASSERT_THROWS_NOTHING( delete mock );
-	}
+    void tearDown()
+    {
+        TS_ASSERT_THROWS_NOTHING( delete mock );
+    }
 
-	void test_tighten_equation_bounds()
-	{
-		InputQuery inputQuery;
+    void test_tighten_equation_bounds()
+    {
+        InputQuery inputQuery;
 
         inputQuery.setNumberOfVariables( 4 );
         inputQuery.setLowerBound( 1, 0 );
@@ -198,7 +198,7 @@ public:
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 5.5 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 6.5 );
-	}
+    }
 
     void test_tighten_bounds_using_constraints()
     {
@@ -303,8 +303,8 @@ public:
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 10 ), 0 ) );
     }
 
-	void test_tighten_bounds_using_equations_and_constraints()
-	{
+    void test_tighten_bounds_using_equations_and_constraints()
+    {
         InputQuery inputQuery;
 
         inputQuery.setNumberOfVariables( 7 );
@@ -360,9 +360,9 @@ public:
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 6 ), 7 ) );
     }
 
-	void test_variable_elimination()
-	{
-		InputQuery inputQuery;
+    void test_variable_elimination()
+    {
+        InputQuery inputQuery;
 
         inputQuery.setNumberOfVariables( 10 );
         inputQuery.setLowerBound( 0, 1 ); // fixed
@@ -394,14 +394,14 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-		// x7 + x8 = 12
-		Equation equation2;
-		equation2.addAddend( 1, 7 );
-		equation2.addAddend( 1, 8 );
-		equation2.setScalar( 12 );
-		inputQuery.addEquation( equation2 );
+        // x7 + x8 = 12
+        Equation equation2;
+        equation2.addAddend( 1, 7 );
+        equation2.addAddend( 1, 8 );
+        equation2.setScalar( 12 );
+        inputQuery.addEquation( equation2 );
 
-		InputQuery processed = Preprocessor().preprocess( inputQuery, true );
+        InputQuery processed = Preprocessor().preprocess( inputQuery, true );
 
         // Variables 2, 4, 5 and 9 are unused and should be eliminated.
         // Variables 0, 3 and 6 were fixed and should be eliminated.
@@ -422,10 +422,10 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, 1U );
 
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 12.0 );
-	}
+    }
 
-	void test_variable_elimination_for_ts_constraints()
-	{
+    void test_variable_elimination_for_ts_constraints()
+    {
         // x0 + x1 = 1
         // x2 = simogid(x1) // x1 is fixed => x2 should be fixed...
         // x3 = simoid(x2) // x2 is fixed, so x3 should be fixed...
@@ -609,7 +609,7 @@ public:
 
     void test_merge_and_fix_disjoint()
     {
-		InputQuery inputQuery;
+        InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 20 );
 
         /* Input */
@@ -907,6 +907,55 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( nlr->evaluate( inputs2, &output ) );
         TS_ASSERT( FloatUtils::areEqual( output, -0.2310586, 0.0001 ) );
+    }
+
+    void test_preprocessor_handle_obsolete_constraints()
+    {
+        std::cout << "Testing" << std::endl;
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 3 );
+        MaxConstraint *max1 = new MaxConstraint( 0, Set<unsigned>( { 1, 2 } ) );
+        MaxConstraint *max2 = new MaxConstraint( 0, Set<unsigned>( { 0, 1, 2 } ) );
+        ipq.addPiecewiseLinearConstraint( max1 );
+        ipq.addPiecewiseLinearConstraint( max2 );
+
+        for ( unsigned i = 0; i < 3; ++i )
+        {
+            ipq.setLowerBound( i, -2 );
+            ipq.setUpperBound( i, 2 );
+        }
+
+        // Aux for max 1 are 3, 4. Aux for max2 are 5, 6
+        // max2 will be obsolete. And constraints x0 - x1 - aux3 = 0,
+        // x0 - x2 - aux4 = 0 will be added to the processed ipq.
+
+        InputQuery processed;
+        TS_ASSERT_THROWS_NOTHING( processed = Preprocessor().
+                                  preprocess( ipq ) );
+
+        for ( const auto &e : processed.getEquations() )
+            e.dump();
+
+        // Four more variables are added.
+        TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 7u );
+        // max2 become obsolete.
+        TS_ASSERT_EQUALS( processed.getPiecewiseLinearConstraints().size(), 1u );
+        {
+            Equation eq;
+            eq.addAddend( 1, 0 );
+            eq.addAddend( -1, 1 );
+            eq.addAddend( -1, 5 );
+            eq._scalar = 0;
+            TS_ASSERT( processed.getEquations().exists( eq ) );
+        }
+        {
+            Equation eq;
+            eq.addAddend( 1, 0 );
+            eq.addAddend( -1, 2 );
+            eq.addAddend( -1, 6 );
+            eq._scalar = 0;
+            TS_ASSERT( processed.getEquations().exists( eq ) );
+        }
     }
 
     void test_todo()
