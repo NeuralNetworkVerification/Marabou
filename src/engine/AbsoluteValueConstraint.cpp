@@ -628,6 +628,8 @@ void AbsoluteValueConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
       negAux is also non-negative, and 0 if in the negative phase
       its upper bound is (f.ub + b.ub)
     */
+    if ( _auxVarsInUse )
+        return;
 
     _posAux = inputQuery.getNumberOfVariables();
     _negAux = _posAux + 1;

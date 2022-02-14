@@ -795,6 +795,8 @@ void ReluConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery 
       Lower bound: always non-negative
       Upper bound: when f = 0 and b is minimal, i.e. -b.lb
     */
+    if ( _auxVarInUse )
+        return;
 
     // Create the aux variable
     _aux = inputQuery.getNumberOfVariables();
