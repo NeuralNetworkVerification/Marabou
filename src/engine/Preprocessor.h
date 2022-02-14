@@ -133,11 +133,6 @@ private:
     void eliminateVariables();
 
     /*
-      Call on the PL constraints to add any auxiliary equations
-    */
-    void addPlAuxiliaryEquations();
-
-    /*
       All input/output variables
     */
     Set<unsigned> _inputOutputVariables;

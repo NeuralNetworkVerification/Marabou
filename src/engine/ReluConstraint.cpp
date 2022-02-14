@@ -781,7 +781,7 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void ReluConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 {
     /*
       We want to add the equation

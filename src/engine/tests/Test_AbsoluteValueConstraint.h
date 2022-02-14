@@ -1689,7 +1689,8 @@ public:
             TS_ASSERT( !abs.participatingVariable( posAux ) );
             TS_ASSERT( !abs.participatingVariable( negAux ) );
 
-            TS_ASSERT_THROWS_NOTHING( abs.addAuxiliaryEquations( ipq ) );
+            TS_ASSERT_THROWS_NOTHING( abs.transformToUseAuxVariablesIfNeeded
+                                      ( ipq ) );
 
             TS_ASSERT_EQUALS( abs.getParticipatingVariables(),
                               List<unsigned>( { b, f, posAux, negAux } ) );

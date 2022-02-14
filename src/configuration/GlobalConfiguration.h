@@ -87,10 +87,6 @@ public:
     // elimination.
     static const bool PREPROCESSOR_ELIMINATE_VARIABLES;
 
-    // Assuming the preprocessor is on, toggle whether or not PL constraints will be called upon
-    // to add auxiliary variables and equations.
-    static const bool PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS;
-
     // Toggle whether or not PL constraints will be called upon
     // to add auxiliary variables and equations after preprocessing.
     static const bool PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING;

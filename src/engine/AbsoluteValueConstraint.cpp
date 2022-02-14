@@ -608,7 +608,8 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
+                                                                  &inputQuery )
 {
     /*
       We want to add the two equations
