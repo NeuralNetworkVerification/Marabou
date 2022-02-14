@@ -162,7 +162,8 @@ public:
       For preprocessing: get any auxiliary equations that this
       constraint would like to add to the equation pool. In the ReLU
       case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
+      non-negative. This way, case splits will be bound
+      update of the aux variables.
     */
     void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
