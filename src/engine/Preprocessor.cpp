@@ -61,12 +61,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
-      Transform the piecewise linear constraints if needed so that the case
-      splits can all be represented as bounds over existing variables.
-    */
-    transformConstraintsIfNeeded();
-
-    /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
       into one.
     */
@@ -76,6 +70,12 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
       Attempt to construct a network level reasoner
     */
     _preprocessed.constructNetworkLevelReasoner();
+
+    /*
+      Transform the piecewise linear constraints if needed so that the case
+      splits can all be represented as bounds over existing variables.
+    */
+    transformConstraintsIfNeeded();
 
     /*
       Merge consecutive WS layers
