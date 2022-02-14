@@ -28,6 +28,10 @@
 #undef ERROR
 #endif
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2df5ae64a68b624c2752d8a5173cc369037fa751
 Marabou::Marabou()
     : _acasParser( NULL )
     , _engine()

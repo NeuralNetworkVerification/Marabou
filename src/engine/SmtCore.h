@@ -91,6 +91,12 @@ public:
     void recordImpliedValidSplit( PiecewiseLinearCaseSplit const& validSplit );
 
     /*
+      Return a list of all splits performed so far, only SMT-originatin,
+      in the correct order.
+    */
+    List<PiecewiseLinearCaseSplit> splitsWithoutImplied() const;
+
+    /*
       Return a list of all splits performed so far, both SMT-originating and valid ones,
       in the correct order.
     */

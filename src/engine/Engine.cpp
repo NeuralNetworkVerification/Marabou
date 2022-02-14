@@ -384,11 +384,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
-            List<PiecewiseLinearCaseSplit> allSplitSoFar;
-            _smtCore.allSplitsSoFar( allSplitSoFar );
             if ( _residualReasoner )
             {
-                _residualReasoner->onUnsatReceived( allSplitSoFar );
+                _residualReasoner->onUnsatReceived( _smtCore.splitsWithoutImplied() );
             }
             if ( !_smtCore.popSplit() )
             {
