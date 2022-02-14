@@ -329,6 +329,8 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     // fLB cannot be smaller than maxElementLB
     if ( FloatUtils::lt( fLB, maxElementLB ) )
         tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+
+    // TODO: bound tightening for aux vars.
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
@@ -564,6 +566,9 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
 
 void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 {
+    if ( _auxToElement.size() > 0 )
+        return;
+
     bool fInInput = false;
     for ( const auto &element : _elements )
     {
