@@ -138,7 +138,7 @@ public:
         nextBtranOutput = new double[m];
     }
 
-    void initializeBounds( unsigned n )
+    void setBoundDimension( unsigned n )
     {
         lastN = n;
     }

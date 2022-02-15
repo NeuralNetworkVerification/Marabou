@@ -50,9 +50,9 @@ public:
     void setDimensions( unsigned m, unsigned n );
 
     /*
-      Initialize the bound array.
+      Allocate space for the bound arrays.
     */
-    void initializeBounds( unsigned n );
+    void setBoundDimension( unsigned n );
 
     /*
       Initialize the constraint matrix

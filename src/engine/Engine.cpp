@@ -1226,19 +1226,32 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     // Populate constriant matrix
     _tableau->setConstraintMatrix( constraintMatrix );
 
-    for ( unsigned i = 0; i < n; ++i )
+    _tableau->registerToWatchAllVariables( _rowBoundTightener );
+    _tableau->registerResizeWatcher( _rowBoundTightener );
+
+    _rowBoundTightener->setDimensions();
+
+    initializeBoundsAndConstraintWatchersInTableau( n );
+
+    _tableau->initializeTableau( initialBasis );
+
+    _costFunctionManager->initialize();
+    _tableau->registerCostFunctionManager( _costFunctionManager );
+    _activeEntryStrategy->initialize( _tableau );
+}
+
+void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
+                                                             numberOfVariables )
+{
+    for ( unsigned i = 0; i < numberOfVariables; ++i )
     {
         _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
 
-    _tableau->registerToWatchAllVariables( _rowBoundTightener );
-    _tableau->registerResizeWatcher( _rowBoundTightener );
-
     _tableau->registerToWatchAllVariables( _constraintBoundTightener );
     _tableau->registerResizeWatcher( _constraintBoundTightener );
 
-    _rowBoundTightener->setDimensions();
     _constraintBoundTightener->setDimensions();
 
     // Register the constraint bound tightener to all the PL constraints
@@ -1248,6 +1261,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
+        constraint->registerGurobi( &( *_gurobi ) );
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
     }
@@ -1258,20 +1272,6 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
     }
-
-    _tableau->initializeTableau( initialBasis );
-
-    if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
-    {
-        _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
-            ( new SumOfInfeasibilitiesManager( _preprocessedQuery,
-                                               *_tableau ) );
-        _soiManager->setStatistics( &_statistics );
-    }
-
-    _costFunctionManager->initialize();
-    _tableau->registerCostFunctionManager( _costFunctionManager );
-    _activeEntryStrategy->initialize( _tableau );
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
                                       _plConstraints.size() );
@@ -1347,48 +1347,21 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             if ( _verbosity > 0 )
                 printf("Using Gurobi to solve LP...\n");
 
-            unsigned n = _preprocessedQuery.getNumberOfVariables();
-            // Only use Tableau to store the bounds.
-            _tableau->initializeBounds( n );
-            for ( unsigned i = 0; i < n; ++i )
-            {
-                _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-                _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-            }
-
-            _tableau->registerToWatchAllVariables( _constraintBoundTightener );
-            _tableau->registerResizeWatcher( _constraintBoundTightener );
-
             _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
             _milpEncoder = std::unique_ptr<MILPEncoder>
                 ( new MILPEncoder( *_tableau ) );
             _milpEncoder->setStatistics( &_statistics );
-
             _tableau->setGurobi( &( *_gurobi ) );
 
-            _constraintBoundTightener->setDimensions();
+            unsigned n = _preprocessedQuery.getNumberOfVariables();
+            // Only use Tableau to store the bounds.
+            _tableau->setBoundDimension( n );
+            initializeBoundsAndConstraintWatchersInTableau( n );
 
-            // Register the constraint bound tightener to all the PL constraints
-            for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
-                plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
-
-            _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
             for ( const auto &constraint : _plConstraints )
             {
                 constraint->registerGurobi( &( *_gurobi ) );
-                constraint->registerAsWatcher( _tableau );
-                constraint->setStatistics( &_statistics );
             }
-
-            _tsConstraints = _preprocessedQuery.getTranscendentalConstraints();
-            for ( const auto &constraint : _tsConstraints )
-            {
-                constraint->registerAsWatcher( _tableau );
-                constraint->setStatistics( &_statistics );
-            }
-
-            _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
-                                              _plConstraints.size() );
         }
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
