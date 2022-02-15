@@ -159,8 +159,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
     updateDirections();
     if ( _lpSolverType == LPSolverType::NATIVE )
         storeInitialEngineState();
-
-    if ( _lpSolverType == LPSolverType::GUROBI )
+    else if ( _lpSolverType == LPSolverType::GUROBI )
     {
         ENGINE_LOG( "Encoding convex relaxation into Gurobi...");
         _milpEncoder->encodeInputQuery( *_gurobi, _preprocessedQuery, true );
@@ -346,10 +345,24 @@ bool Engine::solve( unsigned timeoutInSeconds )
             _tableau->toggleOptimization( false );
             continue;
         }
-        catch( ... )
+        catch ( MarabouError &e )
+        {
+            String message =
+                Stringf( "Caught a MarabouError. Code: %u. Message: %s\n",
+                         e.getCode(), e.getUserMessage() );
+            _exitCode = Engine::ERROR;
+            exportInputQueryWithError( message );
+            struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+            _statistics.incLongAttribute
+                ( Statistics::TIME_MAIN_LOOP_MICRO,
+                  TimeUtils::timePassed( mainLoopStart,
+                                         mainLoopEnd ) );
+            return false;
+        }
+        catch ( ... )
         {
             _exitCode = Engine::ERROR;
-            exportInputQueryWithError( "" );
+            exportInputQueryWithError( "Unknown error" );
             struct timespec mainLoopEnd = TimeUtils::sampleMicro();
             _statistics.incLongAttribute
                 ( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -3044,6 +3057,11 @@ void Engine::informLPSolverOfBounds()
         _statistics.incLongAttribute
             ( Statistics::TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO,
               TimeUtils::timePassed( start, end ) );
+    }
+    else
+    {
+        // Bounds are already up-to-date in Tableau when using native Simplex.
+        return;
     }
 }
 

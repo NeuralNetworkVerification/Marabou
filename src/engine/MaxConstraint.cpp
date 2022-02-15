@@ -406,21 +406,33 @@ unsigned MaxConstraint::getF() const
 
 bool MaxConstraint::satisfied() const
 {
-    if ( !( existsAssignment( _f ) ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
-    for ( const auto &element : _elements )
-        if ( !( existsAssignment( element ) ) )
+    if ( _gurobi )
+    {
+        if ( !( existsAssignment( _f ) ) )
+            throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+        for ( const auto &element : _elements )
+            if ( !( existsAssignment( element ) ) )
+                throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+
+        double fValue = getAssignment( _f );
+        double maxValue = _maxValueOfEliminated;
+        for ( const auto &element : _elements )
+        {
+            double currentValue = getAssignment( element );
+            if ( FloatUtils::gt( currentValue, maxValue ) )
+                maxValue = currentValue;
+        }
+        return FloatUtils::areEqual( maxValue, fValue );
+    }
+    else
+    {
+        if ( !( _assignment.exists( _f ) && _assignment.size() > 0 ) )
             throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
-    double fValue = getAssignment( _f );
-    double maxValue = _maxValueOfEliminated;
-    for ( const auto &element : _elements )
-    {
-        double currentValue = getAssignment( element );
-        if ( FloatUtils::gt( currentValue, maxValue ) )
-            maxValue = currentValue;
+        double fValue = _assignment.get( _f );
+        double maxValue = FloatUtils::max( _assignment.get( getMaxIndex() ), _maxValueOfEliminated );
+        return FloatUtils::areEqual( maxValue, fValue );
     }
-    return FloatUtils::areEqual( maxValue, fValue );
 }
 
 bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
