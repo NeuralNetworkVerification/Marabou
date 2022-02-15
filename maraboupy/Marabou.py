@@ -124,8 +124,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
                   tighteningStrategy="deeppoly", milpTightening="none", milpSolverTimeout=0,
-                  numSimulations=10, skipLpTighteningAfterSplit=False, numBlasThreads=1,
-                  performLpTighteningAfterSplit=False):
+                  numSimulations=10, numBlasThreads=1, performLpTighteningAfterSplit=False,
+                  lpSolver=""):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -149,9 +149,9 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
         milpTightening (string, optional): The (mi)lp-based bound tightening techniques used to preprocess the query (milp-inc/lp-inc/milp/lp/none). default to lp.
         milpSolverTimeout (float, optional): Timeout duration for MILP
         numSimulations (int, optional): Number of simulations generated per neuron, defaults to 10
-        skipLpTighteningAfterSplit (bool, optional): Whether to skip a LP tightening after a case split, defaults to False
         numBlasThreads (int, optional): Number of threads to use when using OpenBLAS matrix multiplication (e.g., for DeepPoly analysis), defaults to 1
         performLpTighteningAfterSplit (bool, optional): Whether to perform a LP tightening after a case split, defaults to False
+        lpSolver (string, optional): the engine for solving LP (native/gurobi).
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -177,4 +177,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
     options._numSimulations = numSimulations
     options._numBlasThreads = numBlasThreads
     options._performLpTighteningAfterSplit = performLpTighteningAfterSplit
+    options._lpSolver = lpSolver
     return options

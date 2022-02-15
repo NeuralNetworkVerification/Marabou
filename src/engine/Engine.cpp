@@ -346,11 +346,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
             _tableau->toggleOptimization( false );
             continue;
         }
-        catch ( ... )
+        catch( ... )
         {
-            throw
             _exitCode = Engine::ERROR;
-            exportInputQueryWithError( "Unknown error" );
+            exportInputQueryWithError( "" );
             struct timespec mainLoopEnd = TimeUtils::sampleMicro();
             _statistics.incLongAttribute
                 ( Statistics::TIME_MAIN_LOOP_MICRO,
@@ -3055,6 +3054,7 @@ bool Engine::minimizeCostWithGurobi( const LinearExpression &costFunction )
     struct timespec simplexStart = TimeUtils::sampleMicro();
 
     _milpEncoder->encodeCostFunction( *_gurobi, costFunction );
+    _gurobi->setTimeLimit( FloatUtils::infinity() );
     _gurobi->solve();
 
     struct timespec simplexEnd = TimeUtils::sampleMicro();
