@@ -147,7 +147,6 @@ public:
             _model->get( GRB_IntAttr_SolCount ) > 0;
     }
 
-
     inline unsigned getNumberOfSimplexIterations()
     {
         return _model->get( GRB_DoubleAttr_IterCount );
