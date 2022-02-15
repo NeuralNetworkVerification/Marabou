@@ -324,7 +324,7 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     }
 }
 
-void Tableau::initializeBounds( unsigned n )
+void Tableau::setBoundDimension( unsigned n )
 {
     _n = n;
 
