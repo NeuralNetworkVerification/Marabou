@@ -159,9 +159,10 @@ public:
 
     /*
       For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      like to add to the equation pool. This way, case splits will be bound
+      update of the aux variables.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.

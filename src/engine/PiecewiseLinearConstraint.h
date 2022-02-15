@@ -249,12 +249,6 @@ public:
     void setStatistics( Statistics *statistics );
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
-    */
-    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
-
-    /*
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */

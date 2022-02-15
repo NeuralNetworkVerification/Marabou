@@ -164,14 +164,6 @@ public:
     void dump( String &output ) const override;
 
     /*
-      For preprocessing: get any auxiliary equations that this
-      constraint would like to add to the equation pool. In the Disjunction
-      case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
-    */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
-
-    /*
       Returns string with shape: disjunction, _f, _b
     */
     String serializeToString() const override;

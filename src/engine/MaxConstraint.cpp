@@ -738,7 +738,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 }
 
-void MaxConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void MaxConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 {
     for ( auto element : _elements )
     {

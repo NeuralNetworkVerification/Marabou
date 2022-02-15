@@ -781,7 +781,7 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void ReluConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
 {
     /*
       We want to add the equation
@@ -795,6 +795,8 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
       Lower bound: always non-negative
       Upper bound: when f = 0 and b is minimal, i.e. -b.lb
     */
+    if ( _auxVarInUse )
+        return;
 
     // Create the aux variable
     _aux = inputQuery.getNumberOfVariables();

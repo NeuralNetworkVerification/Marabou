@@ -61,12 +61,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
     _preprocessed = query;
 
     /*
-      Transform the piecewise linear constraints if needed. For instance, this
-      will make sure all disjunctions are ones over variable bounds.
-    */
-    transformConstraintsIfNeeded();
-
-    /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
       into one.
     */
@@ -76,6 +70,12 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
       Attempt to construct a network level reasoner
     */
     _preprocessed.constructNetworkLevelReasoner();
+
+    /*
+      Transform the piecewise linear constraints if needed so that the case
+      splits can all be represented as bounds over existing variables.
+    */
+    transformConstraintsIfNeeded();
 
     /*
       Merge consecutive WS layers
@@ -98,13 +98,6 @@ InputQuery Preprocessor::preprocess( const InputQuery &query, bool attemptVariab
         _inputOutputVariables.insert( var );
     for ( const auto &var : _preprocessed.getOutputVariables() )
         _inputOutputVariables.insert( var );
-
-    /*
-      Initial work: if needed, have the PL constraints add their additional
-      equations to the pool.
-    */
-    if ( GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS )
-        addPlAuxiliaryEquations();
 
     /*
       Set any missing bounds
@@ -1008,15 +1001,6 @@ void Preprocessor::setMissingBoundsToInfinity()
         if ( !_preprocessed.getUpperBounds().exists( i ) )
             _preprocessed.setUpperBound( i, FloatUtils::infinity() );
     }
-}
-
-void Preprocessor::addPlAuxiliaryEquations()
-{
-    const List<PiecewiseLinearConstraint *> &plConstraints
-        ( _preprocessed.getPiecewiseLinearConstraints() );
-
-    for ( const auto &constraint : plConstraints )
-        constraint->addAuxiliaryEquations( _preprocessed );
 }
 
 void Preprocessor::dumpAllBounds( const String &message )

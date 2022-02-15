@@ -163,7 +163,7 @@ public:
       For preprocessing: get any auxiliary equations that this constraint would
       like to add to the equation pool.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.

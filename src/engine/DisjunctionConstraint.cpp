@@ -378,10 +378,6 @@ void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tighten
 {
 }
 
-void DisjunctionConstraint::addAuxiliaryEquations( InputQuery &/* inputQuery */ )
-{
-}
-
 String DisjunctionConstraint::serializeToString() const
 {
     String s = "disj,";

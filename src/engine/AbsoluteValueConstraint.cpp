@@ -608,7 +608,8 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
+                                                                  &inputQuery )
 {
     /*
       We want to add the two equations
@@ -627,6 +628,8 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
       negAux is also non-negative, and 0 if in the negative phase
       its upper bound is (f.ub + b.ub)
     */
+    if ( _auxVarsInUse )
+        return;
 
     _posAux = inputQuery.getNumberOfVariables();
     _negAux = _posAux + 1;
