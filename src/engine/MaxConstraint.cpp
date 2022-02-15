@@ -383,11 +383,11 @@ bool MaxConstraint::satisfied() const
                                    element ).ascii() );
         });
 
-    double fValue = getAssignment( _f );
+    double fValue = _assignment[_f];
     double maxValue = _maxValueOfEliminatedVariables;
     for ( const auto &element : _elements )
     {                                                                                                                                                                                                         
-        double currentValue = getAssignment( element );
+        double currentValue = _assignment[element];
         if ( FloatUtils::gt( currentValue, maxValue ) )
             maxValue = currentValue;                                                                                                                                                                          
     }
