@@ -2700,15 +2700,6 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
-        // Apply bound tightening before handing to Gurobi
-        if ( _lpSolverType ==LPSolverType::NATIVE &&
-             _tableau->basisMatrixAvailable() )
-        {
-            explicitBasisBoundTightening();
-            applyAllBoundTightenings();
-            applyAllValidConstraintCaseSplits();
-        }
-
         while ( applyAllValidConstraintCaseSplits() )
         {
             performSymbolicBoundTightening();
