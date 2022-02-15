@@ -688,7 +688,7 @@ double MILPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
 
     gurobi.solve();
 
-    if ( gurobi.infeasbile() )
+    if ( gurobi.infeasible() )
     {
         if ( infeasible )
         {
@@ -772,7 +772,7 @@ bool MILPFormulator::tightenUpperBound( GurobiWrapper &gurobi,
     gurobi.setObjective( terms );
     gurobi.solve();
 
-    if ( gurobi.infeasbile() )
+    if ( gurobi.infeasible() )
         throw InfeasibleQueryException();
 
     if ( gurobi.cutoffOccurred() )
@@ -839,7 +839,7 @@ bool MILPFormulator::tightenLowerBound( GurobiWrapper &gurobi,
     gurobi.setCost( terms );
     gurobi.solve();
 
-    if ( gurobi.infeasbile() )
+    if ( gurobi.infeasible() )
         throw InfeasibleQueryException();
 
     if ( gurobi.cutoffOccurred() )

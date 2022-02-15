@@ -82,6 +82,7 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO] = 0;
     _longAttributes[TOTAL_TIME_LOCAL_SEARCH_MICRO] = 0;
     _longAttributes[TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO] = 0;
+    _longAttributes[TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO] = 0;
 
     _doubleAttributes[CURRENT_DEGRADATION] = 0.0;
     _doubleAttributes[MAX_DEGRADATION] = 0.0;
@@ -210,6 +211,13 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] SoI-based local search: %llu milli\n"
             , printPercents( totalTimePerformingLocalSearch, timeMainLoopMicro )
             , totalTimePerformingLocalSearch / 1000
+            );
+    unsigned long long totalTimeAddingConstraintsToMILPSolver =
+        getLongAttribute( Statistics::TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO );
+    printf( "\t\t[%.2lf%%] SoI-based local search: %llu milli\n"
+            , printPercents( totalTimeAddingConstraintsToMILPSolver,
+                             timeMainLoopMicro )
+            , totalTimeAddingConstraintsToMILPSolver / 1000
             );
 
     unsigned long long total =

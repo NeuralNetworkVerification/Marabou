@@ -193,6 +193,9 @@ public:
 
      // Total time getting the SoI phase pattern
      TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO,
+
+     // Total time adding constraints to (MI)LP solver.
+     TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO,
     };
 
     enum StatisticsDoubleAttribute
