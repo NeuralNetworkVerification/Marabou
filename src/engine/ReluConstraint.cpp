@@ -606,8 +606,8 @@ void ReluConstraint::dump( String &output ) const
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    // We have already registered Gurobi and it is too late to update variable
-    // indices.
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
     ASSERT( _gurobi == NULL );
 
     ASSERT( oldIndex == _b || oldIndex == _f || ( _auxVarInUse && oldIndex == _aux ) );
