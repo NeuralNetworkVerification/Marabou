@@ -99,12 +99,12 @@ const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;
-const bool GlobalConfiguration::GUROBI_LOGGING = true;
+const bool GlobalConfiguration::GUROBI_LOGGING = false;
 #endif // ENABLE_GUROBI
 
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
-const bool GlobalConfiguration::ENGINE_LOGGING = true;
+const bool GlobalConfiguration::ENGINE_LOGGING = false;
 const bool GlobalConfiguration::TABLEAU_LOGGING = false;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
