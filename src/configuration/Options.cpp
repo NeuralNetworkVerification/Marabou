@@ -47,7 +47,7 @@ void Options::initializeDefaultValues()
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
-    _boolOptions[SKIP_LP_TIGHTENING_AFTER_SPLIT] = false;
+    _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
 
     /*
       Int options
@@ -83,10 +83,11 @@ void Options::initializeDefaultValues()
     _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
-    _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "";
+    _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "none";
     _stringOptions[QUERY_DUMP_FILE] = "";
     _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
+    _stringOptions[LP_SOLVER] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -200,7 +201,7 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
         else if ( strategyString == "none" )
             return MILPSolverBoundTighteningType::NONE;
         else
-            return MILPSolverBoundTighteningType::LP_RELAXATION;
+            return MILPSolverBoundTighteningType::NONE;
     }
     else
     {
@@ -232,10 +233,14 @@ SoIInitializationStrategy Options::getSoIInitializationStrategy() const
         return SoIInitializationStrategy::INPUT_ASSIGNMENT;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+LPSolverType Options::getLPSolverType() const
+{
+    String solverString = String( _stringOptions.get
+                                    ( Options::LP_SOLVER ) );
+    if ( solverString == "native" )
+        return LPSolverType::NATIVE;
+    else if ( solverString == "gurobi" )
+        return LPSolverType::GUROBI;
+    else
+        return gurobiEnabled() ? LPSolverType::GUROBI : LPSolverType::NATIVE;
+}

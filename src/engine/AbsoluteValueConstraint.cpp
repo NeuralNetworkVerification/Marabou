@@ -120,6 +120,9 @@ void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    // This should never be called when we are using Gurobi to solve LPs.
+    ASSERT( _gurobi == NULL );
+
     _assignment[variable] = value;
 }
 
@@ -284,8 +287,8 @@ bool AbsoluteValueConstraint::satisfied() const
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
         throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     // Possible violations:
     //   1. f is negative
@@ -301,6 +304,9 @@ bool AbsoluteValueConstraint::satisfied() const
 
 List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes() const
 {
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( !satisfied() );
     ASSERT( _assignment.exists( _b ) );
     ASSERT( _assignment.exists( _f ) );
@@ -461,6 +467,10 @@ void AbsoluteValueConstraint::dump( String &output ) const
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
+    // We have already registered Gurobi and it is too late to update variable
+    // indices.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( oldIndex == _b || oldIndex == _f ||
             ( _auxVarsInUse && ( oldIndex == _posAux || oldIndex == _negAux ) ) );
 

@@ -17,8 +17,10 @@
 #define __Tableau_h__
 
 #include "BoundManager.h"
+#include "GurobiWrapper.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
+#include "LPSolverType.h"
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
@@ -46,6 +48,11 @@ public:
       m: number of constraints (rows)
     */
     void setDimensions( unsigned m, unsigned n );
+
+    /*
+      Initialize the bound array.
+    */
+    void initializeBounds( unsigned n );
 
     /*
       Initialize the constraint matrix
@@ -375,6 +382,8 @@ public:
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
 
+    void setGurobi( GurobiWrapper *gurobi );
+
     /*
       Have the Tableau start reporting statistics.
      */
@@ -639,6 +648,14 @@ private:
       simplify some of the computations.
      */
     bool _rhsIsAllZeros;
+
+    /*
+      True if and only if we are using the native Simplex implementation for
+      LP solving.
+    */
+    LPSolverType _lpSolverType;
+
+    GurobiWrapper *_gurobi;
 
     /*
       Free all allocated memory.

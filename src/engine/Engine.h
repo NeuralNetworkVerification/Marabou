@@ -31,6 +31,7 @@
 #include "IEngine.h"
 #include "InputQuery.h"
 #include "LinearExpression.h"
+#include "LPSolverType.h"
 #include "Map.h"
 #include "MILPEncoder.h"
 #include "Options.h"
@@ -406,6 +407,11 @@ private:
     bool _solveWithMILP;
 
     /*
+      The solver to solve the LP during the complete search.
+    */
+    LPSolverType _lpSolverType;
+
+    /*
       GurobiWrapper object
     */
     std::unique_ptr<GurobiWrapper> _gurobi;
@@ -427,7 +433,7 @@ private:
     */
     unsigned _simulationSize;
     bool _isGurobyEnabled;
-    bool _isSkipLpTighteningAfterSplit;
+    bool _performLpTighteningAfterSplit;
     MILPSolverBoundTighteningType _milpSolverBoundTighteningType;
 
     /*
@@ -697,6 +703,25 @@ private:
       PLConstraints to promote them in the branching order.
     */
     void bumpUpPseudoImpactOfPLConstraintsNotInSoI();
+
+    /*
+      If we are using an external solver for LP solving, we need to inform
+      the solver of the up-to-date variable bounds before invoking it.
+    */
+    void informLPSolverOfBounds();
+
+    /*
+      Minimize the given cost function with Gurobi. Return true if
+      the cost function is minimized. Throw InfeasibleQueryException if
+      the constraints in _gurobi are infeasible. Throw an error otherwise.
+    */
+    bool minimizeCostWithGurobi( const LinearExpression &costFunction );
+
+    /*
+      DEBUG only
+      Check that the variable bounds in Gurobi is up-to-date.
+    */
+    void checkGurobiBoundConsistency() const;
 };
 
 #endif // __Engine_h__

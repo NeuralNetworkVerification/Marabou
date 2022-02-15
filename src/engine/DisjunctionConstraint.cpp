@@ -146,6 +146,9 @@ void DisjunctionConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void DisjunctionConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    // This should never be called when we are using Gurobi to solve LPs.
+    ASSERT( _gurobi == NULL );
+
     _assignment[variable] = value;
 }
 
@@ -200,11 +203,17 @@ bool DisjunctionConstraint::satisfied() const
 
 List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getPossibleFixes() const
 {
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
+
     return List<PiecewiseLinearConstraint::Fix>();
 }
 
 List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITableau */* tableau */ ) const
 {
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
+
     return getPossibleFixes();
 }
 
@@ -337,6 +346,9 @@ void DisjunctionConstraint::dump( String &output ) const
 
 void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( !participatingVariable( newIndex ) );
 
     if ( _assignment.exists( oldIndex ) )
@@ -438,12 +450,12 @@ bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &d
     {
         if ( bound._type == Tightening::LB )
         {
-            if ( _assignment[bound._variable] < bound._value )
+            if ( getAssignment( bound._variable ) < bound._value )
                 return false;
         }
         else
         {
-            if ( _assignment[bound._variable] > bound._value )
+            if ( getAssignment( bound._variable ) > bound._value )
                 return false;
         }
     }
@@ -453,7 +465,7 @@ bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &d
     {
         double result = 0;
         for ( const auto &addend : equation._addends )
-            result += addend._coefficient * _assignment[addend._variable];
+            result += addend._coefficient * getAssignment( addend._variable );
 
         if ( !FloatUtils::areEqual( result, equation._scalar ) )
             return false;
