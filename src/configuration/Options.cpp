@@ -201,7 +201,7 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
         else if ( strategyString == "none" )
             return MILPSolverBoundTighteningType::NONE;
         else
-            return MILPSolverBoundTighteningType::LP_RELAXATION;
+            return MILPSolverBoundTighteningType::NONE;
     }
     else
     {
