@@ -19,7 +19,6 @@
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
-#include "GlobalConfiguration.h"
 #include "ITableau.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -108,11 +107,11 @@ List<unsigned> SignConstraint::getParticipatingVariables() const
 
 bool SignConstraint::satisfied() const
 {
-    if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
         throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     // if bValue is negative, f should be -1
     if ( FloatUtils::isNegative( bValue ) )
@@ -144,9 +143,9 @@ List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
-    if ( _assignment.exists( _f ) )
+    if ( existsAssignment( _f ) )
     {
-        if ( FloatUtils::isPositive( _assignment[_f] ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
         {
             splits.append( getPositiveSplit() );
             splits.append( getNegativeSplit() );
@@ -180,9 +179,9 @@ List<PhaseStatus> SignConstraint::getAllCases() const
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
-    if ( _assignment.exists( _f ) )
+    if ( existsAssignment( _f ) )
     {
-        if ( FloatUtils::isPositive( _assignment[_f] ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
             return { SIGN_PHASE_POSITIVE, SIGN_PHASE_NEGATIVE };
         else
             return { SIGN_PHASE_NEGATIVE, SIGN_PHASE_POSITIVE };
@@ -353,8 +352,8 @@ PhaseStatus SignConstraint::getPhaseStatusInAssignment( const
 
 bool SignConstraint::haveOutOfBoundVariables() const
 {
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     if ( FloatUtils::gt( getLowerBound( _b ), bValue ) || FloatUtils::lt( getUpperBound( _b ), bValue ) )
         return true;
@@ -385,6 +384,9 @@ String SignConstraint::phaseToString( PhaseStatus phase )
 
 void SignConstraint::notifyVariableValue( unsigned variable, double value )
 {
+    // This should never be called when we are using Gurobi to solve LPs.
+    ASSERT( _gurobi == NULL );
+
     if ( FloatUtils::isZero( value ) )
         value = 0.0;
 
@@ -455,6 +457,9 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
 
 List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
 {
+    // This should never be called when we are using Gurobi to solve LPs.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( !satisfied() );
     ASSERT( _assignment.exists( _b ) );
     ASSERT( _assignment.exists( _f ) );
@@ -506,6 +511,9 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
 void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
+    // This should never be called when we are using Gurobi to solve LPs.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_boundManager );
     ASSERT( !_assignment.exists( newIndex ) &&

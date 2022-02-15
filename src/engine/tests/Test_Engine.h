@@ -60,6 +60,8 @@ public:
         rowTightener = &( mock->mockRowBoundTightener );
         constraintTightener = &( mock->mockConstraintBoundTightener );
         constraintMatrixAnalyzer = &( mock->mockConstraintMatrixAnalyzer );
+
+        Options::get()->setString( Options::LP_SOLVER, "native" );
     }
 
     void tearDown()
