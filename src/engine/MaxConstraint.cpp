@@ -383,15 +383,15 @@ bool MaxConstraint::satisfied() const
                                    element ).ascii() );
         });
 
-    auto byAssignment = [&]( const unsigned &a, const unsigned &b ) {
-                            return _assignment[a] < _assignment[b];
-                        };
-    double maxValue = _assignment.get( *std::max_element( _elements.begin(),
-                                                          _elements.end(),
-                                                          byAssignment ) );
-    maxValue = FloatUtils::max( maxValue, _maxValueOfEliminatedPhases );
-    double fValue = _assignment.get( _f );
-    return FloatUtils::areEqual( maxValue, fValue );
+    double fValue = getAssignment( _f );
+    double maxValue = _maxValueOfEliminatedVariables;
+    for ( const auto &element : _elements )
+    {                                                                                                                                                                                                         
+        double currentValue = getAssignment( element );
+        if ( FloatUtils::gt( currentValue, maxValue ) )
+            maxValue = currentValue;                                                                                                                                                                          
+    }
+    return FloatUtils::areEqual( maxValue, fValue );  
 }
 
 bool MaxConstraint::isCaseInfeasible( unsigned variable ) const
