@@ -346,7 +346,8 @@ void DisjunctionConstraint::dump( String &output ) const
 
 void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    // Reluplex does not currently work with Gurobi.
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
     ASSERT( _gurobi == NULL );
 
     ASSERT( !participatingVariable( newIndex ) );

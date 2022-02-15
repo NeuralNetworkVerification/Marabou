@@ -511,7 +511,8 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
 void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    // This should never be called when we are using Gurobi to solve LPs.
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
     ASSERT( _gurobi == NULL );
 
     ASSERT( oldIndex == _b || oldIndex == _f );

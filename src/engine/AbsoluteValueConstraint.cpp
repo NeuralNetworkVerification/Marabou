@@ -467,8 +467,8 @@ void AbsoluteValueConstraint::dump( String &output ) const
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    // We have already registered Gurobi and it is too late to update variable
-    // indices.
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
     ASSERT( _gurobi == NULL );
 
     ASSERT( oldIndex == _b || oldIndex == _f ||
