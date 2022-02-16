@@ -39,7 +39,7 @@ MaxConstraint::MaxConstraint( unsigned f, const Set<unsigned> &elements )
     , _initialElements( elements )
     , _obsolete( false )
     , _maxLowerBound( FloatUtils::negativeInfinity() )
-    , _isEliminatedPhaseFeasible( false )
+    , _haveFeasibleEliminatedPhases( false )
     , _maxValueOfEliminatedPhases( FloatUtils::negativeInfinity() )
 {
 }
@@ -72,7 +72,7 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
         maxValueOfEliminatedFromString = std::stod( valuesIter->ascii() );
 
     *(this) = MaxConstraint( f, elements );
-    _isEliminatedPhaseFeasible = eliminatedVariableFromString;
+    _haveFeasibleEliminatedPhases = eliminatedVariableFromString;
     _maxValueOfEliminatedPhases = maxValueOfEliminatedFromString;
 }
 
@@ -181,14 +181,14 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
             for ( unsigned removeVar : toRemove )
                 eliminateCase( removeVar );
 
-            _isEliminatedPhaseFeasible =
+            _haveFeasibleEliminatedPhases =
                 FloatUtils::lte( _maxLowerBound,
                                  _maxValueOfEliminatedPhases );
         }
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _isEliminatedPhaseFeasible ?
+        _phaseStatus = ( _haveFeasibleEliminatedPhases ?
                          MAX_PHASE_ELIMINATED :
                          variableToPhase( *_elements.begin() ) );
 
@@ -231,7 +231,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         /* The case that this variable is an aux variable.
            If the aux variable is 0. This means f - auxToElement[aux] = aux = 0.
            We can eliminate all other cases and set
-           _isEliminatedPhaseFeasible to false;
+           _haveFeasibleEliminatedPhases to false;
         */
         if ( FloatUtils::isZero( value ) )
         {
@@ -240,7 +240,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
                 if ( element != currentElement )
                     eliminateCase( element );
 
-            _isEliminatedPhaseFeasible = false;
+            _haveFeasibleEliminatedPhases = false;
         }
     }
     else if ( _elements.exists( variable ) )
@@ -252,7 +252,7 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _isEliminatedPhaseFeasible ?
+        _phaseStatus = ( _haveFeasibleEliminatedPhases ?
                          MAX_PHASE_ELIMINATED :
                          variableToPhase( *_elements.begin() ) );
 
@@ -410,7 +410,7 @@ List<PhaseStatus> MaxConstraint::getAllCases() const
     for ( unsigned element : _elements )
         cases.append( variableToPhase( element ) );
 
-    if ( _isEliminatedPhaseFeasible )
+    if ( _haveFeasibleEliminatedPhases )
         cases.append( MAX_PHASE_ELIMINATED );
 
     return cases;
@@ -428,8 +428,8 @@ List<PiecewiseLinearCaseSplit> MaxConstraint::getCaseSplits() const
 
 bool MaxConstraint::phaseFixed() const
 {
-    return ( ( _elements.size() == 1 && !_isEliminatedPhaseFeasible ) ||
-             ( _elements.size() == 0 && _isEliminatedPhaseFeasible ) );
+    return ( ( _elements.size() == 1 && !_haveFeasibleEliminatedPhases ) ||
+             ( _elements.size() == 0 && _haveFeasibleEliminatedPhases ) );
 }
 
 bool MaxConstraint::isImplication() const
@@ -532,7 +532,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
         _maxValueOfEliminatedPhases = FloatUtils::max
             ( value, _maxValueOfEliminatedPhases );
 
-        _isEliminatedPhaseFeasible =
+        _haveFeasibleEliminatedPhases =
             FloatUtils::gte( _maxValueOfEliminatedPhases, _maxLowerBound );
     }
     else if ( _auxToElement.exists( var ) )
@@ -551,7 +551,7 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _isEliminatedPhaseFeasible ?
+        _phaseStatus = ( _haveFeasibleEliminatedPhases ?
                          MAX_PHASE_ELIMINATED :
                          variableToPhase( *_elements.begin() ) );
 
@@ -658,7 +658,7 @@ PhaseStatus MaxConstraint::getPhaseStatusInAssignment( const Map<unsigned, doubl
                                                    _elements.end(),
                                                    byAssignment );
     double value = assignment[largestVariable];
-    if ( _isEliminatedPhaseFeasible &&
+    if ( _haveFeasibleEliminatedPhases &&
          FloatUtils::lt( value, _maxValueOfEliminatedPhases ) )
         return MAX_PHASE_ELIMINATED;
     else
@@ -674,8 +674,8 @@ String MaxConstraint::serializeToString() const
 
     // Special delimiter ",e" represents elimination flag and variables
     output += Stringf( ",e" );
-    output += Stringf( ",%u", _isEliminatedPhaseFeasible ? 1 : 0 );
-    if ( _isEliminatedPhaseFeasible )
+    output += Stringf( ",%u", _haveFeasibleEliminatedPhases ? 1 : 0 );
+    if ( _haveFeasibleEliminatedPhases )
         output += Stringf( ",%f", _maxValueOfEliminatedPhases );
     else
         // Will be ignored in any case

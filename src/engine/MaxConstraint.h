@@ -222,9 +222,12 @@ private:
     double _maxLowerBound;
 
     /*
-      We keep track of eliminated variables and the maximal value.
+      We keep track of eliminated variables and the maximal value. The flag is
+      true iff some input variables of the max constraint have been eliminated
+      (fixed to a constant) and the case split corresponding to one of them is
+      feasible (wrt. variable bounds).
     */
-    bool _isEliminatedPhaseFeasible;
+    bool _haveFeasibleEliminatedPhases;
     double _maxValueOfEliminatedPhases;
 
     /*
