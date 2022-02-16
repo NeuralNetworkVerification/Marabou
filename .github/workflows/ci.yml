@@ -34,10 +34,10 @@ jobs:
         if: ${{ matrix.platform == 'macos-latest' }}
         run: |
            brew install ccache cxxtest protobuf
-           python3.8 -m pip install --user --upgrade pip
-           python3.8 -m pip install --user --upgrade setuptools
-           python3.8 -m pip install --user wheel
-           python3.8 -m pip install --user -r maraboupy/requirements.txt --cache-dir $HOME/.pip-cache 
+           python -m pip install --user --upgrade pip
+           python -m pip install --user --upgrade setuptools
+           python -m pip install --user wheel
+           python -m pip install --user -r maraboupy/requirements.txt --cache-dir $HOME/.pip-cache 
            echo "/usr/lib/ccache" >> $GITHUB_PATH
 
       - name: Create Build Environment
