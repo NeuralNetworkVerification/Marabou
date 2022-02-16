@@ -28,6 +28,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _score( FloatUtils::negativeInfinity() )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
+    , _gurobi( NULL )
 {
 }
 
@@ -43,6 +44,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _score( FloatUtils::negativeInfinity() )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
+    , _gurobi( NULL )
 {
 }
 

@@ -93,7 +93,7 @@ public:
 		inputQuery.addPiecewiseLinearConstraint( max2 );
 
         Engine engine;
-        if ( !engine.processInputQuery( inputQuery, false ) )
+        if ( !engine.processInputQuery( inputQuery, true ) )
         {
             // got infeasible in the preprocessing
             TS_ASSERT( 1 );

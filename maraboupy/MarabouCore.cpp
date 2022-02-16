@@ -211,7 +211,7 @@ struct MarabouOptions {
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
-        , _skipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+        , _performLpTighteningAfterSplit( Options::get()->getBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
@@ -219,6 +219,7 @@ struct MarabouOptions {
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
     {};
 
   void setOptions()
@@ -228,7 +229,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
-    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit ); 
+    Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT, _performLpTighteningAfterSplit );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -250,13 +251,14 @@ struct MarabouOptions {
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
     Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
+    Options::get()->setString( Options::LP_SOLVER, _lpSolverString );
   }
 
     bool _snc;
     bool _restoreTreeStates;
     bool _solveWithMILP;
     bool _dumpBounds;
-    bool _skipLpTighteningAfterSplit;
+    bool _performLpTighteningAfterSplit;
     unsigned _numWorkers;
     unsigned _numBlasThreads;
     unsigned _initialTimeout;
@@ -273,6 +275,7 @@ struct MarabouOptions {
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
     std::string _milpTighteningString;
+    std::string _lpSolverString;
 };
 
 
@@ -337,7 +340,6 @@ std::tuple<std::string, std::map<int, double>, Statistics>
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-
         options.setOptions();
 
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
@@ -431,8 +433,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
+        .def_readwrite("_lpSolver", &MarabouOptions::_lpSolverString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
+        .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit);
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(

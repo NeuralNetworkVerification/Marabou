@@ -197,6 +197,11 @@ public:
 
     inline unsigned getF() const { return _f; };
 
+    inline bool auxVariablesInUse() const { return _auxVarsInUse; };
+
+    inline unsigned getPosAux() const { return _posAux; };
+    inline unsigned getNegAux() const { return _negAux; };
+
 private:
     /*
       The variables that make up this constraint; _f = | _b |.
