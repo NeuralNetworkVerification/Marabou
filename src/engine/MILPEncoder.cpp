@@ -81,7 +81,7 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT,
                                 "GurobiWrapper::encodeInputQuery: "
-                                "Only ReLU and Max are supported\n" );
+                                "Unsupported piecewise-linear constraints\n" );
         }
     }
 
@@ -212,7 +212,6 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     // add constraint: a_1 + a_2 + ... + = 1
     gurobi.addEqConstraint( terms, 1 );
 
-    // Add each disjunct as indicator constraints
     terms.clear();
     unsigned index = 0;
     for ( const auto &phase : phases )
