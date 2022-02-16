@@ -81,7 +81,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 9U );
 
-        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariablesIfNeeded( ipq ) );
+        TS_ASSERT_THROWS_NOTHING( max.transformToUseAuxVariables( ipq ) );
 
         TS_ASSERT_THROWS_NOTHING( participatingVariables = max.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 17U );

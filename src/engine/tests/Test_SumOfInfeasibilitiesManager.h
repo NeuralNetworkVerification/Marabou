@@ -77,7 +77,7 @@ public:
         ReluConstraint *relu3 = new ReluConstraint(4,5);
         MaxConstraint *max1 = new MaxConstraint(6, {1,3,5});
 
-        max1->transformToUseAuxVariablesIfNeeded( ipq );
+        max1->transformToUseAuxVariables( ipq );
 
         ipq.addPiecewiseLinearConstraint(relu1);
         ipq.addPiecewiseLinearConstraint(relu2);

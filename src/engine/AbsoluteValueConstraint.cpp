@@ -608,7 +608,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
+void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery
                                                                   &inputQuery )
 {
     /*

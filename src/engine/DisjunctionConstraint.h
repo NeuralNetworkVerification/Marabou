@@ -156,7 +156,7 @@ public:
       Transform the disjunction into a disjunction where each disjunct only
       contains variable bounds.
     */
-    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
 
     /*
       Dump the current state of the constraint.

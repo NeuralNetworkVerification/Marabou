@@ -177,7 +177,7 @@ public:
     /*
       Represent the Max constraint using the aux variables.
     */
-    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.
@@ -216,11 +216,15 @@ private:
 
     bool _obsolete;
 
-    // We eagerly keep track of the max lower bound of the inputs.
+    /*
+      We eagerly keep track of the max lower bound of the inputs.
+    */
     double _maxLowerBound;
 
-    // We keep track of eliminated variables and the maximal value.
-    bool _haveFeasibleEliminatedPhases;
+    /*
+      We keep track of eliminated variables and the maximal value.
+    */
+    bool _isEliminatedPhaseFeasible;
     double _maxValueOfEliminatedPhases;
 
     /*
@@ -230,8 +234,7 @@ private:
 
     /*
        Conversion functions between variables and PhaseStatus.
-     */
-
+    */
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
         return ( variable == MAX_PHASE_ELIMINATED )
@@ -255,19 +258,6 @@ private:
       Return true iff f or the elements are not all within bounds.
     */
     bool haveOutOfBoundVariables() const;
-
-    /*
-     * Returns a boolean value indicating if at least one input variable was eliminated (True)
-     * or not (False)
-     */
-    bool wereVariablesEliminated() const;
-
-    /*
-      For DEBUG only:
-      Return true if all the element in _elements are feasible
-      based on their bounds.
-    */
-    void checkAllInputElementsFeasible() const;
 };
 
 #endif // __MaxConstraint_h__
