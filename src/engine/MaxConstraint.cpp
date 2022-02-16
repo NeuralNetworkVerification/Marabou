@@ -724,3 +724,20 @@ bool MaxConstraint::haveOutOfBoundVariables() const
     }
     return false;
 }
+
+void MaxConstraint::checkAllInputElementsFeasible() const
+{
+    double maxLowerBound = FloatUtils::negativeInfinity();
+    for ( const auto &element : _elements )
+    {
+        maxLowerBound = FloatUtils::max( getLowerBound( element ),
+                                         maxLowerBound );
+    }
+    ASSERT( FloatUtils::areEqual( maxLowerBound, _maxLowerBound ) );
+    for ( const auto &element : _elements )
+    {
+        ASSERT( FloatUtils::gte( getUpperBound( element ), _maxLowerBound ) );
+        ASSERT( FloatUtils::lte( getUpperBound( element ),
+                                 getUpperBound( _f ) ) );
+    }
+}
