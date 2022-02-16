@@ -381,7 +381,7 @@ bool MaxConstraint::satisfied() const
         });
 
     double fValue = getAssignment( _f );
-    double maxValue = _maxValueOfEliminated;
+    double maxValue = _maxValueOfEliminatedPhases;
     for ( const auto &element : _elements )
     {
         double currentValue = getAssignment( element );
