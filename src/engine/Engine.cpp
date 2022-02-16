@@ -348,7 +348,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
         catch ( MarabouError &e )
         {
             String message =
-                Stringf( "Caught a MarabouError. Code: %u. Message: %s\n",
+                Stringf( "Caught a MarabouError. Code: %u. Message: %s ",
                          e.getCode(), e.getUserMessage() );
             _exitCode = Engine::ERROR;
             exportInputQueryWithError( message );

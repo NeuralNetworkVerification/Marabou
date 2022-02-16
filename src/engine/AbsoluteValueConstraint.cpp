@@ -284,7 +284,7 @@ List<unsigned> AbsoluteValueConstraint::getParticipatingVariables() const
 
 bool AbsoluteValueConstraint::satisfied() const
 {
-    if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
         throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
     double bValue = getAssignment( _b );
