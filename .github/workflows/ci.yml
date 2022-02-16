@@ -33,7 +33,6 @@ jobs:
       - name: Install Packages on Mac
         if: ${{ matrix.platform == 'macos-latest' }}
         run: |
-           sudo apt-get update
            brew install ccache cxxtest protobuf
            python3 -m pip install --user --upgrade pip
            python3 -m pip install --user --upgrade setuptools
