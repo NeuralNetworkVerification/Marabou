@@ -261,19 +261,6 @@ private:
       Return true iff f or the elements are not all within bounds.
     */
     bool haveOutOfBoundVariables() const;
-
-    /*
-     * Returns a boolean value indicating if at least one input variable was eliminated (True)
-     * or not (False)
-     */
-    bool wereVariablesEliminated() const;
-
-    /*
-      For DEBUG only:
-      Return true if all the element in _elements are feasible
-      based on their bounds.
-    */
-    void checkAllInputElementsFeasible() const;
 };
 
 #endif // __MaxConstraint_h__
