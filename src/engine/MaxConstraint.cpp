@@ -162,12 +162,8 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     }
     else if ( variable == _f || _elements.exists( variable ) )
     {
-        // If the variable is either in _element or _f. The only case that this is
-        // going to eliminate case is that the new lowerBound is greater than the
-        // _maxLowerBound.
-        // We update _maxLowerBound, and go through each element to see if it
-        // can be eliminated.
-        // We also update the _haveFeasibleEliminatedCase flag.
+        // If the variable is either in _element or _f, there will be eliminated
+        // cases when the new lowerBound is greater than the _maxLowerBound.
         if ( FloatUtils::gt( value, _maxLowerBound ) )
         {
             _maxLowerBound = value;
