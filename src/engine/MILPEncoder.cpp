@@ -50,6 +50,10 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
     // Add Piecewise-linear Constraints
     for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
     {
+        if ( plConstraint->constraintObsolete() )
+        {
+            continue;
+        }
         switch ( plConstraint->getType() )
         {
         case PiecewiseLinearFunctionType::RELU:
@@ -68,6 +72,11 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
             encodeAbsoluteValueConstraint( gurobi,
                                            (AbsoluteValueConstraint *)plConstraint,
                                            relax );
+            break;
+        case PiecewiseLinearFunctionType::DISJUNCTION:
+            encodeDisjunctionConstraint( gurobi,
+                                         (DisjunctionConstraint *)plConstraint,
+                                         relax );
             break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT,
@@ -148,6 +157,15 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
         return;
     }
 
+    /*
+      We have added f - b >= 0 and f >= 0. Additionally, we add
+      f - b <= (1 - a) * (- lb_b) and f <= a * ub_f.
+
+      When a = 1, the constraints become:
+          f - b <= 0, f <= ub_f.
+      When a = 0, the constriants become:
+          f - b <= - lb_b, f <= 0
+    */
     gurobi.addVariable( Stringf( "a%u", _binVarIndex ),
                         0,
                         1,
@@ -157,7 +175,7 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
     unsigned sourceVariable = relu->getB();
     unsigned targetVariable = relu->getF();
     double sourceLb = _tableau.getLowerBound( sourceVariable );
-    double sourceUb = _tableau.getUpperBound( sourceVariable );
+    double targetUb = _tableau.getUpperBound( targetVariable );
 
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -167,7 +185,7 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
 
     terms.clear();
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-    terms.append( GurobiWrapper::Term( -sourceUb, Stringf( "a%u", _binVarIndex++ ) ) );
+    terms.append( GurobiWrapper::Term( -targetUb, Stringf( "a%u", _binVarIndex++ ) ) );
     gurobi.addLeqConstraint( terms, 0 );
 }
 
@@ -177,60 +195,65 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
     if ( !max->isActive() )
         return;
 
-    // y = max(x_1, x_2, ... , x_m)
-    unsigned y = max->getF();
-
-    // xs = [x_1, x_2, ... , x_m]
-    List<unsigned> xs = max->getElements();
-
-    // upper bounds of each x_i
-    using qtype = std::pair<double, unsigned>;
-    auto cmp = []( qtype l, qtype r) { return l.first <= r.first; };
-    std::priority_queue<qtype, std::vector<qtype>, decltype( cmp )> ubq( cmp );
-
-    // terms for Gurobi
     List<GurobiWrapper::Term> terms;
-
-    for ( const auto &x : xs ) 
+    List<PhaseStatus> phases = max->getAllCases();
+    for ( unsigned i = 0; i < phases.size(); ++i )
     {
-        // add binary variable
-        // Nameing rule is `a{_binVarIndex}_{x}` to clarify
-        // which x binary variable is for. 
-        gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, x ),
+        // add a binary variable for each disjunct
+        gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, i ),
                             0,
                             1,
                             relax ?
                             GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
 
-        terms.append( GurobiWrapper::Term( 1, Stringf( "a%u_%u", _binVarIndex, x ) ) );
-        ubq.push( { _tableau.getUpperBound( x ), x } );
+        terms.append( GurobiWrapper::Term( 1, Stringf( "a%u_%u", _binVarIndex, i ) ) );
     }
 
-    // add constraint: a_1 + a_2 + ... + a_m = 1
+    // add constraint: a_1 + a_2 + ... + = 1
     gurobi.addEqConstraint( terms, 1 );
 
-    // extract the pairs of the maximum upper bound and the second.
-    auto ubMax1 = ubq.top();
-    ubq.pop();
-    auto ubMax2 = ubq.top();
-
+    // Add each disjunct as indicator constraints
     terms.clear();
-
-    double umax = 0;
-    for ( const auto &x : xs ) 
+    unsigned index = 0;
+    for ( const auto &phase : phases )
     {
-        // add constraint: y <= x_i + (1 - a_i) * (umax - l)
-        if ( ubMax1.second != x )
-            umax = ubMax1.first;
-        else
-            umax = ubMax2.first;
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", y ) ) );
-        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", x ) ) );
-        terms.append( GurobiWrapper::Term( umax - _tableau.getLowerBound( x ), Stringf( "a%u_%u", _binVarIndex, x ) ) );
-        gurobi.addLeqConstraint( terms, umax - _tableau.getLowerBound( x ) );
+        String binVarName = Stringf( "a%u_%u", _binVarIndex, index );
+        PiecewiseLinearCaseSplit split = max->getCaseSplit( phase );
+        if ( phase == MAX_PHASE_ELIMINATED )
+        {
+            /*
+              We had y - eliminated value >= 0
+              We add y - eliminated-value <= (1 - a) * (ub_y - eliminated-value),
+              which becomes y + (ub_y - eliminated-value) * a <= ub_y
+            */
+            unsigned y = split.getBoundTightenings().begin()->_variable;
+            double yUb = _tableau.getUpperBound( y );
+            double eliminatedValue = split.getBoundTightenings().begin()->_value;
 
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", y ) ) );
+            terms.append( GurobiWrapper::Term( yUb - eliminatedValue, binVarName ) );
+            gurobi.addLeqConstraint( terms, yUb );
+        }
+        else
+        {
+            /*
+              We added aux_i >= 0, for each x.
+              We now add, aux_i <= (1 - a) * (ub_aux)
+            */
+            DEBUG({
+                    ASSERT( split.getBoundTightenings().size() == 1 );
+                    ASSERT( split.getEquations().size() == 0 );
+                });
+            unsigned aux = split.getBoundTightenings().begin()->_variable;
+            double auxUb = _tableau.getUpperBound( aux );
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", aux ) ) );
+            terms.append( GurobiWrapper::Term( auxUb, binVarName ) );
+            gurobi.addLeqConstraint( terms, auxUb );
+        }
         terms.clear();
+        ++index;
     }
+
     _binVarIndex++;
 }
 
@@ -254,14 +277,19 @@ void MILPEncoder::encodeAbsoluteValueConstraint( GurobiWrapper &gurobi,
     unsigned targetVariable = abs->getF();
     double sourceLb = _tableau.getLowerBound( sourceVariable );
     double sourceUb = _tableau.getUpperBound( sourceVariable );
+    double targetUb = _tableau.getUpperBound( targetVariable );
 
     ASSERT( FloatUtils::isPositive( sourceUb ) &&
             FloatUtils::isNegative( sourceLb ) );
 
     /*
-      We have added f - b >= 0 and f + b >= 0. We need to add
-      f - b <= (1 - a) * (ub_b - lb_b) and f + b <= a * (ub_b + ub_b)
-      where a is a binary.
+      We have added f - b >= 0 and f + b >= 0. We add
+      f - b <= (1 - a) * (ub_f - lb_b) and f + b <= a * (ub_f + ub_b)
+
+      When a = 1, the constraints become:
+      f - b <= 0, f + b <= ub_f + ub_b.
+      When a = 0, the constriants become:
+      f - b <= ub_f - lb_b, f + b <= 0
     */
     gurobi.addVariable( Stringf( "a%u", _binVarIndex ),
                         0,
@@ -272,15 +300,65 @@ void MILPEncoder::encodeAbsoluteValueConstraint( GurobiWrapper &gurobi,
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
     terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
-    terms.append( GurobiWrapper::Term( sourceUb - sourceLb, Stringf( "a%u", _binVarIndex ) ) );
-    gurobi.addLeqConstraint( terms, sourceUb - sourceLb );
+    terms.append( GurobiWrapper::Term( targetUb - sourceLb, Stringf( "a%u", _binVarIndex ) ) );
+    gurobi.addLeqConstraint( terms, targetUb - sourceLb );
 
     terms.clear();
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
-    terms.append( GurobiWrapper::Term( -2 * sourceUb, Stringf( "a%u", _binVarIndex ) ) );
+    terms.append( GurobiWrapper::Term( -( targetUb + sourceUb ),
+                                       Stringf( "a%u", _binVarIndex ) ) );
     gurobi.addLeqConstraint( terms, 0 );
     ++_binVarIndex;
+}
+
+void MILPEncoder::encodeDisjunctionConstraint( GurobiWrapper &gurobi,
+                                               DisjunctionConstraint *disj,
+                                               bool relax )
+{
+    if ( !disj->isActive() )
+        return;
+
+    // terms for Gurobi
+    List<GurobiWrapper::Term> terms;
+    List<PiecewiseLinearCaseSplit> disjuncts = disj->getCaseSplits();
+    for ( unsigned i = 0; i < disjuncts.size(); ++i )
+    {
+        // add a binary variable for each disjunct
+        gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, i ),
+                            0,
+                            1,
+                            relax ?
+                            GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
+
+        terms.append( GurobiWrapper::Term( 1, Stringf( "a%u_%u", _binVarIndex, i ) ) );
+    }
+
+    // add constraint: a_1 + a_2 + ... + >= 1
+    gurobi.addGeqConstraint( terms, 1 );
+
+    // Add each disjunct as indicator constraints
+    terms.clear();
+    unsigned index = 0;
+    for ( const auto &disjunct : disjuncts )
+    {
+        String binVarName = Stringf( "a%u_%u", _binVarIndex, index );
+        for ( const auto &tightening : disjunct.getBoundTightenings() )
+        {
+            // add indicator constraint: a_1 => disjunct1, etc.
+            terms.append( GurobiWrapper::Term
+                          ( 1, getVariableNameFromVariable
+                            ( tightening._variable ) ) );
+            if ( tightening._type == Tightening::UB )
+                gurobi.addLeqIndicatorConstraint( binVarName, 1, terms, tightening._value );
+            else
+                gurobi.addGeqIndicatorConstraint( binVarName, 1, terms, tightening._value );
+            terms.clear();
+        }
+        ++index;
+    }
+
+    _binVarIndex++;
 }
 
 void MILPEncoder::encodeSignConstraint( GurobiWrapper &gurobi,
@@ -312,6 +390,10 @@ void MILPEncoder::encodeSignConstraint( GurobiWrapper &gurobi,
     /*
       We have added f <= -2/lb b + 1 and f >= 2/ub * b - 1. We just need to specify
       f is either -1 or 1. That is f = 2 * (a - 0.5)
+
+      f is 1 if a is 1 and -1 if a is 0.
+      Moreover, when f is 1, 1 <= -2 / lb_b * b + 1, thus, b >= 0.
+      When f is -1, -1 >= 2/ub_b * b - 1, thus, b <= 0.
     */
     gurobi.addVariable( Stringf( "a%u", _binVarIndex ),
                         0,

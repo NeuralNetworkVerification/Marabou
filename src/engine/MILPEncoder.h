@@ -16,6 +16,7 @@
 #ifndef __MILPEncoder_h__
 #define __MILPEncoder_h__
 
+#include "DisjunctionConstraint.h"
 #include "GurobiWrapper.h"
 #include "InputQuery.h"
 #include "ITableau.h"
@@ -121,6 +122,13 @@ private:
     */
     void encodeSignConstraint( GurobiWrapper &gurobi, SignConstraint *sign,
                                bool relax );
+
+    /*
+      Encode a disjunction constraint into Gurobi
+    */
+    void encodeDisjunctionConstraint( GurobiWrapper &gurobi,
+                                      DisjunctionConstraint *disj,
+                                      bool relax );
 
     /*
       Encode a Sigmoid constraint
