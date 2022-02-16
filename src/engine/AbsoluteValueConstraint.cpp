@@ -167,7 +167,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
             // bother. The only exception is if the lower bound is,
             // for some reason, negative
             if ( bound < 0 )
-                _boundManager->tightenLowerBound( _f, 0 );
+                _tableau->tightenLowerBound( _f, 0 );
         }
 
         // Any lower bound tightening on the aux variables, if they

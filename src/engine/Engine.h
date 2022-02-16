@@ -498,11 +498,6 @@ private:
     void applyAllRowTightenings();
 
     /*
-      Apply any bound tightenings entailed by the constraints.
-    */
-    void applyAllConstraintTightenings();
-
-    /*
       Apply all valid case splits proposed by the constraints.
       Return true if a valid case split has been applied.
     */

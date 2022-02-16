@@ -47,7 +47,6 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
-#include "BoundManager.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
 #include "ITableau.h"
@@ -64,7 +63,6 @@
 #include "context/context.h"
 
 class Equation;
-class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
@@ -339,14 +337,7 @@ public:
     /**********************************************************************/
 
     /*
-      Register a bound manager. If a bound manager is registered,
-      the piecewise linear constraint will inform the manager whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerBoundManager( BoundManager *boundManager );
-
-    /*
-       Tableau replaces CBT until we can switch to the BM
+       Tableau contains the centralized bounds and assignments.
      */
     void registerTableau( ITableau *tableau );
 
@@ -450,8 +441,7 @@ protected:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
-    BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
-    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+    ITableau *_tableau; // Pointer to a tableau which contains the centralized bound
 
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
@@ -517,26 +507,26 @@ protected:
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
     /**********************************************************************/
-    /* These methods prefer using BoundManager over local bound arrays.   */
+    /* These methods prefer using _tableau over local bound arrays.   */
 
     /*
        Checks whether lower bound value exists.
 
-       If BoundManager is in use, returns true since it initializes bounds for all variables.
+       If Tableau is in use, returns true since it initializes bounds for all variables.
     */
     inline bool existsLowerBound( unsigned var ) const
     {
-        return _boundManager != nullptr || _lowerBounds.exists( var );
+        return _tableau != nullptr || _lowerBounds.exists( var );
     }
 
     /*
        Checks whether upper bound value exists.
 
-       If BoundManager is in use, returns true since it initializes bounds for all variables.
+       If Tableau is in use, returns true since it initializes bounds for all variables.
     */
     inline bool existsUpperBound( unsigned var ) const
     {
-        return _boundManager != nullptr || _upperBounds.exists( var );
+        return _tableau != nullptr || _upperBounds.exists( var );
     }
 
     /*
@@ -544,7 +534,7 @@ protected:
      */
     inline double getLowerBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
+        return ( _tableau != nullptr ) ? _tableau->getLowerBound( var )
                                             : _lowerBounds[var];
     }
 
@@ -553,7 +543,7 @@ protected:
      */
     inline double getUpperBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
+        return ( _tableau != nullptr ) ? _tableau->getUpperBound( var )
                                             : _upperBounds[var];
     }
 
@@ -562,8 +552,10 @@ protected:
      */
     inline void setLowerBound( unsigned var, double value )
     {
-        ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
-                                     : _lowerBounds[var] = value;
+        if ( _tableau )
+            _tableau->setLowerBound( var, value );
+        else
+            _lowerBounds[var] = value;
     }
 
     /*
@@ -571,8 +563,10 @@ protected:
      */
     inline void setUpperBound( unsigned var, double value )
     {
-        ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
-                                     : _upperBounds[var] = value;
+        if ( _tableau )
+            _tableau->setUpperBound( var, value );
+        else
+            _upperBounds[var] = value;
     }
 
     /**********************************************************************/
@@ -597,11 +591,3 @@ protected:
 };
 
 #endif // __PiecewiseLinearConstraint_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

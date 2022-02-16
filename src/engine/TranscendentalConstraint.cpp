@@ -16,17 +16,9 @@
 #include "Statistics.h"
 
 TranscendentalConstraint::TranscendentalConstraint()
-    : _boundManager( nullptr )
-    , _tableau( nullptr )
+    : _tableau( nullptr )
     , _statistics( NULL )
 {
-}
-
-void TranscendentalConstraint::registerBoundManager(
-    BoundManager *boundManager )
-{
-    ASSERT( _boundManager == nullptr );
-    _boundManager = boundManager;
 }
 
 void TranscendentalConstraint::setStatistics( Statistics *statistics )

@@ -515,7 +515,7 @@ void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
     ASSERT( _gurobi == NULL );
 
     ASSERT( oldIndex == _b || oldIndex == _f );
-    ASSERT( !_boundManager );
+    ASSERT( !_tableau );
     ASSERT( !_assignment.exists( newIndex ) &&
             !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&

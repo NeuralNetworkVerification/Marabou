@@ -488,16 +488,18 @@ public:
     {
     }
 
-    Map<unsigned, double> tightenedLowerBounds;
     void tightenLowerBound( unsigned variable, double value )
     {
-        tightenedLowerBounds[variable] = value;
+        if ( lowerBounds.exists( variable ) &&
+             FloatUtils::lt( lowerBounds[variable], value ) )
+            lowerBounds[variable] = value;
     }
 
-    Map<unsigned, double> tightenedUpperBounds;
     void tightenUpperBound( unsigned variable, double value )
     {
-        tightenedUpperBounds[variable] = value;
+        if ( upperBounds.exists( variable ) &&
+             FloatUtils::gt( upperBounds[variable], value ) )
+            upperBounds[variable] = value;
     }
 
     void applySplit( const PiecewiseLinearCaseSplit &/* split */)
@@ -622,6 +624,41 @@ public:
     BoundManager &getBoundManager() const
     {
         return *_boundManager;
+    }
+
+    static void registerInitialBounds( MockTableau &tableau,
+                                       const Map<unsigned, double> &lowerBounds,
+                                       const Map<unsigned, double> &upperBounds )
+    {
+        for ( const auto &pair : lowerBounds )
+            tableau.setLowerBound( pair.first, pair.second );
+        for ( const auto &pair : upperBounds )
+            tableau.setUpperBound( pair.first, pair.second );
+    }
+
+    /*
+      Returns true iff the bounds in the tableau matches the bounds
+      in the given lower- and upper- bounds.
+
+      After switching to CDSmtCore, this will check the bounds in the
+      BoundManager.
+    */
+    static bool checkBoundsInTableau( const MockTableau &tableau,
+                                      const Map<unsigned, double> &lowerBounds,
+                                      const Map<unsigned, double> &upperBounds )
+    {
+        for ( const auto &pair : lowerBounds )
+            if ( !FloatUtils::areEqual( tableau.getLowerBound( pair.first ),
+                                        pair.second ) )
+                return false;
+
+
+        for ( const auto &pair : upperBounds )
+            if ( !FloatUtils::areEqual( tableau.getUpperBound( pair.first ),
+                                        pair.second ) )
+                return false;
+
+        return true;
     }
 };
 

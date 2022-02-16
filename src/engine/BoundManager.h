@@ -111,6 +111,9 @@ private:
     Vector<CVC4::context::CDO<double> *> _lowerBounds;
     Vector<CVC4::context::CDO<double> *> _upperBounds;
 
+    /*
+      TODO: these objects should not be used and should be removed.
+    */
     Vector<CVC4::context::CDO<bool> *> _tightenedLower;
     Vector<CVC4::context::CDO<bool> *> _tightenedUpper;
 };

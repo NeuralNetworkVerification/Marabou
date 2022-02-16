@@ -153,38 +153,38 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
         if ( ( variable == _f || variable == _b ) && bound > 0 )
         {
             unsigned partner = ( variable == _f ) ? _b : _f;
-            _boundManager->tightenLowerBound( partner, bound );
+            _tableau->tightenLowerBound( partner, bound );
 
             // If we're in the active phase, aux should be 0
             if ( _auxVarInUse )
-                _boundManager->tightenUpperBound( _aux, 0 );
+                _tableau->tightenUpperBound( _aux, 0 );
         }
 
         // If b is non-negative, we're in the active phase
         else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
         {
-            _boundManager->tightenUpperBound( _aux, 0 );
+            _tableau->tightenUpperBound( _aux, 0 );
         }
 
         // A positive lower bound for aux means we're inactive: f is 0, b is non-positive
         // When inactive, b = -aux
         else if ( _auxVarInUse && variable == _aux && bound > 0 )
         {
-            _boundManager->tightenUpperBound( _b, -bound );
-            _boundManager->tightenUpperBound( _f, 0 );
+            _tableau->tightenUpperBound( _b, -bound );
+            _tableau->tightenUpperBound( _f, 0 );
         }
 
         // A negative lower bound for b could tighten aux's upper bound
         else if ( _auxVarInUse && variable == _b && bound < 0 )
         {
-            _boundManager->tightenUpperBound( _aux, -bound );
+            _tableau->tightenUpperBound( _aux, -bound );
         }
 
         // Also, if for some reason we only know a negative lower bound for f,
         // we attempt to tighten it to 0
         else if ( bound < 0 && variable == _f )
         {
-            _boundManager->tightenLowerBound( _f, 0 );
+            _tableau->tightenLowerBound( _f, 0 );
         }
     }
 }
@@ -210,30 +210,30 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
         if ( variable == _f )
         {
             // Any bound that we learned of f should be propagated to b
-            _boundManager->tightenUpperBound( _b, bound );
+            _tableau->tightenUpperBound( _b, bound );
         }
         else if ( variable == _b )
         {
             if ( !FloatUtils::isPositive( bound ) )
             {
                 // If b has a non-positive upper bound, f's upper bound is 0
-                _boundManager->tightenUpperBound( _f, 0 );
+                _tableau->tightenUpperBound( _f, 0 );
 
                 if ( _auxVarInUse )
                 {
                     // Aux's range is minus the range of b
-                    _boundManager->tightenLowerBound( _aux, -bound );
+                    _tableau->tightenLowerBound( _aux, -bound );
                 }
             }
             else
             {
                 // b has a positive upper bound, propagate to f
-                _boundManager->tightenUpperBound( _f, bound );
+                _tableau->tightenUpperBound( _f, bound );
             }
         }
         else if ( _auxVarInUse && variable == _aux )
         {
-            _boundManager->tightenLowerBound( _b, -bound );
+            _tableau->tightenLowerBound( _b, -bound );
         }
     }
 }

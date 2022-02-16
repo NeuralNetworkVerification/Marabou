@@ -2,7 +2,7 @@
 /*! \file Test_ReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Parth Shah, Duligur Ibeling, Haoze (Andrew) Wu
+ **   Guy Katz, Parth Shah, Duligur Ibeling, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "InputQuery.h"
+#include "FloatUtils.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
@@ -59,11 +60,13 @@ public:
     void setUp()
     {
         TS_ASSERT( mock = new MockForReluConstraint );
+        TS_ASSERT( bm = new BoundManager( ctx ) );
     }
 
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
+        TS_ASSERT_THROWS_NOTHING( delete bm );
     }
 
     void test_relu_constraint()
@@ -74,7 +77,8 @@ public:
         ReluConstraint relu( b, f );
 
         List<unsigned> participatingVariables;
-        TS_ASSERT_THROWS_NOTHING( participatingVariables = relu.getParticipatingVariables() );
+        TS_ASSERT_THROWS_NOTHING( participatingVariables =
+                                  relu.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
         auto it = participatingVariables.begin();
         TS_ASSERT_EQUALS( *it, b );
@@ -1023,16 +1027,18 @@ public:
         TS_ASSERT_EQUALS( query2.getUpperBound( aux ), 0 );
     }
 
-    ReluConstraint prepareRelu( unsigned b, unsigned f, unsigned aux, ITableau *tableau, bool initBM=false )
+    ReluConstraint prepareRelu( unsigned b, unsigned f, unsigned aux,
+                                ITableau *tableau )
     {
         ReluConstraint relu( b, f );
 
-        if ( initBM )
-        {
-            bm = new BoundManager( ctx );
-            bm->initialize( 1 + aux ); // assume aux is introduced after _b and _f
-            relu.registerBoundManager( bm );
-        }
+        /*
+          If we do not use BoundMananger, we directly update the bounds
+          in the Tableau. This will be an obsolete case after CDSmtCore,
+          because then Tableau will not own bounds but will just keep a
+          reference to the BoundMananger.
+        */
+        relu.registerTableau( tableau );
 
         InputQuery dontCare;
         dontCare.setNumberOfVariables( aux );
@@ -1048,8 +1054,6 @@ public:
         relu.notifyLowerBound( aux, 0 );
         relu.notifyUpperBound( aux, 10 );
 
-        relu.registerTableau( tableau ); // TODO: When transitioning to SMTCore replace with: relu.registerBoundManager( boundManager );
-
         return relu;
     }
 
@@ -1058,138 +1062,156 @@ public:
         unsigned b = 1;
         unsigned f = 4;
         unsigned aux = 10;
-        Context context;
-        BoundManager boundManager( context );
-        boundManager.initialize( 11 );
-        List<Tightening> tightenings;
-
-        boundManager.getTightenings( tightenings );
 
         // Initial state: b in [-10, 15], f in [0, 15], aux in [0, 10]
+        Map<unsigned, double> lowerBounds, upperBounds;
+        lowerBounds[b] = -10; upperBounds[b] = 15;
+        lowerBounds[f] = 0; upperBounds[f] = 15;
+        lowerBounds[aux] = 0; upperBounds[aux] = 10;
 
         {
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
 
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
+
+            // No bound update by any of the following updates.
             relu.notifyLowerBound( b, -20 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
 
             relu.notifyLowerBound( f, -3 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
 
             relu.notifyLowerBound( aux, -5 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
 
             relu.notifyUpperBound( b, 20 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
 
             relu.notifyUpperBound( f, 23 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
 
             relu.notifyUpperBound( aux, 35 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
-
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+            TS_ASSERT( MockTableau::checkBoundsInTableau
+                       ( tableau, lowerBounds, upperBounds ) );
         }
 
+        // Initial state: b in [-10, 15], f in [0, 15], aux in [0, 10]
         {
-            // Tighter lower bound for b that is negative
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
+            // Tighter negative lower bound of b.
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
             relu.notifyLowerBound( b, -8 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( aux, 8, Tightening::UB ) ) );
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+
+            auto newLowerBounds = lowerBounds;
+            auto newUpperBounds = upperBounds;
+
+            newLowerBounds[b] = -8;
+            newUpperBounds[aux] = 8;
+
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
         }
 
         {
-            // Tighter upper bound for aux that is positive
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
+            // Tighter positive aux variables.
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
             relu.notifyUpperBound( aux, 7 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( b, -7, Tightening::LB ) ) );
-        }
 
-        {
-            // Tighter upper bound for aux that is positive, with BM
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
-            relu.notifyUpperBound( aux, 7 );
-            tightener.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( b, -7, Tightening::LB ) ) );
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+            auto newLowerBounds = lowerBounds;
+            auto newUpperBounds = upperBounds;
+
+            newLowerBounds[b] = -7;
+            newUpperBounds[aux] = 7;
+
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
         }
 
         {
             // Tighter upper bound for b/f that is positive
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
             relu.notifyUpperBound( b, 13 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( f, 13, Tightening::UB ) ) );
+
+            auto newLowerBounds = lowerBounds;
+            auto newUpperBounds = upperBounds;
+
+            newUpperBounds[b] = 13;
+            newUpperBounds[f] = 13;
+
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
 
             relu.notifyUpperBound( f, 12 );
-            boundManager.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( b, 12, Tightening::UB ) ) );
-        }
-
-        {
-            // Tighter upper bound for b/f that is positive, with BM
-            ReluConstraint relu = prepareRelu( b, f, aux, &tightener, true );
-            relu.notifyUpperBound( b, 13 );
-            tightener.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( f, 13, Tightening::UB ) ) );
-
-            relu.notifyUpperBound( f, 12 );
-            tightener.getTightenings( tightenings );
-            TS_ASSERT( tightenings.exists( Tightening( b, 12, Tightening::UB ) ) );
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+            newUpperBounds[b] = 12;
+            newUpperBounds[f] = 12;
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
         }
 
         {
             // Tighter upper bound 0 for f
-
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
             relu.notifyUpperBound( f, 0 );
-            boundManager.getTightenings( tightenings );
 
-            TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+            auto newLowerBounds = lowerBounds;
+            auto newUpperBounds = upperBounds;
+
+            newUpperBounds[b] = 0;
+            newUpperBounds[f] = 0;
+
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
         }
 
         {
             // Tighter negative upper bound for b
-
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
             relu.notifyUpperBound( b, -1 );
-            boundManager.getTightenings( tightenings );
 
-            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
-            TS_ASSERT( tightenings.exists( Tightening( aux, 1, Tightening::LB ) ) );
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+            auto newLowerBounds = lowerBounds;
+            auto newUpperBounds = upperBounds;
+
+            newUpperBounds[b] = -1;
+            newUpperBounds[f] = 0;
+            newLowerBounds[aux] = 1;
+
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
         }
 
         {
             // Tighter positive lower bound for aux
-            ReluConstraint relu = prepareRelu( b, f, aux, &tightener );
+            MockTableau tableau;
+            MockTableau::registerInitialBounds( tableau, lowerBounds, upperBounds );
+            ReluConstraint relu = prepareRelu( b, f, aux, &tableau );
             relu.notifyLowerBound( aux, 1 );
-            tightener.getTightenings( tightenings );
 
-            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
-            TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
-        }
+            auto newLowerBounds = lowerBounds;
+            auto newUpperBounds = upperBounds;
 
-        {
-            // Tighter positive lower bound for aux
-            ReluConstraint relu = prepareRelu( b, f, aux, &boundManager, &context );
-            relu.notifyLowerBound( aux, 1 );
-            boundManager.getTightenings( tightenings );
+            newUpperBounds[b] = -1;
+            newUpperBounds[f] = 0;
+            newLowerBounds[aux] = 1;
 
-            TS_ASSERT( tightenings.exists( Tightening( f, 0, Tightening::UB ) ) );
-            TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
-            TS_ASSERT_THROWS_NOTHING( delete bm );
+            TS_ASSERT( MockTableau::MockTableau::checkBoundsInTableau
+                       ( tableau, newLowerBounds, newUpperBounds ) );
         }
     }
 

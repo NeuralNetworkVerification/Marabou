@@ -20,7 +20,6 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     : _numCases( 0 )
     , _constraintActive( true )
     , _phaseStatus( PHASE_NOT_FIXED )
-    , _boundManager( nullptr )
     , _tableau( nullptr )
     , _context( nullptr )
     , _cdConstraintActive( nullptr )
@@ -36,7 +35,6 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     : _numCases( numCases )
     , _constraintActive( true )
     , _phaseStatus( PHASE_NOT_FIXED )
-    , _boundManager( nullptr )
     , _tableau( nullptr )
     , _context( nullptr )
     , _cdConstraintActive( nullptr )
@@ -62,13 +60,6 @@ bool PiecewiseLinearConstraint::isActive() const
         return *_cdConstraintActive;
     else
         return _constraintActive;
-}
-
-void PiecewiseLinearConstraint::registerBoundManager(
-    BoundManager *boundManager )
-{
-    ASSERT( _boundManager == nullptr );
-    _boundManager = boundManager;
 }
 
 void PiecewiseLinearConstraint::registerTableau( ITableau *tableau )

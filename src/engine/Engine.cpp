@@ -1914,30 +1914,11 @@ void Engine::applyAllRowTightenings()
     }
 }
 
-// This method becomes obsolete since bound updates should occur directly
-void Engine::applyAllConstraintTightenings()
-{
-    // List<Tightening> entailedTightenings;
-
-    // // _boundManager.getTightenings( entailedTightenings );
-    // // TODO: Meaningful pruning to take place
-    // for ( const auto &tightening : entailedTightenings )
-    // {
-    //     _statistics.incLongAttribute( Statistics::NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS );
-
-    //     if ( tightening._type == Tightening::LB )
-    //         _tableau->tightenLowerBound( tightening._variable, tightening._value );
-    //     else
-    //         _tableau->tightenUpperBound( tightening._variable, tightening._value );
-    // }
-}
-
 void Engine::applyAllBoundTightenings()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
     applyAllRowTightenings();
-    applyAllConstraintTightenings();
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO,
@@ -2076,7 +2057,6 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
 
     _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
     _rowBoundTightener->clear();
-    //_constraintBoundTightener->resetBounds();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -2099,7 +2079,6 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
 
         _rowBoundTightener->clear();
-        //_constraintBoundTightener->resetBounds();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
@@ -2334,7 +2313,6 @@ void Engine::resetStatistics()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
-    //_constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
     _activeEntryStrategy->setStatistics( &_statistics );
 
@@ -2360,7 +2338,6 @@ void Engine::resetExitCode()
 
 void Engine::resetBoundTighteners()
 {
-
     if ( _lpSolverType == LPSolverType::NATIVE )
         _rowBoundTightener->resetBounds();
 }

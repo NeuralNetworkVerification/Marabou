@@ -205,9 +205,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _boundManager->tightenLowerBound( tightening._variable, tightening._value );
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
             else if ( tightening._type == Tightening::UB )
-                _boundManager->tightenUpperBound( tightening._variable, tightening._value );
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
     }
 }
@@ -267,9 +267,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _boundManager->tightenLowerBound( tightening._variable, tightening._value );
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
             else if ( tightening._type == Tightening::UB )
-                _boundManager->tightenUpperBound( tightening._variable, tightening._value );
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
         }
     }
 }

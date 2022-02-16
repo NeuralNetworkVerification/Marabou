@@ -16,7 +16,6 @@
 #ifndef __TranscendentalConstraint_h__
 #define __TranscendentalConstraint_h__
 
-#include "BoundManager.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
@@ -122,19 +121,10 @@ public:
     /*          Context-dependent Members Initialization and Cleanup      */
     /**********************************************************************/
 
-    /*
-      Register a bound manager. If a bound manager is registered,
-      this transcendental constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerBoundManager( BoundManager *boundManager );
-
 protected:
     Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
-
-    BoundManager *_boundManager;
 
     ITableau *_tableau;
 
@@ -146,26 +136,26 @@ protected:
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
     /**********************************************************************/
-    /* These methods prefer using BoundManager over local bound arrays.   */
+    /* These methods prefer using tableau over local bound arrays.   */
 
     /*
        Checks whether lower bound value exists.
 
-       If BoundManager is in use, returns true since it initializes bounds for all variables.
+       If tableau is in use, returns true since it initializes bounds for all variables.
     */
     inline bool existsLowerBound( unsigned var ) const
     {
-        return _boundManager != nullptr || _lowerBounds.exists( var );
+        return _tableau != nullptr || _lowerBounds.exists( var );
     }
 
     /*
        Checks whether upper bound value exists.
 
-       If BoundManager is in use, returns true since it initializes bounds for all variables.
+       If tableau is in use, returns true since it initializes bounds for all variables.
     */
     inline bool existsUpperBound( unsigned var ) const
     {
-        return _boundManager != nullptr || _upperBounds.exists( var );
+        return _tableau != nullptr || _upperBounds.exists( var );
     }
 
     /*
@@ -173,7 +163,7 @@ protected:
      */
     inline double getLowerBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
+        return ( _tableau != nullptr ) ? _tableau->getLowerBound( var )
                                             : _lowerBounds[var];
     }
 
@@ -182,7 +172,7 @@ protected:
      */
     inline double getUpperBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
+        return ( _tableau != nullptr ) ? _tableau->getUpperBound( var )
                                             : _upperBounds[var];
     }
 
@@ -191,8 +181,10 @@ protected:
      */
     inline void setLowerBound( unsigned var, double value )
     {
-        ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
-                                     : _lowerBounds[var] = value;
+        if ( _tableau )
+            _tableau->setLowerBound( var, value );
+        else
+            _lowerBounds[var] = value;
     }
 
     /*
@@ -200,8 +192,10 @@ protected:
      */
     inline void setUpperBound( unsigned var, double value )
     {
-        ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
-                                     : _upperBounds[var] = value;
+        if ( _tableau )
+            _tableau->setUpperBound( var, value );
+        else
+            _upperBounds[var] = value;
     }
 };
 
