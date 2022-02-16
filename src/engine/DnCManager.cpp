@@ -33,6 +33,11 @@
 #include <cmath>
 #include <thread>
 
+#ifdef ENABLE_OPENBLAS
+#include "cblas.h"
+#endif
+
+
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            std::unique_ptr<InputQuery> inputQuery,
                            std::atomic_uint &numUnsolvedSubQueries,
@@ -122,12 +127,23 @@ void DnCManager::solve()
 
     unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
+#ifdef ENABLE_OPENBLAS
+    // When preprocess the input query with SBT, we leverage multi-threading.
+    openblas_set_num_threads( numWorkers );
+#endif
+
     // Preprocess the input query and create an engine for each of the threads
     if ( !createEngines( numWorkers ) )
     {
         _exitCode = DnCManager::UNSAT;
         return;
     }
+
+#ifdef ENABLE_OPENBLAS
+    // Now each worker occupies one thread. So SBT performed during the search
+    // will be single-threaded.
+    openblas_set_num_threads( 1 );
+#endif
 
     // Prepare the mechanism through which we can ask the engines to quit
     List<std::atomic_bool *> quitThreads;
