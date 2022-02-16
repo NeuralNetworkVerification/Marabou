@@ -5,18 +5,18 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest, macos-latest]
+        compiler: [g++, clang++]
         build_type: [Debug, Production]
 
-    runs-on: ${{ matrix.platform }}
-    name: build 
+    runs-on: ubuntu-latest #TODO: macos-latest
+    name: Debug build 
 
     steps:
 
       - uses: actions/checkout@v2
 
-      - name: Install Packages on Ubuntu
-        if: ${{ matrix.platform == 'ubuntu-latest' }}
+      - name: Install Packages
+        if: 
         run: |
            sudo apt-get update
            sudo apt-get install -y \
@@ -27,17 +27,7 @@ jobs:
            python3 -m pip install --user --upgrade pip
            python3 -m pip install --user --upgrade setuptools
            python3 -m pip install --user wheel
-           python3 -m pip install --user -r maraboupy/requirements.txt --cache-dir $HOME/.pip-cache 
-           echo "/usr/lib/ccache" >> $GITHUB_PATH
-
-      - name: Install Packages on Mac
-        if: ${{ matrix.platform == 'macos-latest' }}
-        run: |
-           brew install ccache cxxtest protobuf
-           python3 -m pip install --user --upgrade pip
-           python3 -m pip install --user --upgrade setuptools
-           python3 -m pip install --user wheel
-           python3 -m pip install --user -r maraboupy/requirements.txt --cache-dir $HOME/.pip-cache 
+           python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
            echo "/usr/lib/ccache" >> $GITHUB_PATH
 
       - name: Create Build Environment
@@ -79,7 +69,7 @@ jobs:
         # Note the current convention is to use the -S and -B options here to specify source 
         # and build directories, but this is only available with CMake 3.13 and higher.  
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
 
       - name: Build
         run: make -j2
@@ -103,11 +93,11 @@ jobs:
           python3 -c "import maraboupy"
 
       - name: Generate Python Code Coverage
-        if: ${{  matrix.build_type == 'Debug' }}
+        if: ${{ ( matrix.compiler == 'g++' ) && ( matrix.build_type == 'Debug' ) }} 
         run: python3 -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
 
       - name: Upload coverage to Codecov
-        if: ${{ ( matrix.platform == 'ubuntu-latest' ) && ( matrix.build_type == 'Debug' ) }}
+        if: ${{ ( matrix.compiler == 'g++' ) && ( matrix.build_type == 'Debug' ) }}
         uses: codecov/codecov-action@v1
         with:
           files: ./coverage.xml
