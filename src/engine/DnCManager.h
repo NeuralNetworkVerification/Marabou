@@ -98,6 +98,13 @@ private:
     void initialDivide( SubQueries &subQueries );
 
     /*
+      Invoked in portfolio mode.
+      Add empty case splits to subQueries so that each worker works on the
+      original problem.
+    */
+    void createDuplicateQueries( SubQueries &subQueries );
+
+    /*
       Read the exitCode of the engine of each thread, and update the manager's
       exitCode.
     */
@@ -158,7 +165,7 @@ private:
     /*
       True if running parallelDeepSoI mode and false if running SnC mode.
     */
-    bool _runPortfolio;
+    bool _runParallelDeepSoI;
 
     /*
       The strategy for dividing a query
