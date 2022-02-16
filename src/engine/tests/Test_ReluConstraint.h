@@ -89,7 +89,7 @@ public:
         TS_ASSERT_THROWS_EQUALS( relu.satisfied(),
                                  const MarabouError &e,
                                  e.getCode(),
-                                 MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+                                 MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
         relu.notifyVariableValue( b, 1 );
         relu.notifyVariableValue( f, 1 );
@@ -298,7 +298,7 @@ public:
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( auxVar );
 
-        relu.transformToUseAuxVariablesIfNeeded( inputQuery );
+        relu.transformToUseAuxVariables( inputQuery );
 
         TS_ASSERT( relu.auxVariableInUse() );
         TS_ASSERT_EQUALS( relu.getAux(), auxVar );
@@ -528,7 +528,7 @@ public:
             InputQuery dontCare;
             unsigned aux = 300;
             dontCare.setNumberOfVariables( aux );
-            relu.transformToUseAuxVariablesIfNeeded( dontCare );
+            relu.transformToUseAuxVariables( dontCare );
 
             TS_ASSERT( !relu.phaseFixed() );
             relu.notifyUpperBound( aux, 3.0 );
@@ -545,7 +545,7 @@ public:
             InputQuery dontCare;
             unsigned aux = 300;
             dontCare.setNumberOfVariables( aux );
-            relu.transformToUseAuxVariablesIfNeeded( dontCare );
+            relu.transformToUseAuxVariables( dontCare );
 
             TS_ASSERT( !relu.phaseFixed() );
             relu.notifyLowerBound( aux, 0.0 );
@@ -658,7 +658,7 @@ public:
         relu.notifyLowerBound( b, -1 );
         relu.notifyLowerBound( f, 0 );
 
-        relu.transformToUseAuxVariablesIfNeeded( dontCare );
+        relu.transformToUseAuxVariables( dontCare );
 
         relu.notifyLowerBound( aux, 0 );
         relu.notifyUpperBound( aux, 1 );
@@ -713,7 +713,7 @@ public:
         relu2.notifyLowerBound( b, -2 );
         relu2.notifyLowerBound( f, 0 );
 
-        relu2.transformToUseAuxVariablesIfNeeded( dontCare );
+        relu2.transformToUseAuxVariables( dontCare );
 
         relu2.notifyLowerBound( aux, 0 );
         relu2.notifyUpperBound( aux, 2 );
@@ -800,7 +800,7 @@ public:
         InputQuery dontCare;
         dontCare.setNumberOfVariables( 500 );
 
-        originalRelu.transformToUseAuxVariablesIfNeeded( dontCare );
+        originalRelu.transformToUseAuxVariables( dontCare );
 
         TS_ASSERT( originalRelu.auxVariableInUse() );
 
@@ -980,7 +980,7 @@ public:
         relu.notifyUpperBound( 4, 15 );
         relu.notifyUpperBound( 6, 15 );
 
-        TS_ASSERT_THROWS_NOTHING( relu.transformToUseAuxVariablesIfNeeded( query ) );
+        TS_ASSERT_THROWS_NOTHING( relu.transformToUseAuxVariables( query ) );
 
         const List<Equation> &equations( query.getEquations() );
 
@@ -1016,7 +1016,7 @@ public:
         relu2.notifyUpperBound( 4, 15 );
         relu2.notifyUpperBound( 6, 15 );
 
-        TS_ASSERT_THROWS_NOTHING( relu2.transformToUseAuxVariablesIfNeeded( query2 ) );
+        TS_ASSERT_THROWS_NOTHING( relu2.transformToUseAuxVariables( query2 ) );
 
         TS_ASSERT_EQUALS( query2.getLowerBound( aux ), 0 );
         TS_ASSERT_EQUALS( query2.getUpperBound( aux ), 0 );
@@ -1042,7 +1042,7 @@ public:
         relu.notifyUpperBound( b, 15 );
         relu.notifyUpperBound( f, 15 );
 
-        TS_ASSERT_THROWS_NOTHING( relu.transformToUseAuxVariablesIfNeeded( dontCare ) );
+        TS_ASSERT_THROWS_NOTHING( relu.transformToUseAuxVariables( dontCare ) );
 
         relu.notifyLowerBound( aux, 0 );
         relu.notifyUpperBound( aux, 10 );

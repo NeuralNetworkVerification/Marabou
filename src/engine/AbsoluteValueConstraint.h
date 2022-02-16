@@ -162,7 +162,7 @@ public:
       like to add to the equation pool. This way, case splits will be bound
       update of the aux variables.
     */
-    void transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
 
     /*
       Whether the constraint can contribute the SoI cost function.

@@ -241,7 +241,7 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
     return getImpliedCaseSplit();
 }
 
-void DisjunctionConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
+void DisjunctionConstraint::transformToUseAuxVariables( InputQuery
                                                                 &inputQuery )
 {
     Vector<PiecewiseLinearCaseSplit> newDisjuncts;

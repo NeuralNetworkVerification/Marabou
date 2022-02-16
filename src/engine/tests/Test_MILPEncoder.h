@@ -93,7 +93,7 @@ public:
 
         f = 1;
         MaxConstraint *max1 = new MaxConstraint( f, elements );
-        max1->transformToUseAuxVariablesIfNeeded( inputQuery1 );
+        max1->transformToUseAuxVariables( inputQuery1 );
         inputQuery1.addPiecewiseLinearConstraint( max1 );
         MILPEncoder milp1( tableau1 );
         milp1.encodeInputQuery( gurobi1, inputQuery1 );
@@ -151,7 +151,7 @@ public:
 
         f = 2;
         MaxConstraint *max2 = new MaxConstraint( f, elements );
-        max2->transformToUseAuxVariablesIfNeeded( inputQuery2 );
+        max2->transformToUseAuxVariables( inputQuery2 );
         inputQuery2.addPiecewiseLinearConstraint( max2 );
         MILPEncoder milp2( tableau2 );
         milp2.encodeInputQuery( gurobi2, inputQuery2 );
@@ -209,7 +209,7 @@ public:
 
         f = 3;
         MaxConstraint *max3 = new MaxConstraint( f, elements );
-        max3->transformToUseAuxVariablesIfNeeded( inputQuery3 );
+        max3->transformToUseAuxVariables( inputQuery3 );
         inputQuery3.addPiecewiseLinearConstraint( max3 );
         MILPEncoder milp3( tableau3 );
         milp3.encodeInputQuery( gurobi3, inputQuery3 );
@@ -282,7 +282,7 @@ public:
 
         f = 0;
         MaxConstraint *max4 = new MaxConstraint( f, elements );
-        max4->transformToUseAuxVariablesIfNeeded( inputQuery4 );
+        max4->transformToUseAuxVariables( inputQuery4 );
         inputQuery4.addPiecewiseLinearConstraint( max4 );
         MILPEncoder milp4( tableau4 );
         milp4.encodeInputQuery( gurobi4, inputQuery4 );
@@ -355,7 +355,7 @@ public:
 
         f = 0;
         MaxConstraint *max5 = new MaxConstraint( f, elements );
-        max5->transformToUseAuxVariablesIfNeeded( inputQuery5 );
+        max5->transformToUseAuxVariables( inputQuery5 );
         inputQuery5.addPiecewiseLinearConstraint( max5 );
         MILPEncoder milp5( tableau5 );
         milp5.encodeInputQuery( gurobi5, inputQuery5 );

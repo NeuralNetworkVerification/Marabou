@@ -282,7 +282,7 @@ List<unsigned> AbsoluteValueConstraint::getParticipatingVariables() const
 bool AbsoluteValueConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
@@ -608,7 +608,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::transformToUseAuxVariablesIfNeeded( InputQuery
+void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery
                                                                   &inputQuery )
 {
     /*

@@ -251,7 +251,7 @@ List<unsigned> ReluConstraint::getParticipatingVariables() const
 bool ReluConstraint::satisfied() const
 {
     if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
     double bValue = _assignment.get( _b );
     double fValue = _assignment.get( _f );
@@ -781,7 +781,7 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void ReluConstraint::transformToUseAuxVariablesIfNeeded( InputQuery &inputQuery )
+void ReluConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
 {
     /*
       We want to add the equation
