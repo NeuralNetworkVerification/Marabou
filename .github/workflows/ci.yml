@@ -1,17 +1,15 @@
 on: [push, pull_request]
 name: CI
 
-env:
-  BUILD_TYPE: Debug
-
 jobs:
   build:
     strategy:
       matrix:
-        compiler: [g++, clang++]
+        platform: [ubuntu-latest, macos-latest]
+        build_type: [Debug, Production]
 
-    runs-on: ubuntu-latest #TODO: macos-latest
-    name: Debug build 
+    runs-on: ${{ matrix.platform }}
+    name: build 
 
     steps:
 
@@ -71,7 +69,7 @@ jobs:
         # Note the current convention is to use the -S and -B options here to specify source 
         # and build directories, but this is only available with CMake 3.13 and higher.  
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
         run: make -j2
@@ -81,10 +79,12 @@ jobs:
         run: ccache -s
         
       - name: Run system tests
+        if: ${{ matrix.build_type == "Debug" }}
         run: ctest -L system -j 2 
         working-directory: build
  
       - name: Run regression tests
+        if: ${{ matrix.build_type == "Debug" }}
         run: ctest -L regress[0-1] -j 2 
         working-directory: build
 
@@ -95,11 +95,11 @@ jobs:
           python3 -c "import maraboupy"
 
       - name: Generate Python Code Coverage
-        if: ${{ matrix.compiler == 'g++' }} 
+        if: ${{ ( matrix.platform == 'ubuntu-latest' ) && ( matrix.build_type == "Debug" ) }}
         run: python3 -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
 
       - name: Upload coverage to Codecov
-        if: ${{ matrix.compiler == 'g++' }} 
+        if: ${{ ( matrix.platform == 'ubuntu-latest' ) && ( matrix.build_type == "Debug" ) }}
         uses: codecov/codecov-action@v1
         with:
           files: ./coverage.xml
