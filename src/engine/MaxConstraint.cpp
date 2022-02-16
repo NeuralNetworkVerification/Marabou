@@ -372,12 +372,12 @@ bool MaxConstraint::satisfied() const
     DEBUG({
             if ( !( _assignment.exists( _f ) ) )
                 throw MarabouError
-                    ( MarabouError::PARTICIPATING_VARIABLES_ABSENT,
+                    ( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
                       Stringf( "f(x%u) assignment missing.", _f ).ascii() );
             for ( const auto &element : _elements )
                 if ( !( _assignment.exists( element ) ) )
                     throw MarabouError
-                        ( MarabouError::PARTICIPATING_VARIABLES_ABSENT,
+                        ( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
                           Stringf( "input(x%u) assignment missing.",
                                    element ).ascii() );
         });

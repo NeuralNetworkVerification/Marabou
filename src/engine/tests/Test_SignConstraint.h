@@ -87,7 +87,7 @@ public:
         TS_ASSERT_THROWS_EQUALS( sign.satisfied(),
                                  const MarabouError &e,
                                  e.getCode(),
-                                 MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+                                 MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
         sign.notifyVariableValue( b, -1 );
         sign.notifyVariableValue( f, -1 );

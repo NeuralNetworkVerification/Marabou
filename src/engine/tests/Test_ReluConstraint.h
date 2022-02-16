@@ -89,7 +89,7 @@ public:
         TS_ASSERT_THROWS_EQUALS( relu.satisfied(),
                                  const MarabouError &e,
                                  e.getCode(),
-                                 MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+                                 MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
         relu.notifyVariableValue( b, 1 );
         relu.notifyVariableValue( f, 1 );
