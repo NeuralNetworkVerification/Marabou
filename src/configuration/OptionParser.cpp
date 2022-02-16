@@ -103,6 +103,9 @@ void OptionParser::initialize()
         ( "reluplex-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
+        ( "branch",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) ),
+          "The branching strategy (earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity" )
         ( "soi-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::DEEP_SOI_REJECTION_THRESHOLD]) ),
           "Max number of rejected phase pattern proposal before splitting" )
@@ -128,6 +131,9 @@ void OptionParser::initialize()
         ( "milp",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
           "Use a MILP solver to solve the input query" )
+        ( "lp-solver",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::LP_SOLVER]) ),
+          "Solver for the LPs during the complete analysis: native/gurobi. default: native" )
         ( "milp-tightening",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ),
           "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none. default: lp" )
@@ -137,8 +143,8 @@ void OptionParser::initialize()
         ( "num-simulations",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
           "Number of simulations generated per neuron" )
-        ( "skip-lp-tightening-after-split",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::SKIP_LP_TIGHTENING_AFTER_SPLIT]) ),
+        ( "lp-tightening-after-split",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT]) ),
           "Whether to skip a LP tightening after a case split" )
 #endif // ENABLE_GUROBI
 

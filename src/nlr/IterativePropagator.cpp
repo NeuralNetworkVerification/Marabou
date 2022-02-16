@@ -233,7 +233,7 @@ double IterativePropagator::optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax
 
     gurobi.solve();
 
-    if ( gurobi.infeasbile() )
+    if ( gurobi.infeasible() )
     {
         if ( infeasible )
         {
