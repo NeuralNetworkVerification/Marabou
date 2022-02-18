@@ -71,6 +71,8 @@ public:
         unsigned f = 4;
 
         ReluConstraint relu( b, f );
+        MockTableau tableau;
+        relu.registerTableau( &tableau );
 
         List<unsigned> participatingVariables;
         TS_ASSERT_THROWS_NOTHING( participatingVariables = relu.getParticipatingVariables() );
@@ -91,48 +93,48 @@ public:
                                  e.getCode(),
                                  MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-        relu.notifyVariableValue( b, 1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 1 );
+        tableau.setValue( f, 1 );
 
         TS_ASSERT( relu.satisfied() );
 
-        relu.notifyVariableValue( f, 2 );
+        tableau.setValue( f, 2 );
 
         TS_ASSERT( !relu.satisfied() );
 
-        relu.notifyVariableValue( b, 2 );
+        tableau.setValue( b, 2 );
 
         TS_ASSERT( relu.satisfied() );
 
-        relu.notifyVariableValue( b, -2 );
+        tableau.setValue( b, -2 );
 
         TS_ASSERT( !relu.satisfied() );
 
-        relu.notifyVariableValue( f, 0 );
+        tableau.setValue( f, 0 );
 
         TS_ASSERT( relu.satisfied() );
 
-        relu.notifyVariableValue( b, -3 );
+        tableau.setValue( b, -3 );
 
         TS_ASSERT( relu.satisfied() );
 
-        relu.notifyVariableValue( b, 0 );
+        tableau.setValue( b, 0 );
 
         TS_ASSERT( relu.satisfied() );
 
-        relu.notifyVariableValue( 4, -1 );
+        tableau.setValue( 4, -1 );
 
         // A relu cannot be satisfied if f is negative
         TS_ASSERT( !relu.satisfied() );
 
-        relu.notifyVariableValue( f, 0 );
-        relu.notifyVariableValue( b, 11 );
+        tableau.setValue( f, 0 );
+        tableau.setValue( b, 11 );
 
         TS_ASSERT( !relu.satisfied() );
 
         // Changing variable indices
-        relu.notifyVariableValue( b, 1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 1 );
+        tableau.setValue( f, 1 );
         TS_ASSERT( relu.satisfied() );
 
         unsigned newB = 12;
@@ -143,11 +145,11 @@ public:
 
         TS_ASSERT( relu.satisfied() );
 
-        relu.notifyVariableValue( newF, 2 );
+        tableau.setValue( newF, 2 );
 
         TS_ASSERT( !relu.satisfied() );
 
-        relu.notifyVariableValue( newB, 2 );
+        tableau.setValue( newB, 2 );
 
         TS_ASSERT( relu.satisfied() );
     }
@@ -158,12 +160,14 @@ public:
         unsigned f = 4;
 
         ReluConstraint relu( b, f );
+        MockTableau tableau;
+        relu.registerTableau( &tableau );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        relu.notifyVariableValue( b, -1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
 
         fixes = relu.getPossibleFixes();
         it = fixes.begin();
@@ -173,8 +177,8 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 0 );
 
-        relu.notifyVariableValue( b, 2 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 2 );
+        tableau.setValue( f, 1 );
 
         fixes = relu.getPossibleFixes();
         it = fixes.begin();
@@ -184,8 +188,8 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 2 );
 
-        relu.notifyVariableValue( b, 11 );
-        relu.notifyVariableValue( f, 0 );
+        tableau.setValue( b, 11 );
+        tableau.setValue( f, 0 );
 
         fixes = relu.getPossibleFixes();
         it = fixes.begin();
@@ -835,6 +839,8 @@ public:
 
         MockTableau tableau;
 
+        relu.registerTableau( &relu );
+
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
@@ -842,8 +848,8 @@ public:
 
         tableau.nextLinearlyDependentResult = false;
 
-        relu.notifyVariableValue( b, -1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
 
         TS_ASSERT_THROWS_NOTHING( fixes = relu.getSmartFixes( &tableau ) );
 
@@ -863,8 +869,8 @@ public:
         double bDeltaToFDelta = -2;
         tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
 
-        relu.notifyVariableValue( b, 5 );
-        relu.notifyVariableValue( f, 2 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, 2 );
 
         // We expect b to decrease by 1, which will cause f to increase by 2
         fixes.clear();
@@ -873,8 +879,8 @@ public:
         TS_ASSERT_EQUALS( fixes.size(), 1U );
         TS_ASSERT( haveFix( fixes, b, 4 ) );
 
-        relu.notifyVariableValue( b, 5 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, 1 );
 
         bDeltaToFDelta = 3;
         tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
@@ -896,8 +902,8 @@ public:
         TS_ASSERT( fixes.empty() );
 
         // Now a case where both fixes are possible
-        relu.notifyVariableValue( b, -1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
 
         bDeltaToFDelta = 1.0 / 3;
         tableau.nextLinearlyDependentCoefficient = bDeltaToFDelta;
@@ -918,8 +924,8 @@ public:
         double fDeltaToBDelta = -1.0 / 2;
         tableau.nextLinearlyDependentCoefficient = 1.0 / fDeltaToBDelta;
 
-        relu.notifyVariableValue( b, 5 );
-        relu.notifyVariableValue( f, 2 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, 2 );
 
         // We expect f to increase by 2, which will cause b to decrease by 1
         fixes.clear();
@@ -928,8 +934,8 @@ public:
         TS_ASSERT_EQUALS( fixes.size(), 1U );
         TS_ASSERT( haveFix( fixes, f, 4 ) );
 
-        relu.notifyVariableValue( b, 5 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, 1 );
 
         fDeltaToBDelta = 1.0 / 3;
         tableau.nextLinearlyDependentCoefficient = 1.0 / fDeltaToBDelta;
@@ -951,8 +957,8 @@ public:
         TS_ASSERT( fixes.empty() );
 
         // Now a case where both fixes are possible
-        relu.notifyVariableValue( b, -1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
 
         fDeltaToBDelta = 3;
         tableau.nextLinearlyDependentCoefficient = 1 / fDeltaToBDelta;
@@ -1264,6 +1270,8 @@ public:
         // b in [1, 2], polarity should be 1, and direction should be RELU_PHASE_ACTIVE
         {
             ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
             relu.notifyLowerBound( b, 1 );
             relu.notifyUpperBound( b, 2 );
             TS_ASSERT( relu.computePolarity() == 1 );
@@ -1274,6 +1282,8 @@ public:
         // b in [-2, 0], polarity should be -1, and direction should be RELU_PHASE_INACTIVE
         {
             ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
             relu.notifyLowerBound( b, -2 );
             relu.notifyUpperBound( b, 0 );
             TS_ASSERT( relu.computePolarity() == -1 );
@@ -1286,6 +1296,9 @@ public:
         // the getCaseSplits(), and getPossibleFix should return the inactive fix first
         {
             ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
+
             relu.notifyLowerBound( b, -2 );
             relu.notifyUpperBound( b, 2 );
             TS_ASSERT( relu.computePolarity() == 0 );
@@ -1300,8 +1313,8 @@ public:
             List<PiecewiseLinearConstraint::Fix> fixes;
             List<PiecewiseLinearConstraint::Fix>::iterator itFix;
 
-            relu.notifyVariableValue( b, -1 );
-            relu.notifyVariableValue( f, 1 );
+            tableau.setValue( b, -1 );
+            tableau.setValue( f, 1 );
 
             fixes = relu.getPossibleFixes();
             itFix = fixes.begin();
@@ -1316,6 +1329,9 @@ public:
         // the getCaseSplits(), and getPossibleFix should return the active fix first
         {
             ReluConstraint relu( b, f );
+            MockTableau tableau;
+            relu.registerTableau( &tableau );
+
             relu.notifyLowerBound( b, -2 );
             relu.notifyUpperBound( b, 3 );
             TS_ASSERT( relu.computePolarity() == 0.2 );
@@ -1330,8 +1346,8 @@ public:
             List<PiecewiseLinearConstraint::Fix> fixes;
             List<PiecewiseLinearConstraint::Fix>::iterator itFix;
 
-            relu.notifyVariableValue( b, -1 );
-            relu.notifyVariableValue( f, 1 );
+            tableau.setValue( b, -1 );
+            tableau.setValue( f, 1 );
 
             fixes = relu.getPossibleFixes();
             itFix = fixes.begin();
@@ -1491,12 +1507,15 @@ public:
 
         // The relu is fixed, do not add cost term.
         ReluConstraint relu1 = ReluConstraint( b, f );
+        MockTableau tableau;
+        relu1.registerTableau( &tableau );
+
         relu1.notifyLowerBound( b, 1 );
         relu1.notifyLowerBound( f, 1 );
         relu1.notifyUpperBound( b, 2 );
         relu1.notifyUpperBound( f, 2 );
-        relu1.notifyVariableValue( b, 1.5 );
-        relu1.notifyVariableValue( f, 2 );
+        tableau.setValue( b, 1.5 );
+        tableau.setValue( f, 2 );
 
         TS_ASSERT( relu1.phaseFixed() );
         LinearExpression cost1;
@@ -1507,13 +1526,14 @@ public:
 
         // The relu is not fixed and add active cost term
         ReluConstraint relu2 = ReluConstraint( b, f );
+        relu2.registerTableau( &tableau );
         LinearExpression cost2;
         relu2.notifyLowerBound( b, -1 );
         relu2.notifyLowerBound( f, 0 );
         relu2.notifyUpperBound( b, 2 );
         relu2.notifyUpperBound( f, 2 );
-        relu2.notifyVariableValue( b, -1 );
-        relu2.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
         TS_ASSERT( !relu2.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( relu2.getCostFunctionComponent( cost2, RELU_PHASE_ACTIVE ) );
         TS_ASSERT_EQUALS( cost2._addends.size(), 2u );
@@ -1522,15 +1542,12 @@ public:
 
         // The relu is not fixed and add inactive cost term
         ReluConstraint relu3 = ReluConstraint( b, f );
+        relu3.registerTableau( &tableau );
         LinearExpression cost3;
         relu3.notifyLowerBound( b, -1 );
         relu3.notifyLowerBound( f, 0 );
         relu3.notifyUpperBound( b, 2 );
         relu3.notifyUpperBound( f, 2 );
-        relu3.notifyVariableValue( b, -1 );
-        relu3.notifyVariableValue( f, 1 );
-        relu3.notifyLowerBound( b, -1 );
-        relu3.notifyLowerBound( f, 0 );
         TS_ASSERT( !relu3.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( relu3.getCostFunctionComponent( cost3, RELU_PHASE_INACTIVE ) );
         TS_ASSERT_EQUALS( cost3._addends.size(), 1u );
@@ -1540,12 +1557,13 @@ public:
         unsigned b2 = 2;
         unsigned f2 = 3;
         ReluConstraint relu4 = ReluConstraint( b2, f2 );
+        relu4.registerTableau( &tableau );
         relu4.notifyLowerBound( b2, -1 );
         relu4.notifyLowerBound( f2, 0 );
         relu4.notifyUpperBound( b2, 2 );
         relu4.notifyUpperBound( f2, 2 );
-        relu4.notifyVariableValue( b2, -1 );
-        relu4.notifyVariableValue( f2, 1 );
+        tableau.setValue( b2, -1 );
+        tableau.setValue( f2, 1 );
 
         TS_ASSERT( !relu4.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( relu4.getCostFunctionComponent( cost3, RELU_PHASE_ACTIVE ) );
@@ -1568,8 +1586,11 @@ public:
 
         // The relu is fixed, do not add cost term.
         ReluConstraint relu = ReluConstraint( b, f );
-        relu.notifyVariableValue( b, 1.5 );
-        relu.notifyVariableValue( f, 2 );
+        MockTableau tableau;
+        relu.registerTableau( &tableau );
+
+        tableau.setValue( b, 1.5 );
+        tableau.setValue( f, 2 );
 
         Map<unsigned, double> assignment;
         assignment[0] = -1;

@@ -183,6 +183,12 @@ public:
     }
 
     Map<unsigned, double> nextValues;
+
+    void setValue( unsigned variable, double value )
+    {
+        nextValues[variable] = value;
+    }
+
     double getValue( unsigned variable ) const
     {
         TS_ASSERT( nextValues.exists( variable ) );
