@@ -292,6 +292,11 @@ public:
     */
     virtual String serializeToString() const = 0;
 
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
+
     /*
       Register a constraint bound tightener. If a tightener is registered,
       this piecewise linear constraint will inform the tightener whenever
@@ -474,6 +479,8 @@ protected:
      */
     double _score;
 
+    ITableau *_tableau;
+
     IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
@@ -591,7 +598,7 @@ protected:
     {
         if ( _gurobi == nullptr )
         {
-            return _assignment[variable];
+            return _tableau->getValue( variable );
         }
         else
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
