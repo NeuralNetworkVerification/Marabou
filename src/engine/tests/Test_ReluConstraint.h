@@ -741,9 +741,11 @@ public:
     void test_relu_duplicate_and_restore()
     {
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
+        MockTableau tableau;
+        relu1->registerTableau( tableau );
         relu1->setActiveConstraint( false );
-        relu1->notifyVariableValue( 4, 1.0 );
-        relu1->notifyVariableValue( 6, 1.0 );
+        tableau.setValue( 4, 1.0 );
+        tableau.setValue( 6, 1.0 );
 
         relu1->notifyLowerBound( 4, -8.0 );
         relu1->notifyUpperBound( 4, 8.0 );
@@ -753,11 +755,12 @@ public:
 
         PiecewiseLinearConstraint *relu2 = relu1->duplicateConstraint();
 
+        tableau.setValue( 4, -2 );
         relu1->notifyVariableValue( 4, -2 );
         TS_ASSERT( !relu1->satisfied() );
 
         TS_ASSERT( !relu2->isActive() );
-        TS_ASSERT( relu2->satisfied() );
+        TS_ASSERT( !relu2->satisfied() );
 
         relu2->restoreState( relu1 );
         TS_ASSERT( !relu2->satisfied() );
