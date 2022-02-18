@@ -1261,7 +1261,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
-        constraint->registerGurobi( &( *_gurobi ) );
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
     }
@@ -1363,6 +1362,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 constraint->registerGurobi( &( *_gurobi ) );
             }
         }
+
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerTableau( _tableau );
+        }
+
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
         {

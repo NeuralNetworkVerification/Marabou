@@ -118,14 +118,6 @@ void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
     }
 }
 
-void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // This should never be called when we are using Gurobi to solve LPs.
-    ASSERT( _gurobi == NULL );
-
-    _assignment[variable] = value;
-}
-
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )

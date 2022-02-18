@@ -382,17 +382,6 @@ String SignConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void SignConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // This should never be called when we are using Gurobi to solve LPs.
-    ASSERT( _gurobi == NULL );
-
-    if ( FloatUtils::isZero( value ) )
-        value = 0.0;
-
-    _assignment[variable] = value;
-}
-
 void SignConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )

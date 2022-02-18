@@ -378,7 +378,6 @@ public:
       Notify all watchers of the given variable of a value update,
       or of changes to its bounds.
     */
-    void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
 

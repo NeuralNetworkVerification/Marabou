@@ -120,17 +120,6 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, _aux );
 }
 
-void ReluConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // This should never be called when we are using Gurobi to solve LPs.
-    ASSERT( _gurobi == NULL );
-
-    if ( FloatUtils::isZero( value, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
-        value = 0.0;
-
-    _assignment[variable] = value;
-}
-
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )

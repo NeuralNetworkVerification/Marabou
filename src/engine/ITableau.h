@@ -63,12 +63,6 @@ public:
     {
     public:
         /*
-          This callback will be invoked when the variable's value
-          changes.
-        */
-        virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
-
-        /*
           These callbacks will be invoked when the variable's
           lower/upper bounds change.
         */

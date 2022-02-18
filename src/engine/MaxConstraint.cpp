@@ -133,13 +133,6 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, _f );
 }
 
-void MaxConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // Reluplex does not currently work with Gurobi.
-    ASSERT( _gurobi == NULL );
-    _assignment[variable] = value;
-}
-
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
     if ( _statistics )
