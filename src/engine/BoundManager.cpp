@@ -158,7 +158,7 @@ bool BoundManager::consistentBounds( unsigned variable ) const
     return FloatUtils::gte( getUpperBound( variable ), getLowerBound( variable ) );
 }
 
-void BoundManager::registerTableauReference( Tableau *ptrTableau )
+void BoundManager::registerTableau( Tableau *ptrTableau )
 {
     ASSERT( _tableau == nullptr );
     _tableau = ptrTableau;
