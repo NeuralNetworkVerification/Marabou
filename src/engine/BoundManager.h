@@ -37,6 +37,7 @@
 #ifndef __BoundManager_h__
 #define __BoundManager_h__
 
+#include "IBoundManager.h"
 #include "List.h"
 #include "Vector.h"
 #include "context/cdo.h"
@@ -44,7 +45,7 @@
 
 class Tableau;
 class Tightening;
-class BoundManager
+class BoundManager : public IBoundManager
 {
 public:
     BoundManager( CVC4::context::Context &ctx );
@@ -101,7 +102,7 @@ public:
     /*
        Register Tableau reference for callbacks from tighten*Bound methods.
      */
-    void registerTableauReference( Tableau *tableau );
+    void registerTableau( Tableau *tableau );
 
 private:
     CVC4::context::Context &_context;
