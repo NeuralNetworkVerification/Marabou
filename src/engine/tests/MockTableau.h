@@ -16,7 +16,7 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
-#include "BoundManager.h"
+#include "MockBoundManager.h"
 #include "context/context.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -49,7 +49,7 @@ public:
         nextLinearlyDependentResult = false;
 
         CVC4::context::Context ctx;
-        _boundManager = new BoundManager( ctx );
+        _boundManager = new MockBoundManager();
     }
 
     ~MockTableau()
@@ -192,23 +192,27 @@ public:
     Map<unsigned, double> lowerBounds;
     double getLowerBound( unsigned variable ) const
     {
+        //return _boundManager->getLowerBound( variable );
         return lowerBounds[variable];
     }
 
     void setLowerBound( unsigned variable, double value )
     {
         lowerBounds[variable] = value;
+        _boundManager->setLowerBound( variable, value );
     }
 
     Map<unsigned, double> upperBounds;
     double getUpperBound( unsigned variable ) const
     {
+        //return _boundManager->getLowerBound( variable );
         return upperBounds[variable];
     }
 
     void setUpperBound( unsigned variable, double value )
     {
         upperBounds[variable] = value;
+        _boundManager->setUpperBound( variable, value );
     }
 
     const double *getLowerBounds() const
