@@ -161,6 +161,8 @@ public:
         return _upperBounds[variable];
     }
 
+    IBoundManager &getBoundManager() const { return _boundManager; }
+
     /*
        Update pointers to lower/upper bounds in BoundManager
      */
