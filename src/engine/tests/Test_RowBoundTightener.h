@@ -52,18 +52,18 @@ public:
         //    5  <= x1 <= 10
         //    -2 <= x2 <= 3
         //  -100 <= x4 <= 100
-        tableau->setLowerBound( 0, -200 );
-        tableau->setUpperBound( 0, 200 );
-        tableau->setLowerBound( 1, 5 );
-        tableau->setUpperBound( 1, 10 );
-        tableau->setLowerBound( 2, -2 );
-        tableau->setUpperBound( 2, 3 );
-        tableau->setLowerBound( 3, -5 );
-        tableau->setUpperBound( 3, 5 );
-        tableau->setLowerBound( 4, -100 );
-        tableau->setUpperBound( 4, 100 );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, -200 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 200 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 1, 10 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 2, -2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 2, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 3, -5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 3, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, -100 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 100 ) );
 
-        tightener.setDimensions();
+        TS_ASSERT_THROWS_NOTHING( tightener.setDimensions() );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -78,6 +78,10 @@ public:
         // 1 - x0 - x1 + 2x2 = x4 (pre pivot)
         // x0 entering, x4 leaving
         // x0 = 1 - x1 + 2 x2 - x4
+
+        // Ignore tightenings from the test set-up
+        List<Tightening> dontCare;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( dontCare ) );
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
@@ -103,7 +107,7 @@ public:
         TS_ASSERT_EQUALS( upper->_value, 102 );
     }
 
-    void test_pivot_row__just_upper_tightend()
+    void test_pivot_row_just_upper_tightend()
     {
         RowBoundTightener tightener( *tableau );
 
@@ -114,18 +118,19 @@ public:
         //    5  <= x1 <= 10
         //    -2 <= x2 <= 3
         //    -10 <= x4 <= 100
-        tableau->setLowerBound( 0, 0 );
-        tableau->setUpperBound( 0, 200 );
-        tableau->setLowerBound( 1, 5 );
-        tableau->setUpperBound( 1, 10 );
-        tableau->setLowerBound( 2, -2 );
-        tableau->setUpperBound( 2, 3 );
-        tableau->setLowerBound( 3, -5 );
-        tableau->setUpperBound( 3, 5 );
-        tableau->setLowerBound( 4, 0 );
-        tableau->setUpperBound( 4, 0 );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 200 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 1, 10 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 2, -2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 2, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 3, -5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 3, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 0 ) );
 
-        tightener.setDimensions();
+        TS_ASSERT_THROWS_NOTHING( tightener.setDimensions() );
+
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -136,6 +141,10 @@ public:
         row._lhs = 4;
 
         tableau->nextPivotRow = &row;
+
+        // Ignore test tightenings from the test set-up
+        List<Tightening> dontCare;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( dontCare ) );
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
@@ -160,18 +169,18 @@ public:
 
         tableau->setDimensions( 2, 5 );
 
-        tableau->setLowerBound( 0, -200 );
-        tableau->setUpperBound( 0, 0 );
-        tableau->setLowerBound( 1, 5 );
-        tableau->setUpperBound( 1, 10 );
-        tableau->setLowerBound( 2, -2 );
-        tableau->setUpperBound( 2, 3 );
-        tableau->setLowerBound( 3, -5 );
-        tableau->setUpperBound( 3, 5 );
-        tableau->setLowerBound( 4, 0 );
-        tableau->setUpperBound( 4, 0 );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, -200 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 1, 10 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 2, -2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 2, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 3, -5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 3, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 0) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 0 ) );
 
-        tightener.setDimensions();
+        TS_ASSERT_THROWS_NOTHING( tightener.setDimensions() );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -182,6 +191,10 @@ public:
         row._lhs = 4;
 
         tableau->nextPivotRow = &row;
+
+        // Ignore tightenings from the test set-up
+        List<Tightening> dontCare;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( dontCare ) );
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
@@ -204,19 +217,18 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, -112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 101 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 1, 10 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 2, -2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 2, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 3, -5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 3, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, -100 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 100 ) );
 
-        tableau->setLowerBound( 0, -112 );
-        tableau->setUpperBound( 0, 101 );
-        tableau->setLowerBound( 1, 5 );
-        tableau->setUpperBound( 1, 10 );
-        tableau->setLowerBound( 2, -2 );
-        tableau->setUpperBound( 2, 3 );
-        tableau->setLowerBound( 3, -5 );
-        tableau->setUpperBound( 3, 5 );
-        tableau->setLowerBound( 4, -100 );
-        tableau->setUpperBound( 4, 100 );
-
-        tightener.setDimensions();
+        TS_ASSERT_THROWS_NOTHING( tightener.setDimensions() );
 
         TableauRow row( 3 );
         // 1 - x0 - x1 + 2x2
@@ -227,6 +239,9 @@ public:
         row._lhs = 4;
 
         tableau->nextPivotRow = &row;
+
+        List<Tightening> dontCare;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( dontCare ) );
 
         TS_ASSERT_THROWS_NOTHING( tightener.examinePivotRow() );
 
@@ -242,16 +257,18 @@ public:
 
         tableau->setDimensions( 1, 5 );
 
-        tableau->setLowerBound( 0, 0 );
-        tableau->setUpperBound( 0, 3 );
-        tableau->setLowerBound( 1, -1 );
-        tableau->setUpperBound( 1, 2 );
-        tableau->setLowerBound( 2, 4 );
-        tableau->setUpperBound( 2, 5 );
-        tableau->setLowerBound( 3, 0 );
-        tableau->setUpperBound( 3, 1 );
-        tableau->setLowerBound( 4, 2 );
-        tableau->setUpperBound( 4, 2 );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, 0) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, -1 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 1, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 2, 4 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 2, 5 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 3, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 3, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 2 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tightener.setDimensions() );
 
         /*
            A = | 1 -2 0  1 2 | , b = | 1  |
@@ -270,13 +287,16 @@ public:
                                       x1 >= 1.5
         */
 
-        tightener.setDimensions();
 
         double A[] = { 1, -2, 0, 1, 2 };
         double b[] = { 1 };
 
         tableau->A = A;
         tableau->b = b;
+
+        // Ignore tightenings from the test set-up
+        List<Tightening> dontCare;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( dontCare ) );
 
         TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
 
@@ -303,16 +323,19 @@ public:
 
         tableau->setDimensions( 2, 5 );
 
-        tableau->setLowerBound( 0, 0 );
-        tableau->setUpperBound( 0, 3 );
-        tableau->setLowerBound( 1, -1 );
-        tableau->setUpperBound( 1, 2 );
-        tableau->setLowerBound( 2, -10 );
-        tableau->setUpperBound( 2, 10 );
-        tableau->setLowerBound( 3, 0 );
-        tableau->setUpperBound( 3, 1 );
-        tableau->setLowerBound( 4, 2 );
-        tableau->setUpperBound( 4, 2 );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 3 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, -1 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 1, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 2, -10 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 2, 10 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 3, 0 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 3, 1 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 2 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 2 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tightener.setDimensions() );
+
 
         /*
                | 1 -2 0  1 2 | ,     | 1  |
@@ -335,8 +358,6 @@ public:
            Equation 2 gives us that x2 <= 2, >= 1
         */
 
-        tightener.setDimensions();
-
         double A[] = {
             1, -2, 0, 1, 2,
             0, -2, 1, 0, 0,
@@ -346,6 +367,10 @@ public:
 
         tableau->A = A;
         tableau->b = b;
+
+        // Ignore the test set-up tightenings
+        List<Tightening> dontCare;
+        TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( dontCare ) );
 
         TS_ASSERT_THROWS_NOTHING( tightener.examineConstraintMatrix( false ) );
 
@@ -378,11 +403,3 @@ public:
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//
