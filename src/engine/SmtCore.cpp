@@ -164,7 +164,8 @@ void SmtCore::performSplit()
     EngineState *stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
-    _engine->storeState( *stateBeforeSplits, true, true );
+    _engine->storeState( *stateBeforeSplits,
+                         TableauStateStorageLevel::STORE_BOUNDS_ONLY );
 
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
@@ -466,7 +467,8 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
     EngineState *stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
-    _engine->storeState( *stateBeforeSplits, true, false );
+    _engine->storeState( *stateBeforeSplits,
+                         TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE );
     stackEntry->_engineState = stateBeforeSplits;
 
     // Apply all the splits

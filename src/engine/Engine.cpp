@@ -1613,29 +1613,10 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::storeTableauState( TableauState &state ) const
+void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) const
 {
-    _tableau->storeState( state );
-}
-
-void Engine::restoreTableauState( const TableauState &state )
-{
-    ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state );
-}
-
-void Engine::storeState( EngineState &state,
-                         bool storeAlsoTableauState,
-                         bool onlyStoreBounds ) const
-{
-    if ( storeAlsoTableauState )
-    {
-        _tableau->storeState( state._tableauState, onlyStoreBounds );
-        state._tableauStateIsStored = true;
-        state._onlyBoundsStored = onlyStoreBounds;
-    }
-    else
-        state._tableauStateIsStored = false;
+    _tableau->storeState( state._tableauState, level );
+    state._tableauStateStorageLevel = level;
 
     for ( const auto &constraint : _plConstraints )
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
@@ -1647,11 +1628,12 @@ void Engine::restoreState( const EngineState &state )
 {
     ENGINE_LOG( "Restore state starting" );
 
-    if ( !state._tableauStateIsStored )
+    if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
         throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state._tableauState, state._onlyBoundsStored );
+    _tableau->restoreState( state._tableauState,
+                            state._tableauStateStorageLevel );
 
     ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )

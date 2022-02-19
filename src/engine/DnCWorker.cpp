@@ -24,6 +24,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PolarityBasedDivider.h"
 #include "SubQuery.h"
+#include "TableauStateStorageLevel.h"
 
 #include <atomic>
 #include <chrono>
@@ -49,7 +50,8 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
 
     // Obtain the current state of the engine
     _initialState = std::make_shared<EngineState>();
-    _engine->storeState( *_initialState, true, false );
+    _engine->storeState( *_initialState,
+                         TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE );
 }
 
 void DnCWorker::setQueryDivider( SnCDivideStrategy divideStrategy )

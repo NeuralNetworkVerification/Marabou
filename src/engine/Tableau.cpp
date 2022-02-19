@@ -1685,16 +1685,16 @@ void Tableau::dumpEquations()
     }
 }
 
-void Tableau::storeState( TableauState &state, bool onlyStoreBounds ) const
+void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) const
 {
     // Store the bounds
-    if ( onlyStoreBounds )
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY )
     {
         state.initializeBounds( _n );
         memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
         memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
     }
-    else
+    else if ( level == TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE )
     {
         // Set the dimensions
         state.setDimensions( _m, _n, *this );
@@ -1736,11 +1736,17 @@ void Tableau::storeState( TableauState &state, bool onlyStoreBounds ) const
         // Store the merged variables
         state._mergedVariables = _mergedVariables;
     }
+    else
+    {
+        ASSERT( level == TableauStateStorageLevel::STORE_NONE );
+        return;
+    }
 }
 
-void Tableau::restoreState( const TableauState &state, bool onlyRestoreBounds )
+void Tableau::restoreState( const TableauState &state,
+                            TableauStateStorageLevel level )
 {
-    if ( onlyRestoreBounds )
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY )
     {
         // Store the bounds
         memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
@@ -1768,7 +1774,7 @@ void Tableau::restoreState( const TableauState &state, bool onlyRestoreBounds )
 
         computeBasicStatus();
     }
-    else
+    else if ( level == TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();
 
@@ -1821,6 +1827,11 @@ void Tableau::restoreState( const TableauState &state, bool onlyRestoreBounds )
             _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
             _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
         }
+    }
+    else
+    {
+        ASSERT( false );
+        return;
     }
 }
 

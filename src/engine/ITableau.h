@@ -20,6 +20,7 @@
 #include "BoundManager.h"
 #include "List.h"
 #include "Set.h"
+#include "TableauStateStorageLevel.h"
 
 class EntrySelectionStrategy;
 class Equation;
@@ -158,8 +159,8 @@ public:
     virtual const SparseUnsortedList *getSparseARow( unsigned row ) const = 0;
     virtual const SparseMatrix *getSparseA() const = 0;
     virtual void performDegeneratePivot() = 0;
-    virtual void storeState( TableauState &state, bool onlyStoreBounds = true ) const = 0;
-    virtual void restoreState( const TableauState &state, bool onlyRestoreBounds = true ) = 0;
+    virtual void storeState( TableauState &state, TableauStateStorageLevel level ) const = 0;
+    virtual void restoreState( const TableauState &state, TableauStateStorageLevel level ) = 0;
     virtual void setGurobi( GurobiWrapper *gurobi ) = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
     virtual const double *getRightHandSide() const = 0;

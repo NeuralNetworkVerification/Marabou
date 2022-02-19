@@ -94,8 +94,7 @@ public:
     void postContextPopHook() {};
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, bool /* storeAlsoTableauState */,
-                     bool /* onlyStoreBounds */ ) const
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
     {
         lastStoredState = &state;
     }
