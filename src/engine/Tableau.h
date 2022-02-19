@@ -359,8 +359,8 @@ public:
       - The current indexing
       - The current basis
     */
-    void storeState( TableauState &state ) const;
-    void restoreState( const TableauState &state );
+    void storeState( TableauState &state, bool onlyStoreBounds=true ) const;
+    void restoreState( const TableauState &state, bool onlyRestoreBounds=true );
 
     /*
       Register or unregister to watch a variable.

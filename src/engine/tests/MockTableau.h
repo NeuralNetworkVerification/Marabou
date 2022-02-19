@@ -491,11 +491,11 @@ public:
     {
     }
 
-    void storeState( TableauState &/* state */ ) const
+    void storeState( TableauState &/* state */, bool /*onlyStoreBounds*/ ) const
     {
     }
 
-    void restoreState( const TableauState &/* state */ )
+    void restoreState( const TableauState &/* state */, bool /*onlyRestoreBounds*/ )
     {
     }
 

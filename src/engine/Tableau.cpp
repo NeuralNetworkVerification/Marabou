@@ -542,7 +542,8 @@ bool Tableau::existsValue( unsigned variable ) const
     }
     else
     {
-        return true;
+        // There is always an assignment.
+        return _nonBasicAssignment && _basicAssignment;
     }
 }
 
@@ -1684,42 +1685,143 @@ void Tableau::dumpEquations()
     }
 }
 
-void Tableau::storeState( TableauState &state ) const
+void Tableau::storeState( TableauState &state, bool onlyStoreBounds ) const
 {
     // Store the bounds
-    state.initializeBounds( _n );
-    memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
-    memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+    if ( onlyStoreBounds )
+    {
+        state.initializeBounds( _n );
+        memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
+        memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+    }
+    else
+    {
+        // Set the dimensions
+        state.setDimensions( _m, _n, *this );
+
+        // Store matrix A
+        _A->storeIntoOther( state._A );
+        for ( unsigned i = 0; i < _n; ++i )
+            _sparseColumnsOfA[i]->storeIntoOther( state._sparseColumnsOfA[i] );
+        for ( unsigned i = 0; i < _m; ++i )
+            _sparseRowsOfA[i]->storeIntoOther( state._sparseRowsOfA[i] );
+        memcpy( state._denseA, _denseA, sizeof(double) * _m * _n );
+
+        // Store right hand side vector _b
+        memcpy( state._b, _b, sizeof(double) * _m );
+
+        // Store the bounds
+        memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
+        memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+
+        // Basic variables
+        state._basicVariables = _basicVariables;
+
+        // Store the assignments
+        memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
+        memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m ) );
+        state._basicAssignmentStatus = _basicAssignmentStatus;
+
+        // Store the indices
+        memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * _m );
+        memcpy( state._nonBasicIndexToVariable, _nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
+        memcpy( state._variableToIndex, _variableToIndex, sizeof(unsigned) * _n );
+
+        // Store the basis factorization
+        _basisFactorization->storeFactorization( state._basisFactorization );
+
+        // Store the _boundsValid indicator
+        state._boundsValid = _boundsValid;
+
+        // Store the merged variables
+        state._mergedVariables = _mergedVariables;
+    }
 }
 
-void Tableau::restoreState( const TableauState &state )
+void Tableau::restoreState( const TableauState &state, bool onlyRestoreBounds )
 {
-    // Store the bounds
-    memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
-    memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
-
-    /*
-    for ( unsigned i = 0; i < _n - _m; ++i )
+    if ( onlyRestoreBounds )
     {
-        unsigned variable = _nonBasicIndexToVariable[i];
-        updateVariableToComplyWithLowerBoundUpdate( variable,
-                                                    _lowerBounds[variable] );
-        updateVariableToComplyWithUpperBoundUpdate( variable,
-                                                    _upperBounds[variable] );
+        // Store the bounds
+        memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
+        memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
+
+
+        for ( unsigned i = 0; i < _n - _m; ++i )
+        {
+            unsigned variable = _nonBasicIndexToVariable[i];
+            updateVariableToComplyWithLowerBoundUpdate( variable,
+                                                        _lowerBounds[variable] );
+            updateVariableToComplyWithUpperBoundUpdate( variable,
+                                                        _upperBounds[variable] );
+        }
+
+        DEBUG({
+                // Restored bounds must be valid. Otherwise, the case split
+                // would not have been performed.
+                for ( unsigned i = 0; i < _n; ++i )
+                    ASSERT( FloatUtils::lte( _lowerBounds[i],
+                                             _upperBounds[i] ) );
+            });
+
+        _boundsValid = true;
+
+        computeBasicStatus();
     }
-    */
+    else
+    {
+        freeMemoryIfNeeded();
 
-    DEBUG({
-            // Restored bounds must be valid. Otherwise, the case split
-            // would not have been performed.
-            for ( unsigned i = 0; i < _n; ++i )
-                ASSERT( FloatUtils::lte( _lowerBounds[i],
-                                         _upperBounds[i] ) );
-        });
+        setDimensions( state._m, state._n );
 
-    _boundsValid = true;
+        // Restore matrix A
+        state._A->storeIntoOther( _A );
+        for ( unsigned i = 0; i < _n; ++i )
+            state._sparseColumnsOfA[i]->storeIntoOther( _sparseColumnsOfA[i] );
+        for ( unsigned i = 0; i < _m; ++i )
+            state._sparseRowsOfA[i]->storeIntoOther( _sparseRowsOfA[i] );
+        memcpy( _denseA, state._denseA, sizeof(double) * _m * _n );
 
-    computeBasicStatus();
+        // Restore right hand side vector _b
+        memcpy( _b, state._b, sizeof(double) * _m );
+
+        // Restore the bounds and valid status
+        // TODO: should notify all the constraints.
+        memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
+        memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
+
+        // Basic variables
+        _basicVariables = state._basicVariables;
+
+        // Restore the assignments
+        memcpy( _basicAssignment, state._basicAssignment, sizeof(double) *_m );
+        memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+        _basicAssignmentStatus = state._basicAssignmentStatus;
+
+        // Restore the indices
+        memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof(unsigned) * _m );
+        memcpy( _nonBasicIndexToVariable, state._nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
+        memcpy( _variableToIndex, state._variableToIndex, sizeof(unsigned) * _n );
+
+        // Restore the basis factorization
+        _basisFactorization->restoreFactorization( state._basisFactorization );
+
+        // Restore the _boundsValid indicator
+        _boundsValid = state._boundsValid;
+
+        // Restore the merged varaibles
+        _mergedVariables = state._mergedVariables;
+
+        computeAssignment();
+        _costFunctionManager->initialize();
+        computeCostFunction();
+
+        if ( _statistics )
+        {
+            _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
+            _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
+        }
+    }
 }
 
 void Tableau::checkBoundsValid()
@@ -1799,7 +1901,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
 
     setLowerBound( variable, value );
 
-    if ( _boundsValid &&  _lpSolverType == LPSolverType::NATIVE )
+    if ( _lpSolverType == LPSolverType::NATIVE )
         updateVariableToComplyWithLowerBoundUpdate( variable, value );
 }
 
@@ -1815,7 +1917,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 
     setUpperBound( variable, value );
 
-    if ( _boundsValid && _lpSolverType == LPSolverType::NATIVE )
+    if ( _lpSolverType == LPSolverType::NATIVE )
         updateVariableToComplyWithUpperBoundUpdate( variable, value );
 }
 
