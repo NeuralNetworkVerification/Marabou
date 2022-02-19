@@ -33,9 +33,7 @@ class Tightening;
 class IBoundManager
 {
 public:
-  virtual ~IBoundManager() {};
-
-    virtual void initialize( unsigned numberOfVariables ) = 0;
+    virtual ~IBoundManager() {};
 
     /*
        Registers a new variable, grows the BoundManager size and bound vectors,
