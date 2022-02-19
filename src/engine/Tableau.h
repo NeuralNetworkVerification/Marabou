@@ -160,7 +160,7 @@ public:
     const double *getLowerBounds() const;
     const double *getUpperBounds() const;
 
-    BoundManager &getBoundManager() const { return _boundManager; }
+    IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*
       Recomputes bound valid status for all variables.
@@ -493,7 +493,7 @@ private:
     /*
        BoundManager object stores bounds of all variables.
      */
-    BoundManager &_boundManager;
+    IBoundManager &_boundManager;
 
     /*
        Flag to indicate whether the BoundManager should be used to manage

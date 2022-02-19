@@ -618,8 +618,8 @@ public:
 
     void postContextPopHook() {}
 
-    BoundManager *_boundManager;
-    BoundManager &getBoundManager() const
+    IBoundManager *_boundManager;
+    IBoundManager &getBoundManager() const
     {
         return *_boundManager;
     }
