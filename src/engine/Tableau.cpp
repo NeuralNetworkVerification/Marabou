@@ -1688,7 +1688,8 @@ void Tableau::dumpEquations()
 void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) const
 {
     // Store the bounds
-    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY )
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
+         _lpSolverType != LPSolverType::NATIVE )
     {
         state.initializeBounds( _n );
         memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
