@@ -16,7 +16,7 @@
 #ifndef __RowBoundTightener_h__
 #define __RowBoundTightener_h__
 
-#include "BoundManager.h"
+#include "IBoundManager.h"
 #include "Equation.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
@@ -168,7 +168,7 @@ private:
        BoundManager object stores bounds of all variables.
        NOT YET IN USE
      */
-    BoundManager *_boundManager;
+    IBoundManager *_boundManager;
 
     /*
       Work space for the inverted basis matrix tighteners
