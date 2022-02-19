@@ -142,6 +142,8 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( relu.updateVariableIndex( b, newB ) );
         TS_ASSERT_THROWS_NOTHING( relu.updateVariableIndex( f, newF ) );
+        tableau.setValue( newB, 1 );
+        tableau.setValue( newF, 1 );
 
         TS_ASSERT( relu.satisfied() );
 
@@ -742,7 +744,7 @@ public:
     {
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
         MockTableau tableau;
-        relu1->registerTableau( tableau );
+        relu1->registerTableau( &tableau );
         relu1->setActiveConstraint( false );
         tableau.setValue( 4, 1.0 );
         tableau.setValue( 6, 1.0 );
@@ -754,9 +756,7 @@ public:
         relu1->notifyUpperBound( 6, 8.0 );
 
         PiecewiseLinearConstraint *relu2 = relu1->duplicateConstraint();
-
         tableau.setValue( 4, -2 );
-        relu1->notifyVariableValue( 4, -2 );
         TS_ASSERT( !relu1->satisfied() );
 
         TS_ASSERT( !relu2->isActive() );
@@ -842,7 +842,7 @@ public:
 
         MockTableau tableau;
 
-        relu.registerTableau( &relu );
+        relu.registerTableau( &tableau );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;

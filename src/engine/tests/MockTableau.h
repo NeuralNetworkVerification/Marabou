@@ -189,6 +189,11 @@ public:
         nextValues[variable] = value;
     }
 
+    bool existsValue( unsigned variable ) const
+    {
+        return nextValues.exists( variable );
+    }
+
     double getValue( unsigned variable ) const
     {
         TS_ASSERT( nextValues.exists( variable ) );

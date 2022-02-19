@@ -450,10 +450,10 @@ List<PiecewiseLinearConstraint::Fix> SignConstraint::getPossibleFixes() const
     ASSERT( _gurobi == NULL );
 
     ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _b ) );
-    ASSERT( _assignment.exists( _f ) );
+    ASSERT( existsAssignment( _b ) );
+    ASSERT( existsAssignment( _f ) );
 
-    double bValue = _assignment.get( _b );
+    double bValue = getAssignment( _b );
     double newFValue = FloatUtils::isNegative( bValue ) ? -1 : 1;
 
     List<PiecewiseLinearConstraint::Fix> fixes;
@@ -506,16 +506,9 @@ void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_boundManager );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( existsLowerBound( oldIndex ) )
     {

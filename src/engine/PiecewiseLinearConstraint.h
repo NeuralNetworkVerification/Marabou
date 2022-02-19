@@ -588,9 +588,12 @@ protected:
     /**********************************************************************/
     inline bool existsAssignment( unsigned variable ) const
     {
-        return ( _gurobi == nullptr ) ?
-            _assignment.exists( variable )
-            : _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        if ( _gurobi == nullptr && _tableau != nullptr )
+            return _tableau->existsValue( variable );
+        else if ( _gurobi )
+            return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        else
+            return false;
     }
 
     inline double getAssignment( unsigned variable ) const

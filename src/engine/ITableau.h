@@ -97,6 +97,7 @@ public:
     virtual void setRightHandSide( unsigned index, double value ) = 0;
     virtual void markAsBasic( unsigned variable ) = 0;
     virtual void initializeTableau( const List<unsigned> &initialBasicVariables ) = 0;
+    virtual bool existsValue( unsigned variable ) const = 0;
     virtual double getValue( unsigned variable ) const = 0;
     virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;

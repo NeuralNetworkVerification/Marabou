@@ -534,6 +534,18 @@ const double *Tableau::getUpperBounds() const
     return _upperBounds;
 }
 
+bool Tableau::existsValue( unsigned variable ) const
+{
+    if ( _lpSolverType == LPSolverType::GUROBI )
+    {
+        return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+    }
+    else
+    {
+        return true;
+    }
+}
+
 double Tableau::getValue( unsigned variable ) const
 {
     if ( _lpSolverType == LPSolverType::GUROBI )

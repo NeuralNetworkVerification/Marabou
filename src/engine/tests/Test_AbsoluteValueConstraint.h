@@ -79,7 +79,7 @@ public:
 
         tableau.setValue( 4, -2 );
         TS_ASSERT( !abs1.satisfied() );
-        TS_ASSERT( !abs1->isActive() );
+        TS_ASSERT( !abs1.isActive() );
         TS_ASSERT( !abs2->isActive() );
         TS_ASSERT( !abs2->satisfied() );
 
@@ -88,7 +88,7 @@ public:
         TS_ASSERT( !abs2->satisfied() );
 
         abs1.setActiveConstraint( true );
-        TS_ASSERT( abs1->isActive() );
+        TS_ASSERT( abs1.isActive() );
         TS_ASSERT( !abs2->isActive() );
 
         TS_ASSERT_THROWS_NOTHING( delete abs2 );
@@ -156,7 +156,7 @@ public:
 
         AbsoluteValueConstraint abs( b, f );
         MockTableau tableau;
-        abs.registerTableau( tableau );
+        abs.registerTableau( &tableau );
 
         tableau.setValue( b, 5 );
         tableau.setValue( f, 5 );
@@ -201,7 +201,7 @@ public:
 
         AbsoluteValueConstraint abs( b, f );
         MockTableau tableau;
-        abs.registerTableau( tableau );
+        abs.registerTableau( &tableau );
 
         // Changing variable indices
         tableau.setValue( b, 1 );
@@ -213,6 +213,9 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( abs.updateVariableIndex( b, newB ) );
         TS_ASSERT_THROWS_NOTHING( abs.updateVariableIndex( f, newF ) );
+
+        tableau.setValue( newB, 1 );
+        tableau.setValue( newF, 1 );
 
         TS_ASSERT( abs.satisfied() );
 
@@ -236,7 +239,7 @@ public:
 
         AbsoluteValueConstraint abs( b, f );
         MockTableau tableau;
-        abs.registerTableau( tableau );
+        abs.registerTableau( &tableau );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -1918,7 +1921,7 @@ public:
         // The abs is fixed, do not add cost term.
         AbsoluteValueConstraint abs1 = AbsoluteValueConstraint( b, f );
         MockTableau tableau;
-        abs1.registerTableau( tableau );
+        abs1.registerTableau( &tableau );
 
         abs1.notifyLowerBound( b, 1 );
         abs1.notifyLowerBound( f, 1 );
@@ -1936,7 +1939,7 @@ public:
 
         // The abs is not fixed and add active cost term
         AbsoluteValueConstraint abs2 = AbsoluteValueConstraint( b, f );
-        abs2.registerTableau( tableau );
+        abs2.registerTableau( &tableau );
 
         LinearExpression cost2;
         abs2.notifyLowerBound( b, -1 );
@@ -1953,7 +1956,7 @@ public:
 
         // The abs is not fixed and add inactive cost term
         AbsoluteValueConstraint abs3 = AbsoluteValueConstraint( b, f );
-        abs3.registerTableau( tableau );
+        abs3.registerTableau( &tableau );
 
         LinearExpression cost3;
         abs3.notifyLowerBound( b, -1 );
@@ -1970,12 +1973,14 @@ public:
         unsigned b2 = 2;
         unsigned f2 = 3;
         AbsoluteValueConstraint abs4 = AbsoluteValueConstraint( b2, f2 );
-        abs4.registerTableau( tableau );
+        abs4.registerTableau( &tableau );
 
         abs4.notifyLowerBound( b2, -1 );
         abs4.notifyLowerBound( f2, 0 );
         abs4.notifyUpperBound( b2, 2 );
         abs4.notifyUpperBound( f2, 2 );
+        tableau.setValue( b2, -1 );
+        tableau.setValue( f2, 1 );
 
         TS_ASSERT( !abs4.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( abs4.getCostFunctionComponent( cost3, ABS_PHASE_POSITIVE ) );

@@ -263,11 +263,11 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
     ASSERT( _gurobi == NULL );
 
     ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _b ) );
-    ASSERT( _assignment.exists( _f ) );
+    ASSERT( existsAssignment( _b ) );
+    ASSERT( existsAssignment( _f ) );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
@@ -321,7 +321,7 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
     ASSERT( _gurobi == NULL );
 
     ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
+    ASSERT( existsAssignment( _f ) && existsAssignment( _b ) );
 
     double bDeltaToFDelta;
     double fDeltaToBDelta;
@@ -375,8 +375,8 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
       by 4, repairing the violation. Of course, there may be multiple options for repair.
     */
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     /*
       Repair option number 1: the active fix. We want to set f = b > 0.
@@ -600,16 +600,9 @@ void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
     ASSERT( _gurobi == NULL );
 
     ASSERT( oldIndex == _b || oldIndex == _f || ( _auxVarInUse && oldIndex == _aux ) );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f && ( !_auxVarInUse || newIndex != _aux ) );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( _lowerBounds.exists( oldIndex ) )
     {

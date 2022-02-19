@@ -118,6 +118,11 @@ public:
     unsigned getN() const;
 
     /*
+      Check if an assignment exists for the variable.
+    */
+    bool existsValue( unsigned variable ) const;
+
+    /*
       Get the assignment of a variable, either basic or non-basic
     */
     double getValue( unsigned variable ) const;
