@@ -36,7 +36,7 @@ public:
     void setDimensions();
 
     /*
-      Initialize tightest lower/upper bounds using the talbeau.
+      Initialize tightest lower/upper bounds using the tableau.
     */
     void resetBounds();
 
@@ -57,8 +57,8 @@ public:
      */
     inline double getLowerBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
-                                            : _lowerBounds[var];
+        return ( _useBoundManager ) ? _boundManager.getLowerBound( var )
+                                    : _lowerBounds[var];
     }
 
     /*
@@ -66,8 +66,8 @@ public:
      */
     inline double getUpperBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
-                                            : _upperBounds[var];
+        return ( _useBoundManager ) ? _boundManager.getUpperBound( var )
+                                    : _upperBounds[var];
     }
 
     /*
@@ -75,8 +75,10 @@ public:
      */
     inline void setLowerBound( unsigned var, double value )
     {
-        ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
-                                     : _lowerBounds[var] = value;
+        if ( _useBoundManager )
+            _boundManager.setLowerBound( var, value );
+        else
+            _lowerBounds[var] = value;
     }
 
     /*
@@ -84,8 +86,10 @@ public:
      */
     inline void setUpperBound( unsigned var, double value )
     {
-        ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
-                                     : _upperBounds[var] = value;
+        if ( _useBoundManager )
+            _boundManager.setUpperBound( var, value );
+        else
+            _upperBounds[var] = value;
     }
 
     /*
@@ -94,11 +98,12 @@ public:
      */
     inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound)
     {
-        return _boundManager->tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
+        return _boundManager.tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
     }
+
     inline unsigned registerTighterUpperBound( unsigned variable, double newLowerBound)
     {
-        return _boundManager->tightenUpperBound( variable, newLowerBound ) ? 1u : 0u;
+        return _boundManager.tightenUpperBound( variable, newLowerBound ) ? 1u : 0u;
     }
 
     /*
@@ -148,6 +153,11 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    /*
+       Enable using the BoundManager to manage bounds.
+     */
+    void enableBoundManager() { _useBoundManager = true; }
+
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -165,10 +175,15 @@ private:
     bool *_tightenedUpper;
 
     /*
-       BoundManager object stores bounds of all variables.
-       NOT YET IN USE
+     * Object that stores current bounds from all the sources
      */
-    IBoundManager *_boundManager;
+    IBoundManager &_boundManager;
+
+    /*
+      Flag to enable using BoundManager to manager bounds. Temporary and only
+      for purposes of integration.
+     */
+    bool _useBoundManager;
 
     /*
       Work space for the inverted basis matrix tighteners
