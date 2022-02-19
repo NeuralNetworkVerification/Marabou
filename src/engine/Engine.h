@@ -110,7 +110,8 @@ public:
     */
     void storeTableauState( TableauState &state ) const;
     void restoreTableauState( const TableauState &state );
-    void storeState( EngineState &state, bool storeAlsoTableauState ) const;
+    void storeState( EngineState &state, bool storeAlsoTableauState,
+                     bool onlyStoreBounds ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 

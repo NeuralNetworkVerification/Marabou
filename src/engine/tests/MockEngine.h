@@ -94,7 +94,8 @@ public:
     void postContextPopHook() {};
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, bool /* storeAlsoTableauState */ ) const
+    void storeState( EngineState &state, bool /* storeAlsoTableauState */,
+                     bool /* onlyStoreBounds */ ) const
     {
         lastStoredState = &state;
     }

@@ -65,7 +65,8 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
+    virtual void storeState( EngineState &state, bool storeAlsoTableauState,
+                             bool onlyStoreBounds ) const = 0;
     virtual void restoreState( const EngineState &state ) = 0;
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 

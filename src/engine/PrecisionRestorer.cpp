@@ -22,7 +22,7 @@
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
 {
-    engine.storeState( _initialEngineState, true );
+    engine.storeState( _initialEngineState, true, false );
 }
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
@@ -44,7 +44,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     try
     {
         EngineState targetEngineState;
-        engine.storeState( targetEngineState, false );
+        engine.storeState( targetEngineState, false, false );
 
         // Store the case splits performed so far
         List<PiecewiseLinearCaseSplit> targetSplits;
@@ -134,7 +134,7 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                 }
 
                 EngineState currentEngineState;
-                engine.storeState( currentEngineState, false );
+                engine.storeState( currentEngineState, false, false );
 
                 ASSERT( currentEngineState._numPlConstraintsDisabledByValidSplits ==
                         targetEngineState._numPlConstraintsDisabledByValidSplits );

@@ -164,7 +164,7 @@ void SmtCore::performSplit()
     EngineState *stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
-    _engine->storeState( *stateBeforeSplits, true );
+    _engine->storeState( *stateBeforeSplits, true, true );
 
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
@@ -466,7 +466,7 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
     EngineState *stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
-    _engine->storeState( *stateBeforeSplits, true );
+    _engine->storeState( *stateBeforeSplits, true, false );
     stackEntry->_engineState = stateBeforeSplits;
 
     // Apply all the splits

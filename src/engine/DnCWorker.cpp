@@ -49,7 +49,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
 
     // Obtain the current state of the engine
     _initialState = std::make_shared<EngineState>();
-    _engine->storeState( *_initialState, true );
+    _engine->storeState( *_initialState, true, false );
 }
 
 void DnCWorker::setQueryDivider( SnCDivideStrategy divideStrategy )

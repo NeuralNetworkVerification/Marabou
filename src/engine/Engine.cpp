@@ -1624,12 +1624,15 @@ void Engine::restoreTableauState( const TableauState &state )
     _tableau->restoreState( state );
 }
 
-void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
+void Engine::storeState( EngineState &state,
+                         bool storeAlsoTableauState,
+                         bool onlyStoreBounds ) const
 {
     if ( storeAlsoTableauState )
     {
-        _tableau->storeState( state._tableauState );
+        _tableau->storeState( state._tableauState, onlyStoreBounds );
         state._tableauStateIsStored = true;
+        state._onlyBoundsStored = onlyStoreBounds;
     }
     else
         state._tableauStateIsStored = false;
@@ -1648,7 +1651,7 @@ void Engine::restoreState( const EngineState &state )
         throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state._tableauState );
+    _tableau->restoreState( state._tableauState, state._onlyBoundsStored );
 
     ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )

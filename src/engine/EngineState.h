@@ -31,6 +31,7 @@ public:
       The state of the tableau
     */
     bool _tableauStateIsStored;
+    bool _onlyBoundsStored;
     TableauState _tableauState;
 
     /*
