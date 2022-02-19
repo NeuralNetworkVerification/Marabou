@@ -1746,33 +1746,38 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
 void Tableau::restoreState( const TableauState &state,
                             TableauStateStorageLevel level )
 {
-    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY )
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY
+          || _lpSolverType != LPSolverType::NATIVE )
     {
         // Store the bounds
         memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
         memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
 
-
-        for ( unsigned i = 0; i < _n - _m; ++i )
-        {
-            unsigned variable = _nonBasicIndexToVariable[i];
-            updateVariableToComplyWithLowerBoundUpdate( variable,
-                                                        _lowerBounds[variable] );
-            updateVariableToComplyWithUpperBoundUpdate( variable,
-                                                        _upperBounds[variable] );
-        }
-
-        DEBUG({
-                // Restored bounds must be valid. Otherwise, the case split
-                // would not have been performed.
-                for ( unsigned i = 0; i < _n; ++i )
-                    ASSERT( FloatUtils::lte( _lowerBounds[i],
-                                             _upperBounds[i] ) );
-            });
-
         _boundsValid = true;
 
-        computeBasicStatus();
+        if ( _lpSolverType == LPSolverType::NATIVE )
+        {
+            // The bounds might be invalid in the state from which we backtrack,
+            // This means we might need to fix the non-basic variable assignments
+            for ( unsigned i = 0; i < _n - _m; ++i )
+                {
+                    unsigned variable = _nonBasicIndexToVariable[i];
+                    updateVariableToComplyWithLowerBoundUpdate( variable,
+                                                                _lowerBounds[variable] );
+                    updateVariableToComplyWithUpperBoundUpdate( variable,
+                                                                _upperBounds[variable] );
+                }
+
+            DEBUG({
+                    // Restored bounds must be valid. Otherwise, the case split
+                    // would not have been performed.
+                    for ( unsigned i = 0; i < _n; ++i )
+                        ASSERT( FloatUtils::lte( _lowerBounds[i],
+                                                 _upperBounds[i] ) );
+                });
+
+            computeBasicStatus();
+        }
     }
     else if ( level == TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE )
     {
