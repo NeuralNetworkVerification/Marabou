@@ -197,7 +197,7 @@ bool CertificateNode::certifyContradiction()
     unsigned var = _contradiction->_var, m = _initialTableau->size();
 
     auto upperBoundExplanation = Vector<double>( 0, 0 );
-    auto lowerBoundExplanation = Vector<double>(0, 0 );
+    auto lowerBoundExplanation = Vector<double>( 0, 0 );
 
     if ( _contradiction->_upperBoundExplanation )
     {
