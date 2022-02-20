@@ -15,11 +15,11 @@
 #include "UNSATCertificate.h"
 
 CertificateNode::CertificateNode( Vector<Vector<double>> *initialTableau, Vector<double> &groundUpperBounds, Vector<double> &groundLowerBounds )
-    : _children ()
+    : _children()
     , _problemConstraints()
     , _parent( NULL )
     , _PLCExplanations()
-    , _contradiction ( NULL )
+    , _contradiction( NULL )
     , _headSplit( )
     , _hasSATSolution( false )
     , _wasVisited( false )
@@ -32,14 +32,14 @@ CertificateNode::CertificateNode( Vector<Vector<double>> *initialTableau, Vector
 }
 
 CertificateNode::CertificateNode( CertificateNode *parent, PiecewiseLinearCaseSplit split )
-    : _children ()
+    : _children()
     , _problemConstraints()
     , _parent( parent )
     , _PLCExplanations()
-    , _contradiction ( NULL )
+    , _contradiction( NULL )
     , _headSplit( std::move( split ) )
     , _hasSATSolution( false )
-    , _wasVisited ( false )
+    , _wasVisited( false )
     , _delegationStatus( DelegationStatus::DONT_DELEGATE )
     , _delegationNumber( 0 )
     , _initialTableau( NULL )
