@@ -552,7 +552,7 @@ double UNSATCertificateUtils::computeBound( unsigned var, bool isUpper, const Ve
 void UNSATCertificateUtils::getExplanationRowCombination(unsigned var, Vector<double> &explanationRowCombination, const Vector<double> &explanation,
 										 const Vector<Vector<double>> &initialTableau )
 {
-    explanationRowCombination = Vector<double>(initialTableau[0].size(), 0 );
+    explanationRowCombination = Vector<double>( initialTableau[0].size(), 0 );
     unsigned n = initialTableau[0].size(), m = explanation.size();
     for ( unsigned i = 0; i < m; ++i )
     {
