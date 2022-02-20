@@ -25,7 +25,7 @@
 class BoundExplainer
 {
 public:
-    BoundExplainer(unsigned numberOfVariables, unsigned numberOfRows );
+    BoundExplainer( unsigned numberOfVariables, unsigned numberOfRows );
 
     /*
       Returns the number of rows
