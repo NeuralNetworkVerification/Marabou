@@ -87,6 +87,11 @@ public:
         return _container[index];
     }
 
+    const T &operator[]( int index ) const
+	{
+		return _container[index];
+	}
+
     bool empty() const
     {
         return size() == 0;
