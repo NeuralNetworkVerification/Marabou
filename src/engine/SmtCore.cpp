@@ -170,6 +170,7 @@ void SmtCore::performSplit()
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
+    ASSERT( split->getEquations().size() == 0 );
     _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
 
@@ -261,6 +262,7 @@ bool SmtCore::popSplit()
     stackEntry->_impliedValidSplits.clear();
 
     SMT_LOG( "\tApplying new split..." );
+    ASSERT( split->getEquations().size() == 0 );
     _engine->applySplit( *split );
     SMT_LOG( "\tApplying new split - DONE" );
 
