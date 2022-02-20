@@ -178,9 +178,9 @@ public:
     
     template <class Predicate>
     void removeIf( Predicate p )
-	{
-    	_container.remove_if( p );
-	}
+    {
+        _container.remove_if( p );
+    }
     
     bool operator==( const List<T> &other ) const
     {
