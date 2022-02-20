@@ -1694,6 +1694,7 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
         state.initializeBounds( _n );
         memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
         memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+        state._boundsValid = _boundsValid;
     }
     else if ( level == TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE )
     {
@@ -1754,29 +1755,20 @@ void Tableau::restoreState( const TableauState &state,
         memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
         memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
 
-        _boundsValid = true;
+        _boundsValid = state._boundsValid;
 
         if ( _lpSolverType == LPSolverType::NATIVE )
         {
             // The bounds might be invalid in the state from which we backtrack,
             // This means we might need to fix the non-basic variable assignments
             for ( unsigned i = 0; i < _n - _m; ++i )
-                {
-                    unsigned variable = _nonBasicIndexToVariable[i];
-                    updateVariableToComplyWithLowerBoundUpdate( variable,
-                                                                _lowerBounds[variable] );
-                    updateVariableToComplyWithUpperBoundUpdate( variable,
-                                                                _upperBounds[variable] );
-                }
-
-            DEBUG({
-                    // Restored bounds must be valid. Otherwise, the case split
-                    // would not have been performed.
-                    for ( unsigned i = 0; i < _n; ++i )
-                        ASSERT( FloatUtils::lte( _lowerBounds[i],
-                                                 _upperBounds[i] ) );
-                });
-
+            {
+                unsigned variable = _nonBasicIndexToVariable[i];
+                updateVariableToComplyWithLowerBoundUpdate( variable,
+                                                            _lowerBounds[variable] );
+                updateVariableToComplyWithUpperBoundUpdate( variable,
+                                                            _upperBounds[variable] );
+            }
             computeBasicStatus();
         }
     }
