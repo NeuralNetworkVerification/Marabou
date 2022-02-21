@@ -2802,9 +2802,9 @@ bool Engine::performDeepSoILocalSearch()
 
     if ( initialPhasePattern.isZero() )
     {
+        applyAllBoundTightenings();
         while ( !_smtCore.needToSplit() )
             _smtCore.reportRejectedPhasePatternProposal();
-        applyAllBoundTightenings();
         return false;
     }
 
@@ -2867,9 +2867,9 @@ bool Engine::performDeepSoILocalSearch()
                 // In this case, we bump up the score of PLConstraints not in
                 // the SoI with the hope to branch on them early.
                 bumpUpPseudoImpactOfPLConstraintsNotInSoI();
+                applyAllBoundTightenings();
                 while ( !_smtCore.needToSplit() )
                     _smtCore.reportRejectedPhasePatternProposal();
-                applyAllBoundTightenings();
                 return false;
             }
         }
@@ -2898,12 +2898,12 @@ bool Engine::performDeepSoILocalSearch()
         }
         else
         {
+            applyAllBoundTightenings();
             _smtCore.reportRejectedPhasePatternProposal();
             lastProposalAccepted = false;
         }
     }
 
-    applyAllBoundTightenings();
     ENGINE_LOG( "Performing local search - done" );
     return false;
 }
