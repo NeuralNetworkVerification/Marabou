@@ -151,7 +151,6 @@ public:
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
-    virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
     virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
@@ -291,6 +290,11 @@ public:
       (ie. "relu", "max", etc)
     */
     virtual String serializeToString() const = 0;
+
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
 
     /*
       Register a constraint bound tightener. If a tightener is registered,
@@ -474,6 +478,8 @@ protected:
      */
     double _score;
 
+    ITableau *_tableau;
+
     IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
@@ -582,16 +588,19 @@ protected:
     /**********************************************************************/
     inline bool existsAssignment( unsigned variable ) const
     {
-        return ( _gurobi == nullptr ) ?
-            _assignment.exists( variable )
-            : _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        if ( _gurobi )
+            return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        else if ( _tableau )
+            return _tableau->existsValue( variable );
+        else
+            return false;
     }
 
     inline double getAssignment( unsigned variable ) const
     {
         if ( _gurobi == nullptr )
         {
-            return _assignment[variable];
+            return _tableau->getValue( variable );
         }
         else
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );

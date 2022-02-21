@@ -18,6 +18,7 @@
 #include "DisjunctionConstraint.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
+#include "MockTableau.h"
 #include "InputQuery.h"
 
 class MockForDisjunctionConstraint
@@ -146,91 +147,42 @@ public:
           1 <= x0 <= 5  -->   x1 = x0
           5 <= x0       -->   x1 = 2x2 + 5
         */
+        MockTableau tableau;
+        dc.registerTableau( &tableau );
 
-        dc.notifyVariableValue( 0, -5 );
-        dc.notifyVariableValue( 1, 2 );
+        tableau.setValue( 0, -5 );
+        tableau.setValue( 1, 2 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 0, -3 );
+        tableau.setValue( 0, -3 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 12, 4 );
+        tableau.setValue( 12, 4 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 0, 3 );
+        tableau.setValue( 0, 3 );
         TS_ASSERT( !dc.satisfied() );
 
-        dc.notifyVariableValue( 1, 3 );
+        tableau.setValue( 1, 3 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 2, 4 );
+        tableau.setValue( 2, 4 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 1, 2 );
+        tableau.setValue( 1, 2 );
         TS_ASSERT( !dc.satisfied() );
 
-        dc.notifyVariableValue( 0, 7 );
-        dc.notifyVariableValue( 1, 7 );
+        tableau.setValue( 0, 7 );
+        tableau.setValue( 1, 7 );
         TS_ASSERT( !dc.satisfied() );
 
-        dc.notifyVariableValue( 2, 1 );
+        tableau.setValue( 2, 1 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 0, 15 );
+        tableau.setValue( 0, 15 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 1, 8 );
-        TS_ASSERT( !dc.satisfied() );
-    }
-
-    void test_satisfied_with_bound_manager()
-    {
-        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
-        DisjunctionConstraint dc( caseSplits );
-        Context context;
-        BoundManager boundManager( context );
-        boundManager.initialize( 11 );
-        dc.registerBoundManager( &boundManager );
-
-        /*
-          x0 <= 1       -->   x1 = 2
-          1 <= x0 <= 5  -->   x1 = x0
-          5 <= x0       -->   x1 = 2x2 + 5
-        */
-
-        dc.notifyVariableValue( 0, -5 );
-        dc.notifyVariableValue( 1, 2 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 0, -3 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 12, 4 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 0, 3 );
-        TS_ASSERT( !dc.satisfied() );
-
-        dc.notifyVariableValue( 1, 3 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 2, 4 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 1, 2 );
-        TS_ASSERT( !dc.satisfied() );
-
-        dc.notifyVariableValue( 0, 7 );
-        dc.notifyVariableValue( 1, 7 );
-        TS_ASSERT( !dc.satisfied() );
-
-        dc.notifyVariableValue( 2, 1 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 0, 15 );
-        TS_ASSERT( dc.satisfied() );
-
-        dc.notifyVariableValue( 1, 8 );
+        tableau.setValue( 1, 8 );
         TS_ASSERT( !dc.satisfied() );
     }
 

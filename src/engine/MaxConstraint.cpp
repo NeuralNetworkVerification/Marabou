@@ -133,13 +133,6 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, _f );
 }
 
-void MaxConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // Reluplex does not currently work with Gurobi.
-    ASSERT( _gurobi == NULL );
-    _assignment[variable] = value;
-}
-
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
     if ( _statistics )
@@ -633,11 +626,11 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
     DEBUG({
             for ( const auto &element : _elements )
             {
-                ASSERT( FloatUtils::gte( _assignment.get( _f ),
-                                         _assignment.get( element ) ) );
+                ASSERT( FloatUtils::gte( getAssignment( _f ),
+                                         getAssignment( element ) ) );
             }
-                ASSERT( FloatUtils::gte( _assignment.get( _f ),
-                                         _maxValueOfEliminatedPhases ) );
+            ASSERT( FloatUtils::gte( getAssignment( _f ),
+                                     _maxValueOfEliminatedPhases ) );
         });
 
     if ( phase == MAX_PHASE_ELIMINATED )
@@ -726,7 +719,7 @@ bool MaxConstraint::haveOutOfBoundVariables() const
              FloatUtils::lt( getUpperBound( element ), value ) )
         return true;
         unsigned aux = _elementToAux[element];
-        double auxValue = _assignment.get( aux );
+        double auxValue = getAssignment( aux );
         if ( FloatUtils::gt( getLowerBound( aux ), auxValue ) ||
              FloatUtils::lt( getUpperBound( aux ), auxValue ) )
             return true;

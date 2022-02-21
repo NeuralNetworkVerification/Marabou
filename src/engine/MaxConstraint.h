@@ -89,7 +89,6 @@ public:
       This callback is invoked when a watched variable's value
       changes.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double value ) override;
     void notifyUpperBound( unsigned variable, double value ) override;
 

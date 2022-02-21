@@ -23,6 +23,7 @@
 #include "Equation.h"
 #include "FloatUtils.h"
 #include "ICostFunctionManager.h"
+#include "InfeasibleQueryException.h"
 #include "LPSolverType.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
@@ -441,10 +442,6 @@ void Tableau::computeAssignment()
     computeBasicStatus();
 
     _basicAssignmentStatus = ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED;
-
-    // Inform the watchers
-    for ( unsigned i = 0; i < _m; ++i )
-        notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
 }
 
 bool Tableau::checkValueWithinBounds( unsigned variable, double value )
@@ -535,6 +532,19 @@ const double *Tableau::getLowerBounds() const
 const double *Tableau::getUpperBounds() const
 {
     return _upperBounds;
+}
+
+bool Tableau::existsValue( unsigned variable ) const
+{
+    if ( _lpSolverType == LPSolverType::GUROBI )
+    {
+        return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+    }
+    else
+    {
+        // There is always an assignment.
+        return _nonBasicAssignment && _basicAssignment;
+    }
 }
 
 double Tableau::getValue( unsigned variable ) const
@@ -1516,7 +1526,6 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
     unsigned nonBasic = _variableToIndex[variable];
     double delta = value - _nonBasicAssignment[nonBasic];
     _nonBasicAssignment[nonBasic] = value;
-    notifyVariableValue( variable, value );
 
     // If we don't need to update the basics, we are done
     if ( !updateBasics )
@@ -1530,7 +1539,6 @@ void Tableau::setNonBasicAssignment( unsigned variable, double value, bool updat
     for ( unsigned i = 0; i < _m; ++i )
     {
         _basicAssignment[i] -= _changeColumn[i] * delta;
-        notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
 
         unsigned oldStatus = _basicStatus[i];
         computeBasicStatus( i );
@@ -1677,18 +1685,19 @@ void Tableau::dumpEquations()
     }
 }
 
-void Tableau::storeState( TableauState &state ) const
+void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) const
 {
-    if ( _lpSolverType == LPSolverType::GUROBI )
+    // Store the bounds
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
+         _lpSolverType != LPSolverType::NATIVE )
     {
-        // Store the bounds
         state.initializeBounds( _n );
         memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
         memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+        state._boundsValid = _boundsValid;
     }
-    else
+    else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
-        ASSERT( _lpSolverType == LPSolverType::NATIVE );
         // Set the dimensions
         state.setDimensions( _m, _n, *this );
 
@@ -1729,27 +1738,41 @@ void Tableau::storeState( TableauState &state ) const
         // Store the merged variables
         state._mergedVariables = _mergedVariables;
     }
+    else
+    {
+        ASSERT( level == TableauStateStorageLevel::STORE_NONE );
+        return;
+    }
 }
 
-void Tableau::restoreState( const TableauState &state )
+void Tableau::restoreState( const TableauState &state,
+                            TableauStateStorageLevel level )
 {
-    if ( _lpSolverType == LPSolverType::GUROBI )
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY
+          || _lpSolverType != LPSolverType::NATIVE )
     {
         // Store the bounds
         memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
         memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
 
-        DEBUG({
-                // Restored bounds must be valid. Otherwise, the case split
-                // would not have been performed.
-                for ( unsigned i = 0; i < _n; ++i )
-                    ASSERT( FloatUtils::lte( _lowerBounds[i],
-                                             _upperBounds[i] ) );
-            });
+        _boundsValid = state._boundsValid;
 
-        _boundsValid = true;
+        if ( _lpSolverType == LPSolverType::NATIVE )
+        {
+            // The bounds might be invalid in the state from which we backtrack,
+            // This means we might need to fix the non-basic variable assignments
+            for ( unsigned i = 0; i < _n - _m; ++i )
+            {
+                unsigned variable = _nonBasicIndexToVariable[i];
+                updateVariableToComplyWithLowerBoundUpdate( variable,
+                                                            _lowerBounds[variable] );
+                updateVariableToComplyWithUpperBoundUpdate( variable,
+                                                            _upperBounds[variable] );
+            }
+            computeBasicStatus();
+        }
     }
-    else
+    else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();
 
@@ -1802,6 +1825,11 @@ void Tableau::restoreState( const TableauState &state )
             _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
             _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
         }
+    }
+    else
+    {
+        ASSERT( false );
+        return;
     }
 }
 
@@ -1999,7 +2027,6 @@ unsigned Tableau::addEquation( const Equation &equation )
             _basicAssignment[_m - 1] = 0.0;
 
         // Notify about the new variable's assignment and compute its status
-        notifyVariableValue( _basicIndexToVariable[_m - 1], _basicAssignment[_m - 1] );
         computeBasicStatus( _m - 1 );
     }
     else
@@ -2221,18 +2248,6 @@ void Tableau::registerToWatchAllVariables( VariableWatcher *watcher )
 void Tableau::registerResizeWatcher( ResizeWatcher *watcher )
 {
     _resizeWatchers.append( watcher );
-}
-
-void Tableau::notifyVariableValue( unsigned variable, double value )
-{
-    for ( auto &watcher : _globalWatchers )
-        watcher->notifyVariableValue( variable, value );
-
-    if ( _variableToWatchers.exists( variable ) )
-    {
-        for ( auto &watcher : _variableToWatchers[variable] )
-            watcher->notifyVariableValue( variable, value );
-    }
 }
 
 void Tableau::notifyLowerBound( unsigned variable, double bound )
@@ -2464,13 +2479,11 @@ void Tableau::updateAssignmentForPivot()
                  continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
-            notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
             computeBasicStatus( i );
         }
 
         // Update the assignment for the non-basic variable
         _nonBasicAssignment[_enteringVariable] = nonBasicDecreases ? _lowerBounds[nonBasic] : _upperBounds[nonBasic];
-        notifyVariableValue( nonBasic, _nonBasicAssignment[_enteringVariable] );
     }
     else
     {
@@ -2514,18 +2527,15 @@ void Tableau::updateAssignmentForPivot()
                 continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
-            notifyVariableValue( _basicIndexToVariable[i], _basicAssignment[i] );
             computeBasicStatus( i );
         }
 
         // Update the assignment for the entering variable
         _basicAssignment[_leavingVariable] = _nonBasicAssignment[_enteringVariable] + nonBasicDelta;
-        notifyVariableValue( _nonBasicIndexToVariable[_enteringVariable], _basicAssignment[_leavingVariable] );
 
         // Update the assignment for the leaving variable
         _nonBasicAssignment[_enteringVariable] =
             basicGoingToUpperBound ? _upperBounds[currentBasic] : _lowerBounds[currentBasic];
-        notifyVariableValue( currentBasic, _nonBasicAssignment[_enteringVariable] );
     }
 }
 
