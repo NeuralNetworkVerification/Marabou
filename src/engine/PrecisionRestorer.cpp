@@ -24,7 +24,7 @@
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
 {
     engine.storeState( _initialEngineState,
-                       TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE );
+                       TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
 }
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,

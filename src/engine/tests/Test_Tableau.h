@@ -1038,7 +1038,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( tableau->storeState
                                   ( *tableauState,
-                                    TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE ) );
+                                    TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE ) );
 
         // Do some more stuff
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
@@ -1069,7 +1069,7 @@ public:
         // Now restore the tableau
         TS_ASSERT_THROWS_NOTHING( tableau->restoreState
                                   ( *tableauState,
-                                    TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE ) );
+                                    TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE ) );
 
         // Do some more stuff again
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );

@@ -1696,7 +1696,7 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
         memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
         state._boundsValid = _boundsValid;
     }
-    else if ( level == TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE )
+    else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         // Set the dimensions
         state.setDimensions( _m, _n, *this );
@@ -1772,7 +1772,7 @@ void Tableau::restoreState( const TableauState &state,
             computeBasicStatus();
         }
     }
-    else if ( level == TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE )
+    else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();
 

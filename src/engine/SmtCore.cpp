@@ -470,7 +470,7 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
     _engine->storeState( *stateBeforeSplits,
-                         TableauStateStorageLevel::STORE_ALL_TABLEAU_STATE );
+                         TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
     stackEntry->_engineState = stateBeforeSplits;
 
     // Apply all the splits
