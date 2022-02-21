@@ -212,13 +212,13 @@ public:
       Apply all bound tightenings (row and matrix-based) in
       the queue.
     */
-    virtual void applyAllBoundTightenings() override;
+    void applyAllBoundTightenings();
 
     /*
       Apply all valid case splits proposed by the constraints.
       Return true if a valid case split has been applied.
     */
-    virtual bool applyAllValidConstraintCaseSplits() override;
+    bool applyAllValidConstraintCaseSplits();
 
 private:
 

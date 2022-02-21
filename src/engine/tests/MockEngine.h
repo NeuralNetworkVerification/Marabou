@@ -198,6 +198,10 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
     {
     }
+
+    void applyAllBoundTightenings() {};
+
+    bool applyAllValidConstraintCaseSplits() { return false; };
 };
 
 #endif // __MockEngine_h__
