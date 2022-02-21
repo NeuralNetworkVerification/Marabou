@@ -76,6 +76,13 @@ def test_matMul():
     filename =  "fc_matMul.onnx"
     evaluateFile(filename)
 
+def test_mul():
+    """
+    Test a custom network that has uses Mul
+    """
+    filename =  "traffic-classifier64.onnx"
+    evaluateFile(filename)
+
 def test_twoBranches():
     """
     Test a custom network that has one input used in two separate branches of computation,
