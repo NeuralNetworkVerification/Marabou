@@ -2951,6 +2951,7 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
                        computeHeuristicCost( heuristicCost ) ).ascii() );
     }
 
+    applyAllBoundTightenings();
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
 }
 
