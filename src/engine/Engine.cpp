@@ -1927,7 +1927,8 @@ void Engine::applyAllBoundTightenings()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    applyAllRowTightenings();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        applyAllRowTightenings();
     applyAllConstraintTightenings();
 
     struct timespec end = TimeUtils::sampleMicro();
