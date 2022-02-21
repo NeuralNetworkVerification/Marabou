@@ -2804,6 +2804,7 @@ bool Engine::performDeepSoILocalSearch()
     {
         while ( !_smtCore.needToSplit() )
             _smtCore.reportRejectedPhasePatternProposal();
+        applyAllBoundTightenings();
         return false;
     }
 
@@ -2868,6 +2869,7 @@ bool Engine::performDeepSoILocalSearch()
                 bumpUpPseudoImpactOfPLConstraintsNotInSoI();
                 while ( !_smtCore.needToSplit() )
                     _smtCore.reportRejectedPhasePatternProposal();
+                applyAllBoundTightenings();
                 return false;
             }
         }
@@ -2901,6 +2903,7 @@ bool Engine::performDeepSoILocalSearch()
         }
     }
 
+    applyAllBoundTightenings();
     ENGINE_LOG( "Performing local search - done" );
     return false;
 }
@@ -2951,7 +2954,6 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
                        computeHeuristicCost( heuristicCost ) ).ascii() );
     }
 
-    applyAllBoundTightenings();
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
 }
 
