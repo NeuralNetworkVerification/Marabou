@@ -110,6 +110,9 @@ public:
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
 
+    virtual void applyAllBoundTightenings() {};
+
+    virtual bool applyAllValidConstraintCaseSplits() { return false; };
 };
 
 #endif // __IEngine_h__

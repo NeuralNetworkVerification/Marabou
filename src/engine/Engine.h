@@ -208,6 +208,18 @@ public:
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
+    /*
+      Apply all bound tightenings (row and matrix-based) in
+      the queue.
+    */
+    virtual void applyAllBoundTightenings() override;
+
+    /*
+      Apply all valid case splits proposed by the constraints.
+      Return true if a valid case split has been applied.
+    */
+    virtual bool applyAllValidConstraintCaseSplits() override;
+
 private:
 
     enum BasisRestorationRequired {
@@ -492,12 +504,6 @@ private:
     void reportPlViolation();
 
     /*
-      Apply all bound tightenings (row and matrix-based) in
-      the queue.
-    */
-    void applyAllBoundTightenings();
-
-    /*
       Apply any bound tightenings found by the row tightener.
     */
     void applyAllRowTightenings();
@@ -507,11 +513,6 @@ private:
     */
     void applyAllConstraintTightenings();
 
-    /*
-      Apply all valid case splits proposed by the constraints.
-      Return true if a valid case split has been applied.
-    */
-    bool applyAllValidConstraintCaseSplits();
     bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*

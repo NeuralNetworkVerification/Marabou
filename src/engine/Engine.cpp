@@ -2802,8 +2802,6 @@ bool Engine::performDeepSoILocalSearch()
 
     if ( initialPhasePattern.isZero() )
     {
-        applyAllBoundTightenings();
-        applyAllValidConstraintCaseSplits();
         while ( !_smtCore.needToSplit() )
             _smtCore.reportRejectedPhasePatternProposal();
         return false;
@@ -2868,8 +2866,6 @@ bool Engine::performDeepSoILocalSearch()
                 // In this case, we bump up the score of PLConstraints not in
                 // the SoI with the hope to branch on them early.
                 bumpUpPseudoImpactOfPLConstraintsNotInSoI();
-                applyAllBoundTightenings();
-                applyAllValidConstraintCaseSplits();
                 while ( !_smtCore.needToSplit() )
                     _smtCore.reportRejectedPhasePatternProposal();
                 return false;
@@ -2900,8 +2896,6 @@ bool Engine::performDeepSoILocalSearch()
         }
         else
         {
-            applyAllBoundTightenings();
-            applyAllValidConstraintCaseSplits();
             _smtCore.reportRejectedPhasePatternProposal();
             lastProposalAccepted = false;
         }

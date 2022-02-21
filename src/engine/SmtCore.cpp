@@ -115,6 +115,8 @@ void SmtCore::reportRejectedPhasePatternProposal()
          _deepSoIRejectionThreshold )
     {
         _needToSplit = true;
+        _engine->applyAllBoundTightenings();
+        _engine->applyAllValidConstraintCaseSplits();
         if ( !pickSplitPLConstraint() )
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
