@@ -588,10 +588,10 @@ protected:
     /**********************************************************************/
     inline bool existsAssignment( unsigned variable ) const
     {
-        if ( _gurobi == nullptr && _tableau != nullptr )
-            return _tableau->existsValue( variable );
-        else if ( _gurobi )
+        if ( _gurobi )
             return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        else if ( _tableau )
+            return _tableau->existsValue( variable );
         else
             return false;
     }

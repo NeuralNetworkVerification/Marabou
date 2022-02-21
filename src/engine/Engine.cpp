@@ -1368,7 +1368,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->registerTableau( _tableau );
         }
 
-
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
         {
             _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
