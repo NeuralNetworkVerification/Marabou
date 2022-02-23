@@ -231,10 +231,10 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         if ( FloatUtils::isZero( value ) )
         {
             unsigned currentElement = _auxToElement[variable];
-            for ( const auto &element : _elements )
-                if ( element != currentElement )
-                    eliminateCase( element );
-
+            Set<unsigned> toRemove = _elements;
+            toRemove.erase( currentElement );
+            for ( const auto &element : toRemove )
+                eliminateCase( element );
             _haveFeasibleEliminatedPhases = false;
         }
     }
