@@ -304,17 +304,8 @@ public:
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
         TS_ASSERT_EQUALS( tightenings.size(), 2U );
 
-        auto it = tightenings.begin();
-
-        TS_ASSERT_EQUALS( it->_variable, 0U );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.0 ) );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-
-        ++it;
-
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.5 ) );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+        TS_ASSERT_DIFFERS( std::find( tightenings.begin(), tightenings.end(), Tightening( 0U, 1.0, Tightening::UB ) ), tightenings.end());
+        TS_ASSERT_DIFFERS( std::find( tightenings.begin(), tightenings.end(), Tightening( 1U, 1.5, Tightening::LB ) ), tightenings.end());
     }
 
     void test_examine_constraint_matrix_multiple_equations()
@@ -378,28 +369,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( tightener.getRowTightenings( tightenings ) );
         TS_ASSERT_EQUALS( tightenings.size(), 4U );
 
-        auto it = tightenings.begin();
+        TS_ASSERT_DIFFERS( std::find( tightenings.begin(), tightenings.end(), Tightening( 0U, 1.0, Tightening::UB ) ), tightenings.end());
+        TS_ASSERT_DIFFERS( std::find( tightenings.begin(), tightenings.end(), Tightening( 1U, 1.5, Tightening::LB ) ), tightenings.end());
+        TS_ASSERT_DIFFERS( std::find( tightenings.begin(), tightenings.end(), Tightening( 2U, 1.0, Tightening::LB ) ), tightenings.end());
+        TS_ASSERT_DIFFERS( std::find( tightenings.begin(), tightenings.end(), Tightening( 2U, 2.0, Tightening::UB ) ), tightenings.end());
 
-        TS_ASSERT_EQUALS( it->_variable, 0U );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.0 ) );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-
-        ++it;
-
-        TS_ASSERT_EQUALS( it->_variable, 1U );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1.5 ) );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-
-        ++it;
-
-        TS_ASSERT_EQUALS( it->_variable, 2U );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1 ) );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-
-        ++it;
-
-        TS_ASSERT_EQUALS( it->_variable, 2U );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 2 ) );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
     }
 };
