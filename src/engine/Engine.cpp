@@ -1322,6 +1322,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 plConstraint->addAuxiliaryEquationsAfterPreprocessing
                     ( *_preprocessedQuery );
 
+        _boundManager.initialize( _preprocessedQuery.getNumberOfVariables() );
+        for ( unsigned i = 0; i < _preprocessedQuery.getNumberOfVariables(); ++i )
+        {
+            _boundManager.setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+            _boundManager.setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+        }
+
         if ( _lpSolverType == LPSolverType::NATIVE )
         {
             double *constraintMatrix = createConstraintMatrix();
