@@ -19,6 +19,7 @@
 #include "DivideStrategy.h"
 #include "SnCDivideStrategy.h"
 #include "List.h"
+#include "context/context.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -108,6 +109,11 @@ public:
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
+
+    /*
+      Get Context reference
+     */
+    virtual CVC4::context::Context &getContext() =0;
 
 };
 
