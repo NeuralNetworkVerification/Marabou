@@ -36,7 +36,7 @@
 
 Tableau::Tableau( IBoundManager &boundManager )
     : _boundManager( boundManager )
-    , _useBoundManager( false )
+    , _useBoundManager( true )
     , _n ( 0 )
     , _m ( 0 )
     , _A( NULL )
