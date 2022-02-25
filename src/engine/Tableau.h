@@ -16,7 +16,7 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
-#include "BoundManager.h"
+#include "IBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
@@ -39,7 +39,7 @@ class TableauState;
 class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
-    Tableau( BoundManager &boundManager );
+    Tableau( IBoundManager &boundManager );
     ~Tableau();
 
     /*
@@ -165,6 +165,9 @@ public:
     const double *getLowerBounds() const;
     const double *getUpperBounds() const;
 
+    /*
+      Get BoundManager reference
+     */
     IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*

@@ -1526,6 +1526,7 @@ public:
 
         Context context;
         BoundManager boundManager( context );
+        boundManager.initialize( 7 );
 
         TS_ASSERT( tableau = new Tableau( boundManager ) );
 
