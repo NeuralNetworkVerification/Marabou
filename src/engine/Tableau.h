@@ -161,6 +161,9 @@ public:
         return _upperBounds[variable];
     }
 
+    /*
+      Get BoundManager reference
+     */
     IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*
