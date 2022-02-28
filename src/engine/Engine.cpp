@@ -745,13 +745,17 @@ bool Engine::performSimplexStep()
     if ( !fakePivot )
     {
         _tableau->computePivotRow();
-        _rowBoundTightener->examinePivotRow();
     }
 
     // Perform the actual pivot
     _activeEntryStrategy->prePivotHook( _tableau, fakePivot );
     _tableau->performPivot();
     _activeEntryStrategy->postPivotHook( _tableau, fakePivot );
+
+    if ( !fakePivot )
+    {
+        _rowBoundTightener->examinePivotRow();
+    }
 
     struct timespec end = TimeUtils::sampleMicro();
     _statistics.incLongAttribute( Statistics::TIME_SIMPLEX_STEPS_MICRO, TimeUtils::timePassed( start, end ) );
