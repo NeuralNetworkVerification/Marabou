@@ -28,6 +28,7 @@
 #include "GlobalConfiguration.h"
 #include "GurobiWrapper.h"
 #include "IEngine.h"
+#include "IncrementalLinearization.h"
 #include "InputQuery.h"
 #include "LinearExpression.h"
 #include "Map.h"

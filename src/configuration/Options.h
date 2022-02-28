@@ -84,6 +84,9 @@ public:
 
         // The random seed used throughout the execution.
         SEED,
+
+        // The number of incremental linearizations
+        NUMBER_OF_INCREMENTAL_LINEARIZATIONS,
     };
 
     enum FloatOptions{

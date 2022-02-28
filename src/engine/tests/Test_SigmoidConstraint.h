@@ -371,4 +371,24 @@ public:
         TS_ASSERT_EQUALS( sigmoid1.getB(), b_2 );
         TS_ASSERT_EQUALS( sigmoid1.getF(), f_2 );        
     }
+
+    void test_sigmoid_add_split_points()
+    {
+        SigmoidConstraint sigmoid1( 0, 1 );
+        sigmoid1.addSplitPoint( 0, 0 );
+        sigmoid1.addSplitPoint( 2, 20 );
+        sigmoid1.addSplitPoint( 1, 10 );
+        const TranscendentalConstraint::SplitPoints &pts = sigmoid1.getSplitPoints();
+
+        auto it1 = pts.begin();
+
+        TS_ASSERT_EQUALS( it1->_x, 0 );
+        TS_ASSERT_EQUALS( it1->_y, 0 );
+        ++it1;
+        TS_ASSERT_EQUALS( it1->_x, 1 );
+        TS_ASSERT_EQUALS( it1->_y, 10 );
+        ++it1;
+        TS_ASSERT_EQUALS( it1->_x, 2 );
+        TS_ASSERT_EQUALS( it1->_y, 20 );
+    }
 };

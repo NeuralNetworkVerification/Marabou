@@ -211,6 +211,7 @@ struct MarabouOptions {
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
         , _skipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+        , _numIncrementalLinearizations( Options::get()->getInt( Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
@@ -237,6 +238,7 @@ struct MarabouOptions {
     Options::get()->setInt( Options::VERBOSITY, _verbosity );
     Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
     Options::get()->setInt( Options::CONSTRAINT_VIOLATION_THRESHOLD, _splitThreshold );
+    Options::get()->setInt( Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS, _numIncrementalLinearizations );
 
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
@@ -263,6 +265,7 @@ struct MarabouOptions {
     unsigned _timeoutInSeconds;
     unsigned _splitThreshold;
     unsigned _numSimulations;
+    unsigned _numIncrementalLinearizations;
     float _timeoutFactor;
     float _preprocessorBoundTolerance;
     float _milpSolverTimeout;
@@ -428,7 +431,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
+        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit)
+        .def_readwrite("_numIncrementalLinearizations", &MarabouOptions::_numIncrementalLinearizations);
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(

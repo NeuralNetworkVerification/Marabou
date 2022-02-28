@@ -75,10 +75,13 @@ public:
     void addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
 
     // Add a new GEQ indicator constraint
-    void addGeqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+    void addGeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
 
     // Add a new EQ indicator constraint
-    void addEqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+    void addEqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+
+    // Add a new Piecewise-Linear constraint
+    void addPiecewiseLinearConstraint( const String xVarName, const String yplVarName, unsigned numOfPts, double *xpts, double *ypts );
 
     // A cost function to minimize, or an objective function to maximize
     void setCost( const List<Term> &terms );
@@ -176,6 +179,7 @@ public:
     void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
+    void addPiecewiseLinearConstraint( const String xVarName, const String yplVarName, unsigned numOfPts, double *xpts, double *ypts ) {}
     void setCost( const List<Term> & ) {}
     void setObjective( const List<Term> & ) {}
     void setCutoff( double ) {};

@@ -38,3 +38,13 @@ void TranscendentalConstraint::registerConstraintBoundTightener( IConstraintBoun
 {
     _constraintBoundTightener = tightener;
 }
+
+void TranscendentalConstraint::addSplitPoint( double x, double y )
+{
+    _pts.insert( SplitPoint( x, y ));
+}
+
+TranscendentalConstraint::SplitPoints TranscendentalConstraint::getSplitPoints()
+{
+    return _pts;
+}

@@ -117,6 +117,33 @@ public:
     */
     void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
+    // Split point 
+    struct SplitPoint
+    {
+      double _x;
+      double _y;
+      SplitPoint( double x, double y )
+      {
+        _x = x;
+        _y = y;
+      };
+      bool operator<( const SplitPoint &other ) const
+      {
+          return _x < other._x;
+      }
+    };
+
+    typedef std::set<SplitPoint> SplitPoints;    
+
+    /*
+      Add a new split point for licremental linearization.
+    */
+    void addSplitPoint( double x, double y );
+
+    /*
+      Return split points
+    */
+    SplitPoints getSplitPoints();
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -203,6 +230,10 @@ protected:
         ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
                                      : _upperBounds[var] = value;
     }
+
+private:
+  // Split points of secant and tangent lines for incremental linearizations.
+  SplitPoints _pts;
 };
 
 #endif // __TranscendentalConstraint_h__

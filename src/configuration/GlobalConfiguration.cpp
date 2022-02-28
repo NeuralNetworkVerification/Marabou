@@ -117,6 +117,7 @@ const bool GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING = false;
 const bool GlobalConfiguration::MPS_PARSER_LOGGING= false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
+const bool GlobalConfiguration::INCREMENTAL_LINEARIZATION_LOGGING = false;
 
 const bool GlobalConfiguration::USE_SMART_FIX = false;
 const bool GlobalConfiguration::USE_LEAST_FIX = false;

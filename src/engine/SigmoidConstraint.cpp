@@ -227,28 +227,28 @@ String SigmoidConstraint::serializeToString() const
     return Stringf( "sigmoid,%u,%u", _f, _b );
 }
 
-unsigned SigmoidConstraint::getB() const
-{
-    return _b;
-}
-
-unsigned SigmoidConstraint::getF() const
-{
-    return _f;
-}
-
-double SigmoidConstraint::sigmoid( double x ) const
+double SigmoidConstraint::sigmoid( double x )
 {
     return 1 / ( 1 + std::exp( -x ) );
 }
 
-double SigmoidConstraint::sigmoidInverse( double y ) const
+double SigmoidConstraint::sigmoidInverse( double y )
 {
     ASSERT( y != 1 );
     return log( y / ( 1 - y ) );
 }
 
-double SigmoidConstraint::sigmoidDerivative( double x ) const
+double SigmoidConstraint::sigmoidDerivative( double x )
 {
     return sigmoid( x ) * ( 1 - sigmoid( x ) );
+}
+void SigmoidConstraint::setBinVarName( String binVarName )
+{
+    ASSERT( _binVarName == "" );
+    _binVarName = binVarName;
+}
+
+String SigmoidConstraint::getBinVarName()
+{
+    return _binVarName;
 }

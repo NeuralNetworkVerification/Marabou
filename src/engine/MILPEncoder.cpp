@@ -216,51 +216,51 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
         // In this case, tangentePoint is equal to sourceLb or sourceUb
         double yAtTangentPoint = sigmoid->sigmoid( sourceLb );
-        double tangentSlope = sigmoid->sigmoidDerivative( sourceLb );
-
-        List<GurobiWrapper::Term> terms;
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addEqConstraint( terms, -tangentSlope * sourceLb + yAtTangentPoint );
+        addTangentLineOnSigmoid( gurobi, sigmoid, sourceLb, yAtTangentPoint, sourceLb, sourceUb );
     }
     else if ( FloatUtils::lt( sourceLb, 0 ) && FloatUtils::gt( sourceUb, 0 ) )
     {
-        List<GurobiWrapper::Term> terms;
+        // set binVarName
         String binVarName = Stringf( "a%u", _binVarIndex ); // a = 1 -> the case where x_b >= 0, otherwise where x_b <= 0
         gurobi.addVariable( binVarName,
                             0,
                             1,
                             GurobiWrapper::BINARY );
+        _binVarIndex++;
+        sigmoid->setBinVarName( binVarName );
+
+        int binVal = 1;
+
+        List<GurobiWrapper::Term> terms;
 
         // Constraint where x_b >= 0
         // Upper line is tangent and lower line is secant for an overapproximation with a linearization.
 
-        int binVal = 1;
+        // add a tangent line
+        double xpt = sourceUb / 2;
+        double ypt = sigmoid->sigmoid( xpt );
+        addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
 
-        // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
-        double tangentPoint = sourceUb / 2;
-        double yAtTangentPoint = sigmoid->sigmoid( tangentPoint );
-        double tangentSlope = sigmoid->sigmoidDerivative( tangentPoint );
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
-        terms.clear();
+        // add a split point
+        sigmoid->addSplitPoint( xpt, ypt );
 
-        // secant line: x_f = secantSlope * (x_b - 0) + y_l
+        // add secant lines
         double y_l = sigmoid->sigmoid( 0 );
         double y_u = sigmoid->sigmoid( sourceUb );
-        double secantSlope = ( y_u - y_l ) / sourceUb;
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -secantSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, y_l );
-        terms.clear();
+        double xpts[3] = { 0, xpt, sourceUb };
+        double ypts[3] = { y_l, ypt, y_u };
+        addSecantLinesOnSigmoid( gurobi, sigmoid, xpt, 3, xpts, ypts, sourceLb, sourceUb );
 
-        // lower bound of x_b
+        // add split points
+        sigmoid->addSplitPoint( sourceUb, y_u );
+        sigmoid->addSplitPoint( 0, y_l );
+
+        // set lower bound of x_b
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
         gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, 0 );  
         terms.clear();
 
-        // lower bound of x_f
+        // set lower bound of x_f
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
         gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, y_l );  
         terms.clear(); 
@@ -270,23 +270,23 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
 
         binVal = 0;
 
-        // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
-        tangentPoint = sourceLb / 2;
-        yAtTangentPoint = sigmoid->sigmoid( tangentPoint );
-        tangentSlope = sigmoid->sigmoidDerivative( tangentPoint );
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
-        terms.clear();
+        // add a tangent line
+        xpt = sourceLb / 2;
+        ypt = sigmoid->sigmoid( xpt );
+        addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
 
-        // secant line: x_f = secantSlope * (x_b - sourceLb) + y_l
+        // add a split point
+        sigmoid->addSplitPoint( xpt, ypt );
+
+        // add secant lines
         y_u = y_l;
         y_l = sigmoid->sigmoid( sourceLb );
-        secantSlope = ( y_u - y_l ) / ( 0 - sourceLb );
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -secantSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, -secantSlope * sourceLb + y_l );
-        terms.clear();
+        double xptsNeg[3] = { sourceLb, xpt, 0 };
+        double yptsNeg[3] = { y_l, ypt, y_u };
+        addSecantLinesOnSigmoid( gurobi, sigmoid, xpt, 3, xptsNeg, yptsNeg, sourceLb, sourceUb );
+
+        // add a split point
+        sigmoid->addSplitPoint( sourceLb, y_l );
 
         // upper bound of x_b
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
@@ -296,46 +296,103 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         // upper bound of x_f
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
         gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, y_u );  
-        terms.clear(); 
-
-        _binVarIndex++;
+        terms.clear();
     }
     else
     {   
-        // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
-        double tangentPoint = ( sourceLb + sourceUb ) / 2;
-        double yAtTangentPoint = sigmoid->sigmoid( tangentPoint );
-        double tangentSlope = sigmoid->sigmoidDerivative( tangentPoint );
+        // add a tangent line
+        double xpt = ( sourceLb + sourceUb ) / 2;
+        double ypt = sigmoid->sigmoid( xpt );
+        addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
 
-        List<GurobiWrapper::Term> terms;
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-
-        if ( FloatUtils::gte( sourceLb, 0 ) )
-        {
-            gurobi.addLeqConstraint( terms, -tangentSlope * tangentPoint + yAtTangentPoint );
-        }
-        else
-        {
-            gurobi.addGeqConstraint( terms, -tangentSlope * tangentPoint + yAtTangentPoint );
-        }
-        terms.clear();
-
+        // add a split point
+        sigmoid->addSplitPoint( xpt, ypt );
+        
         double y_l = sigmoid->sigmoid( sourceLb );
         double y_u = sigmoid->sigmoid( sourceUb );
 
-        double secantSlope = ( y_u - y_l ) / ( sourceUb - sourceLb );
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -secantSlope, Stringf( "x%u", sourceVariable ) ) );
+        // add split points
+        sigmoid->addSplitPoint( sourceLb, y_l );
+        sigmoid->addSplitPoint( sourceUb, y_u );
 
-        if ( FloatUtils::gte( sourceLb, 0 ) )
-        {
-            gurobi.addGeqConstraint( terms, -secantSlope * sourceLb + y_l );
-        }
+        double xpts[3] = { sourceLb, xpt, sourceUb };
+        double ypts[3] = { y_l, ypt, y_u };
+
+        // add secant lines
+        addSecantLinesOnSigmoid( gurobi, sigmoid, xpt, 3, xpts, ypts, sourceLb, sourceUb ); 
+    }
+}
+
+void MILPEncoder::addTangentLineOnSigmoid( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid, double tangentPoint, double yAtTangentPoint, double sourceLb, double sourceUb )
+{
+    unsigned sourceVariable = sigmoid->getB();  // x_b
+    unsigned targetVariable = sigmoid->getF();  // x_f
+    double tangentSlope = sigmoid->sigmoidDerivative( tangentPoint );
+
+    // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
+    List<GurobiWrapper::Term> terms;
+    terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+    terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
+
+    if ( sourceLb == sourceUb )
+        // In this case, tangentePoint is equal to sourceLb or sourceUb
+        gurobi.addEqConstraint( terms, -tangentSlope * sourceLb + yAtTangentPoint );
+    else if ( FloatUtils::lt( sourceLb, 0 ) && FloatUtils::gt( sourceUb, 0 ) )
+    {
+        String binVarName = sigmoid->getBinVarName();
+        ASSERT( binVarName != "" );
+        
+        if ( FloatUtils::gte( tangentPoint, 0 ) )
+            gurobi.addLeqIndicatorConstraint( binVarName, 1, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
         else
-        {
-            gurobi.addLeqConstraint( terms, -secantSlope * sourceLb + y_l );
-        }
-        terms.clear();
+            gurobi.addGeqIndicatorConstraint( binVarName, 0, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
+    }
+    else
+    {
+        if ( FloatUtils::gte( tangentPoint, 0 ) )
+            gurobi.addLeqConstraint( terms, -tangentSlope * tangentPoint + yAtTangentPoint );
+        else
+            gurobi.addGeqConstraint( terms, -tangentSlope * tangentPoint + yAtTangentPoint );
+    }
+}
+
+void MILPEncoder::addSecantLinesOnSigmoid( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid, 
+                                            double newSplitPoint, unsigned numOfPts, double *xpts, 
+                                            double *ypts, double sourceLb, double sourceUb )
+{
+    unsigned sourceVariable = sigmoid->getB();  // x_b
+    unsigned targetVariable = sigmoid->getF();  // x_f
+
+    // get var names in gurobi
+    String xVarName = getVariableNameFromVariable( sourceVariable );
+    String yVarName = getVariableNameFromVariable( targetVariable );
+
+    List<GurobiWrapper::Term> terms;
+
+    // add a piece-wise linear constraint
+    String yplVarName = Stringf( "pl_%s_%u", yVarName.ascii(), _plVarIndex );
+    gurobi.addVariable( yplVarName, ypts[0], ypts[numOfPts - 1] );
+    _plVarIndex++;
+    gurobi.addPiecewiseLinearConstraint( xVarName, yplVarName, numOfPts, xpts, ypts );
+    terms.append( GurobiWrapper::Term( 1, yplVarName ) );
+    terms.append( GurobiWrapper::Term( -1, yVarName ) );
+
+    // add secant lines
+    if ( FloatUtils::lt( sourceLb, 0 ) && FloatUtils::gt( sourceUb, 0 ) )
+    {
+        String binVarName = sigmoid->getBinVarName();
+        ASSERT( binVarName != "" );
+
+        if ( FloatUtils::gte( newSplitPoint, 0 ) )
+            gurobi.addLeqIndicatorConstraint( binVarName, 1, terms, 0 );
+        else
+            gurobi.addGeqIndicatorConstraint( binVarName, 0, terms, 0 );
+    }
+    else
+    {
+        if ( FloatUtils::gte( newSplitPoint, 0 ) )
+            gurobi.addLeqConstraint( terms, 0 );
+        else
+            gurobi.addGeqConstraint( terms, 0 );
     }
 }

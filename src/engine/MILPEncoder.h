@@ -39,6 +39,16 @@ public:
     */
     String getVariableNameFromVariable( unsigned variable );
 
+    /*
+      Add a tangent line
+    */
+    void addTangentLineOnSigmoid( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid, double tangentPoint, double yAtTangentPoint, double sourceLb, double sourceUb );
+
+    /*
+      Add secant lines
+    */
+    void addSecantLinesOnSigmoid( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid, double newSplitPoint, unsigned numOfPts, double *xpts, double *ypts, double sourceLb, double sourceUb );
+
 private:
 
     /*
@@ -55,6 +65,11 @@ private:
       Index for Guroby binary variables
     */
     unsigned _binVarIndex = 0;
+
+    /*
+      Index for Guroby piece-wise linear variables
+    */
+    unsigned _plVarIndex = 0;
 
     /*
       Encode an (in)equality into Gurobi.

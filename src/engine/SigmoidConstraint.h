@@ -96,27 +96,47 @@ public:
     /*
       Get the index of the B and F variables.
     */
-    unsigned getB() const;
-    unsigned getF() const;
+    inline unsigned getB() const
+    {
+      return _b;
+    }
+
+    inline unsigned getF() const
+    {
+      return _f;
+    }
 
     /*
       Compute the sigmoid function.
     */
-    double sigmoid( double x ) const;
+    static double sigmoid( double x );
 
     /*
       Compute the inverse of the sigmoid function.
     */
-    double sigmoidInverse( double y ) const;
+    static double sigmoidInverse( double y );
 
     /*
       Compute the derivative of the sigmoid function.
     */
-    double sigmoidDerivative( double x ) const;
+    static double sigmoidDerivative( double x );
+
+    /*
+      Set the binVarName
+    */
+    void setBinVarName( String binVarName );
+
+    /*
+      Get the binVarName
+    */
+    String getBinVarName();
 
 private:
     unsigned _b, _f; 
     bool _haveEliminatedVariables;
+  
+    // Binary var name for Gurobi's indicator constraint
+    String _binVarName;
 };
 
 #endif // __SigmoidConstraint_h__

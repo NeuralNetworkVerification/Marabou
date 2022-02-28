@@ -254,6 +254,7 @@ public:
     static const bool MPS_PARSER_LOGGING;
     static const bool SOI_LOGGING;
     static const bool SCORE_TRACKER_LOGGING;
+    static const bool INCREMENTAL_LINEARIZATION_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

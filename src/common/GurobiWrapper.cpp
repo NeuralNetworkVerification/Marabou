@@ -224,6 +224,23 @@ void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int b
     }
 }
 
+void GurobiWrapper::addPiecewiseLinearConstraint( const String xVarName, const String yplVarName, unsigned numOfPts, double *xpts, double *ypts )
+{
+    try
+    {
+        ASSERT( _nameToVariable.exists( xVarName ) );
+        ASSERT( _nameToVariable.exists( yplVarName ) );
+        _model->addGenConstrPWL( *_nameToVariable[xVarName], *_nameToVariable[yplVarName], numOfPts, xpts, ypts );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }   
+}
+
 void GurobiWrapper::setCost( const List<Term> &terms )
 {
     try
