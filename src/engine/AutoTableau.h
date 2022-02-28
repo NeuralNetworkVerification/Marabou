@@ -16,15 +16,17 @@
 #ifndef __AutoTableau_h__
 #define __AutoTableau_h__
 
+#include "BoundManager.h"
+
 #include "ITableau.h"
 #include "T/TableauFactory.h"
 
 class AutoTableau
 {
 public:
-	AutoTableau()
+	AutoTableau( BoundManager &boundManager )
 	{
-		_tableau = T::createTableau();
+		_tableau = T::createTableau( boundManager );
 	}
 
 	~AutoTableau()

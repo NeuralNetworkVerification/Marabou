@@ -2,7 +2,7 @@
 /*! \file AbsoluteValueConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz, Aleksandar Zeljic
+ **   Shiran Aziz, Guy Katz, Haoze Wu, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -116,11 +116,6 @@ void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, _posAux );
         tableau->unregisterToWatchVariable( this, _negAux );
     }
-}
-
-void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    _assignment[variable] = value;
 }
 
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
@@ -281,11 +276,11 @@ List<unsigned> AbsoluteValueConstraint::getParticipatingVariables() const
 
 bool AbsoluteValueConstraint::satisfied() const
 {
-    if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     // Possible violations:
     //   1. f is negative
@@ -301,12 +296,13 @@ bool AbsoluteValueConstraint::satisfied() const
 
 List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes() const
 {
-    ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _b ) );
-    ASSERT( _assignment.exists( _f ) );
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    ASSERT( !satisfied() );
+
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
@@ -461,19 +457,16 @@ void AbsoluteValueConstraint::dump( String &output ) const
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( oldIndex == _b || oldIndex == _f ||
             ( _auxVarsInUse && ( oldIndex == _posAux || oldIndex == _negAux ) ) );
 
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !existsLowerBound( newIndex ) &&
+    ASSERT( !existsLowerBound( newIndex ) &&
             !existsUpperBound( newIndex ) &&
             newIndex != _b && newIndex != _f && ( !_auxVarsInUse || ( newIndex != _posAux && newIndex != _negAux ) ) );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( existsLowerBound( oldIndex ) )
     {
@@ -608,7 +601,8 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery
+                                                                  &inputQuery )
 {
     /*
       We want to add the two equations
@@ -627,6 +621,8 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
       negAux is also non-negative, and 0 if in the negative phase
       its upper bound is (f.ub + b.ub)
     */
+    if ( _auxVarsInUse )
+        return;
 
     _posAux = inputQuery.getNumberOfVariables();
     _negAux = _posAux + 1;
@@ -659,6 +655,80 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
 
     // Mark that the aux vars are in use
     _auxVarsInUse = true;
+}
+
+void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                                        PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    // This should not be called when the linear constraints have
+    // not been satisfied
+    ASSERT( !haveOutOfBoundVariables() );
+
+    ASSERT( phase == ABS_PHASE_NEGATIVE || phase == ABS_PHASE_POSITIVE );
+
+    // The soundness of the SoI component assumes that the constraints f >= b and
+    // f >= -b is added.
+    ASSERT( FloatUtils::gte
+            ( getAssignment( _f ), getAssignment( _b ),
+              GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) &&
+            FloatUtils::gte
+            ( getAssignment( _f ), -getAssignment( _b ),
+              GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) );
+
+    if ( phase == ABS_PHASE_NEGATIVE )
+    {
+        // The cost term corresponding to the negative phase is f + b,
+        // since the Abs is negative and satisfied iff f + b is 0
+        // and minimal. This is true when we added the constraint
+        // that f >= b and f >= -b.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] += 1;
+        cost._addends[_b] += 1;
+    }
+    else
+    {
+        // The cost term corresponding to the positive phase is f - b,
+        // since the Abs is non-negative and satisfied iff f - b is 0 and
+        // minimal. This is true when we added the constraint
+        // that f >= b and f >= -b.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] += 1;
+        cost._addends[_b] -= 1;
+    }
+}
+
+PhaseStatus AbsoluteValueConstraint::getPhaseStatusInAssignment
+( const Map<unsigned, double> &assignment ) const
+{
+    ASSERT( assignment.exists( _b ) );
+    return FloatUtils::isNegative( assignment[_b] ) ?
+        ABS_PHASE_NEGATIVE : ABS_PHASE_POSITIVE;
+}
+
+bool AbsoluteValueConstraint::haveOutOfBoundVariables() const
+{
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
+
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue ) ||
+         FloatUtils::lt( getUpperBound( _b ), bValue ) )
+        return true;
+
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) ||
+         FloatUtils::lt( getUpperBound( _f ), fValue ) )
+        return true;
+
+    return false;
 }
 
 String AbsoluteValueConstraint::serializeToString() const

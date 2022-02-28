@@ -82,6 +82,13 @@ private:
     }
 
     /*
+      Transform the piecewise linear constraints if needed. For instance, this
+      will make sure all disjuncts in all disjunctions contain only bounds and
+      no (in)equalities between variables.
+    */
+    void transformConstraintsIfNeeded();
+
+    /*
       Transform all equations of type GE or LE to type EQ.
     */
     void makeAllEquationsEqualities();
@@ -124,11 +131,6 @@ private:
       identical variable
     */
     void eliminateVariables();
-
-    /*
-      Call on the PL constraints to add any auxiliary equations
-    */
-    void addPlAuxiliaryEquations();
 
     /*
       All input/output variables

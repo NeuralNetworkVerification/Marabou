@@ -203,6 +203,7 @@ struct MarabouOptions {
         , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _dumpBounds( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
+        , _numBlasThreads( Options::get()->getInt( Options::NUM_BLAS_THREADS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
         , _onlineDivides( Options::get()->getInt( Options::NUM_ONLINE_DIVIDES ) )
@@ -210,8 +211,7 @@ struct MarabouOptions {
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
-        , _skipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
-        , _numIncrementalLinearizations( Options::get()->getInt( Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS ) )
+        , _performLpTighteningAfterSplit( Options::get()->getBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
@@ -219,6 +219,8 @@ struct MarabouOptions {
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
+        , _numIncrementalLinearizations( Options::get()->getInt( Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS ) )
     {};
 
   void setOptions()
@@ -228,10 +230,11 @@ struct MarabouOptions {
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
-    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit ); 
+    Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT, _performLpTighteningAfterSplit );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
+    Options::get()->setInt( Options::NUM_BLAS_THREADS, _numBlasThreads );
     Options::get()->setInt( Options::INITIAL_TIMEOUT, _initialTimeout );
     Options::get()->setInt( Options::NUM_INITIAL_DIVIDES, _initialDivides );
     Options::get()->setInt( Options::NUM_ONLINE_DIVIDES, _onlineDivides );
@@ -250,14 +253,16 @@ struct MarabouOptions {
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
     Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
+    Options::get()->setString( Options::LP_SOLVER, _lpSolverString );
   }
 
     bool _snc;
     bool _restoreTreeStates;
     bool _solveWithMILP;
     bool _dumpBounds;
-    bool _skipLpTighteningAfterSplit;
+    bool _performLpTighteningAfterSplit;
     unsigned _numWorkers;
+    unsigned _numBlasThreads;
     unsigned _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
@@ -273,6 +278,7 @@ struct MarabouOptions {
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
     std::string _milpTighteningString;
+    std::string _lpSolverString;
 };
 
 
@@ -337,7 +343,6 @@ std::tuple<std::string, std::map<int, double>, Statistics>
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-
         options.setOptions();
 
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
@@ -413,6 +418,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
+        .def_readwrite("_numBlasThreads", &MarabouOptions::_numBlasThreads)
         .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
         .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
         .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
@@ -430,8 +436,9 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
+        .def_readwrite("_lpSolver", &MarabouOptions::_lpSolverString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit)
+        .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit)
         .def_readwrite("_numIncrementalLinearizations", &MarabouOptions::_numIncrementalLinearizations);
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");

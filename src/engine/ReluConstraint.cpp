@@ -120,14 +120,6 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, _aux );
 }
 
-void ReluConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    if ( FloatUtils::isZero( value, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
-        value = 0.0;
-
-    _assignment[variable] = value;
-}
-
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
@@ -250,11 +242,11 @@ List<unsigned> ReluConstraint::getParticipatingVariables() const
 
 bool ReluConstraint::satisfied() const
 {
-    if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     if ( FloatUtils::isNegative( fValue ) )
         return false;
@@ -267,12 +259,15 @@ bool ReluConstraint::satisfied() const
 
 List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
 {
-    ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _b ) );
-    ASSERT( _assignment.exists( _f ) );
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    ASSERT( !satisfied() );
+    ASSERT( existsAssignment( _b ) );
+    ASSERT( existsAssignment( _f ) );
+
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
@@ -322,8 +317,11 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getPossibleFixes() const
 
 List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *tableau ) const
 {
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _f ) && _assignment.size() > 1 );
+    ASSERT( existsAssignment( _f ) && existsAssignment( _b ) );
 
     double bDeltaToFDelta;
     double fDeltaToBDelta;
@@ -377,8 +375,8 @@ List<PiecewiseLinearConstraint::Fix> ReluConstraint::getSmartFixes( ITableau *ta
       by 4, repairing the violation. Of course, there may be multiple options for repair.
     */
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     /*
       Repair option number 1: the active fix. We want to set f = b > 0.
@@ -462,9 +460,9 @@ List<PiecewiseLinearCaseSplit> ReluConstraint::getCaseSplits() const
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
-    if ( _assignment.exists( _f ) )
+    if ( existsAssignment( _f ) )
     {
-        if ( FloatUtils::isPositive( _assignment[_f] ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
         {
             splits.append( getActiveSplit() );
             splits.append( getInactiveSplit() );
@@ -496,9 +494,9 @@ List<PhaseStatus> ReluConstraint::getAllCases() const
 
     // If we have existing knowledge about the assignment, use it to
     // influence the order of splits
-    if ( _assignment.exists( _f ) )
+    if ( existsAssignment( _f ) )
     {
-        if ( FloatUtils::isPositive( _assignment[_f] ) )
+        if ( FloatUtils::isPositive( getAssignment( _f ) ) )
             return { RELU_PHASE_ACTIVE, RELU_PHASE_INACTIVE };
         else
             return { RELU_PHASE_INACTIVE, RELU_PHASE_ACTIVE };
@@ -597,17 +595,14 @@ void ReluConstraint::dump( String &output ) const
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-	ASSERT( oldIndex == _b || oldIndex == _f || ( _auxVarInUse && oldIndex == _aux ) );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
+    ASSERT( _gurobi == NULL );
+
+    ASSERT( oldIndex == _b || oldIndex == _f || ( _auxVarInUse && oldIndex == _aux ) );
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f && ( !_auxVarInUse || newIndex != _aux ) );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( _lowerBounds.exists( oldIndex ) )
     {
@@ -781,7 +776,7 @@ String ReluConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
-void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void ReluConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
 {
     /*
       We want to add the equation
@@ -795,6 +790,8 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
       Lower bound: always non-negative
       Upper bound: when f = 0 and b is minimal, i.e. -b.lb
     */
+    if ( _auxVarInUse )
+        return;
 
     // Create the aux variable
     _aux = inputQuery.getNumberOfVariables();
@@ -809,13 +806,15 @@ void ReluConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.addEquation( equation );
 
     // Adjust the bounds for the new variable
-    ASSERT( existsLowerBound( _b ) );
     inputQuery.setLowerBound( _aux, 0 );
+
+    double bLowerBounds =
+        existsLowerBound( _b ) ? getLowerBound( _b ) : FloatUtils::negativeInfinity();
 
     // Generally, aux.ub = -b.lb. However, if b.lb is positive (active
     // phase), then aux.ub needs to be 0
     double auxUpperBound =
-        getLowerBound( _b ) > 0 ? 0 : -getLowerBound( _b );
+        bLowerBounds > 0 ? 0 : -bLowerBounds;
     inputQuery.setUpperBound( _aux, auxUpperBound );
 
     // We now care about the auxiliary variable, as well
@@ -837,7 +836,7 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     // The soundness of the SoI component assumes that the constraints f >= b and
     // f >= 0 is added.
-    ASSERT( FloatUtils::gte( _assignment.get( _f ), _assignment.get( _b ),
+    ASSERT( FloatUtils::gte( getAssignment( _f ), getAssignment( _b ),
                              GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
             && FloatUtils::gte( getLowerBound( _f ), 0 ) );
 
@@ -873,8 +872,8 @@ PhaseStatus ReluConstraint::getPhaseStatusInAssignment( const Map<unsigned, doub
 
 bool ReluConstraint::haveOutOfBoundVariables() const
 {
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     if ( FloatUtils::gt( getLowerBound( _b ), bValue ) || FloatUtils::lt( getUpperBound( _b ), bValue ) )
         return true;

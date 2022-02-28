@@ -26,8 +26,10 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _cdPhaseStatus( nullptr )
     , _cdInfeasibleCases( nullptr )
     , _score( FloatUtils::negativeInfinity() )
+    , _tableau( NULL )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
+    , _gurobi( NULL )
 {
 }
 
@@ -41,8 +43,10 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _cdPhaseStatus( nullptr )
     , _cdInfeasibleCases( nullptr )
     , _score( FloatUtils::negativeInfinity() )
+    , _tableau( NULL )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
+    , _gurobi( NULL )
 {
 }
 

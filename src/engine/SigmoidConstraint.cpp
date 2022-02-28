@@ -87,13 +87,6 @@ void SigmoidConstraint::unregisterAsWatcher( ITableau *tableau )
     tableau->unregisterToWatchVariable( this, _f );
 }
 
-void SigmoidConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    ASSERT( variable == _b || variable == _f );
-
-    _assignment[variable] = value;
-}
-
 void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );

@@ -118,6 +118,7 @@ public:
     void setTableau( const ITableau *tableau );
     const ITableau *getTableau() const;
 
+    void obtainCurrentBounds( const InputQuery &inputQuery );
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();

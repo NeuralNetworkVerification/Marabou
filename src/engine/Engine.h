@@ -22,6 +22,7 @@
 #include "AutoRowBoundTightener.h"
 #include "AutoTableau.h"
 #include "BlandsRule.h"
+#include "BoundManager.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
@@ -31,6 +32,7 @@
 #include "IncrementalLinearization.h"
 #include "InputQuery.h"
 #include "LinearExpression.h"
+#include "LPSolverType.h"
 #include "Map.h"
 #include "MILPEncoder.h"
 #include "Options.h"
@@ -43,7 +45,9 @@
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 
+#include <context/context.h>
 #include <atomic>
+
 
 #ifdef _WIN32
 #undef ERROR
@@ -55,6 +59,9 @@ class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
 class String;
+
+
+using CVC4::context::Context;
 
 class Engine : public IEngine, public SignalHandler::Signalable
 {
@@ -102,9 +109,7 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    void storeTableauState( TableauState &state ) const;
-    void restoreTableauState( const TableauState &state );
-    void storeState( EngineState &state, bool storeAlsoTableauState ) const;
+    void storeState( EngineState &state, TableauStateStorageLevel level ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 
@@ -204,6 +209,18 @@ public:
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
+    /*
+      Apply all bound tightenings (row and matrix-based) in
+      the queue.
+    */
+    void applyAllBoundTightenings();
+
+    /*
+      Apply all valid case splits proposed by the constraints.
+      Return true if a valid case split has been applied.
+    */
+    bool applyAllValidConstraintCaseSplits();
+
 private:
 
     enum BasisRestorationRequired {
@@ -224,6 +241,19 @@ private:
       access to the explicit basis matrix.
     */
     void explicitBasisBoundTightening();
+
+    /*
+       Context is the central object that manages memory and back-tracking
+       across context-dependent components - SMTCore,
+       PiecewiseLinearConstraints, BoundManager, etc.
+     */
+    Context _context;
+
+    /*
+       BoundManager is the centralized context-dependent object that stores
+       derived bounds.
+     */
+    BoundManager _boundManager;
 
     /*
       Collect and print various statistics.
@@ -388,6 +418,11 @@ private:
     bool _solveWithMILP;
 
     /*
+      The solver to solve the LP during the complete search.
+    */
+    LPSolverType _lpSolverType;
+
+    /*
       GurobiWrapper object
     */
     std::unique_ptr<GurobiWrapper> _gurobi;
@@ -409,7 +444,7 @@ private:
     */
     unsigned _simulationSize;
     bool _isGurobyEnabled;
-    bool _isSkipLpTighteningAfterSplit;
+    bool _performLpTighteningAfterSplit;
     MILPSolverBoundTighteningType _milpSolverBoundTighteningType;
 
     /*
@@ -470,12 +505,6 @@ private:
     void reportPlViolation();
 
     /*
-      Apply all bound tightenings (row and matrix-based) in
-      the queue.
-    */
-    void applyAllBoundTightenings();
-
-    /*
       Apply any bound tightenings found by the row tightener.
     */
     void applyAllRowTightenings();
@@ -485,11 +514,6 @@ private:
     */
     void applyAllConstraintTightenings();
 
-    /*
-      Apply all valid case splits proposed by the constraints.
-      Return true if a valid case split has been applied.
-    */
-    bool applyAllValidConstraintCaseSplits();
     bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*
@@ -572,7 +596,7 @@ private:
       Perform a round of symbolic bound tightening, taking into
       account the current state of the piecewise linear constraints.
     */
-    void performSymbolicBoundTightening();
+    void performSymbolicBoundTightening( InputQuery *inputQuery = nullptr );
 
     /*
       Perform a simulation which calculates concrete values of each layer with
@@ -608,15 +632,16 @@ private:
     void removeRedundantEquations( const double *constraintMatrix );
     void selectInitialVariablesForBasis( const double *constraintMatrix, List<unsigned> &initialBasis, List<unsigned> &basicRows );
     void initializeTableau( const double *constraintMatrix, const List<unsigned> &initialBasis );
+    void initializeBoundsAndConstraintWatchersInTableau( unsigned numberOfVariables );
     void initializeNetworkLevelReasoning();
     double *createConstraintMatrix();
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
-    void performMILPSolverBoundedTightening();
+    void performMILPSolverBoundedTightening( InputQuery *inputQuery = nullptr );
 
     /*
       Call MILP bound tightening for a single layer.
-    */    
+    */
     void performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex );
 
     /*
@@ -672,14 +697,32 @@ private:
     void updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePattern,
                                          double costOfProposedPhasePattern );
 
+    /*
+      This is called when handling the case when the SoI is already 0 but
+      the PLConstraints not participating in the SoI are not satisfied.
+      In that case, we bump up the score of those non-participating
+      PLConstraints to promote them in the branching order.
+    */
+    void bumpUpPseudoImpactOfPLConstraintsNotInSoI();
+
+    /*
+      If we are using an external solver for LP solving, we need to inform
+      the solver of the up-to-date variable bounds before invoking it.
+    */
+    void informLPSolverOfBounds();
+
+    /*
+      Minimize the given cost function with Gurobi. Return true if
+      the cost function is minimized. Throw InfeasibleQueryException if
+      the constraints in _gurobi are infeasible. Throw an error otherwise.
+    */
+    bool minimizeCostWithGurobi( const LinearExpression &costFunction );
+
+    /*
+      DEBUG only
+      Check that the variable bounds in Gurobi is up-to-date.
+    */
+    void checkGurobiBoundConsistency() const;
 };
 
 #endif // __Engine_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

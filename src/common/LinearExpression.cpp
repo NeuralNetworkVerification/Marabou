@@ -56,6 +56,16 @@ double LinearExpression::evaluate( const Map<unsigned, double> &assignment )
     return sum;
 }
 
+bool LinearExpression::isZero() const
+{
+    for ( const auto &addend : _addends )
+    {
+        if ( addend.second != 0 )
+            return false;
+    }
+    return _constant == 0;
+}
+
 void LinearExpression::dump() const
 {
     String output = "";

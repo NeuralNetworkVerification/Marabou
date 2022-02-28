@@ -94,7 +94,7 @@ public:
     void postContextPopHook() {};
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, bool /* storeAlsoTableauState */ ) const
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
     {
         lastStoredState = &state;
     }
@@ -198,6 +198,10 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
     {
     }
+
+    void applyAllBoundTightenings() {};
+
+    bool applyAllValidConstraintCaseSplits() { return false; };
 };
 
 #endif // __MockEngine_h__

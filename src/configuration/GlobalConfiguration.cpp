@@ -24,7 +24,9 @@ const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
 
 // Whether to use SoI instead of Reluplex for local search for satisfying assignments
 //to non-linear constraint.
-const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
+const bool GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = true;
+
+const double GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI = 5;
 
 // Use the polarity metrics to decide which branch to take first in a case split
 // and how to repair a ReLU constraint.
@@ -52,7 +54,7 @@ const bool GlobalConfiguration::USE_COLUMN_MERGING_EQUATIONS = false;
 const double GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD = 0.1;
 const unsigned GlobalConfiguration::MAX_SIMPLEX_PIVOT_SEARCH_ITERATIONS = 5;
 const DivideStrategy GlobalConfiguration::SPLITTING_HEURISTICS = DivideStrategy::ReLUViolation;
-const unsigned GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY = 5;
+const unsigned GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY = 1;
 const unsigned GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD = 10;
 const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENCY = 100;
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
@@ -66,7 +68,7 @@ const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.0000
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
-const bool GlobalConfiguration::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS = true;
+const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = false;
 
@@ -150,8 +152,6 @@ void GlobalConfiguration::print()
 
     printf( "  PREPROCESS_INPUT_QUERY: %s\n", PREPROCESS_INPUT_QUERY ? "Yes" : "No" );
     printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
-    printf( "  PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS: %s\n",
-            PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS ? "Yes" : "No" );
     printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
     printf( "  RELU_CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", RELU_CONSTRAINT_COMPARISON_TOLERANCE );

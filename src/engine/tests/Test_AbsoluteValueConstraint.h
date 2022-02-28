@@ -62,9 +62,12 @@ public:
     void test_abs_duplicate_and_restore()
     {
         AbsoluteValueConstraint abs1( 4, 6 );
+        MockTableau tableau;
+        abs1.registerTableau( &tableau );
+
         abs1.setActiveConstraint( false );
-        abs1.notifyVariableValue( 4, 1.0 );
-        abs1.notifyVariableValue( 6, 1.0 );
+        tableau.setValue( 4, 1.0 );
+        tableau.setValue( 6, 1.0 );
 
         abs1.notifyLowerBound( 4, -8.0 );
         abs1.notifyUpperBound( 4, 8.0 );
@@ -74,15 +77,19 @@ public:
 
         PiecewiseLinearConstraint *abs2 = abs1.duplicateConstraint();
 
-        abs1.notifyVariableValue( 4, -2 );
-
+        tableau.setValue( 4, -2 );
         TS_ASSERT( !abs1.satisfied() );
-
+        TS_ASSERT( !abs1.isActive() );
         TS_ASSERT( !abs2->isActive() );
-        TS_ASSERT( abs2->satisfied() );
+        TS_ASSERT( !abs2->satisfied() );
 
         abs2->restoreState( &abs1 );
+        TS_ASSERT( !abs2->isActive() );
         TS_ASSERT( !abs2->satisfied() );
+
+        abs1.setActiveConstraint( true );
+        TS_ASSERT( abs1.isActive() );
+        TS_ASSERT( !abs2->isActive() );
 
         TS_ASSERT_THROWS_NOTHING( delete abs2 );
     }
@@ -148,40 +155,42 @@ public:
         unsigned f = 4;
 
         AbsoluteValueConstraint abs( b, f );
+        MockTableau tableau;
+        abs.registerTableau( &tableau );
 
-        abs.notifyVariableValue( b, 5 );
-        abs.notifyVariableValue( f, 5 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, 5 );
         TS_ASSERT( abs.satisfied() );
 
-        abs.notifyVariableValue( b, -5 );
-        abs.notifyVariableValue( f, 5 );
+        tableau.setValue( b, -5 );
+        tableau.setValue( f, 5 );
         TS_ASSERT( abs.satisfied() );
 
-        abs.notifyVariableValue( b, 5 );
-        abs.notifyVariableValue( f, -5 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, -5 );
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( f, -1 );
-        abs.notifyVariableValue( b, -5 );
+        tableau.setValue( f, -1 );
+        tableau.setValue( b, -5 );
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( b, 1 );
+        tableau.setValue( b, 1 );
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( b, 5 );
-        abs.notifyVariableValue( f, 4 );
+        tableau.setValue( b, 5 );
+        tableau.setValue( f, 4 );
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( b, -4 );
-        abs.notifyVariableValue( f, -5 );
+        tableau.setValue( b, -4 );
+        tableau.setValue( f, -5 );
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( f, 1 );
-        abs.notifyVariableValue( b, -2 );
+        tableau.setValue( f, 1 );
+        tableau.setValue( b, -2 );
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( f, -1 );
-        abs.notifyVariableValue( b, -2 );
+        tableau.setValue( f, -1 );
+        tableau.setValue( b, -2 );
         TS_ASSERT( !abs.satisfied() );
     }
 
@@ -191,10 +200,12 @@ public:
         unsigned f = 4;
 
         AbsoluteValueConstraint abs( b, f );
+        MockTableau tableau;
+        abs.registerTableau( &tableau );
 
         // Changing variable indices
-        abs.notifyVariableValue( b, 1 );
-        abs.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 1 );
+        tableau.setValue( f, 1 );
         TS_ASSERT( abs.satisfied() );
 
         unsigned newB = 12;
@@ -203,13 +214,16 @@ public:
         TS_ASSERT_THROWS_NOTHING( abs.updateVariableIndex( b, newB ) );
         TS_ASSERT_THROWS_NOTHING( abs.updateVariableIndex( f, newF ) );
 
+        tableau.setValue( newB, 1 );
+        tableau.setValue( newF, 1 );
+
         TS_ASSERT( abs.satisfied() );
 
-        abs.notifyVariableValue( newF, 2 );
+        tableau.setValue( newF, 2 );
 
         TS_ASSERT( !abs.satisfied() );
 
-        abs.notifyVariableValue( newB, 2 );
+        tableau.setValue( newB, 2 );
 
         TS_ASSERT( abs.satisfied() );
     }
@@ -224,14 +238,16 @@ public:
         unsigned f = 4;
 
         AbsoluteValueConstraint abs( b, f );
+        MockTableau tableau;
+        abs.registerTableau( &tableau );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
         //   1. f is positive, b is positive, b and f are unequal
 
-        abs.notifyVariableValue( b, 2 );
-        abs.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 2 );
+        tableau.setValue( f, 1 );
 
         fixes = abs.getPossibleFixes();
         TS_ASSERT_EQUALS( fixes.size(), 3U );
@@ -246,8 +262,8 @@ public:
         TS_ASSERT_EQUALS( it->_value, 2 );
 
         //   2. f is positive, b is negative, -b and f are unequal
-        abs.notifyVariableValue( b, -2 );
-        abs.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -2 );
+        tableau.setValue( f, 1 );
 
         fixes = abs.getPossibleFixes();
         TS_ASSERT_EQUALS( fixes.size(), 3U );
@@ -1689,7 +1705,8 @@ public:
             TS_ASSERT( !abs.participatingVariable( posAux ) );
             TS_ASSERT( !abs.participatingVariable( negAux ) );
 
-            TS_ASSERT_THROWS_NOTHING( abs.addAuxiliaryEquations( ipq ) );
+            TS_ASSERT_THROWS_NOTHING( abs.transformToUseAuxVariables
+                                      ( ipq ) );
 
             TS_ASSERT_EQUALS( abs.getParticipatingVariables(),
                               List<unsigned>( { b, f, posAux, negAux } ) );
@@ -1763,7 +1780,7 @@ public:
             TS_ASSERT( !abs.participatingVariable( posAux ) );
             TS_ASSERT( !abs.participatingVariable( negAux ) );
 
-            TS_ASSERT_THROWS_NOTHING( abs.addAuxiliaryEquations( ipq ) );
+            TS_ASSERT_THROWS_NOTHING( abs.transformToUseAuxVariables( ipq ) );
 
             TS_ASSERT_EQUALS( abs.getParticipatingVariables(),
                               List<unsigned>( { b, f, posAux, negAux } ) );
@@ -1893,12 +1910,114 @@ public:
         context.pop();
         TS_ASSERT_EQUALS( abs.getPhaseStatus(), PHASE_NOT_FIXED );
     }
-};
 
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+    void test_get_cost_function_component()
+    {
+        /* Test the add cost function component methods */
+
+        unsigned b = 0;
+        unsigned f = 1;
+
+        // The abs is fixed, do not add cost term.
+        AbsoluteValueConstraint abs1 = AbsoluteValueConstraint( b, f );
+        MockTableau tableau;
+        abs1.registerTableau( &tableau );
+
+        abs1.notifyLowerBound( b, 1 );
+        abs1.notifyLowerBound( f, 1 );
+        abs1.notifyUpperBound( b, 2 );
+        abs1.notifyUpperBound( f, 2 );
+        tableau.setValue( b, 1.5 );
+        tableau.setValue( f, 2 );
+
+        TS_ASSERT( abs1.phaseFixed() );
+        LinearExpression cost1;
+        TS_ASSERT_THROWS_NOTHING( abs1.getCostFunctionComponent( cost1, ABS_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost1._addends.size(), 0u );
+        TS_ASSERT_EQUALS( cost1._constant, 0 );
+
+
+        // The abs is not fixed and add active cost term
+        AbsoluteValueConstraint abs2 = AbsoluteValueConstraint( b, f );
+        abs2.registerTableau( &tableau );
+
+        LinearExpression cost2;
+        abs2.notifyLowerBound( b, -1 );
+        abs2.notifyLowerBound( f, 0 );
+        abs2.notifyUpperBound( b, 2 );
+        abs2.notifyUpperBound( f, 2 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
+        TS_ASSERT( !abs2.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( abs2.getCostFunctionComponent( cost2, ABS_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost2._addends.size(), 2u );
+        TS_ASSERT_EQUALS( cost2._addends[b], -1 );
+        TS_ASSERT_EQUALS( cost2._addends[f], 1 );
+
+        // The abs is not fixed and add inactive cost term
+        AbsoluteValueConstraint abs3 = AbsoluteValueConstraint( b, f );
+        abs3.registerTableau( &tableau );
+
+        LinearExpression cost3;
+        abs3.notifyLowerBound( b, -1 );
+        abs3.notifyLowerBound( f, 0 );
+        abs3.notifyUpperBound( b, 2 );
+        abs3.notifyUpperBound( f, 2 );
+        TS_ASSERT( !abs3.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( abs3.getCostFunctionComponent( cost3, ABS_PHASE_NEGATIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 2u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+
+        // Add the cost term for another abs
+        unsigned b2 = 2;
+        unsigned f2 = 3;
+        AbsoluteValueConstraint abs4 = AbsoluteValueConstraint( b2, f2 );
+        abs4.registerTableau( &tableau );
+
+        abs4.notifyLowerBound( b2, -1 );
+        abs4.notifyLowerBound( f2, 0 );
+        abs4.notifyUpperBound( b2, 2 );
+        abs4.notifyUpperBound( f2, 2 );
+        tableau.setValue( b2, -1 );
+        tableau.setValue( f2, 1 );
+
+        TS_ASSERT( !abs4.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( abs4.getCostFunctionComponent( cost3, ABS_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 4u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b2], -1 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], 1 );
+
+        TS_ASSERT_THROWS_NOTHING( abs4.getCostFunctionComponent( cost3, ABS_PHASE_POSITIVE ) );
+        TS_ASSERT_EQUALS( cost3._addends.size(), 4u );
+        TS_ASSERT_EQUALS( cost3._addends[f], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b], 1 );
+        TS_ASSERT_EQUALS( cost3._addends[b2], -2 );
+        TS_ASSERT_EQUALS( cost3._addends[f2], 2 );
+    }
+
+    void test_get_phase_in_assignment()
+    {
+        unsigned b = 0;
+        unsigned f = 1;
+
+        // The abs is fixed, do not add cost term.
+        AbsoluteValueConstraint abs = AbsoluteValueConstraint( b, f );
+        MockTableau tableau;
+        abs.registerTableau( &tableau );
+        tableau.setValue( b, 1.5 );
+        tableau.setValue( f, 2 );
+
+        Map<unsigned, double> assignment;
+        assignment[0] = -1;
+        TS_ASSERT_EQUALS( abs.getPhaseStatusInAssignment( assignment ),
+                          ABS_PHASE_NEGATIVE );
+
+        assignment[0] = 15;
+        TS_ASSERT_EQUALS( abs.getPhaseStatusInAssignment( assignment ),
+                          ABS_PHASE_POSITIVE );
+    }
+
+};

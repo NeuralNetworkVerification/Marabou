@@ -95,7 +95,8 @@ PiecewiseLinearConstraint *PolarityBasedDivider::getPLConstraintToSplit
 ( const PiecewiseLinearCaseSplit &split )
 {
     EngineState *engineStateBeforeSplit = new EngineState();
-    _engine->storeState( *engineStateBeforeSplit, true );
+    _engine->storeState( *engineStateBeforeSplit,
+                         TableauStateStorageLevel::STORE_BOUNDS_ONLY );
     _engine->applySplit( split );
 
     PiecewiseLinearConstraint *constraintToSplit = NULL;

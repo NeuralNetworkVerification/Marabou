@@ -16,6 +16,8 @@
 #ifndef __MockTableauFactory_h__
 #define __MockTableauFactory_h__
 
+#include "BoundManager.h"
+
 #include "MockTableau.h"
 #include "T/TableauFactory.h"
 
@@ -34,7 +36,7 @@ public:
 		}
 	}
 
-	ITableau *createTableau()
+	ITableau *createTableau( BoundManager &/*boundManager*/ )
 	{
 		mockTableau.mockConstructor();
 		return &mockTableau;

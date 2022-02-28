@@ -49,6 +49,7 @@
 
 #include "BoundManager.h"
 #include "FloatUtils.h"
+#include "GurobiWrapper.h"
 #include "ITableau.h"
 #include "LinearExpression.h"
 #include "List.h"
@@ -150,7 +151,6 @@ public:
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
-    virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
     virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
@@ -240,13 +240,25 @@ public:
     */
     virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
+    /*
+      Transform the piecewise linear constraint so that each disjunct contains
+      only bound constraints.
+    */
+    virtual void transformToUseAuxVariables( InputQuery & ) {};
+
     void setStatistics( Statistics *statistics );
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      Before solving: get additional auxiliary euqations (typically bound-dependent)
+      that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                          &/* inputQuery */ ) {}
+
+    /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual bool supportSoI() const { return false; };
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to
@@ -278,6 +290,11 @@ public:
       (ie. "relu", "max", etc)
     */
     virtual String serializeToString() const = 0;
+
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
 
     /*
       Register a constraint bound tightener. If a tightener is registered,
@@ -318,6 +335,14 @@ public:
     void setScore( double score )
     {
         _score = score;
+    }
+
+    /*
+      Register the GurobiWrapper object. We will query it for assignment.
+    */
+    inline void registerGurobi( GurobiWrapper *gurobi )
+    {
+        _gurobi = gurobi;
     }
 
     /**********************************************************************/
@@ -453,12 +478,19 @@ protected:
      */
     double _score;
 
+    ITableau *_tableau;
+
     IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      The gurobi object for solving the LPs during the search.
+    */
+    GurobiWrapper *_gurobi;
 
     /*
       Initialize CDOs.
@@ -549,6 +581,29 @@ protected:
     {
         ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
                                      : _upperBounds[var] = value;
+    }
+
+    /**********************************************************************/
+    /*                      ASSIGNMENT WRAPPER METHODS                    */
+    /**********************************************************************/
+    inline bool existsAssignment( unsigned variable ) const
+    {
+        if ( _gurobi )
+            return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        else if ( _tableau )
+            return _tableau->existsValue( variable );
+        else
+            return false;
+    }
+
+    inline double getAssignment( unsigned variable ) const
+    {
+        if ( _gurobi == nullptr )
+        {
+            return _tableau->getValue( variable );
+        }
+        else
+            return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
 };
 

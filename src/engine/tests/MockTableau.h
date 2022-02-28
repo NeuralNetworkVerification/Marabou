@@ -16,6 +16,8 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include "BoundManager.h"
+#include "context/context.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
@@ -45,6 +47,9 @@ public:
         lastCostFunctionManager = NULL;
 
         nextLinearlyDependentResult = false;
+
+        CVC4::context::Context ctx;
+        _boundManager = new BoundManager( ctx );
     }
 
     ~MockTableau()
@@ -78,10 +83,15 @@ public:
             delete[] nextCostFunction;
             nextCostFunction = NULL;
         }
+
+        if ( _boundManager )
+        {
+            delete _boundManager;
+        }
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
     List<unsigned> mockCandidates;
     unsigned mockEnteringVariable;
@@ -95,18 +105,18 @@ public:
         mockEnteringVariable = nonBasic;
     }
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     bool setDimensionsCalled;
     unsigned lastM;
@@ -126,6 +136,11 @@ public:
 
         lastBtranInput = new double[m];
         nextBtranOutput = new double[m];
+    }
+
+    void setBoundDimension( unsigned n )
+    {
+        lastN = n;
     }
 
     double *lastEntries;
@@ -168,6 +183,17 @@ public:
     }
 
     Map<unsigned, double> nextValues;
+
+    void setValue( unsigned variable, double value )
+    {
+        nextValues[variable] = value;
+    }
+
+    bool existsValue( unsigned variable ) const
+    {
+        return nextValues.exists( variable );
+    }
+
     double getValue( unsigned variable ) const
     {
         TS_ASSERT( nextValues.exists( variable ) );
@@ -465,11 +491,13 @@ public:
     {
     }
 
-    void storeState( TableauState &/* state */ ) const
+    void storeState( TableauState &/* state */,
+                     TableauStateStorageLevel /*level*/ ) const
     {
     }
 
-    void restoreState( const TableauState &/* state */ )
+    void restoreState( const TableauState &/* state */,
+                       TableauStateStorageLevel /*level*/ )
     {
     }
 
@@ -519,6 +547,10 @@ public:
     }
 
     void computeBasicCosts()
+    {
+    }
+
+    void setGurobi( GurobiWrapper */* gurobi */ )
     {
     }
 
@@ -598,6 +630,12 @@ public:
     }
 
     void postContextPopHook() {}
+
+    BoundManager *_boundManager;
+    BoundManager &getBoundManager() const
+    {
+        return *_boundManager;
+    }
 };
 
 #endif // __MockTableau_h__

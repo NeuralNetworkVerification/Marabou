@@ -72,7 +72,6 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
 
@@ -162,9 +161,18 @@ public:
       For preprocessing: get any auxiliary equations that this
       constraint would like to add to the equation pool. In the ReLU
       case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
+      non-negative. This way, case splits will be bound
+      update of the aux variables.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+
+    /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to

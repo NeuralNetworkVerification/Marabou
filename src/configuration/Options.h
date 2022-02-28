@@ -17,6 +17,7 @@
 #define __Options_h__
 
 #include "DivideStrategy.h"
+#include "LPSolverType.h"
 #include "MString.h"
 #include "Map.h"
 #include "MILPSolverBoundTighteningType.h"
@@ -57,7 +58,7 @@ public:
         SOLVE_WITH_MILP,
 
         // Whether to call a LP tightening after a case split
-        SKIP_LP_TIGHTENING_AFTER_SPLIT
+        PERFORM_LP_TIGHTENING_AFTER_SPLIT
     };
 
     enum IntOptions {
@@ -84,6 +85,9 @@ public:
 
         // The random seed used throughout the execution.
         SEED,
+      
+        // The number of threads to use for OpenBLAS matrix multiplication.
+        NUM_BLAS_THREADS,
 
         // The number of incremental linearizations
         NUMBER_OF_INCREMENTAL_LINEARIZATIONS,
@@ -118,6 +122,9 @@ public:
         SOI_SEARCH_STRATEGY,
         // The strategy used for initializing the soi
         SOI_INITIALIZATION_STRATEGY,
+
+        // The procedure/solver for solving the LP
+        LP_SOLVER,
     };
 
     /*
@@ -148,6 +155,7 @@ public:
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
     SoIInitializationStrategy getSoIInitializationStrategy() const;
     SoISearchStrategy getSoISearchStrategy() const;
+    LPSolverType getLPSolverType() const;
 
     /*
       Retrieve the value of the various options, by type

@@ -17,8 +17,10 @@
 #define __Tableau_h__
 
 #include "BoundManager.h"
+#include "GurobiWrapper.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
+#include "LPSolverType.h"
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
@@ -37,7 +39,7 @@ class TableauState;
 class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
-    Tableau();
+    Tableau( BoundManager &boundManager );
     ~Tableau();
 
     /*
@@ -46,6 +48,11 @@ public:
       m: number of constraints (rows)
     */
     void setDimensions( unsigned m, unsigned n );
+
+    /*
+      Allocate space for the bound arrays.
+    */
+    void setBoundDimension( unsigned n );
 
     /*
       Initialize the constraint matrix
@@ -111,6 +118,11 @@ public:
     unsigned getN() const;
 
     /*
+      Check if an assignment exists for the variable.
+    */
+    bool existsValue( unsigned variable ) const;
+
+    /*
       Get the assignment of a variable, either basic or non-basic
     */
     double getValue( unsigned variable ) const;
@@ -152,6 +164,8 @@ public:
     */
     const double *getLowerBounds() const;
     const double *getUpperBounds() const;
+
+    BoundManager &getBoundManager() const { return _boundManager; }
 
     /*
       Recomputes bound valid status for all variables.
@@ -345,8 +359,8 @@ public:
       - The current indexing
       - The current basis
     */
-    void storeState( TableauState &state ) const;
-    void restoreState( const TableauState &state );
+    void storeState( TableauState &state, TableauStateStorageLevel level ) const;
+    void restoreState( const TableauState &state, TableauStateStorageLevel level );
 
     /*
       Register or unregister to watch a variable.
@@ -369,9 +383,10 @@ public:
       Notify all watchers of the given variable of a value update,
       or of changes to its bounds.
     */
-    void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
+
+    void setGurobi( GurobiWrapper *gurobi );
 
     /*
       Have the Tableau start reporting statistics.
@@ -461,6 +476,11 @@ public:
      */
     void postContextPopHook() { computeBasicStatus(); };
 
+    /*
+       Enables use of BoundManager to store Tableau bounds
+     */
+    void enableBoundManager() { _useBoundManager = true; };
+
 private:
     /*
       Variable watchers
@@ -473,6 +493,18 @@ private:
       Resize watchers
     */
     List<ResizeWatcher *> _resizeWatchers;
+
+    /*
+       BoundManager object stores bounds of all variables.
+     */
+    BoundManager &_boundManager;
+
+    /*
+       Flag to indicate whether the BoundManager should be used to manage
+       bounds. Temporary flag to enable updating class signatures without using
+       the features until they are ready
+     */
+    bool _useBoundManager; 
 
     /*
       The dimensions of matrix A
@@ -558,12 +590,6 @@ private:
     double *_upperBounds;
 
     /*
-       BoundManager object stores bounds of all variables.
-       NOT YET IN USE
-     */
-    BoundManager *_boundManager;
-
-    /*
       Whether all variables have valid bounds (l <= u).
     */
     bool _boundsValid;
@@ -626,6 +652,14 @@ private:
       simplify some of the computations.
      */
     bool _rhsIsAllZeros;
+
+    /*
+      True if and only if we are using the native Simplex implementation for
+      LP solving.
+    */
+    LPSolverType _lpSolverType;
+
+    GurobiWrapper *_gurobi;
 
     /*
       Free all allocated memory.

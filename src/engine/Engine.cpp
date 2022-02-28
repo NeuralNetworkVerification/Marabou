@@ -35,7 +35,10 @@
 #include <random>
 
 Engine::Engine()
-    : _rowBoundTightener( *_tableau )
+    : _context()
+    , _boundManager( _context )
+    , _tableau( _boundManager )
+    , _rowBoundTightener( *_tableau )
     , _smtCore( this )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
@@ -54,12 +57,13 @@ Engine::Engine()
     , _lastIterationWithProgress( 0 )
     , _symbolicBoundTighteningType( Options::get()->getSymbolicBoundTighteningType() )
     , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
+    , _lpSolverType( Options::get()->getLPSolverType() )
     , _gurobi( nullptr )
     , _milpEncoder( nullptr )
     , _soiManager( nullptr )
     , _simulationSize( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
     , _isGurobyEnabled( Options::get()->gurobiEnabled() )
-    , _isSkipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+    , _performLpTighteningAfterSplit( Options::get()->getBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT ) )
     , _milpSolverBoundTighteningType( Options::get()->getMILPSolverBoundTighteningType() )
     , _sncMode( false )
     , _queryId( "" )
@@ -153,7 +157,14 @@ bool Engine::solve( unsigned timeoutInSeconds )
         return solveWithMILPEncoding( timeoutInSeconds );
 
     updateDirections();
-    storeInitialEngineState();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        storeInitialEngineState();
+    else if ( _lpSolverType == LPSolverType::GUROBI )
+    {
+        ENGINE_LOG( "Encoding convex relaxation into Gurobi...");
+        _milpEncoder->encodeInputQuery( *_gurobi, _preprocessedQuery, true );
+        ENGINE_LOG( "Encoding convex relaxation into Gurobi - done");
+    }
 
     mainLoopStatistics();
     if ( _verbosity > 0 )
@@ -213,23 +224,27 @@ bool Engine::solve( unsigned timeoutInSeconds )
                  GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
                 _statistics.print();
 
-            // Check whether progress has been made recently
-            checkOverallProgress();
-
-            if ( performPrecisionRestorationIfNeeded() )
-                continue;
-
-            if ( _tableau->basisMatrixAvailable() )
+            if ( _lpSolverType == LPSolverType::NATIVE )
             {
-                explicitBasisBoundTightening();
-                applyAllBoundTightenings();
-                applyAllValidConstraintCaseSplits();
+                checkOverallProgress();
+                // Check whether progress has been made recently
+
+                if ( performPrecisionRestorationIfNeeded() )
+                    continue;
+
+                if ( _tableau->basisMatrixAvailable() )
+                {
+                    explicitBasisBoundTightening();
+                    applyAllBoundTightenings();
+                    applyAllValidConstraintCaseSplits();
+                }
             }
 
             // If true, we just entered a new subproblem
             if ( splitJustPerformed )
             {
                 performBoundTighteningAfterCaseSplit();
+                informLPSolverOfBounds();
                 splitJustPerformed = false;
             }
 
@@ -274,13 +289,23 @@ bool Engine::solve( unsigned timeoutInSeconds )
             }
 
             // We have out-of-bounds variables.
-            performSimplexStep();
+            if ( _lpSolverType == LPSolverType::NATIVE )
+                performSimplexStep();
+            else
+            {
+                ENGINE_LOG( "Checking LP feasibility with Gurobi..." );
+                DEBUG({ checkGurobiBoundConsistency(); });
+                ASSERT( _lpSolverType == LPSolverType::GUROBI );
+                LinearExpression dontCare;
+                minimizeCostWithGurobi( dontCare );
+            }
             continue;
         }
         catch ( const MalformedBasisException & )
         {
             if ( !handleMalformedBasisException() )
             {
+                ASSERT( _lpSolverType == LPSolverType::NATIVE );
                 _exitCode = Engine::ERROR;
                 exportInputQueryWithError( "Cannot restore tableau" );
                 struct timespec mainLoopEnd = TimeUtils::sampleMicro();
@@ -319,6 +344,20 @@ bool Engine::solve( unsigned timeoutInSeconds )
         {
             _tableau->toggleOptimization( false );
             continue;
+        }
+        catch ( MarabouError &e )
+        {
+            String message =
+                Stringf( "Caught a MarabouError. Code: %u. Message: %s ",
+                         e.getCode(), e.getUserMessage() );
+            _exitCode = Engine::ERROR;
+            exportInputQueryWithError( message );
+            struct timespec mainLoopEnd = TimeUtils::sampleMicro();
+            _statistics.incLongAttribute
+                ( Statistics::TIME_MAIN_LOOP_MICRO,
+                  TimeUtils::timePassed( mainLoopStart,
+                                         mainLoopEnd ) );
+            return false;
         }
         catch ( ... )
         {
@@ -376,12 +415,15 @@ void Engine::performBoundTighteningAfterCaseSplit()
 
 bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
 {
+    ENGINE_LOG( "Linear constraints satisfied. Now trying to satisfy non-linear"
+                " constraints..." );
     collectViolatedPlConstraints();
 
     // If all constraints are satisfied, we are possibly done
     if ( allPlConstraintsHold() )
     {
-        if ( _tableau->getBasicAssignmentStatus() !=
+        if ( _lpSolverType == LPSolverType::NATIVE &&
+             _tableau->getBasicAssignmentStatus() !=
              ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
         {
             if ( _verbosity > 0 )
@@ -1184,19 +1226,32 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
     // Populate constriant matrix
     _tableau->setConstraintMatrix( constraintMatrix );
 
-    for ( unsigned i = 0; i < n; ++i )
+    _tableau->registerToWatchAllVariables( _rowBoundTightener );
+    _tableau->registerResizeWatcher( _rowBoundTightener );
+
+    _rowBoundTightener->setDimensions();
+
+    initializeBoundsAndConstraintWatchersInTableau( n );
+
+    _tableau->initializeTableau( initialBasis );
+
+    _costFunctionManager->initialize();
+    _tableau->registerCostFunctionManager( _costFunctionManager );
+    _activeEntryStrategy->initialize( _tableau );
+}
+
+void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
+                                                             numberOfVariables )
+{
+    for ( unsigned i = 0; i < numberOfVariables; ++i )
     {
         _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
 
-    _tableau->registerToWatchAllVariables( _rowBoundTightener );
-    _tableau->registerResizeWatcher( _rowBoundTightener );
-
     _tableau->registerToWatchAllVariables( _constraintBoundTightener );
     _tableau->registerResizeWatcher( _constraintBoundTightener );
 
-    _rowBoundTightener->setDimensions();
     _constraintBoundTightener->setDimensions();
 
     // Register the constraint bound tightener to all the PL constraints
@@ -1216,20 +1271,6 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
     }
-
-    _tableau->initializeTableau( initialBasis );
-
-    if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
-    {
-        _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
-            ( new SumOfInfeasibilitiesManager( _preprocessedQuery,
-                                               *_tableau ) );
-        _soiManager->setStatistics( &_statistics );
-    }
-
-    _costFunctionManager->initialize();
-    _tableau->registerCostFunctionManager( _costFunctionManager );
-    _activeEntryStrategy->initialize( _tableau );
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
                                       _plConstraints.size() );
@@ -1255,42 +1296,88 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
 
-        double *constraintMatrix = createConstraintMatrix();
-        removeRedundantEquations( constraintMatrix );
-
-        // The equations have changed, recreate the constraint matrix
-        delete[] constraintMatrix;
-        constraintMatrix = createConstraintMatrix();
-
-        List<unsigned> initialBasis;
-        List<unsigned> basicRows;
-        selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
-        addAuxiliaryVariables();
-        augmentInitialBasisIfNeeded( initialBasis, basicRows );
-
-        storeEquationsInDegradationChecker();
-
-        // The equations have changed, recreate the constraint matrix
-        delete[] constraintMatrix;
-        constraintMatrix = createConstraintMatrix();
-
         initializeNetworkLevelReasoning();
-        initializeTableau( constraintMatrix, initialBasis );
-
-        if ( GlobalConfiguration::WARM_START )
-            warmStart();
-
-        delete[] constraintMatrix;
-
         if ( preprocess )
         {
-            performSymbolicBoundTightening();
+            performSymbolicBoundTightening( &_preprocessedQuery );
             performSimulation();
-            performMILPSolverBoundedTightening();
+            performMILPSolverBoundedTightening( &_preprocessedQuery );
         }
 
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
+
+        if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
+            for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
+                plConstraint->addAuxiliaryEquationsAfterPreprocessing
+                    ( _preprocessedQuery );
+
+        if ( _lpSolverType == LPSolverType::NATIVE )
+        {
+            double *constraintMatrix = createConstraintMatrix();
+            removeRedundantEquations( constraintMatrix );
+
+            // The equations have changed, recreate the constraint matrix
+            delete[] constraintMatrix;
+            constraintMatrix = createConstraintMatrix();
+
+            List<unsigned> initialBasis;
+            List<unsigned> basicRows;
+            selectInitialVariablesForBasis( constraintMatrix, initialBasis, basicRows );
+            addAuxiliaryVariables();
+            augmentInitialBasisIfNeeded( initialBasis, basicRows );
+
+            storeEquationsInDegradationChecker();
+
+            // The equations have changed, recreate the constraint matrix
+            delete[] constraintMatrix;
+            constraintMatrix = createConstraintMatrix();
+
+            initializeTableau( constraintMatrix, initialBasis );
+
+            delete[] constraintMatrix;
+        }
+        else
+        {
+            ASSERT( _lpSolverType == LPSolverType::GUROBI );
+
+            ASSERT( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH == true );
+
+            if ( _verbosity > 0 )
+                printf("Using Gurobi to solve LP...\n");
+
+            _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
+            _milpEncoder = std::unique_ptr<MILPEncoder>
+                ( new MILPEncoder( *_tableau ) );
+            _milpEncoder->setStatistics( &_statistics );
+            _tableau->setGurobi( &( *_gurobi ) );
+
+            unsigned n = _preprocessedQuery.getNumberOfVariables();
+            // Only use Tableau to store the bounds.
+            _tableau->setBoundDimension( n );
+            initializeBoundsAndConstraintWatchersInTableau( n );
+
+            for ( const auto &constraint : _plConstraints )
+            {
+                constraint->registerGurobi( &( *_gurobi ) );
+            }
+        }
+
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerTableau( _tableau );
+        }
+
+        if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+        {
+            _soiManager = std::unique_ptr<SumOfInfeasibilitiesManager>
+                ( new SumOfInfeasibilitiesManager( _preprocessedQuery,
+                                                   *_tableau ) );
+            _soiManager->setStatistics( &_statistics );
+        }
+
+        if ( GlobalConfiguration::WARM_START )
+            warmStart();
 
         decideBranchingHeuristics();
 
@@ -1331,11 +1418,15 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     return true;
 }
 
-void Engine::performMILPSolverBoundedTightening()
+void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 {
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
-        _networkLevelReasoner->obtainCurrentBounds();
+	// Obtain from and store bounds into inputquery if it is not null.
+        if ( inputQuery )
+            _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+        else
+            _networkLevelReasoner->obtainCurrentBounds();
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound Tightening.
         if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
@@ -1363,20 +1454,43 @@ void Engine::performMILPSolverBoundedTightening()
         List<Tightening> tightenings;
         _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-        for ( const auto &tightening : tightenings )
-        {
-            if ( tightening._type == Tightening::LB )
-                _tableau->tightenLowerBound( tightening._variable, tightening._value );
 
-            else if ( tightening._type == Tightening::UB )
-                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+        if ( inputQuery )
+        {
+            for ( const auto &tightening : tightenings )
+            {
+
+                if ( tightening._type == Tightening::LB &&
+                     FloatUtils::gt( tightening._value,
+                                     inputQuery->getLowerBound
+                                     ( tightening._variable ) ) )
+                    inputQuery->setLowerBound( tightening._variable,
+					       tightening._value );
+                if ( tightening._type == Tightening::UB &&
+                     FloatUtils::lt( tightening._value,
+                                     inputQuery->getUpperBound
+                                     ( tightening._variable ) ) )
+                    inputQuery->setUpperBound( tightening._variable,
+                                               tightening._value );
+            }
+        }
+        else
+        {
+            for ( const auto &tightening : tightenings )
+            {
+                if ( tightening._type == Tightening::LB )
+                    _tableau->tightenLowerBound( tightening._variable, tightening._value );
+
+                else if ( tightening._type == Tightening::UB )
+                    _tableau->tightenUpperBound( tightening._variable, tightening._value );
+            }
         }
     }
 }
 
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
-    if ( _networkLevelReasoner && _isGurobyEnabled && !_isSkipLpTighteningAfterSplit
+    if ( _networkLevelReasoner && _isGurobyEnabled && !_performLpTighteningAfterSplit
             && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
         _networkLevelReasoner->obtainCurrentBounds();
@@ -1460,7 +1574,13 @@ void Engine::extractSolution( InputQuery &inputQuery )
 
 bool Engine::allVarsWithinBounds() const
 {
-    return !_tableau->existsBasicOutOfBounds();
+    if ( _lpSolverType == LPSolverType::GUROBI )
+    {
+        ASSERT( _gurobi );
+        return _gurobi->haveFeasibleSolution();
+    }
+    else
+        return !_tableau->existsBasicOutOfBounds();
 }
 
 void Engine::collectViolatedPlConstraints()
@@ -1492,26 +1612,10 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::storeTableauState( TableauState &state ) const
+void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) const
 {
-    _tableau->storeState( state );
-}
-
-void Engine::restoreTableauState( const TableauState &state )
-{
-    ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state );
-}
-
-void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
-{
-    if ( storeAlsoTableauState )
-    {
-        _tableau->storeState( state._tableauState );
-        state._tableauStateIsStored = true;
-    }
-    else
-        state._tableauStateIsStored = false;
+    _tableau->storeState( state._tableauState, level );
+    state._tableauStateStorageLevel = level;
 
     for ( const auto &constraint : _plConstraints )
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
@@ -1523,11 +1627,12 @@ void Engine::restoreState( const EngineState &state )
 {
     ENGINE_LOG( "Restore state starting" );
 
-    if ( !state._tableauStateIsStored )
+    if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
         throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state._tableauState );
+    _tableau->restoreState( state._tableauState,
+                            state._tableauStateStorageLevel );
 
     ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )
@@ -1540,12 +1645,15 @@ void Engine::restoreState( const EngineState &state )
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
-    // Make sure the data structures are initialized to the correct size
-    _rowBoundTightener->setDimensions();
-    _constraintBoundTightener->setDimensions();
-    adjustWorkMemorySize();
-    _activeEntryStrategy->resizeHook( _tableau );
-    _costFunctionManager->initialize();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+    {
+        // Make sure the data structures are initialized to the correct size
+        _rowBoundTightener->setDimensions();
+        _constraintBoundTightener->setDimensions();
+        adjustWorkMemorySize();
+        _activeEntryStrategy->resizeHook( _tableau );
+        _costFunctionManager->initialize();
+    }
 
     // Reset the violation counts in the SMT core
     _smtCore.resetSplitConditions();
@@ -1660,6 +1768,14 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
 
     List<Tightening> bounds = split.getBoundTightenings();
     List<Equation> equations = split.getEquations();
+
+    // We assume that case splits only apply new bounds but do not apply
+    // new equations. This can always be made possible.
+    if ( _lpSolverType != LPSolverType::NATIVE && equations.size() > 0 )
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                            "Can only update bounds when using non-native"
+                            "simplex engine!" );
+
     for ( auto &equation : equations )
     {
         /*
@@ -1747,9 +1863,13 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         }
     }
 
-    adjustWorkMemorySize();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+    {
+        adjustWorkMemorySize();
 
-    _rowBoundTightener->resetBounds();
+        _rowBoundTightener->resetBounds();
+    }
+
     _constraintBoundTightener->resetBounds();
 
     for ( auto &bound : bounds )
@@ -1807,7 +1927,8 @@ void Engine::applyAllBoundTightenings()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    applyAllRowTightenings();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        applyAllRowTightenings();
     applyAllConstraintTightenings();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -2066,7 +2187,8 @@ List<unsigned> Engine::getInputVariables() const
 
 void Engine::performSimulation()
 {
-    if ( _simulationSize == 0 || !_networkLevelReasoner )
+    if ( _simulationSize == 0 || !_networkLevelReasoner ||
+         _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::NONE )
     {
         ENGINE_LOG( Stringf( "Skip simulation...").ascii() );
         return;
@@ -2091,7 +2213,7 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-void Engine::performSymbolicBoundTightening()
+void Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) )
@@ -2102,7 +2224,16 @@ void Engine::performSymbolicBoundTightening()
     unsigned numTightenedBounds = 0;
 
     // Step 1: tell the NLR about the current bounds
-    _networkLevelReasoner->obtainCurrentBounds();
+    if ( inputQuery )
+    {
+	// Obtain from and store bounds into inputquery if it is not null.
+        _networkLevelReasoner->obtainCurrentBounds( *inputQuery );
+    }
+    else
+     {
+        // Get bounds from Tableau.
+        _networkLevelReasoner->obtainCurrentBounds();
+     }
 
     // Step 2: perform SBT
     if ( _symbolicBoundTighteningType ==
@@ -2116,21 +2247,50 @@ void Engine::performSymbolicBoundTightening()
     List<Tightening> tightenings;
     _networkLevelReasoner->getConstraintTightenings( tightenings );
 
-    for ( const auto &tightening : tightenings )
+    if ( inputQuery )
     {
-
-        if ( tightening._type == Tightening::LB &&
-             FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+        for ( const auto &tightening : tightenings )
         {
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
-            ++numTightenedBounds;
+
+            if ( tightening._type == Tightening::LB &&
+                 FloatUtils::gt( tightening._value,
+                                 inputQuery->getLowerBound
+                                 ( tightening._variable ) ) )
+            {
+                inputQuery->setLowerBound( tightening._variable,
+                                           tightening._value );
+                ++numTightenedBounds;
+            }
+
+            if ( tightening._type == Tightening::UB &&
+                 FloatUtils::lt( tightening._value,
+                                 inputQuery->getUpperBound
+                                 ( tightening._variable ) ) )
+            {
+                inputQuery->setUpperBound( tightening._variable,
+                                           tightening._value );
+                ++numTightenedBounds;
+            }
         }
-
-        if ( tightening._type == Tightening::UB &&
-             FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+    }
+    else
+    {
+        for ( const auto &tightening : tightenings )
         {
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
-            ++numTightenedBounds;
+
+            if ( tightening._type == Tightening::LB &&
+                 FloatUtils::gt( tightening._value, _tableau->getLowerBound( tightening._variable ) ) )
+            {
+                _tableau->tightenLowerBound( tightening._variable, tightening._value );
+                ++numTightenedBounds;
+            }
+
+            if ( tightening._type == Tightening::UB &&
+                 FloatUtils::lt( tightening._value, _tableau->getUpperBound( tightening._variable ) ) )
+            {
+                _tableau->tightenUpperBound( tightening._variable, tightening._value );
+                ++numTightenedBounds;
+            }
         }
     }
 
@@ -2193,7 +2353,9 @@ void Engine::resetExitCode()
 void Engine::resetBoundTighteners()
 {
     _constraintBoundTightener->resetBounds();
-    _rowBoundTightener->resetBounds();
+
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        _rowBoundTightener->resetBounds();
 }
 
 void Engine::warmStart()
@@ -2528,18 +2690,10 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
-        // Apply bound tightening before handing to Gurobi
-        if ( _tableau->basisMatrixAvailable() )
-        {
-            explicitBasisBoundTightening();
-            applyAllBoundTightenings();
-            applyAllValidConstraintCaseSplits();
-        }
-        do
+        while ( applyAllValidConstraintCaseSplits() )
         {
             performSymbolicBoundTightening();
         }
-        while ( applyAllValidConstraintCaseSplits() );
     }
     catch ( const InfeasibleQueryException & )
     {
@@ -2557,6 +2711,8 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
                                 : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
     _gurobi->setTimeLimit( timeoutForGurobi );
+
+    _gurobi->setVerbosity( _verbosity > 1 );
     
     struct timespec start = TimeUtils::sampleMicro();
     _gurobi->solve();
@@ -2580,7 +2736,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
             return true;
         }
     }
-    else if ( _gurobi->infeasbile() )
+    else if ( _gurobi->infeasible() )
         _exitCode = IEngine::UNSAT;
     else if ( _gurobi->timeout() )
         _exitCode = IEngine::TIMEOUT;
@@ -2649,7 +2805,18 @@ bool Engine::performDeepSoILocalSearch()
     // All the linear constraints have been satisfied at this point.
     // Update the cost function
     _soiManager->initializePhasePattern();
-    minimizeHeuristicCost( _soiManager->getCurrentSoIPhasePattern() );
+
+    LinearExpression initialPhasePattern =
+        _soiManager->getCurrentSoIPhasePattern();
+
+    if ( initialPhasePattern.isZero() )
+    {
+        while ( !_smtCore.needToSplit() )
+            _smtCore.reportRejectedPhasePatternProposal();
+        return false;
+    }
+
+    minimizeHeuristicCost( initialPhasePattern );
     ASSERT( allVarsWithinBounds() );
     _soiManager->updateCurrentPhasePatternForSatisfiedPLConstraints();
     // Always accept the first phase pattern.
@@ -2681,7 +2848,8 @@ bool Engine::performDeepSoILocalSearch()
             collectViolatedPlConstraints();
             if ( allPlConstraintsHold() )
             {
-                if ( _tableau->getBasicAssignmentStatus() !=
+                if ( _lpSolverType == LPSolverType::NATIVE &&
+                     _tableau->getBasicAssignmentStatus() !=
                      ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
                 {
                     if ( _verbosity > 0 )
@@ -2700,7 +2868,17 @@ bool Engine::performDeepSoILocalSearch()
                     return true;
                 }
             }
-            ASSERT( !FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
+            else if ( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) )
+            {
+                // Corner case: the SoI is minimal but there are still some PL
+                // constraints (those not in the SoI) unsatisfied.
+                // In this case, we bump up the score of PLConstraints not in
+                // the SoI with the hope to branch on them early.
+                bumpUpPseudoImpactOfPLConstraintsNotInSoI();
+                while ( !_smtCore.needToSplit() )
+                    _smtCore.reportRejectedPhasePatternProposal();
+                return false;
+            }
         }
 
         // No satisfying assignment found for the last accepted phase pattern,
@@ -2738,37 +2916,50 @@ bool Engine::performDeepSoILocalSearch()
 
 void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
 {
-    _tableau->toggleOptimization( true );
-
-    _heuristicCost = heuristicCost;
-
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost..." );
-    bool localOptimumReached = false;
-    while ( !localOptimumReached )
+
+    if ( _lpSolverType == LPSolverType::GUROBI )
     {
-        DEBUG( _tableau->verifyInvariants() );
+        minimizeCostWithGurobi( heuristicCost );
 
-        mainLoopStatistics();
-        if ( _verbosity > 1 &&
-             _statistics.getLongAttribute
-             ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
-             GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
-            _statistics.print();
-
-        if ( !allVarsWithinBounds() )
-            throw VariableOutOfBoundDuringOptimizationException();
-
-        if ( performPrecisionRestorationIfNeeded() )
-            continue;
-
-        ASSERT( allVarsWithinBounds() );
-
-        localOptimumReached = performSimplexStep();
+        ENGINE_LOG
+            ( Stringf( "Current heuristic cost: %f",
+                       _gurobi->getOptimalCostOrObjective() ).ascii() );
     }
-    ENGINE_LOG
-        ( Stringf( "Current heuristic cost: %f",
-                   computeHeuristicCost( heuristicCost ) ).ascii() );
-    _tableau->toggleOptimization( false );
+    else
+    {
+        _tableau->toggleOptimization( true );
+
+        _heuristicCost = heuristicCost;
+
+        bool localOptimumReached = false;
+        while ( !localOptimumReached )
+        {
+            DEBUG( _tableau->verifyInvariants() );
+
+            mainLoopStatistics();
+            if ( _verbosity > 1 &&
+                 _statistics.getLongAttribute
+                 ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
+                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+                _statistics.print();
+
+            if ( !allVarsWithinBounds() )
+                throw VariableOutOfBoundDuringOptimizationException();
+
+            if ( performPrecisionRestorationIfNeeded() )
+                continue;
+
+            ASSERT( allVarsWithinBounds() );
+
+            localOptimumReached = performSimplexStep();
+        }
+        _tableau->toggleOptimization( false );
+        ENGINE_LOG
+            ( Stringf( "Current heuristic cost: %f",
+                       computeHeuristicCost( heuristicCost ) ).ascii() );
+    }
+
     ENGINE_LOG( "Optimizing w.r.t. the current heuristic cost - done\n" );
 }
 
@@ -2798,4 +2989,101 @@ void Engine::updatePseudoImpactWithSoICosts( double costOfLastAcceptedPhasePatte
     // Update the Pseudo-Impact estimation.
     for ( const auto &constraint : constraintsUpdated )
         _smtCore.updatePLConstraintScore( constraint, score );
+}
+
+void Engine::bumpUpPseudoImpactOfPLConstraintsNotInSoI()
+{
+    ASSERT( _soiManager );
+    for ( const auto &plConstraint : _plConstraints )
+    {
+        if ( plConstraint->isActive() && !plConstraint->supportSoI() &&
+             !plConstraint->phaseFixed() && !plConstraint->satisfied() )
+            _smtCore.updatePLConstraintScore
+                ( plConstraint, GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI );
+    }
+}
+
+void Engine::informLPSolverOfBounds()
+{
+    if ( _lpSolverType == LPSolverType::GUROBI )
+    {
+        struct timespec start = TimeUtils::sampleMicro();
+        for ( unsigned i = 0; i < _preprocessedQuery.getNumberOfVariables(); ++i )
+        {
+            String variableName = _milpEncoder->getVariableNameFromVariable( i );
+            _gurobi->setLowerBound( variableName, _tableau->getLowerBound( i ) );
+            _gurobi->setUpperBound( variableName, _tableau->getUpperBound( i ) );
+        }
+        _gurobi->updateModel();
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.incLongAttribute
+            ( Statistics::TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO,
+              TimeUtils::timePassed( start, end ) );
+    }
+    else
+    {
+        // Bounds are already up-to-date in Tableau when using native Simplex.
+        return;
+    }
+}
+
+bool Engine::minimizeCostWithGurobi( const LinearExpression &costFunction )
+{
+    ASSERT( _gurobi && _milpEncoder );
+
+    struct timespec simplexStart = TimeUtils::sampleMicro();
+
+    _milpEncoder->encodeCostFunction( *_gurobi, costFunction );
+    _gurobi->setTimeLimit( FloatUtils::infinity() );
+    _gurobi->solve();
+
+    struct timespec simplexEnd = TimeUtils::sampleMicro();
+
+    _statistics.incLongAttribute( Statistics::TIME_SIMPLEX_STEPS_MICRO,
+                             TimeUtils::timePassed( simplexStart, simplexEnd ) );
+    _statistics.incLongAttribute( Statistics::NUM_SIMPLEX_STEPS,
+                                  _gurobi->getNumberOfSimplexIterations() );
+
+    if ( _gurobi->infeasible() )
+        throw InfeasibleQueryException();
+    else if ( _gurobi->optimal() )
+        return true;
+    else
+        throw CommonError( CommonError::UNEXPECTED_GUROBI_STATUS,
+                           Stringf( "Current status: %u",
+                                    _gurobi->getStatusCode() ).ascii() );
+
+    return false;
+}
+
+void Engine::checkGurobiBoundConsistency() const
+{
+    if ( _gurobi && _milpEncoder )
+    {
+        for ( unsigned i = 0; i < _preprocessedQuery.getNumberOfVariables(); ++i )
+        {
+            String iName = _milpEncoder->getVariableNameFromVariable( i );
+            double gurobiLowerBound = _gurobi->getLowerBound( iName );
+            double lowerBound = _tableau->getLowerBound( i );
+            if ( !FloatUtils::areEqual( gurobiLowerBound, lowerBound ) )
+            {
+                throw MarabouError
+                    ( MarabouError::BOUNDS_NOT_UP_TO_DATE_IN_LP_SOLVER,
+                      Stringf( "x%u lower bound inconsistent!"
+                               " Gurobi: %f, Tableau: %f",
+                               i, gurobiLowerBound, lowerBound ).ascii() );
+            }
+            double gurobiUpperBound = _gurobi->getUpperBound( iName );
+            double upperBound = _tableau->getUpperBound( i );
+
+            if ( !FloatUtils::areEqual( gurobiUpperBound, upperBound ) )
+            {
+                throw MarabouError
+                    ( MarabouError::BOUNDS_NOT_UP_TO_DATE_IN_LP_SOLVER,
+                      Stringf( "x%u upper bound inconsistent!"
+                               " Gurobi: %f, Tableau: %f",
+                               i, gurobiUpperBound, upperBound ).ascii() );
+            }
+        }
+    }
 }

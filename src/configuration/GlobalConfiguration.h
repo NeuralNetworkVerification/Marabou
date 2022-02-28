@@ -31,6 +31,11 @@ public:
     //to non-linear constraint.
     static const bool USE_DEEPSOI_LOCAL_SEARCH;
 
+    // The quantity by which the score is bumped up for PLContraints not
+    // participating in the SoI. This promotes those constraints in the branching
+    // order.
+    static const double SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI;
+
     // Use the polarity metrics to decide which branch to take first in a case split
     // and how to repair a ReLU constraint.
     static const bool USE_POLARITY_BASED_DIRECTION_HEURISTICS;
@@ -82,9 +87,9 @@ public:
     // elimination.
     static const bool PREPROCESSOR_ELIMINATE_VARIABLES;
 
-    // Assuming the preprocessor is on, toggle whether or not PL constraints will be called upon
-    // to add auxiliary variables and equations.
-    static const bool PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS;
+    // Toggle whether or not PL constraints will be called upon
+    // to add auxiliary variables and equations after preprocessing.
+    static const bool PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING;
 
     // If the difference between a variable's lower and upper bounds is smaller than this
     // threshold, the preprocessor will treat it as fixed.

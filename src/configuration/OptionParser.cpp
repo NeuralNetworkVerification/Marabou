@@ -71,10 +71,13 @@ void OptionParser::initialize()
           "Strategy for stochastically minimizing the soi: mcmc/walksat. default: mcmc" )
         ( "soi-init-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_INITIALIZATION_STRATEGY]) ),
-          "Strategy for initialize the soi function: input-assignment/random. default: input-assignment" )
+          "Strategy for initialize the soi function: input-assignment/current-assignment. default: input-assignment" )
         ( "num-workers",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
           "(SnC) Number of workers" )
+        ( "blas-threads",
+          boost::program_options::value<int>( &((*_intOptions)[Options::NUM_BLAS_THREADS]) ),
+          "Number of threads to use for matrix multiplication with OpenBLAS" )
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
           "(SnC) The splitting strategy" )
@@ -100,6 +103,9 @@ void OptionParser::initialize()
         ( "reluplex-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
+        ( "branch",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) ),
+          "The branching strategy (earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity" )
         ( "soi-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::DEEP_SOI_REJECTION_THRESHOLD]) ),
           "Max number of rejected phase pattern proposal before splitting" )
@@ -125,6 +131,9 @@ void OptionParser::initialize()
         ( "milp",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
           "Use a MILP solver to solve the input query" )
+        ( "lp-solver",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::LP_SOLVER]) ),
+          "Solver for the LPs during the complete analysis: native/gurobi. default: native" )
         ( "milp-tightening",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ),
           "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none. default: lp" )
@@ -134,8 +143,8 @@ void OptionParser::initialize()
         ( "num-simulations",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
           "Number of simulations generated per neuron" )
-        ( "skip-lp-tightening-after-split",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::SKIP_LP_TIGHTENING_AFTER_SPLIT]) ),
+        ( "lp-tightening-after-split",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT]) ),
           "Whether to skip a LP tightening after a case split" )
         ( "num-incremental-linearizations",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS]) ),

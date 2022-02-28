@@ -47,7 +47,7 @@ void Options::initializeDefaultValues()
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
-    _boolOptions[SKIP_LP_TIGHTENING_AFTER_SPLIT] = false;
+    _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
 
     /*
       Int options
@@ -59,9 +59,10 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
-    _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 4;
+    _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 2;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
-    _intOptions[SEED] = 217;
+    _intOptions[SEED] = 1;
+    _intOptions[NUM_BLAS_THREADS] = 1;
     _intOptions[NUMBER_OF_INCREMENTAL_LINEARIZATIONS] = 1;
 
     /*
@@ -83,10 +84,11 @@ void Options::initializeDefaultValues()
     _stringOptions[SPLITTING_STRATEGY] = "";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "";
     _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
-    _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "";
+    _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "none";
     _stringOptions[QUERY_DUMP_FILE] = "";
     _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
+    _stringOptions[LP_SOLVER] = "";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -226,14 +228,20 @@ SoIInitializationStrategy Options::getSoIInitializationStrategy() const
                                     ( Options::SOI_INITIALIZATION_STRATEGY ) );
     if ( strategyString == "input-assignment" )
         return SoIInitializationStrategy::INPUT_ASSIGNMENT;
+    if ( strategyString == "current-assignment" )
+        return SoIInitializationStrategy::CURRENT_ASSIGNMENT;
     else
         return SoIInitializationStrategy::INPUT_ASSIGNMENT;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+LPSolverType Options::getLPSolverType() const
+{
+    String solverString = String( _stringOptions.get
+                                    ( Options::LP_SOLVER ) );
+    if ( solverString == "native" )
+        return LPSolverType::NATIVE;
+    else if ( solverString == "gurobi" )
+        return LPSolverType::GUROBI;
+    else
+        return gurobiEnabled() ? LPSolverType::GUROBI : LPSolverType::NATIVE;
+}
