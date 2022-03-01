@@ -27,7 +27,9 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
                             Map<unsigned, int> *intOptions,
                             Map<unsigned, float> *floatOptions,
                             Map<unsigned, std::string> *stringOptions )
-    : _optionDescription( "Supported options" )
+    : _common( "Common options" )
+    , _other( "Less common options " )
+    , _expert( "More advanced internal options" )
     , _boolOptions( boolOptions )
     , _intOptions( intOptions )
     , _floatOptions( floatOptions )
@@ -37,50 +39,77 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
 
 void OptionParser::initialize()
 {
-    // Possible options
-    _optionDescription.add_options()
-        ( "pl-aux-eq",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS]) ),
-          "PL constraints generate auxiliary equations" )
+    // Most common options
+    _common.add_options()
+        ( "help",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::HELP] )->default_value( (*_boolOptions)[Options::HELP] ),
+          "Prints the help message")
+        ( "input",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::INPUT_FILE_PATH] )->default_value( (*_stringOptions)[Options::INPUT_FILE_PATH] ),
+          "Neural netowrk file." )
+        ( "property",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::PROPERTY_FILE_PATH] )->default_value( (*_stringOptions)[Options::PROPERTY_FILE_PATH] ),
+          "Property file." )
+        ( "portfolio",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::PORTFOLIO_MODE] )->default_value( (*_boolOptions)[Options::PORTFOLIO_MODE] ),
+          "Use the portfolio solving mode." )
+        ( "query-dump-file",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::QUERY_DUMP_FILE] )->default_value( (*_stringOptions)[Options::QUERY_DUMP_FILE] ),
+          "(string) Dump the verification query in Marabou's input query format." )
+        ( "num-workers",
+          boost::program_options::value<int>( &(*_intOptions)[Options::NUM_WORKERS] )->default_value( (*_intOptions)[Options::NUM_WORKERS] ),
+          "Number of threads to use." )
+        ( "timeout",
+          boost::program_options::value<int>( &(*_intOptions)[Options::TIMEOUT] )->default_value( (*_intOptions)[Options::TIMEOUT] ),
+          "Global timeout in seconds. 0 means no timeout." )
+        ( "version",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::VERSION] )->default_value( (*_boolOptions)[Options::VERSION] ),
+          "Prints the version number.")
+#ifdef ENABLE_GUROBI
+        ( "milp",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::SOLVE_WITH_MILP] )->default_value( (*_boolOptions)[Options::SOLVE_WITH_MILP] ),
+          "Use a MILP solver to solve the input query" )
+#endif
+        ;
+
+    // Less common options
+    _other.add_options()
+        ( "dump-bounds",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) )->default_value( (*_boolOptions)[Options::DUMP_BOUNDS] ),
+          "Dump the bounds after preprocessing" )
         ( "snc",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
-          "Use the split-and-conquer solving mode: largest-interval/polarity/auto. default: auto" )
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) )->default_value( (*_boolOptions)[Options::DNC_MODE] ),
+          "Use the split-and-conquer solving mode" )
+        ( "summary-file",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) )->default_value( (*_stringOptions)[Options::SUMMARY_FILE] ),
+          "Summary file" )
+        ( "verbosity",
+          boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) )->default_value( (*_intOptions)[Options::VERBOSITY] ),
+          "Verbosity of engine::solve(). 0: does not print anything (for SnC), 1: print"
+          "out statistics in the beginning and end, 2: print out statistics during solving." )
+        ( "seed",
+          boost::program_options::value<int>( &((*_intOptions)[Options::SEED]) )->default_value( (*_intOptions)[Options::SEED] ),
+          "The random seed." )
+#ifdef ENABLE_GUROBI
+#endif // ENABLE_GUROBI
+        ;
+
+    _expert.add_options()
+        ( "branch",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) ),
+          "The branching strategy (earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity)" )
+        ( "blas-threads",
+          boost::program_options::value<int>( &((*_intOptions)[Options::NUM_BLAS_THREADS]) ),
+          "Number of threads to use for matrix multiplication with OpenBLAS" )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
           "Restore tree states in SnC mode" )
-        ( "dump-bounds",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) ),
-          "Dump the bounds after preprocessing" )
-        ( "portfolio",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::PORTFOLIO_MODE]) ),
-          "Use the portfolio solving mode." )
-        ( "input",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_FILE_PATH]) ),
-          "Neural netowrk file" )
-        ( "property",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::PROPERTY_FILE_PATH]) ),
-          "Property file" )
-        ( "input-query",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_QUERY_FILE_PATH]) ),
-          "Input Query file" )
-        ( "summary-file",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) ),
-          "Summary file" )
-        ( "query-dump-file",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::QUERY_DUMP_FILE]) ),
-          "Query dump file" )
         ( "soi-search-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_SEARCH_STRATEGY]) ),
           "Strategy for stochastically minimizing the soi: mcmc/walksat. default: mcmc" )
         ( "soi-init-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_INITIALIZATION_STRATEGY]) ),
           "Strategy for initialize the soi function: input-assignment/current-assignment. default: input-assignment" )
-        ( "num-workers",
-          boost::program_options::value<int>( &((*_intOptions)[Options::NUM_WORKERS]) ),
-          "(SnC) Number of workers" )
-        ( "blas-threads",
-          boost::program_options::value<int>( &((*_intOptions)[Options::NUM_BLAS_THREADS]) ),
-          "Number of threads to use for matrix multiplication with OpenBLAS" )
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) ),
           "(SnC) The splitting strategy" )
@@ -96,62 +125,41 @@ void OptionParser::initialize()
         ( "num-online-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_ONLINE_DIVIDES]) ),
           "(SnC) Number of times to further bisect a sub-region when a timeout occurs" )
-        ( "timeout",
-          boost::program_options::value<int>( &((*_intOptions)[Options::TIMEOUT]) ),
-          "Global timeout" )
-        ( "verbosity",
-          boost::program_options::value<int>( &((*_intOptions)[Options::VERBOSITY]) ),
-          "Verbosity of engine::solve(). 0: does not print anything (for SnC), 1: print"
-          "out statistics in the beginning and end, 2: print out statistics during solving." )
         ( "reluplex-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) ),
           "Max number of tries to repair a relu before splitting" )
-        ( "branch",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) ),
-          "The branching strategy (earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity" )
         ( "soi-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::DEEP_SOI_REJECTION_THRESHOLD]) ),
           "Max number of rejected phase pattern proposal before splitting" )
-        ( "seed",
-          boost::program_options::value<int>( &((*_intOptions)[Options::SEED]) ),
-          "The random seed." )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) ),
           "(SnC) The timeout factor" )
-        ( "help",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::HELP]) ),
-          "Prints the help message")
-        ( "version",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::VERSION]) ),
-          "Prints the version number")
-         ( "preprocessor-bound-tolerance",
+        ( "preprocessor-bound-tolerance",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) ),
           "epsilon for preprocessor bound tightening comparisons" )
         ( "mcmc-beta",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PROBABILITY_DENSITY_PARAMETER]) ),
           "beta parameter in MCMC search." )
 #ifdef ENABLE_GUROBI
-        ( "milp",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::SOLVE_WITH_MILP]) ),
-          "Use a MILP solver to solve the input query" )
         ( "lp-solver",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::LP_SOLVER]) ),
-          "Solver for the LPs during the complete analysis: native/gurobi. default: native" )
-        ( "milp-tightening",
-          boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ),
-          "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none. default: lp" )
-        ( "milp-timeout",
-          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) ),
-          "Per-ReLU timeout for iterative propagation" )
+          "Solver for the LPs during the complete analysis: native/gurobi. default: gurobi" )
         ( "num-simulations",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) ),
           "Number of simulations generated per neuron" )
         ( "lp-tightening-after-split",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT]) ),
           "Whether to skip a LP tightening after a case split" )
-#endif // ENABLE_GUROBI
-
+        ( "milp-timeout",
+          boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) )->default_value( (*_floatOptions)[Options::MILP_SOLVER_TIMEOUT] ),
+          "Per-ReLU timeout for iterative propagation" )
+        ( "milp-tightening",
+          boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) )->default_value((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ,
+          "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none." )
+#endif
         ;
+
+    _optionDescription.add( _common ).add( _other ).add( _expert );
 
     // Positional options, for the mandatory options
     _positionalOptions.add( "input", 1 );
@@ -180,7 +188,17 @@ int OptionParser::extractIntValue( const String &option )
 
 void OptionParser::printHelpMessage() const
 {
-    std::cerr << _optionDescription << std::endl;
+    std::cerr << "\nusage: ./Marabou <network.nnet> <property> [<options>]\n" << std::endl;
+    std::cerr <<  "OR      ./Marabou --input-query <input-query-file> [<options>]\n" << std::endl;
+
+    std::cerr << "You might also consider using the ./resources/runMarabou.py "
+              << "script, see README.md for more information." << std::endl;
+
+    std::cerr << "Options are the following:\n" << std::endl;
+
+    std::cerr << "\n" << _common << std::endl;
+    std::cerr << "\n" << _other << std::endl;
+    std::cerr << "\n" << _expert << std::endl;
 };
 
 //
