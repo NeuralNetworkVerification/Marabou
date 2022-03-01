@@ -465,44 +465,6 @@ void DnCManager::initialDivide( SubQueries &subQueries )
                                     *split, initialTimeout, subQueries );
 }
 
-void DnCManager::initialDivide( SubQueries &subQueries )
-{
-    auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
-        ( new PiecewiseLinearCaseSplit() );
-    std::unique_ptr<QueryDivider> queryDivider = nullptr;
-    if ( _sncSplittingStrategy == SnCDivideStrategy::Polarity )
-    {
-        queryDivider = std::unique_ptr<QueryDivider>
-            ( new PolarityBasedDivider( _baseEngine ) );
-    }
-    else // Default is LargestInterval
-    {
-        const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
-        queryDivider = std::unique_ptr<QueryDivider>
-            ( new LargestIntervalDivider( inputVariables ) );
-        InputQuery *inputQuery = _baseEngine->getInputQuery();
-        // Add bound as equations for each input variable
-        for ( const auto &variable : inputVariables )
-        {
-            double lb = inputQuery->getLowerBounds()[variable];
-            double ub = inputQuery->getUpperBounds()[variable];
-            split->storeBoundTightening( Tightening( variable, lb,
-                                                     Tightening::LB ) );
-            split->storeBoundTightening( Tightening( variable, ub,
-                                                     Tightening::UB ) );
-        }
-    }
-
-    unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
-    unsigned initialTimeout = Options::get()->getInt( Options::INITIAL_TIMEOUT );
-
-    String queryId;
-
-    // Create subqueries
-    queryDivider->createSubQueries( pow( 2, initialDivides ), queryId, 0,
-                                    *split, initialTimeout, subQueries );
-}
-
 void DnCManager::updateTimeoutReached( timespec startTime, unsigned long long
                                        timeoutInMicroSeconds )
 {
