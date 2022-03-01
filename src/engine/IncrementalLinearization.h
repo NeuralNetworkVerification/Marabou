@@ -43,7 +43,7 @@ private:
     MILPEncoder &_milpEncoder;
 
     /*
-      add new linear constraints
+      add new constraints
     */
     bool incrementLinearConstraint( GurobiWrapper &gurobi, TranscendentalConstraint *constraint, const Map<String, double> &assignment);
 };

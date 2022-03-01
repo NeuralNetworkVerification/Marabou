@@ -86,7 +86,7 @@ IEngine::ExitCode IncrementalLinearization::solveWithIncrementalLinearization( G
             incrementalCount++;
             continue;
         }
-        else if ( gurobi.infeasbile() )
+        else if ( gurobi.infeasible() )
             return IEngine::UNSAT;
         else if ( gurobi.timeout() || restTimeoutInSeconds <= 0 )
             return IEngine::TIMEOUT;
