@@ -243,6 +243,33 @@ void BoundManager::getTightenings( List<Tightening> &tightenings )
     }
 }
 
+void BoundManager::clearTightenings()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+      *_tightenedLower[i]=false;
+      *_tightenedUpper[i]=false;
+    }
+}
+
+void BoundManager::propagateTightenings()
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+      if ( *_tightenedLower[i] )
+      {
+        _tableau->notifyLowerBound( i, getLowerBound( i ) );
+        *_tightenedLower[i] = false;
+      }
+
+      if ( *_tightenedUpper[i] )
+      {
+        _tableau->notifyUpperBound( i, getUpperBound( i ) );
+        *_tightenedUpper[i] = false;
+      }
+    }
+}
+
 bool BoundManager::consistentBounds() const
 {
     return _consistentBounds;
