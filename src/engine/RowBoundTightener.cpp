@@ -678,7 +678,6 @@ void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
         setLowerBound( variable, bound );
         _tightenedLower[variable] = false;
     }
-    ASSERT( _boundManager.getLowerBound( variable ) == _lowerBounds[variable] );
 }
 
 void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
@@ -689,7 +688,6 @@ void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
         _tightenedUpper[variable] = false;
 
     }
-   ASSERT( _boundManager.getUpperBound( variable ) == _upperBounds[variable] );
 }
 
 void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n */ )
