@@ -220,6 +220,8 @@ public:
     */
     bool applyAllValidConstraintCaseSplits();
 
+    void setRandomSeed( unsigned seed );
+
 private:
 
     enum BasisRestorationRequired {

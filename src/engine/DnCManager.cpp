@@ -40,11 +40,12 @@
 
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            std::unique_ptr<InputQuery> inputQuery,
-                           std::atomic_uint &numUnsolvedSubQueries,
+                           std::atomic_int &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, SnCDivideStrategy divideStrategy,
-                           bool restoreTreeStates, unsigned verbosity )
+                           bool restoreTreeStates, unsigned verbosity,
+                           unsigned seed, bool portfolio )
 {
     unsigned cpuId = 0;
     (void) threadId;
@@ -53,11 +54,12 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     getCPUId( cpuId );
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
+    engine->setRandomSeed( seed );
     engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
-                      timeoutFactor, divideStrategy, verbosity );
+                      timeoutFactor, divideStrategy, verbosity, portfolio );
     while ( !shouldQuitSolving.load() )
     {
         worker.popOneSubQueryAndSolve( restoreTreeStates );
@@ -71,7 +73,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
-    , _runPortfolio( Options::get()->getBool( Options::RUN_PORTFOLIO_MODE ) )
+    , _runPortfolio( Options::get()->getBool( Options::PORTFOLIO_MODE ) )
 {
     SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
     if ( sncSplittingStrategy == SnCDivideStrategy::Auto )
@@ -161,10 +163,23 @@ void DnCManager::solve()
     if ( !_runPortfolio )
         initialDivide( subQueries );
     else
-        createDuplicateQueries( subQueries );
+    {
+        for ( unsigned i = 0; i < numWorkers; ++i )
+        {
+            // Create empty case splits to get each worker started.
+            SubQuery *subQuery = new SubQuery;
+            subQuery->_queryId = Stringf( "%u", i );
+            auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
+                ( new PiecewiseLinearCaseSplit );
+            subQuery->_split = std::move( split );
+            subQuery->_timeoutInSeconds = timeoutInSeconds;
+            subQuery->_depth = 0;
+            subQueries.append( subQuery );
+        }
+    }
 
     // Create objects shared across workers
-    _numUnsolvedSubQueries = subQueries.size();
+    _numUnsolvedSubQueries = _runPortfolio ? 1 : subQueries.size();
     std::atomic_bool shouldQuitSolving( false );
     WorkerQueue *workload = new WorkerQueue( 0 );
     for ( auto &subQuery : subQueries )
@@ -179,6 +194,7 @@ void DnCManager::solve()
     unsigned onlineDivides = Options::get()->getInt( Options::NUM_ONLINE_DIVIDES );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
+    unsigned seed = Options::get()->getInt( Options::SEED );
 
     // Spawn threads and start solving
     std::list<std::thread> threads;
@@ -187,13 +203,17 @@ void DnCManager::solve()
         // Get the processed input query from the base engine
         auto inputQuery = std::unique_ptr<InputQuery>
             ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
                                         std::move( inputQuery ),
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, onlineDivides,
                                         timeoutFactor, _sncSplittingStrategy,
-                                        restoreTreeStates, _verbosity ) );
+                                        restoreTreeStates, _verbosity,
+                                        _runPortfolio ? seed + threadId : seed,
+                                        _runPortfolio
+                                        ) );
     }
 
     // Wait until either all subQueries are solved or a satisfying assignment is
@@ -204,7 +224,8 @@ void DnCManager::solve()
         if ( _timeoutReached )
             shouldQuitSolving = true;
         else
-            std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+            std::this_thread::sleep_for( std::chrono::milliseconds
+                                         ( numWorkers ) );
     }
 
 
@@ -405,44 +426,6 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
     }
 
     return true;
-}
-
-void DnCManager::initialDivide( SubQueries &subQueries )
-{
-    auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
-        ( new PiecewiseLinearCaseSplit() );
-    std::unique_ptr<QueryDivider> queryDivider = nullptr;
-    if ( _sncSplittingStrategy == SnCDivideStrategy::Polarity )
-    {
-        queryDivider = std::unique_ptr<QueryDivider>
-            ( new PolarityBasedDivider( _baseEngine ) );
-    }
-    else // Default is LargestInterval
-    {
-        const List<unsigned> inputVariables( _baseEngine->getInputVariables() );
-        queryDivider = std::unique_ptr<QueryDivider>
-            ( new LargestIntervalDivider( inputVariables ) );
-        InputQuery *inputQuery = _baseEngine->getInputQuery();
-        // Add bound as equations for each input variable
-        for ( const auto &variable : inputVariables )
-        {
-            double lb = inputQuery->getLowerBounds()[variable];
-            double ub = inputQuery->getUpperBounds()[variable];
-            split->storeBoundTightening( Tightening( variable, lb,
-                                                     Tightening::LB ) );
-            split->storeBoundTightening( Tightening( variable, ub,
-                                                     Tightening::UB ) );
-        }
-    }
-
-    unsigned initialDivides = Options::get()->getInt( Options::NUM_INITIAL_DIVIDES );
-    unsigned initialTimeout = Options::get()->getInt( Options::INITIAL_TIMEOUT );
-
-    String queryId;
-
-    // Create subqueries
-    queryDivider->createSubQueries( pow( 2, initialDivides ), queryId, 0,
-                                    *split, initialTimeout, subQueries );
 }
 
 void DnCManager::initialDivide( SubQueries &subQueries )

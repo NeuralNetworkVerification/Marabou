@@ -58,7 +58,10 @@ public:
         SOLVE_WITH_MILP,
 
         // Whether to call a LP tightening after a case split
-        PERFORM_LP_TIGHTENING_AFTER_SPLIT
+        PERFORM_LP_TIGHTENING_AFTER_SPLIT,
+
+        // Run portfolio mode
+        PORTFOLIO_MODE,
     };
 
     enum IntOptions {

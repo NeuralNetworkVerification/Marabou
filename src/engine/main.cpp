@@ -76,7 +76,8 @@ int main( int argc, char **argv )
             return 0;
         };
 
-        if ( options->getBool( Options::DNC_MODE ) )
+        if ( options->getBool( Options::DNC_MODE ) ||
+             options->getBool( Options::PORTFOLIO_MODE ) )
 	{
 #ifdef ENABLE_OPENBLAS
 	    openblas_set_num_threads(1);

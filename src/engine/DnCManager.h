@@ -78,11 +78,12 @@ private:
     */
     static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                           std::unique_ptr<InputQuery> inputQuery,
-                          std::atomic_uint &numUnsolvedSubQueries,
+                          std::atomic_int &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, SnCDivideStrategy divideStrategy,
-                          bool restoreTreeStates, unsigned verbosity );
+                          bool restoreTreeStates, unsigned verbosity,
+                          unsigned seed, bool portfolio );
 
     /*
       Create the base engine from the network and property files,
@@ -95,13 +96,6 @@ private:
       Divide up the input region and store them in subqueries
     */
     void initialDivide( SubQueries &subQueries );
-
-    /*
-      Invoked in portfolio mode.
-      Add empty case splits to subQueries so that each worker works on the
-      original problem.
-    */
-    void createDuplicateQueries( SubQueries &subQueries );
 
     /*
       Read the exitCode of the engine of each thread, and update the manager's
@@ -154,7 +148,7 @@ private:
     /*
       The number of currently unsolved sub queries
     */
-    std::atomic_uint _numUnsolvedSubQueries;
+    std::atomic_int _numUnsolvedSubQueries;
 
     /*
       The level of verbosity
