@@ -234,7 +234,7 @@ public:
     void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
-    void addPiecewiseLinearConstraint( const String, const String, unsigned, double, double ) {}
+    void addPiecewiseLinearConstraint( const String, const String, unsigned, double*, double* ) {}
     void setCost( const List<Term> &, double /* constant */=0 ) {}
     void setObjective( const List<Term> &, double /* constant */=0 ) {}
     double getOptimalCostOrObjective() { return 0; };
