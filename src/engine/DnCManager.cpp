@@ -268,12 +268,12 @@ void DnCManager::updateDnCExitCode()
         _exitCode = DnCManager::SAT;
     else if ( _timeoutReached )
         _exitCode = DnCManager::TIMEOUT;
+    else if ( _numUnsolvedSubQueries.load() <= 0 )
+        _exitCode = DnCManager::UNSAT;
     else if ( hasQuitRequested )
         _exitCode = DnCManager::QUIT_REQUESTED;
     else if ( hasError )
         _exitCode = DnCManager::ERROR;
-    else if ( _numUnsolvedSubQueries.load() == 0 )
-        _exitCode = DnCManager::UNSAT;
     else
     {
         ASSERT( false ); // This should never happen
