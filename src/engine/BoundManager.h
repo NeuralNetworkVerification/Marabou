@@ -89,9 +89,19 @@ public:
 
     /*
        Obtain a list of all the bound updates since the last call to
-       getTightenings.
+       getTightenings or clearTightenings or propagateTighetings.
      */
     void getTightenings( List<Tightening> &tightenings );
+
+    /*
+       Clear tightened flags.
+     */
+    void clearTightenings();
+
+    /*
+       Inform variable watchers of new tightenings.
+     */
+    void propagateTightenings();
 
     /*
       Returns true if the bounds for the variable is valid, used to
