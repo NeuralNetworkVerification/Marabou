@@ -202,7 +202,7 @@ so that LPs are solved by Gurobi instead of the open-source native simplex engin
 
 You could also leverage *parallelism* by setting the num-workers option to N. This will spawn N threads, each solving
 the original verification query using the single-threaded configuration with
-a different random seed. This is the preferred parallelization strategy for low level of parallelism (N < 50).
+a different random seed. This is the preferred parallelization strategy for low level of parallelism (e.g. N < 30).
 For example to solve a query using this mode with 4 threads spawned:
 ```
 ./resources/runMarabou.py resources/nnet/mnist/mnist10x10.nnet resources/properties/mnist/image3_target6_epsilon0.05.txt --num-workers=4
