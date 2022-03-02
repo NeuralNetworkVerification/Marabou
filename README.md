@@ -190,8 +190,8 @@ for the python interface, which contains examples, API documentation, and a deve
 For ease of use, we also provide a example python script (resources/runMarabou.py). The script can take the same arguments
 as the Marabou binary. The difference is that the python script also supports networks in onnx format.
 
-Moreover, instead of passing in a property file, you could define your property with the Python API calls here:
-https://github.com/NeuralNetworkVerification/Marabou/blob/4ea15521b4bdfe5e2109ad00c20ce1372946bc10/resources/runMarabou.py#L80-L81
+Moreover, instead of passing in a property file, you could define your property with the Python API
+calls [here](https://github.com/NeuralNetworkVerification/Marabou/blob/master/resources/runMarabou.py#L80-L81).
 
 ### Choice of solver configurations
 
@@ -207,7 +207,7 @@ is a portfolio solving mode, where each thread runs the default configuration wi
 ./resources/runMarabou.py resources/nnet/mnist/mnist10x10.nnet resources/properties/mnist/image3_target6_epsilon0.05.txt --portfolio --num-workers=4
 ```
 
-You could consider the Split-and-Conquer mode (see below).
+Alternatively, you could also consider the Split-and-Conquer mode (see below).
 
 ### Using the Split and Conquer (SNC) mode
 In the SNC mode, activated by *--snc* Marabou decomposes the problem into *2^n0*
