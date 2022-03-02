@@ -83,7 +83,7 @@ private:
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, SnCDivideStrategy divideStrategy,
                           bool restoreTreeStates, unsigned verbosity,
-                          unsigned seed, bool portfolio );
+                          unsigned seed, bool parallelDeepSoI );
 
     /*
       Create the base engine from the network and property files,
@@ -156,7 +156,7 @@ private:
     unsigned _verbosity;
 
     /*
-      True if running portfolio mode and false if running SnC mode.
+      True if running parallelDeepSoI mode and false if running SnC mode.
     */
     bool _runPortfolio;
 

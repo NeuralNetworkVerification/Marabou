@@ -36,7 +36,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
                       float timeoutFactor, SnCDivideStrategy divideStrategy,
-                      unsigned verbosity, bool portfolio )
+                      unsigned verbosity, bool parallelDeepSoI )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -45,7 +45,7 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
     , _verbosity( verbosity )
-    , _portfolio( portfolio )
+    , _parallelDeepSoI( parallelDeepSoI )
 {
     setQueryDivider( divideStrategy );
 
@@ -117,7 +117,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         {
             // If UNSAT, continue to solve
             *_numUnsolvedSubQueries -= 1;
-            if ( _numUnsolvedSubQueries->load() == 0 || _portfolio )
+            if ( _numUnsolvedSubQueries->load() == 0 || _parallelDeepSoI )
                 *_shouldQuitSolving = true;
             delete subQuery;
         }

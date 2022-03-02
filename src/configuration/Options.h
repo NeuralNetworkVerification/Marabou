@@ -60,8 +60,10 @@ public:
         // Whether to call a LP tightening after a case split
         PERFORM_LP_TIGHTENING_AFTER_SPLIT,
 
-        // Run portfolio mode
-        PORTFOLIO_MODE,
+        // When multiple threads are allowed, run the DeepSoI-based procedure
+        // with a different random seed on each thread. The problem is solved once
+        // any of the thread finishes.
+        PARALLEL_DEEPSOI,
     };
 
     enum IntOptions {

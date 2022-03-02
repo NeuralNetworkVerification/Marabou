@@ -44,7 +44,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, SnCDivideStrategy divideStrategy,
                            bool restoreTreeStates, unsigned verbosity,
-                           unsigned seed, bool portfolio )
+                           unsigned seed, bool parallelDeepSoI )
 {
     unsigned cpuId = 0;
     (void) threadId;
@@ -58,7 +58,7 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
-                      timeoutFactor, divideStrategy, verbosity, portfolio );
+                      timeoutFactor, divideStrategy, verbosity, parallelDeepSoI );
     while ( !shouldQuitSolving.load() )
     {
         worker.popOneSubQueryAndSolve( restoreTreeStates );
@@ -72,7 +72,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
-    , _runPortfolio( Options::get()->getBool( Options::PORTFOLIO_MODE ) )
+    , _runPortfolio( Options::get()->getBool( Options::PARALLEL_DEEPSOI ) )
 {
     SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
     if ( sncSplittingStrategy == SnCDivideStrategy::Auto )

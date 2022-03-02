@@ -31,7 +31,7 @@ public:
                std::atomic_bool &shouldQuitSolving, unsigned threadId,
                unsigned onlineDivides, float timeoutFactor,
                SnCDivideStrategy divideStrategy, unsigned verbosity,
-               bool portfolio );
+               bool parallelDeepSoI );
 
     /*
       Pop one subQuery, solve it and handle the result
@@ -82,7 +82,7 @@ private:
     unsigned _onlineDivides;
     float _timeoutFactor;
     unsigned _verbosity;
-    bool _portfolio;
+    bool _parallelDeepSoI;
 };
 
 #endif // __DnCWorker_h__
