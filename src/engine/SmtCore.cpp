@@ -136,6 +136,7 @@ void SmtCore::performSplit()
 
     _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
+    // TODO: Ideally we will not ever reach this point
     if ( !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
@@ -170,6 +171,7 @@ void SmtCore::performSplit()
     _engine->storeState( *stateBeforeSplits,
                          TableauStateStorageLevel::STORE_BOUNDS_ONLY );
 
+    _context.push();
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
@@ -187,6 +189,7 @@ void SmtCore::performSplit()
     }
 
     _stack.append( stackEntry );
+
     if ( _statistics )
     {
         unsigned level = getStackDepth();
@@ -205,6 +208,7 @@ void SmtCore::performSplit()
 
 unsigned SmtCore::getStackDepth() const
 {
+    ASSERT( _stack.size() == static_cast<unsigned>( _context.getLevel() ) );
     return _stack.size();
 }
 
@@ -239,6 +243,7 @@ bool SmtCore::popSplit()
         delete _stack.back()->_engineState;
         delete _stack.back();
         _stack.popBack();
+        _context.pop();
 
         if ( _stack.empty() )
             return false;
@@ -253,6 +258,8 @@ bool SmtCore::popSplit()
 
     SmtStackEntry *stackEntry = _stack.back();
 
+    _context.pop();
+    _engine->postContextPopHook();
     // Restore the state of the engine
     SMT_LOG( "\tRestoring engine state..." );
     _engine->restoreState( *( stackEntry->_engineState ) );
@@ -266,6 +273,7 @@ bool SmtCore::popSplit()
 
     SMT_LOG( "\tApplying new split..." );
     ASSERT( split->getEquations().size() == 0 );
+    _context.push();
     _engine->applySplit( *split );
     SMT_LOG( "\tApplying new split - DONE" );
 
