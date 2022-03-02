@@ -50,11 +50,6 @@ public:
     void setDimensions( unsigned m, unsigned n );
 
     /*
-      Allocate space for the bound arrays.
-    */
-    void setBoundDimension( unsigned n );
-
-    /*
       Initialize the constraint matrix
     */
     void setConstraintMatrix( const double *A );
@@ -158,12 +153,6 @@ public:
     */
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
-
-    /*
-      Get all lower and upper bounds.
-    */
-    const double *getLowerBounds() const;
-    const double *getUpperBounds() const;
 
     /*
       Get BoundManager reference
@@ -479,11 +468,6 @@ public:
      */
     void postContextPopHook() { computeBasicStatus(); };
 
-    /*
-       Enables use of BoundManager to store Tableau bounds
-     */
-    void enableBoundManager() { _useBoundManager = true; };
-
 private:
     /*
       Variable watchers
@@ -501,13 +485,6 @@ private:
        BoundManager object stores bounds of all variables.
      */
     IBoundManager &_boundManager;
-
-    /*
-       Flag to indicate whether the BoundManager should be used to manage
-       bounds. Temporary flag to enable updating class signatures without using
-       the features until they are ready
-     */
-    bool _useBoundManager; 
 
     /*
       The dimensions of matrix A
@@ -585,12 +562,6 @@ private:
       The assignment of the non basic variables.
     */
     double *_nonBasicAssignment;
-
-    /*
-      Upper and lower bounds for all variables
-    */
-    double *_lowerBounds;
-    double *_upperBounds;
 
     /*
       Whether all variables have valid bounds (l <= u).

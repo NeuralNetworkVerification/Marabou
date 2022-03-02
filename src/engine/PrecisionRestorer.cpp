@@ -40,8 +40,11 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
 
     double *lowerBounds = new double[targetN];
     double *upperBounds = new double[targetN];
-    memcpy( lowerBounds, tableau.getLowerBounds(), sizeof(double) * targetN );
-    memcpy( upperBounds, tableau.getUpperBounds(), sizeof(double) * targetN );
+    for ( unsigned i = 0; i < targetN; ++i )
+    {
+        lowerBounds[i] = tableau.getLowerBound( i );
+        upperBounds[i] = tableau.getUpperBound( i );
+    }
 
     try
     {

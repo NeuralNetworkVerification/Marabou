@@ -37,7 +37,6 @@
 
 Tableau::Tableau( IBoundManager &boundManager )
     : _boundManager( boundManager )
-    , _useBoundManager( true )
     , _n ( 0 )
     , _m ( 0 )
     , _A( NULL )
@@ -56,8 +55,6 @@ Tableau::Tableau( IBoundManager &boundManager )
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
     , _nonBasicAssignment( NULL )
-    , _lowerBounds( NULL )
-    , _upperBounds( NULL )
     , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
@@ -173,18 +170,6 @@ void Tableau::freeMemoryIfNeeded()
         _nonBasicAssignment = NULL;
     }
 
-    if ( _lowerBounds )
-    {
-        delete[] _lowerBounds;
-        _lowerBounds = NULL;
-    }
-
-    if ( _upperBounds )
-    {
-        delete[] _upperBounds;
-        _upperBounds = NULL;
-    }
-
     if ( _basicAssignment )
     {
         delete[] _basicAssignment;
@@ -287,16 +272,6 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     if ( !_nonBasicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
 
-    _lowerBounds = new double[n];
-    if ( !_lowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
-
-    _upperBounds = new double[n];
-    if ( !_upperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
-
     _basicAssignment = new double[m];
     if ( !_basicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::assignment" );
@@ -323,21 +298,6 @@ void Tableau::setDimensions( unsigned m, unsigned n )
         _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
         _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
     }
-}
-
-void Tableau::setBoundDimension( unsigned n )
-{
-    _n = n;
-
-    _lowerBounds = new double[n];
-    if ( !_lowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
-
-    _upperBounds = new double[n];
-    if ( !_upperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
 }
 
 void Tableau::setConstraintMatrix( const double *A )
@@ -491,10 +451,7 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
 void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    if ( _useBoundManager )
-        _boundManager.setLowerBound( variable, value );
-    else
-        _lowerBounds[variable] = value;
+    _boundManager.setLowerBound( variable, value );
     notifyLowerBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -502,10 +459,7 @@ void Tableau::setLowerBound( unsigned variable, double value )
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    if ( _useBoundManager )
-        _boundManager.setUpperBound( variable, value );
-    else
-        _upperBounds[variable] = value;
+    _boundManager.setUpperBound( variable, value );
     notifyUpperBound( variable, value );
     checkBoundsValid( variable );
 }
@@ -513,25 +467,13 @@ void Tableau::setUpperBound( unsigned variable, double value )
 double Tableau::getLowerBound( unsigned variable ) const
 {
     ASSERT( variable < _n );
-    return ( _useBoundManager ) ? _boundManager.getLowerBound( variable )
-                                : _lowerBounds[variable];
+    return _boundManager.getLowerBound( variable );
 }
 
 double Tableau::getUpperBound( unsigned variable ) const
 {
     ASSERT( variable < _n );
-    return ( _useBoundManager ) ? _boundManager.getUpperBound( variable )
-                                : _upperBounds[variable];
-}
-
-const double *Tableau::getLowerBounds() const
-{
-    return _lowerBounds;
-}
-
-const double *Tableau::getUpperBounds() const
-{
-    return _upperBounds;
+    return _boundManager.getUpperBound( variable );
 }
 
 bool Tableau::existsValue( unsigned variable ) const
@@ -1687,15 +1629,9 @@ void Tableau::dumpEquations()
 
 void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) const
 {
-    // Store the bounds
     if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
          _lpSolverType != LPSolverType::NATIVE )
-    {
-        state.initializeBounds( _n );
-        memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
-        memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
-        state._boundsValid = _boundsValid;
-    }
+    {}
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         // Set the dimensions
@@ -1711,10 +1647,6 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
 
         // Store right hand side vector _b
         memcpy( state._b, _b, sizeof(double) * _m );
-
-        // Store the bounds
-        memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
-        memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
 
         // Basic variables
         state._basicVariables = _basicVariables;
@@ -1732,9 +1664,6 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
         // Store the basis factorization
         _basisFactorization->storeFactorization( state._basisFactorization );
 
-        // Store the _boundsValid indicator
-        state._boundsValid = _boundsValid;
-
         // Store the merged variables
         state._mergedVariables = _mergedVariables;
     }
@@ -1748,37 +1677,9 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
 void Tableau::restoreState( const TableauState &state,
                             TableauStateStorageLevel level )
 {
-    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY
-          || _lpSolverType != LPSolverType::NATIVE )
-    {
-        // Store the bounds
-        memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
-        memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
-
-        DEBUG({
-                // Restored bounds must be valid. Otherwise, the case split
-                // would not have been performed.
-                for ( unsigned i = 0; i < _n; ++i )
-                    ASSERT( FloatUtils::lte( getLowerBound( i ),
-                                             getUpperBound( i ) ) );
-            });
-        _boundsValid = state._boundsValid;
-
-        if ( _lpSolverType == LPSolverType::NATIVE )
-        {
-            // The bounds might be invalid in the state from which we backtrack,
-            // This means we might need to fix the non-basic variable assignments
-            for ( unsigned i = 0; i < _n - _m; ++i )
-            {
-                unsigned variable = _nonBasicIndexToVariable[i];
-                updateVariableToComplyWithLowerBoundUpdate( variable,
-                                                            _lowerBounds[variable] );
-                updateVariableToComplyWithUpperBoundUpdate( variable,
-                                                            _upperBounds[variable] );
-            }
-            computeBasicStatus();
-        }
-    }
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
+         _lpSolverType != LPSolverType::NATIVE )
+    {}
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();
@@ -1796,11 +1697,6 @@ void Tableau::restoreState( const TableauState &state,
         // Restore right hand side vector _b
         memcpy( _b, state._b, sizeof(double) * _m );
 
-        // Restore the bounds and valid status
-        // TODO: should notify all the constraints.
-        memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
-        memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
-
         // Basic variables
         _basicVariables = state._basicVariables;
 
@@ -1816,9 +1712,6 @@ void Tableau::restoreState( const TableauState &state,
 
         // Restore the basis factorization
         _basisFactorization->restoreFactorization( state._basisFactorization );
-
-        // Restore the _boundsValid indicator
-        _boundsValid = state._boundsValid;
 
         // Restore the merged varaibles
         _mergedVariables = state._mergedVariables;

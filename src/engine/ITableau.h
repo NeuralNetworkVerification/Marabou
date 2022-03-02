@@ -92,7 +92,6 @@ public:
     virtual ~ITableau() {};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
-    virtual void setBoundDimension( unsigned n ) = 0;
     virtual void setConstraintMatrix( const double *A ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;
@@ -103,8 +102,6 @@ public:
     virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
-    virtual const double *getLowerBounds() const = 0;
-    virtual const double *getUpperBounds() const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;

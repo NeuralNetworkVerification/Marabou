@@ -1370,9 +1370,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _milpEncoder->setStatistics( &_statistics );
             _tableau->setGurobi( &( *_gurobi ) );
 
-            unsigned n = _preprocessedQuery->getNumberOfVariables();
-            // Only use Tableau to store the bounds.
-            _tableau->setBoundDimension( n );
+            unsigned n = _preprocessedQuery.getNumberOfVariables();
+            // Only use BoundManager to store the bounds.
+            _boundManager.initialize( n );
             initializeBoundsAndConstraintWatchersInTableau( n );
 
             for ( const auto &constraint : _plConstraints )
