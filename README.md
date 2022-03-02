@@ -200,14 +200,15 @@ uses DeepPoly analysis for bound tightening, and the DeepSoI procedure during th
 For optimal runtime performance, you need to build Marabou with Gurobi enabled (See sub-section below for Gurobi installation),
 so that LPs are solved by Gurobi instead of the open-source native simplex engine.  
 
-You could also leverage *parallelism* in different ways. By far, the best strategy for low levels of parallelism (e.g., <= 50 threads)
-is a portfolio solving mode, where each thread runs the default configuration with a different random seed
-(which impacts the DeepSoI search). For example to solve a query using this mode with 4 threads spawned:
+You could also leverage *parallelism* by setting the num-workers option to N. This will spawn N threads, each solving
+the original verification query using the single-threaded configuration with
+a different random seed. This is the preferred parallelization strategy for low level of parallelism (N < 50).
+For example to solve a query using this mode with 4 threads spawned:
 ```
-./resources/runMarabou.py resources/nnet/mnist/mnist10x10.nnet resources/properties/mnist/image3_target6_epsilon0.05.txt --portfolio --num-workers=4
+./resources/runMarabou.py resources/nnet/mnist/mnist10x10.nnet resources/properties/mnist/image3_target6_epsilon0.05.txt --num-workers=4
 ```
 
-Alternatively, you could also consider the Split-and-Conquer mode (see below).
+If you have access to a large number of threads, you could also consider the Split-and-Conquer mode (see below).
 
 ### Using the Split and Conquer (SNC) mode
 In the SNC mode, activated by *--snc* Marabou decomposes the problem into *2^n0*
