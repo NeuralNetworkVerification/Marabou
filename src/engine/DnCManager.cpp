@@ -37,7 +37,6 @@
 #include "cblas.h"
 #endif
 
-
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            std::unique_ptr<InputQuery> inputQuery,
                            std::atomic_int &numUnsolvedSubQueries,
