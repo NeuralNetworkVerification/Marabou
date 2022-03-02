@@ -53,9 +53,6 @@ void OptionParser::initialize()
         ( "input-query",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_QUERY_FILE_PATH]) )->default_value( (*_stringOptions)[Options::INPUT_QUERY_FILE_PATH] ),
           "Input Query file" )
-        ( "portfolio",
-          boost::program_options::bool_switch( &(*_boolOptions)[Options::PORTFOLIO_MODE] )->default_value( (*_boolOptions)[Options::PORTFOLIO_MODE] ),
-          "Use the portfolio solving mode." )
         ( "num-workers",
           boost::program_options::value<int>( &(*_intOptions)[Options::NUM_WORKERS] )->default_value( (*_intOptions)[Options::NUM_WORKERS] ),
           "Number of threads to use." )
@@ -143,6 +140,9 @@ void OptionParser::initialize()
         ( "preprocessor-bound-tolerance",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) )->default_value( (*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
           "epsilon for preprocessor bound tightening comparisons" )
+        ( "no-parallel-deepsoi",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::PARALLEL_DEEPSOI] )->default_value( (*_boolOptions)[Options::PARALLEL_DEEPSOI] ),
+          "Do not use the parallel deep-soi solving mode when multiple threads are allowed." )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::LP_SOLVER]) )->default_value( (*_stringOptions)[Options::LP_SOLVER] ),
