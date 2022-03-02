@@ -27,7 +27,8 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
                             Map<unsigned, int> *intOptions,
                             Map<unsigned, float> *floatOptions,
                             Map<unsigned, std::string> *stringOptions )
-    : _common( "Common options" )
+    : _positional( "" )
+    , _common( "Common options" )
     , _other( "Less common options " )
     , _expert( "More advanced internal options" )
     , _boolOptions( boolOptions )
@@ -39,29 +40,32 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
 
 void OptionParser::initialize()
 {
-    // Most common options
-    _common.add_options()
-        ( "help",
-          boost::program_options::bool_switch( &(*_boolOptions)[Options::HELP] )->default_value( (*_boolOptions)[Options::HELP] ),
-          "Prints the help message")
+    _positional.add_options()
         ( "input",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::INPUT_FILE_PATH] )->default_value( (*_stringOptions)[Options::INPUT_FILE_PATH] ),
           "Neural netowrk file." )
         ( "property",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::PROPERTY_FILE_PATH] )->default_value( (*_stringOptions)[Options::PROPERTY_FILE_PATH] ),
           "Property file." )
+        ;
+
+    // Most common options
+    _common.add_options()
+        ( "help",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::HELP] )->default_value( (*_boolOptions)[Options::HELP] ),
+          "Prints the help message")
+        ( "version",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::VERSION] )->default_value( (*_boolOptions)[Options::VERSION] ),
+          "Prints the version number.")
         ( "input-query",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::INPUT_QUERY_FILE_PATH]) )->default_value( (*_stringOptions)[Options::INPUT_QUERY_FILE_PATH] ),
-          "Input Query file" )
+          "Input Query file. When specified, Marabou will solve this instead of the network and property pair." )
         ( "num-workers",
           boost::program_options::value<int>( &(*_intOptions)[Options::NUM_WORKERS] )->default_value( (*_intOptions)[Options::NUM_WORKERS] ),
           "Number of threads to use." )
         ( "timeout",
           boost::program_options::value<int>( &(*_intOptions)[Options::TIMEOUT] )->default_value( (*_intOptions)[Options::TIMEOUT] ),
           "Global timeout in seconds. 0 means no timeout." )
-        ( "version",
-          boost::program_options::bool_switch( &(*_boolOptions)[Options::VERSION] )->default_value( (*_boolOptions)[Options::VERSION] ),
-          "Prints the version number.")
 #ifdef ENABLE_GUROBI
         ( "milp",
           boost::program_options::bool_switch( &(*_boolOptions)[Options::SOLVE_WITH_MILP] )->default_value( (*_boolOptions)[Options::SOLVE_WITH_MILP] ),
@@ -162,7 +166,7 @@ void OptionParser::initialize()
 #endif
         ;
 
-    _optionDescription.add( _common ).add( _other ).add( _expert );
+    _optionDescription.add( _positional ).add( _common ).add( _other ).add( _expert );
 
     // Positional options, for the mandatory options
     _positionalOptions.add( "input", 1 );
@@ -197,7 +201,7 @@ void OptionParser::printHelpMessage() const
     std::cerr << "You might also consider using the ./resources/runMarabou.py "
               << "script, see README.md for more information." << std::endl;
 
-    std::cerr << "Options are the following:\n" << std::endl;
+    std::cerr << "\nBelow are the possible options:" << std::endl;
 
     std::cerr << "\n" << _common << std::endl;
     std::cerr << "\n" << _other << std::endl;
