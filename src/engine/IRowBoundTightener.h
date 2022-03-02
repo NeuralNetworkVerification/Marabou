@@ -30,16 +30,6 @@ public:
     virtual void setDimensions() = 0;
 
     /*
-      Initialize tightest lower/upper bounds using the talbeau.
-    */
-    virtual void resetBounds() = 0;
-
-    /*
-      Clear all learned bounds, without reallocating memory.
-    */
-    virtual void clear() = 0;
-
-    /*
       Derive and enqueue new bounds for all varaibles, using the
       inverse of the explicit basis matrix, inv(B0), which should be available
       through the tableau. Can also do this until saturation, meaning that we

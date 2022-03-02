@@ -36,11 +36,6 @@ public:
     void setDimensions();
 
     /*
-      Initialize tightest lower/upper bounds using the tableau.
-    */
-    void resetBounds();
-
-    /*
       Clear all learned bounds, without reallocating memory.
     */
     void clear();
@@ -57,8 +52,7 @@ public:
      */
     inline double getLowerBound( unsigned var ) const
     {
-        return ( _useBoundManager ) ? _boundManager.getLowerBound( var )
-                                    : _lowerBounds[var];
+        return _boundManager.getLowerBound( var );
     }
 
     /*
@@ -66,8 +60,7 @@ public:
      */
     inline double getUpperBound( unsigned var ) const
     {
-        return ( _useBoundManager ) ? _boundManager.getUpperBound( var )
-                                    : _upperBounds[var];
+        return _boundManager.getUpperBound( var );
     }
 
     /*
@@ -75,10 +68,7 @@ public:
      */
     inline void setLowerBound( unsigned var, double value )
     {
-        if ( _useBoundManager )
-            _boundManager.setLowerBound( var, value );
-        else
-            _lowerBounds[var] = value;
+        _boundManager.setLowerBound( var, value );
     }
 
     /*
@@ -86,10 +76,7 @@ public:
      */
     inline void setUpperBound( unsigned var, double value )
     {
-        if ( _useBoundManager )
-            _boundManager.setUpperBound( var, value );
-        else
-            _upperBounds[var] = value;
+        _boundManager.setUpperBound( var, value );
     }
 
     /*
@@ -153,37 +140,15 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
-    /*
-       Enable using the BoundManager to manage bounds.
-     */
-    void enableBoundManager() { _useBoundManager = true; }
-
 private:
     const ITableau &_tableau;
     unsigned _n;
     unsigned _m;
 
     /*
-      Work space for the tightener to derive tighter bounds. These
-      represent the tightest bounds currently known, either taken
-      from the tableau or derived by the tightener. The flags indicate
-      whether each bound has been tightened by the tightener.
-    */
-    double *_lowerBounds;
-    double *_upperBounds;
-    bool *_tightenedLower;
-    bool *_tightenedUpper;
-
-    /*
      * Object that stores current bounds from all the sources
      */
     IBoundManager &_boundManager;
-
-    /*
-      Flag to enable using BoundManager to manager bounds. Temporary and only
-      for purposes of integration.
-     */
-    bool _useBoundManager;
 
     /*
       Work space for the inverted basis matrix tighteners

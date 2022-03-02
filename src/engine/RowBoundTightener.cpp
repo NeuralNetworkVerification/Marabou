@@ -22,12 +22,7 @@
 
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     : _tableau( tableau )
-    , _lowerBounds( NULL )
-    , _upperBounds( NULL )
-    , _tightenedLower( NULL )
-    , _tightenedUpper( NULL )
     , _boundManager( tableau.getBoundManager() )
-    , _useBoundManager( true )
     , _rows( NULL )
     , _z( NULL )
     , _ciTimesLb( NULL )
@@ -43,24 +38,6 @@ void RowBoundTightener::setDimensions()
 
     _n = _tableau.getN();
     _m = _tableau.getM();
-
-    _lowerBounds = new double[_n];
-    if ( !_lowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
-
-    _upperBounds = new double[_n];
-    if ( !_upperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
-
-    _tightenedLower = new bool[_n];
-    if ( !_tightenedLower )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedLower" );
-
-    _tightenedUpper = new bool[_n];
-    if ( !_tightenedUpper )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
-
-    resetBounds();
 
     if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
          GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX )
@@ -84,28 +61,9 @@ void RowBoundTightener::setDimensions()
     _ciSign = new char[_n];
 }
 
-void RowBoundTightener::resetBounds()
-{
-    std::fill( _tightenedLower, _tightenedLower + _n, false );
-    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
-
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        setLowerBound( i, _tableau.getLowerBound( i ));
-        setUpperBound( i, _tableau.getUpperBound( i ));
-    }
-}
-
 void RowBoundTightener::clear()
 {
-    std::fill( _tightenedLower, _tightenedLower + _n, false );
-    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
-
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        setLowerBound( i, _tableau.getLowerBound( i ));
-        setUpperBound( i, _tableau.getUpperBound( i ));
-    }
+    //_boundManager->clearTightenings();
 }
 
 RowBoundTightener::~RowBoundTightener()
@@ -115,30 +73,6 @@ RowBoundTightener::~RowBoundTightener()
 
 void RowBoundTightener::freeMemoryIfNeeded()
 {
-    if ( _lowerBounds )
-    {
-        delete[] _lowerBounds;
-        _lowerBounds = NULL;
-    }
-
-    if ( _upperBounds )
-    {
-        delete[] _upperBounds;
-        _upperBounds = NULL;
-    }
-
-    if ( _tightenedLower )
-    {
-        delete[] _tightenedLower;
-        _tightenedLower = NULL;
-    }
-
-    if ( _tightenedUpper )
-    {
-        delete[] _tightenedUpper;
-        _tightenedUpper = NULL;
-    }
-
     if ( _rows )
     {
         for ( unsigned i = 0; i < _m; ++i )
@@ -650,20 +584,6 @@ void RowBoundTightener::examinePivotRow()
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
 {
     _boundManager.getTightenings( tightenings );
-    // for ( unsigned i = 0; i < _n; ++i )
-    // {
-    //     if ( _tightenedLower[i] )
-    //     {
-    //         tightenings.append( Tightening( i, getLowerBound( i ), Tightening::LB ) );
-    //         _tightenedLower[i] = false;
-    //     }
-
-    //     if ( _tightenedUpper[i] )
-    //     {
-    //         tightenings.append( Tightening( i, getUpperBound( i ), Tightening::UB ) );
-    //         _tightenedUpper[i] = false;
-    //     }
-    // }
 }
 
 void RowBoundTightener::setStatistics( Statistics *statistics )
@@ -673,21 +593,12 @@ void RowBoundTightener::setStatistics( Statistics *statistics )
 
 void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
 {
-    if ( FloatUtils::gt( bound, getLowerBound( variable ) ) )
-    {
-        setLowerBound( variable, bound );
-        _tightenedLower[variable] = false;
-    }
+    setLowerBound( variable, bound );
 }
 
 void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
 {
-    if ( FloatUtils::lt( bound, getUpperBound( variable ) ) )
-    {
-        setUpperBound( variable, bound );
-        _tightenedUpper[variable] = false;
-
-    }
+    setUpperBound( variable, bound );
 }
 
 void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n */ )
