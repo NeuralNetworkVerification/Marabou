@@ -29,6 +29,7 @@
 SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
     , _engine( engine )
+    , _context( _engine->getContext() )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )

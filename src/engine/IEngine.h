@@ -20,6 +20,7 @@
 #include "SnCDivideStrategy.h"
 #include "TableauStateStorageLevel.h"
 #include "List.h"
+#include "context/context.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -113,6 +114,11 @@ public:
     virtual void applyAllBoundTightenings() = 0;
 
     virtual bool applyAllValidConstraintCaseSplits() = 0;
+    /*
+      Get Context reference
+     */
+    virtual CVC4::context::Context &getContext() =0;
+
 };
 
 #endif // __IEngine_h__

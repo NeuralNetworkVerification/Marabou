@@ -20,6 +20,7 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "context/context.h"
 
 class String;
 
@@ -202,6 +203,9 @@ public:
     void applyAllBoundTightenings() {};
 
     bool applyAllValidConstraintCaseSplits() { return false; };
+
+    CVC4::context::Context _dontCare;
+    CVC4::context::Context &getContext() { return _dontCare; }
 };
 
 #endif // __MockEngine_h__

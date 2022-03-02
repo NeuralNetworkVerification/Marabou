@@ -729,6 +729,11 @@ private:
       Check that the variable bounds in Gurobi is up-to-date.
     */
     void checkGurobiBoundConsistency() const;
+
+    /*
+      Get Context reference
+     */
+    Context &getContext() { return _context; }
 };
 
 #endif // __Engine_h__
