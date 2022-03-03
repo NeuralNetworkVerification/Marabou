@@ -77,6 +77,7 @@ Engine::Engine()
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
     _statistics.stampStartingTime();
+    setRandomSeed( Options::get()->getInt( Options::SEED ) );
 }
 
 Engine::~Engine()
