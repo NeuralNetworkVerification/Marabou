@@ -24,6 +24,7 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "PolarityBasedDivider.h"
 #include "SubQuery.h"
+#include "TableauStateStorageLevel.h"
 
 #include <atomic>
 #include <chrono>
@@ -31,11 +32,11 @@
 #include <thread>
 
 DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
-                      std::atomic_uint &numUnsolvedSubQueries,
+                      std::atomic_int &numUnsolvedSubQueries,
                       std::atomic_bool &shouldQuitSolving,
                       unsigned threadId, unsigned onlineDivides,
                       float timeoutFactor, SnCDivideStrategy divideStrategy,
-                      unsigned verbosity )
+                      unsigned verbosity, bool parallelDeepSoI )
     : _workload( workload )
     , _engine( engine )
     , _numUnsolvedSubQueries( &numUnsolvedSubQueries )
@@ -44,12 +45,14 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     , _onlineDivides( onlineDivides )
     , _timeoutFactor( timeoutFactor )
     , _verbosity( verbosity )
+    , _parallelDeepSoI( parallelDeepSoI )
 {
     setQueryDivider( divideStrategy );
 
     // Obtain the current state of the engine
     _initialState = std::make_shared<EngineState>();
-    _engine->storeState( *_initialState, true );
+    _engine->storeState( *_initialState,
+                         TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
 }
 
 void DnCWorker::setQueryDivider( SnCDivideStrategy divideStrategy )
@@ -114,7 +117,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         {
             // If UNSAT, continue to solve
             *_numUnsolvedSubQueries -= 1;
-            if ( _numUnsolvedSubQueries->load() == 0 )
+            if ( _numUnsolvedSubQueries->load() == 0 || _parallelDeepSoI )
                 *_shouldQuitSolving = true;
             delete subQuery;
         }
@@ -197,7 +200,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
     else
     {
         // If the queue is empty but the pop fails, wait and retry
-        std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+        std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
     }
 }
 

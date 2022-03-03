@@ -76,8 +76,6 @@ Engine::Engine()
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
     _activeEntryStrategy->setStatistics( &_statistics );
-
-    srand( Options::get()->getInt( Options::SEED ) );
     _statistics.stampStartingTime();
 }
 
@@ -115,6 +113,11 @@ void Engine::applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId )
   _sncSplit = sncSplit;
   _queryId = queryId;
   applySplit( sncSplit );
+}
+
+void Engine::setRandomSeed( unsigned seed )
+{
+    srand( seed );
 }
 
 InputQuery Engine::prepareSnCInputQuery()
@@ -1261,7 +1264,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
     _plConstraints = _preprocessedQuery.getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
-        constraint->registerGurobi( &( *_gurobi ) );
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
     }
@@ -1362,6 +1364,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             {
                 constraint->registerGurobi( &( *_gurobi ) );
             }
+        }
+
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerTableau( _tableau );
         }
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
@@ -1608,26 +1615,10 @@ void Engine::reportPlViolation()
     _smtCore.reportViolatedConstraint( _plConstraintToFix );
 }
 
-void Engine::storeTableauState( TableauState &state ) const
+void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) const
 {
-    _tableau->storeState( state );
-}
-
-void Engine::restoreTableauState( const TableauState &state )
-{
-    ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state );
-}
-
-void Engine::storeState( EngineState &state, bool storeAlsoTableauState ) const
-{
-    if ( storeAlsoTableauState )
-    {
-        _tableau->storeState( state._tableauState );
-        state._tableauStateIsStored = true;
-    }
-    else
-        state._tableauStateIsStored = false;
+    _tableau->storeState( state._tableauState, level );
+    state._tableauStateStorageLevel = level;
 
     for ( const auto &constraint : _plConstraints )
         state._plConstraintToState[constraint] = constraint->duplicateConstraint();
@@ -1639,11 +1630,12 @@ void Engine::restoreState( const EngineState &state )
 {
     ENGINE_LOG( "Restore state starting" );
 
-    if ( !state._tableauStateIsStored )
+    if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
         throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
     ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state._tableauState );
+    _tableau->restoreState( state._tableauState,
+                            state._tableauStateStorageLevel );
 
     ENGINE_LOG( "\tRestoring constraint states" );
     for ( auto &constraint : _plConstraints )
@@ -1938,7 +1930,8 @@ void Engine::applyAllBoundTightenings()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    applyAllRowTightenings();
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        applyAllRowTightenings();
     applyAllConstraintTightenings();
 
     struct timespec end = TimeUtils::sampleMicro();

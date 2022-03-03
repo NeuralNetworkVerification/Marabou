@@ -48,6 +48,7 @@ void Options::initializeDefaultValues()
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
     _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
+    _boolOptions[PARALLEL_DEEPSOI] = true;
 
     /*
       Int options
@@ -80,14 +81,14 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
-    _stringOptions[SPLITTING_STRATEGY] = "";
-    _stringOptions[SNC_SPLITTING_STRATEGY] = "";
-    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
+    _stringOptions[SPLITTING_STRATEGY] = "auto";
+    _stringOptions[SNC_SPLITTING_STRATEGY] = "auto";
+    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "deeppoly";
     _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "none";
     _stringOptions[QUERY_DUMP_FILE] = "";
     _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
-    _stringOptions[LP_SOLVER] = "";
+    _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
 }
 
 void Options::parseOptions( int argc, char **argv )

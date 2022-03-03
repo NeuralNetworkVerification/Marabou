@@ -144,14 +144,6 @@ void DisjunctionConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, variable );
 }
 
-void DisjunctionConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // This should never be called when we are using Gurobi to solve LPs.
-    ASSERT( _gurobi == NULL );
-
-    _assignment[variable] = value;
-}
-
 void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )

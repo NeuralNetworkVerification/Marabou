@@ -18,6 +18,7 @@
 
 #include "DivideStrategy.h"
 #include "SnCDivideStrategy.h"
+#include "TableauStateStorageLevel.h"
 #include "List.h"
 
 #ifdef _WIN32
@@ -65,7 +66,7 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
+    virtual void storeState( EngineState &state, TableauStateStorageLevel level ) const = 0;
     virtual void restoreState( const EngineState &state ) = 0;
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
@@ -109,6 +110,9 @@ public:
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
 
+    virtual void applyAllBoundTightenings() = 0;
+
+    virtual bool applyAllValidConstraintCaseSplits() = 0;
 };
 
 #endif // __IEngine_h__

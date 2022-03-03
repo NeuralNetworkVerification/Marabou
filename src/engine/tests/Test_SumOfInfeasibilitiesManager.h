@@ -62,7 +62,8 @@ public:
     }
 
     void createInputQuery( InputQuery &ipq,
-                           Vector<PiecewiseLinearConstraint *> &plConstraints )
+                           Vector<PiecewiseLinearConstraint *> &plConstraints,
+                           ITableau &tableau )
     {
         /*  R
           0 -- 1
@@ -102,11 +103,13 @@ public:
 
         for ( const auto &c : plConstraints )
         {
+            c->registerTableau( &tableau );
             for ( const auto &var : c->getParticipatingVariables() )
             {
                 c->notifyLowerBound( var, -3 );
                 c->notifyUpperBound( var, 3 );
             }
+
         }
         relu1->notifyLowerBound( 1, 0 );
         relu2->notifyLowerBound( 3, 0 );
@@ -126,8 +129,8 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString
@@ -139,23 +142,16 @@ public:
               std::unique_ptr<SumOfInfeasibilitiesManager>
               ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
-        tableau.nextValues[0] = -1;
-        tableau.nextValues[2] = 1;
-        tableau.nextValues[4] = 2;
-        plConstraints[0]->notifyVariableValue( 0, -1 );
-        plConstraints[0]->notifyVariableValue( 1, 0 );
-        plConstraints[1]->notifyVariableValue( 2, 1 );
-        plConstraints[1]->notifyVariableValue( 3, 1 );
-        plConstraints[2]->notifyVariableValue( 4, 2 );
-        plConstraints[2]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 1, 0 );
-        plConstraints[3]->notifyVariableValue( 3, 1 );
-        plConstraints[3]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 6, 2 );
-        plConstraints[3]->notifyVariableValue( 7, 2 );
-        plConstraints[3]->notifyVariableValue( 8, 1 );
-        plConstraints[3]->notifyVariableValue( 9, 0 );
-
+        tableau.setValue( 0, -1 );
+        tableau.setValue( 1, 0 );
+        tableau.setValue( 2, 1 );
+        tableau.setValue( 3, 1 );
+        tableau.setValue( 4, 2 );
+        tableau.setValue( 5, 2 );
+        tableau.setValue( 6, 2 );
+        tableau.setValue( 7, 2 );
+        tableau.setValue( 8, 1 );
+        tableau.setValue( 9, 0 );
 
         // The input assignment is [-1, 1, 2], the output of the max should be 2
         TS_ASSERT_THROWS_NOTHING
@@ -183,8 +179,8 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString
@@ -196,30 +192,22 @@ public:
               std::unique_ptr<SumOfInfeasibilitiesManager>
               ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
-        tableau.nextValues[0] = 1;
-        tableau.nextValues[2] = 2;
-        tableau.nextValues[4] = -1;
-        plConstraints[0]->notifyVariableValue( 0, 1 );
-        plConstraints[0]->notifyVariableValue( 1, 1 );
-
         // Phase is fixed, won't add the second relu to SoI
-        plConstraints[1]->notifyLowerBound( 2, 2 );
-        plConstraints[1]->notifyVariableValue( 2, 2 );
-        plConstraints[1]->notifyVariableValue( 3, 2 );
+        tableau.setValue( 0, 1 );
+        tableau.setValue( 1, 1 );
+        tableau.setValue( 2, 2 );
+        tableau.setValue( 3, 2 );
+        tableau.setValue( 4, -1 );
+        tableau.setValue( 5, 0 );
+        tableau.setValue( 6, 2 );
+        tableau.setValue( 7, 1 );
+        tableau.setValue( 9, 0 );
 
-        plConstraints[2]->notifyVariableValue( 4, -1 );
-        plConstraints[2]->notifyVariableValue( 5, 0 );
+        plConstraints[1]->notifyLowerBound( 2, 2 );
 
         // Eliminate the variable from the max constraint
         plConstraints[3]->eliminateVariable( 3, 2 );
         ipq.getNetworkLevelReasoner()->eliminateVariable( 3, 2 );
-
-        plConstraints[3]->notifyVariableValue( 1, 1 );
-        plConstraints[3]->notifyVariableValue( 5, 0 );
-        plConstraints[3]->notifyVariableValue( 6, 2 );
-        plConstraints[3]->notifyVariableValue( 7, 1 );
-        plConstraints[3]->notifyVariableValue( 9, 0 );
-
 
         // The input assignment is [1, 2, -1], the output of the max constraint
         // should be 2
@@ -235,6 +223,7 @@ public:
                                   ( cost, RELU_PHASE_INACTIVE ) );
         TS_ASSERT_THROWS_NOTHING( plConstraints[3]->getCostFunctionComponent
                                   ( cost, MAX_PHASE_ELIMINATED ) );
+
         TS_ASSERT_EQUALS( cost, soiManager->getCurrentSoIPhasePattern() );
     }
 
@@ -242,8 +231,8 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString
@@ -258,28 +247,13 @@ public:
         tableau.nextValues[0] = -1;
         tableau.nextValues[1] = 0;
         tableau.nextValues[2] = 1;
-        tableau.nextValues[3] = 3;
+        tableau.nextValues[3] = 2;
         tableau.nextValues[4] = 2;
         tableau.nextValues[5] = 2;
         tableau.nextValues[6] = 2;
         tableau.nextValues[7] = 2;
         tableau.nextValues[8] = 1;
         tableau.nextValues[9] = 0;
-
-        plConstraints[0]->notifyVariableValue( 0, -1 );
-        plConstraints[0]->notifyVariableValue( 1, 0 );
-        plConstraints[1]->notifyVariableValue( 2, 1 );
-        plConstraints[1]->notifyVariableValue( 3, 1 );
-        plConstraints[2]->notifyVariableValue( 4, 2 );
-        plConstraints[2]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 1, 0 );
-        plConstraints[3]->notifyVariableValue( 3, 1 );
-        plConstraints[3]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 6, 2 );
-        plConstraints[3]->notifyVariableValue( 7, 2 );
-        plConstraints[3]->notifyVariableValue( 8, 1 );
-        plConstraints[3]->notifyVariableValue( 9, 0 );
-
 
         // The input assignment is [-1, 1, 2], the output of the max should be 2
         TS_ASSERT_THROWS_NOTHING
@@ -307,25 +281,19 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
         tableau.nextValues[0] = -1;
+        tableau.nextValues[1] = 1;
         tableau.nextValues[2] = 1;
+        tableau.nextValues[3] = 2;
         tableau.nextValues[4] = 2;
-        plConstraints[0]->notifyVariableValue( 0, -1 );
-        plConstraints[0]->notifyVariableValue( 1, 1 );
-        plConstraints[1]->notifyVariableValue( 2, 1 );
-        plConstraints[1]->notifyVariableValue( 3, 2 );
-        plConstraints[2]->notifyVariableValue( 4, 2 );
-        plConstraints[2]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 1, 0 );
-        plConstraints[3]->notifyVariableValue( 3, 2 );
-        plConstraints[3]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 6, 2 );
-        plConstraints[3]->notifyVariableValue( 7, 2 );
-        plConstraints[3]->notifyVariableValue( 8, 0 );
-        plConstraints[3]->notifyVariableValue( 9, 0 );
+        tableau.nextValues[5] = 2;
+        tableau.nextValues[6] = 2;
+        tableau.nextValues[7] = 2;
+        tableau.nextValues[8] = 0;
+        tableau.nextValues[9] = 0;
 
         Options::get()->setString
             ( Options::SOI_INITIALIZATION_STRATEGY, "input-assignment" );
@@ -418,26 +386,9 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
-        tableau.nextValues[0] = -2;
-        tableau.nextValues[2] = 1;
-        tableau.nextValues[4] = 2;
-        plConstraints[0]->notifyVariableValue( 0, -2 );
-        plConstraints[0]->notifyVariableValue( 1, 0.5 );
-        plConstraints[1]->notifyVariableValue( 2, 1 );
-        plConstraints[1]->notifyVariableValue( 3, 2 );
-        plConstraints[2]->notifyVariableValue( 4, 2 );
-        plConstraints[2]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 1, 0.5 );
-        plConstraints[3]->notifyVariableValue( 3, 2 );
-        plConstraints[3]->notifyVariableValue( 5, 2 );
-        plConstraints[3]->notifyVariableValue( 6, 2.5 );
-        plConstraints[3]->notifyVariableValue( 7, 2 );
-        plConstraints[3]->notifyVariableValue( 8, 0.5 );
-        plConstraints[3]->notifyVariableValue( 9, 0.5 );
-
         tableau.nextValues[0] = -2;
         tableau.nextValues[1] = 0.5;
         tableau.nextValues[2] = 1;
@@ -498,8 +449,7 @@ public:
                           plConstraints[0] );
 
 
-        plConstraints[0]->notifyVariableValue( 0, 0 );
-        tableau.nextValues[0] = 0;
+        tableau.setValue( 0, 0 );
 
         // Reduced cost for relu1: 0, for relu2: 1, for relu3: -2,
         // for max: 1.5. So pick max with phase corresponding to the second input.
@@ -580,8 +530,8 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString
@@ -594,20 +544,6 @@ public:
               ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         // relu1, relu2 satisfied, relu3 not satisfied, max not satisfied.
-        plConstraints[0]->notifyVariableValue( 0, -1 );
-        plConstraints[0]->notifyVariableValue( 1, 0 );
-        plConstraints[1]->notifyVariableValue( 2, 1 );
-        plConstraints[1]->notifyVariableValue( 3, 1 );
-        plConstraints[2]->notifyVariableValue( 4, 1 );
-        plConstraints[2]->notifyVariableValue( 5, 1.5 );
-        plConstraints[3]->notifyVariableValue( 1, 0 );
-        plConstraints[3]->notifyVariableValue( 3, 1 );
-        plConstraints[3]->notifyVariableValue( 5, 1.5 );
-        plConstraints[3]->notifyVariableValue( 6, 2.5 );
-        plConstraints[3]->notifyVariableValue( 7, 2.5 );
-        plConstraints[3]->notifyVariableValue( 8, 1.5 );
-        plConstraints[3]->notifyVariableValue( 9, 1 );
-
         tableau.nextValues[0] = -1;
         tableau.nextValues[1] = 0;
         tableau.nextValues[2] = 1;
@@ -651,8 +587,8 @@ public:
     {
         InputQuery ipq;
         Vector<PiecewiseLinearConstraint *> plConstraints;
-        createInputQuery( ipq, plConstraints );
         MockTableau tableau;
+        createInputQuery( ipq, plConstraints, tableau );
         ipq.getNetworkLevelReasoner()->setTableau( &tableau );
 
         Options::get()->setString
@@ -665,28 +601,16 @@ public:
               ( new SumOfInfeasibilitiesManager( ipq, tableau ) ) );
 
         // relu1, relu2 satisfied, relu3 not satisfied, max not satisfied.
-        plConstraints[0]->notifyVariableValue( 0, -1 );
-        plConstraints[0]->notifyVariableValue( 1, 0 );
-        plConstraints[1]->notifyVariableValue( 2, 1 );
-        plConstraints[1]->notifyVariableValue( 3, 1 );
-        plConstraints[2]->notifyVariableValue( 4, 1 );
-        plConstraints[2]->notifyVariableValue( 5, 1.5 );
-        plConstraints[3]->notifyVariableValue( 1, 0 );
-        plConstraints[3]->notifyVariableValue( 3, 1 );
-        plConstraints[3]->notifyVariableValue( 5, 1.5 );
-        plConstraints[3]->notifyVariableValue( 6, 2.5 );
-        plConstraints[3]->notifyVariableValue( 7, 2.5 );
-        plConstraints[3]->notifyVariableValue( 8, 1.5 );
-        plConstraints[3]->notifyVariableValue( 9, 1 );
-
-
-        tableau.nextValues[0] = -1;
-        tableau.nextValues[1] = 0;
-        tableau.nextValues[2] = 1;
-        tableau.nextValues[3] = 1;
-        tableau.nextValues[4] = 1;
-        tableau.nextValues[5] = 1.5;
-        tableau.nextValues[6] = 2.5;
+        tableau.setValue( 0, -1 );
+        tableau.setValue( 1, 0 );
+        tableau.setValue( 2, 1 );
+        tableau.setValue( 3, 1 );
+        tableau.setValue( 4, 1 );
+        tableau.setValue( 5, 1.5 );
+        tableau.setValue( 6, 2.5 );
+        tableau.setValue( 7, 2.5 );
+        tableau.setValue( 8, 1.5 );
+        tableau.setValue( 9, 1 );
 
         TS_ASSERT_THROWS_NOTHING
             (soiManager->initializePhasePattern() );
