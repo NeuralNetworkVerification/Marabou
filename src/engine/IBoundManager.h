@@ -79,6 +79,7 @@ public:
        getTightenings.
      */
     virtual void getTightenings( List<Tightening> &tightenings ) = 0;
+    virtual void clearTightenings() = 0;
 
     /*
       Returns true if the bounds for the variable is valid. Used to

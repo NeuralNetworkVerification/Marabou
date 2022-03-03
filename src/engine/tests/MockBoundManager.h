@@ -150,6 +150,10 @@ public:
             }
         }
     }
+    /*
+       Clear tightened flags;
+     */
+    void clearTightenings() {};
 
     /*
       Returns true if the bounds of all variables are consistent. Used to
