@@ -1246,7 +1246,7 @@ public:
 
         double xpts1[4] = { 0, 0.5, 0.75, 1 };
         double ypts1[4] = { 0.5, sigmoid1->sigmoid( 0.5 ), sigmoid1->sigmoid( 0.75 ), sigmoid1->sigmoid( 1 ) };
-        milp1.addSecantLinesOnSigmoid( gurobi1, sigmoid1, 0.75, 4, xpts1, ypts1, 0, 1);
+        milp1.addSecantLinesOnSigmoid( gurobi1, sigmoid1, 4, xpts1, ypts1, 0, 1);
 
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
 
@@ -1303,7 +1303,7 @@ public:
 
         double xpts2[4] = { -1, -0.55, -0.2, -0.1 };
         double ypts2[4] = { sigmoid2->sigmoid( -1 ), sigmoid2->sigmoid( -0.55 ), sigmoid2->sigmoid( -0.2 ), sigmoid2->sigmoid( -0.1 ) };
-        milp2.addSecantLinesOnSigmoid( gurobi2, sigmoid2, -0.2, 4, xpts2, ypts2, -1, -0.1);
+        milp2.addSecantLinesOnSigmoid( gurobi2, sigmoid2, 4, xpts2, ypts2, -1, -0.1);
 
         TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
 
@@ -1360,7 +1360,7 @@ public:
 
         double xpts3[6] = { -1, -0.5, 0, 0.5, 0.75, 1 };
         double ypts3[6] = { sigmoid3->sigmoid( -1 ), sigmoid3->sigmoid( -0.5 ), sigmoid3->sigmoid( 0 ), sigmoid3->sigmoid( 0.5 ), sigmoid3->sigmoid( 0.75 ), sigmoid3->sigmoid( 1 ) };
-        milp2.addSecantLinesOnSigmoid( gurobi3, sigmoid3, 0.75, 6, xpts3, ypts3, -1, 1);
+        milp2.addSecantLinesOnSigmoid( gurobi3, sigmoid3, 6, xpts3, ypts3, -1, 1);
 
         TS_ASSERT_THROWS_NOTHING( gurobi3.solve() );
 

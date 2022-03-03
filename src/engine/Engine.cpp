@@ -2718,6 +2718,11 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     _gurobi->solve();
     struct timespec end = TimeUtils::sampleMicro();
     unsigned long long passedTime = TimeUtils::timePassed( start, end );
+    
+    // for debug
+    // _gurobi->dumpModel("gurobi.lp");
+    // if ( _gurobi->haveFeasibleSolution())
+    //     _gurobi->dumpModel("gurobi.sol");
 
     if ( _gurobi->haveFeasibleSolution() )
     {

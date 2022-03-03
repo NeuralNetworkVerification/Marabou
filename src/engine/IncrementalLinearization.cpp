@@ -74,6 +74,11 @@ IEngine::ExitCode IncrementalLinearization::solveWithIncrementalLinearization( G
             struct timespec end = TimeUtils::sampleMicro();
             unsigned long long passedTime = TimeUtils::timePassed( start, end );
             restTimeoutInSeconds -= passedTime / 1000000;
+            
+            // for debug
+            // gurobi.dumpModel( Stringf("gurobi_%u.lp", incrementalCount).ascii() );
+            // if ( gurobi.haveFeasibleSolution () )
+            //     gurobi.dumpModel( Stringf("gurobi_%u.sol", incrementalCount).ascii() );
         }
         else
         {
@@ -123,109 +128,33 @@ bool IncrementalLinearization::incrementLinearConstraint( GurobiWrapper &gurobi,
     // add a tangent line
     _milpEncoder.addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
 
-    // generate xpts and ypts for new secant lines.
-    Vector<double> xpts;
-    Vector<double> ypts;
-    if ( FloatUtils::lt( sourceLb, 0 ) && FloatUtils::gt( sourceUb, 0 ) )
+    // generate xpts and ypts for secant lines.
+    double xpts[pts.size() + 1];
+    double ypts[pts.size() + 1];
+    unsigned i = 0;
+    double ptSet = false;
+    for ( const auto &pt : pts )
     {
-        // if xpt is positive, every element in xpts should be greater than and equal to 0.
-        if ( FloatUtils::gte( xpt, 0 ) )
+        if ( FloatUtils::areEqual( pt._x, xpt ))
         {
-            bool ptSet = false;
-            for ( const auto &pt : pts )
-            {
-                if ( FloatUtils::areEqual( xpt, pt._x ) )
-                    // if xpt is same as one of current split points, no longer continue.
-                    return false;
-                else if ( FloatUtils::gte( pt._x, 0 ) )
-                {
-                    if ( FloatUtils::lt( pt._x, xpt ) )
-                    {
-                        xpts.append( pt._x );
-                        ypts.append( pt._y );
-                    }    
-                    else if ( FloatUtils::gt( pt._x, xpt ) )
-                    {
-                        if ( !ptSet )
-                        {
-                            // insert xpt and ypt
-                            xpts.append( xpt );
-                            ypts.append( ypt );
-                            ptSet = true;
-                        }
-                        xpts.append( pt._x );
-                        ypts.append( pt._y );
-                    }
-                }
-            }
+            // if xpt is same as one of current split points, no longer continues.
+            return false;            
         }
-        // if xpt is negative, every element in xpts should be less than and equal to 0.
-        else
+        else if ( FloatUtils::gt( pt._x, xpt ) && !ptSet )
         {
-            bool ptSet = false;
-            for ( const auto &pt : pts )
-            {
-                if ( FloatUtils::areEqual( xpt, pt._x ) )
-                    // if xpt is positive, every element in xpts should be greater than and equal to 0.
-                    return false;
-                else if ( FloatUtils::lte( pt._x, 0 ) )
-                {
-                    if ( FloatUtils::lt( pt._x, xpt ) )
-                    {
-                        xpts.append( pt._x );
-                        ypts.append( pt._y );
-                    }    
-                    else
-                    {
-                        if ( !ptSet )
-                        {
-                            xpts.append( xpt );
-                            ypts.append( ypt );
-                            ptSet = true;
-                        }
-                        xpts.append( pt._x );
-                        ypts.append( pt._y );
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
+            xpts[i] = xpt;
+            ypts[i] = ypt;
+            i++;
+            ptSet = true;
         }
-    }
-    else
-    {
-        bool ptSet = false;
-        for ( const auto &pt : pts )
-        {
-            if ( FloatUtils::areEqual( xpt, pt._x ) )
-                // if xpt is positive, every element in xpts should be greater than and equal to 0.
-                return false;
-            else
-            {
-                if ( FloatUtils::lt( pt._x, xpt ) )
-                {
-                    xpts.append( pt._x );
-                    ypts.append( pt._y );
-                }    
-                else if ( FloatUtils::gt( pt._x, xpt ) )
-                {
-                    if ( !ptSet )
-                    {
-                        xpts.append( xpt );
-                        ypts.append( ypt );
-                        ptSet = true;
-                    }
-                    xpts.append( pt._x );
-                    ypts.append( pt._y );
-                }
-            }
-        }
+
+        xpts[i] = pt._x;
+        ypts[i] = pt._y;
+        i++;            
     }
 
     // add secant lines
-    _milpEncoder.addSecantLinesOnSigmoid( gurobi, sigmoid, xpt, xpts.size(), xpts.data(), ypts.data(), sourceLb, sourceUb );
+    _milpEncoder.addSecantLinesOnSigmoid( gurobi, sigmoid, pts.size() + 1, xpts, ypts, sourceLb, sourceUb );
 
     // add split points for next linearization
     sigmoid->addSplitPoint( xpt, ypt );

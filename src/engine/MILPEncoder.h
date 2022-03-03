@@ -51,7 +51,7 @@ public:
     /*
       Add secant lines
     */
-    void addSecantLinesOnSigmoid( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid, double newSplitPoint, unsigned numOfPts, double *xpts, double *ypts, double sourceLb, double sourceUb );
+    void addSecantLinesOnSigmoid( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid, unsigned numOfPts, double *xpts, double *ypts, double sourceLb, double sourceUb );
 
     inline void setStatistics( Statistics *statistics )
     {
