@@ -75,7 +75,7 @@ public:
       Returns true if the bounds for the variable is valid. Used to
       detect a conflict state.
     */
-    virtual bool consistentBounds( unsigned variable ) const = 0;
+    virtual bool consistentBounds() const = 0;
 
 };
 

@@ -142,6 +142,19 @@ public:
     }
 
     /*
+      Returns true if the bounds of all variables are consistent. Used to
+      detect a conflict state.
+    */
+    bool consistentBounds() const
+    {
+      for ( unsigned i = 0; i < _size; ++i )
+        if ( !consistentBounds( i ) )
+          return false;
+
+      return true;
+    }
+
+    /*
       Returns true if the bounds for the variable is valid, used to
       detect a conflict state.
     */

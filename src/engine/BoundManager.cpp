@@ -27,7 +27,10 @@ BoundManager::BoundManager( Context &context )
     : _context( context )
     , _size( 0 )
     , _tableau( nullptr )
+    , _consistentBounds( &_context )
+    , _firstInconsistentTightening( 0, 0.0, Tightening::LB )
 {
+  _consistentBounds = true;
 };
 
 BoundManager::~BoundManager()
@@ -94,29 +97,39 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value )
     return tightened;
 }
 
+void BoundManager::recordInconsistentBounds( unsigned variable, double value, Tightening::BoundType type )
+{
+  if ( _consistentBounds )
+  {
+    _consistentBounds = false;
+    _firstInconsistentTightening = Tightening( variable, value, type );
+  }
+}
+
 bool BoundManager::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
-    if ( value > getLowerBound( variable ) )
+    if ( FloatUtils::gt( value , getLowerBound( variable ) ) )
     {
         *_lowerBounds[variable] = value;
         *_tightenedLower[variable] = true;
         if ( !consistentBounds( variable ) )
-            throw InfeasibleQueryException();
+            recordInconsistentBounds( variable, value, Tightening::LB );
         return true;
     }
     return false;
 }
 
+
 bool BoundManager::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
-    if ( value < getUpperBound( variable ) )
+    if ( FloatUtils::lt( value , getUpperBound( variable ) ) )
     {
         *_upperBounds[variable] = value;
         *_tightenedUpper[variable] = true;
         if ( !consistentBounds( variable ) )
-            throw InfeasibleQueryException();
+          recordInconsistentBounds( variable, value, Tightening::UB );
         return true;
     }
     return false;

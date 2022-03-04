@@ -39,12 +39,12 @@
 
 #include "IBoundManager.h"
 #include "List.h"
+#include "Tightening.h"
 #include "Vector.h"
 #include "context/cdo.h"
 #include "context/context.h"
 
 class Tableau;
-class Tightening;
 class BoundManager : public IBoundManager
 {
 public:
@@ -94,11 +94,18 @@ public:
     void getTightenings( List<Tightening> &tightenings );
 
     /*
+      Returns true if the bounds of all variables are valid. Returns false in a conflict state.
+    */
+    bool consistentBounds() const
+    {
+        return _consistentBounds;
+    };
+
+    /*
       Returns true if the bounds for the variable is valid, used to
       detect a conflict state.
     */
     bool consistentBounds( unsigned variable ) const;
-
     /*
        Register Tableau reference for callbacks from tighten*Bound methods.
      */
@@ -109,11 +116,20 @@ private:
     unsigned _size;
     Tableau *_tableau; // Used only by callbacks
 
+    CVC4::context::CDO<bool> _consistentBounds;
+    Tightening _firstInconsistentTightening;
+
     Vector<CVC4::context::CDO<double> *> _lowerBounds;
     Vector<CVC4::context::CDO<double> *> _upperBounds;
 
     Vector<CVC4::context::CDO<bool> *> _tightenedLower;
     Vector<CVC4::context::CDO<bool> *> _tightenedUpper;
+
+    /*
+       Record first tightening that violates bounds
+     */
+    void recordInconsistentBounds( unsigned variable, double value, Tightening::BoundType type );
+
 };
 
 #endif // __BoundManager_h__

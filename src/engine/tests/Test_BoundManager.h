@@ -105,7 +105,8 @@ public:
         TS_ASSERT( boundManager.consistentBounds( 0 ) );
 
         TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 1 ) );
-        TS_ASSERT_THROWS( boundManager.setUpperBound( 0, 0 ), InfeasibleQueryException );
+        TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 0 ) );
+        TS_ASSERT( !boundManager.consistentBounds() );
     }
 
     /*
