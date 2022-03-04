@@ -79,11 +79,11 @@ jobs:
         run: ccache -s
         
       - name: Run system tests
-        run: ctest -L system -j 2 
+        run: ctest -L system -j 2 --rerun-failed --output-on-failure 
         working-directory: build
  
       - name: Run regression tests
-        run: ctest -L regress[0-1] -j 2 
+        run: ctest -L regress[0-1] -j 2 --rerun-failed --output-on-failure 
         working-directory: build
 
 
