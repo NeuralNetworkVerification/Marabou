@@ -63,6 +63,7 @@ private:
     boost::program_options::options_description _expert;
     boost::program_options::positional_options_description _positionalOptions;
 
+
     Map<unsigned, bool> *_boolOptions;
     Map<unsigned, int> *_intOptions;
     Map<unsigned, float> *_floatOptions;
