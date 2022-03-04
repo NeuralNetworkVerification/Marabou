@@ -36,18 +36,6 @@ public:
     void setDimensions();
 
     /*
-      Clear all learned bounds, without reallocating memory.
-    */
-    void clear();
-
-    /*
-      Callbacks from the Tableau, to inform of bounds tightened by,
-      e.g., the PL constraints.
-    */
-    void notifyLowerBound( unsigned variable, double bound );
-    void notifyUpperBound( unsigned variable, double bound );
-
-    /*
        Method obtains lower bound of *var*.
      */
     inline double getLowerBound( unsigned var ) const
@@ -64,24 +52,7 @@ public:
     }
 
     /*
-       Method sets the lower bound of *var* to *value*.
-     */
-    inline void setLowerBound( unsigned var, double value )
-    {
-        _boundManager.setLowerBound( var, value );
-    }
-
-    /*
-       Method sets the upper bound of *var* to *value*.
-     */
-    inline void setUpperBound( unsigned var, double value )
-    {
-        _boundManager.setUpperBound( var, value );
-    }
-
-    /*
-     * Local register new bound functions
-     * NOTE: Used post integration, currently these methods are not used anywhere atm.
+     * Register a new tighter bound
      */
     inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound)
     {
@@ -92,11 +63,6 @@ public:
     {
         return _boundManager.tightenUpperBound( variable, newLowerBound ) ? 1u : 0u;
     }
-
-    /*
-      Callback from the Tableau, to inform of a change in dimensions
-    */
-    void notifyDimensionChange( unsigned m, unsigned n );
 
     /*
       Derive and enqueue new bounds for all varaibles, using the

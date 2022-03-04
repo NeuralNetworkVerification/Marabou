@@ -61,11 +61,6 @@ void RowBoundTightener::setDimensions()
     _ciSign = new char[_n];
 }
 
-void RowBoundTightener::clear()
-{
-    //_boundManager->clearTightenings();
-}
-
 RowBoundTightener::~RowBoundTightener()
 {
     freeMemoryIfNeeded();
@@ -589,21 +584,6 @@ void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
 void RowBoundTightener::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
-}
-
-void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
-{
-    setLowerBound( variable, bound );
-}
-
-void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
-{
-    setUpperBound( variable, bound );
-}
-
-void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n */ )
-{
-    setDimensions();
 }
 
 //
