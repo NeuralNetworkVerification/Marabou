@@ -113,7 +113,6 @@ public:
     unsigned getN() const;
 
     /*
-      Check if an assignment exists for the variable.
     */
     bool existsValue( unsigned variable ) const;
 
@@ -158,17 +157,6 @@ public:
       Get BoundManager reference
      */
     IBoundManager &getBoundManager() const { return _boundManager; }
-
-    /*
-      Recomputes bound valid status for all variables.
-    */
-    void checkBoundsValid();
-
-    /*
-      Sets bound valid flag to false if bounds are invalid
-      on the given variable.
-    */
-    void checkBoundsValid( unsigned variable );
 
     /*
       Returns whether any variable's bounds are invalid.
@@ -562,11 +550,6 @@ private:
       The assignment of the non basic variables.
     */
     double *_nonBasicAssignment;
-
-    /*
-      Whether all variables have valid bounds (l <= u).
-    */
-    bool _boundsValid;
 
     /*
       The current assignment for the basic variables

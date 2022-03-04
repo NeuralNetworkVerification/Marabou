@@ -55,7 +55,6 @@ Tableau::Tableau( IBoundManager &boundManager )
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
     , _nonBasicAssignment( NULL )
-    , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
     , _basicAssignmentStatus( ITableau::BASIC_ASSIGNMENT_INVALID )
@@ -453,7 +452,6 @@ void Tableau::setLowerBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _boundManager.setLowerBound( variable, value );
     notifyLowerBound( variable, value );
-    checkBoundsValid( variable );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
@@ -461,7 +459,6 @@ void Tableau::setUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _boundManager.setUpperBound( variable, value );
     notifyUpperBound( variable, value );
-    checkBoundsValid( variable );
 }
 
 double Tableau::getLowerBound( unsigned variable ) const
@@ -1733,32 +1730,10 @@ void Tableau::restoreState( const TableauState &state,
     }
 }
 
-void Tableau::checkBoundsValid()
-{
-    _boundsValid = true;
-    for ( unsigned i = 0; i < _n ; ++i )
-    {
-        checkBoundsValid( i );
-        if ( !_boundsValid )
-            return;
-    }
-}
-
-void Tableau::checkBoundsValid( unsigned variable )
-{
-    ASSERT( variable < _n );
-    if ( !FloatUtils::lte( getLowerBound( variable ), getUpperBound( variable ) ) )
-    {
-        _boundsValid = false;
-        return;
-    }
-}
-
 bool Tableau::allBoundsValid() const
 {
-    return _boundsValid;
+    return _boundManager.consistentBounds();
 }
-
 
 void Tableau::updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value )
 {

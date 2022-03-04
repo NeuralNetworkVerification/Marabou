@@ -117,8 +117,9 @@ public:
     /*
       Get Context reference
      */
-    virtual CVC4::context::Context &getContext() =0;
+    virtual CVC4::context::Context &getContext() = 0;
 
+    virtual bool consistentBounds() const = 0;
 };
 
 #endif // __IEngine_h__
