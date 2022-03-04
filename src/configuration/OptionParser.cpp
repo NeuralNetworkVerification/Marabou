@@ -29,7 +29,7 @@ OptionParser::OptionParser( Map<unsigned, bool> *boolOptions,
                             Map<unsigned, std::string> *stringOptions )
     : _positional( "" )
     , _common( "Common options" )
-    , _other( "Less common options " )
+    , _other( "Less common options" )
     , _expert( "More advanced internal options" )
     , _boolOptions( boolOptions )
     , _intOptions( intOptions )
@@ -53,7 +53,7 @@ void OptionParser::initialize()
     _common.add_options()
         ( "help",
           boost::program_options::bool_switch( &(*_boolOptions)[Options::HELP] )->default_value( (*_boolOptions)[Options::HELP] ),
-          "Prints the help message")
+          "Prints the help message.")
         ( "version",
           boost::program_options::bool_switch( &(*_boolOptions)[Options::VERSION] )->default_value( (*_boolOptions)[Options::VERSION] ),
           "Prints the version number.")
@@ -81,13 +81,13 @@ void OptionParser::initialize()
           "out statistics in the beginning and end, 2: print out statistics during solving." )
         ( "snc",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) )->default_value( (*_boolOptions)[Options::DNC_MODE] ),
-          "Use the split-and-conquer solving mode" )
+          "Use the split-and-conquer solving mode." )
         ( "seed",
           boost::program_options::value<int>( &((*_intOptions)[Options::SEED]) )->default_value( (*_intOptions)[Options::SEED] ),
           "The random seed." )
         ( "dump-bounds",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) )->default_value( (*_boolOptions)[Options::DUMP_BOUNDS] ),
-          "Dump the bounds after preprocessing" )
+          "Dump the bounds after preprocessing." )
         ( "query-dump-file",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::QUERY_DUMP_FILE] )->default_value( (*_stringOptions)[Options::QUERY_DUMP_FILE] ),
           "Dump the verification query in Marabou's input query format." )
@@ -104,46 +104,47 @@ void OptionParser::initialize()
           "type of bound tightening technique to use: sbt/deeppoly/none." )
         ( "branch",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SPLITTING_STRATEGY]) )->default_value( (*_stringOptions)[Options::SPLITTING_STRATEGY] ),
-          "The branching strategy (earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity)." )
+          "The branching strategy (earliest-relu/pseudo-impact/largest-interval/relu-violation/polarity)."
+          " pseudo-impact is specific to the DeepSoI (default) procedure and relu-violation is specific to the Reluplex procedure.\n" )
         ( "soi-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::DEEP_SOI_REJECTION_THRESHOLD]) )->default_value( (*_intOptions)[Options::DEEP_SOI_REJECTION_THRESHOLD] ),
-          "(DeepSoI) Max number of rejected phase pattern proposal before splitting" )
+          "(DeepSoI) Max number of rejected phase pattern proposal before splitting." )
         ( "soi-search-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_SEARCH_STRATEGY]) )->default_value( (*_stringOptions)[Options::SOI_SEARCH_STRATEGY] ),
           "(DeepSoI) Strategy for stochastically minimizing the soi: mcmc/walksat." )
         ( "soi-init-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SOI_INITIALIZATION_STRATEGY]) )->default_value( (*_stringOptions)[Options::SOI_INITIALIZATION_STRATEGY] ),
-          "(DeepSoI) Strategy for initialize the soi function: input-assignment/current-assignment. default: input-assignment" )
+          "(DeepSoI) Strategy for initialize the soi function: input-assignment/current-assignment. default: input-assignment." )
         ( "mcmc-beta",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PROBABILITY_DENSITY_PARAMETER]) )->default_value( (*_floatOptions)[Options::PROBABILITY_DENSITY_PARAMETER] ),
-          "(DeepSoI) The beta parameter in MCMC search." )
+          "(DeepSoI) The beta parameter in MCMC search.\n" )
         ( "split-strategy",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SNC_SPLITTING_STRATEGY]) )->default_value( (*_stringOptions)[Options::SNC_SPLITTING_STRATEGY] ),
-          "(SnC) The splitting strategy" )
+          "(SnC) The splitting strategy." )
         ( "initial-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_INITIAL_DIVIDES]) )->default_value( (*_intOptions)[Options::NUM_INITIAL_DIVIDES] ),
-          "(SnC) Number of times to initially bisect the input region" )
+          "(SnC) Number of times to initially bisect the input region." )
         ( "initial-timeout",
           boost::program_options::value<int>( &((*_intOptions)[Options::INITIAL_TIMEOUT]) )->default_value( (*_intOptions)[Options::INITIAL_TIMEOUT] ),
-          "(SnC) The initial timeout" )
+          "(SnC) The initial timeout." )
         ( "num-online-divides",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_ONLINE_DIVIDES]) )->default_value( (*_intOptions)[Options::NUM_ONLINE_DIVIDES] ),
-          "(SnC) Number of times to further bisect a sub-region when a timeout occurs" )
+          "(SnC) Number of times to further bisect a sub-region when a timeout occurs." )
         ( "timeout-factor",
           boost::program_options::value<float>( &((*_floatOptions)[Options::TIMEOUT_FACTOR]) )->default_value( (*_floatOptions)[Options::TIMEOUT_FACTOR] ),
-          "(SnC) The timeout factor" )
+          "(SnC) The timeout factor." )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) )->default_value( (*_boolOptions)[Options::RESTORE_TREE_STATES] ),
-          "(SnC) Restore tree states in SnC mode" )
+          "(SnC) Restore tree states in SnC mode.\n" )
         ( "blas-threads",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUM_BLAS_THREADS]) )->default_value( (*_intOptions)[Options::NUM_BLAS_THREADS] ),
-          "Number of threads to use for matrix multiplication with OpenBLAS" )
+          "Number of threads to use for matrix multiplication with OpenBLAS." )
         ( "reluplex-split-threshold",
           boost::program_options::value<int>( &((*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD]) )->default_value( (*_intOptions)[Options::CONSTRAINT_VIOLATION_THRESHOLD] ),
-          "Max number of tries to repair a relu before splitting" )
+          "Max number of tries to repair a relu before splitting when the Reluplex procedure is used." )
         ( "preprocessor-bound-tolerance",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) )->default_value( (*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
-          "epsilon for preprocessor bound tightening comparisons" )
+          "epsilon for preprocessor bound tightening comparisons." )
         ( "no-parallel-deepsoi",
           boost::program_options::bool_switch( &(*_boolOptions)[Options::PARALLEL_DEEPSOI] )->default_value( (*_boolOptions)[Options::PARALLEL_DEEPSOI] ),
           "Do not use the parallel deep-soi solving mode when multiple threads are allowed." )
@@ -153,13 +154,13 @@ void OptionParser::initialize()
           "Solver for the LPs during the complete analysis: native/gurobi." )
         ( "num-simulations",
           boost::program_options::value<int>( &((*_intOptions)[Options::NUMBER_OF_SIMULATIONS]) )->default_value( (*_intOptions)[Options::NUMBER_OF_SIMULATIONS] ),
-          "Number of simulations generated per neuron" )
+          "Number of simulations generated per neuron." )
         ( "lp-tightening-after-split",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT]) )->default_value( (*_boolOptions)[Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT] ),
-          "Whether to skip a LP tightening after a case split" )
+          "Whether to skip a LP tightening after a case split." )
         ( "milp-timeout",
           boost::program_options::value<float>( &((*_floatOptions)[Options::MILP_SOLVER_TIMEOUT]) )->default_value( (*_floatOptions)[Options::MILP_SOLVER_TIMEOUT] ),
-          "Per-ReLU timeout for iterative propagation" )
+          "Per-ReLU timeout for iterative propagation." )
         ( "milp-tightening",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) )->default_value((*_stringOptions)[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ]) ,
           "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none." )
