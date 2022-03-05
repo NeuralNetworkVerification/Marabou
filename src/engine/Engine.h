@@ -150,7 +150,7 @@ public:
     /*
       Hook invoked after context pop to update context independent data.
     */
-    void postContextPopHook() { _tableau->postContextPopHook(); };
+    void postContextPopHook();
 
     /*
       Reset the state of the engine, before solving a new query

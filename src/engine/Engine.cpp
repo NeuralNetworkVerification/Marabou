@@ -2337,6 +2337,11 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTimeInMicro() / MICROSECONDS_TO_SECONDS > timeout;
 }
 
+void Engine::postContextPopHook()
+{
+    _tableau->postContextPopHook();
+}
+
 void Engine::reset()
 {
     resetStatistics();

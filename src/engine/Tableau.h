@@ -390,6 +390,7 @@ public:
       variable or status of a basic variable after a lower/upper bound is
       updated.
     */
+    void updateVariablesToComplyWithBounds();
     void updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value );
     void updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value );
 
@@ -454,7 +455,7 @@ public:
        data. After backtracking assignments satisfy bounds, but the
        basic/non-basic status may be out of date, so it is recomputed.
      */
-    void postContextPopHook() { computeBasicStatus(); };
+    void postContextPopHook();
 
 private:
     /*

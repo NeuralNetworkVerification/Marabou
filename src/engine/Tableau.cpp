@@ -1671,28 +1671,30 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
     }
 }
 
+void Tableau::updateVariablesToComplyWithBounds()
+{
+    if ( _lpSolverType == LPSolverType::NATIVE )
+    {
+        // The bounds might be invalid in the state from which we backtrack,
+        // This means we might need to fix the non-basic variable assignments
+        for ( unsigned i = 0; i < _n - _m; ++i )
+        {
+            unsigned variable = _nonBasicIndexToVariable[i];
+            updateVariableToComplyWithLowerBoundUpdate( variable,
+                                                        getLowerBound( variable ) );
+            updateVariableToComplyWithUpperBoundUpdate( variable,
+                                                        getUpperBound( variable ) );
+        }
+        computeBasicStatus();
+    }
+}
+
 void Tableau::restoreState( const TableauState &state,
                             TableauStateStorageLevel level )
 {
     if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
          _lpSolverType != LPSolverType::NATIVE )
-    {
-
-        if ( _lpSolverType == LPSolverType::NATIVE )
-        {
-            // The bounds might be invalid in the state from which we backtrack,
-            // This means we might need to fix the non-basic variable assignments
-            for ( unsigned i = 0; i < _n - _m; ++i )
-            {
-                unsigned variable = _nonBasicIndexToVariable[i];
-                updateVariableToComplyWithLowerBoundUpdate( variable,
-                                                            getLowerBound( variable ) );
-                updateVariableToComplyWithUpperBoundUpdate( variable,
-                                                            getUpperBound( variable ) );
-            }
-            computeBasicStatus();
-        }
-    }
+    {}
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();
@@ -2510,6 +2512,11 @@ unsigned Tableau::getVariableAfterMerging( unsigned variable ) const
         answer = _mergedVariables[answer];
 
     return answer;
+}
+
+void Tableau::postContextPopHook()
+{
+    updateVariablesToComplyWithBounds();
 }
 
 void Tableau::mergeColumns( unsigned x1, unsigned x2 )
