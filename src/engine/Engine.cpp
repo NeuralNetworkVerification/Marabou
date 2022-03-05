@@ -1345,11 +1345,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
             unsigned n = _preprocessedQuery.getNumberOfVariables();
             _boundManager.initialize( n );
-            for ( unsigned i = 0; i < n; ++i )
-            {
-                _boundManager.setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-                _boundManager.setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-            }
 
             initializeTableau( constraintMatrix, initialBasis );
 
