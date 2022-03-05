@@ -61,7 +61,6 @@ void SmtCore::reset()
 {
     freeMemory();
     _impliedValidSplitsAtRoot.clear();
-    _engine->postContextPopHook();
     _needToSplit = false;
     _constraintForSplitting = NULL;
     _stateId = 0;
@@ -263,7 +262,6 @@ bool SmtCore::popSplit()
         SmtStackEntry *stackEntry = _stack.back();
 
         _context.pop();
-        _engine->postContextPopHook();
         // Restore the state of the engine
         SMT_LOG( "\tRestoring engine state..." );
         _engine->restoreState( *( stackEntry->_engineState ) );

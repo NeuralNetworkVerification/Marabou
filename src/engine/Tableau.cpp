@@ -1687,7 +1687,23 @@ void Tableau::restoreState( const TableauState &state,
 {
     if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
          _lpSolverType != LPSolverType::NATIVE )
-    {}
+    {
+
+        if ( _lpSolverType == LPSolverType::NATIVE )
+        {
+            // The bounds might be invalid in the state from which we backtrack,
+            // This means we might need to fix the non-basic variable assignments
+            for ( unsigned i = 0; i < _n - _m; ++i )
+            {
+                unsigned variable = _nonBasicIndexToVariable[i];
+                updateVariableToComplyWithLowerBoundUpdate( variable,
+                                                            getLowerBound( variable ) );
+                updateVariableToComplyWithUpperBoundUpdate( variable,
+                                                            getUpperBound( variable ) );
+            }
+            computeBasicStatus();
+        }
+    }
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();

@@ -1343,13 +1343,13 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             delete[] constraintMatrix;
             constraintMatrix = createConstraintMatrix();
 
-            _boundManager.initialize( _preprocessedQuery.getNumberOfVariables() );
-            for ( unsigned i = 0; i < _preprocessedQuery.getNumberOfVariables(); ++i )
+            unsigned n = _preprocessedQuery.getNumberOfVariables();
+            _boundManager.initialize( n );
+            for ( unsigned i = 0; i < n; ++i )
             {
                 _boundManager.setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
                 _boundManager.setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
             }
-
 
             initializeTableau( constraintMatrix, initialBasis );
 
