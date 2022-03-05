@@ -725,17 +725,17 @@ private:
     bool minimizeCostWithGurobi( const LinearExpression &costFunction );
 
     /*
+      Get Context reference
+    */
+    Context &getContext() { return _context; }
+
+    bool consistentBounds() const;
+
+    /*
       DEBUG only
       Check that the variable bounds in Gurobi is up-to-date.
     */
     void checkGurobiBoundConsistency() const;
-
-    /*
-      Get Context reference
-     */
-    Context &getContext() { return _context; }
-
-    bool consistentBounds() const { return _boundManager.consistentBounds(); };
 };
 
 #endif // __Engine_h__

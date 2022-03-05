@@ -109,7 +109,7 @@ void BoundManager::recordInconsistentBounds( unsigned variable, double value, Ti
 bool BoundManager::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
-    if ( FloatUtils::gt( value , getLowerBound( variable ) ) )
+    if ( value > getLowerBound( variable ) )
     {
         *_lowerBounds[variable] = value;
         *_tightenedLower[variable] = true;
@@ -124,7 +124,7 @@ bool BoundManager::setLowerBound( unsigned variable, double value )
 bool BoundManager::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _size );
-    if ( FloatUtils::lt( value , getUpperBound( variable ) ) )
+    if ( value < getUpperBound( variable ) )
     {
         *_upperBounds[variable] = value;
         *_tightenedUpper[variable] = true;
@@ -163,6 +163,11 @@ void BoundManager::getTightenings( List<Tightening> &tightenings )
             *_tightenedUpper[i] = false;
         }
     }
+}
+
+bool BoundManager::consistentBounds() const
+{
+    return _consistentBounds;
 }
 
 bool BoundManager::consistentBounds( unsigned variable ) const

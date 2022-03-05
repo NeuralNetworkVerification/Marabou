@@ -96,10 +96,7 @@ public:
     /*
       Returns true if the bounds of all variables are valid. Returns false in a conflict state.
     */
-    bool consistentBounds() const
-    {
-        return _consistentBounds;
-    };
+    bool consistentBounds() const;
 
     /*
       Returns true if the bounds for the variable is valid, used to
