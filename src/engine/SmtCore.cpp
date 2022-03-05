@@ -229,10 +229,29 @@ bool SmtCore::popSplit()
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
     }
 
-    // Remove any entries that have no alternatives
-    String error;
-    while ( _stack.back()->_alternativeSplits.empty() )
+    bool inconsistent = true;
+    while ( inconsistent )
     {
+        // Remove any entries that have no alternatives
+        String error;
+        while ( _stack.back()->_alternativeSplits.empty() )
+        {
+            if ( checkSkewFromDebuggingSolution() )
+            {
+                // Pops should not occur from a compliant stack!
+                printf( "Error! Popping from a compliant stack\n" );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            }
+
+            delete _stack.back()->_engineState;
+            delete _stack.back();
+            _stack.popBack();
+            _context.pop();
+
+            if ( _stack.empty() )
+                return false;
+        }
+
         if ( checkSkewFromDebuggingSolution() )
         {
             // Pops should not occur from a compliant stack!
@@ -240,45 +259,33 @@ bool SmtCore::popSplit()
             throw MarabouError( MarabouError::DEBUGGING_ERROR );
         }
 
-        delete _stack.back()->_engineState;
-        delete _stack.back();
-        _stack.popBack();
+        SmtStackEntry *stackEntry = _stack.back();
+
         _context.pop();
+        _engine->postContextPopHook();
+        // Restore the state of the engine
+        SMT_LOG( "\tRestoring engine state..." );
+        _engine->restoreState( *( stackEntry->_engineState ) );
+        SMT_LOG( "\tRestoring engine state - DONE" );
 
-        if ( _stack.empty() )
-            return false;
+        // Apply the new split and erase it from the list
+        auto split = stackEntry->_alternativeSplits.begin();
+
+        // Erase any valid splits that were learned using the split we just
+        // popped
+        stackEntry->_impliedValidSplits.clear();
+
+        SMT_LOG( "\tApplying new split..." );
+        ASSERT( split->getEquations().size() == 0 );
+        _context.push();
+        _engine->applySplit( *split );
+        SMT_LOG( "\tApplying new split - DONE" );
+
+        stackEntry->_activeSplit = *split;
+        stackEntry->_alternativeSplits.erase( split );
+
+        inconsistent = !_engine->consistentBounds();
     }
-
-    if ( checkSkewFromDebuggingSolution() )
-    {
-        // Pops should not occur from a compliant stack!
-        printf( "Error! Popping from a compliant stack\n" );
-        throw MarabouError( MarabouError::DEBUGGING_ERROR );
-    }
-
-    SmtStackEntry *stackEntry = _stack.back();
-
-    _context.pop();
-    _engine->postContextPopHook();
-    // Restore the state of the engine
-    SMT_LOG( "\tRestoring engine state..." );
-    _engine->restoreState( *( stackEntry->_engineState ) );
-    SMT_LOG( "\tRestoring engine state - DONE" );
-
-    // Apply the new split and erase it from the list
-    auto split = stackEntry->_alternativeSplits.begin();
-
-    // Erase any valid splits that were learned using the split we just popped
-    stackEntry->_impliedValidSplits.clear();
-
-    SMT_LOG( "\tApplying new split..." );
-    ASSERT( split->getEquations().size() == 0 );
-    _context.push();
-    _engine->applySplit( *split );
-    SMT_LOG( "\tApplying new split - DONE" );
-
-    stackEntry->_activeSplit = *split;
-    stackEntry->_alternativeSplits.erase( split );
 
     if ( _statistics )
     {
