@@ -205,97 +205,100 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _m = m;
     _n = n;
 
-    _A = new CSRMatrix();
-    if ( !_A )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::A" );
-
-    _sparseColumnsOfA = new SparseUnsortedList *[n];
-    if ( !_sparseColumnsOfA )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
-
-    for ( unsigned i = 0; i < n; ++i )
+    if ( _lpSolverType == LPSolverType::NATIVE )
     {
-        _sparseColumnsOfA[i] = new SparseUnsortedList( _m );
-        if ( !_sparseColumnsOfA[i] )
-            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
-    }
+        _A = new CSRMatrix();
+        if ( !_A )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::A" );
 
-    _sparseRowsOfA = new SparseUnsortedList *[m];
-    if ( !_sparseRowsOfA )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
+        _sparseColumnsOfA = new SparseUnsortedList *[n];
+        if ( !_sparseColumnsOfA )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
 
-    for ( unsigned i = 0; i < m; ++i )
-    {
-        _sparseRowsOfA[i] = new SparseUnsortedList( _n );
-        if ( !_sparseRowsOfA[i] )
-            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
-    }
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _sparseColumnsOfA[i] = new SparseUnsortedList( _m );
+            if ( !_sparseColumnsOfA[i] )
+                throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
+        }
 
-    _denseA = new double[m*n];
-    if ( !_denseA )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::denseA" );
+        _sparseRowsOfA = new SparseUnsortedList *[m];
+        if ( !_sparseRowsOfA )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
 
-    _changeColumn = new double[m];
-    if ( !_changeColumn )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::changeColumn" );
+        for ( unsigned i = 0; i < m; ++i )
+        {
+            _sparseRowsOfA[i] = new SparseUnsortedList( _n );
+            if ( !_sparseRowsOfA[i] )
+                throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
+        }
 
-    _pivotRow = new TableauRow( n-m );
-    if ( !_pivotRow )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::pivotRow" );
+        _denseA = new double[m*n];
+        if ( !_denseA )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::denseA" );
 
-    _b = new double[m];
-    if ( !_b )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::b" );
+        _changeColumn = new double[m];
+        if ( !_changeColumn )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::changeColumn" );
 
-    _unitVector = new double[m];
-    if ( !_unitVector )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::unitVector" );
+        _pivotRow = new TableauRow( n-m );
+        if ( !_pivotRow )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::pivotRow" );
 
-    _multipliers = new double[m];
-    if ( !_multipliers )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::multipliers" );
+        _b = new double[m];
+        if ( !_b )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::b" );
 
-    _basicIndexToVariable = new unsigned[m];
-    if ( !_basicIndexToVariable )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
+        _unitVector = new double[m];
+        if ( !_unitVector )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::unitVector" );
 
-    _variableToIndex = new unsigned[n];
-    if ( !_variableToIndex )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
+        _multipliers = new double[m];
+        if ( !_multipliers )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::multipliers" );
 
-    _nonBasicIndexToVariable = new unsigned[n-m];
-    if ( !_nonBasicIndexToVariable )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
+        _basicIndexToVariable = new unsigned[m];
+        if ( !_basicIndexToVariable )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
 
-    _nonBasicAssignment = new double[n-m];
-    if ( !_nonBasicAssignment )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
+        _variableToIndex = new unsigned[n];
+        if ( !_variableToIndex )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
 
-    _basicAssignment = new double[m];
-    if ( !_basicAssignment )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::assignment" );
+        _nonBasicIndexToVariable = new unsigned[n-m];
+        if ( !_nonBasicIndexToVariable )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
 
-    _basicStatus = new unsigned[m];
-    if ( !_basicStatus )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicStatus" );
+        _nonBasicAssignment = new double[n-m];
+        if ( !_nonBasicAssignment )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
 
-    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
-    if ( !_basisFactorization )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
-    _basisFactorization->setStatistics( _statistics );
+        _basicAssignment = new double[m];
+        if ( !_basicAssignment )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::assignment" );
 
-    _workM = new double[m];
-    if ( !_workM )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
+        _basicStatus = new unsigned[m];
+        if ( !_basicStatus )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicStatus" );
 
-    _workN = new double[n];
-    if ( !_workN )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
+        _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
+        if ( !_basisFactorization )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+        _basisFactorization->setStatistics( _statistics );
 
-    if ( _statistics )
-    {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
+        _workM = new double[m];
+        if ( !_workM )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
+
+        _workN = new double[n];
+        if ( !_workN )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
+
+        if ( _statistics )
+        {
+            _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
+            _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
+        }
     }
 }
 

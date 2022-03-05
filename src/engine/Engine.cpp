@@ -1345,11 +1345,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
             unsigned n = _preprocessedQuery.getNumberOfVariables();
             _boundManager.initialize( n );
-            for ( unsigned i = 0; i < n; ++i )
-            {
-                _boundManager.setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-                _boundManager.setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-            }
 
             initializeTableau( constraintMatrix, initialBasis );
 
@@ -1371,14 +1366,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _tableau->setGurobi( &( *_gurobi ) );
 
             unsigned n = _preprocessedQuery.getNumberOfVariables();
+            unsigned m = _preprocessedQuery.getEquations().size();
             // Only use BoundManager to store the bounds.
             _boundManager.initialize( n );
-            for ( unsigned i = 0; i < n; ++i )
-            {
-                _boundManager.setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-                _boundManager.setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
-            }
-
+            _tableau->setDimensions( m, n );
             initializeBoundsAndConstraintWatchersInTableau( n );
 
             for ( const auto &constraint : _plConstraints )
