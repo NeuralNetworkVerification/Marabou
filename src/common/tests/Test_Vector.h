@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_Vector.h
+/*! \file Vector.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz
@@ -9,504 +9,288 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** \brief [[ Add one-line brief description here ]]
- **
  ** [[ Add lengthier description here ]]
+
  **/
 
-#include <cxxtest/TestSuite.h>
+#ifndef __Vector_h__
+#define __Vector_h__
 
-#include "MString.h"
-#include "MockErrno.h"
-#include "Vector.h"
+#include <algorithm>
+#include <cstdio>
 
-class VectorTestSuite : public CxxTest::TestSuite
+#include "CommonError.h"
+#include <vector>
+
+template<class T>
+class Vector
 {
+    typedef std::vector<T> Super;
 public:
-    MockErrno *mockErrno;
+    typedef typename Super::iterator iterator;
+    typedef typename Super::const_iterator const_iterator;
 
-    void setUp()
+    Vector<T>()
     {
-        TS_ASSERT( mockErrno = new MockErrno );
     }
 
-    void tearDown()
+    Vector<T>( const Vector<T> &rhs) = default;
+
+    Vector<T>( const std::initializer_list<T> &initializerList ) : _container( initializerList )
     {
-        TS_ASSERT_THROWS_NOTHING( delete mockErrno );
     }
 
-    void test_constructor_size()
+    Vector<T>( unsigned size ) : _container( size )
     {
-        unsigned size = 3;
-
-        Vector<double> vector( size );
-
-        TS_ASSERT_EQUALS( vector.size(), 3u );
     }
 
-    void test_constructor_value()
+    Vector<T>( unsigned size, T value ) : _container( size, value )
     {
-        unsigned size = 3;
-        double value = 10.0;
-
-        Vector<double> vector( size, value );
-
-        TS_ASSERT_EQUALS( vector.size(), 3u );
-        TS_ASSERT_EQUALS( vector[0], value );
-        TS_ASSERT_EQUALS( vector[1], value );
-        TS_ASSERT_EQUALS( vector[2], value );
     }
 
-    void test_brackets()
+    template<class InputIt>
+    Vector<T>( InputIt begin, InputIt end) : _container( begin, end )
     {
-        Vector<String> vector;
-
-        vector.append( "Apple" );
-        vector.append( "Red" );
-        vector.append( "Tasty" );
-
-        TS_ASSERT_EQUALS( vector[0], "Apple" );
-        TS_ASSERT_EQUALS( vector[1], "Red" );
-        TS_ASSERT_EQUALS( vector[2], "Tasty" );
     }
 
-    void test_size_and_exists()
+    virtual void assign ( unsigned size, T value )
     {
-        Vector<String> vector;
-
-        TS_ASSERT_EQUALS( vector.size(), 0u );
-        TS_ASSERT( vector.empty() );
-
-        vector.append( "Apple" );
-        TS_ASSERT_EQUALS( vector.size(), 1u );
-        TS_ASSERT( vector.exists( "Apple" ) );
-        TS_ASSERT( !vector.exists( "Red" ) );
-
-        TS_ASSERT( !vector.empty() );
-
-        vector.append( "Red" );
-        TS_ASSERT_EQUALS( vector.size(), 2u );
-        TS_ASSERT( vector.exists( "Apple" ) );
-        TS_ASSERT( vector.exists( "Red" ) );
-
-        vector.append( "Tasty" );
-        TS_ASSERT_EQUALS( vector.size(), 3u );
-        TS_ASSERT( vector.exists( "Apple" ) );
-        TS_ASSERT( vector.exists( "Red" ) );
-        TS_ASSERT( vector.exists( "Tasty" ) );
+        _container.assign( size, value );
     }
 
-    void test_erase()
+    virtual void append( T value )
     {
-        Vector<String> vector;
-
-        vector.append( "Apple" );
-        TS_ASSERT( vector.exists( "Apple" ) );
-        TS_ASSERT_THROWS_NOTHING( vector.erase( "Apple" ) );
-        TS_ASSERT( !vector.exists( "Apple" ) );
-        TS_ASSERT_EQUALS( vector.size(), 0U );
-
-        vector.append( "Red" );
-        vector.append( "Tasty" );
-        TS_ASSERT( !vector.exists( "Apple" ) );
-        TS_ASSERT( vector.exists( "Red" ) );
-        TS_ASSERT( vector.exists( "Tasty" ) );
-
-        TS_ASSERT_THROWS_NOTHING( vector.erase( "Tasty" ) );
-        TS_ASSERT( !vector.exists( "Apple" ) );
-        TS_ASSERT( vector.exists( "Red" ) );
-        TS_ASSERT( !vector.exists( "Tasty" ) );
-
-        TS_ASSERT_THROWS_EQUALS( vector.erase( "Bla" ),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VALUE_DOESNT_EXIST_IN_VECTOR );
-
-        Vector<String> anotherVector;
-        anotherVector.append( "1" );
-
-        String toDelete = anotherVector[0];
-
-        TS_ASSERT_THROWS_NOTHING( anotherVector.erase( toDelete ) );
-        TS_ASSERT_EQUALS( anotherVector.size(), 0u );
+        _container.push_back( value );
     }
 
-    void test_eraseByValue()
+    virtual void insertHead( T value )
     {
-        Vector<String> vector;
-
-        vector.append( "Apple" );
-        TS_ASSERT( vector.exists( "Apple" ) );
-        TS_ASSERT_THROWS_NOTHING( vector.eraseByValue( "Apple" ) );
-        TS_ASSERT( !vector.exists( "Apple" ) );
-        TS_ASSERT_EQUALS( vector.size(), 0U );
-
-        vector.append( "Red" );
-        vector.append( "Tasty" );
-        TS_ASSERT( !vector.exists( "Apple" ) );
-        TS_ASSERT( vector.exists( "Red" ) );
-        TS_ASSERT( vector.exists( "Tasty" ) );
-
-        TS_ASSERT_THROWS_NOTHING( vector.eraseByValue( "Tasty" ) );
-        TS_ASSERT( !vector.exists( "Apple" ) );
-        TS_ASSERT( vector.exists( "Red" ) );
-        TS_ASSERT( !vector.exists( "Tasty" ) );
-
-        TS_ASSERT_THROWS_EQUALS( vector.eraseByValue( "Bla" ),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VALUE_DOESNT_EXIST_IN_VECTOR );
-
-        Vector<String> anotherVector;
-        anotherVector.append( "1" );
-
-        String toDelete = anotherVector[0];
-
-        TS_ASSERT_THROWS_NOTHING( anotherVector.eraseByValue( toDelete ) );
-        TS_ASSERT_EQUALS( anotherVector.size(), 0u );
+        _container.insert( _container.begin(), value );
     }
 
-    void test_erase_at()
+    virtual ~Vector()
     {
-        Vector<int> vector;
-
-        vector.append( 2 );
-        vector.append( 4 );
-        vector.append( 6 );
-        vector.append( 8 );
-
-        vector.eraseAt( 0 );
-
-        TS_ASSERT_EQUALS( vector[0], 4 );
-        TS_ASSERT_EQUALS( vector[1], 6 );
-        TS_ASSERT_EQUALS( vector[2], 8 );
-
-        vector.eraseAt( 1 );
-
-        TS_ASSERT_EQUALS( vector[0], 4 );
-        TS_ASSERT_EQUALS( vector[1], 8 );
-
-        TS_ASSERT_THROWS_EQUALS( vector.eraseAt( 17 ),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VECTOR_OUT_OF_BOUNDS );
     }
 
-    void test_clear()
+    T *data()
     {
-        Vector<unsigned> vector;
-
-        vector.append( 5 );
-        vector.append( 10 );
-
-        TS_ASSERT_EQUALS( vector.size(), 2U );
-
-        TS_ASSERT_THROWS_NOTHING( vector.clear() );
-
-        TS_ASSERT_EQUALS( vector.size(), 0U );
-
-        TS_ASSERT( !vector.exists( 5 ) );
-        TS_ASSERT( !vector.exists( 10 ) );
-
-        vector.append( 10 );
-
-        TS_ASSERT_EQUALS( vector.size(), 1U );
-        TS_ASSERT( vector.exists( 10 ) );
+        return _container.data();
     }
 
-    void test_concatenation()
+    T get( int index ) const
     {
-        Vector<unsigned> one;
-        Vector<unsigned> two;
-        Vector<unsigned> output;
-
-        one.append( 1 );
-        one.append( 15 );
-
-        two.append( 27 );
-        two.append( 13 );
-
-        output = one + two;
-
-        TS_ASSERT_EQUALS( output.size(), 4U );
-
-        TS_ASSERT_EQUALS( output[0], 1U );
-        TS_ASSERT_EQUALS( output[1], 15U );
-        TS_ASSERT_EQUALS( output[2], 27U );
-        TS_ASSERT_EQUALS( output[3], 13U );
-
-        TS_ASSERT_EQUALS( one.size(), 2U );
-
-        one += two;
-
-        TS_ASSERT_EQUALS( one.size(), 4U );
-
-        TS_ASSERT_EQUALS( one[0], 1U );
-        TS_ASSERT_EQUALS( one[1], 15U );
-        TS_ASSERT_EQUALS( one[2], 27U );
-        TS_ASSERT_EQUALS( one[3], 13U );
+        return _container.at( index );
     }
 
-    void test_pop_first()
+    T &operator[]( int index )
     {
-        Vector<int> vector;
-
-        vector.append( 1 );
-        vector.append( 2 );
-        vector.append( 3 );
-
-        TS_ASSERT_EQUALS( vector.popFirst(), 1 );
-        TS_ASSERT_EQUALS( vector.size(), 2U );
-
-        TS_ASSERT_EQUALS( vector.popFirst(), 2 );
-        TS_ASSERT_EQUALS( vector.size(), 1U );
-
-        TS_ASSERT_EQUALS( vector.popFirst(), 3 );
-        TS_ASSERT_EQUALS( vector.size(), 0U );
-
-        TS_ASSERT_THROWS_EQUALS( vector.popFirst(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::POPPING_FROM_EMPTY_VECTOR );
+        return _container[index];
     }
 
-    void test_pop()
+    const T &operator[]( int index ) const
     {
-        Vector<int> vector;
-
-        vector.append( 1 );
-        vector.append( 2 );
-        vector.append( 3 );
-
-        TS_ASSERT_EQUALS( vector.pop(), 3 );
-        TS_ASSERT_EQUALS( vector.size(), 2U );
-
-        TS_ASSERT_EQUALS( vector.pop(), 2 );
-        TS_ASSERT_EQUALS( vector.size(), 1U );
-
-        TS_ASSERT_EQUALS( vector.pop(), 1 );
-        TS_ASSERT_EQUALS( vector.size(), 0U );
-
-        TS_ASSERT_THROWS_EQUALS( vector.pop(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::POPPING_FROM_EMPTY_VECTOR );
+        return _container[index];
     }
 
-    void test_first()
+    bool empty() const
     {
-        Vector<int> vector;
-
-        TS_ASSERT_THROWS_EQUALS( vector.first(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VECTOR_OUT_OF_BOUNDS );
-
-        vector.append( 1 );
-        TS_ASSERT_EQUALS( vector.first(), 1 );
-
-        vector.append( 2 );
-        TS_ASSERT_EQUALS( vector.first(), 1 );
-
-        vector.append( 3 );
-        TS_ASSERT_EQUALS( vector.first(), 1 );
-
-        vector.erase( 1 );
-        TS_ASSERT_EQUALS( vector.first(), 2 );
+        return size() == 0;
     }
 
-    void test_last()
+    unsigned size() const
     {
-        Vector<int> vector;
-
-        TS_ASSERT_THROWS_EQUALS( vector.last(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VECTOR_OUT_OF_BOUNDS );
-
-        vector.append( 1 );
-        TS_ASSERT_EQUALS( vector.last(), 1 );
-
-        vector.append( 2 );
-        TS_ASSERT_EQUALS( vector.last(), 2 );
-
-        vector.append( 3 );
-        TS_ASSERT_EQUALS( vector.last(), 3 );
+        return _container.size();
     }
 
-    void test_insert_head()
+    bool exists( const T &value ) const
     {
-        Vector<int> vector;
+        for ( unsigned i = 0; i < size(); ++i )
+        {
+            if ( get( i ) == value )
+                return true;
+        }
 
-        vector.append( 1 );
-        vector.append( 2 );
-
-        vector.insertHead( 3 );
-
-        TS_ASSERT_EQUALS( vector.size(), 3U );
-        TS_ASSERT_EQUALS( vector[0], 3 );
-        TS_ASSERT_EQUALS( vector[1], 1 );
-        TS_ASSERT_EQUALS( vector[2], 2 );
-
-        vector.insertHead( 4 );
-
-        TS_ASSERT_EQUALS( vector.size(), 4U );
-        TS_ASSERT_EQUALS( vector[0], 4 );
-        TS_ASSERT_EQUALS( vector[1], 3 );
-        TS_ASSERT_EQUALS( vector[2], 1 );
-        TS_ASSERT_EQUALS( vector[3], 2 );
+        return false;
     }
 
-    void test_equality()
+    void erase( const T &value )
     {
-        Vector<int> a;
-        Vector<int> b;
+        for ( iterator it = _container.begin(); it != _container.end(); ++it )
+        {
+            if ( (*it) == value )
+            {
+                _container.erase( it );
+                return;
+            }
+        }
 
-        TS_ASSERT( a == b );
-        TS_ASSERT( a == a );
-        TS_ASSERT( b == b );
-
-        b.append( 1 );
-
-        TS_ASSERT( a != b );
-
-        a.append( 1 );
-
-        TS_ASSERT( a == b );
-
-        a.append( 3 );
-        a.append( 2 );
-
-        b.append( 2 );
-
-        TS_ASSERT( a != b );
-
-        b.append( 3 );
-
-        TS_ASSERT( a == b );
+        throw CommonError( CommonError::VALUE_DOESNT_EXIST_IN_VECTOR );
     }
 
-    void test_equality_complex()
+    void eraseByValue( T value )
     {
-        Vector<int> a, b;
+        for ( iterator it = _container.begin(); it != _container.end(); ++it )
+        {
+            if ( (*it) == value )
+            {
+                _container.erase( it );
+                return;
+            }
+        }
 
-        a.append( 1 );
-        a.append( 2 );
-        a.append( 1 );
-
-        b.append( 1 );
-        b.append( 2 );
-        b.append( 2 );
-
-        TS_ASSERT( !( a == b ) );
+        throw CommonError( CommonError::VALUE_DOESNT_EXIST_IN_VECTOR );
     }
 
-    void test_sort()
+    iterator begin()
     {
-        Vector<int> a;
-
-        a.append( 2 );
-        a.append( 3 );
-        a.append( 1 );
-
-        TS_ASSERT_EQUALS( a[0], 2 );
-
-        TS_ASSERT_THROWS_NOTHING( a.sort() );
-
-        TS_ASSERT_EQUALS( a[0], 1 );
-        TS_ASSERT_EQUALS( a[1], 2 );
-        TS_ASSERT_EQUALS( a[2], 3 );
-
-        Vector<String> b;
-
-        b.append( "egg" );
-        b.append( "dog" );
-        b.append( "cat" );
-
-        TS_ASSERT_EQUALS( b[0], "egg" );
-
-        TS_ASSERT_THROWS_NOTHING( b.sort() );
-
-        TS_ASSERT_EQUALS( b[0], "cat" );
-        TS_ASSERT_EQUALS( b[1], "dog" );
-        TS_ASSERT_EQUALS( b[2], "egg" );
+        return _container.begin();
     }
 
-    void test_erase_by_iterator()
+    iterator end()
     {
-        Vector<int> a;
-
-        a.append( 1 );
-        a.append( 2 );
-        a.append( 3 );
-        a.append( 4 );
-
-        Vector<int>::iterator it = a.begin();
-
-        TS_ASSERT_EQUALS( *it, 1 );
-
-        TS_ASSERT_THROWS_NOTHING( a.erase( it ) );
-
-        TS_ASSERT_EQUALS( *it, 2 );
-
-        TS_ASSERT_EQUALS( a.size(), 3U );
-
-        ++it;
-
-        TS_ASSERT_EQUALS( *it, 3 );
-        TS_ASSERT_THROWS_NOTHING( a.erase( it ) );
-        TS_ASSERT_EQUALS( *it, 4 );
-
-        ++it;
-
-        TS_ASSERT_EQUALS( it, a.end() );
-
-        TS_ASSERT_EQUALS( a.size(), 2U );
+        return _container.end();
     }
 
-    void test_assignemnt()
+    const_iterator begin() const
     {
-        Vector<int> a,b;
-
-        a.append( 1 );
-        a.append( 2 );
-
-        TS_ASSERT_EQUALS( a.size(), 2U );
-        TS_ASSERT_EQUALS( b.size(), 0U );
-
-        b = a;
-
-        TS_ASSERT_EQUALS( a.size(), 2U );
-        TS_ASSERT_EQUALS( b.size(), 2U );
-
-        TS_ASSERT_EQUALS( b[0], 1 );
-        TS_ASSERT_EQUALS( b[1], 2 );
-
-        a.erase( 1 );
-        TS_ASSERT_EQUALS( b.size(), 2U );
+        return _container.begin();
     }
 
-    void test_get()
+    const_iterator end() const
     {
-        Vector<int> a;
-
-        a.append( 1 );
-        a.append( 2 );
-
-        TS_ASSERT_EQUALS( a.get( 0 ), a[0] );
-        TS_ASSERT_EQUALS( a.get( 1 ), a[1] );
-
-        a[0] = 13;
-
-        TS_ASSERT_EQUALS( a.get( 0 ), 13 );
-        TS_ASSERT_EQUALS( a.get( 0 ), a[0] );
+        return _container.cend();
     }
+
+    void erase( iterator &it )
+    {
+        _container.erase( it );
+    }
+
+    void eraseAt( unsigned index )
+    {
+        if ( index >= size() )
+            throw CommonError( CommonError::VECTOR_OUT_OF_BOUNDS );
+
+        iterator it = _container.begin();
+
+        while ( index > 0 )
+        {
+            ++it;
+            --index;
+        }
+
+        _container.erase( it );
+    }
+
+    void clear()
+    {
+        _container.clear();
+    }
+
+    Vector<T> operator+( const Vector<T> &other )
+    {
+        Vector<T> output;
+
+        for ( unsigned i = 0; i < this->size(); ++i )
+            output.append( ( *this )[i] );
+
+        for ( unsigned i = 0; i < other.size(); ++i )
+            output.append( other.get( i ) );
+
+        return output;
+    }
+
+    Vector<T> &operator+=( const Vector<T> &other )
+    {
+        (*this) = (*this) + other;
+        return *this;
+    }
+
+    T popFirst()
+    {
+        if ( size() == 0 )
+            throw CommonError( CommonError::POPPING_FROM_EMPTY_VECTOR );
+
+        T value = _container[0];
+        eraseAt( 0 );
+        return value;
+    }
+
+    T first() const
+    {
+        if ( empty() )
+            throw CommonError( CommonError::VECTOR_OUT_OF_BOUNDS );
+
+        return get( 0 );
+    }
+
+    T last() const
+    {
+        if ( empty() )
+            throw CommonError( CommonError::VECTOR_OUT_OF_BOUNDS );
+
+        return get( size() - 1 );
+    }
+
+    T pop()
+    {
+        if ( size() == 0 )
+            throw CommonError( CommonError::POPPING_FROM_EMPTY_VECTOR );
+
+        T value = last();
+        eraseAt( size() - 1 );
+        return value;
+    }
+
+    bool operator==( const Vector<T> &other ) const
+    {
+        if ( size() != other.size() )
+            return false;
+
+        Vector<T> copyOfOther = other;
+
+        for ( unsigned i = 0; i < size(); ++i )
+        {
+            if ( !copyOfOther.exists( get( i ) ) )
+                return false;
+
+            copyOfOther.erase( get( i ) );
+        }
+
+        return true;
+    }
+
+    bool operator!=( const Vector<T> &other ) const
+    {
+        return !( *this == other );
+    }
+
+    Vector &operator=( const Vector<T> &other )
+    {
+        _container = other._container;
+        return *this;
+    }
+
+    void sort()
+    {
+        std::sort( _container.begin(), _container.end() );
+    }
+
+    Super getContainer() const
+    {
+        return _container;
+    }
+
+protected:
+    Super _container;
 };
+
+#endif // __Vector_h__
 
 //
 // Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
 // c-basic-offset: 4
 // End:
 //
