@@ -76,7 +76,7 @@ public:
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( = 0 ( + ( * 1.000000 x0 ) ( * 1.000000 x1 ))))";
+        expectedLine = "( assert ( = 0 ( + ( * 1.000000 x0 ) ( * 1.000000 x1 ) ) ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
