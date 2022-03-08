@@ -73,7 +73,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
-    , _runPortfolio( Options::get()->getBool( Options::PARALLEL_DEEPSOI ) )
+    , _runPortfolio( !Options::get()->getBool( Options::NO_PARALLEL_DEEPSOI ) )
 {
     SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
     if ( sncSplittingStrategy == SnCDivideStrategy::Auto )

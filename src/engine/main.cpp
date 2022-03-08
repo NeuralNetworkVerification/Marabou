@@ -77,7 +77,7 @@ int main( int argc, char **argv )
         };
 
         if ( options->getBool( Options::DNC_MODE ) ||
-             ( options->getBool( Options::PARALLEL_DEEPSOI ) &&
+             ( !options->getBool( Options::NO_PARALLEL_DEEPSOI ) &&
                options->getInt( Options::NUM_WORKERS ) > 1 ) )
             DnCMarabou().run();
         else
