@@ -122,6 +122,7 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
+    std::cout << "relu called" << std::endl;
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 

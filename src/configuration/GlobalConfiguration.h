@@ -169,6 +169,9 @@ public:
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
 
+    // Build the tableau for explicit basis bound tightening
+    static const bool BUILD_TABLEAU_ANYWAY;
+
     /*
       Explicit (Reluplex-style) bound tightening options
     */

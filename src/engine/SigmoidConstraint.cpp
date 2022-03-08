@@ -89,6 +89,7 @@ void SigmoidConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
 {
+    std::cout << "sigmoid called" << std::endl;
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )

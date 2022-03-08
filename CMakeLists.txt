@@ -213,7 +213,7 @@ if (${ENABLE_GUROBI})
   if (APPLE)
     set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.dylib)
   else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.so)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.so)
   endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})

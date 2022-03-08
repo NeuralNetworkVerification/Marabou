@@ -89,6 +89,8 @@ const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration:
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
+const bool GlobalConfiguration::BUILD_TABLEAU_ANYWAY = true;
+
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
     GlobalConfiguration::SPARSE_FORREST_TOMLIN_FACTORIZATION;
