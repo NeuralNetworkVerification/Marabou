@@ -54,7 +54,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
     engine->setRandomSeed( seed );
-    engine->processInputQuery( *inputQuery, false );
+    if ( threadId != 0 )
+        engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
@@ -412,12 +413,15 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
+    _engines.append( _baseEngine );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 
+    _baseEngine->setVerbosity( 0 );
+
     // Create engines for each thread
-    for ( unsigned i = 0; i < numberOfEngines; ++i )
+    for ( unsigned i = 1; i < numberOfEngines; ++i )
     {
         auto engine = std::make_shared<Engine>();
         engine->setVerbosity( 0 );

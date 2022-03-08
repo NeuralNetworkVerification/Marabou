@@ -289,7 +289,7 @@ private:
     /*
       Preprocessed InputQuery
     */
-    InputQuery _preprocessedQuery;
+    std::unique_ptr<InputQuery> _preprocessedQuery;
 
     /*
       Pivot selection strategies.
