@@ -2694,6 +2694,13 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
+        if ( _tableau->basisMatrixAvailable() )
+        {
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+
         while ( applyAllValidConstraintCaseSplits() )
         {
             performSymbolicBoundTightening();
