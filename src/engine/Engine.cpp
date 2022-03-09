@@ -883,9 +883,8 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
     if ( _preprocessingEnabled )
-        _preprocessedQuery = std::move(_preprocessor.preprocess
-                                       ( inputQuery,
-                                         GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES ) );
+        _preprocessedQuery = _preprocessor.preprocess
+            ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
     else
         _preprocessedQuery = std::unique_ptr<InputQuery>
             ( new InputQuery( inputQuery ) );
