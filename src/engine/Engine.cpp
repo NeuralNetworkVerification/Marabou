@@ -235,11 +235,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                 if ( performPrecisionRestorationIfNeeded() )
                     continue;
-            }
 
-            if ( _lpSolverType == LPSolverType::NATIVE ||
-                 GlobalConfiguration::BUILD_TABLEAU_ANYWAY )
-            {
                 if ( _tableau->basisMatrixAvailable() )
                 {
                     explicitBasisBoundTightening();
@@ -1251,6 +1247,12 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
                                                              numberOfVariables )
 {
+    for ( unsigned i = 0; i < numberOfVariables; ++i )
+    {
+        _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
+        _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
+    }
+
     _tableau->registerToWatchAllVariables( _constraintBoundTightener );
     _tableau->registerResizeWatcher( _constraintBoundTightener );
 
@@ -1272,12 +1274,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
     {
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
-    }
-
-    for ( unsigned i = 0; i < numberOfVariables; ++i )
-    {
-        _tableau->setLowerBound( i, _preprocessedQuery.getLowerBound( i ) );
-        _tableau->setUpperBound( i, _preprocessedQuery.getUpperBound( i ) );
     }
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
@@ -1312,13 +1308,15 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             performMILPSolverBoundedTightening( &_preprocessedQuery );
         }
 
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
+
         if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
             for ( auto &plConstraint : _preprocessedQuery.getPiecewiseLinearConstraints() )
                 plConstraint->addAuxiliaryEquationsAfterPreprocessing
                     ( _preprocessedQuery );
 
-        if ( _lpSolverType == LPSolverType::NATIVE ||
-             GlobalConfiguration::BUILD_TABLEAU_ANYWAY )
+        if ( _lpSolverType == LPSolverType::NATIVE )
         {
             double *constraintMatrix = createConstraintMatrix();
             removeRedundantEquations( constraintMatrix );
@@ -1368,9 +1366,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 constraint->registerGurobi( &( *_gurobi ) );
             }
         }
-
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-            _networkLevelReasoner->dumpBounds();
 
         for ( const auto &constraint : _plConstraints )
         {
@@ -1936,10 +1931,8 @@ void Engine::applyAllBoundTightenings()
 {
     struct timespec start = TimeUtils::sampleMicro();
 
-    if ( _lpSolverType == LPSolverType::NATIVE ||
-         GlobalConfiguration::BUILD_TABLEAU_ANYWAY )
+    if ( _lpSolverType == LPSolverType::NATIVE )
         applyAllRowTightenings();
-
     applyAllConstraintTightenings();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -2701,14 +2694,6 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
-        if ( GlobalConfiguration::BUILD_TABLEAU_ANYWAY &&
-             _tableau->basisMatrixAvailable() )
-        {
-            explicitBasisBoundTightening();
-            applyAllBoundTightenings();
-            applyAllValidConstraintCaseSplits();
-        }
-
         while ( applyAllValidConstraintCaseSplits() )
         {
             performSymbolicBoundTightening();
