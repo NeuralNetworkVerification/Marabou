@@ -2694,7 +2694,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
-        if ( _tableau->basisMatrixAvailable() )
+        if ( _lpSolverType == NATIVE && _tableau->basisMatrixAvailable() )
         {
             explicitBasisBoundTightening();
             applyAllBoundTightenings();
