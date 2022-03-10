@@ -58,6 +58,8 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     else
         gurobi.setCost( terms );
 
+    gurobi.setTimeLimit( FloatUtils::infinity() );
+
     gurobi.solve();
 
     if ( gurobi.infeasible() )

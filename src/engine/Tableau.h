@@ -118,6 +118,11 @@ public:
     unsigned getN() const;
 
     /*
+      Check if an assignment exists for the variable.
+    */
+    bool existsValue( unsigned variable ) const;
+
+    /*
       Get the assignment of a variable, either basic or non-basic
     */
     double getValue( unsigned variable ) const;
@@ -354,8 +359,8 @@ public:
       - The current indexing
       - The current basis
     */
-    void storeState( TableauState &state ) const;
-    void restoreState( const TableauState &state );
+    void storeState( TableauState &state, TableauStateStorageLevel level ) const;
+    void restoreState( const TableauState &state, TableauStateStorageLevel level );
 
     /*
       Register or unregister to watch a variable.
@@ -378,7 +383,6 @@ public:
       Notify all watchers of the given variable of a value update,
       or of changes to its bounds.
     */
-    void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
 

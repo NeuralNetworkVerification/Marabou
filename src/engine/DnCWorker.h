@@ -27,10 +27,11 @@ class DnCWorker
 {
 public:
     DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
-               std::atomic_uint &numUnsolvedSubqueries,
+               std::atomic_int &numUnsolvedSubqueries,
                std::atomic_bool &shouldQuitSolving, unsigned threadId,
                unsigned onlineDivides, float timeoutFactor,
-               SnCDivideStrategy divideStrategy, unsigned verbosity );
+               SnCDivideStrategy divideStrategy, unsigned verbosity,
+               bool parallelDeepSoI );
 
     /*
       Pop one subQuery, solve it and handle the result
@@ -63,7 +64,7 @@ private:
     /*
       The number of unsolved subqueries
     */
-    std::atomic_uint *_numUnsolvedSubQueries;
+    std::atomic_int *_numUnsolvedSubQueries;
 
     /*
       A boolean denoting whether a solution has been found
@@ -81,6 +82,7 @@ private:
     unsigned _onlineDivides;
     float _timeoutFactor;
     unsigned _verbosity;
+    bool _parallelDeepSoI;
 };
 
 #endif // __DnCWorker_h__

@@ -78,11 +78,12 @@ private:
     */
     static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                           std::unique_ptr<InputQuery> inputQuery,
-                          std::atomic_uint &numUnsolvedSubQueries,
+                          std::atomic_int &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
                           unsigned threadId, unsigned onlineDivides,
                           float timeoutFactor, SnCDivideStrategy divideStrategy,
-                          bool restoreTreeStates, unsigned verbosity );
+                          bool restoreTreeStates, unsigned verbosity,
+                          unsigned seed, bool parallelDeepSoI );
 
     /*
       Create the base engine from the network and property files,
@@ -91,6 +92,7 @@ private:
     bool createEngines( unsigned numberOfEngines );
 
     /*
+      Invoked in SnC mode.
       Divide up the input region and store them in subqueries
     */
     void initialDivide( SubQueries &subQueries );
@@ -146,12 +148,17 @@ private:
     /*
       The number of currently unsolved sub queries
     */
-    std::atomic_uint _numUnsolvedSubQueries;
+    std::atomic_int _numUnsolvedSubQueries;
 
     /*
       The level of verbosity
     */
     unsigned _verbosity;
+
+    /*
+      True if running parallelDeepSoI mode and false if running SnC mode.
+    */
+    bool _runPortfolio;
 
     /*
       The strategy for dividing a query
