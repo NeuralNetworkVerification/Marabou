@@ -108,9 +108,7 @@ public:
     /*
       Methods for storing and restoring the state of the engine.
     */
-    void storeTableauState( TableauState &state ) const;
-    void restoreTableauState( const TableauState &state );
-    void storeState( EngineState &state, bool storeAlsoTableauState ) const;
+    void storeState( EngineState &state, TableauStateStorageLevel level ) const;
     void restoreState( const EngineState &state );
     void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints );
 
@@ -209,6 +207,20 @@ public:
        Register initial split when in SnC mode
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
+
+    /*
+      Apply all bound tightenings (row and matrix-based) in
+      the queue.
+    */
+    void applyAllBoundTightenings();
+
+    /*
+      Apply all valid case splits proposed by the constraints.
+      Return true if a valid case split has been applied.
+    */
+    bool applyAllValidConstraintCaseSplits();
+
+    void setRandomSeed( unsigned seed );
 
 private:
 
@@ -494,12 +506,6 @@ private:
     void reportPlViolation();
 
     /*
-      Apply all bound tightenings (row and matrix-based) in
-      the queue.
-    */
-    void applyAllBoundTightenings();
-
-    /*
       Apply any bound tightenings found by the row tightener.
     */
     void applyAllRowTightenings();
@@ -509,11 +515,6 @@ private:
     */
     void applyAllConstraintTightenings();
 
-    /*
-      Apply all valid case splits proposed by the constraints.
-      Return true if a valid case split has been applied.
-    */
-    bool applyAllValidConstraintCaseSplits();
     bool applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint );
 
     /*

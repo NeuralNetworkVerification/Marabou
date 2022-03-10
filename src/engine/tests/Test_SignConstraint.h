@@ -66,6 +66,8 @@ public:
         unsigned f = 4;
 
         SignConstraint sign( b, f );
+        MockTableau tableau;
+        sign.registerTableau( &tableau );
 
         List<unsigned> participatingVariables;
 
@@ -89,53 +91,53 @@ public:
                                  e.getCode(),
                                  MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-        sign.notifyVariableValue( b, -1 );
-        sign.notifyVariableValue( f, -1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, -1 );
 
         TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue( f, 1 );
+        tableau.setValue( f, 1 );
 
         TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue( b, 2 );
+        tableau.setValue( b, 2 );
 
         TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue( b, -2 );
+        tableau.setValue( b, -2 );
 
         TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue( f, 1 );
+        tableau.setValue( f, 1 );
 
         TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue( b, 0 );
+        tableau.setValue( b, 0 );
 
         TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue( b, 9 );
+        tableau.setValue( b, 9 );
 
         TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue( 4, -8 );
+        tableau.setValue( 4, -8 );
 
         // A sign constraint cannot be satisfied if f is not '1' or '-1'
         TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue( 4, 1.5 );
+        tableau.setValue( 4, 1.5 );
 
         // A sign cannot be satisfied if f is not '1' or '-1'
         TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue( f, -1 );
-        sign.notifyVariableValue( b, 11 );
+        tableau.setValue( f, -1 );
+        tableau.setValue( b, 11 );
 
         TS_ASSERT( !sign.satisfied() );
 
         // Changing variable indices
-        sign.notifyVariableValue( b, 1 );
-        sign.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 1 );
+        tableau.setValue( f, 1 );
         TS_ASSERT( sign.satisfied() );
 
         unsigned newB = 12;
@@ -143,14 +145,16 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( sign.updateVariableIndex( b, newB ) );
         TS_ASSERT_THROWS_NOTHING( sign.updateVariableIndex( f, newF ) );
+        tableau.setValue( newB, 1 );
+        tableau.setValue( newF, 1 );
 
         TS_ASSERT( sign.satisfied() );
 
-        sign.notifyVariableValue( newF, -1 );
+        tableau.setValue( newF, -1 );
 
         TS_ASSERT( !sign.satisfied() );
 
-        sign.notifyVariableValue( newB, -0.1 );
+        tableau.setValue( newB, -0.1 );
 
         TS_ASSERT( sign.satisfied() );
     }
@@ -161,12 +165,14 @@ public:
         unsigned f = 4;
 
         SignConstraint sign( b, f );
+        MockTableau tableau;
+        sign.registerTableau( &tableau );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
 
-        sign.notifyVariableValue( b, -1 );
-        sign.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
@@ -174,8 +180,8 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, -1 );
 
-        sign.notifyVariableValue( b, 0 );
-        sign.notifyVariableValue( f, -1 );
+        tableau.setValue( b, 0 );
+        tableau.setValue( f, -1 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
@@ -183,8 +189,8 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 1 );
 
-        sign.notifyVariableValue( b, 3 );
-        sign.notifyVariableValue( f, -1 );
+        tableau.setValue( b, 3 );
+        tableau.setValue( f, -1 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
@@ -192,8 +198,8 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, 1 );
 
-        sign.notifyVariableValue( b, -2 );
-        sign.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -2 );
+        tableau.setValue( f, 1 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
@@ -201,8 +207,8 @@ public:
         TS_ASSERT_EQUALS( it->_variable, f );
         TS_ASSERT_EQUALS( it->_value, -1 );
 
-        sign.notifyVariableValue( b, 11 );
-        sign.notifyVariableValue( f, 0 );
+        tableau.setValue( b, 11 );
+        tableau.setValue( f, 0 );
 
         fixes = sign.getPossibleFixes();
         it = fixes.begin();
@@ -623,11 +629,13 @@ public:
     void test_sign_duplicate_and_restore()
     {
         SignConstraint *sign1 = new SignConstraint( 4, 6 );
+        MockTableau tableau;
+        sign1->registerTableau( &tableau );
         MockConstraintBoundTightener tightener;
         sign1->registerConstraintBoundTightener( &tightener );
         sign1->setActiveConstraint( false );
-        sign1->notifyVariableValue( 4, 1.0 );
-        sign1->notifyVariableValue( 6, 1.0 );
+        tableau.setValue( 4, 1.0 );
+        tableau.setValue( 6, 1.0 );
 
         sign1->notifyLowerBound( 4, -8.0 );
         sign1->notifyUpperBound( 4, 8.0 );
@@ -637,20 +645,20 @@ public:
 
         PiecewiseLinearConstraint *sign2 = sign1->duplicateConstraint();
 
-        sign1->notifyVariableValue( 4, -2 );
+        tableau.setValue( 4, -2 );
         // f != sign(b)
         TS_ASSERT( !sign1->satisfied() );
 
-        sign1->notifyVariableValue( 6, -1 );
+        tableau.setValue( 6, -1 );
         // f = sign(b)
         TS_ASSERT( sign1->satisfied() );
 
-        sign1->notifyVariableValue( 6, 0.5 );
+        tableau.setValue( 6, 0.5 );
         // f != sign(b)
         TS_ASSERT( !sign1->satisfied() );
 
         TS_ASSERT( !sign2->isActive() );
-        TS_ASSERT( sign2->satisfied() );
+        TS_ASSERT( !sign2->satisfied() );
 
         sign2->restoreState( sign1 );
         TS_ASSERT( !sign2->satisfied() );
@@ -1357,12 +1365,15 @@ public:
 
         // The sign is fixed, do not add cost term.
         SignConstraint sign1 = SignConstraint( b, f );
+        MockTableau tableau;
+        sign1.registerTableau( &tableau );
+
         sign1.notifyLowerBound( b, 0.5 );
         sign1.notifyLowerBound( f, 1 );
         sign1.notifyUpperBound( b, 1 );
         sign1.notifyUpperBound( f, 1 );
-        sign1.notifyVariableValue( b, 1.5 );
-        sign1.notifyVariableValue( f, 2 );
+        tableau.setValue( b, 1.5 );
+        tableau.setValue( f, 2 );
 
         TS_ASSERT( sign1.phaseFixed() );
         LinearExpression cost1;
@@ -1373,13 +1384,14 @@ public:
 
         // The sign is not fixed and add active cost term
         SignConstraint sign2 = SignConstraint( b, f );
+        sign2.registerTableau( &tableau );
         LinearExpression cost2;
         sign2.notifyLowerBound( b, -1 );
         sign2.notifyLowerBound( f, -1 );
         sign2.notifyUpperBound( b, 2 );
         sign2.notifyUpperBound( f, 1 );
-        sign2.notifyVariableValue( b, -1 );
-        sign2.notifyVariableValue( f, 1 );
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
         TS_ASSERT( !sign2.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( sign2.getCostFunctionComponent( cost2, SIGN_PHASE_POSITIVE ) );
         TS_ASSERT_EQUALS( cost2._addends.size(), 1u );
@@ -1388,13 +1400,12 @@ public:
 
         // The sign is not fixed and add inactive cost term
         SignConstraint sign3 = SignConstraint( b, f );
+        sign3.registerTableau( &tableau );
         LinearExpression cost3;
         sign3.notifyLowerBound( b, -1 );
         sign3.notifyLowerBound( f, -1 );
         sign3.notifyUpperBound( b, 2 );
         sign3.notifyUpperBound( f, 1 );
-        sign3.notifyVariableValue( b, -1 );
-        sign3.notifyVariableValue( f, 1 );
         TS_ASSERT( !sign3.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( sign3.getCostFunctionComponent( cost3, SIGN_PHASE_NEGATIVE ) );
         TS_ASSERT_EQUALS( cost3._addends.size(), 1u );
@@ -1405,12 +1416,14 @@ public:
         unsigned b2 = 2;
         unsigned f2 = 3;
         SignConstraint sign4 = SignConstraint( b2, f2 );
+        sign4.registerTableau( &tableau );
         sign4.notifyLowerBound( b2, -1 );
         sign4.notifyLowerBound( f2, -1 );
         sign4.notifyUpperBound( b2, 5 );
         sign4.notifyUpperBound( f2, 1 );
-        sign4.notifyVariableValue( b2, -1 );
-        sign4.notifyVariableValue( f2, 1 );
+
+        tableau.setValue( b2, -1 );
+        tableau.setValue( f2, 1 );
 
         TS_ASSERT( !sign4.phaseFixed() );
         TS_ASSERT_THROWS_NOTHING( sign4.getCostFunctionComponent( cost3, SIGN_PHASE_POSITIVE ) );
@@ -1432,8 +1445,11 @@ public:
         unsigned f = 1;
 
         SignConstraint sign = SignConstraint( b, f );
-        sign.notifyVariableValue( b, 1.5 );
-        sign.notifyVariableValue( f, 1 );
+        MockTableau tableau;
+        sign.registerTableau( &tableau );
+
+        tableau.setValue( b, 1.5 );
+        tableau.setValue( f, 1 );
 
         Map<unsigned, double> assignment;
         assignment[0] = -1;

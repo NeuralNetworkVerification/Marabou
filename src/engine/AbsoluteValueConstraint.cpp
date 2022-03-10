@@ -118,14 +118,6 @@ void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
     }
 }
 
-void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    // This should never be called when we are using Gurobi to solve LPs.
-    ASSERT( _gurobi == NULL );
-
-    _assignment[variable] = value;
-}
-
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
@@ -308,11 +300,9 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes()
     ASSERT( _gurobi == NULL );
 
     ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _b ) );
-    ASSERT( _assignment.exists( _f ) );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
@@ -474,16 +464,9 @@ void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned n
     ASSERT( oldIndex == _b || oldIndex == _f ||
             ( _auxVarsInUse && ( oldIndex == _posAux || oldIndex == _negAux ) ) );
 
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !existsLowerBound( newIndex ) &&
+    ASSERT( !existsLowerBound( newIndex ) &&
             !existsUpperBound( newIndex ) &&
             newIndex != _b && newIndex != _f && ( !_auxVarsInUse || ( newIndex != _posAux && newIndex != _negAux ) ) );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( existsLowerBound( oldIndex ) )
     {
@@ -690,10 +673,10 @@ void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
     // The soundness of the SoI component assumes that the constraints f >= b and
     // f >= -b is added.
     ASSERT( FloatUtils::gte
-            ( _assignment.get( _f ), _assignment.get( _b ),
+            ( getAssignment( _f ), getAssignment( _b ),
               GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) &&
             FloatUtils::gte
-            ( _assignment.get( _f ), -_assignment.get( _b ),
+            ( getAssignment( _f ), -getAssignment( _b ),
               GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) );
 
     if ( phase == ABS_PHASE_NEGATIVE )
@@ -734,8 +717,8 @@ PhaseStatus AbsoluteValueConstraint::getPhaseStatusInAssignment
 
 bool AbsoluteValueConstraint::haveOutOfBoundVariables() const
 {
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     if ( FloatUtils::gt( getLowerBound( _b ), bValue ) ||
          FloatUtils::lt( getUpperBound( _b ), bValue ) )

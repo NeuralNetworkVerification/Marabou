@@ -39,12 +39,6 @@ public:
 class MockVariableWatcher : public ITableau::VariableWatcher
 {
 public:
-    Map<unsigned, double> lastNotifiedValues;
-    void notifyVariableValue( unsigned variable, double value )
-    {
-        lastNotifiedValues[variable] = value;
-    }
-
     Map<unsigned, double> lastNotifiedLowerBounds;
     void notifyLowerBound( unsigned variable, double bound )
     {
@@ -179,65 +173,6 @@ public:
         TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
         TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
-
-        TS_ASSERT_THROWS_NOTHING( delete tableau );
-    }
-
-    void test_watcher__value_changes()
-    {
-        Tableau *tableau = NULL;
-        Context context;
-        BoundManager boundManager( context );
-
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
-        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
-        initializeTableauValues( *tableau );
-
-        for ( unsigned i = 0; i < 4; ++i )
-        {
-            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
-            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
-        }
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
-
-        MockVariableWatcher watcher1;
-        MockVariableWatcher watcher2;
-
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher2, 5 ) );
-
-        List<unsigned> basics = { 4, 5, 6 };
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
-
-        // The basic values get computed, so the watchers should be called
-
-        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[4], 217.0 );
-        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[5], 113.0 );
-        TS_ASSERT_EQUALS( watcher2.lastNotifiedValues[5], 113.0 );
-
-        MockVariableWatcher watcher3;
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher3, 3 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 2, false ) );
-
-        TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 2.0 );
-
-        watcher3.lastNotifiedValues.clear();
-        TS_ASSERT_THROWS_NOTHING( tableau->unregisterToWatchVariable( &watcher3, 3 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 1, false ) );
-        //TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 1.0 );
-        TS_ASSERT( watcher3.lastNotifiedValues.empty() );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
@@ -1101,7 +1036,9 @@ public:
         TableauState *tableauState = NULL;
         TS_ASSERT( tableauState = new TableauState );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->storeState( *tableauState ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->storeState
+                                  ( *tableauState,
+                                    TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE ) );
 
         // Do some more stuff
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
@@ -1130,7 +1067,9 @@ public:
         TS_ASSERT( !tableau->isBasic( 5u ) );
 
         // Now restore the tableau
-        TS_ASSERT_THROWS_NOTHING( tableau->restoreState( *tableauState ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->restoreState
+                                  ( *tableauState,
+                                    TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE ) );
 
         // Do some more stuff again
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );

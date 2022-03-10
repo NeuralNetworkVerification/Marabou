@@ -323,6 +323,7 @@ void SumOfInfeasibilitiesManager::removeCostComponentFromHeuristicCost
     if ( _currentPhasePattern.exists( constraint ) )
     {
         _currentPhasePattern.erase( constraint );
+        _lastAcceptedPhasePattern.erase( constraint );
         ASSERT( _plConstraintsInCurrentPhasePattern.exists( constraint ) );
         _plConstraintsInCurrentPhasePattern.erase( constraint );
     }
