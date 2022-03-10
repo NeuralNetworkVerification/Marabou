@@ -1249,12 +1249,6 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
                                                              numberOfVariables )
 {
-    for ( unsigned i = 0; i < numberOfVariables; ++i )
-    {
-        _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
-        _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
-    }
-
     _tableau->registerToWatchAllVariables( _constraintBoundTightener );
     _tableau->registerResizeWatcher( _constraintBoundTightener );
 
@@ -1276,6 +1270,12 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
     {
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
+    }
+
+    for ( unsigned i = 0; i < numberOfVariables; ++i )
+    {
+        _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+        _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
     }
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
@@ -1309,9 +1309,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             performSimulation();
             performMILPSolverBoundedTightening( &(*_preprocessedQuery) );
         }
-
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-            _networkLevelReasoner->dumpBounds();
 
         if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
             for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
@@ -1373,6 +1370,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         {
             constraint->registerTableau( _tableau );
         }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
         {
@@ -2696,6 +2696,13 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 {
     try
     {
+        if ( _lpSolverType == LPSolverType::NATIVE && _tableau->basisMatrixAvailable() )
+        {
+            explicitBasisBoundTightening();
+            applyAllBoundTightenings();
+            applyAllValidConstraintCaseSplits();
+        }
+
         while ( applyAllValidConstraintCaseSplits() )
         {
             performSymbolicBoundTightening();
