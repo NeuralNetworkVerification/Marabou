@@ -83,7 +83,9 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits( L
     List<PLCaseSplitRawData> pastSplitsRaw;
     for ( auto const& split : allSplitsSoFar )
     {
-        pastSplitsRaw.append( *split.reluRawData() );
+        if (split.reluRawData()) {
+            pastSplitsRaw.append( *split.reluRawData() );
+        }
     }
 
     auto const getUnsatisfied =
