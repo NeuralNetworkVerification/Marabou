@@ -834,12 +834,6 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
 
-    // The soundness of the SoI component assumes that the constraints f >= b and
-    // f >= 0 is added.
-    ASSERT( FloatUtils::gte( getAssignment( _f ), getAssignment( _b ),
-                             GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
-            && FloatUtils::gte( getLowerBound( _f ), 0 ) );
-
     if ( phase == RELU_PHASE_INACTIVE )
     {
         // The cost term corresponding to the inactive phase is just f,
