@@ -77,6 +77,11 @@ public:
         return _container.data();
     }
 
+    const T *data() const
+    {
+        return _container.data();
+    }
+
     T get( int index ) const
     {
         return _container.at( index );
