@@ -617,22 +617,6 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
     if( !isActive() || phaseFixed() )
         return;
 
-    // This should not be called when the linear constraints have
-    // not been satisfied
-    ASSERT( !haveOutOfBoundVariables() );
-
-    // The soundness of the SoI component assumes that the constraints
-    // f >= element is added.
-    DEBUG({
-            for ( const auto &element : _elements )
-            {
-                ASSERT( FloatUtils::gte( getAssignment( _f ),
-                                         getAssignment( element ) ) );
-            }
-            ASSERT( FloatUtils::gte( getAssignment( _f ),
-                                     _maxValueOfEliminatedPhases ) );
-        });
-
     if ( phase == MAX_PHASE_ELIMINATED )
     {
         // The cost term corresponding to this phase is f - maxValueOfEliminated.
