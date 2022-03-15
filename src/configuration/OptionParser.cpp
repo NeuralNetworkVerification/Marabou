@@ -46,7 +46,7 @@ void OptionParser::initialize()
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DNC_MODE]) ),
           "Use the split-and-conquer solving mode: largest-interval/polarity/auto. default: auto" )
         ( "no-parallel-deepsoi",
-          boost::program_options::bool_switch( &((*_boolOptions)[Options::PARALLEL_DEEPSOI]) ),
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::NO_PARALLEL_DEEPSOI]) ),
           "Do not use the parallel deep-soi solving mode when multiple threads are allowed." )
         ( "restore-tree-states",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::RESTORE_TREE_STATES]) ),
