@@ -15,6 +15,7 @@ macro(proofs_add_unit_test name)
 endmacro()
 
 proofs_add_unit_test(BoundExplainer)
+proofs_add_unit_test(Checker)
 proofs_add_unit_test(SmtLibWriter)
 proofs_add_unit_test(UnsatCertificateNode)
 proofs_add_unit_test(UnsatCertificateUtils)
