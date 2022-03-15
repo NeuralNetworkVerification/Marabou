@@ -14,11 +14,14 @@
 
 #include "UnsatCertificateUtils.h"
 
-double UNSATCertificateUtils::computeBound( unsigned var, bool isUpper, const Vector<double> &explanation,
-                                            const Vector<Vector<double>> &initialTableau, const Vector<double> &groundUpperBounds, const Vector<double> &groundLowerBounds )
+double UNSATCertificateUtils::computeBound( unsigned var,
+                                            bool isUpper,
+                                            const double *explanation,
+                                            const Vector<Vector<double>> &initialTableau,
+                                            const Vector<double> &groundUpperBounds,
+                                            const Vector<double> &groundLowerBounds )
 {
     ASSERT( groundLowerBounds.size() == groundUpperBounds.size() );
-    ASSERT( initialTableau.size() == explanation.size() || explanation.empty() );
     ASSERT( groundLowerBounds.size() == initialTableau[0].size() );
     ASSERT( groundLowerBounds.size() == initialTableau[initialTableau.size() - 1 ].size() );
     ASSERT( var < groundUpperBounds.size() );
@@ -27,7 +30,7 @@ double UNSATCertificateUtils::computeBound( unsigned var, bool isUpper, const Ve
     double temp;
     unsigned n = groundUpperBounds.size();
 
-    if ( explanation.empty() )
+    if ( !explanation )
         return isUpper ? groundUpperBounds[var]  : groundLowerBounds[var];
 
     // Create linear combination of original rows implied from explanation
@@ -53,14 +56,14 @@ double UNSATCertificateUtils::computeBound( unsigned var, bool isUpper, const Ve
     return derivedBound;
 }
 
-void UNSATCertificateUtils::getExplanationRowCombination( unsigned var, Vector<double> &explanationRowCombination, const Vector<double> &explanation,
+void UNSATCertificateUtils::getExplanationRowCombination( unsigned var,
+                                                          Vector<double> &explanationRowCombination,
+                                                          const double *explanation,
                                                           const Vector<Vector<double>> &initialTableau )
 {
-    ASSERT(  explanation.size() == initialTableau.size() );
-
     explanationRowCombination = Vector<double>( initialTableau[0].size(), 0 );
     unsigned n = initialTableau[0].size();
-    unsigned m = explanation.size();
+    unsigned m = initialTableau.size();
     for ( unsigned i = 0; i < m; ++i )
     {
         for ( unsigned j = 0; j < n; ++j )
@@ -72,13 +75,11 @@ void UNSATCertificateUtils::getExplanationRowCombination( unsigned var, Vector<d
 
     for ( unsigned i = 0; i < n; ++i )
     {
-        if ( !FloatUtils::isZero( explanationRowCombination[i] ) )
-            explanationRowCombination[i] *= -1;
-        else
+        if ( FloatUtils::isZero( explanationRowCombination[i] ) )
             explanationRowCombination[i] = 0;
     }
 
-    // Since: 0 = Sum (ci * xi) + c * var = Sum (ci * xi) + (c - 1) * var + var
-    // We have: var = - Sum (ci * xi) - (c - 1) * var
+    // Since: 0 = Sum (ci * xi) + c * var = Sum (ci * xi) + (c + 1) * var - var
+    // We have: var = Sum (ci * xi) + (c + 1) * var
     ++explanationRowCombination[var];
 }
