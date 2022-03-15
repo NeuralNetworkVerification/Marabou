@@ -25,7 +25,7 @@
 class BoundExplainer
 {
 public:
-    BoundExplainer(unsigned numberOfVariables, unsigned numberOfRows );
+    BoundExplainer( unsigned numberOfVariables, unsigned numberOfRows );
 
     /*
       Returns the number of rows
@@ -70,7 +70,7 @@ public:
     /*
       Updates an explanation, without necessarily using the recursive rule
      */
-    void injectExplanation( const Vector<double> &explanation, unsigned var, bool isUpper );
+    void setExplanation( const Vector<double> &explanation, unsigned var, bool isUpper );
 
 private:
     unsigned _numberOfVariables;
@@ -87,7 +87,7 @@ private:
       Upon receiving a row, extract coefficients of the original tableau's equations that create the row
       Equivalently, extract the coefficients of the slack variables.
       Assumption - the slack variables indices are always the last m.
-      All coefficients are divided by -ci, the coefficient of the explained var, for normalization.
+      All coefficients are divided by ci, the coefficient of the explained var, for normalization.
     */
     void extractRowCoefficients( const TableauRow &row, Vector<double> &coefficients, double ci ) const;
 
@@ -95,7 +95,7 @@ private:
       Upon receiving a row given as a SparseUnsortedList, extract coefficients of the original tableau's equations that create the row
       Equivalently, extract the coefficients of the slack variables.
       Assumption - the slack variables indices are always the last m.
-      All coefficients are divided by -ci, the coefficient of the explained var, for normalization.
+      All coefficients are divided by ci, the coefficient of the explained var, for normalization.
     */
     void extractSparseRowCoefficients( const SparseUnsortedList &row, Vector<double> &coefficients, double ci ) const;
 };
