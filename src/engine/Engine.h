@@ -459,6 +459,11 @@ private:
      */
     String _queryId;
 
+    /*
+      Frequency to print the statistics.
+    */
+    unsigned _statisticsPrintingFrequency;
+
     LinearExpression _heuristicCost;
 
     /*
