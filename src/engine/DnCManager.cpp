@@ -73,7 +73,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
-    , _runPortfolio( !Options::get()->getBool( Options::NO_PARALLEL_DEEPSOI ) )
+    , _runParallelDeepSoI( !Options::get()->getBool( Options::NO_PARALLEL_DEEPSOI ) )
 {
     SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
     if ( sncSplittingStrategy == SnCDivideStrategy::Auto )
@@ -160,7 +160,7 @@ void DnCManager::solve()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "DnCManager::workload" );
 
     SubQueries subQueries;
-    if ( !_runPortfolio )
+    if ( !_runParallelDeepSoI )
         initialDivide( subQueries );
     else
     {
@@ -179,7 +179,7 @@ void DnCManager::solve()
     }
 
     // Create objects shared across workers
-    _numUnsolvedSubQueries = _runPortfolio ? 1 : subQueries.size();
+    _numUnsolvedSubQueries = _runParallelDeepSoI ? 1 : subQueries.size();
     std::atomic_bool shouldQuitSolving( false );
     WorkerQueue *workload = new WorkerQueue( 0 );
     for ( auto &subQuery : subQueries )
@@ -216,8 +216,8 @@ void DnCManager::solve()
                                         threadId, onlineDivides,
                                         timeoutFactor, _sncSplittingStrategy,
                                         restoreTreeStates, _verbosity,
-                                        _runPortfolio ? seed + threadId : seed,
-                                        _runPortfolio
+                                        _runParallelDeepSoI ? seed + threadId : seed,
+                                        _runParallelDeepSoI
                                         ) );
     }
 

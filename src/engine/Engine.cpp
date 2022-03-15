@@ -79,6 +79,11 @@ Engine::Engine()
     _activeEntryStrategy->setStatistics( &_statistics );
     _statistics.stampStartingTime();
     setRandomSeed( Options::get()->getInt( Options::SEED ) );
+
+    _statisticsPrintingFrequency =
+        ( _lpSolverType == LPSolverType::NATIVE ) ?
+        GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY :
+        GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI ;
 }
 
 Engine::~Engine()
@@ -226,7 +231,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             if ( _verbosity > 1 &&
                  _statistics.getLongAttribute
                  ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
-                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+                 _statisticsPrintingFrequency == 0 )
                 _statistics.print();
 
             if ( _lpSolverType == LPSolverType::NATIVE )
@@ -2726,6 +2731,8 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
                                 : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
     _gurobi->setTimeLimit( timeoutForGurobi );
+    if ( !_sncMode )
+        _gurobi->setNumberOfThreads( Options::get()->getInt( Options::NUM_WORKERS ) );
     _gurobi->setVerbosity( _verbosity > 1 );
     _gurobi->solve();
 
@@ -2947,7 +2954,7 @@ void Engine::minimizeHeuristicCost( const LinearExpression &heuristicCost )
             if ( _verbosity > 1 &&
                  _statistics.getLongAttribute
                  ( Statistics::NUM_MAIN_LOOP_ITERATIONS ) %
-                 GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY == 0 )
+                 _statisticsPrintingFrequency == 0 )
                 _statistics.print();
 
             if ( !allVarsWithinBounds() )
