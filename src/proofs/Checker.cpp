@@ -151,7 +151,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
         unsigned causingVar = plcExplanation->getCausingVar();
         unsigned affectedVar = plcExplanation->getAffectedVar();
         double bound = plcExplanation->getBound();
-        double *explanation = plcExplanation->getExplanation();
+        const double *explanation = plcExplanation->getExplanation();
         BoundType causingVarBound = plcExplanation->getCausingVarBound();
         BoundType affectedVarBound = plcExplanation->getAffectedVarBound();
         PiecewiseLinearFunctionType constraintType = plcExplanation->getConstraintType();
@@ -162,7 +162,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
         unsigned aux = 0;
 
         // Make sure propagation was made by a problem constraint
-        for ( auto &constraint : _problemConstraints )
+        for ( const auto &constraint : _problemConstraints )
         {
             constraintVars = constraint->getParticipatingVariables();
             if ( constraintType == PiecewiseLinearFunctionType::RELU && constraintVars.exists( affectedVar ) && constraintVars.exists( causingVar ) )
