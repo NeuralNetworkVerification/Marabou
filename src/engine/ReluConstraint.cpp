@@ -252,7 +252,7 @@ bool ReluConstraint::satisfied() const
         return false;
 
     if ( FloatUtils::isPositive( fValue ) )
-        return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE );
+        return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
     else
         return !FloatUtils::isPositive( bValue );
 }
@@ -869,12 +869,12 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     double bValue = getAssignment( _b );
     double fValue = getAssignment( _f );
 
-    if ( FloatUtils::gt( getLowerBound( _b ), bValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
-         || FloatUtils::lt( getUpperBound( _b ), bValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE )
+         || FloatUtils::lt( getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
-    if ( FloatUtils::gt( getLowerBound( _f ), fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
-         || FloatUtils::lt( getUpperBound( _f ), fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE )
+         || FloatUtils::lt( getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     return false;

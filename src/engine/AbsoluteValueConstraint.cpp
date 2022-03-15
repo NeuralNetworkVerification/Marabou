@@ -291,7 +291,7 @@ bool AbsoluteValueConstraint::satisfied() const
 
     return FloatUtils::areEqual( FloatUtils::abs( bValue ),
                                  fValue,
-                                 GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE );
+                                 GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes() const

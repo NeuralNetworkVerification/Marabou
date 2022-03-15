@@ -161,11 +161,8 @@ public:
     // PSE's Gamma function's update tolerance
     static const double PSE_GAMMA_UPDATE_TOLERANCE;
 
-    // The tolerance for checking whether f = Relu( b )
-    static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
-
-    // The tolerance for checking whether f = Abs( b )
-    static const double ABS_CONSTRAINT_COMPARISON_TOLERANCE;
+    // The tolerance for checking whether f = Constraint( b ), Constraint \in { ReLU, ABS, Sign}
+    static const double CONSTRAINT_COMPARISON_TOLERANCE;
 
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
