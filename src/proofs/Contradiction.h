@@ -15,21 +15,28 @@
 #ifndef __Contradiction_h__
 #define __Contradiction_h__
 
+#include "Vector.h"
+
 /*
   Contains all info relevant for a simple Marabou contradiction - i.e. explanations of contradicting bounds of a variable
 */
 class Contradiction
 {
 public:
-    Contradiction( unsigned var, double *upperBoundExplanation, double *lowerBoundExplanation );
+    Contradiction( unsigned var, const Vector<double> &upperBoundExplanation, const Vector<double> &lowerBoundExplanation );
     ~Contradiction();
+
+    /*
+      Getters for all fields
+     */
+    unsigned getVar() const;
+    const double *getUpperBoundExplanation() const;
+    const double *getLowerBoundExplanation() const;
 
 private:
     unsigned _var;
     double *_upperBoundExplanation;
     double *_lowerBoundExplanation;
-
-friend class UnsatCertificateNode;
 };
 
 #endif //__Contradiction_h__
