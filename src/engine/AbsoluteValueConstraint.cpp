@@ -664,20 +664,7 @@ void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
     if( !isActive() || phaseFixed() )
         return;
 
-    // This should not be called when the linear constraints have
-    // not been satisfied
-    ASSERT( !haveOutOfBoundVariables() );
-
     ASSERT( phase == ABS_PHASE_NEGATIVE || phase == ABS_PHASE_POSITIVE );
-
-    // The soundness of the SoI component assumes that the constraints f >= b and
-    // f >= -b is added.
-    ASSERT( FloatUtils::gte
-            ( getAssignment( _f ), getAssignment( _b ),
-              GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) &&
-            FloatUtils::gte
-            ( getAssignment( _f ), -getAssignment( _b ),
-              GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE ) );
 
     if ( phase == ABS_PHASE_NEGATIVE )
     {

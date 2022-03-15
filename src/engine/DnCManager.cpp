@@ -54,7 +54,8 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
     engine->setRandomSeed( seed );
-    engine->processInputQuery( *inputQuery, false );
+    if ( threadId != 0 )
+        engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
@@ -72,7 +73,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
-    , _runParallelDeepSoI( Options::get()->getBool( Options::PARALLEL_DEEPSOI ) )
+    , _runParallelDeepSoI( !Options::get()->getBool( Options::NO_PARALLEL_DEEPSOI ) )
 {
     SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
     if ( sncSplittingStrategy == SnCDivideStrategy::Auto )
@@ -195,16 +196,21 @@ void DnCManager::solve()
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
     unsigned seed = Options::get()->getInt( Options::SEED );
 
+    auto baseInputQuery = std::unique_ptr<InputQuery>
+        ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+
     // Spawn threads and start solving
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < numWorkers; ++threadId )
     {
-        // Get the processed input query from the base engine
-        auto inputQuery = std::unique_ptr<InputQuery>
-            ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+        std::unique_ptr<InputQuery> inputQuery = nullptr;
+        if ( threadId != 0 )
+            // Get the processed input query from the base engine
+            inputQuery = std::unique_ptr<InputQuery>
+                ( new InputQuery( *( baseInputQuery ) ) );
 
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
-                                        std::move( inputQuery ),
+                                        threadId != 0 ? std::move( inputQuery ) : nullptr,
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, onlineDivides,
@@ -412,12 +418,15 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
+    _engines.append( _baseEngine );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 
+    _baseEngine->setVerbosity( 0 );
+
     // Create engines for each thread
-    for ( unsigned i = 0; i < numberOfEngines; ++i )
+    for ( unsigned i = 1; i < numberOfEngines; ++i )
     {
         auto engine = std::make_shared<Engine>();
         engine->setVerbosity( 0 );

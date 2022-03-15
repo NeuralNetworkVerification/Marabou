@@ -146,7 +146,7 @@ void OptionParser::initialize()
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) )->default_value( (*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
           "epsilon for preprocessor bound tightening comparisons." )
         ( "no-parallel-deepsoi",
-          boost::program_options::bool_switch( &(*_boolOptions)[Options::PARALLEL_DEEPSOI] )->default_value( (*_boolOptions)[Options::PARALLEL_DEEPSOI] ),
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::NO_PARALLEL_DEEPSOI] )->default_value( (*_boolOptions)[Options::NO_PARALLEL_DEEPSOI] ),
           "Do not use the parallel deep-soi solving mode when multiple threads are allowed." )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
