@@ -234,7 +234,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
             return false;
 
         // If so, update the ground bounds and continue
-        Vector<double> &temp = affectedVarBound ? _groundUpperBounds : _groundLowerBounds;
+        Vector<double> &temp = affectedVarBound == UPPER ? _groundUpperBounds : _groundLowerBounds;
         bool isTighter = affectedVarBound ? FloatUtils::lt( bound, temp[affectedVar] ) : FloatUtils::gt( bound, temp[affectedVar] );
         if ( isTighter )
         {
