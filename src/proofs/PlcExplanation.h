@@ -16,11 +16,12 @@
 #define __PlcExplanation_h__
 
 #include "PiecewiseLinearConstraint.h"
+#include "Vector.h"
 
-enum BoundType : bool
+enum BoundType : unsigned
 {
-    UPPER = true,
-    LOWER = false,
+    UPPER = 1,
+    LOWER = 0,
 };
 
 /*
@@ -29,10 +30,29 @@ enum BoundType : bool
 class PLCExplanation
 {
 public:
-    PLCExplanation( unsigned causingVar, unsigned affectedVar, double bound, BoundType causingVarBound, BoundType affectedVarBound, double *explanation, PiecewiseLinearFunctionType constraintType, unsigned decisionLevel );
+    PLCExplanation( unsigned causingVar,
+                    unsigned affectedVar,
+                    double bound,
+                    BoundType causingVarBound,
+                    BoundType affectedVarBound,
+                    const Vector<double> &explanation,
+                    PiecewiseLinearFunctionType constraintType,
+                    unsigned decisionLevel );
+
     ~PLCExplanation();
 
-    unsigned getDecisionLevel();
+
+    /*
+     Getters for all fields
+    */
+    unsigned getCausingVar() const;
+    unsigned getAffectedVar() const;
+    double getBound() const;
+    BoundType getCausingVarBound() const;
+    BoundType getAffectedVarBound() const;
+    const double *getExplanation() const;
+    PiecewiseLinearFunctionType getConstraintType() const;
+    unsigned getDecisionLevel() const;
 
 private:
     unsigned _causingVar;
@@ -43,8 +63,6 @@ private:
     double *_explanation;
     PiecewiseLinearFunctionType _constraintType;
     unsigned _decisionLevel;
-
-friend class UnsatCertificateNode;
 };
 
 #endif //__PlcExplanation_h__
