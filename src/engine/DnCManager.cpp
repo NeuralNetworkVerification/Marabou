@@ -196,16 +196,21 @@ void DnCManager::solve()
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
     unsigned seed = Options::get()->getInt( Options::SEED );
 
+    auto baseInputQuery = std::unique_ptr<InputQuery>
+        ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+
     // Spawn threads and start solving
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < numWorkers; ++threadId )
     {
-        // Get the processed input query from the base engine
-        auto inputQuery = std::unique_ptr<InputQuery>
-            ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+        std::unique_ptr<InputQuery> inputQuery = nullptr;
+        if ( threadId != 0 )
+            // Get the processed input query from the base engine
+            inputQuery = std::unique_ptr<InputQuery>
+                ( new InputQuery( *( baseInputQuery ) ) );
 
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
-                                        std::move( inputQuery ),
+                                        threadId != 0 ? std::move( inputQuery ) : nullptr,
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, onlineDivides,
