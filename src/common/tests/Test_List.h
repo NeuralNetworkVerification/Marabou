@@ -299,7 +299,6 @@ public:
         a.append( 1 );
         a.append( -2 );
 
-
         a.removeIf( [] ( int number ) { return number < 0; } );
 
         auto it = a.begin();
