@@ -17,7 +17,6 @@
 
 #include "BoundExplainer.h"
 #include "Contradiction.h"
-#include "UnsatCertificateProblemConstraint.h"
 #include "SmtLibWriter.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "PlcExplanation.h"
@@ -37,22 +36,8 @@ enum DelegationStatus : unsigned
 class UnsatCertificateNode
 {
 public:
-    /*
-      Constructor for the root
-    */
-    UnsatCertificateNode( Vector<Vector<double>> *_initialTableau, Vector<double> &groundUpperBounds, Vector<double> &groundLowerBounds );
-
-    /*
-      Constructor for a regular node
-    */
     UnsatCertificateNode( UnsatCertificateNode *parent, PiecewiseLinearCaseSplit split );
-
     ~UnsatCertificateNode();
-
-    /*
-      Certifies the tree is indeed a correct proof of unsatisfiability;
-    */
-    bool certify();
 
     /*
       Sets the leaf contradiction certificate as input
@@ -62,10 +47,10 @@ public:
     /*
       Returns the leaf contradiction certificate of the node
     */
-    Contradiction *getContradiction() const;
+    const Contradiction *getContradiction() const;
 
     /*
-     Returns the parent of a node
+      Returns the parent of a node
     */
     UnsatCertificateNode *getParent() const;
 
@@ -75,12 +60,17 @@ public:
     const PiecewiseLinearCaseSplit &getSplit() const;
 
     /*
-     Returns the list of PLC explanations of the node
+      Returns the head split of a node
+    */
+    const List<UnsatCertificateNode*> &getChildren() const;
+
+    /*
+      Returns the list of PLC explanations of the node
     */
     const List<std::shared_ptr<PLCExplanation>> &getPLCExplanations() const;
 
     /*
-     Sets  the list of PLC explanations of the node
+      Sets  the list of PLC explanations of the node
     */
     void setPLCExplanations( const List<std::shared_ptr<PLCExplanation>> &explanations );
 
@@ -90,19 +80,24 @@ public:
     void addPLCExplanation( std::shared_ptr<PLCExplanation> &explanation );
 
     /*
-     Adds an a problem constraint to the list
-    */
-    void addProblemConstraint( PiecewiseLinearFunctionType type, List<unsigned> constraintVars, PhaseStatus status );
-
-    /*
       Returns a pointer to a child by a head split, or NULL if not found
     */
     UnsatCertificateNode *getChildBySplit( const PiecewiseLinearCaseSplit &split ) const;
 
     /*
+     Gets value of _hasSATSolution
+    */
+    bool getSATSolutionFlag() const;
+
+    /*
       Sets value of _hasSATSolution to be true
     */
-    void setSATSolution();
+    void setSATSolutionFlag();
+
+    /*
+      Sets value of _wasVisited to be true
+    */
+    bool getVisited() const;
 
     /*
       Sets value of _wasVisited to be true
@@ -110,10 +105,14 @@ public:
     void setVisited();
 
     /*
-      Sets value of _shouldDelegate to be true
-      Saves delegation to file iff saveToFile is true
+      Gets delegation status of a node
     */
-    void shouldDelegate( unsigned delegationNumber, DelegationStatus saveToFile );
+    DelegationStatus getDelegationStatus() const;
+
+    /*
+      Sets delegation status of a node
+    */
+    void setDelegationStatus( DelegationStatus saveToFile );
 
     /*
      Removes all PLC explanations
@@ -130,9 +129,18 @@ public:
     */
     void removePLCExplanationsBelowDecisionLevel( unsigned decisionLevel );
 
+    /*
+     Checks if the node is a valid leaf
+    */
+    bool isValidLeaf() const;
+
+    /*
+      Checks if the node is a valid none-leaf
+    */
+    bool isValidNonLeaf() const;
+
 private:
     List<UnsatCertificateNode*> _children;
-    List<UnsatCertificateProblemConstraint> _problemConstraints;
     UnsatCertificateNode *_parent;
     List<std::shared_ptr<PLCExplanation>> _PLCExplanations;
     Contradiction *_contradiction;
@@ -143,62 +151,6 @@ private:
     bool _wasVisited;
 
     DelegationStatus _delegationStatus;
-    unsigned _delegationNumber;
-
-    Vector<Vector<double>> *_initialTableau;
-    Vector<double> _groundUpperBounds;
-    Vector<double> _groundLowerBounds;
-
-    /*
-      Copies initial tableau and ground bounds
-    */
-    void copyGroundBounds( Vector<double> &groundUpperBounds, Vector<double> &groundLowerBounds );
-
-    /*
-      Inherits the initialTableau pointer, the ground bounds and the problem constraint from parent, if exists.
-      Fixes the phase of the constraint that corresponds to the head split
-    */
-    void passChangesToChildren( UnsatCertificateProblemConstraint *childrenSplitConstraint );
-
-    /*
-      Checks if the node is a valid leaf
-    */
-    bool isValidLeaf() const;
-
-    /*
-      Checks if the node is a valid none-leaf
-    */
-    bool isValidNonLeaf() const;
-
-    /*
-      Write a leaf marked to delegate to a smtlib file format
-    */
-    void writeLeafToFile();
-
-    /*
-      Return true iff a list of splits represents a splits over a single variable
-    */
-    bool certifySingleVarSplits( const List<PiecewiseLinearCaseSplit> &splits ) const;
-
-    /*
-      Return true iff the changes in the ground bounds are certified, with tolerance to errors with at most size epsilon
-    */
-    bool certifyAllPLCExplanations( double epsilon );
-
-    /*
-      Return a pointer to the problem constraint representing the split
-    */
-    UnsatCertificateProblemConstraint *getCorrespondingReLUConstraint( const List<PiecewiseLinearCaseSplit> &splits );
-
-    /*
-      Certifies a contradiction
-    */
-    bool certifyContradiction();
-
-    /*
-      Computes a bound according to an explanation
-    */
-    double explainBound( unsigned var, bool isUpper, Vector<double> &explanation );
 };
 
 #endif //__UnsatCertificateNode_h__
