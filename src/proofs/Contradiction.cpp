@@ -12,14 +12,26 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cstddef>
 #include "Contradiction.h"
 
-Contradiction::Contradiction( unsigned var, double *upperBoundExplanation, double *lowerBoundExplanation )
-        :_var( var )
-        ,_upperBoundExplanation( upperBoundExplanation )
-        ,_lowerBoundExplanation( lowerBoundExplanation )
+Contradiction::Contradiction( unsigned var, const Vector<double> &upperBoundExplanation, const Vector<double> &lowerBoundExplanation )
+    : _var( var )
 {
+    if ( upperBoundExplanation.empty() )
+        _upperBoundExplanation = NULL;
+    else
+    {
+        _upperBoundExplanation = new double[upperBoundExplanation.size()];
+        std::copy( upperBoundExplanation.begin(), upperBoundExplanation.end(), _upperBoundExplanation );
+    }
+
+    if ( lowerBoundExplanation.empty() )
+        _lowerBoundExplanation = NULL;
+    else
+    {
+        _lowerBoundExplanation = new double[lowerBoundExplanation.size()];
+        std::copy( lowerBoundExplanation.begin(), lowerBoundExplanation.end(), _lowerBoundExplanation );
+    }
 }
 
 Contradiction::~Contradiction()
@@ -35,4 +47,19 @@ Contradiction::~Contradiction()
         delete [] _lowerBoundExplanation;
         _lowerBoundExplanation = NULL;
     }
+}
+
+unsigned Contradiction::getVar() const
+{
+    return _var;
+}
+
+const double *Contradiction::getUpperBoundExplanation() const
+{
+    return _upperBoundExplanation;
+}
+
+const double *Contradiction::getLowerBoundExplanation() const
+{
+    return _lowerBoundExplanation;
 }
