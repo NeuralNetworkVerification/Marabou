@@ -125,7 +125,7 @@ private:
     /*
        Record first tightening that violates bounds
      */
-    void recordInconsistentBounds( unsigned variable, double value, Tightening::BoundType type );
+    void recordInconsistentBound( unsigned variable, double value, Tightening::BoundType type );
 
 };
 

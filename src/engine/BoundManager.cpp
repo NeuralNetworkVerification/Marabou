@@ -30,7 +30,7 @@ BoundManager::BoundManager( Context &context )
     , _consistentBounds( &_context )
     , _firstInconsistentTightening( 0, 0.0, Tightening::LB )
 {
-  _consistentBounds = true;
+    _consistentBounds = true;
 };
 
 BoundManager::~BoundManager()
@@ -97,7 +97,7 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value )
     return tightened;
 }
 
-void BoundManager::recordInconsistentBounds( unsigned variable, double value, Tightening::BoundType type )
+void BoundManager::recordInconsistentBound( unsigned variable, double value, Tightening::BoundType type )
 {
   if ( _consistentBounds )
   {
@@ -114,7 +114,7 @@ bool BoundManager::setLowerBound( unsigned variable, double value )
         *_lowerBounds[variable] = value;
         *_tightenedLower[variable] = true;
         if ( !consistentBounds( variable ) )
-            recordInconsistentBounds( variable, value, Tightening::LB );
+            recordInconsistentBound( variable, value, Tightening::LB );
         return true;
     }
     return false;
@@ -129,7 +129,7 @@ bool BoundManager::setUpperBound( unsigned variable, double value )
         *_upperBounds[variable] = value;
         *_tightenedUpper[variable] = true;
         if ( !consistentBounds( variable ) )
-          recordInconsistentBounds( variable, value, Tightening::UB );
+          recordInconsistentBound( variable, value, Tightening::UB );
         return true;
     }
     return false;

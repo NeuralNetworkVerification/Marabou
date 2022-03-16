@@ -729,6 +729,9 @@ private:
     */
     Context &getContext() { return _context; }
 
+    /*
+       Checks whether the current bounds are consistent. Exposed for the SmtCore.
+     */
     bool consistentBounds() const;
 
     /*
