@@ -1343,7 +1343,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             delete[] constraintMatrix;
             constraintMatrix = createConstraintMatrix();
 
-            unsigned n = _preprocessedQuery.getNumberOfVariables();
+            unsigned n = _preprocessedQuery->getNumberOfVariables();
             _boundManager.initialize( n );
 
             initializeTableau( constraintMatrix, initialBasis );
@@ -1365,8 +1365,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _milpEncoder->setStatistics( &_statistics );
             _tableau->setGurobi( &( *_gurobi ) );
 
-            unsigned n = _preprocessedQuery.getNumberOfVariables();
-            unsigned m = _preprocessedQuery.getEquations().size();
+            unsigned n = _preprocessedQuery->getNumberOfVariables();
+            unsigned m = _preprocessedQuery->getEquations().size();
             // Only use BoundManager to store the bounds.
             _boundManager.initialize( n );
             _tableau->setDimensions( m, n );
