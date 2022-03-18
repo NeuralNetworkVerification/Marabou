@@ -365,7 +365,7 @@ std::tuple<IEngine::ExitCode, std::map<int, double>, Statistics> solve(InputQuer
         }
 
         if ( doResidualReasoning && gammaUnsatOutputFile.length() > 0 ) {
-            residualReasoner->gammaUnsat().saveToFile( gammaUnsatOutputFile );
+            residualReasoner->outputGammaUnsat().saveToFile( gammaUnsatOutputFile );
         }
     }
     catch(const MarabouError &e){
