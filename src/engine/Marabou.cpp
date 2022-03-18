@@ -304,6 +304,8 @@ void Marabou::run()
     struct timespec start = TimeUtils::sampleMicro();
 
     // handle residual reasoning
+    // std::string gammaUnsatInputFile = "/tmp/experiment244/gamma_unsat_input";
+    // std::string gammaUnsatOutputFile = "/tmp/experiment244/gamma_unsat_output";
     auto gammaUnsatInputFile = Options::get()->getString( Options::GAMMA_UNSAT_INPUT_FILE );
     auto gammaUnsatOutputFile = Options::get()->getString( Options::GAMMA_UNSAT_OUTPUT_FILE );
     bool const doResidualReasoning = gammaUnsatInputFile.length() > 0;
@@ -327,7 +329,7 @@ void Marabou::run()
     struct timespec end = TimeUtils::sampleMicro();
 
     if ( doResidualReasoning && gammaUnsatOutputFile.length() > 0 ) {
-        residualReasoner->gammaUnsat().saveToFile( gammaUnsatOutputFile );
+        residualReasoner->outputGammaUnsat().saveToFile( gammaUnsatOutputFile );
     }
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
@@ -337,6 +339,7 @@ void Marabou::run()
 void Marabou::prepareInputQuery()
 {
     String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
+    // String inputQueryFilePath = "/tmp/experiment244/query";
     if ( inputQueryFilePath.length() > 0 )
     {
         /*

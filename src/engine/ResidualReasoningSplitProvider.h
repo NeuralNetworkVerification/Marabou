@@ -14,11 +14,13 @@ public:
 
     List<PiecewiseLinearCaseSplit> getImpliedSplits( List<PiecewiseLinearCaseSplit> allSplitsSoFar ) const;
 
-    GammaUnsat gammaUnsat() const;
+    GammaUnsat inputGammaUnsat() const;
+    GammaUnsat outputGammaUnsat() const;
     void onUnsatReceived( List<PiecewiseLinearCaseSplit> const& allSplitsSoFar );
 
 private:
-    GammaUnsat _gammaUnsat;
+    GammaUnsat _inputGammaUnsat;
+    GammaUnsat _outputGammaUnsat;
     // derive what are the required splits, after a given split was performed
     List<PLCaseSplitRawData> deriveRequiredSplits( List<PiecewiseLinearCaseSplit> const& allSplitsSoFar ) const;
 };
