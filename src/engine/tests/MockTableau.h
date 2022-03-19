@@ -640,6 +640,26 @@ public:
     {
         return *_boundManager;
     }
+
+    void notifyLowerBound( unsigned /*variable*/, double /*bound*/ )
+    {
+    }
+
+    void notifyUpperBound( unsigned /*variable*/, double /*bound*/ )
+    {
+    }
+
+    void updateVariablesToComplyWithBounds()
+    {
+    }
+
+    void updateVariableToComplyWithLowerBoundUpdate( unsigned /*variable*/, double /*value*/ )
+    {
+    }
+
+    void updateVariableToComplyWithUpperBoundUpdate( unsigned /*variable*/, double /*value*/ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__

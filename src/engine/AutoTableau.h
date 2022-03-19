@@ -26,7 +26,8 @@ class AutoTableau
 public:
 	AutoTableau( IBoundManager &boundManager )
 	{
-		_tableau = T::createTableau( boundManager );
+        _tableau = T::createTableau( boundManager );
+        boundManager.registerTableau( _tableau );
 	}
 
 	~AutoTableau()

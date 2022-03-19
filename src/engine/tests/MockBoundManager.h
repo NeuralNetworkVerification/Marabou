@@ -173,6 +173,10 @@ public:
       return getLowerBound( variable ) <= getUpperBound( variable );
     };
 
+    void registerTableau( ITableau */*tableau*/ )
+    {
+    }
+
 private:
     unsigned _size;
 
@@ -180,11 +184,6 @@ private:
     Map<unsigned, double> _upperBounds;
     Map<unsigned, bool> _tightenedLower;
     Map<unsigned, bool> _tightenedUpper;
-    /* double *_lowerBounds; */
-    /* double *_upperBounds; */
-
-    /* bool *_tightenedLower; */
-    /* bool *_tightenedUpper; */
 };
 
 #endif // __MockBoundManager_h__

@@ -38,13 +38,14 @@
 #define __BoundManager_h__
 
 #include "IBoundManager.h"
+#include "ITableau.h"
 #include "List.h"
 #include "Tightening.h"
 #include "Vector.h"
 #include "context/cdo.h"
 #include "context/context.h"
 
-class Tableau;
+class ITableau;
 class BoundManager : public IBoundManager
 {
 public:
@@ -118,13 +119,13 @@ public:
     /*
        Register Tableau reference for callbacks from tighten*Bound methods.
      */
-    void registerTableau( Tableau *tableau );
+    void registerTableau( ITableau *tableau );
 
 private:
     CVC4::context::Context &_context;
     unsigned _size;
     unsigned _allocated;
-    Tableau *_tableau; // Used only by callbacks
+    ITableau *_tableau; // Used only by callbacks
 
     CVC4::context::CDO<bool> _consistentBounds;
     Tightening _firstInconsistentTightening;

@@ -30,6 +30,7 @@
 #include "List.h"
 
 class Tightening;
+class ITableau;
 class IBoundManager
 {
 public:
@@ -86,6 +87,10 @@ public:
     */
     virtual bool consistentBounds() const = 0;
 
+    /*
+      Register Tableau for callbacks.
+     */
+    virtual void registerTableau( ITableau *tableau ) = 0;
 };
 
 #endif // __IBoundManager_h__
