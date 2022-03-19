@@ -517,6 +517,10 @@ public:
         tightenedUpperBounds[variable] = value;
     }
 
+    void setBoundsPointers( const double */*lower*/, const double */*upper*/ )
+    {
+    }
+
     void applySplit( const PiecewiseLinearCaseSplit &/* split */)
     {
     }

@@ -170,7 +170,7 @@ void SmtCore::performSplit()
     ++_stateId;
     _engine->storeState( *stateBeforeSplits,
                          TableauStateStorageLevel::STORE_BOUNDS_ONLY );
-
+    _engine->preContextPushHook();
     _context.push();
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
@@ -277,6 +277,7 @@ bool SmtCore::popSplit()
 
         SMT_LOG( "\tApplying new split..." );
         ASSERT( split->getEquations().size() == 0 );
+        _engine->preContextPushHook();
         _context.push();
         _engine->applySplit( *split );
         SMT_LOG( "\tApplying new split - DONE" );

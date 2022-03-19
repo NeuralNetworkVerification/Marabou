@@ -2328,8 +2328,14 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTimeInMicro() / MICROSECONDS_TO_SECONDS > timeout;
 }
 
+void Engine::preContextPushHook()
+{
+    _boundManager.storeLocalBounds();
+}
+
 void Engine::postContextPopHook()
 {
+    _boundManager.restoreLocalBounds();
     _tableau->postContextPopHook();
 }
 

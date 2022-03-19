@@ -93,6 +93,7 @@ public:
     }
 
     void postContextPopHook() {};
+    void preContextPushHook() {};
 
     mutable EngineState *lastStoredState;
     void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const

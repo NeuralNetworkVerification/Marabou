@@ -85,6 +85,9 @@ void BoundManager::allocateLocalBounds( unsigned size )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "BoundManager::upperBounds" );
     std::fill_n( _upperBounds, size, FloatUtils::infinity() );
     _allocated = size;
+
+    if ( _tableau )
+      _tableau->setBoundsPointers( _lowerBounds, _upperBounds);
 }
 
 unsigned BoundManager::registerNewVariable()

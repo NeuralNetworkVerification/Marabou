@@ -104,6 +104,7 @@ public:
     virtual double getUpperBound( unsigned variable ) const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
+    virtual void setBoundsPointers( const double *lower, const double *upper ) = 0;
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;
     virtual void tightenUpperBound( unsigned variable, double value ) = 0;
     virtual void notifyLowerBound( unsigned variable, double bound ) = 0;
