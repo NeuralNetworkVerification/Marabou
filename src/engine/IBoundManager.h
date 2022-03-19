@@ -66,6 +66,15 @@ public:
     virtual double getUpperBound( unsigned variable ) const = 0;
 
     /*
+      Get pointers to latest bounds used for access by tableau and tighteners
+     */
+    virtual const double * getLowerBounds() const = 0;
+    virtual const double * getUpperBounds() const = 0;
+
+    /*
+     * Store and restore bounds after push/pop
+     */
+    /*
        Obtain a list of all the bound updates since the last call to
        getTightenings.
      */

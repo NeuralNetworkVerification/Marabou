@@ -88,6 +88,18 @@ public:
     double getUpperBound( unsigned variable ) const;
 
     /*
+      Get pointers to latest bounds used for access by tableau and tighteners
+     */
+    const double * getLowerBounds() const;
+    const double * getUpperBounds() const;
+
+    /*
+       Store and restore local bounds after context advances/backtracks.
+     */
+    void storeLocalBounds();
+    void restoreLocalBounds();
+
+    /*
        Obtain a list of all the bound updates since the last call to
        getTightenings.
      */
@@ -111,13 +123,17 @@ public:
 private:
     CVC4::context::Context &_context;
     unsigned _size;
+    unsigned _allocated;
     Tableau *_tableau; // Used only by callbacks
 
     CVC4::context::CDO<bool> _consistentBounds;
     Tightening _firstInconsistentTightening;
 
-    Vector<CVC4::context::CDO<double> *> _lowerBounds;
-    Vector<CVC4::context::CDO<double> *> _upperBounds;
+    double * _lowerBounds;
+    double * _upperBounds;
+
+    Vector<CVC4::context::CDO<double> *> _storedLowerBounds;
+    Vector<CVC4::context::CDO<double> *> _storedUpperBounds;
 
     Vector<CVC4::context::CDO<bool> *> _tightenedLower;
     Vector<CVC4::context::CDO<bool> *> _tightenedUpper;
@@ -127,6 +143,7 @@ private:
      */
     void recordInconsistentBound( unsigned variable, double value, Tightening::BoundType type );
 
+    void allocateLocalBounds( unsigned size );
 };
 
 #endif // __BoundManager_h__

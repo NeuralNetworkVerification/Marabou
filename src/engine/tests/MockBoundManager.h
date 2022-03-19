@@ -108,7 +108,17 @@ public:
       return true;
     };
 
-    /*
+    const double * getLowerBounds() const
+    {
+        return nullptr;
+    };
+
+    const double * getUpperBounds() const
+    {
+        return nullptr;
+    };
+
+     /*
        Obtain a list of all the bound updates since the last call to
        getTightenings.
      */

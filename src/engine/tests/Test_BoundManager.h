@@ -77,7 +77,6 @@ public:
                                          FloatUtils::negativeInfinity() ) );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 4 ),
                                          FloatUtils::infinity() ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
         TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
         TS_ASSERT_EQUALS( boundManager.getNumberOfVariables(), 7u );
@@ -165,7 +164,9 @@ public:
       double level2Upper[] = {  3.738962,   8.308432000,   16.79211593, 115.9003,  57.5459822 };
 
 
-      TS_ASSERT_THROWS_NOTHING( context->push() )
+      TS_ASSERT_THROWS_NOTHING( boundManager.storeLocalBounds() );
+      TS_ASSERT_THROWS_NOTHING( context->push() );
+
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -176,6 +177,7 @@ public:
         TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level0Upper[v] );
       }
 
+      TS_ASSERT_THROWS_NOTHING( boundManager.storeLocalBounds() );
       TS_ASSERT_THROWS_NOTHING( context->push() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
@@ -188,6 +190,7 @@ public:
       }
 
 
+      TS_ASSERT_THROWS_NOTHING( boundManager.storeLocalBounds() );
       TS_ASSERT_THROWS_NOTHING( context->push() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
@@ -201,6 +204,7 @@ public:
 
 
       TS_ASSERT_THROWS_NOTHING( context->pop() );
+      TS_ASSERT_THROWS_NOTHING( boundManager.restoreLocalBounds() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -210,6 +214,7 @@ public:
 
 
       TS_ASSERT_THROWS_NOTHING( context->pop() );
+      TS_ASSERT_THROWS_NOTHING( boundManager.restoreLocalBounds() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -236,6 +241,7 @@ public:
         }
 
       TS_ASSERT_THROWS_NOTHING( context->pop() );
+      TS_ASSERT_THROWS_NOTHING( boundManager.restoreLocalBounds() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
         {
