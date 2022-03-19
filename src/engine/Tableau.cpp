@@ -37,6 +37,8 @@
 
 Tableau::Tableau( IBoundManager &boundManager )
     : _boundManager( boundManager )
+    , _lowerBounds( _boundManager.getLowerBounds() )
+    , _upperBounds( _boundManager.getUpperBounds() )
     , _n ( 0 )
     , _m ( 0 )
     , _A( NULL )
@@ -462,18 +464,6 @@ void Tableau::setUpperBound( unsigned variable, double value )
     ASSERT( variable < _n );
     _boundManager.setUpperBound( variable, value );
     notifyUpperBound( variable, value );
-}
-
-double Tableau::getLowerBound( unsigned variable ) const
-{
-    ASSERT( variable < _n );
-    return _boundManager.getLowerBound( variable );
-}
-
-double Tableau::getUpperBound( unsigned variable ) const
-{
-    ASSERT( variable < _n );
-    return _boundManager.getUpperBound( variable );
 }
 
 bool Tableau::existsValue( unsigned variable ) const
@@ -2610,4 +2600,10 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
         inverseCoefficient = 1 / coefficient;
 
     return true;
+}
+
+void Tableau::setBoundsPointers( const double *lower, const double *upper )
+{
+    _lowerBounds = lower;
+    _upperBounds = upper;
 }

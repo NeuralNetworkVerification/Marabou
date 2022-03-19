@@ -151,8 +151,20 @@ public:
     /*
       Get the lower/upper bounds for a variable.
     */
-    double getLowerBound( unsigned variable ) const;
-    double getUpperBound( unsigned variable ) const;
+    inline double getLowerBound( unsigned variable ) const
+    {
+        return _lowerBounds[variable];
+    }
+
+    inline double getUpperBound( unsigned variable ) const
+    {
+        return _upperBounds[variable];
+    }
+
+    /*
+       Update pointers to lower/upper bounds in BoundManager
+     */
+    void setBoundsPointers( const double *lower, const double *upper );
 
     /*
       Get BoundManager reference
@@ -475,6 +487,12 @@ private:
        BoundManager object stores bounds of all variables.
      */
     IBoundManager &_boundManager;
+
+    /*
+       Direct pointers to _boundManager arrays to avoid multiple dereferencing.
+     */
+    const double * _lowerBounds;
+    const double * _upperBounds;
 
     /*
       The dimensions of matrix A
