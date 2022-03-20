@@ -48,7 +48,7 @@ void Options::initializeDefaultValues()
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
     _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
-    _boolOptions[PARALLEL_DEEPSOI] = true;
+    _boolOptions[NO_PARALLEL_DEEPSOI] = false;
 
     /*
       Int options

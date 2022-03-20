@@ -129,6 +129,12 @@ public:
         _model->getEnv().set( GRB_IntParam_OutputFlag, verbosity );
     }
 
+    // Set number of threads
+    inline void setNumberOfThreads( unsigned threads )
+    {
+        _model->getEnv().set( GRB_IntParam_Threads, threads );
+    }
+
     // Solve and extract the solution, or the best known bound on the
     // objective function
     void solve();
@@ -246,6 +252,7 @@ public:
     bool haveFeasibleSolution() { return true; };
     void setTimeLimit( double ) {};
     void setVerbosity( unsigned ) {};
+    void setNumberOfThreads( unsigned ) {};
     double getObjectiveBound() { return 0; };
     double getAssignment( const String & ){ return 0; };
     unsigned getNumberOfSimplexIterations() { return 0; };

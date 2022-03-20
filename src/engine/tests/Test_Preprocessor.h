@@ -68,7 +68,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
 
         // x0 = 10 - x1 + x2
         //
@@ -99,7 +99,7 @@ public:
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 13 + 1 = 4
         // 3 is a tighter bound than 4, keep 3 as the upper bound
 
-        processed = Preprocessor().preprocess( inputQuery );
+        processed = *( Preprocessor().preprocess( inputQuery ) );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 0 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 13 );
@@ -121,7 +121,7 @@ public:
         // x2.lb = -10 + x0.lb + x1.lb = -10 + 9 + 3 = 2
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 15 + 3 = 8
 
-        processed = Preprocessor().preprocess( inputQuery, false );
+        processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 9 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
@@ -144,7 +144,7 @@ public:
         // x2.lb = -10 + x0.lb + x1.lb = Unbounded
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 15 -2 = 3
 
-        processed = Preprocessor().preprocess( inputQuery, false );
+        processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 15 );
@@ -194,7 +194,7 @@ public:
         equation2.setScalar( 10 );
         inputQuery2.addEquation( equation2 );
 
-        processed = Preprocessor().preprocess( inputQuery2 );
+        processed = *( Preprocessor().preprocess( inputQuery2 ) );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 5.5 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 6.5 );
@@ -244,7 +244,7 @@ public:
         inputQuery.markInputVariable( 9, 5 );
         inputQuery.markInputVariable( 10, 6 );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         // x1 = Relu( x0 ) = max( 0, x0 )
         // x1 \in [0, 10]
@@ -350,7 +350,7 @@ public:
         equation.setScalar( 10 );
         inputQuery.addEquation( equation );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), 5.5 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 6.5 ) );
@@ -401,7 +401,7 @@ public:
         equation2.setScalar( 12 );
         inputQuery.addEquation( equation2 );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery, true );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // Variables 2, 4, 5 and 9 are unused and should be eliminated.
         // Variables 0, 3 and 6 were fixed and should be eliminated.
@@ -469,7 +469,7 @@ public:
         equation2.setScalar( 12 );
         inputQuery.addEquation( equation2 );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery, true );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // Variables 2, 4, 5 and 9 are unused and should be eliminated.
         // Variables 0, 3 and 6 were fixed and should be eliminated.
@@ -512,7 +512,7 @@ public:
         equation1.setScalar( 10 );
         inputQuery.addEquation( equation1 );
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery, false );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery, false ) );
 
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 4U );
 
@@ -569,7 +569,7 @@ public:
         inputQuery.addPiecewiseLinearConstraint( relu1 );
 
         Preprocessor preprocessor;
-        InputQuery processed = preprocessor.preprocess( inputQuery, true );
+        InputQuery processed = *( preprocessor.preprocess( inputQuery, true ) );
 
         TS_ASSERT( processed.getEquations().size() > 1U );
 
@@ -740,7 +740,7 @@ public:
         inputQuery.addEquation( *eq_eq);
         delete eq_eq;
 
-        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
@@ -806,7 +806,7 @@ public:
 
         // Invoke preprocessor
         TS_ASSERT( !inputQuery._networkLevelReasoner );
-        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
         TS_ASSERT( processed._networkLevelReasoner );
 
         NLR::NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
@@ -886,7 +886,7 @@ public:
 
         // Invoke preprocessor
         TS_ASSERT( !inputQuery._networkLevelReasoner );
-        InputQuery processed = Preprocessor().preprocess( inputQuery );
+        InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
         TS_ASSERT( processed._networkLevelReasoner );
 
         NLR::NetworkLevelReasoner *nlr = processed._networkLevelReasoner;
@@ -923,8 +923,8 @@ public:
         // x0 - x2 - aux4 = 0 will be added to the processed ipq.
 
         InputQuery processed;
-        TS_ASSERT_THROWS_NOTHING( processed = Preprocessor().
-                                  preprocess( ipq ) );
+        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().
+                                                 preprocess( ipq ) ) );
 
         for ( const auto &e : processed.getEquations() )
             e.dump();

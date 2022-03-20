@@ -48,6 +48,7 @@ public:
 
     // How often should the main loop print statistics?
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
+    static const unsigned STATISTICS_PRINTING_FREQUENCY_GUROBI;
 
     // Tolerance when checking whether the value computed for a basic variable is out of bounds
     static const double BOUND_COMPARISON_ADDITIVE_TOLERANCE;

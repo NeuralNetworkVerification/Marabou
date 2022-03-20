@@ -309,13 +309,7 @@ void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
     if( !isActive() || phaseFixed() )
         return;
 
-    // This should not be called when the linear constraints have
-    // not been satisfied
-    ASSERT( !haveOutOfBoundVariables() );
-
     ASSERT( phase == SIGN_PHASE_NEGATIVE || phase == SIGN_PHASE_POSITIVE );
-
-    ASSERT( getLowerBound( _f ) >= -1 && getUpperBound( _f ) <= 1 );
 
     // The SoI cost term is sound iff the aux equations are added.
     ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
