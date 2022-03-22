@@ -454,7 +454,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Get variables
         inputVars = self.varMap[inputName].reshape(numChannels, -1)
         outputVars = self.makeNewVariables(nodeName).reshape(numChannels, -1)
-        assert(inputVars,shape == outputVars.shape)
+        assert(inputVars.shape == outputVars.shape)
 
         numInputs = inputVars.shape[1]
 
