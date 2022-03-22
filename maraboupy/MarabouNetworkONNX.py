@@ -49,13 +49,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputName = None
         self.graph = None
         
-    def readONNX(self, filename, inputNames, outputName):
+    def readONNX(self, filename, inputNames, outputName, reindexOutputVars=True):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
             filename: (str): Path to the ONNX file
             inputNames: (list of str): List of names corresponding to inputs
             outputName: (str): Name of node corresponding to output
+            reindexOutputVars: (bool): Reindex the variables so that the output variables are immediate after input variables.
             
         :meta private:
         """
@@ -93,12 +94,13 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # If the given inputNames/outputName specify only a portion of the network, then we will have
         # shape information saved not relevant to the portion of the network. Remove extra shapes.
         self.cleanShapes()
-        
-        # Other Marabou input parsers assign output variables immediately after input variables and before any
-        # intermediate variables. This function reassigns variable numbering to match other parsers.
-        # If this is skipped, the output variables will be the last variables defined.
-        self.reassignOutputVariables()
-        
+
+        if reindexOutputVars:
+            # Other Marabou input parsers assign output variables immediately after input variables and before any
+            # intermediate variables. This function reassigns variable numbering to match other parsers.
+            # If this is skipped, the output variables will be the last variables defined.
+            self.reassignOutputVariables()
+
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
         
@@ -152,7 +154,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if self.foundnInputFlags != len(self.inputNames):
             err_msg = "These input variables could not be found: %s"%(", ".join([inVar for inVar in self.inputNames if inVar not in self.varMap]))
             raise RuntimeError(err_msg)
-            
+
         # Compute node's shape and create Marabou equations as needed
         self.makeMarabouEquations(nodeName, makeEquations)
         
@@ -171,7 +173,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         :meta private:
         """
         node = self.getNode(nodeName)
-
         if node.op_type == 'Constant':
             self.constant(node)
         elif node.op_type == 'Identity': 
@@ -185,7 +186,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         elif node.op_type == "Transpose":
             self.transpose(node)
         elif node.op_type == "BatchNormalization":
-            self.batchNorm(node)
+            self.batchNorm(node, makeEquations)
         elif node.op_type == "MaxPool":
             self.maxpoolEquations(node, makeEquations)
         elif node.op_type == "Conv":
@@ -420,7 +421,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
 
-    def batchNorm(self, node):
+    def batchNorm(self, node, makeEquations):
         """Function to generate equations for a BatchNormalization
 
         Args:
@@ -431,7 +432,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         nodeName = node.output[0]
         inputName = node.input[0]
-        self.shapeMap[nodeName] = self.shapeMap[inputName] 
+        self.shapeMap[nodeName] = self.shapeMap[inputName]
 
         # Get attributes
         epsilon = None
@@ -443,22 +444,30 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         scales = self.constantMap[node.input[1]].reshape(-1)
         biases = self.constantMap[node.input[2]].reshape(-1)
         input_means = self.constantMap[node.input[3]].reshape(-1)
-        input_vars = self.constantMap[node.input[4]].reshape(-1)
+        input_variances = self.constantMap[node.input[4]].reshape(-1)
+
+        if not makeEquations:
+            return
+
+        numChannels = len(scales)
 
         # Get variables
-        inputVars = self.varMap[inputName].reshape(-1)
-        outputVars = self.makeNewVariables(nodeName).reshape(-1)
-        assert len(inputVars) == len(outputVars)
+        inputVars = self.varMap[inputName].reshape(numChannels, -1)
+        outputVars = self.makeNewVariables(nodeName).reshape(numChannels, -1)
+        assert(inputVars.shape == outputVars.shape)
 
-        for i in range(len(inputVars)):
-            # Add equation
-            # To know this computation, 
-            # refer to https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization.
-            e = MarabouUtils.Equation()
-            e.addAddend(-1, outputVars[i])
-            e.addAddend(1 / np.sqrt(input_vars[i] + epsilon) * scales[i], inputVars[i])
-            e.setScalar(input_means[i] / np.sqrt(input_vars[i] + epsilon) * scales[i] - biases[i])
-            self.addEquation(e)      
+        numInputs = inputVars.shape[1]
+
+        for i in range(numChannels):
+            for j in range(numInputs):
+                # Add equation
+                # To know this computation,
+                # refer to https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization.
+                e = MarabouUtils.Equation()
+                e.addAddend(-1, outputVars[i][j])
+                e.addAddend(1 / np.sqrt(input_variances[i] + epsilon) * scales[i], inputVars[i][j])
+                e.setScalar(input_means[i] / np.sqrt(input_variances[i] + epsilon) * scales[i] - biases[i])
+                self.addEquation(e)
 
     def maxpoolEquations(self, node, makeEquations):
         """Function to generate maxpooling equations
