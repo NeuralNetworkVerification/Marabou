@@ -9,8 +9,8 @@
 #include "Optional.h"
 
 
-ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( GammaUnsat inputGammaUnsat )
-    : _inputGammaUnsat( inputGammaUnsat ), _outputGammaUnsat( inputGammaUnsat )
+ResidualReasoningSplitProvider::ResidualReasoningSplitProvider( GammaUnsat gammaUnsat )
+    : _gammaUnsat( gammaUnsat )
 { }
 
 List<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::getImpliedSplits( List<PiecewiseLinearCaseSplit> allSplitsSoFar ) const {
@@ -46,12 +46,8 @@ List<PiecewiseLinearCaseSplit> ResidualReasoningSplitProvider::getImpliedSplits(
     return impliedSplits;
 }
 
-GammaUnsat ResidualReasoningSplitProvider::inputGammaUnsat() const {
-    return _inputGammaUnsat;
-}
-
-GammaUnsat ResidualReasoningSplitProvider::outputGammaUnsat() const {
-    return _outputGammaUnsat;
+GammaUnsat ResidualReasoningSplitProvider::gammaUnsat() const {
+    return _gammaUnsat;
 }
 
 void ResidualReasoningSplitProvider::onUnsatReceived( List<PiecewiseLinearCaseSplit> const& allSplitsSoFar )
@@ -64,17 +60,17 @@ void ResidualReasoningSplitProvider::onUnsatReceived( List<PiecewiseLinearCaseSp
         if ( reluRawData )
             unsatSeq.activations.append( *reluRawData );
     }
-    _outputGammaUnsat.addUnsatSequence( unsatSeq );
-    printf("_outputGammaUnsat.addUnsatSequence\n");
+    _gammaUnsat.addUnsatSequence( unsatSeq );
+    printf("_gammaUnsat.addUnsatSequence\n");
 }
 
 List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits( List<PiecewiseLinearCaseSplit> const& allSplitsSoFar ) const
 {
     // derives all required splits
-    // a split is required if it is part of any unsat clause in inputGammaUnsat and all other parts
+    // a split is required if it is part of any unsat clause in gammaUnsat and all other parts
     // in the clause are mapped the same as they are mapped in _pastSplits (the current mapping)
     // for example, if (notation is: active=1, inactive=-1)
-    // inputGammaUnsat = [{(c1f, c1b) : 1 , (c2f, c2b):1}, {(c1f, c1b):1, (c3f, c3b):-1}, {(c2f, c2b):-1,(c3f, c3b):-1}] and
+    // gammaUnsat = [{(c1f, c1b) : 1 , (c2f, c2b):1}, {(c1f, c1b):1, (c3f, c3b):-1}, {(c2f, c2b):-1,(c3f, c3b):-1}] and
     // _pastSplits = {(c1f, c1b):1}
     // then 2 splits: {(c2f, c2b):-1, (c3f, c3b):1} are derived from the 2 first clauses
     // (and no split is derived from the 3'rd clause)
@@ -124,9 +120,9 @@ List<PLCaseSplitRawData> ResidualReasoningSplitProvider::deriveRequiredSplits( L
 
     List<PLCaseSplitRawData> derived;
     unsigned clause_index = 0;
-    for ( auto const& gammaSeq : _inputGammaUnsat.getUnsatSequences() )
+    for ( auto const& gammaSeq : _gammaUnsat.getUnsatSequences() )
     {
-        // printf("%d", _inputGammaUnsat.getUnsatSequences().size());
+        // printf("%d", _gammaUnsat.getUnsatSequences().size());
         auto const maybeDerivedSplit = getUnsatisfied( gammaSeq );
         if ( maybeDerivedSplit ) {
             ActivationType opposeActivation = maybeDerivedSplit->_activation == ActivationType::ACTIVE ? ActivationType::INACTIVE : ActivationType::ACTIVE;

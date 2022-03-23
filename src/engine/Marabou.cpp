@@ -329,7 +329,7 @@ void Marabou::run()
     struct timespec end = TimeUtils::sampleMicro();
 
     if ( doResidualReasoning && gammaUnsatOutputFile.length() > 0 ) {
-        residualReasoner->outputGammaUnsat().saveToFile( gammaUnsatOutputFile );
+        residualReasoner->gammaUnsat().saveToFile( gammaUnsatOutputFile );
     }
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
