@@ -501,6 +501,30 @@ public:
         TS_ASSERT_EQUALS( a.get( 0 ), 13 );
         TS_ASSERT_EQUALS( a.get( 0 ), a[0] );
     }
+
+    void test_const_random_access()
+    {
+        const Vector<int> a = { 1, 2, 3 };
+
+        TS_ASSERT_EQUALS( a[0], 1 );
+        TS_ASSERT_EQUALS( a[1], 2 );
+        TS_ASSERT_EQUALS( a[2], 3 );
+    }
+
+    void test_data_access()
+    {
+        Vector<int> a = { 1, 2, 3 };
+        const int *constData = a.data();
+        int *data = a.data();
+
+        TS_ASSERT_EQUALS( data[0], 1 );
+        TS_ASSERT_EQUALS( data[1], 2 );
+        TS_ASSERT_EQUALS( data[2], 3 );
+
+        TS_ASSERT_EQUALS( constData[0], 1 );
+        TS_ASSERT_EQUALS( constData[1], 2 );
+        TS_ASSERT_EQUALS( constData[2], 3 );
+    }
 };
 
 //
