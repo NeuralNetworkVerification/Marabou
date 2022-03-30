@@ -23,7 +23,6 @@ def test_gtsrb():
     filename =  "model-german-traffic-sign-fast.onnx"
     evaluateFile(filename)
 
-
 def test_cifar10():
     """
     Test a fully-connected neural network, exported from tensorflow
