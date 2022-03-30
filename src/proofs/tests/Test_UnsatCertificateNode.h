@@ -26,11 +26,6 @@ public:
     */
     void testTreeRelations()
     {
-        Vector<double> row1 = { 1, 0, -1, 1, 0, 0 };
-        Vector<double> row2 = { 0, -1, 2, 0, 1, 0 };
-        Vector<double> row3 = { 0.5, 0, -1, 0, 0, 1 };
-        Vector<Vector<double>> initialTableau = { row1, row2, row3 };
-
         Vector<double> groundUpperBounds( 6, 1 );
         Vector<double> groundLowerBounds( 6, 0 );
 
@@ -57,8 +52,8 @@ public:
 
         root->makeLeaf();
 
-        TS_ASSERT_EQUALS( root->getChildBySplit( split1 ), nullptr );
-        TS_ASSERT_EQUALS( root->getChildBySplit( split2 ), nullptr );
+        TS_ASSERT( root->getChildBySplit( split1 ) == nullptr );
+        TS_ASSERT( root->getChildBySplit( split2 ) == nullptr );
 
         delete root;
     }
@@ -68,13 +63,9 @@ public:
      */
     void testContradiction()
     {
-        Vector<Vector<double>> initialTableau = { Vector<double>( 1,1 ) };
-        Vector<double> groundUpperBounds( 1, 1 );
-        Vector<double> groundLowerBounds( 1, 0 );
-
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
-        auto upperBoundExplanation = Vector<double>(1, 1);
 
+        auto upperBoundExplanation = Vector<double>(1, 1);
         auto lowerBoundExplanation = Vector<double>(1, 1);
 
         auto *contradiction = new Contradiction( 0, upperBoundExplanation, lowerBoundExplanation );
@@ -87,10 +78,6 @@ public:
     */
     void testPLCExplChanges()
     {
-        Vector<Vector<double>> initialTableau = { Vector<double>( 1,1 ) };
-        Vector<double> groundUpperBounds( 1, 1 );
-        Vector<double> groundLowerBounds( 1, -1 );
-
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
         Vector<double> emptyVec;
 
