@@ -15,6 +15,15 @@ NETWORK_FOLDER = "../../resources/onnx/"   # Folder for test networks
 np.random.seed(123)                        # Seed random numbers for repeatability
 NUM_RAND = 10                              # Default number of random test points per example
 
+def test_gtsrb():
+    """
+    Test a fully-connected neural network, exported from tensorflow
+    Uses Gemm, Relu, and Identity layers
+    """
+    filename =  "model-german-traffic-sign-fast.onnx"
+    evaluateFile(filename)
+
+
 def test_cifar10():
     """
     Test a fully-connected neural network, exported from tensorflow
