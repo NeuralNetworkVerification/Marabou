@@ -116,33 +116,63 @@ public:
     */
     void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
-    // Split point 
-    struct SplitPoint
+    // Tangent point
+    struct TangentPoint
     {
       double _x;
       double _y;
-      SplitPoint( double x, double y )
+      TangentPoint( double x, double y )
       {
         _x = x;
         _y = y;
       };
-      bool operator<( const SplitPoint &other ) const
+      bool operator<( const TangentPoint &other ) const
       {
           return _x < other._x;
       }
     };
 
-    typedef std::set<SplitPoint> SplitPoints;    
+    typedef std::set<TangentPoint> TangentPoints;
+
+    // Secant point
+    struct SecantPoint
+    {
+      double _x;
+      double _y;
+      SecantPoint( double x, double y )
+      {
+        _x = x;
+        _y = y;
+      };
+      bool operator<( const SecantPoint &other ) const
+      {
+          return _x < other._x;
+      }
+    };
+
+    typedef std::set<SecantPoint> SecantPoints; 
+
 
     /*
-      Add a new split point for licremental linearization.
+      Add a new tangent point for licremental linearization.
     */
-    void addSplitPoint( double x, double y );
+    void addTangentPoint( double x, double y );
 
     /*
-      Return split points
+      Add a new secant point for licremental linearization.
     */
-    SplitPoints getSplitPoints();
+    void addSecantPoint( double x, double y );
+
+    /*
+      Return tangent points
+    */
+    TangentPoints getTangentPoints();
+
+    /*
+      Return secant points
+    */
+    SecantPoints getSecantPoints();
+
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -231,8 +261,11 @@ protected:
     }
 
 private:
-  // Split points of secant and tangent lines for incremental linearizations.
-  SplitPoints _pts;
+  // Points of tangent lines for incremental linearizations.
+  TangentPoints _tangentPts;
+
+  // Points of secant lines for incremental linearizations.
+  SecantPoints _secantPts;
 };
 
 #endif // __TranscendentalConstraint_h__

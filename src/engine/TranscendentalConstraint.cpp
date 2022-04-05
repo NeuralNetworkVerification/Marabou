@@ -39,12 +39,22 @@ void TranscendentalConstraint::registerConstraintBoundTightener( IConstraintBoun
     _constraintBoundTightener = tightener;
 }
 
-void TranscendentalConstraint::addSplitPoint( double x, double y )
+void TranscendentalConstraint::addTangentPoint( double x, double y )
 {
-    _pts.insert( SplitPoint( x, y ));
+    _tangentPts.insert( TangentPoint( x, y ));
 }
 
-TranscendentalConstraint::SplitPoints TranscendentalConstraint::getSplitPoints()
+TranscendentalConstraint::TangentPoints TranscendentalConstraint::getTangentPoints()
 {
-    return _pts;
+    return _tangentPts;
+}
+
+void TranscendentalConstraint::addSecantPoint( double x, double y )
+{
+    _secantPts.insert( SecantPoint( x, y ));
+}
+
+TranscendentalConstraint::SecantPoints TranscendentalConstraint::getSecantPoints()
+{
+    return _secantPts;
 }

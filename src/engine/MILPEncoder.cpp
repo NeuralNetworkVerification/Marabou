@@ -447,9 +447,7 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         double xptPos = sourceUb / 2;
         double yptPos = sigmoid->sigmoid( xptPos );
         addTangentLineOnSigmoid( gurobi, sigmoid, xptPos, yptPos, sourceLb, sourceUb );
-
-        // add a split point
-        sigmoid->addSplitPoint( xptPos, yptPos );
+        sigmoid->addTangentPoint( xptPos, yptPos );
 
         // set lower bound of x_b
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
@@ -470,9 +468,7 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         double xptNeg = sourceLb / 2;
         double yptNeg = sigmoid->sigmoid( xptNeg );
         addTangentLineOnSigmoid( gurobi, sigmoid, xptNeg, yptNeg, sourceLb, sourceUb );
-
-        // add a split point
-        sigmoid->addSplitPoint( xptNeg, yptNeg );
+        sigmoid->addTangentPoint( xptNeg, yptNeg );
 
         // upper bound of x_b
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
@@ -490,6 +486,8 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
             double xpts[5] = { sourceLb, xptNeg, 0, xptPos, sourceUb };
             double ypts[5] = { y_l, yptNeg, 0.5, yptPos, y_u };
             addSecantLinesOnSigmoid( gurobi, sigmoid, 5, xpts, ypts, sourceLb, sourceUb );
+            sigmoid->addSecantPoint( xptNeg, yptNeg );
+            sigmoid->addSecantPoint( xptPos, yptPos );
         }
         else
         {
@@ -499,9 +497,9 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         }
 
         // add split points
-        sigmoid->addSplitPoint( sourceLb, y_l );
-        sigmoid->addSplitPoint( 0, 0.5 );
-        sigmoid->addSplitPoint( sourceUb, y_u );
+        sigmoid->addSecantPoint( sourceLb, y_l );
+        sigmoid->addSecantPoint( 0, 0.5 );
+        sigmoid->addSecantPoint( sourceUb, y_u );
     }
     else
     {   
@@ -511,11 +509,11 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
 
         // add a split point
-        sigmoid->addSplitPoint( xpt, ypt );
+        sigmoid->addTangentPoint( xpt, ypt );
         
         // add split points for lb and ub
-        sigmoid->addSplitPoint( sourceLb, y_l );
-        sigmoid->addSplitPoint( sourceUb, y_u );
+        sigmoid->addSecantPoint( sourceLb, y_l );
+        sigmoid->addSecantPoint( sourceUb, y_u );
 
         // add secant lines
         if ( GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT )
@@ -523,6 +521,7 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
             double xpts[3] = { sourceLb, xpt, sourceUb };
             double ypts[3] = { y_l, ypt, y_u };
             addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb );
+            sigmoid->addSecantPoint( xpt, ypt );
         }
         else
         {

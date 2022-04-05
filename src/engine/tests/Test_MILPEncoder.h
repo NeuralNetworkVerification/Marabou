@@ -402,15 +402,20 @@ public:
         // binVarName should not be set.
         TS_ASSERT( sigmoid1->getBinVarName() == "" );
         
-        // check whether split points are correctly set.
-        const TranscendentalConstraint::SplitPoints &pts = sigmoid1->getSplitPoints();
-        TS_ASSERT_EQUALS( pts.size(), 3UL );
-        auto it = pts.begin();
-        TS_ASSERT_EQUALS( it->_x, 0 );
-        it++;
+        // check whether tanget points are correctly set.
+        const TranscendentalConstraint::TangentPoints &tangentPts = sigmoid1->getTangentPoints();
+        TS_ASSERT_EQUALS( tangentPts.size(), 1UL );
+        auto it = tangentPts.begin();
         TS_ASSERT_EQUALS( it->_x, 0.5 );
-        it++;
-        TS_ASSERT_EQUALS( it->_x, 1 );
+
+        // check whether split points are correctly set.
+        const TranscendentalConstraint::SecantPoints &secantPts = sigmoid1->getSecantPoints();
+        TS_ASSERT_EQUALS( secantPts.size(), 2UL );
+        auto itSec = secantPts.begin();
+        TS_ASSERT_EQUALS( itSec->_x, 0 );
+        itSec++;
+        TS_ASSERT_EQUALS( itSec->_x, 1 );
+
 
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
 
@@ -456,15 +461,21 @@ public:
         // binVarName should not be set.
         TS_ASSERT( sigmoid2->getBinVarName() == "" );
         
-        // check whether split points are correctly set.
-        const TranscendentalConstraint::SplitPoints &pts2 = sigmoid2->getSplitPoints();
-        TS_ASSERT_EQUALS( pts2.size(), 3UL );
-        auto it2 = pts2.begin();
-        TS_ASSERT_EQUALS( it2->_x, -1 );
-        it2++;
+        // check whether tangent points are correctly set.
+        const TranscendentalConstraint::TangentPoints &tangentPts2 = sigmoid2->getTangentPoints();
+        TS_ASSERT_EQUALS( tangentPts2.size(), 1UL );
+        auto it2 = tangentPts2.begin();
         TS_ASSERT_EQUALS( it2->_x, -0.55 );
-        it2++;
-        TS_ASSERT_EQUALS( it2->_x, -0.1 );
+
+
+        // check whether tangent points are correctly set.
+        const TranscendentalConstraint::SecantPoints &secantPts2 = sigmoid2->getSecantPoints();
+        TS_ASSERT_EQUALS( secantPts2.size(), 2UL );
+        auto itSec2 = secantPts2.begin();
+        TS_ASSERT_EQUALS( itSec2->_x, -1 );
+        itSec2++;
+        TS_ASSERT_EQUALS( itSec2->_x, -0.1 );
+
 
         TS_ASSERT_THROWS_NOTHING( gurobi2.solve() );
 
@@ -509,19 +520,24 @@ public:
         // binVarName should be set.
         TS_ASSERT( sigmoid3->getBinVarName() == "a0" );
 
-        // check whether split points are correctly set.
-        const TranscendentalConstraint::SplitPoints &pts3 = sigmoid3->getSplitPoints();
-        TS_ASSERT_EQUALS( pts3.size(), 5UL );
-        auto it3 = pts3.begin();
-        TS_ASSERT_EQUALS( it3->_x, -1 );
-        it3++;
+        // check whether tangent points are correctly set.
+        const TranscendentalConstraint::TangentPoints &tangentPts3 = sigmoid3->getTangentPoints();
+        TS_ASSERT_EQUALS( tangentPts3.size(), 2UL );
+        auto it3 = tangentPts3.begin();
         TS_ASSERT_EQUALS( it3->_x, -0.5 );
         it3++;
-        TS_ASSERT_EQUALS( it3->_x, 0 );
-        it3++;
         TS_ASSERT_EQUALS( it3->_x, 0.5 );
-        it3++;
-        TS_ASSERT_EQUALS( it3->_x, 1 );
+
+
+        // check whether secant points are correctly set.
+        const TranscendentalConstraint::SecantPoints &secantPts3 = sigmoid3->getSecantPoints();
+        TS_ASSERT_EQUALS( secantPts3.size(), 3UL );
+        auto itSec3 = secantPts3.begin();
+        TS_ASSERT_EQUALS( itSec3->_x, -1 );
+        itSec3++;
+        TS_ASSERT_EQUALS( itSec3->_x, 0 );
+        itSec3++;
+        TS_ASSERT_EQUALS( itSec3->_x, 1 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi3.solve() );
 
@@ -567,9 +583,13 @@ public:
         // binVarName should be not set.
         TS_ASSERT( sigmoid4->getBinVarName() == "" );
 
-        // check whether no split point is set.
-        const TranscendentalConstraint::SplitPoints &pts4 = sigmoid4->getSplitPoints();
-        TS_ASSERT_EQUALS( pts4.size(), 0UL );
+        // check whether no tangent point is set.
+        const TranscendentalConstraint::TangentPoints &tangentPts4 = sigmoid4->getTangentPoints();
+        TS_ASSERT_EQUALS( tangentPts4.size(), 0UL );
+
+        // check whether no secant point is set.
+        const TranscendentalConstraint::SecantPoints &secantPts4 = sigmoid4->getSecantPoints();
+        TS_ASSERT_EQUALS( secantPts4.size(), 0UL );
 
         TS_ASSERT_THROWS_NOTHING( gurobi4.solve() );
 
@@ -615,15 +635,20 @@ public:
         // binVarName should not be set.
         TS_ASSERT( sigmoid5->getBinVarName() == "" );
 
-        // check whether split points are correctly set.
-        const TranscendentalConstraint::SplitPoints &pts5 = sigmoid5->getSplitPoints();
-        TS_ASSERT_EQUALS( pts5.size(), 3UL );
-        auto it5 = pts5.begin();
-        TS_ASSERT_EQUALS( it5->_x, -1 );
-        it5++;
+        // check whether tangent points are correctly set.
+        const TranscendentalConstraint::TangentPoints &tangentPts5 = sigmoid5->getTangentPoints();
+        TS_ASSERT_EQUALS( tangentPts5.size(), 1UL );
+        auto it5 = tangentPts5.begin();
         TS_ASSERT_EQUALS( it5->_x, -0.5 );
-        it5++;
-        TS_ASSERT_EQUALS( it5->_x, 0 );
+
+
+        // check whether secant points are correctly set.
+        const TranscendentalConstraint::SecantPoints &secantPts5 = sigmoid5->getSecantPoints();
+        TS_ASSERT_EQUALS( secantPts5.size(), 2UL );
+        auto itSec5 = secantPts5.begin();
+        TS_ASSERT_EQUALS( itSec5->_x, -1 );
+        itSec5++;
+        TS_ASSERT_EQUALS( itSec5->_x, 0 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi5.solve() );
 
@@ -669,15 +694,19 @@ public:
         // binVarName should not be set.
         TS_ASSERT( sigmoid6->getBinVarName() == "" );
 
-        // check whether split points are correctly set.
-        const TranscendentalConstraint::SplitPoints &pts6 = sigmoid6->getSplitPoints();
-        TS_ASSERT_EQUALS( pts6.size(), 3UL );
-        auto it6 = pts6.begin();
-        TS_ASSERT_EQUALS( it6->_x, 0 );
-        it6++;
+        // check whether tangent points are correctly set.
+        const TranscendentalConstraint::TangentPoints &tangentPts6 = sigmoid6->getTangentPoints();
+        TS_ASSERT_EQUALS( tangentPts6.size(), 1UL );
+        auto it6 = tangentPts6.begin();
         TS_ASSERT_EQUALS( it6->_x, 0.5 );
-        it6++;
-        TS_ASSERT_EQUALS( it6->_x, 1 );
+
+        // check whether secant points are correctly set.
+        const TranscendentalConstraint::SecantPoints &secantPts6 = sigmoid6->getSecantPoints();
+        TS_ASSERT_EQUALS( secantPts6.size(), 2UL );
+        auto itSec6 = secantPts6.begin();
+        TS_ASSERT_EQUALS( itSec6->_x, 0 );
+        itSec6++;
+        TS_ASSERT_EQUALS( itSec6->_x, 1 );
 
         TS_ASSERT_THROWS_NOTHING( gurobi6.solve() );
 
