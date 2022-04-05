@@ -34,6 +34,9 @@ IEngine::ExitCode IncrementalLinearization::solveWithIncrementalLinearization( G
 
     while ( incrementalCount < numOfIncrementalLinearizations && restTimeoutInSeconds > 0 )
     {
+        // TG: 残りどれくらいかを表示する
+        gurobi.setTimeLimit( restTimeoutInSeconds );
+
         INCREMENTAL_LINEARIZATION_LOG( Stringf( "Start incremental linearization: %u",
                                 incrementalCount ).ascii() );
         
@@ -105,14 +108,23 @@ bool IncrementalLinearization::incrementLinearConstraint( GurobiWrapper &gurobi,
 {
     SigmoidConstraint *sigmoid = (SigmoidConstraint *)constraint;
     unsigned sourceVariable = sigmoid->getB();  // x_b
+    unsigned targetVariable = sigmoid->getF();  // x_f
     
     // get x of the found solution and calculate y of the x
     // This x is going to become a new split point
     double xpt = assignment[_milpEncoder.getVariableNameFromVariable( sourceVariable )];
     double ypt = sigmoid->sigmoid( xpt );
 
-    INCREMENTAL_LINEARIZATION_LOG( Stringf( "new xpt: %f, new ypt: %f",
-                                    xpt, ypt ).ascii() );
+    const double clipPoint = GlobalConfiguration::SIGMOID_CLIP_POINT_OF_LINEARIZATION;
+    if ( xpt <= -clipPoint || xpt >= clipPoint )
+        return false;
+
+
+    double yptOfSol = assignment[_milpEncoder.getVariableNameFromVariable( targetVariable )];
+    
+    // If true, secant lines are added, otherwise a tangent line is added.
+    bool isSolInsideOfConvex = ( xpt >= 0 && ypt > yptOfSol ) || ( xpt < 0 && ypt < yptOfSol );
+
 
     // get current split points
     const TranscendentalConstraint::SplitPoints &pts = sigmoid->getSplitPoints();
@@ -124,9 +136,6 @@ bool IncrementalLinearization::incrementLinearConstraint( GurobiWrapper &gurobi,
     it = pts.end();
     --it;
     double sourceUb = it->_x;
-
-    // add a tangent line
-    _milpEncoder.addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
 
     // generate xpts and ypts for secant lines.
     double xpts[pts.size() + 1];
@@ -153,8 +162,20 @@ bool IncrementalLinearization::incrementLinearConstraint( GurobiWrapper &gurobi,
         i++;            
     }
 
-    // add secant lines
-    _milpEncoder.addSecantLinesOnSigmoid( gurobi, sigmoid, pts.size() + 1, xpts, ypts, sourceLb, sourceUb );
+    if( !isSolInsideOfConvex )
+    {
+        // add a tangent line
+        _milpEncoder.addTangentLineOnSigmoid( gurobi, sigmoid, xpt, ypt, sourceLb, sourceUb );
+        INCREMENTAL_LINEARIZATION_LOG( Stringf( "new xpt: %f, new ypt: %f for a tangent line",
+                                        xpt, ypt ).ascii() );
+    }
+    else
+    {
+        // add secant lines
+        _milpEncoder.addSecantLinesOnSigmoid( gurobi, sigmoid, pts.size() + 1, xpts, ypts, sourceLb, sourceUb );
+        INCREMENTAL_LINEARIZATION_LOG( Stringf( "new xpt: %f, new ypt: %f for secant lines",
+                                        xpt, ypt ).ascii() );
+    }
 
     // add split points for next linearization
     sigmoid->addSplitPoint( xpt, ypt );

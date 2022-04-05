@@ -485,9 +485,18 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         terms.clear();
 
         // add secant lines
-        double xpts[5] = { sourceLb, xptNeg, 0, xptPos, sourceUb };
-        double ypts[5] = { y_l, yptNeg, 0.5, yptPos, y_u };
-        addSecantLinesOnSigmoid( gurobi, sigmoid, 5, xpts, ypts, sourceLb, sourceUb );
+        if ( GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT )
+        {
+            double xpts[5] = { sourceLb, xptNeg, 0, xptPos, sourceUb };
+            double ypts[5] = { y_l, yptNeg, 0.5, yptPos, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 5, xpts, ypts, sourceLb, sourceUb );
+        }
+        else
+        {
+            double xpts[3] = { sourceLb, 0, sourceUb };
+            double ypts[3] = { y_l, 0.5, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb );
+        }
 
         // add split points
         sigmoid->addSplitPoint( sourceLb, y_l );
@@ -504,15 +513,23 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         // add a split point
         sigmoid->addSplitPoint( xpt, ypt );
         
-        // add split points
+        // add split points for lb and ub
         sigmoid->addSplitPoint( sourceLb, y_l );
         sigmoid->addSplitPoint( sourceUb, y_u );
 
-        double xpts[3] = { sourceLb, xpt, sourceUb };
-        double ypts[3] = { y_l, ypt, y_u };
-
         // add secant lines
-        addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb ); 
+        if ( GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT )
+        {
+            double xpts[3] = { sourceLb, xpt, sourceUb };
+            double ypts[3] = { y_l, ypt, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb );
+        }
+        else
+        {
+            double xpts[2] = { sourceLb, sourceUb };
+            double ypts[2] = { y_l, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 2, xpts, ypts, sourceLb, sourceUb );
+        }
     }
 }
 
