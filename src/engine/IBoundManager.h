@@ -18,9 +18,8 @@
  **   * set*Bounds     - local method used to update bounds
  **   * tighten*Bounds - shared method to update bounds, propagates the new bounds
  **
- ** As soon as bounds become inconsistent, i.e. lowerBound > upperBound, an
- ** InfeasableQueryException is thrown. In the long run, we want the exception
- ** replaced by a flag, and switch to the conflict analysis mode instead.
+ ** As soon as bounds become inconsistent, i.e. lowerBound > upperBound, a
+ ** _consistentBounds flag is set which can be checked using consistentBounds() method.
  **
  **/
 

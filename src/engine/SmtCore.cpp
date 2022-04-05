@@ -136,7 +136,6 @@ void SmtCore::performSplit()
 
     _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
-    // TODO: Ideally we will not ever reach this point
     if ( !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
