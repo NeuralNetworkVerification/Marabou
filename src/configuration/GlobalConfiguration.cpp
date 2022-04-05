@@ -98,7 +98,7 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 const bool GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT = false;
-
+const bool GlobalConfiguration::SIGMOID_CLIP_POINT_USE = false;
 const double GlobalConfiguration::SIGMOID_CLIP_POINT_OF_LINEARIZATION = 3;
 
 #ifdef ENABLE_GUROBI

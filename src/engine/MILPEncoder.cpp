@@ -418,6 +418,10 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
     double y_l = sigmoid->sigmoid( sourceLb );
     double y_u = sigmoid->sigmoid( sourceUb );
 
+    const bool secantsAtMiddlePts = GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT;
+    const bool clipUse = GlobalConfiguration::SIGMOID_CLIP_POINT_USE;
+    const double clipPoint = GlobalConfiguration::SIGMOID_CLIP_POINT_OF_LINEARIZATION;
+
     if ( sourceLb == sourceUb )
     {
         // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
@@ -481,7 +485,28 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         terms.clear();
 
         // add secant lines
-        if ( GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT )
+        if ( !secantsAtMiddlePts
+            || ( clipUse && xptNeg <= -clipPoint && xptPos >= clipPoint ) )
+        {
+            double xpts[3] = { sourceLb, 0, sourceUb };
+            double ypts[3] = { y_l, 0.5, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb );
+        }
+        else if ( clipUse && xptNeg >= -clipPoint && xptPos >= clipPoint )
+        {
+            double xpts[4] = { sourceLb, xptNeg, 0, sourceUb };
+            double ypts[4] = { y_l, yptNeg, 0.5, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 4, xpts, ypts, sourceLb, sourceUb );
+            sigmoid->addSecantPoint( xptNeg, yptNeg );           
+        }
+        else if ( clipUse && xptNeg <= -clipPoint && xptPos <= clipPoint )
+        {
+            double xpts[4] = { sourceLb, 0, xptPos, sourceUb };
+            double ypts[4] = { y_l, 0.5, yptPos, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 4, xpts, ypts, sourceLb, sourceUb );
+            sigmoid->addSecantPoint( xptPos, yptPos );   
+        }
+        else
         {
             double xpts[5] = { sourceLb, xptNeg, 0, xptPos, sourceUb };
             double ypts[5] = { y_l, yptNeg, 0.5, yptPos, y_u };
@@ -489,12 +514,7 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
             sigmoid->addSecantPoint( xptNeg, yptNeg );
             sigmoid->addSecantPoint( xptPos, yptPos );
         }
-        else
-        {
-            double xpts[3] = { sourceLb, 0, sourceUb };
-            double ypts[3] = { y_l, 0.5, y_u };
-            addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb );
-        }
+
 
         // add split points
         sigmoid->addSecantPoint( sourceLb, y_l );
@@ -516,18 +536,19 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         sigmoid->addSecantPoint( sourceUb, y_u );
 
         // add secant lines
-        if ( GlobalConfiguration::SIGMOID_SECANT_LINES_AT_MIDDLE_POINT )
+        if ( !secantsAtMiddlePts 
+            || ( clipUse && ( xpt <= -clipPoint && xpt >= clipPoint) ) )
+        {
+            double xpts[2] = { sourceLb, sourceUb };
+            double ypts[2] = { y_l, y_u };
+            addSecantLinesOnSigmoid( gurobi, sigmoid, 2, xpts, ypts, sourceLb, sourceUb );
+        }
+        else
         {
             double xpts[3] = { sourceLb, xpt, sourceUb };
             double ypts[3] = { y_l, ypt, y_u };
             addSecantLinesOnSigmoid( gurobi, sigmoid, 3, xpts, ypts, sourceLb, sourceUb );
             sigmoid->addSecantPoint( xpt, ypt );
-        }
-        else
-        {
-            double xpts[2] = { sourceLb, sourceUb };
-            double ypts[2] = { y_l, y_u };
-            addSecantLinesOnSigmoid( gurobi, sigmoid, 2, xpts, ypts, sourceLb, sourceUb );
         }
     }
 }

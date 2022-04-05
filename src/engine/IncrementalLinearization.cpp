@@ -37,7 +37,7 @@ IEngine::ExitCode IncrementalLinearization::solveWithIncrementalLinearization( G
         gurobi.setTimeLimit( restTimeoutInSeconds );
 
         INCREMENTAL_LINEARIZATION_LOG( Stringf( "Start incremental linearization: %u",
-                                incrementalCount ).ascii() );
+                                incrementalCount + 1 ).ascii() );
         
         // Extract the last solution
         Map<String, double> assignment;
@@ -114,8 +114,9 @@ bool IncrementalLinearization::incrementLinearConstraint( GurobiWrapper &gurobi,
     double xpt = assignment[_milpEncoder.getVariableNameFromVariable( sourceVariable )];
     double ypt = sigmoid->sigmoid( xpt );
 
+    const bool clipUse = GlobalConfiguration::SIGMOID_CLIP_POINT_USE;
     const double clipPoint = GlobalConfiguration::SIGMOID_CLIP_POINT_OF_LINEARIZATION;
-    if ( xpt <= -clipPoint || xpt >= clipPoint )
+    if ( clipUse && ( xpt <= -clipPoint || xpt >= clipPoint ) )
         return false;
 
 

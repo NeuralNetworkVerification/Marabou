@@ -232,8 +232,11 @@ public:
     */
     static const unsigned DNC_DEPTH_THRESHOLD;
 
-    // Whether to add secant lines at the middle point of sigmoid between lb and ub  for fisrt linearization. 
+    // Whether to add secant lines at the middle point of sigmoid between lb and ub for fisrt linearization. 
     static const bool SIGMOID_SECANT_LINES_AT_MIDDLE_POINT;
+
+    // Wheter to use clip point for sigmoid linearization
+    static const bool SIGMOID_CLIP_POINT_USE;
 
     // A clip point of sigmoig linearlization
     static const double SIGMOID_CLIP_POINT_OF_LINEARIZATION;
