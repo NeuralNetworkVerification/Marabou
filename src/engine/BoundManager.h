@@ -17,8 +17,10 @@
  ** BoundManager provides a method to obtain a new variable with:
  ** registerNewVariable().
  **
- ** The bound values and tighten flags are stored using context-dependent objects,
- ** which backtrack automatically with the central _context object.
+ ** The bound values are stored locally and copied over to and from
+ ** context-dependent objects, which backtrack automatically with the central
+ ** _context object. The pointers to local bounds are provided to the Tableau
+ ** for efficiency of read operations.
  **
  ** There are two sets of methods to set bounds:
  **   * set*Bounds     - local method used to update bounds
@@ -26,9 +28,9 @@
  **                        to the _tableau (if registered) to keep the assignment and
  **                      basic/non-basic variables updated accordingly.
  **
- ** As soon as bounds become inconsistent, i.e. lowerBound > upperBound, an
- ** InfeasableQueryException is thrown. In the long run, we want the exception
- ** replaced by a flag, and switch to the conflict analysis mode instead.
+ ** When bounds become inconsistent, i.e. lowerBound > upperBound,
+ ** _consistentBounds flag is set and the bound update that yielded
+ ** inconsistency is stored for conflict analysis purposes.
  **
  ** It is assumed that variables are not introduced on the fly, and as such
  ** interaction with context-dependent features is not implemented.
