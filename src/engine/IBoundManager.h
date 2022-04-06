@@ -44,6 +44,11 @@ public:
     virtual unsigned registerNewVariable() = 0;
 
     /*
+       Initialize BoundManager to a given number of variables;
+     */
+    virtual void initialize( unsigned numberOfVariables ) = 0;
+
+    /*
        Returns number of registered variables
      */
     virtual unsigned getNumberOfVariables() const = 0;

@@ -20,6 +20,7 @@
 #include "Vector.h"
 #include "Map.h"
 #include "Tightening.h"
+#include "MarabouError.h"
 
 class Tableau;
 class MockBoundManager : public IBoundManager
@@ -27,15 +28,26 @@ class MockBoundManager : public IBoundManager
 public:
     MockBoundManager()
       : _size( 0 )
-      , _lowerBounds()
-      , _upperBounds()
-      , _tightenedLower()
-      , _tightenedUpper()
+      , _lowerBounds( nullptr )
+      , _upperBounds( nullptr )
+      , _tightenedLower( nullptr )
+      , _tightenedUpper( nullptr )
     {
     };
 
     ~MockBoundManager()
     {
+        if ( _lowerBounds != nullptr )
+            delete [] _lowerBounds;
+
+        if ( _upperBounds != nullptr )
+            delete [] _upperBounds;
+
+        if ( _tightenedLower != nullptr )
+            delete [] _tightenedLower;
+
+        if ( _tightenedUpper != nullptr )
+            delete [] _tightenedUpper;
     };
 
     /*
@@ -47,6 +59,23 @@ public:
     {
       return -1;
     };
+
+    /*
+       Initialize local bounds
+     */
+    void initialize( unsigned size )
+    {
+      _lowerBounds = new double[size];
+      _upperBounds = new double[size];
+      _tightenedUpper = new bool[size];
+      _tightenedLower = new bool[size];
+
+      if ( _lowerBounds == nullptr || _upperBounds == nullptr ||
+           _tightenedLower == nullptr || _tightenedUpper == nullptr )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "MockBoundManager" );
+
+      _size = size;
+    }
 
     /*
        Returns number of registered variables
@@ -110,12 +139,12 @@ public:
 
     const double * getLowerBounds() const
     {
-        return nullptr;
+        return _lowerBounds;
     };
 
     const double * getUpperBounds() const
     {
-        return nullptr;
+        return _upperBounds;
     };
 
      /*
@@ -125,28 +154,23 @@ public:
     void getTightenings( List<Tightening> &tightenings )
     {
 
-        for ( auto it : _tightenedLower )
+        for ( unsigned var = 0; var < _size; ++var )
         {
-            unsigned var =  it.first;
-            bool tightened =  it.second;
-
-            if ( tightened )
+            if ( _tightenedLower[var] )
             {
                 tightenings.append(
                     Tightening( var, _lowerBounds[var], Tightening::LB ) );
-                it.second = false;
+                _tightenedLower[var] = false;
             }
         }
 
-        for ( auto it : _tightenedUpper )
+        for ( unsigned var = 0; var < _size; ++var )
         {
-            unsigned var =  it.first;
-            bool tightened =  it.second;
-            if ( tightened )
+            if ( _tightenedUpper[var] )
             {
                 tightenings.append(
                     Tightening( var, _upperBounds[var], Tightening::UB ) );
-                it.second = false;
+                _tightenedUpper[var] = false;
             }
         }
     }
@@ -188,10 +212,14 @@ public:
 private:
     unsigned _size;
 
-    Map<unsigned, double> _lowerBounds;
-    Map<unsigned, double> _upperBounds;
-    Map<unsigned, bool> _tightenedLower;
-    Map<unsigned, bool> _tightenedUpper;
+    double *_lowerBounds;
+    double *_upperBounds;
+    bool *_tightenedLower;
+    bool *_tightenedUpper;
+    /* Map<unsigned, double> _lowerBounds; */
+    /* Map<unsigned, double> _upperBounds; */
+    /* Map<unsigned, bool> _tightenedLower; */
+    /* Map<unsigned, bool> _tightenedUpper; */
 };
 
 #endif // __MockBoundManager_h__

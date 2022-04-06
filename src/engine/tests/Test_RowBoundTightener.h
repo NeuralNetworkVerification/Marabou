@@ -46,6 +46,8 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
+        tightener.setBoundsPointers( tableau->getBoundManager().getLowerBounds(),
+                                     tableau->getBoundManager().getUpperBounds() );
 
         // Current bounds:
         //  0 <= x0 <= 0
@@ -112,6 +114,10 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
+        tightener.setBoundsPointers( tableau->getBoundManager().getLowerBounds(),
+                                     tableau->getBoundManager().getUpperBounds() );
+
+
 
         // Current bounds:
         //    0  <= x0 <= 0
@@ -168,6 +174,10 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
+        tightener.setBoundsPointers( tableau->getBoundManager().getLowerBounds(),
+                                     tableau->getBoundManager().getUpperBounds() );
+
+
 
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, -200 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 0 ) );
@@ -217,6 +227,8 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
+        tightener.setBoundsPointers( tableau->getBoundManager().getLowerBounds(),
+                                     tableau->getBoundManager().getUpperBounds() );
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, -112 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 101 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 1, 5 ) );
@@ -256,6 +268,8 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 1, 5 );
+        tightener.setBoundsPointers( tableau->getBoundManager().getLowerBounds(),
+                                     tableau->getBoundManager().getUpperBounds() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, 0) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 3 ) );
@@ -313,6 +327,8 @@ public:
         RowBoundTightener tightener( *tableau );
 
         tableau->setDimensions( 2, 5 );
+        tightener.setBoundsPointers( tableau->getBoundManager().getLowerBounds(),
+                                     tableau->getBoundManager().getUpperBounds() );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 0, 0 ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 0, 3 ) );
