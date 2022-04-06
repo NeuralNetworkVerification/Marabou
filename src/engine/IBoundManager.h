@@ -30,6 +30,7 @@
 
 class Tightening;
 class ITableau;
+class IRowBoundTightener;
 class IBoundManager
 {
 public:
@@ -91,6 +92,13 @@ public:
       Register Tableau for callbacks.
      */
     virtual void registerTableau( ITableau *tableau ) = 0;
+
+    /*
+       Register RowBoundTightener for callbacks.
+     */
+    virtual void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener ) = 0;
+
+
 };
 
 #endif // __IBoundManager_h__

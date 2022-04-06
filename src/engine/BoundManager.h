@@ -40,6 +40,7 @@
 #define __BoundManager_h__
 
 #include "IBoundManager.h"
+#include "IRowBoundTightener.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Tightening.h"
@@ -129,15 +130,21 @@ public:
     */
     bool consistentBounds( unsigned variable ) const;
     /*
-       Register Tableau reference for callbacks from tighten*Bound methods.
+       Register Tableau pointer for callbacks from tighten*Bound methods.
      */
     void registerTableau( ITableau *tableau );
+
+    /*
+       Register RowBoundTightener for updates to local bound pointers.
+     */
+    void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener );
 
 private:
     CVC4::context::Context &_context;
     unsigned _size;
     unsigned _allocated;
     ITableau *_tableau; // Used only by callbacks
+    IRowBoundTightener *_rowBoundTightener; // Used only by callbacks
 
     CVC4::context::CDO<bool> _consistentBounds;
     Tightening _firstInconsistentTightening;

@@ -177,7 +177,11 @@ public:
       return getLowerBound( variable ) <= getUpperBound( variable );
     };
 
-    void registerTableau( ITableau */*tableau*/ )
+    void registerTableau( ITableau */* tableau */ )
+    {
+    }
+
+    void registerRowBoundTightener( IRowBoundTightener */* rowBoundTightener */ )
     {
     }
 

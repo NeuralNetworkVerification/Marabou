@@ -29,6 +29,7 @@ BoundManager::BoundManager( Context &context )
     , _size( 0 )
     , _allocated( 0 )
     , _tableau( nullptr )
+    , _rowBoundTightener( nullptr )
     , _consistentBounds( &_context )
     , _firstInconsistentTightening( 0, 0.0, Tightening::LB )
     , _lowerBounds( nullptr )
@@ -87,7 +88,10 @@ void BoundManager::allocateLocalBounds( unsigned size )
     _allocated = size;
 
     if ( _tableau )
-      _tableau->setBoundsPointers( _lowerBounds, _upperBounds);
+      _tableau->setBoundsPointers( _lowerBounds, _upperBounds );
+
+    if ( _rowBoundTightener )
+      _rowBoundTightener->setBoundsPointers( _lowerBounds, _upperBounds );
 }
 
 unsigned BoundManager::registerNewVariable()
@@ -285,4 +289,10 @@ void BoundManager::registerTableau( ITableau *ptrTableau )
 {
     ASSERT( _tableau == nullptr );
     _tableau = ptrTableau;
+}
+
+void BoundManager::registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener )
+{
+    ASSERT( _rowBoundTightener == nullptr );
+    _rowBoundTightener = ptrRowBoundTightener;
 }
