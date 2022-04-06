@@ -106,6 +106,11 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    /*
+       Update pointers to local lower/upper bounds in BoundManager
+     */
+    void setBoundsPointers( const double *lower, const double *upper );
+
 private:
     const ITableau &_tableau;
     unsigned _n;
@@ -115,6 +120,13 @@ private:
      * Object that stores current bounds from all the sources
      */
     IBoundManager &_boundManager;
+
+    /*
+       Direct pointers to _boundManager arrays to avoid multiple dereferencing.
+     */
+    const double * _lowerBounds;
+    const double * _upperBounds;
+
 
     /*
       Work space for the inverted basis matrix tighteners

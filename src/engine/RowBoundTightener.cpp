@@ -23,6 +23,8 @@
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     : _tableau( tableau )
     , _boundManager( tableau.getBoundManager() )
+    , _lowerBounds( nullptr )
+    , _upperBounds( nullptr )
     , _rows( NULL )
     , _z( NULL )
     , _ciTimesLb( NULL )
@@ -584,6 +586,12 @@ void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
 void RowBoundTightener::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
+}
+
+void RowBoundTightener::setBoundsPointers( const double *lower, const double *upper )
+{
+    _lowerBounds = lower;
+    _upperBounds = upper;
 }
 
 //
