@@ -164,6 +164,10 @@ void Statistics::print()
             , printPercents( _totalTimePerformingSymbolicBoundTightening, _timeMainLoopMicro )
             , _totalTimePerformingSymbolicBoundTightening / 1000
             );
+    
+    printf( "\t\t Residual Reasoning (derive/maintain) Times: %u, %u (nano)\n"
+            , _residualReasoningDerivationTime, _residualReasoningMaintenanceTime
+            );
 
     unsigned long long total =
         _timeSimplexStepsMicro +
@@ -559,8 +563,24 @@ void Statistics::incNumResidualReasoningSplits() {
     ++_numResidualReasoningSplits;
 }
 
+void Statistics::incResidualReasoningDerivationTime(unsigned int rr_time) {
+    _residualReasoningDerivationTime += rr_time;
+}
+
+void Statistics::incResidualReasoningMaintenanceTime(unsigned int rr_time) {
+    _residualReasoningMaintenanceTime += rr_time;
+}
+
 unsigned int Statistics::getNumResidualReasoningSplits() const {
     return _numResidualReasoningSplits;
+}
+
+unsigned int Statistics::getResidualReasoningDerivationTime() const {
+    return _residualReasoningDerivationTime;
+}
+
+unsigned int Statistics::getResidualReasoningMaintenanceTime() const {
+    return _residualReasoningMaintenanceTime;
 }
 
 void Statistics::addTimeForValidCaseSplit( unsigned long long time )

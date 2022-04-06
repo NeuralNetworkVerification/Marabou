@@ -150,6 +150,10 @@ public:
     */
     void incNumResidualReasoningSplits();
     unsigned int getNumResidualReasoningSplits() const;
+    void incResidualReasoningDerivationTime(unsigned int);
+    unsigned int getResidualReasoningDerivationTime() const;
+    void incResidualReasoningMaintenanceTime(unsigned int);
+    unsigned int getResidualReasoningMaintenanceTime() const;
 
     /*
       For debugging purposes
@@ -322,6 +326,12 @@ private:
 
     // Residual Reasoning num splits
     unsigned _numResidualReasoningSplits;
+    
+    // Residual Reasoning derivation process run time
+    unsigned int _residualReasoningDerivationTime;
+
+    // Residual Reasoning maintainance run time
+    unsigned int _residualReasoningMaintenanceTime;
 
     // Printing helpers
     double printPercents( unsigned long long part, unsigned long long total ) const;

@@ -31,7 +31,12 @@
 #include "TimeUtils.h"
 #include "Vector.h"
 
+#include <iostream>
 #include <random>
+#include <chrono>
+
+using namespace std;
+using namespace chrono;
 
 Engine::Engine()
     : _rowBoundTightener( *_tableau )
@@ -279,9 +284,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 {
                     // check for more splits
                     List<PiecewiseLinearCaseSplit> allSplitSoFar;
-
+                    high_resolution_clock::time_point rr_start = high_resolution_clock::now();
+                    
                     // option 1:
-                    // applt thoses splits
+                    // apply those splits
                     while ( true ) {
                         _smtCore.allSplitsSoFar( allSplitSoFar );
                         const auto impliedSplits = _residualReasoner->getImpliedSplits( allSplitSoFar );
@@ -293,6 +299,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
                             this->applySplit( split );
                         }
                     }
+                    high_resolution_clock::time_point rr_end = high_resolution_clock::now();
+                    auto tm_duration = duration_cast<nanoseconds>(rr_end - rr_start).count();
+                    _statistics.incResidualReasoningDerivationTime(tm_duration);
                 }
                 splitJustPerformed = true;
                 continue;
@@ -386,7 +395,12 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If we're at level 0, the whole query is unsat.
             if ( _residualReasoner )
             {
+
+                high_resolution_clock::time_point rr_start = high_resolution_clock::now();
                 _residualReasoner->onUnsatReceived( _smtCore.splitsWithoutImplied() );
+                high_resolution_clock::time_point rr_end = high_resolution_clock::now();
+                auto tm_duration = duration_cast<nanoseconds>(rr_end - rr_start).count();
+                _statistics.incResidualReasoningMaintenanceTime(tm_duration);
             }
             if ( !_smtCore.popSplit() )
             {

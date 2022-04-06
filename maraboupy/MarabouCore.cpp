@@ -577,5 +577,7 @@ enum ExitCode {
         .def("getTimeSimplexStepsMicro", &Statistics::getTimeSimplexStepsMicro)
         .def("getNumConstraintFixingSteps", &Statistics::getNumConstraintFixingSteps)
         .def("getNumResidualReasoningSplits", &Statistics::getNumResidualReasoningSplits)
+        .def("getResidualReasoningDerivationTime", &Statistics::getResidualReasoningDerivationTime)
+        .def("getResidualReasoningMaintenanceTime", &Statistics::getResidualReasoningMaintenanceTime)
         .def("hasTimedOut", &Statistics::hasTimedOut);
 }
