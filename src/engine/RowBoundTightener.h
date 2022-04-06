@@ -40,7 +40,7 @@ public:
      */
     inline double getLowerBound( unsigned var ) const
     {
-        return _boundManager.getLowerBound( var );
+        return  _lowerBounds[var];// _boundManager.getLowerBound( var );
     }
 
     /*
@@ -48,7 +48,7 @@ public:
      */
     inline double getUpperBound( unsigned var ) const
     {
-        return _boundManager.getUpperBound( var );
+        return _upperBounds[var];//_boundManager.getUpperBound( var );
     }
 
     /*
