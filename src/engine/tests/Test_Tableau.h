@@ -114,9 +114,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -135,9 +134,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -184,9 +182,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -239,9 +236,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -294,9 +290,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
@@ -409,9 +404,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -474,9 +468,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -555,9 +548,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -767,9 +759,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -971,9 +962,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         // Initialization steps
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
@@ -1108,9 +1098,9 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.registerTableau( tableau ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1176,6 +1166,7 @@ public:
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
         equation.setScalar( 5 );
+
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );
@@ -1268,9 +1259,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1348,9 +1338,8 @@ public:
         Context context;
         BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau( boundManager ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1526,6 +1515,7 @@ public:
 
         Context context;
         BoundManager boundManager( context );
+        boundManager.initialize( 7 );
 
         TS_ASSERT( tableau = new Tableau( boundManager ) );
 

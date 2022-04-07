@@ -1213,10 +1213,12 @@ public:
 
         TS_ASSERT_EQUALS( max.numFeasibleCases(), 3u );
 
+        bm.storeLocalBounds();
         context.push(); // L1
         max.notifyUpperBound( 3, 5 ); // This should eliminate variable 3;
         TS_ASSERT_EQUALS( max.numFeasibleCases(), 2u );
 
+        bm.storeLocalBounds();
         context.push(); // L2
         PhaseStatus phase = max.nextFeasibleCase();
         TS_ASSERT_DIFFERS( phase, MAX_PHASE_ELIMINATED );
@@ -1227,6 +1229,7 @@ public:
         TS_ASSERT_EQUALS( max.nextFeasibleCase(), MAX_PHASE_ELIMINATED );
 
         context.pop(); // L1
+        bm.restoreLocalBounds();
         TS_ASSERT( !max.isImplication() );
         max.notifyUpperBound( 4, 6 ); // This should eliminate variable 4;
         TS_ASSERT( max.isImplication() );
@@ -1238,6 +1241,7 @@ public:
         TS_ASSERT( !max.isFeasible() );
 
         context.pop(); // L1
+        bm.restoreLocalBounds();
 
         TS_ASSERT_EQUALS( max.getPhaseStatus(), PHASE_NOT_FIXED );
     }

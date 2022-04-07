@@ -1343,6 +1343,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             delete[] constraintMatrix;
             constraintMatrix = createConstraintMatrix();
 
+            unsigned n = _preprocessedQuery->getNumberOfVariables();
+            _boundManager.initialize( n );
+
             initializeTableau( constraintMatrix, initialBasis );
 
             delete[] constraintMatrix;
@@ -1363,8 +1366,10 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _tableau->setGurobi( &( *_gurobi ) );
 
             unsigned n = _preprocessedQuery->getNumberOfVariables();
-            // Only use Tableau to store the bounds.
-            _tableau->setBoundDimension( n );
+            unsigned m = _preprocessedQuery->getEquations().size();
+            // Only use BoundManager to store the bounds.
+            _boundManager.initialize( n );
+            _tableau->setDimensions( m, n );
             initializeBoundsAndConstraintWatchersInTableau( n );
 
             for ( const auto &constraint : _plConstraints )
@@ -2323,6 +2328,17 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
     return _statistics.getTotalTimeInMicro() / MICROSECONDS_TO_SECONDS > timeout;
 }
 
+void Engine::preContextPushHook()
+{
+    _boundManager.storeLocalBounds();
+}
+
+void Engine::postContextPopHook()
+{
+    _boundManager.restoreLocalBounds();
+    _tableau->postContextPopHook();
+}
+
 void Engine::reset()
 {
     resetStatistics();
@@ -3099,4 +3115,9 @@ void Engine::checkGurobiBoundConsistency() const
             }
         }
     }
+}
+
+bool Engine::consistentBounds() const
+{
+    return _boundManager.consistentBounds();
 }

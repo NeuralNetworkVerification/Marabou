@@ -148,9 +148,10 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
-      Hook invoked after context pop to update context independent data.
+      Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
-    void postContextPopHook() { _tableau->postContextPopHook(); };
+    void postContextPopHook();
+    void preContextPushHook();
 
     /*
       Reset the state of the engine, before solving a new query
@@ -723,6 +724,16 @@ private:
       the constraints in _gurobi are infeasible. Throw an error otherwise.
     */
     bool minimizeCostWithGurobi( const LinearExpression &costFunction );
+
+    /*
+      Get Context reference
+    */
+    Context &getContext() { return _context; }
+
+    /*
+       Checks whether the current bounds are consistent. Exposed for the SmtCore.
+     */
+    bool consistentBounds() const;
 
     /*
       DEBUG only
