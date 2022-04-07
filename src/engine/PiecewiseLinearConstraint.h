@@ -344,6 +344,18 @@ public:
     {
         _gurobi = gurobi;
     }
+    
+    /*
+      Method to set PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
+     */
+    void setPhaseStatus( PhaseStatus phaseStatus );
+
+    /*
+      Method to get PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior.
+    */
+    PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -509,18 +521,6 @@ protected:
        Check whether a case is marked as infeasible under current search prefix.
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
-
-    /*
-       Method to set PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
-     */
-    void setPhaseStatus( PhaseStatus phaseStatus );
-
-    /*
-       Method to get PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior.
-    */
-    PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
