@@ -172,16 +172,6 @@ public:
     IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*
-       Update pointers to lower/upper bounds in BoundManager
-     */
-    void setBoundsPointers( const double *lower, const double *upper );
-
-    /*
-      Get BoundManager reference
-     */
-    IBoundManager &getBoundManager() const { return _boundManager; }
-
-    /*
       Returns whether any variable's bounds are invalid.
     */
     bool allBoundsValid() const;
