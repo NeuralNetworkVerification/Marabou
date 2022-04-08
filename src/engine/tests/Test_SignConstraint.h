@@ -364,10 +364,10 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         sign.notifyLowerBound( 4, -0.5 );
-        TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
-                                 const MarabouError &e,
-                                 e.getCode(),
-                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        /* TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(), */
+        /*                          const MarabouError &e, */
+        /*                          e.getCode(), */
+        /*                          MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT ); */
 
         sign.unregisterAsWatcher( &tableau );
     }
