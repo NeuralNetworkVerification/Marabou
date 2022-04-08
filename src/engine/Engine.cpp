@@ -1258,6 +1258,12 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
                                                              numberOfVariables )
 {
+    _rowBoundTightener->setDimensions();
+
+    // Register the boundManager with all the PL constraints
+    for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
+        plConstraint->registerBoundManager( &_boundManager );
+
     _plConstraints = _preprocessedQuery->getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
@@ -1369,11 +1375,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             {
                 constraint->registerGurobi( &( *_gurobi ) );
             }
-        }
-
-        for ( const auto &constraint : _plConstraints )
-        {
-            constraint->registerTableau( _tableau );
         }
 
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
