@@ -14,7 +14,6 @@
 
 #include "SignConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -393,18 +392,18 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::gt( bound, -1 ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
-            _constraintBoundTightener->registerTighterLowerBound( _b, 0 );
+            _boundManager->tightenLowerBound( _f, 1 );
+            _boundManager->tightenLowerBound( _b, 0 );
         }
     }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
+            _boundManager->tightenLowerBound( _f, 1 );
         }
     }
 }
@@ -424,18 +423,18 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::lt( bound, 1 ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
-            _constraintBoundTightener->registerTighterUpperBound( _b, 0 );
+            _boundManager->tightenUpperBound( _f, -1 );
+            _boundManager->tightenUpperBound( _b, 0 );
         }
     }
     else if ( variable == _b && FloatUtils::isNegative( bound ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
+            _boundManager->tightenUpperBound( _f, -1 );
         }
     }
 }

@@ -14,7 +14,6 @@
 
 #include "AbsoluteValueConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -133,19 +132,19 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
     fixPhaseIfNeeded();
 
     // Update partner's bound
-    if ( isActive() && _constraintBoundTightener )
+    if ( isActive() && _boundManager )
     {
         if ( variable == _b )
         {
             if ( bound < 0 )
             {
                 double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) );
-                _constraintBoundTightener->registerTighterUpperBound( _f, fUpperBound );
+                _boundManager->tightenUpperBound( _f, fUpperBound );
 
                 if ( _auxVarsInUse )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _posAux, fUpperBound - bound );
+                    _boundManager->
+                        tightenUpperBound( _posAux, fUpperBound - bound );
                 }
             }
             else
@@ -160,7 +159,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
             // bother. The only exception is if the lower bound is,
             // for some reason, negative
             if ( bound < 0 )
-                _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+                _boundManager->tightenLowerBound( _f, 0 );
         }
 
         // Any lower bound tightening on the aux variables, if they
@@ -183,19 +182,19 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
     fixPhaseIfNeeded();
 
     // Update partner's bound
-    if ( isActive() && _constraintBoundTightener )
+    if ( isActive() && _boundManager )
     {
         if ( variable == _b )
         {
             if ( bound > 0 )
             {
                 double fUpperBound = FloatUtils::max( bound, -getLowerBound( _b ) );
-                _constraintBoundTightener->registerTighterUpperBound( _f, fUpperBound );
+                _boundManager->tightenUpperBound( _f, fUpperBound );
 
                 if ( _auxVarsInUse )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _negAux, fUpperBound + bound );
+                    _boundManager->
+                        tightenUpperBound( _negAux, fUpperBound + bound );
                 }
             }
             else
@@ -207,23 +206,23 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
         {
             // F's upper bound can restrict both bounds of B
             if ( bound < getUpperBound( _b ) )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+                _boundManager->tightenUpperBound( _b, bound );
 
             if ( -bound > getLowerBound( _b ) )
-                _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
+                _boundManager->tightenLowerBound( _b, -bound );
 
             if ( _auxVarsInUse )
             {
                 if ( existsLowerBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _posAux, bound - getLowerBound( _b ) );
+                    _boundManager->
+                        tightenUpperBound( _posAux, bound - getLowerBound( _b ) );
                 }
 
                 if ( existsUpperBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _negAux, bound + getUpperBound( _b ) );
+                    _boundManager->
+                        tightenUpperBound( _negAux, bound + getUpperBound( _b ) );
                 }
             }
         }
@@ -233,31 +232,31 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
             {
                 if ( existsUpperBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _f, getUpperBound( _b ) + bound );
+                    _boundManager->
+                        tightenUpperBound( _f, getUpperBound( _b ) + bound );
                 }
 
                 if ( existsLowerBound( _f ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterLowerBound( _b, getLowerBound( _f ) - bound );
+                    _boundManager->
+                        tightenLowerBound( _b, getLowerBound( _f ) - bound );
                 }
             }
             else if ( variable == _negAux )
             {
                 if ( existsLowerBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _f, bound - getLowerBound( _b ) );
+                    _boundManager->
+                        tightenUpperBound( _f, bound - getLowerBound( _b ) );
                 }
 
                 if ( existsLowerBound( _f ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _b, bound - getLowerBound( _f ) );
+                    _boundManager->
+                        tightenUpperBound( _b, bound - getLowerBound( _f ) );
                 }
             }
-        }
+       }
     }
 }
 
