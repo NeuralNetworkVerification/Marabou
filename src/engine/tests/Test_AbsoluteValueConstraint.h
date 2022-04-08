@@ -1636,25 +1636,14 @@ public:
                                    double bUpper,
                                    List<Tightening> entailedTightenings )
     {
-        List<Tightening>::iterator it;
-        it = entailedTightenings.begin();
-
         TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-        TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, fLower );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, bLower );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, fUpper );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, bUpper );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        Tightening f_lower( f, fLower, Tightening::LB );
+        Tightening f_upper( f, fUpper, Tightening::UB );
+        Tightening b_lower( b, bLower, Tightening::LB );
+        Tightening b_upper( b, bUpper, Tightening::UB );
+        for ( const auto &t : { f_lower, f_upper, b_lower, b_upper} )
+          TS_ASSERT( entailedTightenings.exists( t ) );
     }
 
     void assert_tightenings_match( List<Tightening> a, List<Tightening> b )
