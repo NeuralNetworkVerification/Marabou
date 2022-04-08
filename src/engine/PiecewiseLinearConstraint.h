@@ -332,7 +332,11 @@ public:
     {
         _gurobi = gurobi;
     }
-    
+
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
     /*
       Method to set PhaseStatus of the constraint. Encapsulates both context
       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
