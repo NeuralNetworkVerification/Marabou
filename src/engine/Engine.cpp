@@ -1377,6 +1377,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             }
         }
 
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerTableau( _tableau );
+        }
+
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
 
@@ -1916,6 +1921,7 @@ void Engine::applyAllRowTightenings()
     applyBoundTightenings();
 }
 
+// This method becomes obsolete since bound updates should occur directly
 void Engine::applyAllConstraintTightenings()
 {
     applyBoundTightenings();
