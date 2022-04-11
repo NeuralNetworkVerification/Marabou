@@ -58,7 +58,12 @@ public:
         SOLVE_WITH_MILP,
 
         // Whether to call a LP tightening after a case split
-        PERFORM_LP_TIGHTENING_AFTER_SPLIT
+        PERFORM_LP_TIGHTENING_AFTER_SPLIT,
+
+        // If false, when multiple threads are allowed, run the DeepSoI-based procedure
+        // with a different random seed on each thread. The problem is solved once
+        // any of the thread finishes.
+        NO_PARALLEL_DEEPSOI,
     };
 
     enum IntOptions {

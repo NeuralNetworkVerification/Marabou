@@ -33,13 +33,18 @@
 #include <cmath>
 #include <thread>
 
+#ifdef ENABLE_OPENBLAS
+#include "cblas.h"
+#endif
+
 void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
                            std::unique_ptr<InputQuery> inputQuery,
-                           std::atomic_uint &numUnsolvedSubQueries,
+                           std::atomic_int &numUnsolvedSubQueries,
                            std::atomic_bool &shouldQuitSolving,
                            unsigned threadId, unsigned onlineDivides,
                            float timeoutFactor, SnCDivideStrategy divideStrategy,
-                           bool restoreTreeStates, unsigned verbosity )
+                           bool restoreTreeStates, unsigned verbosity,
+                           unsigned seed, bool parallelDeepSoI )
 {
     unsigned cpuId = 0;
     (void) threadId;
@@ -48,11 +53,13 @@ void DnCManager::dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine
     getCPUId( cpuId );
     DNC_MANAGER_LOG( Stringf( "Thread #%u on CPU %u", threadId, cpuId ).ascii() );
 
-    engine->processInputQuery( *inputQuery, false );
+    engine->setRandomSeed( seed );
+    if ( threadId != 0 )
+        engine->processInputQuery( *inputQuery, false );
 
     DnCWorker worker( workload, engine, std::ref( numUnsolvedSubQueries ),
                       std::ref( shouldQuitSolving ), threadId, onlineDivides,
-                      timeoutFactor, divideStrategy, verbosity );
+                      timeoutFactor, divideStrategy, verbosity, parallelDeepSoI );
     while ( !shouldQuitSolving.load() )
     {
         worker.popOneSubQueryAndSolve( restoreTreeStates );
@@ -66,6 +73,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
     , _timeoutReached( false )
     , _numUnsolvedSubQueries( 0 )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
+    , _runParallelDeepSoI( !Options::get()->getBool( Options::NO_PARALLEL_DEEPSOI ) )
 {
     SnCDivideStrategy sncSplittingStrategy = Options::get()->getSnCDivideStrategy();
     if ( sncSplittingStrategy == SnCDivideStrategy::Auto )
@@ -122,12 +130,23 @@ void DnCManager::solve()
 
     unsigned numWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
+#ifdef ENABLE_OPENBLAS
+    // When preprocess the input query with SBT, we leverage multi-threading.
+    openblas_set_num_threads( numWorkers );
+#endif
+
     // Preprocess the input query and create an engine for each of the threads
     if ( !createEngines( numWorkers ) )
     {
         _exitCode = DnCManager::UNSAT;
         return;
     }
+
+#ifdef ENABLE_OPENBLAS
+    // Now each worker occupies one thread. So SBT performed during the search
+    // will be single-threaded.
+    openblas_set_num_threads( 1 );
+#endif
 
     // Prepare the mechanism through which we can ask the engines to quit
     List<std::atomic_bool *> quitThreads;
@@ -141,10 +160,26 @@ void DnCManager::solve()
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "DnCManager::workload" );
 
     SubQueries subQueries;
-    initialDivide( subQueries );
+    if ( !_runParallelDeepSoI )
+        initialDivide( subQueries );
+    else
+    {
+        for ( unsigned i = 0; i < numWorkers; ++i )
+        {
+            // Create empty case splits to get each worker started.
+            SubQuery *subQuery = new SubQuery;
+            subQuery->_queryId = Stringf( "%u", i );
+            auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
+                ( new PiecewiseLinearCaseSplit );
+            subQuery->_split = std::move( split );
+            subQuery->_timeoutInSeconds = timeoutInSeconds;
+            subQuery->_depth = 0;
+            subQueries.append( subQuery );
+        }
+    }
 
     // Create objects shared across workers
-    _numUnsolvedSubQueries = subQueries.size();
+    _numUnsolvedSubQueries = _runParallelDeepSoI ? 1 : subQueries.size();
     std::atomic_bool shouldQuitSolving( false );
     WorkerQueue *workload = new WorkerQueue( 0 );
     for ( auto &subQuery : subQueries )
@@ -159,21 +194,31 @@ void DnCManager::solve()
     unsigned onlineDivides = Options::get()->getInt( Options::NUM_ONLINE_DIVIDES );
     float timeoutFactor = Options::get()->getFloat( Options::TIMEOUT_FACTOR );
     bool restoreTreeStates = Options::get()->getBool( Options::RESTORE_TREE_STATES );
+    unsigned seed = Options::get()->getInt( Options::SEED );
+
+    auto baseInputQuery = std::unique_ptr<InputQuery>
+        ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
 
     // Spawn threads and start solving
     std::list<std::thread> threads;
     for ( unsigned threadId = 0; threadId < numWorkers; ++threadId )
     {
-        // Get the processed input query from the base engine
-        auto inputQuery = std::unique_ptr<InputQuery>
-            ( new InputQuery( *( _baseEngine->getInputQuery() ) ) );
+        std::unique_ptr<InputQuery> inputQuery = nullptr;
+        if ( threadId != 0 )
+            // Get the processed input query from the base engine
+            inputQuery = std::unique_ptr<InputQuery>
+                ( new InputQuery( *( baseInputQuery ) ) );
+
         threads.push_back( std::thread( dncSolve, workload, _engines[ threadId ],
-                                        std::move( inputQuery ),
+                                        threadId != 0 ? std::move( inputQuery ) : nullptr,
                                         std::ref( _numUnsolvedSubQueries ),
                                         std::ref( shouldQuitSolving ),
                                         threadId, onlineDivides,
                                         timeoutFactor, _sncSplittingStrategy,
-                                        restoreTreeStates, _verbosity ) );
+                                        restoreTreeStates, _verbosity,
+                                        _runParallelDeepSoI ? seed + threadId : seed,
+                                        _runParallelDeepSoI
+                                        ) );
     }
 
     // Wait until either all subQueries are solved or a satisfying assignment is
@@ -184,7 +229,8 @@ void DnCManager::solve()
         if ( _timeoutReached )
             shouldQuitSolving = true;
         else
-            std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+            std::this_thread::sleep_for( std::chrono::milliseconds
+                                         ( numWorkers ) );
     }
 
 
@@ -227,12 +273,12 @@ void DnCManager::updateDnCExitCode()
         _exitCode = DnCManager::SAT;
     else if ( _timeoutReached )
         _exitCode = DnCManager::TIMEOUT;
+    else if ( _numUnsolvedSubQueries.load() <= 0 )
+        _exitCode = DnCManager::UNSAT;
     else if ( hasQuitRequested )
         _exitCode = DnCManager::QUIT_REQUESTED;
     else if ( hasError )
         _exitCode = DnCManager::ERROR;
-    else if ( _numUnsolvedSubQueries.load() == 0 )
-        _exitCode = DnCManager::UNSAT;
     else
     {
         ASSERT( false ); // This should never happen
@@ -372,12 +418,15 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
 {
     // Create the base engine
     _baseEngine = std::make_shared<Engine>();
+    _engines.append( _baseEngine );
     if ( !_baseEngine->processInputQuery( *_baseInputQuery ) )
         // Solved by preprocessing, we are done!
         return false;
 
+    _baseEngine->setVerbosity( 0 );
+
     // Create engines for each thread
-    for ( unsigned i = 0; i < numberOfEngines; ++i )
+    for ( unsigned i = 1; i < numberOfEngines; ++i )
     {
         auto engine = std::make_shared<Engine>();
         engine->setVerbosity( 0 );

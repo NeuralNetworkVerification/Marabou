@@ -76,13 +76,11 @@ int main( int argc, char **argv )
             return 0;
         };
 
-        if ( options->getBool( Options::DNC_MODE ) )
-	{
-#ifdef ENABLE_OPENBLAS
-	    openblas_set_num_threads(1);
-#endif
+        if ( options->getBool( Options::DNC_MODE ) ||
+             ( !options->getBool( Options::NO_PARALLEL_DEEPSOI ) &&
+               !options->getBool( Options::SOLVE_WITH_MILP ) &&
+               options->getInt( Options::NUM_WORKERS ) > 1 ) )
             DnCMarabou().run();
-	}
         else
 	{
 #ifdef ENABLE_OPENBLAS

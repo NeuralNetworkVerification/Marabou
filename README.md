@@ -186,6 +186,30 @@ on Windows.
 Please see our [documentation](https://neuralnetworkverification.github.io/Marabou/)
 for the python interface, which contains examples, API documentation, and a developer's guide.
 
+### Using the run script (*Recommended*)
+For ease of use, we also provide a example python script (resources/runMarabou.py). The script can take the same arguments
+as the Marabou binary. The difference is that the python script also supports networks in onnx format.
+
+Moreover, instead of passing in a property file, you could define your property with the Python API
+calls [here](https://github.com/NeuralNetworkVerification/Marabou/blob/master/resources/runMarabou.py#L80-L81).
+
+### Choice of solver configurations
+
+Currently the default configuration of Marabou is a *single-threaded* one that
+uses DeepPoly analysis for bound tightening, and the DeepSoI procedure during the complete search.
+For optimal runtime performance, you need to build Marabou with Gurobi enabled (See sub-section below for Gurobi installation),
+so that LPs are solved by Gurobi instead of the open-source native simplex engine.  
+
+You could also leverage *parallelism* by setting the num-workers option to N. This will spawn N threads, each solving
+the original verification query using the single-threaded configuration with
+a different random seed. This is the preferred parallelization strategy for low level of parallelism (e.g. N < 30).
+For example to solve a query using this mode with 4 threads spawned:
+```
+./resources/runMarabou.py resources/nnet/mnist/mnist10x10.nnet resources/properties/mnist/image3_target6_epsilon0.05.txt --num-workers=4
+```
+
+If you have access to a large number of threads, you could also consider the Split-and-Conquer mode (see below).
+
 ### Using the Split and Conquer (SNC) mode
 In the SNC mode, activated by *--snc* Marabou decomposes the problem into *2^n0*
 sub-problems, specified by *--initial-divides=n0*. Each sub-problem will be
@@ -206,20 +230,20 @@ A guide to Split and Conquer is available as a Jupyter Notebook in [resources/Sp
 Marabou has an option to use LP relaxation for bound tightening.
 For now we use Gurobi as an LP solver. Gurobi requires a license (a free
 academic license is available), after getting one the software can be downloaded
-[here](https://www.gurobi.com/downloads/gurobi-optimizer-eula/) and [here](https://www.gurobi.com/documentation/9.0/quickstart_linux/software_installation_guid.html#section:Installation) are
+[here](https://www.gurobi.com/downloads/gurobi-optimizer-eula/) and [here](https://www.gurobi.com/documentation/9.5/quickstart_linux/software_installation_guid.html#section:Installation) are
 installation steps, there is a [compatibility
 issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-on-Linux) that should be addressed.
 A quick installation reference:
 ```
 export INSTALL_DIR=/opt
-sudo tar xvfz gurobi9.1.1_linux64.tar.gz -C $INSTALL_DIR
-cd $INSTALL_DIR/gurobi911/linux64/src/build
+sudo tar xvfz gurobi9.5.1_linux64.tar.gz -C $INSTALL_DIR
+cd $INSTALL_DIR/gurobi951/linux64/src/build
 sudo make
 sudo cp libgurobi_c++.a ../../lib/
 ```
 Next it is recommended to add the following to the .bashrc (but not necessary) 
 ```
-export GUROBI_HOME="/opt/gurobi911/linux64"
+export GUROBI_HOME="/opt/gurobi951/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 

@@ -834,12 +834,6 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
 
     ASSERT( phase == RELU_PHASE_ACTIVE || phase == RELU_PHASE_INACTIVE );
 
-    // The soundness of the SoI component assumes that the constraints f >= b and
-    // f >= 0 is added.
-    ASSERT( FloatUtils::gte( getAssignment( _f ), getAssignment( _b ),
-                             GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
-            && FloatUtils::gte( getLowerBound( _f ), 0 ) );
-
     if ( phase == RELU_PHASE_INACTIVE )
     {
         // The cost term corresponding to the inactive phase is just f,
@@ -875,10 +869,12 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     double bValue = getAssignment( _b );
     double fValue = getAssignment( _f );
 
-    if ( FloatUtils::gt( getLowerBound( _b ), bValue ) || FloatUtils::lt( getUpperBound( _b ), bValue ) )
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
+         || FloatUtils::lt( getUpperBound( _b ), bValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
-    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) || FloatUtils::lt( getUpperBound( _f ), fValue ) )
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
+         || FloatUtils::lt( getUpperBound( _f ), fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     return false;
