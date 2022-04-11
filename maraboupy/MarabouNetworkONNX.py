@@ -1019,7 +1019,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             inputValues (list of numpy array): Input values representing inputs to network
 
         Returns:
-            (numpy array): Output values of neural network
+            (list of numpy array): Output values of neural network
         """
         # Check that all input variables are designated as inputs in the graph
         # Unlike Tensorflow, ONNX only allows assignment of values to input/output nodes

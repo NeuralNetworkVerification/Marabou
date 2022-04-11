@@ -142,7 +142,10 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                 outputOps.append(self.sess.graph.get_operation_by_name(o))
         # By default, assume that the last operation is the output if output not specified
         else:
-            outputOps = [output.op for output in self.sess.graph.outputs]
+            if modelType == "savedModel_v2":
+                outputOps = [output.op for output in self.sess.graph.outputs]
+            else:
+                outputOps = [self.sess.graph.get_operations()[-1]]
 
         # Get input operations if inputNames is given
         inputOps = []
@@ -935,7 +938,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         # If we've recursed to find a Placeholder operation, this operation needs to be added the inputName list
         elif op.node_def.op == 'Placeholder':
-            raise RuntimeError("The output %s depends on placeholder %s.\nPlease add '%s' to the inputName list." % (self.outputOps.node_def.name, op.node_def.name, op.node_def.name))
+            raise RuntimeError("One of the outputs in %s depends on placeholder %s.\nPlease add '%s' to the inputName list." % ([self.outputOps[i].node_def.name for i in range(len(self.outputOps))], op.node_def.name, op.node_def.name))
         else:
             raise NotImplementedError("Operation %s not implemented" % (op.node_def.op))
 
