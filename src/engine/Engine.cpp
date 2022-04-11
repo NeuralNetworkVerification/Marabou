@@ -2711,7 +2711,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
         _exitCode = Engine::UNSAT;
         return false;
     }
-
+    
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
@@ -2721,10 +2721,16 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     double timeoutForGurobi = ( timeoutInSeconds == 0 ? FloatUtils::infinity()
                                 : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
+
+    if ( !_sncMode )
+        _gurobi->setNumberOfThreads( Options::get()->getInt( Options::NUM_WORKERS ) );
+
     _gurobi->setTimeLimit( timeoutForGurobi );
 
     _gurobi->setVerbosity( _verbosity > 1 );
     
+    printf("TG: MILP solve starts.\n"); // TG: test purpose. it should be deleted.
+
     struct timespec start = TimeUtils::sampleMicro();
     _gurobi->solve();
     struct timespec end = TimeUtils::sampleMicro();
