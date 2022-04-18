@@ -433,24 +433,6 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
       We first compute the lower and upper bounds for the expression
 
           sum ci xi - b
-          if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
-          {
-          ASSERT( FloatUtils::lt( _boundManager.getLowerBound( xi ), lowerBound ) );
-
-          _lowerBounds[xi] = lowerBound;
-          _tightenedLower[xi] = true;
-          ++result;
-          }
-
-          if ( FloatUtils::gt( _upperBounds[xi], upperBound ) )
-          {
-          ASSERT( FloatUtils::gt( _boundManager.getUpperBound( xi ), upperBound ) );
-
-          _upperBounds[xi] = upperBound;
-          _tightenedUpper[xi] = true;
-          ++result;
-          }
-
    */
     unsigned n = _tableau.getN();
 
