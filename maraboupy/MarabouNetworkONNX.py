@@ -578,7 +578,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                         for dj in range(filter_height):
                             for dk in range(filter_channels):
                                 w_ind = int(strides[0]*i+di - pad_left)
-                                h_ind = int(strides[1]*j+dj - pad_top)
+                                h_ind = int(strides[1]*j+dj - pad_bottom)
                                 if h_ind < input_height and h_ind >= 0 and w_ind < input_width and w_ind >= 0:
                                     var = inVars[0][dk][w_ind][h_ind]
                                     c = weights[k][dk][di][dj]
