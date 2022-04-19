@@ -49,22 +49,13 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputNames = None
         self.graph = None
         
-<<<<<<< HEAD
     def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True):
-=======
-    def readONNX(self, filename, inputNames, outputName, reindexOutputVars=True):
->>>>>>> 5833ca152b15e87e8e730184d56ca0620204a8ca
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
             filename: (str): Path to the ONNX file
-<<<<<<< HEAD
             inputNames: (list of str): List of node names corresponding to inputs
             outputNames: (list of str): List of node names corresponding to outputs
-=======
-            inputNames: (list of str): List of names corresponding to inputs
-            outputName: (str): Name of node corresponding to output
->>>>>>> 5833ca152b15e87e8e730184d56ca0620204a8ca
             reindexOutputVars: (bool): Reindex the variables so that the output variables are immediate after input variables.
             
         :meta private:
@@ -108,11 +99,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             # intermediate variables. This function reassigns variable numbering to match other parsers.
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
-<<<<<<< HEAD
         
-=======
-
->>>>>>> 5833ca152b15e87e8e730184d56ca0620204a8ca
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
         
@@ -591,7 +578,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                         for dj in range(filter_height):
                             for dk in range(filter_channels):
                                 w_ind = int(strides[0]*i+di - pad_left)
-                                h_ind = int(strides[1]*j+dj - pad_bottom)
+                                h_ind = int(strides[1]*j+dj - pad_top)
                                 if h_ind < input_height and h_ind >= 0 and w_ind < input_width and w_ind >= 0:
                                     var = inVars[0][dk][w_ind][h_ind]
                                     c = weights[k][dk][di][dj]
