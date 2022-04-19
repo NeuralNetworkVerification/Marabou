@@ -1258,7 +1258,10 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
 
     // Register the boundManager with all the PL constraints
     for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
+    {
         plConstraint->registerBoundManager( &_boundManager );
+        plConstraint->initializeCDOs( &_context );
+    }
 
     _plConstraints = _preprocessedQuery->getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
