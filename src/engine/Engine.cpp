@@ -1897,12 +1897,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     ENGINE_LOG( "Done with split\n" );
 }
 
-void Engine::applyAllRowTightenings()
+void Engine::applyBoundTightenings()
 {
-    List<Tightening> rowTightenings;
-    _rowBoundTightener->getRowTightenings( rowTightenings );
+    List<Tightening> tightenings;
+    _boundManager.getTightenings( tightenings );
 
-    for ( const auto &tightening : rowTightenings )
+    for ( const auto &tightening : tightenings )
     {
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
@@ -1910,10 +1910,14 @@ void Engine::applyAllRowTightenings()
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
 }
+void Engine::applyAllRowTightenings()
+{
+    applyBoundTightenings();
+}
 
-// This method becomes obsolete since bound updates should occur directly
 void Engine::applyAllConstraintTightenings()
 {
+    applyBoundTightenings();
 }
 
 void Engine::applyAllBoundTightenings()

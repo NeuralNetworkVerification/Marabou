@@ -209,6 +209,11 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
     /*
+       Apply bound tightenings stored in the bound manager.
+     */
+    void applyBoundTightenings();
+
+    /*
       Apply all bound tightenings (row and matrix-based) in
       the queue.
     */
