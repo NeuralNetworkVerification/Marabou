@@ -1921,7 +1921,6 @@ void Engine::applyAllRowTightenings()
     applyBoundTightenings();
 }
 
-// This method becomes obsolete since bound updates should occur directly
 void Engine::applyAllConstraintTightenings()
 {
     applyBoundTightenings();
