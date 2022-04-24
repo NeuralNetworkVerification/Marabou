@@ -2255,6 +2255,25 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
         return NULL;
 }
 
+PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnReversedTopology()
+{
+    // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
+    ENGINE_LOG( Stringf( "Using LatestReLU heuristics..." ).ascii() );
+
+    if ( !_networkLevelReasoner )
+        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+
+    List<PiecewiseLinearConstraint *> constraints =
+        _networkLevelReasoner->getConstraintsInTopologicalOrder();
+
+    for (List<PiecewiseLinearConstraint*>::reverse_iterator rit=constraints.rbegin(); rit!=constraints.rend(); ++rit)
+    {
+        if ( (*rit)->isActive() && !(*rit)->phaseFixed() )
+            return *rit;
+    }
+    return NULL;
+}
+
 PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnTopology()
 {
     // We push the first unfixed ReLU in the topology order to the _candidatePlConstraints
@@ -2322,6 +2341,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint()
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
     if ( _splittingStrategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
+    else if ( _splittingStrategy == DivideStrategy::LatestReLU )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnReversedTopology();
     else if ( _splittingStrategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( _splittingStrategy == DivideStrategy::LargestInterval &&
@@ -2343,6 +2364,8 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
     else if ( strategy == SnCDivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
+    else if ( strategy == SnCDivideStrategy::LatestReLU )
+        candidatePLConstraint = pickSplitPLConstraintBasedOnReversedTopology();
 
     ENGINE_LOG( Stringf( "Done updating scores..." ).ascii() );
     ENGINE_LOG( Stringf( ( candidatePLConstraint ?

@@ -605,6 +605,11 @@ private:
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnTopology();
 
     /*
+      Pick the last unfixed ReLU in the topological order
+    */
+    PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnReversedTopology();
+
+    /*
       Pick the input variable with the largest interval
     */
     PiecewiseLinearConstraint *pickSplitPLConstraintBasedOnIntervalWidth();

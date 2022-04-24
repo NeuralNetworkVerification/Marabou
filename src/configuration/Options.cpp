@@ -143,6 +143,8 @@ DivideStrategy Options::getDivideStrategy() const
         return DivideStrategy::Polarity;
     if ( strategyString == "earliest-relu" )
         return DivideStrategy::EarliestReLU;
+    if ( strategyString == "latest-relu" )
+        return DivideStrategy::LatestReLU;
     if ( strategyString == "relu-violation" )
         return DivideStrategy::ReLUViolation;
     else if ( strategyString == "largest-interval" )

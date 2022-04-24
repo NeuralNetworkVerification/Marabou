@@ -140,7 +140,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
         timeoutFactor (float, optional): Timeout factor for SnC mode, defaults to 1.5
         verbosity (int, optional): Verbosity level for Marabou, defaults to 2
         snc (bool, optional): If SnC mode should be used, defaults to False
-        splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu)
+        splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu/latest-relu)
         sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the SnC mode (auto/largest-interval/polarity).
         restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode, defaults to False
         solveWithMILP (bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
