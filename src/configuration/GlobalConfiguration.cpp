@@ -81,8 +81,7 @@ const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
-const double GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
-const double GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
+const double GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
 
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
@@ -154,7 +153,7 @@ void GlobalConfiguration::print()
     printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
     printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
-    printf( "  RELU_CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", RELU_CONSTRAINT_COMPARISON_TOLERANCE );
+    printf( "  CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", CONSTRAINT_COMPARISON_TOLERANCE );
 
     String basisBoundTighteningType;
     switch ( EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )

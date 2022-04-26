@@ -136,6 +136,8 @@ public:
 
         lastBtranInput = new double[m];
         nextBtranOutput = new double[m];
+
+        _boundManager->initialize( m + n );
     }
 
     void setBoundDimension( unsigned n )

@@ -1884,8 +1884,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     if ( _lpSolverType == LPSolverType::NATIVE )
     {
         adjustWorkMemorySize();
-
-        _rowBoundTightener->resetBounds();
     }
 
     _constraintBoundTightener->resetBounds();
@@ -2085,7 +2083,6 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
                                   TimeUtils::timePassed( start, end ) );
 
     _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
-    _rowBoundTightener->clear();
     _constraintBoundTightener->resetBounds();
 
     // debug
@@ -2108,7 +2105,6 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
                                       TimeUtils::timePassed( start, end ) );
         _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
 
-        _rowBoundTightener->clear();
         _constraintBoundTightener->resetBounds();
 
         // debug
@@ -2382,9 +2378,6 @@ void Engine::resetExitCode()
 void Engine::resetBoundTighteners()
 {
     _constraintBoundTightener->resetBounds();
-
-    if ( _lpSolverType == LPSolverType::NATIVE )
-        _rowBoundTightener->resetBounds();
 }
 
 void Engine::warmStart()

@@ -30,6 +30,7 @@
 
 class Tightening;
 class ITableau;
+class IRowBoundTightener;
 class IBoundManager
 {
 public:
@@ -41,6 +42,11 @@ public:
        variable.
      */
     virtual unsigned registerNewVariable() = 0;
+
+    /*
+       Initialize BoundManager to a given number of variables;
+     */
+    virtual void initialize( unsigned numberOfVariables ) = 0;
 
     /*
        Returns number of registered variables
@@ -79,6 +85,7 @@ public:
        getTightenings.
      */
     virtual void getTightenings( List<Tightening> &tightenings ) = 0;
+    virtual void clearTightenings() = 0;
 
     /*
       Returns true if the bounds for the variable is valid. Used to
@@ -90,6 +97,13 @@ public:
       Register Tableau for callbacks.
      */
     virtual void registerTableau( ITableau *tableau ) = 0;
+
+    /*
+       Register RowBoundTightener for callbacks.
+     */
+    virtual void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener ) = 0;
+
+
 };
 
 #endif // __IBoundManager_h__
