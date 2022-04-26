@@ -1260,13 +1260,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
 {
     _rowBoundTightener->setDimensions();
 
-    // Register the boundManager with all the PL constraints
-    for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
-    {
-        plConstraint->registerBoundManager( &_boundManager );
-        plConstraint->initializeCDOs( &_context );
-    }
-
     _plConstraints = _preprocessedQuery->getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
     {
@@ -1285,6 +1278,12 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
     {
         _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+    }
+
+    // Register the boundManager with all the PL constraints
+    for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
+    {
+        plConstraint->registerBoundManager( &_boundManager );
     }
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
