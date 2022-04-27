@@ -135,14 +135,17 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
     if ( _statistics )
-        _statistics->incLongAttribute
-            ( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) &&
-         !FloatUtils::gt( value, getLowerBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr )
+    {
+        if ( existsLowerBound( variable ) &&
+             !FloatUtils::gt( value, getLowerBound( variable ) ) )
+            return;
 
-    setLowerBound( variable, value );
+        setLowerBound( variable, value );
+    }
 
     /*
       See if we can eliminate any cases.
@@ -176,15 +179,14 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
                 eliminateCase( removeVar );
 
             _haveFeasibleEliminatedPhases =
-                FloatUtils::lte( _maxLowerBound,
-                                 _maxValueOfEliminatedPhases );
+                FloatUtils::lte( _maxLowerBound, _maxValueOfEliminatedPhases );
         }
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ?
-                         MAX_PHASE_ELIMINATED :
-                         variableToPhase( *_elements.begin() ) );
+        _phaseStatus = ( _haveFeasibleEliminatedPhases
+                             ? MAX_PHASE_ELIMINATED
+                             : variableToPhase( *_elements.begin() ) );
 
     if ( isActive() && _boundManager )
     {
@@ -195,9 +197,11 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _boundManager->tightenLowerBound( tightening._variable, tightening._value );
+                _boundManager->tightenLowerBound( tightening._variable,
+                                                  tightening._value );
             else if ( tightening._type == Tightening::UB )
-                _boundManager->tightenUpperBound( tightening._variable, tightening._value );
+                _boundManager->tightenUpperBound( tightening._variable,
+                                                  tightening._value );
         }
     }
 }
@@ -205,13 +209,17 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( value, getUpperBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr )
+    {
+        if ( existsUpperBound( variable ) &&
+             !FloatUtils::lt( value, getUpperBound( variable ) ) )
+            return;
 
-    setUpperBound( variable, value );
-
+        setUpperBound( variable, value );
+    }
     /*
       See if we can eliminate any cases.
     */
@@ -241,9 +249,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ?
-                         MAX_PHASE_ELIMINATED :
-                         variableToPhase( *_elements.begin() ) );
+        _phaseStatus = ( _haveFeasibleEliminatedPhases
+                             ? MAX_PHASE_ELIMINATED
+                             : variableToPhase( *_elements.begin() ) );
 
     // There is no need to recompute the max lower bound and max index here.
 
@@ -256,9 +264,11 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
         for ( const auto &tightening : tightenings )
         {
             if ( tightening._type == Tightening::LB )
-                _boundManager->tightenLowerBound( tightening._variable, tightening._value );
+                _boundManager->tightenLowerBound( tightening._variable,
+                                                  tightening._value );
             else if ( tightening._type == Tightening::UB )
-                _boundManager->tightenUpperBound( tightening._variable, tightening._value );
+                _boundManager->tightenUpperBound( tightening._variable,
+                                                  tightening._value );
         }
     }
 }
