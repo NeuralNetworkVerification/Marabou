@@ -380,21 +380,27 @@ String SignConstraint::phaseToString( PhaseStatus phase )
 void SignConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     // If there's an already-stored tighter bound, return
     if ( _boundManager == nullptr && existsLowerBound( variable ) &&
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
-    // Otherwise - update bound
-    setLowerBound( variable, bound );
-
-    if ( variable == _f && FloatUtils::gt( bound, -1 ) )
+        // Otherwise - update bound
+        setLowerBound( variable, bound );
+        if ( variable == _f && FloatUtils::gt( bound, -1 ) )
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
+        else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
+    }
+    else if ( !phaseFixed() )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
         if ( _boundManager != nullptr )
         {
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
             _boundManager->tightenLowerBound( _f, 1 );
             _boundManager->tightenLowerBound( _b, 0 );
         }
@@ -410,21 +416,28 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
 void SignConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     // If there's an already-stored tighter bound, return
     if ( _boundManager == nullptr && existsUpperBound( variable ) &&
          !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    // Otherwise - update bound
-    setUpperBound( variable, bound );
+        // Otherwise - update bound
+        setUpperBound( variable, bound );
 
-    if ( variable == _f && FloatUtils::lt( bound, 1 ) )
+        if ( variable == _f && FloatUtils::lt( bound, 1 ) )
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
+        else if ( variable == _b && FloatUtils::isNegative( bound ) )
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
+    }
+    else if ( !phaseFixed() )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
         if ( _boundManager != nullptr )
         {
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
             _boundManager->tightenUpperBound( _f, -1 );
             _boundManager->tightenUpperBound( _b, 0 );
         }
@@ -434,6 +447,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
         if ( _boundManager != nullptr )
         {
+            setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
             _boundManager->tightenUpperBound( _f, -1 );
         }
     }
