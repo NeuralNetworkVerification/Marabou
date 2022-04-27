@@ -120,13 +120,17 @@ void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) &&
-         !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr )
+    {
+        if ( existsLowerBound( variable ) &&
+             !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+            return;
 
-    setLowerBound( variable, bound );
+        setLowerBound( variable, bound );
+    }
 
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
@@ -138,13 +142,14 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
         {
             if ( bound < 0 )
             {
-                double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) );
+                double fUpperBound =
+                    FloatUtils::max( -bound, getUpperBound( _b ) );
                 _boundManager->tightenUpperBound( _f, fUpperBound );
 
                 if ( _auxVarsInUse )
                 {
-                    _boundManager->
-                        tightenUpperBound( _posAux, fUpperBound - bound );
+                    _boundManager->tightenUpperBound( _posAux,
+                                                      fUpperBound - bound );
                 }
             }
             else
@@ -173,13 +178,16 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+    if ( _boundManager == nullptr )
+    {
+      if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    setUpperBound( variable, bound );
-
+     setUpperBound( variable, bound );
+    }
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
+
 
     // Update partner's bound
     if ( isActive() && _boundManager )
