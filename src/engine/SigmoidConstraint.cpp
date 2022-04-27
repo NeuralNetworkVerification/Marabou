@@ -91,19 +91,23 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr )
+    {
+        if ( existsLowerBound( variable ) &&
+             !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+            return;
 
-    setLowerBound( variable, bound );
-
-    if ( _boundManager )
+        setLowerBound( variable, bound );
+    }
+    else
     {
         if ( variable == _f )
-            _boundManager->tightenLowerBound( _b, sigmoidInverse(bound) );
+            _boundManager->tightenLowerBound( _b, sigmoidInverse( bound ) );
         else if ( variable == _b )
-            _boundManager->tightenLowerBound( _f, sigmoid(bound) );
+            _boundManager->tightenLowerBound( _f, sigmoid( bound ) );
     }
 }
 
@@ -112,19 +116,23 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr )
+    {
+        if ( existsUpperBound( variable ) &&
+             !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+            return;
 
-    setUpperBound( variable, bound );
-
-    if ( _boundManager )
+        setUpperBound( variable, bound );
+    }
+    else
     {
         if ( variable == _f )
-            _boundManager->tightenUpperBound( _b, sigmoidInverse(bound) );
+            _boundManager->tightenUpperBound( _b, sigmoidInverse( bound ) );
         else if ( variable == _b )
-            _boundManager->tightenUpperBound( _f, sigmoid(bound) );
+            _boundManager->tightenUpperBound( _f, sigmoid( bound ) );
     }
 }
 
