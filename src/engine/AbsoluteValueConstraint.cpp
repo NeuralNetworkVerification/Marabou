@@ -127,7 +127,8 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
       return;
 
-    setLowerBound( variable, bound );
+        setLowerBound( variable, bound );
+    }
 
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
@@ -182,6 +183,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
      setUpperBound( variable, bound );
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
+
 
     // Update partner's bound
     if ( isActive() && _boundManager )
