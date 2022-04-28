@@ -245,6 +245,7 @@ Next it is recommended to add the following to the .bashrc (but not necessary)
 ```
 export GUROBI_HOME="/opt/gurobi951/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
+export CPATH="${CPATH}:${GUROBI_HOME}/include"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 
 ```
