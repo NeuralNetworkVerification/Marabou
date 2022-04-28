@@ -123,14 +123,11 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
         _statistics->incLongAttribute(
             Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( _boundManager == nullptr )
-    {
-        if ( existsLowerBound( variable ) &&
-             !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-            return;
+    if ( _boundManager == nullptr && existsLowerBound( variable ) &&
+         !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+      return;
 
-        setLowerBound( variable, bound );
-    }
+    setLowerBound( variable, bound );
 
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
@@ -178,16 +175,13 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( _boundManager == nullptr )
-    {
-      if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+    if ( _boundManager == nullptr && existsUpperBound( variable ) &&
+         !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
      setUpperBound( variable, bound );
-    }
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
-
 
     // Update partner's bound
     if ( isActive() && _boundManager )
