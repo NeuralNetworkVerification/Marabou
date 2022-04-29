@@ -623,6 +623,7 @@ public:
     {
         SignConstraint *sign1 = new SignConstraint( 4, 6 );
         MockTableau tableau;
+        sign1->registerTableau( &tableau );
         IBoundManager *boundManager = &tableau.getBoundManager();
         boundManager->initialize( 7 );
         sign1->registerBoundManager( boundManager );
@@ -894,14 +895,18 @@ public:
                 MockBoundManager boundManager;
                 boundManager.initialize( 6 );
                 SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyLowerBound( b, 1 );
                 boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+                tightenings.clear();
 
                 sign.notifyUpperBound( f, -0.5 );
                 boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+                tightenings.clear();
             }
 
             {
@@ -909,11 +914,14 @@ public:
                 MockBoundManager boundManager;
                 boundManager.initialize( 6 );
                 SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyUpperBound( f, 0 );
                 boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+                tightenings.clear();
             }
 
             {
@@ -921,6 +929,8 @@ public:
                 MockBoundManager boundManager;
                 boundManager.initialize( 6 );
                 SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyUpperBound( b, 0 );
                 boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
@@ -931,22 +941,28 @@ public:
                 MockBoundManager boundManager;
                 boundManager.initialize( 6 );
                 SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyLowerBound( b, 0 );
                 boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+                tightenings.clear();
             }
 
             {
-                // Tighter negative upper bound for b
+                // Tighter negtive upper bound for b
                 MockBoundManager boundManager;
                 boundManager.initialize( 6 );
                 SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyUpperBound( f, 0.5 );
                 boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+                tightenings.clear();
             }
         }
 
