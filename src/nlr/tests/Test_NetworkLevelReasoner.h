@@ -475,6 +475,7 @@ public:
         populateNetwork( nlr );
 
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 14 );
 
         // Initialize the bounds
         tableau.setLowerBound( 0, -1 );
@@ -680,6 +681,7 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 13 );
 
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 14 );
 
         // Initialize the bounds
         tableau.setLowerBound( 0, -1 );
@@ -863,6 +865,7 @@ public:
         // Very loose bounds for neurons except inputs
         double large = 1000000;
 
+        tableau.getBoundManager().initialize( 7 );
         tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
@@ -1176,6 +1179,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1288,6 +1292,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1404,6 +1409,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1524,6 +1530,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
