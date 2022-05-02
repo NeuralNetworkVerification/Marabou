@@ -1280,12 +1280,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
     }
 
-    // Register the boundManager with all the PL constraints
-    for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
-    {
-        plConstraint->registerBoundManager( &_boundManager );
-    }
-
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
                                       _plConstraints.size() );
 }
