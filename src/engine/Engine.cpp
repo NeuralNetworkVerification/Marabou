@@ -161,6 +161,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
+    // Register the boundManager with all the PL constraints
+    for ( auto &plConstraint : _plConstraints )
+        plConstraint->registerBoundManager( &_boundManager );
+
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
 
@@ -1274,12 +1278,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
     {
         _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
-    }
-
-    // Register the boundManager with all the PL constraints
-    for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
-    {
-        plConstraint->registerBoundManager( &_boundManager );
     }
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
