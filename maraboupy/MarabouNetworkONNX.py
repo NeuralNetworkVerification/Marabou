@@ -202,6 +202,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
+        elif node.op_type == 'Concat':
+            self.concat(node)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -362,6 +364,22 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
         elif inputName1 in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
+
+    def concat(self, node):
+        """Function representing concat
+
+        Args:
+            node (node): ONNX node representing concat operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName1, inputName2 = node.input
+
+        # Assume first input is array to be reshaped, second input is the new shape array
+        if inputName1 in self.varMap and inputName2 in self.varMap:
+            self.varMap[nodeName] = np.concatenate((self.varMap[inputName1], self.varMap[inputName2]), axis=1)
+            self.shapeMap[nodeName] = self.varMap[nodeName].shape
 
     def flatten(self, node):
         """Function representing flatten
