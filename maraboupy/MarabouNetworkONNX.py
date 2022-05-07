@@ -100,6 +100,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             # intermediate variables. This function reassigns variable numbering to match other parsers.
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
+        else:
+            self.outputVars = self.varMap[self.outputName]
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
@@ -985,7 +987,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for eq in self.equList:
             for i, (c,var) in enumerate(eq.addendList):
                 eq.addendList[i] = (c, self.reassignVariable(var, numInVars, outVars, newOutVars))
-                
+
+        # Adjust equation variables
+        for eq in self.additionalEquList:
+            for i, (c,var) in enumerate(eq.addendList):
+                eq.addendList[i] = (c, self.reassignVariable(var, numInVars, outVars, newOutVars))
+
         # Adjust relu list
         for i, variables in enumerate(self.reluList):
             self.reluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])

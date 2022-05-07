@@ -46,6 +46,7 @@ class MarabouNetwork:
         """
         self.numVars = 0
         self.equList = []
+        self.additionalEquList = [] # used to store user defined equations
         self.reluList = []
         self.sigmoidList = []
         self.maxList = []
@@ -68,13 +69,16 @@ class MarabouNetwork:
         self.numVars += 1
         return self.numVars - 1
 
-    def addEquation(self, x):
+    def addEquation(self, x, addToAdditionalEquList=False):
         """Function to add new equation to the network
 
         Args:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
         """
-        self.equList += [x]
+        if addToAdditionalEquList:
+            self.additionalEquList += [x]
+        else:
+            self.equList += [x]
 
     def setLowerBound(self, x, v):
         """Function to set lower bound for variable
@@ -163,7 +167,7 @@ class MarabouNetwork:
         """
         return x in self.upperBounds
 
-    def addEquality(self, vars, coeffs, scalar):
+    def addEquality(self, vars, coeffs, scalar, addToAdditionalEquList=False):
         """Function to add equality constraint to network
 
         .. math::
@@ -179,9 +183,9 @@ class MarabouNetwork:
         for i in range(len(vars)):
             e.addAddend(coeffs[i], vars[i])
         e.setScalar(scalar)
-        self.addEquation(e)
+        self.addEquation(e, addToAdditionalEquList)
 
-    def addInequality(self, vars, coeffs, scalar):
+    def addInequality(self, vars, coeffs, scalar, addToAdditionalEquList=False):
         """Function to add inequality constraint to network
 
         .. math::
@@ -197,7 +201,7 @@ class MarabouNetwork:
         for i in range(len(vars)):
             e.addAddend(coeffs[i], vars[i])
         e.setScalar(scalar)
-        self.addEquation(e)
+        self.addEquation(e, addToAdditionalEquList)
 
     def getMarabouQuery(self):
         """Function to convert network into Marabou InputQuery
@@ -220,6 +224,14 @@ class MarabouNetwork:
             i+=1
 
         for e in self.equList:
+            eq = MarabouCore.Equation(e.EquationType)
+            for (c, v) in e.addendList:
+                assert v < self.numVars
+                eq.addAddend(c, v)
+            eq.setScalar(e.scalar)
+            ipq.addEquation(eq)
+
+        for e in self.additionalEquList:
             eq = MarabouCore.Equation(e.EquationType)
             for (c, v) in e.addendList:
                 assert v < self.numVars
