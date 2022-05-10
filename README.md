@@ -31,13 +31,14 @@ Properties can be specified using inequalites over input and output variables or
 via Python interface. 
 
 For more details about the features of Marabou check out the [tool
-paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf) and the
-[slides](https://aisafety.stanford.edu/marabou/fomlas19.html). 
+paper](https://aisafety.stanford.edu/marabou/MarabouCAV2019.pdf)
+([slides](https://aisafety.stanford.edu/marabou/fomlas19.html)) and our [**recent work**](https://arxiv.org/abs/2203.11201)
+based on Sum-of-Infeasibilities, which is now the default solving mode of Marabou. 
 
 For more information about the input formats please check the
 [wiki](https://github.com/NeuralNetworkVerification/Marabou/wiki/Marabou-Input-Formats).
 
-**NEW** A guide to Split and Conquer mode is available in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb). The Jupyter Notebook gives on overview of SnC's parameters, discusses several runtime examples and a few rules of thumb to choose parameter values.
+A guide to Split and Conquer mode is available in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb). The Jupyter Notebook gives on overview of SnC's parameters, discusses several runtime examples and a few rules of thumb to choose parameter values.
 
 Research
 ------------------------------------------------------------------------------
