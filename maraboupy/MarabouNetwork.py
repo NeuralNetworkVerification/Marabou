@@ -20,6 +20,7 @@ from maraboupy import MarabouUtils
 
 import numpy as np
 
+
 class MarabouNetwork:
     """Abstract class representing general Marabou network
     
