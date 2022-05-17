@@ -286,12 +286,12 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
     // Arguments: InputQuery object, filename to redirect output
     // Returns: Preprocessed input query
 
+    options.setOptions();
     Engine engine;
     int output=-1;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        options.setOptions();
         engine.processInputQuery(inputQuery);
     }
     catch(const MarabouError &e){
