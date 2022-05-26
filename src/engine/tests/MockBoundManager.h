@@ -177,7 +177,14 @@ public:
     /*
        Clear tightened flags;
      */
-    void clearTightenings() {};
+    void clearTightenings()
+    {
+        for ( unsigned var = 0; var < _size; ++var )
+        {
+            _tightenedLower[var] = false;
+            _tightenedUpper[var] = false;
+        }
+    };
 
     /*
       Returns true if the bounds of all variables are consistent. Used to
