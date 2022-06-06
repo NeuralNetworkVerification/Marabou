@@ -22,6 +22,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
+#include "context/context.h"
 
 #include <string.h>
 
@@ -107,25 +108,35 @@ public:
         }
 
         List<PiecewiseLinearCaseSplit> nextSplits;
+        void registerCaseSplit( PiecewiseLinearCaseSplit caseSplit )
+        {
+            nextSplits.append( caseSplit );
+            allCases.append( (PhaseStatus)(++_numCases) );
+        }
+
         List<PiecewiseLinearCaseSplit> getCaseSplits() const
         {
             return nextSplits;
         }
 
+        List<PhaseStatus> allCases;
         List<PhaseStatus> getAllCases() const
         {
-            return List<PhaseStatus>();
+            return allCases;
         }
 
         bool phaseFixed() const
         {
-            return true;
+            return false;
         }
 
-        PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus /*caseId*/ ) const
+        PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus caseId ) const
         {
-            PiecewiseLinearCaseSplit dontCare;
-            return dontCare;
+            auto it = nextSplits.begin();
+            for ( int i = 0; i < (int)caseId - 1; ++i )
+                ++it;
+
+            return *it;
         }
 
         PiecewiseLinearCaseSplit getValidCaseSplit() const
@@ -169,6 +180,7 @@ public:
         {
             return "";
         }
+
     };
 
     void setUp()
@@ -188,8 +200,10 @@ public:
         ReluConstraint constraint1( 1, 2 );
         ReluConstraint constraint2( 3, 4 );
 
-        SmtCore smtCore( engine );
+        CVC4::context::Context context;
+        SmtCore smtCore( engine, context );
 
+        TS_ASSERT( !smtCore.needToSplit() );
         for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) - 1; ++i )
         {
             smtCore.reportViolatedConstraint( &constraint1 );
@@ -204,7 +218,8 @@ public:
 
     void test_perform_split()
     {
-        SmtCore smtCore( engine );
+        CVC4::context::Context context;
+        SmtCore smtCore( engine, context );
 
         MockConstraint constraint;
 
@@ -231,9 +246,11 @@ public:
         split3.storeBoundTightening( bound5 );
 
         // Store the splits
-        constraint.nextSplits.append( split1 );
-        constraint.nextSplits.append( split2 );
-        constraint.nextSplits.append( split3 );
+        constraint.registerCaseSplit( split1 );
+        constraint.registerCaseSplit( split2 );
+        constraint.registerCaseSplit( split3 );
+
+        constraint.initializeCDOs( &context );
 
         for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint );
@@ -242,85 +259,30 @@ public:
         engine->lastRestoredState = NULL;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT_EQUALS( smtCore.getDecisionLevel(), 0U );
         TS_ASSERT( !constraint.setActiveWasCalled );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.decide() );
         TS_ASSERT( constraint.setActiveWasCalled );
         TS_ASSERT( !smtCore.needToSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
+        TS_ASSERT_EQUALS( smtCore.getDecisionLevel(), 1U );
 
-        // Check that Split1 was performed and tableau state was stored
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_variable, 1U );
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.begin()->_bound, 3.0 );
+        // Pop Split1  and check that Split2 was decided
+        TS_ASSERT( smtCore.backtrackAndContinueSearch() );
+        TS_ASSERT_EQUALS( smtCore.getDecisionLevel(), 1U );
 
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 1U );
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_variable, 1U );
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.begin()->_bound, 5.0 );
-
-        TS_ASSERT( engine->lastStoredState );
-        TS_ASSERT( !engine->lastRestoredState );
-
-        EngineState *originalState = engine->lastStoredState;
-        engine->lastStoredState = NULL;
-        engine->lastLowerBounds.clear();
-        engine->lastUpperBounds.clear();
-        engine->lastEquations.clear();
-
-        // Pop Split1, check that the tableau was restored and that
-        // a Split2 was performed
-        TS_ASSERT( smtCore.popSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
-
-        TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
-        TS_ASSERT( !engine->lastStoredState );
-        engine->lastRestoredState = NULL;
-
-        TS_ASSERT( engine->lastLowerBounds.empty() );
-
-        TS_ASSERT_EQUALS( engine->lastUpperBounds.size(), 2U );
-        auto it = engine->lastUpperBounds.begin();
-        TS_ASSERT_EQUALS( it->_variable, 2U );
-        TS_ASSERT_EQUALS( it->_bound, 13.0 );
-        ++it;
-        TS_ASSERT_EQUALS( it->_variable, 3U );
-        TS_ASSERT_EQUALS( it->_bound, 25.0 );
-
-        engine->lastRestoredState = NULL;
-        engine->lastLowerBounds.clear();
-        engine->lastUpperBounds.clear();
-        engine->lastEquations.clear();
-
-        // Pop Split2, check that the tableau was restored and that
-        // a Split3 was performed
-        TS_ASSERT( smtCore.popSplit() );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 1U );
-
-        TS_ASSERT_EQUALS( engine->lastRestoredState, originalState );
-        TS_ASSERT( !engine->lastStoredState );
-        engine->lastRestoredState = NULL;
-
-        TS_ASSERT_EQUALS( engine->lastLowerBounds.size(), 1U );
-        it = engine->lastLowerBounds.begin();
-        TS_ASSERT_EQUALS( it->_variable, 14U );
-        TS_ASSERT_EQUALS( it->_bound, 2.3 );
-
-        TS_ASSERT( engine->lastUpperBounds.empty() );
-
-        engine->lastRestoredState = NULL;
-        engine->lastLowerBounds.clear();
-        engine->lastUpperBounds.clear();
-        engine->lastEquations.clear();
+        // Pop Split2, check that Split3 was implied
+        TS_ASSERT( smtCore.backtrackAndContinueSearch() );
+        TS_ASSERT_EQUALS( smtCore.getDecisionLevel(), 0U );
 
         // Final pop
-        TS_ASSERT( !smtCore.popSplit() );
-        TS_ASSERT( !engine->lastRestoredState );
-        TS_ASSERT_EQUALS( smtCore.getStackDepth(), 0U );
+        TS_ASSERT( !smtCore.backtrackAndContinueSearch() );
+        TS_ASSERT_EQUALS( smtCore.getDecisionLevel(), 0U );
     }
 
     void test_perform_split__inactive_constraint()
     {
-        SmtCore smtCore( engine );
+        CVC4::context::Context context;
+        SmtCore smtCore( engine, context );
 
         MockConstraint constraint;
 
@@ -347,9 +309,9 @@ public:
         split3.storeBoundTightening( bound5 );
 
         // Store the splits
-        constraint.nextSplits.append( split1 );
-        constraint.nextSplits.append( split2 );
-        constraint.nextSplits.append( split3 );
+        constraint.registerCaseSplit( split1 );
+        constraint.registerCaseSplit( split2 );
+        constraint.registerCaseSplit( split3 );
 
         for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint );
@@ -357,7 +319,7 @@ public:
         constraint.nextIsActive = false;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.decide() );
         TS_ASSERT( !smtCore.needToSplit() );
 
         // Check that no split was performed
@@ -370,7 +332,8 @@ public:
 
     void test_all_splits_so_far()
     {
-        SmtCore smtCore( engine );
+        CVC4::context::Context context;
+        SmtCore smtCore( engine, context );
 
         MockConstraint constraint;
 
@@ -391,8 +354,9 @@ public:
         split2.storeBoundTightening( bound4 );
 
         // Store the splits
-        constraint.nextSplits.append( split1 );
-        constraint.nextSplits.append( split2 );
+        constraint.registerCaseSplit( split1 );
+        constraint.registerCaseSplit( split2 );
+        constraint.initializeCDOs( &context );
 
         for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint );
@@ -400,16 +364,20 @@ public:
         constraint.nextIsActive = true;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.decide() );
         TS_ASSERT( !smtCore.needToSplit() );
 
         // Register a valid split
 
         // Split 3
+        MockConstraint implication;
         PiecewiseLinearCaseSplit split3;
         Tightening bound5( 14, 2.3, Tightening::LB );
+        split3.storeBoundTightening( bound5 );
+        implication.registerCaseSplit( split3 );
+        implication.initializeCDOs( &context );
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split3 ) );
+        TS_ASSERT_THROWS_NOTHING( smtCore.pushImplication( &implication ) );
 
         // Do another real split
 
@@ -424,8 +392,10 @@ public:
         Tightening bound7( 8, 13.0, Tightening::UB );
         split5.storeBoundTightening( bound7 );
 
-        constraint2.nextSplits.append( split4 );
-        constraint2.nextSplits.append( split5 );
+        constraint2.registerCaseSplit( split4 );
+        constraint2.registerCaseSplit( split5 );
+
+        constraint2.initializeCDOs( &context );
 
         for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
             smtCore.reportViolatedConstraint( &constraint2 );
@@ -433,7 +403,7 @@ public:
         constraint2.nextIsActive = true;
 
         TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
+        TS_ASSERT_THROWS_NOTHING( smtCore.decide() );
         TS_ASSERT( !smtCore.needToSplit() );
 
         // Check that everything is received in the correct order
@@ -452,98 +422,103 @@ public:
         TS_ASSERT_EQUALS( *it, split4 );
     }
 
-    void test_store_smt_state()
-    {
-        // ReLU(x0, x1)
-        // ReLU(x2, x3)
-        // ReLU(x4, x5)
+    /* void _test_store_smt_state() */
+    /* { */
+    /*     // ReLU(x0, x1) */
+    /*     // ReLU(x2, x3) */
+    /*     // ReLU(x4, x5) */
 
-        InputQuery inputQuery;
-        inputQuery.setNumberOfVariables( 6 );
+    /*     InputQuery inputQuery; */
+    /*     inputQuery.setNumberOfVariables( 6 ); */
 
-        ReluConstraint relu1 = ReluConstraint( 0, 1 );
-        ReluConstraint relu2 = ReluConstraint( 2, 3 );
+    /*     ReluConstraint relu1 = ReluConstraint( 0, 1 ); */
+    /*     ReluConstraint relu2 = ReluConstraint( 2, 3 ); */
 
-        relu1.transformToUseAuxVariables( inputQuery );
-        relu2.transformToUseAuxVariables( inputQuery );
+    /*     relu1.transformToUseAuxVariables( inputQuery ); */
+    /*     relu2.transformToUseAuxVariables( inputQuery ); */
 
-        SmtCore smtCore( engine );
+    /*     CVC4::context::Context context; */
+    /*     SmtCore smtCore( engine, context ); */
 
-        PiecewiseLinearCaseSplit split1;
-        Tightening bound1( 1, 0.5, Tightening::LB );
-        split1.storeBoundTightening( bound1 );
-        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split1 ) );
+    /*     MockConstraint implication; */
+    /*     PiecewiseLinearCaseSplit split1; */
+    /*     Tightening bound1( 1, 0.5, Tightening::LB ); */
+    /*     split1.storeBoundTightening( bound1 ); */
+    /*     implication.registerCaseSplit( split1 ); */
+    /*     TS_ASSERT_THROWS_NOTHING( smtCore.pushImplication( &implication ) ); */
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
-            smtCore.reportViolatedConstraint( &relu1 );
+    /*     for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i ) */
+    /*         smtCore.reportViolatedConstraint( &relu1 ); */
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+    /*     TS_ASSERT( smtCore.needToSplit() ); */
+    /*     TS_ASSERT_THROWS_NOTHING( smtCore.decide() ); */
+    /*     TS_ASSERT( !smtCore.needToSplit() ); */
 
-        PiecewiseLinearCaseSplit split2;
-        Tightening bound2( 3, 2.3, Tightening::UB );
-        split2.storeBoundTightening( bound2 );
-        TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split2 ) );
+    /*     MockConstraint implication2; */
+    /*     PiecewiseLinearCaseSplit split2; */
+    /*     Tightening bound2( 3, 2.3, Tightening::UB ); */
+    /*     split2.storeBoundTightening( bound2 ); */
+    /*     implication2.registerCaseSplit( split2 ); */
+    /*     TS_ASSERT_THROWS_NOTHING( smtCore.pushImplication( &implication2 ) ); */
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
-            smtCore.reportViolatedConstraint( &relu2 );
+    /*     for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i ) */
+    /*         smtCore.reportViolatedConstraint( &relu2 ); */
 
-        TS_ASSERT( smtCore.needToSplit() );
-        TS_ASSERT_THROWS_NOTHING( smtCore.performSplit() );
-        TS_ASSERT( !smtCore.needToSplit() );
+    /*     TS_ASSERT( smtCore.needToSplit() ); */
+    /*     TS_ASSERT_THROWS_NOTHING( smtCore.decide() ); */
+    /*     TS_ASSERT( !smtCore.needToSplit() ); */
 
-        SmtState smtState;
-        smtCore.storeSmtState( smtState );
-        TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 );
-        TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 );
+    /*     SmtState smtState; */
+    /*     smtCore.storeSmtState( smtState ); */
+    /*     TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 ); */
+    /*     TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 ); */
 
-        TS_ASSERT( smtState._stack.size() == 2 );
-        // Examine the first stackEntry
-        SmtStackEntry *stackEntry = *( smtState._stack.begin() );
-        TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
-        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
-        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
-        TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
-        // Examine the second stackEntry
-        stackEntry = *( ++smtState._stack.begin() );
-        TS_ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) );
-        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu2.getCaseSplits().begin() ) );
-        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
+    /*     TS_ASSERT( smtState._stack.size() == 2 ); */
+    /*     // Examine the first stackEntry */
+    /*     SmtStackEntry *stackEntry = *( smtState._stack.begin() ); */
+    /*     TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 ); */
+    /*     TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 ); */
+    /*     // Examine the second stackEntry */
+    /*     stackEntry = *( ++smtState._stack.begin() ); */
+    /*     TS_ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu2.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 ); */
 
-        clearSmtState( smtState );
+    /*     clearSmtState( smtState ); */
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
+    /*     TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() ); */
 
-        smtCore.storeSmtState( smtState );
-        TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 );
-        TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 );
+    /*     smtCore.storeSmtState( smtState ); */
+    /*     TS_ASSERT( smtState._impliedValidSplitsAtRoot.size() == 1 ); */
+    /*     TS_ASSERT( *smtState._impliedValidSplitsAtRoot.begin() == split1 ); */
 
-        TS_ASSERT( smtState._stack.size() == 2 );
-        // Examine the first stackEntry
-        stackEntry = *( smtState._stack.begin() );
-        TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
-        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
-        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
-        TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
-        // Examine the second stackEntry
-        stackEntry = *( ++smtState._stack.begin() );
-        TS_ASSERT( stackEntry->_activeSplit == *( ++relu2.getCaseSplits().begin() ) );
-        TS_ASSERT( stackEntry->_alternativeSplits.empty() );
-        TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
+    /*     TS_ASSERT( smtState._stack.size() == 2 ); */
+    /*     // Examine the first stackEntry */
+    /*     stackEntry = *( smtState._stack.begin() ); */
+    /*     TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 ); */
+    /*     TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 ); */
+    /*     // Examine the second stackEntry */
+    /*     stackEntry = *( ++smtState._stack.begin() ); */
+    /*     TS_ASSERT( stackEntry->_activeSplit == *( ++relu2.getCaseSplits().begin() ) ); */
+    /*     TS_ASSERT( stackEntry->_alternativeSplits.empty() ); */
+    /*     TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 ); */
 
-        clearSmtState( smtState );
+    /*     clearSmtState( smtState ); */
 
-        TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() );
-    }
+    /*     TS_ASSERT_THROWS_NOTHING( smtCore.popSplit() ); */
+    /* } */
 
-    void clearSmtState( SmtState &smtState )
-    {
-        for ( const auto &stackEntry : smtState._stack )
-            delete stackEntry;
-        smtState._stack = List<SmtStackEntry *>();
-        smtState._impliedValidSplitsAtRoot = List<PiecewiseLinearCaseSplit>();
-    }
+    /* void clearSmtState( SmtState &smtState ) */
+    /* { */
+    /*     for ( const auto &stackEntry : smtState._stack ) */
+    /*         delete stackEntry; */
+    /*     smtState._stack = List<SmtStackEntry *>(); */
+    /*     smtState._impliedValidSplitsAtRoot = List<PiecewiseLinearCaseSplit>(); */
+    /* } */
 
     void test_todo()
     {

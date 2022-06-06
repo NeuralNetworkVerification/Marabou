@@ -40,7 +40,7 @@ Engine::Engine()
     , _tableau( _boundManager )
     , _preprocessedQuery( nullptr )
     , _rowBoundTightener( *_tableau )
-    , _smtCore( this )
+    , _smtCore( this, _context )
     , _numPlConstraintsDisabledByValidSplits( 0 )
     , _preprocessingEnabled( false )
     , _initialStateStored( false )
@@ -263,7 +263,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // Perform any SmtCore-initiated case splits
             if ( _smtCore.needToSplit() )
             {
-                _smtCore.performSplit();
+                _smtCore.decide();
                 splitJustPerformed = true;
                 continue;
             }
@@ -334,7 +334,7 @@ bool Engine::solve( unsigned timeoutInSeconds )
             _tableau->toggleOptimization( false );
             // The current query is unsat, and we need to pop.
             // If we're at level 0, the whole query is unsat.
-            if ( !_smtCore.popSplit() )
+            if ( !_smtCore.backtrackAndContinueSearch() )
             {
                 struct timespec mainLoopEnd = TimeUtils::sampleMicro();
                 _statistics.incLongAttribute
@@ -1635,39 +1635,39 @@ void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) co
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 }
 
-void Engine::restoreState( const EngineState &state )
+void Engine::restoreState( const EngineState &/*state*/ )
 {
-    ENGINE_LOG( "Restore state starting" );
+    //ENGINE_LOG( "Restore state starting" );
 
-    if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
-        throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
+    // if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
+    //     throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
-    ENGINE_LOG( "\tRestoring tableau state" );
-    _tableau->restoreState( state._tableauState,
-                            state._tableauStateStorageLevel );
+    // ENGINE_LOG( "\tRestoring tableau state" );
+    // _tableau->restoreState( state._tableauState,
+    //                         state._tableauStateStorageLevel );
 
-    ENGINE_LOG( "\tRestoring constraint states" );
-    for ( auto &constraint : _plConstraints )
-    {
-        if ( !state._plConstraintToState.exists( constraint ) )
-            throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
+    // ENGINE_LOG( "\tRestoring constraint states" );
+    // for ( auto &constraint : _plConstraints )
+    // {
+    //     if ( !state._plConstraintToState.exists( constraint ) )
+    //         throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
 
-        constraint->restoreState( state._plConstraintToState[constraint] );
-    }
+    //     constraint->restoreState( state._plConstraintToState[constraint] );
+    // }
 
-    _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
+    // _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
-    if ( _lpSolverType == LPSolverType::NATIVE )
-    {
-        // Make sure the data structures are initialized to the correct size
-        _rowBoundTightener->setDimensions();
-        adjustWorkMemorySize();
-        _activeEntryStrategy->resizeHook( _tableau );
-        _costFunctionManager->initialize();
-    }
+    // if ( _lpSolverType == LPSolverType::NATIVE )
+    // {
+    //    // Make sure the data structures are initialized to the correct size
+    //    _rowBoundTightener->setDimensions();
+    //    adjustWorkMemorySize();
+    //    _activeEntryStrategy->resizeHook( _tableau );
+    //    _costFunctionManager->initialize();
+    //}
 
     // Reset the violation counts in the SMT core
-    _smtCore.resetSplitConditions();
+    // _smtCore.resetSplitConditions();
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )
@@ -1956,14 +1956,13 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
     if ( constraint->isActive() && constraint->phaseFixed() )
     {
         String constraintString;
+        // This is a performance issue
         constraint->dump( constraintString );
         ENGINE_LOG( Stringf( "A constraint has become valid. Dumping constraint: %s",
                              constraintString.ascii() ).ascii() );
 
         constraint->setActiveConstraint( false );
-        PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
-        _smtCore.recordImpliedValidSplit( validSplit );
-        applySplit( validSplit );
+        _smtCore.pushImplication( constraint );
         if ( _soiManager )
             _soiManager->removeCostComponentFromHeuristicCost( constraint );
         ++_numPlConstraintsDisabledByValidSplits;
@@ -2592,7 +2591,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
     PiecewiseLinearConstraint *candidatePLConstraint = NULL;
     if ( strategy == DivideStrategy::PseudoImpact )
     {
-        if ( _smtCore.getStackDepth() > 3 )
+        if ( _smtCore.getDecisionLevel() > 3 )
             candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
         else if ( _preprocessedQuery->getInputVariables().size() <
                   GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
@@ -2605,7 +2604,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy
     else if ( strategy == DivideStrategy::EarliestReLU )
         candidatePLConstraint = pickSplitPLConstraintBasedOnTopology();
     else if ( strategy == DivideStrategy::LargestInterval &&
-              ( _smtCore.getStackDepth() %
+              ( _smtCore.getDecisionLevel() %
                 GlobalConfiguration::INTERVAL_SPLITTING_FREQUENCY == 0 )
               )
     {
@@ -2631,68 +2630,6 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintSnC( SnCDivideStrategy s
                            "Picked..." :
                            "Unable to pick using the current strategy..." ) ).ascii() );
     return candidatePLConstraint;
-}
-
-bool Engine::restoreSmtState( SmtState & smtState )
-{
-    try
-    {
-        ASSERT( _smtCore.getStackDepth() == 0 );
-
-        // Step 1: all implied valid splits at root
-        for ( auto &validSplit : smtState._impliedValidSplitsAtRoot )
-        {
-            applySplit( validSplit );
-            _smtCore.recordImpliedValidSplit( validSplit );
-        }
-
-        tightenBoundsOnConstraintMatrix();
-        applyAllBoundTightenings();
-        // For debugging purposes
-        checkBoundCompliancyWithDebugSolution();
-        do
-            performSymbolicBoundTightening();
-        while ( applyAllValidConstraintCaseSplits() );
-
-        // Step 2: replay the stack
-        for ( auto &stackEntry : smtState._stack )
-        {
-            _smtCore.replaySmtStackEntry( stackEntry );
-            // Do all the bound propagation, and set ReLU constraints to inactive (at
-            // least the one corresponding to the _activeSplit applied above.
-            tightenBoundsOnConstraintMatrix();
-            applyAllBoundTightenings();
-            // For debugging purposes
-            checkBoundCompliancyWithDebugSolution();
-            do
-                performSymbolicBoundTightening();
-            while ( applyAllValidConstraintCaseSplits() );
-
-        }
-    }
-    catch ( const InfeasibleQueryException & )
-    {
-        // The current query is unsat, and we need to pop.
-        // If we're at level 0, the whole query is unsat.
-        if ( !_smtCore.popSplit() )
-        {
-            if ( _verbosity > 0 )
-            {
-                printf( "\nEngine::solve: UNSAT query\n" );
-                _statistics.print();
-            }
-            _exitCode = Engine::UNSAT;
-            for ( PiecewiseLinearConstraint *p : _plConstraints )
-                p->setActiveConstraint( true );
-            return false;
-        }
-    }
-    return true;
-}
-
-void Engine::storeSmtState( SmtState & smtState )
-{
-    _smtCore.storeSmtState( smtState );
 }
 
 bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )

@@ -101,7 +101,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
 
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery
         if ( restoreTreeStates && smtState )
-            fullSolveNeeded = _engine->restoreSmtState( *smtState );
+            fullSolveNeeded = true; //_engine->restoreSmtState( *smtState );
         IEngine::ExitCode result = IEngine::NOT_DONE;
         if ( fullSolveNeeded )
         {
@@ -141,7 +141,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
                 {
                     newSmtStates.push_back( std::unique_ptr<SmtState>
                                             ( new SmtState() ) );
-                    _engine->storeSmtState( *( newSmtStates[i] ) );
+                    //_engine->storeSmtState( *( newSmtStates[i] ) );
                 }
             }
 
