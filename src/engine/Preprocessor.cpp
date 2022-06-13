@@ -101,11 +101,11 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     for ( const auto &var : _preprocessed->getOutputVariables() )
         _uneliminableVariables.insert( var );
     for ( const auto &constraint : _preprocessed->getPiecewiseLinearConstraints() )
-        if ( constraint->supportVariableElimination() )
+        if ( !constraint->supportVariableElimination() )
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
     for ( const auto &constraint : _preprocessed->getNonlinearConstraints() )
-        if ( constraint->supportVariableElimination() )
+        if ( !constraint->supportVariableElimination() )
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
 

@@ -417,10 +417,6 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
     inputQuery.saveQuery(String(filename));
 }
 
-void writeSmtLib(InputQuery& inputQuery, std::string filename){
-    inputQuery.dumpSmtLibFile(String(filename));
-}
-
 InputQuery loadQuery(std::string filename){
     return QueryLoader::loadQuery(String(filename));
 }
@@ -490,14 +486,6 @@ PYBIND11_MODULE(MarabouCore, m) {
             filename (str): Name of file to save query
         )pbdoc",
         py::arg("inputQuery"), py::arg("filename"));
-    m.def("writeSmtLib", &writeSmtLib, R"pbdoc(
-        Save to smt2 file
-
-        Args:
-            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
-            filename (str): Name of file to save query
-        )pbdoc",
-          py::arg("inputQuery"), py::arg("filename"));
     m.def("loadQuery", &loadQuery, R"pbdoc(
         Loads and returns a serialized InputQuery from the given filename
 
@@ -579,7 +567,6 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("dump", &InputQuery::dump)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
-        .def("addQuadraticEquation", &InputQuery::addQuadraticEquation)
         .def("getSolutionValue", &InputQuery::getSolutionValue)
         .def("getNumberOfVariables", &InputQuery::getNumberOfVariables)
         .def("getNumInputVariables", &InputQuery::getNumInputVariables)
@@ -604,17 +591,6 @@ PYBIND11_MODULE(MarabouCore, m) {
     eq.def(py::init<Equation::EquationType>());
     eq.def("addAddend", &Equation::addAddend);
     eq.def("setScalar", &Equation::setScalar);
-    py::class_<QuadraticEquation> qeq(m, "QuadraticEquation");
-    py::enum_<QuadraticEquation::QuadraticEquationType>(qeq, "QuadraticEquationType")
-        .value("EQ", QuadraticEquation::QuadraticEquationType::EQ)
-        .value("GE", QuadraticEquation::QuadraticEquationType::GE)
-        .value("LE", QuadraticEquation::QuadraticEquationType::LE)
-        .export_values();
-    qeq.def(py::init());
-    qeq.def(py::init<QuadraticEquation ::QuadraticEquationType>());
-    qeq.def("addAddend", &QuadraticEquation::addAddend);
-    qeq.def("addQuadraticAddend", &QuadraticEquation::addQuadraticAddend);
-    qeq.def("setScalar", &QuadraticEquation::setScalar);
     py::enum_<Statistics::StatisticsUnsignedAttribute>(m, "StatisticsUnsignedAttribute")
         .value("NUM_POPS", Statistics::StatisticsUnsignedAttribute::NUM_POPS)
         .value("CURRENT_DECISION_LEVEL", Statistics::StatisticsUnsignedAttribute::CURRENT_DECISION_LEVEL)
