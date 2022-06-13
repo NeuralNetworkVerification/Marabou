@@ -78,6 +78,8 @@ public:
     */
     List<unsigned> getParticipatingVariables() const override;
 
+    bool supportVariableElimination() { return false; };
+
     /*
       Returns true iff the assignment satisfies the constraint
     */

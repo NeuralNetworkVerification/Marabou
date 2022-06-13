@@ -101,9 +101,13 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     for ( const auto &var : _preprocessed->getOutputVariables() )
         _uneliminableVariables.insert( var );
     for ( const auto &constraint : _preprocessed->getPiecewiseLinearConstraints() )
-        constraint->addUneliminableVariables( _uneliminableVariables );
+        if ( constraint->supportVariableElimination() )
+            for ( const auto &var : constraint->getParticipatingVariables() )
+                _uneliminableVariables.insert( var );
     for ( const auto &constraint : _preprocessed->getNonlinearConstraints() )
-        constraint->addUneliminableVariables( _uneliminableVariables );
+        if ( constraint->supportVariableElimination() )
+            for ( const auto &var : constraint->getParticipatingVariables() )
+                _uneliminableVariables.insert( var );
 
     /*
       Set any missing bounds
@@ -735,7 +739,7 @@ void Preprocessor::eliminateVariables()
                 ++constraint;
         }
 
-        List<NonlinearConstraint *> &tsConstraints( _preprocessed->getTranscendentalConstraints() );
+        List<NonlinearConstraint *> &tsConstraints( _preprocessed->getNonlinearConstraints() );
         List<NonlinearConstraint *>::iterator tsConstraint = tsConstraints.begin();
         while ( tsConstraint != tsConstraints.end() )
         {
@@ -925,7 +929,7 @@ void Preprocessor::eliminateVariables()
 
     // Let the transcendental constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
-    List<NonlinearConstraint *> &tsConstraints( _preprocessed->getTranscendentalConstraints() );
+    List<NonlinearConstraint *> &tsConstraints( _preprocessed->getNonlinearConstraints() );
     List<NonlinearConstraint *>::iterator tsConstraint = tsConstraints.begin();
     while ( tsConstraint != tsConstraints.end() )
     {

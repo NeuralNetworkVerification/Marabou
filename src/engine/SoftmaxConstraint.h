@@ -67,6 +67,8 @@ public:
     */
     List<unsigned> getParticipatingVariables() const override;
 
+    bool supportVariableElimination() { return false; };
+
     /*
       Preprocessing related functions, to inform that a variable has
       been eliminated completely because it was fixed to some value,

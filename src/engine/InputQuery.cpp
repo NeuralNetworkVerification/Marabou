@@ -160,17 +160,17 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
     return _plConstraints;
 }
 
-void InputQuery::addNonlinearConstraint( TranscendentalConstraint *constraint )
+void InputQuery::addNonlinearConstraint( NonlinearConstraint *constraint )
 {
     _tsConstraints.append( constraint );
 }
 
-List<NonlinearConstraint *> &InputQuery::getTranscendentalConstraints()
+List<NonlinearConstraint *> &InputQuery::getNonlinearConstraints()
 {
     return _tsConstraints;
 }
 
-const List<NonlinearConstraint *> &InputQuery::getTranscendentalConstraints() const
+const List<NonlinearConstraint *> &InputQuery::getNonlinearConstraints() const
 {
     return _tsConstraints;
 }

@@ -54,9 +54,9 @@ public:
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
   
-    void addNonlinearConstraint( TranscendentalConstraint *constraint );
-    const List<NonlinearConstraint *> &getTranscendentalConstraints() const;
-    List<NonlinearConstraint *> &getTranscendentalConstraints();
+    void addNonlinearConstraint( NonlinearConstraint *constraint );
+    const List<NonlinearConstraint *> &getNonlinearConstraints() const;
+    List<NonlinearConstraint *> &getNonlinearConstraints();
 
     /*
       Methods for handling input and output variables

@@ -2,7 +2,7 @@
 /*! \file SoftmaxConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Haoze Wu
+ **   Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -58,7 +58,8 @@ NonlinearConstraint *SoftmaxConstraint::duplicateConstraint() const
 
 void SoftmaxConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const SoftmaxConstraint *softmax = dynamic_cast<const SoftmaxConstraint *>( state );
+    const SoftmaxConstraint *softmax =
+        dynamic_cast<const SoftmaxConstraint *>( state );
     *this = *softmax;
 }
 
@@ -97,8 +98,10 @@ void SoftmaxConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void SoftmaxConstraint::notifyUpperBound( unsigned variable, double bound )
 {
+    ASSERT( participatingVariable( variable ) );
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute
+            ( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
     if ( _boundManager == nullptr )
     {
@@ -127,8 +130,8 @@ List<unsigned> SoftmaxConstraint::getParticipatingVariables() const
 
 void SoftmaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    ASSERT( participatingVariable( variable ) );
-    ASSERT( !participatingVariable( variable ) );
+    ASSERT( participatingVariable( oldIndex ) );
+    ASSERT( !participatingVariable( newIndex ) );
 
     if ( _assignment.exists( oldIndex ) )
     {
@@ -177,79 +180,77 @@ void SoftmaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) 
         tightenings.append( Tightening( _outputs[i], 1, Tightening::UB ) );
 
         // First get tighter lower bound
-        bool valid = true;
+        bool validBound = true;
         Vector<double> values;
         for ( unsigned j = 0; j < _inputs.size(); ++j )
         {
             if ( i == j )
             {
-                if ( existsLowerBound( _inputs[j] ) && FloatUtils::isFinite( getLowerBound( _inputs[j] ) ) )
-                {
+                if ( existsLowerBound( _inputs[j] ) &&
+                     FloatUtils::isFinite( getLowerBound( _inputs[j] ) ) )
                     values.append( getLowerBound( _inputs[j] ) );
-                }
                 else
                 {
-                    valid = false;
+                    validBound = false;
                     break;
                 }
             }
             else
             {
-                if ( existsUpperBound( _inputs[j] ) && FloatUtils::isFinite( getUpperBound( _inputs[j] ) ) )
-                {
+                if ( existsUpperBound( _inputs[j] ) &&
+                     FloatUtils::isFinite( getUpperBound( _inputs[j] ) ) )
                     values.append( getUpperBound( _inputs[j] ) );
-                }
                 else
                 {
-                    valid = false;
+                    validBound = false;
                     break;
                 }
             }
         }
 
-        if ( valid )
+        if ( validBound )
         {
             Vector<double> result;
             softmax( values, result );
-            tightenings.append( Tightening( _outputs[i], result[i], Tightening::LB ) );
+            tightenings.append( Tightening( _outputs[i], result[i],
+                                            Tightening::LB ) );
         }
 
         // Now get tighter upper bound
-        valid = true;
+        validBound = true;
         values.clear();
         for ( unsigned j = 0; j < _inputs.size(); ++j )
         {
             if ( i == j )
             {
-                if ( existsUpperBound( _inputs[j] ) && FloatUtils::isFinite( getUpperBound( _inputs[j] ) ) )
-                {
+                if ( existsUpperBound( _inputs[j] ) &&
+                     FloatUtils::isFinite( getUpperBound( _inputs[j] ) ) )
                     values.append( getUpperBound( _inputs[j] ) );
-                }
                 else
                 {
-                    valid = false;
+                    validBound = false;
                     break;
                 }
             }
             else
             {
-                if ( existsLowerBound( _inputs[j] ) && FloatUtils::isFinite( getLowerBound( _inputs[j] ) ) )
-                {
+                if ( existsLowerBound( _inputs[j] )
+                     && FloatUtils::isFinite( getLowerBound( _inputs[j] ) ) )
                     values.append( getLowerBound( _inputs[j] ) );
-                }
                 else
                 {
-                    valid = false;
+                    validBound = false;
                     break;
                 }
             }
         }
 
-        if ( valid )
+        if ( validBound )
         {
             Vector<double> result;
             softmax( values, result );
-            tightenings.append( Tightening( _outputs[i], result[i], Tightening::UB ) );
+            tightenings.append( Tightening( _outputs[i], result[i],
+                                            Tightening::UB ) );
         }
     }
 }

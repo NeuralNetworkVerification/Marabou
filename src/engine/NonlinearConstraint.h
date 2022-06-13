@@ -21,7 +21,7 @@
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
-#include "NonLinearFunctionType.h"
+#include "NonlinearFunctionType.h"
 #include "Queue.h"
 #include "Tightening.h"
 
@@ -31,30 +31,30 @@ class ITableau;
 class InputQuery;
 class String;
 
-class NonLinearConstraint : public ITableau::VariableWatcher
+class NonlinearConstraint : public ITableau::VariableWatcher
 {
 public:
-    NonLinearConstraint();
-    virtual ~NonLinearConstraint()
+    NonlinearConstraint();
+    virtual ~NonlinearConstraint()
     {
     }
 
     /*
       Get the type of this constraint.
     */
-    virtual NonLinearFunctionType getType() const = 0;
+    virtual NonlinearFunctionType getType() const = 0;
 
     /*
       Return a clone of the constraint.
     */
-    virtual NonLinearConstraint *duplicateConstraint() const = 0;
+    virtual NonlinearConstraint *duplicateConstraint() const = 0;
 
     /*
       Restore the state of this constraint from the given one.
       We have this function in order to take advantage of the polymorphically
       correct assignment operator.
     */
-    virtual void restoreState( const NonLinearConstraint *state ) = 0;
+    virtual void restoreState( const NonlinearConstraint *state ) = 0;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -79,11 +79,12 @@ public:
     virtual List<unsigned> getParticipatingVariables() const = 0;
 
     /*
-      Get the list of variables that should not be eliminated by preprocessor.
+      Whether variables participating in the constraint can be eliminated by
+      preprocessor.
       Caution: when implementing a new constraint class, this method should
-      preferably not be overloaded
+      preferably not be overloaded.
     */
-    virtual void addUneliminableVariables( Set<unsigned> &/*list*/ ) const {};
+    virtual bool supportVariableElimination() { return true; };
 
     /*
       Dump the current state of the constraint.
@@ -211,4 +212,4 @@ protected:
     }
 };
 
-#endif // __NonLinearConstraint_h__
+#endif // __NonlinearConstraint_h__

@@ -15,7 +15,7 @@
 #include "NonlinearConstraint.h"
 #include "Statistics.h"
 
-NonlinearConstraint::TranscendentalConstraint()
+NonlinearConstraint::NonlinearConstraint()
     : _boundManager( nullptr )
     , _constraintBoundTightener( NULL )
     , _statistics( NULL )
