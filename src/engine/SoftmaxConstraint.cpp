@@ -14,7 +14,6 @@
 
 #include "SoftmaxConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "NonlinearConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -71,7 +70,7 @@ void SoftmaxConstraint::registerAsWatcher( ITableau *tableau )
         tableau->registerToWatchVariable( this, output );
 }
 
-void SoftmaxConstraint::unregisterAsWatcher( ITableau * )
+void SoftmaxConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     for ( const auto &input : _inputs )
         tableau->unregisterToWatchVariable( this, input );
