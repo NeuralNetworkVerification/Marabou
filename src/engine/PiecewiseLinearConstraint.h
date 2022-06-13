@@ -172,6 +172,13 @@ public:
     virtual List<unsigned> getParticipatingVariables() const = 0;
 
     /*
+      Get the list of variables that should not be eliminated by preprocessor.
+      Caution: when implementing a new constraint class, this method should
+      preferably not be overloaded
+    */
+    virtual void addUneliminableVariables( Set<unsigned> &/*list*/ ) const {};
+
+    /*
       Returns true iff the assignment satisfies the constraint.
     */
     virtual bool satisfied() const = 0;

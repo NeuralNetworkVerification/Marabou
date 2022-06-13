@@ -18,11 +18,11 @@
 
 #include "List.h"
 #include "Map.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 #include <cmath>
 
-class SoftmaxConstraint : public TranscendentalConstraint
+class SoftmaxConstraint : public NonlinearConstraint
 {
 public:
     SoftmaxConstraint( const Vector<unsigned> &inputs,
@@ -32,17 +32,17 @@ public:
     /*
       Get the type of this constraint.
     */
-    TranscendentalFunctionType getType() const override;
+    NonlinearFunctionType getType() const override;
 
     /*
       Return a clone of the constraint.
     */
-    TranscendentalConstraint *duplicateConstraint() const override;
+    NonlinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const TranscendentalConstraint *state ) override; 
+    void restoreState( const NonlinearConstraint *state ) override; 
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -82,11 +82,6 @@ public:
       Get the tightenings entailed by the constraint.
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
-
-    /*
-      Dump the current state of the constraint.
-    */
-    void dump( String &output ) const override;
 
     String serializeToString() const override;
 

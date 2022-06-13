@@ -15,7 +15,7 @@
 #include "SoftmaxConstraint.h"
 
 #include "ConstraintBoundTightener.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -32,10 +32,11 @@
 
 SoftmaxConstraint::SoftmaxConstraint( const Vector<unsigned> &inputs,
                                       const Vector<unsigned> &outputs )
-    : TranscendentalConstraint()
+    : NonlinearConstraint()
     , _inputs( inputs )
     , _outputs( outputs )
 {
+    ASSERT( _inputs.size() == _outputs.size() );
 }
 
 SoftmaxConstraint::SoftmaxConstraint( const String & )
@@ -43,45 +44,55 @@ SoftmaxConstraint::SoftmaxConstraint( const String & )
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
-TranscendentalFunctionType SoftmaxConstraint::getType() const
+NonlinearFunctionType SoftmaxConstraint::getType() const
 {
-    return TranscendentalFunctionType::SOFTMAX;
+    return NonlinearFunctionType::SOFTMAX;
 }
 
-TranscendentalConstraint *SoftmaxConstraint::duplicateConstraint() const
+NonlinearConstraint *SoftmaxConstraint::duplicateConstraint() const
 {
     SoftmaxConstraint *clone = new SoftmaxConstraint( _inputs, _outputs );
     *clone = *this;
     return clone;
 }
 
-void SoftmaxConstraint::restoreState( const TranscendentalConstraint *state )
+void SoftmaxConstraint::restoreState( const NonlinearConstraint *state )
 {
     const SoftmaxConstraint *softmax = dynamic_cast<const SoftmaxConstraint *>( state );
     *this = *softmax;
 }
 
-void SoftmaxConstraint::registerAsWatcher( ITableau * )
+void SoftmaxConstraint::registerAsWatcher( ITableau *tableau )
 {
+    for ( const auto &input : _inputs )
+        tableau->registerToWatchVariable( this, input );
+    for ( const auto &output : _outputs )
+        tableau->registerToWatchVariable( this, output );
 }
 
 void SoftmaxConstraint::unregisterAsWatcher( ITableau * )
 {
+    for ( const auto &input : _inputs )
+        tableau->unregisterToWatchVariable( this, input );
+    for ( const auto &output : _outputs )
+        tableau->unregisterToWatchVariable( this, output );
 }
 
 void SoftmaxConstraint::notifyLowerBound( unsigned variable, double bound )
 {
+    ASSERT( participatingVariable( variable ) );
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute
+            ( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
-
-    setLowerBound( variable, bound );
-
-    if ( _constraintBoundTightener )
+    if ( _boundManager == nullptr )
     {
+        if ( existsLowerBound( variable ) &&
+             !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+            return;
+        setLowerBound( variable, bound );
     }
+    // TODO: bound derivation
 }
 
 void SoftmaxConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -89,14 +100,14 @@ void SoftmaxConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-        return;
-
-    setUpperBound( variable, bound );
-
-    if ( _constraintBoundTightener )
+    if ( _boundManager == nullptr )
     {
+        if ( existsUpperBound( variable ) &&
+             !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+            return;
+        setUpperBound( variable, bound );
     }
+    // TODO: bound derivation
 }
 
 bool SoftmaxConstraint::participatingVariable( unsigned variable ) const
@@ -114,25 +125,48 @@ List<unsigned> SoftmaxConstraint::getParticipatingVariables() const
     return toReturn;
 }
 
-void SoftmaxConstraint::dump( String &output ) const
+void SoftmaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    output = Stringf( "Softmax constraint\n" );
-}
+    ASSERT( participatingVariable( variable ) );
+    ASSERT( !participatingVariable( variable ) );
 
-void SoftmaxConstraint::updateVariableIndex( unsigned /*oldIndex*/, unsigned /*newIndex*/ )
-{
-    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+    if ( _assignment.exists( oldIndex ) )
+    {
+        _assignment[newIndex] = _assignment.get( oldIndex );
+        _assignment.erase( oldIndex );
+    }
+
+    if ( _lowerBounds.exists( oldIndex ) )
+    {
+        _lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
+        _lowerBounds.erase( oldIndex );
+    }
+
+    if ( _upperBounds.exists( oldIndex ) )
+    {
+        _upperBounds[newIndex] = _upperBounds.get( oldIndex );
+        _upperBounds.erase( oldIndex );
+    }
+
+    for ( unsigned i = 0; i < _inputs.size(); ++i )
+    {
+        if ( _inputs[i] == oldIndex )
+            _inputs[i] = newIndex;
+        if ( _outputs[i] == oldIndex )
+            _outputs[i] = newIndex;
+    }
 }
 
 void SoftmaxConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
                                         __attribute__((unused)) double fixedValue )
 {
-    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                        "Eliminate variable from a Softmax constraint" );
 }
 
 bool SoftmaxConstraint::constraintObsolete() const
 {
-    return false;
+    return _inputs.size() == 0;
 }
 
 void SoftmaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const

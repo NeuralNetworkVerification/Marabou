@@ -390,7 +390,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid1 = new SigmoidConstraint( 0, 1 );
-        inputQuery1.addTranscendentalConstraint( sigmoid1 );
+        inputQuery1.addNonlinearConstraint( sigmoid1 );
         inputQuery1.setLowerBound( 1, sigmoid1->sigmoid( 0 ) );
         inputQuery1.setUpperBound( 1, sigmoid1->sigmoid( 1 ) );
         tableau1.setLowerBound( 1, sigmoid1->sigmoid( 0 ) );
@@ -431,7 +431,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid2 = new SigmoidConstraint( 0, 1 );
-        inputQuery2.addTranscendentalConstraint( sigmoid2 );
+        inputQuery2.addNonlinearConstraint( sigmoid2 );
         inputQuery2.setLowerBound( 1, sigmoid2->sigmoid( -1 ) );
         inputQuery2.setUpperBound( 1, sigmoid2->sigmoid( -0.1 )  );
         tableau2.setLowerBound( 1, sigmoid2->sigmoid( -1 )  );
@@ -471,7 +471,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid3 = new SigmoidConstraint( 0, 1 );
-        inputQuery3.addTranscendentalConstraint( sigmoid3 );
+        inputQuery3.addNonlinearConstraint( sigmoid3 );
         inputQuery3.setLowerBound( 1, sigmoid3->sigmoid( -1 ) );
         inputQuery3.setUpperBound( 1, sigmoid3->sigmoid( 1 ) );
         tableau3.setLowerBound( 1, sigmoid3->sigmoid( -1 ) );
@@ -512,7 +512,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid4 = new SigmoidConstraint( 0, 1 );
-        inputQuery4.addTranscendentalConstraint( sigmoid4 );
+        inputQuery4.addNonlinearConstraint( sigmoid4 );
         inputQuery4.setLowerBound( 1, sigmoid4->sigmoid( 0 ) );
         inputQuery4.setUpperBound( 1, sigmoid4->sigmoid( 0 ) );
         tableau4.setLowerBound( 1, sigmoid4->sigmoid( 0 ) );
@@ -553,7 +553,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid5 = new SigmoidConstraint( 0, 1 );
-        inputQuery5.addTranscendentalConstraint( sigmoid5 );
+        inputQuery5.addNonlinearConstraint( sigmoid5 );
         inputQuery5.setLowerBound( 1, sigmoid5->sigmoid( -1 ) );
         inputQuery5.setUpperBound( 1, sigmoid5->sigmoid( 0 ) );
         tableau5.setLowerBound( 1, sigmoid5->sigmoid( -1 ) );
@@ -594,7 +594,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid6 = new SigmoidConstraint( 0, 1 );
-        inputQuery6.addTranscendentalConstraint( sigmoid6 );
+        inputQuery6.addNonlinearConstraint( sigmoid6 );
         inputQuery6.setLowerBound( 1, sigmoid6->sigmoid( 0 ) );
         inputQuery6.setUpperBound( 1, sigmoid6->sigmoid( 1 ) );
         tableau6.setLowerBound( 1, sigmoid6->sigmoid( 0 ) );
@@ -648,7 +648,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid1 = new SigmoidConstraint( x0, x1 );
-        inputQuery1.addTranscendentalConstraint( sigmoid1 );
+        inputQuery1.addNonlinearConstraint( sigmoid1 );
         inputQuery1.setLowerBound( x1, sigmoid1->sigmoid( 0 ) );
         inputQuery1.setUpperBound( x1, sigmoid1->sigmoid( 1 ) );
         tableau1.setLowerBound( x1, sigmoid1->sigmoid( 0 ) );
@@ -691,7 +691,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid2 = new SigmoidConstraint( x0, x1 );
-        inputQuery2.addTranscendentalConstraint( sigmoid2 );
+        inputQuery2.addNonlinearConstraint( sigmoid2 );
         inputQuery2.setLowerBound( x1, sigmoid2->sigmoid( -1 ) );
         inputQuery2.setUpperBound( x1, sigmoid2->sigmoid( -0.1 )  );
         tableau2.setLowerBound( x1, sigmoid2->sigmoid( -1 )  );
@@ -734,7 +734,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid3 = new SigmoidConstraint( x0, x1 );
-        inputQuery3.addTranscendentalConstraint( sigmoid3 );
+        inputQuery3.addNonlinearConstraint( sigmoid3 );
         inputQuery3.setLowerBound( x1, sigmoid3->sigmoid( -1 ) );
         inputQuery3.setUpperBound( x1, sigmoid3->sigmoid( 1 ) );
         tableau3.setLowerBound( x1, sigmoid3->sigmoid( -1 ) );
@@ -777,7 +777,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid4 = new SigmoidConstraint( x0, x1 );
-        inputQuery4.addTranscendentalConstraint( sigmoid4 );
+        inputQuery4.addNonlinearConstraint( sigmoid4 );
         inputQuery4.setLowerBound( x1, sigmoid4->sigmoid( 0 ) );
         inputQuery4.setUpperBound( x1, sigmoid4->sigmoid( 0 ) );
         tableau4.setLowerBound( x1, sigmoid4->sigmoid( 0 ) );
@@ -836,7 +836,7 @@ public:
         tableau5.setLowerBound( x2, 0.5 * sigmoid5->sigmoid( -1 ) );
         tableau5.setUpperBound( x2, 0.5 * sigmoid5->sigmoid( 0 ) );
 
-        inputQuery5.addTranscendentalConstraint( sigmoid5 );
+        inputQuery5.addNonlinearConstraint( sigmoid5 );
         MILPEncoder milp5( tableau5 );
         milp5.encodeInputQuery( gurobi5, inputQuery5 );
 
@@ -863,7 +863,7 @@ public:
 
         // x1 = sigmoid( x0 )
         SigmoidConstraint *sigmoid6 = new SigmoidConstraint( x0, x1 );
-        inputQuery6.addTranscendentalConstraint( sigmoid6 );
+        inputQuery6.addNonlinearConstraint( sigmoid6 );
         inputQuery6.setLowerBound( x1, sigmoid6->sigmoid( 0 ) );
         inputQuery6.setUpperBound( x1, sigmoid6->sigmoid( 1 ) );
         tableau6.setLowerBound( x1, sigmoid6->sigmoid( 0 ) );

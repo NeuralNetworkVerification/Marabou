@@ -870,7 +870,7 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
         }
     }
 
-    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    for ( const auto &tsConstraint : inputQuery.getNonlinearConstraints() )
     {
         List<unsigned> variables = tsConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
@@ -1267,7 +1267,7 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         constraint->setStatistics( &_statistics );
     }
 
-    _tsConstraints = _preprocessedQuery->getTranscendentalConstraints();
+    _tsConstraints = _preprocessedQuery->getNonlinearConstraints();
     for ( const auto &constraint : _tsConstraints )
     {
         constraint->registerAsWatcher( _tableau );
@@ -1443,7 +1443,7 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound Tightening.
         if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
-            && _preprocessedQuery->getTranscendentalConstraints().size() > 0 )
+            && _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
 
@@ -2724,7 +2724,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     if ( _gurobi->haveFeasibleSolution() )
     {
         // Return UNKNOWN if input query has transcendental constratints.
-        if ( _preprocessedQuery->getTranscendentalConstraints().size() > 0 )
+        if ( _preprocessedQuery->getNonlinearConstraints().size() > 0 )
         {
             // TODO: Return UNKNOW exitCode insted of throwing Error after implementing python interface to support UNKNOWN.
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "UNKNOWN (Marabou doesn't support UNKNOWN cases with exitCode yet.)" );

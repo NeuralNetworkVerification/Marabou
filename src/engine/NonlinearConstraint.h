@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file TranscendentalConstraint.h
+/*! \file NonLinearConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,15 +13,15 @@
 
 **/
 
-#ifndef __TranscendentalConstraint_h__
-#define __TranscendentalConstraint_h__
+#ifndef __NonLinearConstraint_h__
+#define __NonLinearConstraint_h__
 
 #include "BoundManager.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
-#include "TranscendentalFunctionType.h"
+#include "NonLinearFunctionType.h"
 #include "Queue.h"
 #include "Tightening.h"
 
@@ -31,30 +31,30 @@ class ITableau;
 class InputQuery;
 class String;
 
-class TranscendentalConstraint : public ITableau::VariableWatcher
+class NonLinearConstraint : public ITableau::VariableWatcher
 {
 public:
-    TranscendentalConstraint();
-    virtual ~TranscendentalConstraint()
+    NonLinearConstraint();
+    virtual ~NonLinearConstraint()
     {
     }
 
     /*
       Get the type of this constraint.
     */
-    virtual TranscendentalFunctionType getType() const = 0;
+    virtual NonLinearFunctionType getType() const = 0;
 
     /*
       Return a clone of the constraint.
     */
-    virtual TranscendentalConstraint *duplicateConstraint() const = 0;
+    virtual NonLinearConstraint *duplicateConstraint() const = 0;
 
     /*
       Restore the state of this constraint from the given one.
       We have this function in order to take advantage of the polymorphically
       correct assignment operator.
     */
-    virtual void restoreState( const TranscendentalConstraint *state ) = 0;
+    virtual void restoreState( const NonLinearConstraint *state ) = 0;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -77,6 +77,13 @@ public:
       Get the list of variables participating in this constraint.
     */
     virtual List<unsigned> getParticipatingVariables() const = 0;
+
+    /*
+      Get the list of variables that should not be eliminated by preprocessor.
+      Caution: when implementing a new constraint class, this method should
+      preferably not be overloaded
+    */
+    virtual void addUneliminableVariables( Set<unsigned> &/*list*/ ) const {};
 
     /*
       Dump the current state of the constraint.
@@ -204,4 +211,4 @@ protected:
     }
 };
 
-#endif // __TranscendentalConstraint_h__
+#endif // __NonLinearConstraint_h__

@@ -97,9 +97,13 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
       Collect input and output variables
     */
     for ( const auto &var : _preprocessed->getInputVariables() )
-        _inputOutputVariables.insert( var );
+        _uneliminableVariables.insert( var );
     for ( const auto &var : _preprocessed->getOutputVariables() )
-        _inputOutputVariables.insert( var );
+        _uneliminableVariables.insert( var );
+    for ( const auto &constraint : _preprocessed->getPiecewiseLinearConstraints() )
+        constraint->addUneliminableVariables( _uneliminableVariables );
+    for ( const auto &constraint : _preprocessed->getNonlinearConstraints() )
+        constraint->addUneliminableVariables( _uneliminableVariables );
 
     /*
       Set any missing bounds
@@ -536,7 +540,7 @@ bool Preprocessor::processConstraints()
         }
     }
 
-    for ( auto &constraint : _preprocessed->getTranscendentalConstraints() )
+    for ( auto &constraint : _preprocessed->getNonlinearConstraints() )
     {
         for ( unsigned variable : constraint->getParticipatingVariables() )
         {
@@ -613,8 +617,8 @@ bool Preprocessor::processIdenticalVariables()
         unsigned v2 = term2._variable;
 
         // Input and output variables should not be merged
-        if ( _inputOutputVariables.exists( v1 ) ||
-             _inputOutputVariables.exists( v2 ) )
+        if ( _uneliminableVariables.exists( v1 ) ||
+             _uneliminableVariables.exists( v2 ) )
         {
             ++equation;
             continue;
@@ -661,7 +665,7 @@ void Preprocessor::collectFixedValues()
         for ( const auto &var : constraint->getParticipatingVariables() )
             usedVariables.insert( var );
     }
-    for ( const auto &constraint : _preprocessed->getTranscendentalConstraints() )
+    for ( const auto &constraint : _preprocessed->getNonlinearConstraints() )
     {
         for ( const auto &var : constraint->getParticipatingVariables() )
             usedVariables.insert( var );
@@ -731,8 +735,8 @@ void Preprocessor::eliminateVariables()
                 ++constraint;
         }
 
-        List<TranscendentalConstraint *> &tsConstraints( _preprocessed->getTranscendentalConstraints() );
-        List<TranscendentalConstraint *>::iterator tsConstraint = tsConstraints.begin();
+        List<NonlinearConstraint *> &tsConstraints( _preprocessed->getTranscendentalConstraints() );
+        List<NonlinearConstraint *>::iterator tsConstraint = tsConstraints.begin();
         while ( tsConstraint != tsConstraints.end() )
         {
             if ( (*tsConstraint)->constraintObsolete() )
@@ -809,7 +813,7 @@ void Preprocessor::eliminateVariables()
     {
         for ( const auto &fixed : _fixedVariables )
         {
-            if ( _inputOutputVariables.exists( fixed.first ) )
+            if ( _uneliminableVariables.exists( fixed.first ) )
                 continue;
 
             _preprocessed->_networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
@@ -822,7 +826,7 @@ void Preprocessor::eliminateVariables()
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
     {
         if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
-             !_inputOutputVariables.exists( i ) )
+             !_uneliminableVariables.exists( i ) )
         {
             ++numEliminated;
             ++offset;
@@ -921,8 +925,8 @@ void Preprocessor::eliminateVariables()
 
     // Let the transcendental constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
-    List<TranscendentalConstraint *> &tsConstraints( _preprocessed->getTranscendentalConstraints() );
-    List<TranscendentalConstraint *>::iterator tsConstraint = tsConstraints.begin();
+    List<NonlinearConstraint *> &tsConstraints( _preprocessed->getTranscendentalConstraints() );
+    List<NonlinearConstraint *>::iterator tsConstraint = tsConstraints.begin();
     while ( tsConstraint != tsConstraints.end() )
     {
         List<unsigned> participatingVariables = (*tsConstraint)->getParticipatingVariables();
@@ -967,7 +971,7 @@ void Preprocessor::eliminateVariables()
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
     {
         if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
-			 !_inputOutputVariables.exists( i ) )
+			 !_uneliminableVariables.exists( i ) )
             continue;
 
         ASSERT( _oldIndexToNewIndex.at( i ) <= i );

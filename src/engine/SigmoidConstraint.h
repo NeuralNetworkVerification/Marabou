@@ -18,11 +18,11 @@
 
 #include "List.h"
 #include "Map.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 #include <cmath>
 
-class SigmoidConstraint : public TranscendentalConstraint
+class SigmoidConstraint : public NonlinearConstraint
 {
 public:
     SigmoidConstraint( unsigned b, unsigned f );
@@ -31,17 +31,17 @@ public:
     /*
       Get the type of this constraint.
     */
-    TranscendentalFunctionType getType() const override;
+    NonlinearFunctionType getType() const override;
 
     /*
       Return a clone of the constraint.
     */
-    TranscendentalConstraint *duplicateConstraint() const override;
+    NonlinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const TranscendentalConstraint *state ) override; 
+    void restoreState( const NonlinearConstraint *state ) override; 
 
     /*
       Register/unregister the constraint with a talbeau.

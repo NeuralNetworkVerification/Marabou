@@ -85,12 +85,12 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
         }
     }
 
-    // Add Transcendental Constraints
-    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    // Add Nonlinear Constraints
+    for ( const auto &tsConstraint : inputQuery.getNonlinearConstraints() )
     {
         switch ( tsConstraint->getType() )
         {
-        case TranscendentalFunctionType::SIGMOID:
+        case NonlinearFunctionType::SIGMOID:
             encodeSigmoidConstraint( gurobi, (SigmoidConstraint *)tsConstraint );
             break;
         default:

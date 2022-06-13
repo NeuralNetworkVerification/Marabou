@@ -45,7 +45,7 @@
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -98,8 +98,8 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
-    ipq.addTranscendentalConstraint(s);
+    NonlinearConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addNonlinearConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -124,7 +124,7 @@ void addSoftmaxConstraint(InputQuery& ipq, std::list<unsigned> inputs,
     for ( const auto &v : outputs )
         outputList.append( v );
     SoftmaxConstraint *m = new SoftmaxConstraint( inputList, outputList );
-    ipq.addTranscendentalConstraint( m );
+    ipq.addNonlinearConstraint( m );
 }
 
 void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){

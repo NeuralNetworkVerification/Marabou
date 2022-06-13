@@ -160,17 +160,17 @@ const List<PiecewiseLinearConstraint *> &InputQuery::getPiecewiseLinearConstrain
     return _plConstraints;
 }
 
-void InputQuery::addTranscendentalConstraint( TranscendentalConstraint *constraint )
+void InputQuery::addNonlinearConstraint( TranscendentalConstraint *constraint )
 {
     _tsConstraints.append( constraint );
 }
 
-List<TranscendentalConstraint *> &InputQuery::getTranscendentalConstraints()
+List<NonlinearConstraint *> &InputQuery::getTranscendentalConstraints()
 {
     return _tsConstraints;
 }
 
-const List<TranscendentalConstraint *> &InputQuery::getTranscendentalConstraints() const
+const List<NonlinearConstraint *> &InputQuery::getTranscendentalConstraints() const
 {
     return _tsConstraints;
 }
@@ -437,7 +437,7 @@ void InputQuery::saveQuery( const String &fileName )
         ++i;
     }
 
-    // Transcendental Constraints
+    // Nonlinear Constraints
     i = 0;
     for ( const auto &constraint : _tsConstraints )
     {
@@ -934,8 +934,8 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
     List<NeuronInformation> newNeurons;
 
     // Look for Sigmoids where all b variables have already been handled
-    const List<TranscendentalConstraint *> &tsConstraints =
-        getTranscendentalConstraints();
+    const List<NonlinearConstraint *> &tsConstraints =
+        getNonlinearConstraints();
 
     for ( const auto &tsc : tsConstraints )
     {

@@ -22,7 +22,7 @@
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 class InputQuery
 {
@@ -54,9 +54,9 @@ public:
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
   
-    void addTranscendentalConstraint( TranscendentalConstraint *constraint );
-    const List<TranscendentalConstraint *> &getTranscendentalConstraints() const;
-    List<TranscendentalConstraint *> &getTranscendentalConstraints();
+    void addNonlinearConstraint( TranscendentalConstraint *constraint );
+    const List<NonlinearConstraint *> &getTranscendentalConstraints() const;
+    List<NonlinearConstraint *> &getTranscendentalConstraints();
 
     /*
       Methods for handling input and output variables
@@ -146,7 +146,7 @@ private:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;
-    List<TranscendentalConstraint *> _tsConstraints;
+    List<NonlinearConstraint *> _tsConstraints;
 
     Map<unsigned, double> _solution;
 
