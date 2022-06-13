@@ -41,6 +41,7 @@
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+#include "SoftmaxConstraint.h"
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
@@ -112,6 +113,18 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
         e.insert(var);
     PiecewiseLinearConstraint* m = new MaxConstraint(v, e);
     ipq.addPiecewiseLinearConstraint(m);
+}
+
+void addSoftmaxConstraint(InputQuery& ipq, std::list<unsigned> inputs,
+                          std::list<unsigned> outputs){
+    Vector<unsigned> inputList;
+    for ( const auto &v : inputs )
+        inputList.append( v );
+    Vector<unsigned> outputList;
+    for ( const auto &v : outputs )
+        outputList.append( v );
+    SoftmaxConstraint *m = new SoftmaxConstraint( inputList, outputList );
+    ipq.addTranscendentalConstraint( m );
 }
 
 void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
@@ -404,6 +417,10 @@ void saveQuery(InputQuery& inputQuery, std::string filename){
     inputQuery.saveQuery(String(filename));
 }
 
+void writeSmtLib(InputQuery& inputQuery, std::string filename){
+    inputQuery.dumpSmtLibFile(String(filename));
+}
+
 InputQuery loadQuery(std::string filename){
     return QueryLoader::loadQuery(String(filename));
 }
@@ -473,6 +490,14 @@ PYBIND11_MODULE(MarabouCore, m) {
             filename (str): Name of file to save query
         )pbdoc",
         py::arg("inputQuery"), py::arg("filename"));
+    m.def("writeSmtLib", &writeSmtLib, R"pbdoc(
+        Save to smt2 file
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be saved
+            filename (str): Name of file to save query
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("filename"));
     m.def("loadQuery", &loadQuery, R"pbdoc(
         Loads and returns a serialized InputQuery from the given filename
 
@@ -519,6 +544,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             v (int): Output variable from max constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
+    m.def("addSoftmaxConstraint", &addSoftmaxConstraint, R"pbdoc(
+        Add a Softmax constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            elements (set of int): Input variables to softmax constraint
+            v (int): Output variable from softmax constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("inputs"), py::arg("outputs"));
     m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
         Add an Abs constraint to the InputQuery
 
@@ -545,6 +579,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def("dump", &InputQuery::dump)
         .def("setNumberOfVariables", &InputQuery::setNumberOfVariables)
         .def("addEquation", &InputQuery::addEquation)
+        .def("addQuadraticEquation", &InputQuery::addQuadraticEquation)
         .def("getSolutionValue", &InputQuery::getSolutionValue)
         .def("getNumberOfVariables", &InputQuery::getNumberOfVariables)
         .def("getNumInputVariables", &InputQuery::getNumInputVariables)
@@ -569,6 +604,17 @@ PYBIND11_MODULE(MarabouCore, m) {
     eq.def(py::init<Equation::EquationType>());
     eq.def("addAddend", &Equation::addAddend);
     eq.def("setScalar", &Equation::setScalar);
+    py::class_<QuadraticEquation> qeq(m, "QuadraticEquation");
+    py::enum_<QuadraticEquation::QuadraticEquationType>(qeq, "QuadraticEquationType")
+        .value("EQ", QuadraticEquation::QuadraticEquationType::EQ)
+        .value("GE", QuadraticEquation::QuadraticEquationType::GE)
+        .value("LE", QuadraticEquation::QuadraticEquationType::LE)
+        .export_values();
+    qeq.def(py::init());
+    qeq.def(py::init<QuadraticEquation ::QuadraticEquationType>());
+    qeq.def("addAddend", &QuadraticEquation::addAddend);
+    qeq.def("addQuadraticAddend", &QuadraticEquation::addQuadraticAddend);
+    qeq.def("setScalar", &QuadraticEquation::setScalar);
     py::enum_<Statistics::StatisticsUnsignedAttribute>(m, "StatisticsUnsignedAttribute")
         .value("NUM_POPS", Statistics::StatisticsUnsignedAttribute::NUM_POPS)
         .value("CURRENT_DECISION_LEVEL", Statistics::StatisticsUnsignedAttribute::CURRENT_DECISION_LEVEL)

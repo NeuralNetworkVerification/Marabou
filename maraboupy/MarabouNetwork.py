@@ -47,7 +47,9 @@ class MarabouNetwork:
         """
         self.numVars = 0
         self.equList = []
+        self.quadEquList = []
         self.reluList = []
+        self.softmaxList = []
         self.sigmoidList = []
         self.maxList = []
         self.absList = []
@@ -76,6 +78,14 @@ class MarabouNetwork:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
         """
         self.equList += [x]
+
+    def addQuadraticEquation(self, x):
+        """Function to add new equation to the network
+
+        Args:
+            x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
+        """
+        self.quadEquList += [x]
 
     def setLowerBound(self, x, v):
         """Function to set lower bound for variable
@@ -121,6 +131,15 @@ class MarabouNetwork:
             v (int): Variable representing output of max constraint
         """
         self.maxList += [(elements, v)]
+
+    def addSoftmaxConstraint(self, inputs, outputs):
+        """Function to add a new softmax constraint
+
+        Args:
+            inputs (set of int): Variable representing input to max constraint
+            outputs (set of int): Variables representing outputs of max constraint
+        """
+        self.softmaxList += [(inputs, outputs)]
 
     def addAbsConstraint(self, b, f):
         """Function to add a new Abs constraint
@@ -229,6 +248,18 @@ class MarabouNetwork:
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
 
+        for e in self.quadEquList:
+            eq = MarabouCore.QuadraticEquation(e.EquationType)
+            for (c, v1, v2) in e.addendList:
+                assert v1 < self.numVars
+                assert v2 < self.numVars
+                if v2 == -1:
+                    eq.addAddend(c, v)
+                else:
+                    eq.addQuadraticAddend(c, v1, v2)
+            eq.setScalar(e.scalar)
+            ipq.addQuadraticEquation(eq)
+
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
@@ -242,6 +273,13 @@ class MarabouNetwork:
             for e in m[0]:
                 assert e < self.numVars
             MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+
+        for m in self.softmaxList:
+            for e in m[1]:
+                assert e < self.numVars
+            for e in m[0]:
+                assert e < self.numVars
+            MarabouCore.addSoftmaxConstraint(ipq, m[0], m[1])
 
         for b, f in self.absList:
             MarabouCore.addAbsConstraint(ipq, b, f)
@@ -391,6 +429,15 @@ class MarabouNetwork:
         """
         ipq = self.getMarabouQuery()
         MarabouCore.saveQuery(ipq, str(filename))
+
+    def saveSmtLib(self, filename=""):
+        """Serializes the inputQuery in the given filename
+
+        Args:
+            filename: (string) file to write serialized inputQuery
+        """
+        ipq = self.getMarabouQuery()
+        MarabouCore.writeSmtLib(ipq, str(filename))
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", options=None):
         """Function to evaluate network at a given point using Marabou as solver
