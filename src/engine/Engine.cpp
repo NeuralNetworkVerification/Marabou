@@ -163,7 +163,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
     // Register the boundManager with all the PL constraints
     for ( auto &plConstraint : _plConstraints )
+    {
         plConstraint->registerBoundManager( &_boundManager );
+        plConstraint->initializeCDOs( &_context );
+    }
 
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
