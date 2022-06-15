@@ -126,10 +126,6 @@ public:
        heuristics should be implemented.
      */
     List<PhaseStatus> getAllCases() const override;
-    /*
-      Check if the constraint's phase has been fixed.
-    */
-    bool phaseFixed() const override;
 
     /*
       If the phase is not fixed, add _f <= -2/lb_b * _b + 1

@@ -395,10 +395,6 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const
     return positivePhase;
 }
 
-bool AbsoluteValueConstraint::phaseFixed() const
-{
-    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
-}
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getImpliedCaseSplit() const
 {

@@ -1956,7 +1956,7 @@ bool Engine::applyAllValidConstraintCaseSplits()
 
 bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constraint )
 {
-    if ( constraint->isActive() && constraint->phaseFixed() )
+    if ( constraint->isActive() && ( constraint->phaseFixed() || constraint->isImplication() ) )
     {
         String constraintString;
         // This is a performance issue

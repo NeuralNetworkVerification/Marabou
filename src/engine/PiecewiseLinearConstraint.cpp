@@ -170,10 +170,13 @@ void PiecewiseLinearConstraint::markInfeasible(
 
 PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase()
 {
-    ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
+    //ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
 
     if ( !isFeasible() )
         return CONSTRAINT_INFEASIBLE;
+
+    if ( phaseFixed() )
+        return getPhaseStatus();
 
     List<PhaseStatus> allCases = getAllCases();
     for ( PhaseStatus thisCase : allCases )
@@ -201,6 +204,13 @@ void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
+bool PiecewiseLinearConstraint::phaseFixed() const
+{
+    if ( _cdPhaseStatus != nullptr )
+        return *_cdPhaseStatus != PHASE_NOT_FIXED;
+    else
+        return _phaseStatus != PHASE_NOT_FIXED;
+};
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

@@ -197,7 +197,7 @@ public:
     /*
       Check if the constraint's phase has been fixed.
     */
-    virtual bool phaseFixed() const = 0;
+    virtual bool phaseFixed() const;
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.

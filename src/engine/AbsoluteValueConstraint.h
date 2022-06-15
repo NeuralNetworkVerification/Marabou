@@ -133,7 +133,6 @@ public:
       Check whether the constraint's phase has been fixed.
      */
     void fixPhaseIfNeeded();
-    bool phaseFixed() const override;
 
     /*
       Preprocessing related functions, to inform that a variable has

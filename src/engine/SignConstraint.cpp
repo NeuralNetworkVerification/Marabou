@@ -217,10 +217,6 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const
     return positivePhase;
 }
 
-bool SignConstraint::phaseFixed() const
-{
-    return _phaseStatus != PHASE_NOT_FIXED;
-}
 
 void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
                                                               &inputQuery )

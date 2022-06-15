@@ -574,11 +574,6 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     return activePhase;
 }
 
-bool ReluConstraint::phaseFixed() const
-{
-    return _phaseStatus != PHASE_NOT_FIXED;
-}
-
 PiecewiseLinearCaseSplit ReluConstraint::getImpliedCaseSplit() const
 {
     ASSERT( _phaseStatus != PHASE_NOT_FIXED );

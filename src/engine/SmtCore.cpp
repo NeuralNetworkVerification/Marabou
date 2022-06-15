@@ -123,9 +123,14 @@ void SmtCore::pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus 
 
 void SmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
 {
-    ASSERT( constraint->isImplication() );
+    ASSERT( constraint->isImplication() || constraint->phaseFixed() );
     SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
-    TrailEntry te( constraint, constraint->nextFeasibleCase() );
+    PhaseStatus impliedCase = PHASE_NOT_FIXED;
+    if ( constraint->phaseFixed() )
+      impliedCase = constraint->getPhaseStatus();
+    else
+      impliedCase = constraint->nextFeasibleCase();
+    TrailEntry te( constraint, impliedCase );
     applyTrailEntry( te, false );
     SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
 }
@@ -169,6 +174,7 @@ void SmtCore::decide()
 
 void SmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
 {
+    ASSERT( constraint != nullptr );
     struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
