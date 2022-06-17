@@ -59,6 +59,13 @@ class MarabouNetwork:
         self.inputVars = []
         self.outputVars = []
 
+    def clearProperty(self):
+        """Clear the lower bounds and upper bounds map, and the self.additionEquList
+        """
+        self.lowerBounds.clear()
+        self.upperBounds.clear()
+        self.additionalEquList.clear()
+
     def getNewVariable(self):
         """Function to create a new variable
 
@@ -70,13 +77,13 @@ class MarabouNetwork:
         self.numVars += 1
         return self.numVars - 1
 
-    def addEquation(self, x, addToAdditionalEquList=False):
+    def addEquation(self, x, isProperty=False):
         """Function to add new equation to the network
 
         Args:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
         """
-        if addToAdditionalEquList:
+        if isProperty:
             self.additionalEquList += [x]
         else:
             self.equList += [x]
@@ -168,7 +175,7 @@ class MarabouNetwork:
         """
         return x in self.upperBounds
 
-    def addEquality(self, vars, coeffs, scalar, addToAdditionalEquList=False):
+    def addEquality(self, vars, coeffs, scalar, isProperty=False):
         """Function to add equality constraint to network
 
         .. math::
@@ -184,9 +191,9 @@ class MarabouNetwork:
         for i in range(len(vars)):
             e.addAddend(coeffs[i], vars[i])
         e.setScalar(scalar)
-        self.addEquation(e, addToAdditionalEquList)
+        self.addEquation(e, isProperty)
 
-    def addInequality(self, vars, coeffs, scalar, addToAdditionalEquList=False):
+    def addInequality(self, vars, coeffs, scalar, isProperty=False):
         """Function to add inequality constraint to network
 
         .. math::
@@ -202,7 +209,7 @@ class MarabouNetwork:
         for i in range(len(vars)):
             e.addAddend(coeffs[i], vars[i])
         e.setScalar(scalar)
-        self.addEquation(e, addToAdditionalEquList)
+        self.addEquation(e, isProperty)
 
     def getMarabouQuery(self):
         """Function to convert network into Marabou InputQuery
