@@ -30,6 +30,7 @@ class MarabouNetwork:
         reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
         sigmoidList (list of tuples): List of sigmoid constraint tuples, where each tuple contains the backward and forward variables
         maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
+        softmaxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and the set of output variables
         absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
         signList (list of tuples): List of sign constraint tuples, where each tuple conatins the input variable and the output variable
         lowerBounds (Dict[int, float]): Lower bounds of variables
@@ -47,11 +48,10 @@ class MarabouNetwork:
         """
         self.numVars = 0
         self.equList = []
-        self.quadEquList = []
         self.reluList = []
-        self.softmaxList = []
         self.sigmoidList = []
         self.maxList = []
+        self.softmaxList = []
         self.absList = []
         self.signList = []
         self.disjunctionList = []
@@ -78,14 +78,6 @@ class MarabouNetwork:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
         """
         self.equList += [x]
-
-    def addQuadraticEquation(self, x):
-        """Function to add new equation to the network
-
-        Args:
-            x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
-        """
-        self.quadEquList += [x]
 
     def setLowerBound(self, x, v):
         """Function to set lower bound for variable
@@ -247,18 +239,6 @@ class MarabouNetwork:
                 eq.addAddend(c, v)
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
-
-        for e in self.quadEquList:
-            eq = MarabouCore.QuadraticEquation(e.EquationType)
-            for (c, v1, v2) in e.addendList:
-                assert v1 < self.numVars
-                assert v2 < self.numVars
-                if v2 == -1:
-                    eq.addAddend(c, v)
-                else:
-                    eq.addQuadraticAddend(c, v1, v2)
-            eq.setScalar(e.scalar)
-            ipq.addQuadraticEquation(eq)
 
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars
@@ -429,15 +409,6 @@ class MarabouNetwork:
         """
         ipq = self.getMarabouQuery()
         MarabouCore.saveQuery(ipq, str(filename))
-
-    def saveSmtLib(self, filename=""):
-        """Serializes the inputQuery in the given filename
-
-        Args:
-            filename: (string) file to write serialized inputQuery
-        """
-        ipq = self.getMarabouQuery()
-        MarabouCore.writeSmtLib(ipq, str(filename))
 
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", options=None):
         """Function to evaluate network at a given point using Marabou as solver
