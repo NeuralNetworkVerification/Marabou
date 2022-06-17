@@ -44,13 +44,13 @@ def read_nnet(filename, normalize=False):
     return MarabouNetworkNNet(filename, normalize=normalize)
 
 
-def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
+def read_tf(filename, inputNames=None, outputNames=None, modelType="frozen", savedModelTags=[]):
     """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
     Args:
         filename (str): Path to tensorflow network
         inputNames (list of str, optional): List of operation names corresponding to inputs
-        outputName (str, optional): Name of operation corresponding to output
+        outputNames (list of str, optional): List of operation names corresponding to outputs
         modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                             Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                             created from either tensorflow versions 1.X or 2.X respectively.
@@ -59,20 +59,20 @@ def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", save
     Returns:
         :class:`~maraboupy.MarabouNetworkTF.MarabouNetworkTF`
     """
-    return MarabouNetworkTF(filename, inputNames, outputName, modelType, savedModelTags)
+    return MarabouNetworkTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
-def read_onnx(filename, inputNames=None, outputName=None):
+def read_onnx(filename, inputNames=None, outputNames=None):
     """Constructs a MarabouNetworkONNX object from an ONNX file
 
     Args:
         filename (str): Path to the ONNX file
         inputNames (list of str, optional): List of node names corresponding to inputs
-        outputName (str, optional): Name of node corresponding to output
+        outputNames (list of str, optional): List of node names corresponding to outputs
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
-    return MarabouNetworkONNX(filename, inputNames, outputName)
+    return MarabouNetworkONNX(filename, inputNames, outputNames)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename

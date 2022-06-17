@@ -21,7 +21,7 @@ def test_equality_output():
     The first output variable should equal a randomly generated value
     """
     network = load_network()
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[0]
     for _ in range(NUM_RAND):
         
@@ -51,7 +51,7 @@ def test_equality_input():
     network.addEquality(inputVars, weights, averageInputValue)
     
     # Lower bound on second output variable
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)
@@ -68,7 +68,7 @@ def test_inequality_output():
     """
     network = load_network()
     
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     weights = np.ones(outputVars.shape)
     for _ in range(NUM_RAND):
         
@@ -98,7 +98,7 @@ def test_inequality_input():
     network.addInequality(inputVars, weights, averageInputValue)
     
     # Add lower bound on second output variable
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)

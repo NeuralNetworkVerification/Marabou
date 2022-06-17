@@ -50,7 +50,6 @@ Engine::Engine()
     , _costFunctionManager( _tableau )
     , _quitRequested( false )
     , _exitCode( Engine::NOT_DONE )
-    , _constraintBoundTightener( *_tableau )
     , _numVisitedStatesAtPreviousRestoration( 0 )
     , _networkLevelReasoner( NULL )
     , _verbosity( Options::get()->getInt( Options::VERBOSITY ) )
@@ -72,7 +71,6 @@ Engine::Engine()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
-    _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
 
     _activeEntryStrategy = _projectedSteepestEdgeRule;
@@ -162,6 +160,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
+
+    // Register the boundManager with all the PL constraints
+    for ( auto &plConstraint : _plConstraints )
+        plConstraint->registerBoundManager( &_boundManager );
 
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
@@ -1256,14 +1258,7 @@ void Engine::initializeTableau( const double *constraintMatrix, const List<unsig
 void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
                                                              numberOfVariables )
 {
-    _tableau->registerToWatchAllVariables( _constraintBoundTightener );
-    _tableau->registerResizeWatcher( _constraintBoundTightener );
-
-    _constraintBoundTightener->setDimensions();
-
-    // Register the constraint bound tightener to all the PL constraints
-    for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
-        plConstraint->registerConstraintBoundTightener( _constraintBoundTightener );
+    _rowBoundTightener->setDimensions();
 
     _plConstraints = _preprocessedQuery->getPiecewiseLinearConstraints();
     for ( const auto &constraint : _plConstraints )
@@ -1663,15 +1658,11 @@ void Engine::restoreState( const EngineState &state )
 
     _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
-    if ( _lpSolverType == LPSolverType::NATIVE )
-    {
-        // Make sure the data structures are initialized to the correct size
-        _rowBoundTightener->setDimensions();
-        _constraintBoundTightener->setDimensions();
-        adjustWorkMemorySize();
-        _activeEntryStrategy->resizeHook( _tableau );
-        _costFunctionManager->initialize();
-    }
+    // Make sure the data structures are initialized to the correct size
+    _rowBoundTightener->setDimensions();
+    adjustWorkMemorySize();
+    _activeEntryStrategy->resizeHook( _tableau );
+    _costFunctionManager->initialize();
 
     // Reset the violation counts in the SMT core
     _smtCore.resetSplitConditions();
@@ -1886,8 +1877,6 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
         adjustWorkMemorySize();
     }
 
-    _constraintBoundTightener->resetBounds();
-
     for ( auto &bound : bounds )
     {
         unsigned variable = _tableau->getVariableAfterMerging( bound._variable );
@@ -1908,12 +1897,12 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     ENGINE_LOG( "Done with split\n" );
 }
 
-void Engine::applyAllRowTightenings()
+void Engine::applyBoundTightenings()
 {
-    List<Tightening> rowTightenings;
-    _rowBoundTightener->getRowTightenings( rowTightenings );
+    List<Tightening> tightenings;
+    _boundManager.getTightenings( tightenings );
 
-    for ( const auto &tightening : rowTightenings )
+    for ( const auto &tightening : tightenings )
     {
         if ( tightening._type == Tightening::LB )
             _tableau->tightenLowerBound( tightening._variable, tightening._value );
@@ -1921,22 +1910,14 @@ void Engine::applyAllRowTightenings()
             _tableau->tightenUpperBound( tightening._variable, tightening._value );
     }
 }
+void Engine::applyAllRowTightenings()
+{
+    applyBoundTightenings();
+}
 
 void Engine::applyAllConstraintTightenings()
 {
-    List<Tightening> entailedTightenings;
-
-    _constraintBoundTightener->getConstraintTightenings( entailedTightenings );
-
-    for ( const auto &tightening : entailedTightenings )
-    {
-        _statistics.incLongAttribute( Statistics::NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS );
-
-        if ( tightening._type == Tightening::LB )
-            _tableau->tightenLowerBound( tightening._variable, tightening._value );
-        else
-            _tableau->tightenUpperBound( tightening._variable, tightening._value );
-    }
+    applyBoundTightenings();
 }
 
 void Engine::applyAllBoundTightenings()
@@ -2083,7 +2064,6 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
                                   TimeUtils::timePassed( start, end ) );
 
     _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
-    _constraintBoundTightener->resetBounds();
 
     // debug
     double after = _degradationChecker.computeDegradation( *_tableau );
@@ -2104,8 +2084,6 @@ void Engine::performPrecisionRestoration( PrecisionRestorer::RestoreBasics resto
         _statistics.incLongAttribute( Statistics::TOTAL_TIME_PRECISION_RESTORATION,
                                       TimeUtils::timePassed( start, end ) );
         _statistics.incUnsignedAttribute( Statistics::NUM_PRECISION_RESTORATIONS );
-
-        _constraintBoundTightener->resetBounds();
 
         // debug
         double afterSecond = _degradationChecker.computeDegradation( *_tableau );
@@ -2351,7 +2329,6 @@ void Engine::resetStatistics()
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
-    _constraintBoundTightener->setStatistics( &_statistics );
     _preprocessor.setStatistics( &_statistics );
     _activeEntryStrategy->setStatistics( &_statistics );
 
@@ -2377,7 +2354,6 @@ void Engine::resetExitCode()
 
 void Engine::resetBoundTighteners()
 {
-    _constraintBoundTightener->resetBounds();
 }
 
 void Engine::warmStart()
@@ -2885,7 +2861,6 @@ bool Engine::performDeepSoILocalSearch()
                 }
                 else
                 {
-                    ASSERT( FloatUtils::isZero( costOfLastAcceptedPhasePattern ) );
                     ENGINE_LOG( "Performing local search - done" );
                     return true;
                 }

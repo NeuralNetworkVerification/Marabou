@@ -20,6 +20,7 @@ from maraboupy import MarabouUtils
 
 import numpy as np
 
+
 class MarabouNetwork:
     """Abstract class representing general Marabou network
     
@@ -34,7 +35,7 @@ class MarabouNetwork:
         lowerBounds (Dict[int, float]): Lower bounds of variables
         upperBounds (Dict[int, float]): Upper bounds of variables
         inputVars (list of numpy arrays): Input variables
-        outputVars (numpy array): Output variables
+        outputVars (list of numpy arrays): Output variables
     """
     def __init__(self):
         """Constructs a MarabouNetwork object and calls function to initialize
@@ -56,7 +57,7 @@ class MarabouNetwork:
         self.lowerBounds = dict()
         self.upperBounds = dict()
         self.inputVars = []
-        self.outputVars = np.array([])
+        self.outputVars = []
 
     def getNewVariable(self):
         """Function to create a new variable
@@ -219,9 +220,10 @@ class MarabouNetwork:
                 i+=1
 
         i = 0
-        for outputVar in self.outputVars.flatten():
-            ipq.markOutputVariable(outputVar, i)
-            i+=1
+        for outputVarArray in self.outputVars:
+            for outputVar in outputVarArray.flatten():
+                ipq.markOutputVariable(outputVar, i)
+                i+=1
 
         for e in self.equList:
             eq = MarabouCore.Equation(e.EquationType)
@@ -297,8 +299,9 @@ class MarabouNetwork:
                     for i in range(self.inputVars[j].size):
                         print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
 
-                for i in range(self.outputVars.size):
-                    print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
+                for j in range(len(self.outputVars)):
+                    for i in range(self.outputVars[j].size):
+                        print("output {} = {}".format(i, vals[self.outputVars[j].item(i)]))
 
         return [exitCode, vals, stats]
 
@@ -333,6 +336,16 @@ class MarabouNetwork:
         if inputVars.shape != input.shape:
             raise RuntimeError("Input shape of the model should be same as the input shape\n input shape of the model: {0}, shape of the input: {1}".format(inputVars.shape, input.shape))
 
+        if (type(self.outputVars) is list):
+            if (len(self.outputVars) != 1):
+                raise NotImplementedError("Operation for %d outputs is not implemented" % len(self.outputVars))
+        elif (type(self.outputVars) is np.ndarray):
+            if (len(self.outputVars) != 1):
+                raise NotImplementedError("Operation for %d outputs is not implemented" % len(self.outputVars))
+        else:
+            err_msg = "Unpexpected type of output vars."
+            raise RuntimeError(err_msg)
+
         if options == None:
             options = MarabouCore.Options()
 
@@ -344,10 +357,10 @@ class MarabouNetwork:
             self.setUpperBound(flattenInputVars[i], flattenInput[i] + epsilon)
         
         maxClass = None
-        outputStartIndex = self.outputVars[0][0]
+        outputStartIndex = self.outputVars[0][0][0]
 
         if targetClass is None:
-            outputLayerSize = len(self.outputVars[0])
+            outputLayerSize = len(self.outputVars[0][0])
             # loop for all of output classes except for original class
             for outputLayerIndex in range(outputLayerSize):
                 if outputLayerIndex != originalClass:
@@ -360,7 +373,7 @@ class MarabouNetwork:
                         maxClass = outputLayerIndex
                         break
         else:
-            self.addMaxConstraint(set(self.outputVars[0]), outputStartIndex + targetClass)
+            self.addMaxConstraint(set(self.outputVars[0][0]), outputStartIndex + targetClass)
             exitCode, vals, stats = self.solve(options = options)
             if verbose:
                 if not stats.hasTimedOut() and len(vals) > 0:
@@ -372,12 +385,13 @@ class MarabouNetwork:
                 print("TO")
             elif len(vals) > 0:
                 print("sat")
-                for j in range(len(self.inputVars)):
-                    for i in range(self.inputVars[j].size):
-                        print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
+                for j in range(len(self.inputVars[0])):
+                    for i in range(self.inputVars[0][j].size):
+                        print("input {} = {}".format(i, vals[self.inputVars[0][j].item(i)]))
 
-                for i in range(self.outputVars.size):
-                    print("output {} = {}".format(i, vals[self.outputVars.item(i)]))
+                for j in range(len(self.outputVars[0])):
+                    for i in range(self.outputVars[0][j].size):
+                        print("output {} = {}".format(i, vals[self.outputVars[0][j].item(i)]))
 
         return [vals, stats, maxClass]
 
@@ -399,13 +413,13 @@ class MarabouNetwork:
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
 
         Returns:
-            (np array): Values representing the output of the network or None if system is UNSAT
+            (list of np arrays): Values representing the outputs of the network or None if system is UNSAT
         """
         # Make sure inputValues is a list of np arrays and not list of lists
         inputValues = [np.array(inVal) for inVal in inputValues]
         
         inputVars = self.inputVars # list of numpy arrays
-        outputVars = self.outputVars
+        outputVars = self.outputVars # list of numpy arrays
 
         inputDict = dict()
         inputVarList = np.concatenate([inVar.flatten() for inVar in inputVars], axis=-1).flatten()
@@ -427,10 +441,11 @@ class MarabouNetwork:
         if outputDict == {}:
             return None
 
-        outputValues = outputVars.reshape(-1).astype(np.float64)
+        outputValues = [outVars.reshape(-1).astype(np.float64) for outVars in outputVars]
         for i in range(len(outputValues)):
-            outputValues[i] = outputDict[outputValues[i]]
-        outputValues = outputValues.reshape(outputVars.shape)
+            for j in range(len(outputValues[i])):
+                outputValues[i][j] = outputDict[outputValues[i][j]]
+            outputValues[i] = outputValues[i].reshape(outputVars[i].shape)
         return outputValues
 
     def evaluate(self, inputValues, useMarabou=True, options=None, filename="evaluateWithMarabou.log"):
@@ -443,7 +458,7 @@ class MarabouNetwork:
             filename (str): Path to redirect output if using Marabou solver, defaults to "evaluateWithMarabou.log"
 
         Returns:
-            (np array): Values representing the output of the network or None if output cannot be computed
+            (list of np arrays): Values representing the outputs of the network or None if output cannot be computed
         """
         if useMarabou:
             return self.evaluateWithMarabou(inputValues, filename=filename, options=options)
@@ -459,9 +474,10 @@ class MarabouNetwork:
             filename (str): Path to redirect output if using Marabou solver, defaults to "evaluateWithMarabou.log"
 
         Returns:
-            (np array): Values representing the error in each output variable
+            (list of np arrays): Values representing the error in each output variable
         """
         outMar = self.evaluate(inputValues, useMarabou=True, options=options, filename=filename)
         outNotMar = self.evaluate(inputValues, useMarabou=False, options=options, filename=filename)
-        err = np.abs(outMar - outNotMar)
+        assert len(outMar) == len(outNotMar)
+        err = [np.abs(outMar[i] - outNotMar[i]) for i in range(len(outMar))]
         return err

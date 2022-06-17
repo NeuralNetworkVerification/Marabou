@@ -76,6 +76,12 @@ public:
     void notifyUpperBound( unsigned variable, double bound ) override;
 
     /*
+       Check conditions that fix Phase and met update phase status
+     */
+    void checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound );
+    void checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound );
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint
     */

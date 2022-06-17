@@ -22,7 +22,7 @@ def test_sat_query(tmpdir):
     network = load_onnx_network()
     
     # Set output constraint
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)
@@ -52,7 +52,7 @@ def test_unsat_query(tmpdir):
     network = load_onnx_network()
     
     # Set output constraint
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[0]
     minOutputValue = 2000.0
     network.setLowerBound(outputVar, minOutputValue)
@@ -83,7 +83,7 @@ def test_to_query(tmpdir):
     network = load_acas_network()
     
     # Set output constraint
-    outputVars = network.outputVars.flatten()
+    outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[0]
     minOutputValue = 1500.0
     network.setLowerBound(outputVar, minOutputValue)
