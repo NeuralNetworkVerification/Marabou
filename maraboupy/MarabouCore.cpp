@@ -45,7 +45,7 @@
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
-#include "NonlinearConstraint.h"
+#include "TranscendentalConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -98,8 +98,8 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    NonlinearConstraint* s = new SigmoidConstraint(var1, var2);
-    ipq.addNonlinearConstraint(s);
+    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addTranscendentalConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -537,8 +537,8 @@ PYBIND11_MODULE(MarabouCore, m) {
 
         Args:
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
-            elements (set of int): Input variables to softmax constraint
-            v (int): Output variable from softmax constraint
+            inputs (list of int): Input variables to softmax constraint
+            outputs (list of int): Output variables from softmax constraint
         )pbdoc",
           py::arg("inputQuery"), py::arg("inputs"), py::arg("outputs"));
     m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
