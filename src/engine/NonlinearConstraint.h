@@ -84,7 +84,7 @@ public:
       Caution: when implementing a new constraint class, this method should
       preferably not be overloaded.
     */
-    virtual bool supportVariableElimination() { return true; };
+    virtual bool supportVariableElimination() const { return true; };
 
     /*
       Dump the current state of the constraint.

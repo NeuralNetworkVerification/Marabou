@@ -67,7 +67,7 @@ public:
     */
     List<unsigned> getParticipatingVariables() const override;
 
-    bool supportVariableElimination() { return false; };
+    virtual bool supportVariableElimination() const override { return false; };
 
     /*
       Preprocessing related functions, to inform that a variable has
