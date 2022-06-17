@@ -32,6 +32,7 @@
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
+#include "NonlinearConstraint.h"
 #include "InputParserError.h"
 #include "MString.h"
 #include "MaxConstraint.h"
@@ -45,7 +46,6 @@
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
-#include "TranscendentalConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -98,8 +98,8 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
-    ipq.addTranscendentalConstraint(s);
+    NonlinearConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addNonlinearConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
