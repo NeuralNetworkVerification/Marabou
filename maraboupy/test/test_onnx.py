@@ -31,6 +31,18 @@ def test_cifar10():
     filename =  "cifar10/cifar_base_kw_simp.onnx"
     evaluateFile(filename)
 
+def test_softmax():
+    """
+    Test a mnist classifier with softmax layer exported from Pytorch
+    """
+    filename = "softmax-last-layer.onnx"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
+    network = Marabou.read_onnx(filename)
+    assert(len(network.softmaxList) == 1)
+    assert(len(network.softmaxList[0][0]) == 10)
+    assert(len(network.softmaxList[0][1]) == 10)
+    ipq = network.getMarabouQuery()
+
 def test_fc1():
     """
     Test a fully-connected neural network, exported from tensorflow
