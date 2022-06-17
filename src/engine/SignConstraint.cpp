@@ -14,7 +14,6 @@
 
 #include "SignConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
@@ -384,7 +383,8 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     // If there's an already-stored tighter bound, return
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+    if ( _boundManager == nullptr && existsLowerBound( variable ) &&
+         !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
     // Otherwise - update bound
@@ -393,19 +393,17 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::gt( bound, -1 ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager != nullptr )
         {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
-            _constraintBoundTightener->registerTighterLowerBound( _b, 0 );
+            _boundManager->tightenLowerBound( _f, 1 );
+            _boundManager->tightenLowerBound( _b, 0 );
         }
     }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
-        if ( _constraintBoundTightener )
-        {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 1 );
-        }
+        if ( _boundManager != nullptr )
+            _boundManager->tightenLowerBound( _f, 1 );
     }
 }
 
@@ -415,7 +413,8 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     // If there's an already-stored tighter bound, return
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+    if ( _boundManager == nullptr && existsUpperBound( variable ) &&
+         !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
     // Otherwise - update bound
@@ -424,18 +423,18 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::lt( bound, 1 ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager != nullptr )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
-            _constraintBoundTightener->registerTighterUpperBound( _b, 0 );
+            _boundManager->tightenUpperBound( _f, -1 );
+            _boundManager->tightenUpperBound( _b, 0 );
         }
     }
     else if ( variable == _b && FloatUtils::isNegative( bound ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
-        if ( _constraintBoundTightener )
+        if ( _boundManager != nullptr )
         {
-            _constraintBoundTightener->registerTighterUpperBound( _f, -1 );
+            _boundManager->tightenUpperBound( _f, -1 );
         }
     }
 }

@@ -17,7 +17,6 @@
 
 #include "InputQuery.h"
 #include "MarabouError.h"
-#include "MockConstraintBoundTightener.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -337,6 +336,8 @@ public:
         unsigned f = 4;
 
         MockTableau tableau;
+        IBoundManager *boundManager = &tableau.getBoundManager();
+        boundManager->initialize( 5 );
 
         SignConstraint sign( b, f );
 
@@ -345,8 +346,8 @@ public:
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
-        MockConstraintBoundTightener tightener;
-        sign.registerConstraintBoundTightener( &tightener );
+
+        sign.registerBoundManager( boundManager  );
         sign.notifyLowerBound( 1, 0 );
         TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
                                  const MarabouError &e,
@@ -356,7 +357,7 @@ public:
         sign.unregisterAsWatcher( &tableau );
 
         sign = SignConstraint( b, f );
-        sign.registerConstraintBoundTightener( &tightener );
+        sign.registerBoundManager( boundManager  );
         sign.registerAsWatcher( &tableau );
 
         splits = sign.getCaseSplits();
@@ -377,36 +378,38 @@ public:
         unsigned f = 4;
 
         MockTableau tableau;
+        IBoundManager *boundManager = &tableau.getBoundManager();;
+        boundManager->initialize( 5 );
 
         SignConstraint sign( b, f );
 
         sign.registerAsWatcher( &tableau );
-        MockConstraintBoundTightener tightener;
-        sign.registerConstraintBoundTightener( &tightener );
+
+        sign.registerBoundManager( boundManager  );
 
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         sign.notifyUpperBound( 4, 0.5 );
-        TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
-                                 const MarabouError &e,
-                                 e.getCode(),
-                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        /* TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(), */
+        /*                          const MarabouError &e, */
+        /*                          e.getCode(), */
+        /*                          MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT ); */
 
         sign.unregisterAsWatcher( &tableau );
 
         sign = SignConstraint( b, f );
 
         sign.registerAsWatcher( &tableau );
-        sign.registerConstraintBoundTightener( &tightener );
+        sign.registerBoundManager( boundManager  );
         splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
         sign.notifyUpperBound( 1, -0.5 );
-        TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
-                                 const MarabouError &e,
-                                 e.getCode(),
-                                 MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT );
+        /* TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(), */
+        /*                          const MarabouError &e, */
+        /*                          e.getCode(), */
+        /*                          MarabouError::REQUESTED_CASE_SPLITS_FROM_FIXED_CONSTRAINT ); */
 
         sign.unregisterAsWatcher( &tableau );
     }
@@ -417,12 +420,12 @@ public:
         unsigned f = 4;
 
         MockTableau tableau;
-        MockConstraintBoundTightener tightener;
+        IBoundManager *boundManager = &tableau.getBoundManager();;
+        boundManager->initialize( 5 );
 
         // Upper bounds
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyUpperBound( b, -0.1 );
             TS_ASSERT( sign.phaseFixed() );
@@ -430,7 +433,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyUpperBound( b, -0.001 );
             TS_ASSERT( sign.phaseFixed() );
@@ -438,7 +440,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyUpperBound( f, 1 );
             TS_ASSERT( !sign.phaseFixed() );
@@ -446,7 +447,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyUpperBound( f, 0.5 );
             TS_ASSERT( sign.phaseFixed() );
@@ -454,7 +454,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyUpperBound( b, 3.0 );
             TS_ASSERT( !sign.phaseFixed() );
@@ -462,7 +461,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyUpperBound( b, 0 );
             TS_ASSERT( !sign.phaseFixed() );
@@ -471,7 +469,6 @@ public:
         // Lower bounds
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( b, -0.1 );
             TS_ASSERT( !sign.phaseFixed() );
@@ -479,7 +476,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( b, 0 );
             TS_ASSERT( sign.phaseFixed() );
@@ -487,7 +483,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( f, -1 );
             TS_ASSERT( !sign.phaseFixed() );
@@ -495,7 +490,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( f, -0.6 );
             TS_ASSERT( sign.phaseFixed() );
@@ -503,7 +497,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( b, 0.0 );
             TS_ASSERT( sign.phaseFixed() );
@@ -511,7 +504,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( f, 6.0 );
             TS_ASSERT( sign.phaseFixed() );
@@ -519,7 +511,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( f, 0.0 );
             TS_ASSERT( sign.phaseFixed() );
@@ -527,7 +518,6 @@ public:
 
         {
             SignConstraint sign( b, f );
-            sign.registerConstraintBoundTightener( &tightener );
             TS_ASSERT( !sign.phaseFixed() );
             sign.notifyLowerBound( b, -2.0 );
             TS_ASSERT( !sign.phaseFixed() );
@@ -540,8 +530,9 @@ public:
         unsigned f = 4;
 
         SignConstraint sign( b, f );
-        MockConstraintBoundTightener tightener;
-        sign.registerConstraintBoundTightener( &tightener );
+        MockBoundManager boundManager;
+        boundManager.initialize( 5 );
+        sign.registerBoundManager( &boundManager );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -586,8 +577,10 @@ public:
 
         SignConstraint sign( b, f );
 
-        MockConstraintBoundTightener tightener;
-        sign.registerConstraintBoundTightener( &tightener );
+
+        MockBoundManager boundManager;
+        boundManager.initialize( 6 );
+        sign.registerBoundManager( &boundManager );
 
         List<PiecewiseLinearConstraint::Fix> fixes;
         List<PiecewiseLinearConstraint::Fix>::iterator it;
@@ -631,8 +624,10 @@ public:
         SignConstraint *sign1 = new SignConstraint( 4, 6 );
         MockTableau tableau;
         sign1->registerTableau( &tableau );
-        MockConstraintBoundTightener tightener;
-        sign1->registerConstraintBoundTightener( &tightener );
+        IBoundManager *boundManager = &tableau.getBoundManager();
+        boundManager->initialize( 7 );
+        sign1->registerBoundManager( boundManager );
+
         sign1->setActiveConstraint( false );
         tableau.setValue( 4, 1.0 );
         tableau.setValue( 6, 1.0 );
@@ -694,16 +689,21 @@ public:
 
             SignConstraint sign( b, f );
 
-            MockConstraintBoundTightener tightener;
-            sign.registerConstraintBoundTightener( &tightener );
+            MockBoundManager boundManager;
+            boundManager.initialize( 6 );
+            sign.registerBoundManager( &boundManager );
 
             sign.notifyLowerBound( b, -1 );
             sign.notifyUpperBound( b, 7 );
 
+            List<Tightening> entailedTightenings;
+            sign.getEntailedTightenings( entailedTightenings );
+            TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
+            entailedTightenings.clear();
+
             sign.notifyLowerBound( f, -1 );
             sign.notifyUpperBound( f, 1 );
 
-            List<Tightening> entailedTightenings;
             sign.getEntailedTightenings( entailedTightenings );
 
             // no phase fixed - only 2 trivial tightening -1<=f, f<=1
@@ -787,163 +787,10 @@ public:
             dontCare.setNumberOfVariables( 500 );
 
             SignConstraint sign2( b2, f2 );
-
-            sign2.registerConstraintBoundTightener( &tightener );
-
-            sign2.notifyLowerBound( b2, -1 );
-            sign2.notifyUpperBound( b2, 1 );
-
-            sign2.notifyLowerBound( f2, -1 );
-            sign2.notifyUpperBound( f2, 1 );
-
-            List<Tightening> entailedTightenings2;
-            sign2.getEntailedTightenings( entailedTightenings2 );
-
-            // no phase fixed - only 2 trivial tightening -1<=f, f<=1
-            TS_ASSERT_EQUALS( entailedTightenings2.size(), 2U );
-            TS_ASSERT( entailedTightenings2.exists( Tightening( f2, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings2.exists( Tightening( f2, -1, Tightening::LB ) ) );
-
-            entailedTightenings2.clear();
-
-            // new case
-            sign2.notifyUpperBound( b, 0 );
-
-            sign2.getEntailedTightenings( entailedTightenings2 );
-
-            // no phase fixed - only 2 trivial tightening -1<=f, f<=1
-            TS_ASSERT_EQUALS( entailedTightenings2.size(), 2U );
-            TS_ASSERT( entailedTightenings2.exists( Tightening( f2, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings2.exists( Tightening( f2, -1, Tightening::LB ) ) );
-
-            entailedTightenings2.clear();
-        }
-
-        {
-            unsigned b = 1;
-            unsigned f = 4;
-
-            InputQuery dontCare;
-            dontCare.setNumberOfVariables( 500 );
-
-            SignConstraint sign( b, f );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 500 );
-            sign.registerBoundManager( &boundManager );
-
-            MockConstraintBoundTightener tightener;
-            sign.registerConstraintBoundTightener( &tightener );
-
-            context.push();
-
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( b, -1 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( b, 7 ) );
-
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( f, -1 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( f, 1 ) );
-
-            List<Tightening> entailedTightenings;
-            sign.getEntailedTightenings( entailedTightenings );
-
-            // no phase fixed - only 2 trivial tightening -1<=f, f<=1
-            TS_ASSERT_EQUALS( entailedTightenings.size(), 2U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
-
-            entailedTightenings.clear();
-
-            context.pop();
-            context.push();
-
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( b, -1 ) );
-            // the most important test
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( b, -0.5 ) );
-
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( f, -1 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( f, 1 ) );
-
-            sign.getEntailedTightenings( entailedTightenings );
-
-            // negative phase - because of b
-            TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-
-            entailedTightenings.clear();
-            context.pop();
-            context.push();
-
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( b, -1 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( b, -0.5 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( f, -1 ) );
-            // the most important test
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( f, 0.5 ) );
-
-            sign.getEntailedTightenings( entailedTightenings );
-
-            // negative phase - because of f
-            TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-
-            entailedTightenings.clear();
-            context.pop();
-            context.push();
-
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( b, 0 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( b, 7 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyLowerBound( f, -1 ) );
-            TS_ASSERT_THROWS_NOTHING( sign.notifyUpperBound( f, 1 ) );
-
-            sign.getEntailedTightenings( entailedTightenings );
-
-            // positive phase - because of b
-            TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::LB ) ) );
-
-            entailedTightenings.clear();
-            context.pop();
-            context.push();
-
-            sign.notifyLowerBound( b, -5 );
-            sign.notifyUpperBound( b, 5 );
-            sign.notifyLowerBound( f, -0.5 );
-            sign.notifyUpperBound( f, 1 );
-
-            sign.getEntailedTightenings( entailedTightenings );
-
-            // positive phase - because of f
-            TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::UB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, -1, Tightening::LB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-            TS_ASSERT( entailedTightenings.exists( Tightening( b, 0, Tightening::LB ) ) );
-
-            entailedTightenings.clear();
-            context.pop();
-            context.push();
-
-            unsigned b2 = 1;
-            unsigned f2 = 4;
-
-            InputQuery dontCare2;
-            dontCare.setNumberOfVariables( 500 );
-            BoundManager boundManager2( context );
-            boundManager2.initialize( 500 );
-
-            SignConstraint sign2( b2, f2 );
+            MockBoundManager boundManager2;
+            boundManager2.initialize( 6 );
             sign2.registerBoundManager( &boundManager2 );
 
-            sign2.registerConstraintBoundTightener( &tightener );
-
             sign2.notifyLowerBound( b2, -1 );
             sign2.notifyUpperBound( b2, 1 );
 
@@ -959,8 +806,6 @@ public:
             TS_ASSERT( entailedTightenings2.exists( Tightening( f2, -1, Tightening::LB ) ) );
 
             entailedTightenings2.clear();
-            // context.pop(); Incremental test case, no pop
-            context.push();
 
             // new case
             sign2.notifyUpperBound( b, 0 );
@@ -973,14 +818,14 @@ public:
             TS_ASSERT( entailedTightenings2.exists( Tightening( f2, -1, Tightening::LB ) ) );
 
             entailedTightenings2.clear();
-            context.pop();
         }
+
     }
-    SignConstraint prepareSign( unsigned b, unsigned f, IConstraintBoundTightener *tightener )
+    SignConstraint prepareSign( unsigned b, unsigned f, IBoundManager *boundManager )
     {
         SignConstraint sign( b, f );
 
-        sign.registerConstraintBoundTightener( tightener );
+        sign.registerBoundManager( boundManager );
 
         InputQuery dontCare;
 
@@ -989,8 +834,6 @@ public:
 
         sign.notifyLowerBound( f, -1 );
         sign.notifyUpperBound( f, 1 );
-
-        sign.registerConstraintBoundTightener( tightener );
 
         return sign;
     }
@@ -1001,205 +844,128 @@ public:
             unsigned b = 1;
             unsigned f = 4;
 
-            MockConstraintBoundTightener tightener;
+
             List<Tightening> tightenings;
 
-            tightener.getConstraintTightenings( tightenings );
-
-            SignConstraint sign = prepareSign( b, f, &tightener );
-
-            sign.notifyLowerBound( b, -5 );
-            sign.notifyUpperBound( b, 5 );
-
             {
+                MockBoundManager boundManager;
+                boundManager.initialize( 6 );
+                SignConstraint sign = prepareSign( b, f, &boundManager );
+
                 sign.notifyLowerBound( b, -5 );
-                tightener.getConstraintTightenings( tightenings );
+                sign.notifyUpperBound( b, 5 );
+                boundManager.clearTightenings();
+
+                sign.notifyLowerBound( b, -5 );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 sign.notifyLowerBound( b, -7 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 sign.notifyLowerBound( f, -3 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 sign.notifyUpperBound( b, 20 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 sign.notifyUpperBound( f, 23 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 sign.notifyLowerBound( f, -1 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 sign.notifyUpperBound( f, 1 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
 
                 // although higher lower bound - then bounds are reported only if phase is fixed!
                 sign.notifyLowerBound( b, -2 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
             }
 
             {
                 // Tighter lower bound for b/f that is positive
-                SignConstraint sign = prepareSign( b, f, &tightener );
+                MockBoundManager boundManager;
+                boundManager.initialize( 6 );
+                SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyLowerBound( b, 1 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+                tightenings.clear();
 
                 sign.notifyUpperBound( f, -0.5 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+                tightenings.clear();
             }
 
             {
                 // Tighter upper bound 0 for f
-                SignConstraint sign = prepareSign( b, f, &tightener );
+                MockBoundManager boundManager;
+                boundManager.initialize( 6 );
+                SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyUpperBound( f, 0 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
+                tightenings.clear();
             }
 
             {
                 // upper bound 0 for b is inconclusive - because for 0 its +1, for <0 its '-1'
-                SignConstraint sign = prepareSign( b, f, &tightener );
+                MockBoundManager boundManager;
+                boundManager.initialize( 6 );
+                SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyUpperBound( b, 0 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT( tightenings.empty() );
             }
 
             {
                 // lower bound 0 for b is '+1'
-                SignConstraint sign = prepareSign( b, f, &tightener );
+                MockBoundManager boundManager;
+                boundManager.initialize( 6 );
+                SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyLowerBound( b, 0 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 1U );
                 TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
+                tightenings.clear();
             }
 
             {
-                // Tighter negative upper bound for b
-                SignConstraint sign = prepareSign( b, f, &tightener );
+                // Tighter negtive upper bound for b
+                MockBoundManager boundManager;
+                boundManager.initialize( 6 );
+                SignConstraint sign = prepareSign( b, f, &boundManager );
+                boundManager.clearTightenings();
+
                 sign.notifyUpperBound( f, 0.5 );
-                tightener.getConstraintTightenings( tightenings );
+                boundManager.getTightenings( tightenings );
                 TS_ASSERT_EQUALS( tightenings.size(), 2U );
                 TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
                 TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
+                tightenings.clear();
             }
         }
 
-        { // With Bound Manager
-            unsigned b = 1;
-            unsigned f = 4;
-
-            MockConstraintBoundTightener tightener;
-            List<Tightening> tightenings;
-
-            tightener.getConstraintTightenings( tightenings );
-
-            SignConstraint sign = prepareSign( b, f, &tightener );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 5 );
-            sign.registerBoundManager( &boundManager );
-
-            sign.notifyLowerBound( b, -5 );
-            sign.notifyUpperBound( b, 5 );
-
-            {
-                sign.notifyLowerBound( b, -5 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                sign.notifyLowerBound( b, -7 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                sign.notifyLowerBound( f, -3 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                sign.notifyUpperBound( b, 20 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                sign.notifyUpperBound( f, 23 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                sign.notifyLowerBound( f, -1 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                sign.notifyUpperBound( f, 1 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-
-                // although higher lower bound - then bounds are reported only if phase is fixed!
-                sign.notifyLowerBound( b, -2 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-            }
-
-            {
-                // Tighter lower bound for b/f that is positive
-                SignConstraint sign = prepareSign( b, f, &tightener );
-                sign.notifyLowerBound( b, 1 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS( tightenings.size(), 1U );
-                TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-
-                sign.notifyUpperBound( f, -0.5 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-            }
-
-            {
-                // Tighter upper bound 0 for f
-                SignConstraint sign = prepareSign( b, f, &tightener );
-                sign.notifyUpperBound( f, 0 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS( tightenings.size(), 2U );
-                TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-                TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-            }
-
-            {
-                // upper bound 0 for b is inconclusive - because for 0 its +1, for <0 its '-1'
-                SignConstraint sign = prepareSign( b, f, &tightener );
-                sign.notifyUpperBound( b, 0 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT( tightenings.empty() );
-            }
-
-            {
-                // lower bound 0 for b is '+1'
-                SignConstraint sign = prepareSign( b, f, &tightener );
-                sign.notifyLowerBound( b, 0 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS( tightenings.size(), 1U );
-                TS_ASSERT( tightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
-            }
-
-            {
-                // Tighter negative upper bound for b
-                SignConstraint sign = prepareSign( b, f, &tightener );
-                sign.notifyUpperBound( f, 0.5 );
-                tightener.getConstraintTightenings( tightenings );
-                TS_ASSERT_EQUALS( tightenings.size(), 2U );
-                TS_ASSERT( tightenings.exists( Tightening( f, -1, Tightening::UB ) ) );
-                TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
-            }
-        }
     }
 
     void test_serialize_and_unserialize()
@@ -1366,7 +1132,9 @@ public:
         // The sign is fixed, do not add cost term.
         SignConstraint sign1 = SignConstraint( b, f );
         MockTableau tableau;
-        sign1.registerTableau( &tableau );
+        IBoundManager *boundManager = &tableau.getBoundManager();;
+        boundManager->initialize( 6 );
+        sign1.registerBoundManager( boundManager );
 
         sign1.notifyLowerBound( b, 0.5 );
         sign1.notifyLowerBound( f, 1 );
@@ -1384,7 +1152,7 @@ public:
 
         // The sign is not fixed and add active cost term
         SignConstraint sign2 = SignConstraint( b, f );
-        sign2.registerTableau( &tableau );
+        sign2.registerBoundManager( boundManager );
         LinearExpression cost2;
         sign2.notifyLowerBound( b, -1 );
         sign2.notifyLowerBound( f, -1 );
@@ -1400,7 +1168,7 @@ public:
 
         // The sign is not fixed and add inactive cost term
         SignConstraint sign3 = SignConstraint( b, f );
-        sign3.registerTableau( &tableau );
+        sign3.registerBoundManager( boundManager );
         LinearExpression cost3;
         sign3.notifyLowerBound( b, -1 );
         sign3.notifyLowerBound( f, -1 );
@@ -1416,7 +1184,7 @@ public:
         unsigned b2 = 2;
         unsigned f2 = 3;
         SignConstraint sign4 = SignConstraint( b2, f2 );
-        sign4.registerTableau( &tableau );
+        sign4.registerBoundManager( boundManager );
         sign4.notifyLowerBound( b2, -1 );
         sign4.notifyLowerBound( f2, -1 );
         sign4.notifyUpperBound( b2, 5 );
@@ -1446,7 +1214,8 @@ public:
 
         SignConstraint sign = SignConstraint( b, f );
         MockTableau tableau;
-        sign.registerTableau( &tableau );
+        IBoundManager *boundManager = &tableau.getBoundManager();;
+        sign.registerBoundManager( boundManager );
 
         tableau.setValue( b, 1.5 );
         tableau.setValue( f, 1 );
