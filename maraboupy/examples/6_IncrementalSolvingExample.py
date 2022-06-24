@@ -32,7 +32,7 @@ after invoking the solve() method.
 
 # Global settings
 ONNX_FILE = "../../resources/onnx/mnist2x10.onnx" # tiny mnist classifier
-EPSILON = 0.04
+EPSILON = 0.02
 NUM_SAMPLES = 5
 OPT = Marabou.createOptions(timeoutInSeconds=10,verbosity=0)
 SEED = 50
@@ -46,13 +46,14 @@ random_images = [np.random.random((784,1)) for _ in range(NUM_SAMPLES)]
 
 # Step 1: load the network
 network = Marabou.read_onnx(filename)
-# Step 2: iterate over image
-for img in random_images:
+# Step 2: iterate over images
+for idx, img in enumerate(random_images):
+    robust = True
     correctLabel = np.argmax(network.evaluateWithoutMarabou([img]))
-    # Step 3: iterate over each adversarial label and check robustness
+    # Step 3: iterate over adversarial labels
     outputVars = network.outputVars[0].flatten()
-    for i, _ in enumerate(outputVars):
-        if i == correctLabel:
+    for y_idx, _ in enumerate(outputVars):
+        if y_idx == correctLabel:
             continue
         # Step 3.1: clear the user defined constraints in the last round.
         network.clearProperty()
@@ -60,12 +61,25 @@ for img in random_images:
         for i, x in enumerate(np.array(network.inputVars[0]).flatten()):
             network.setLowerBound(x, max(0, img[i] - EPSILON))
             network.setUpperBound(x, min(1, img[i] + EPSILON))
-
         # y_correct - y_i <= 0
         network.addInequality([outputVars[correctLabel],
-                               outputVars[i]],
-                              [1, -1], 0,
-                              addToAdditionalEquList=True)
+                               outputVars[y_idx]],
+                              [1, -1], 0, isProperty=True)
+        # Step 3.3: check whether it is possible that y_correct is less than
+        # y_i.
         res, _, _ = network.solve(verbose=False, options=OPT)
-
-        print(res)
+        if res == 'sat':
+            # It is possible that y_correct <= y_i.
+            print(f"not locally robust at image {idx}")
+            robust = False
+            break
+        elif res == 'unsat':
+            # It is not possible that y_correct <= y_i.
+            continue
+        else:
+            # Either timeout, or some runtime error occurs.
+            print(f"local robustness unknown at image {idx}")
+            robust = False
+            break
+    if robust:
+        print(f"locally robust at image {idx}")
