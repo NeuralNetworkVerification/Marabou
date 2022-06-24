@@ -82,6 +82,7 @@ class MarabouNetwork:
 
         Args:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
+            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
         """
         if isProperty:
             self.additionalEquList += [x]
@@ -185,6 +186,7 @@ class MarabouNetwork:
             vars (list of int): Variable numbers
             coeffs (list of float): Coefficients
             scalar (float): Right hand side constant of equation
+            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
         """
         assert len(vars)==len(coeffs)
         e = MarabouUtils.Equation()
@@ -203,6 +205,7 @@ class MarabouNetwork:
             vars (list of int): Variable numbers
             coeffs (list of float): Coefficients
             scalar (float): Right hand side constant of inequality
+            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
         """
         assert len(vars)==len(coeffs)
         e = MarabouUtils.Equation(MarabouCore.Equation.LE)
