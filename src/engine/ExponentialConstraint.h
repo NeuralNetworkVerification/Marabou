@@ -2,7 +2,7 @@
 /*! \file ExponentialConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Haoze WU
+ **   Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
