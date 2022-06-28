@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SigmoidConstraint.cpp
+/*! \file ExponentialConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Teruhiro Tagomori
@@ -9,10 +9,10 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** See the description of the class in SigmoidConstraint.h.
+ ** See the description of the class in ExponentialConstraint.h.
  **/
 
-#include "SigmoidConstraint.h"
+#include "ExponentialConstraint.h"
 
 #include "NonlinearConstraint.h"
 #include "Debug.h"
@@ -30,7 +30,7 @@
 #define __attribute__(x)
 #endif
 
-SigmoidConstraint::SigmoidConstraint( unsigned b, unsigned f )
+ExponentialConstraint::SigmoidConstraint( unsigned b, unsigned f )
     : NonlinearConstraint()
     , _b( b )
     , _f( f )
@@ -38,14 +38,14 @@ SigmoidConstraint::SigmoidConstraint( unsigned b, unsigned f )
 {
 }
 
-SigmoidConstraint::SigmoidConstraint( const String &serializedSigmoid )
+ExponentialConstraint::SigmoidConstraint( const String &serializedSigmoid )
     : _haveEliminatedVariables( false )
 {
-    String constraintType = serializedSigmoid.substring( 0, 7 );
+    String constraintType = serializedExponential.substring( 0, 7 );
     ASSERT( constraintType == String( "sigmoid" ) );
 
     // Remove the constraint type in serialized form
-    String serializedValues = serializedSigmoid.substring( 8, serializedSigmoid.length() - 5 );
+    String serializedValues = serializedExponential.substring( 8, serializedSigmoid.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
 
     ASSERT( values.size() == 2 );
@@ -56,37 +56,37 @@ SigmoidConstraint::SigmoidConstraint( const String &serializedSigmoid )
     _b = atoi( var->ascii() );
 }
 
-NonlinearFunctionType SigmoidConstraint::getType() const
+NonlinearFunctionType ExponentialConstraint::getType() const
 {
     return NonlinearFunctionType::SIGMOID;
 }
 
-NonlinearConstraint *SigmoidConstraint::duplicateConstraint() const
+NonlinearConstraint *ExponentialConstraint::duplicateConstraint() const
 {
-    SigmoidConstraint *clone = new SigmoidConstraint( _b, _f );
+    ExponentialConstraint *clone = new SigmoidConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
-void SigmoidConstraint::restoreState( const NonlinearConstraint *state )
+void ExponentialConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const SigmoidConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
+    const ExponentialConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
     *this = *sigmoid;
 }
 
-void SigmoidConstraint::registerAsWatcher( ITableau *tableau )
+void ExponentialConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 }
 
-void SigmoidConstraint::unregisterAsWatcher( ITableau *tableau )
+void ExponentialConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
 }
 
-void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
+void ExponentialConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -111,7 +111,7 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
     }
 }
 
-void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
+void ExponentialConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -136,19 +136,19 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
     }
 }
 
-bool SigmoidConstraint::participatingVariable( unsigned variable ) const
+bool ExponentialConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
 }
 
-List<unsigned> SigmoidConstraint::getParticipatingVariables() const
+List<unsigned> ExponentialConstraint::getParticipatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
 }
 
-void SigmoidConstraint::dump( String &output ) const
+void ExponentialConstraint::dump( String &output ) const
 {
-    output = Stringf( "SigmoidConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
+    output = Stringf( "ExponentialConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
 
     output += Stringf( "b in [%s, %s], ",
                        existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
@@ -159,7 +159,7 @@ void SigmoidConstraint::dump( String &output ) const
                        existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
 }
 
-void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+void ExponentialConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_assignment.exists( newIndex ) &&
@@ -191,21 +191,21 @@ void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newInde
         _f = newIndex;
 }
 
-void SigmoidConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
+void ExponentialConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
                                         __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
 
-    // In a Sigmoid constraint, if a variable is removed the entire constraint can be discarded.
+    // In a Exponential constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
 }
 
-bool SigmoidConstraint::constraintObsolete() const
+bool ExponentialConstraint::constraintObsolete() const
 {
     return _haveEliminatedVariables;
 }
 
-void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+void ExponentialConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 { 
     ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
             existsUpperBound( _b ) && existsUpperBound( _f ) );
@@ -222,33 +222,33 @@ void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) 
     tightenings.append( Tightening( _f, fUpperBound, Tightening::UB ) );
 }
 
-String SigmoidConstraint::serializeToString() const
+String ExponentialConstraint::serializeToString() const
 {
     return Stringf( "sigmoid,%u,%u", _f, _b );
 }
 
-unsigned SigmoidConstraint::getB() const
+unsigned ExponentialConstraint::getB() const
 {
     return _b;
 }
 
-unsigned SigmoidConstraint::getF() const
+unsigned ExponentialConstraint::getF() const
 {
     return _f;
 }
 
-double SigmoidConstraint::sigmoid( double x ) const
+double ExponentialConstraint::sigmoid( double x ) const
 {
     return 1 / ( 1 + std::exp( -x ) );
 }
 
-double SigmoidConstraint::sigmoidInverse( double y ) const
+double ExponentialConstraint::sigmoidInverse( double y ) const
 {
     ASSERT( y != 1 );
     return log( y / ( 1 - y ) );
 }
 
-double SigmoidConstraint::sigmoidDerivative( double x ) const
+double ExponentialConstraint::sigmoidDerivative( double x ) const
 {
     return sigmoid( x ) * ( 1 - sigmoid( x ) );
 }

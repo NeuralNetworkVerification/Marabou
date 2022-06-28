@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file SigmoidConstraint.h
+/*! \file ExponentialConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Haoze WU
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,8 +13,8 @@
 
 **/
 
-#ifndef __SigmoidConstraint_h__
-#define __SigmoidConstraint_h__
+#ifndef __ExponentialConstraint_h__
+#define __ExponentialConstraint_h__
 
 #include "List.h"
 #include "Map.h"
@@ -22,11 +22,11 @@
 
 #include <cmath>
 
-class SigmoidConstraint : public NonlinearConstraint
+class ExponentialConstraint : public NonlinearConstraint
 {
 public:
-    SigmoidConstraint( unsigned b, unsigned f );
-    SigmoidConstraint( const String &serializedSigmoid );
+    ExponentialConstraint( unsigned b, unsigned f );
+    ExponentialConstraint( const String &serializedExponential );
 
     /*
       Get the type of this constraint.
@@ -118,4 +118,4 @@ private:
     bool _haveEliminatedVariables;
 };
 
-#endif // __SigmoidConstraint_h__
+#endif // __ExponentialConstraint_h__

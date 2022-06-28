@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SigmoidConstraint.h
+/*! \file ReciprocalConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Teruhiro Tagomori
@@ -13,8 +13,8 @@
 
 **/
 
-#ifndef __SigmoidConstraint_h__
-#define __SigmoidConstraint_h__
+#ifndef __ReciprocalConstraint_h__
+#define __ReciprocalConstraint_h__
 
 #include "List.h"
 #include "Map.h"
@@ -22,11 +22,11 @@
 
 #include <cmath>
 
-class SigmoidConstraint : public NonlinearConstraint
+class ReciprocalConstraint : public NonlinearConstraint
 {
 public:
-    SigmoidConstraint( unsigned b, unsigned f );
-    SigmoidConstraint( const String &serializedSigmoid );
+    ReciprocalConstraint( unsigned b, unsigned f );
+    ReciprocalConstraint( const String &serializedSigmoid );
 
     /*
       Get the type of this constraint.
@@ -118,4 +118,4 @@ private:
     bool _haveEliminatedVariables;
 };
 
-#endif // __SigmoidConstraint_h__
+#endif // __ReciprocalConstraint_h__

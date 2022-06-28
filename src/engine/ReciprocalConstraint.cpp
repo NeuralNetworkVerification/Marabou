@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file SigmoidConstraint.cpp
+/*! \file ReciprocalConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Teruhiro Tagomori
@@ -9,10 +9,10 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** See the description of the class in SigmoidConstraint.h.
+ ** See the description of the class in ReciprocalConstraint.h.
  **/
 
-#include "SigmoidConstraint.h"
+#include "ReciprocalConstraint.h"
 
 #include "NonlinearConstraint.h"
 #include "Debug.h"
@@ -30,7 +30,7 @@
 #define __attribute__(x)
 #endif
 
-SigmoidConstraint::SigmoidConstraint( unsigned b, unsigned f )
+ReciprocalConstraint::SigmoidConstraint( unsigned b, unsigned f )
     : NonlinearConstraint()
     , _b( b )
     , _f( f )
@@ -38,14 +38,14 @@ SigmoidConstraint::SigmoidConstraint( unsigned b, unsigned f )
 {
 }
 
-SigmoidConstraint::SigmoidConstraint( const String &serializedSigmoid )
+ReciprocalConstraint::SigmoidConstraint( const String &serializedSigmoid )
     : _haveEliminatedVariables( false )
 {
-    String constraintType = serializedSigmoid.substring( 0, 7 );
+    String constraintType = serializedReciprocal.substring( 0, 7 );
     ASSERT( constraintType == String( "sigmoid" ) );
 
     // Remove the constraint type in serialized form
-    String serializedValues = serializedSigmoid.substring( 8, serializedSigmoid.length() - 5 );
+    String serializedValues = serializedReciprocal.substring( 8, serializedSigmoid.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
 
     ASSERT( values.size() == 2 );
@@ -56,37 +56,37 @@ SigmoidConstraint::SigmoidConstraint( const String &serializedSigmoid )
     _b = atoi( var->ascii() );
 }
 
-NonlinearFunctionType SigmoidConstraint::getType() const
+NonlinearFunctionType ReciprocalConstraint::getType() const
 {
     return NonlinearFunctionType::SIGMOID;
 }
 
-NonlinearConstraint *SigmoidConstraint::duplicateConstraint() const
+NonlinearConstraint *ReciprocalConstraint::duplicateConstraint() const
 {
-    SigmoidConstraint *clone = new SigmoidConstraint( _b, _f );
+    ReciprocalConstraint *clone = new SigmoidConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
-void SigmoidConstraint::restoreState( const NonlinearConstraint *state )
+void ReciprocalConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const SigmoidConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
+    const ReciprocalConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
     *this = *sigmoid;
 }
 
-void SigmoidConstraint::registerAsWatcher( ITableau *tableau )
+void ReciprocalConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 }
 
-void SigmoidConstraint::unregisterAsWatcher( ITableau *tableau )
+void ReciprocalConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
 }
 
-void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
+void ReciprocalConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -111,7 +111,7 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
     }
 }
 
-void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
+void ReciprocalConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -136,19 +136,19 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
     }
 }
 
-bool SigmoidConstraint::participatingVariable( unsigned variable ) const
+bool ReciprocalConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
 }
 
-List<unsigned> SigmoidConstraint::getParticipatingVariables() const
+List<unsigned> ReciprocalConstraint::getParticipatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
 }
 
-void SigmoidConstraint::dump( String &output ) const
+void ReciprocalConstraint::dump( String &output ) const
 {
-    output = Stringf( "SigmoidConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
+    output = Stringf( "ReciprocalConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
 
     output += Stringf( "b in [%s, %s], ",
                        existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
@@ -159,7 +159,7 @@ void SigmoidConstraint::dump( String &output ) const
                        existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
 }
 
-void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+void ReciprocalConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_assignment.exists( newIndex ) &&
@@ -191,21 +191,21 @@ void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newInde
         _f = newIndex;
 }
 
-void SigmoidConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
+void ReciprocalConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
                                         __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
 
-    // In a Sigmoid constraint, if a variable is removed the entire constraint can be discarded.
+    // In a Reciprocal constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
 }
 
-bool SigmoidConstraint::constraintObsolete() const
+bool ReciprocalConstraint::constraintObsolete() const
 {
     return _haveEliminatedVariables;
 }
 
-void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+void ReciprocalConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 { 
     ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
             existsUpperBound( _b ) && existsUpperBound( _f ) );
@@ -222,33 +222,33 @@ void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) 
     tightenings.append( Tightening( _f, fUpperBound, Tightening::UB ) );
 }
 
-String SigmoidConstraint::serializeToString() const
+String ReciprocalConstraint::serializeToString() const
 {
     return Stringf( "sigmoid,%u,%u", _f, _b );
 }
 
-unsigned SigmoidConstraint::getB() const
+unsigned ReciprocalConstraint::getB() const
 {
     return _b;
 }
 
-unsigned SigmoidConstraint::getF() const
+unsigned ReciprocalConstraint::getF() const
 {
     return _f;
 }
 
-double SigmoidConstraint::sigmoid( double x ) const
+double ReciprocalConstraint::sigmoid( double x ) const
 {
     return 1 / ( 1 + std::exp( -x ) );
 }
 
-double SigmoidConstraint::sigmoidInverse( double y ) const
+double ReciprocalConstraint::sigmoidInverse( double y ) const
 {
     ASSERT( y != 1 );
     return log( y / ( 1 - y ) );
 }
 
-double SigmoidConstraint::sigmoidDerivative( double x ) const
+double ReciprocalConstraint::sigmoidDerivative( double x ) const
 {
     return sigmoid( x ) * ( 1 - sigmoid( x ) );
 }
