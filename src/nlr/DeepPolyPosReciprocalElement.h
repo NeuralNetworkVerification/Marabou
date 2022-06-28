@@ -45,15 +45,8 @@ private:
     void freeMemoryIfNeeded();
     void log( const String &message );
 
-    /*
-      Compute the sigmoid function.
-    */
-    double sigmoid( double x );
-
-    /*
-      Compute the derivative of the sigmoid function.
-    */
-    double sigmoid_diff( double x );
+    double reciprocal( double x );
+    double reciprocalDerivative( double x );
 };
 
 } // namespace NLR

@@ -49,13 +49,10 @@ void DeepPolyPosReciprocalElement::execute( const Map<unsigned, DeepPolyElement 
         double sourceUb = predecessor->getUpperBound
             ( sourceIndex._neuron );
 
-        _ub[i] = sigmoid( sourceUb );
-        _lb[i] = sigmoid( sourceLb );
+        _ub[i] = reciprocal( sourceLb );
+        _lb[i] = reciprocal( sourceUb );
 
-        double lambda = ( _ub[i] - _lb[i] ) / ( sourceUb - sourceLb );
-        double lambdaPrime = std::min( sigmoid_diff( sourceLb ), sigmoid_diff( sourceUb ) );
-
-        if ( sourceUb == sourceLb )
+        if ( FloatUtils::areEqual( sourceUb, sourceLb ) )
         {
             _symbolicUb[i] = 0;
             _symbolicUpperBias[i] = _lb[i];
@@ -64,29 +61,18 @@ void DeepPolyPosReciprocalElement::execute( const Map<unsigned, DeepPolyElement 
         }
         else
         {
-            // update lower bound
-            if ( FloatUtils::isPositive( sourceLb ) )
-            {
-                _symbolicLb[i] = lambda;
-                _symbolicLowerBias[i] = sigmoid( sourceLb ) - lambda * sourceLb;   
-            }
-            else
-            {
-                _symbolicLb[i] = lambdaPrime;
-                _symbolicLowerBias[i] = sigmoid( sourceLb ) - lambdaPrime * sourceLb;   
-            }
+            double lambda = ( _ub[i] - _lb[i] ) / ( sourceLb - sourceUb );
 
+            // f = lambda (b - sourceLb) + recp(sourceLb)
             // update upper bound
-            if ( !FloatUtils::isPositive( sourceUb ) )
-            {
-                _symbolicUb[i] = lambda;
-                _symbolicUpperBias[i] = sigmoid( sourceUb ) - lambda * sourceUb;            
-            }
-            else
-            {
-                _symbolicUb[i] = lambdaPrime;
-                _symbolicUpperBias[i] = sigmoid( sourceUb ) - lambdaPrime * sourceUb;               
-            }
+            ASSERT( FloatUtils::isPositive( sourceLb ) );
+            _symbolicUb[i] = lambda;
+            _symbolicUpperBias[i] = reciprocal( sourceLb ) - lambda * sourceLb;
+
+            double midPoint = ( sourceUb + sourceLb ) / 2;
+            double lambdaPrime = reciprocalDerivative( midPoint );
+            _symbolicLb[i] = lambdaPrime;
+            _symbolicLowerBias[i] = reciprocal( midPoint ) - lambdaPrime * midPoint;
         }
 
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
@@ -223,14 +209,14 @@ void DeepPolyPosReciprocalElement::log( const String &message )
         printf( "DeepPolyPosReciprocalElement: %s\n", message.ascii() );
 }
 
-double DeepPolyPosReciprocalElement::sigmoid( double x )
+double DeepPolyPosReciprocalElement::reciprocal( double x )
 {
-    return 1 / ( 1 + std::exp( -x ) );
+    return 1 / x;
 }
 
-double DeepPolyPosReciprocalElement::sigmoid_diff( double x )
+double DeepPolyPosReciprocalElement::reciprocalDerivative( double x )
 {
-    return sigmoid( x ) * ( 1 - sigmoid( x ) );
+    return -1/(x * x);
 }
 
 } // namespace NLR

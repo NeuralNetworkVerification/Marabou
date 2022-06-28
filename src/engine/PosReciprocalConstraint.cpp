@@ -221,15 +221,15 @@ unsigned PosReciprocalConstraint::getF() const
 
 double PosReciprocalConstraint::evaluate( double x ) const
 {
-    return std::exp( x );
+    return 1/x;
 }
 
 double PosReciprocalConstraint::inverse( double y ) const
 {
-    return log( y );
+    return 1/y;
 }
 
 double PosReciprocalConstraint::derivative( double x ) const
 {
-    return evaluate( x );
+    return -1 / (x * x);
 }

@@ -1,4 +1,4 @@
- /*********************                                                        */
+/*********************                                                        */
 /*! \file DeepPolyExponentialElement.cpp
  ** \verbatim
  ** Top contributors (to current version):
@@ -49,13 +49,11 @@ void DeepPolyExponentialElement::execute( const Map<unsigned, DeepPolyElement *>
         double sourceUb = predecessor->getUpperBound
             ( sourceIndex._neuron );
 
-        _ub[i] = sigmoid( sourceUb );
-        _lb[i] = sigmoid( sourceLb );
 
-        double lambda = ( _ub[i] - _lb[i] ) / ( sourceUb - sourceLb );
-        double lambdaPrime = std::min( sigmoid_diff( sourceLb ), sigmoid_diff( sourceUb ) );
+        _ub[i] = exp( sourceUb );
+        _lb[i] = exp( sourceLb );
 
-        if ( sourceUb == sourceLb )
+        if ( FloatUtils::areEqual( sourceUb, sourceLb ) )
         {
             _symbolicUb[i] = 0;
             _symbolicUpperBias[i] = _lb[i];
@@ -63,31 +61,22 @@ void DeepPolyExponentialElement::execute( const Map<unsigned, DeepPolyElement *>
             _symbolicLowerBias[i] = _lb[i];
         }
         else
-        {
-            // update lower bound
-            if ( FloatUtils::isPositive( sourceLb ) )
             {
-                _symbolicLb[i] = lambda;
-                _symbolicLowerBias[i] = sigmoid( sourceLb ) - lambda * sourceLb;   
-            }
-            else
-            {
-                _symbolicLb[i] = lambdaPrime;
-                _symbolicLowerBias[i] = sigmoid( sourceLb ) - lambdaPrime * sourceLb;   
-            }
+                double lambda = ( _ub[i] - _lb[i] ) / ( sourceUb - sourceLb );
 
-            // update upper bound
-            if ( !FloatUtils::isPositive( sourceUb ) )
-            {
+                // f = lambda (b - sourceLb) + recp(sourceLb)
+                // update upper bound
                 _symbolicUb[i] = lambda;
-                _symbolicUpperBias[i] = sigmoid( sourceUb ) - lambda * sourceUb;            
+                _symbolicUpperBias[i] = exp( sourceLb ) - lambda * sourceLb;
+
+                // Following https://openreview.net/pdf?id=BJxwPJHFwS
+                double d = std::min( ( sourceUb + sourceLb ) / 2,
+                                     sourceLb + 1 - 0.01 );
+
+                double lambdaPrime = expDerivative( d );
+                _symbolicLb[i] = lambdaPrime;
+                _symbolicLowerBias[i] = exp( d ) - lambdaPrime * d;
             }
-            else
-            {
-                _symbolicUb[i] = lambdaPrime;
-                _symbolicUpperBias[i] = sigmoid( sourceUb ) - lambdaPrime * sourceUb;               
-            }
-        }
 
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
                       i, _symbolicLb[i], _symbolicLowerBias[i],
@@ -223,14 +212,14 @@ void DeepPolyExponentialElement::log( const String &message )
         printf( "DeepPolyExponentialElement: %s\n", message.ascii() );
 }
 
-double DeepPolyExponentialElement::sigmoid( double x )
+double DeepPolyExponentialElement::exp( double x )
 {
-    return 1 / ( 1 + std::exp( -x ) );
+    return std::exp( x );
 }
 
-double DeepPolyExponentialElement::sigmoid_diff( double x )
+double DeepPolyExponentialElement::expDerivative( double x )
 {
-    return sigmoid( x ) * ( 1 - sigmoid( x ) );
+    return std::exp( x );
 }
 
 } // namespace NLR

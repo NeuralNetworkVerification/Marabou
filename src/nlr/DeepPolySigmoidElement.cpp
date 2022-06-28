@@ -55,7 +55,7 @@ void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
         double lambda = ( _ub[i] - _lb[i] ) / ( sourceUb - sourceLb );
         double lambdaPrime = std::min( sigmoid_diff( sourceLb ), sigmoid_diff( sourceUb ) );
 
-        if ( sourceUb == sourceLb )
+        if ( FloatUtils::areEqual( sourceUb, sourceLb ) )
         {
             _symbolicUb[i] = 0;
             _symbolicUpperBias[i] = _lb[i];
