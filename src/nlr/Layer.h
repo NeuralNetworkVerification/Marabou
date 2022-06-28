@@ -46,7 +46,7 @@ public:
         SIGN,
         SIGMOID,
         EXP,
-        RECIPROCAL,
+        POS_RECIPROCAL,
     };
 
     /*

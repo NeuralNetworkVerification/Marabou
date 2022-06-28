@@ -168,6 +168,12 @@ private:
     bool constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
+    bool constructPosReciprocalLayer( NLR::NetworkLevelReasoner *nlr,
+                                Map<unsigned, unsigned> &handledVariableToLayer,
+                                unsigned newLayerIndex );
+    bool constructExponentialLayer( NLR::NetworkLevelReasoner *nlr,
+                                Map<unsigned, unsigned> &handledVariableToLayer,
+                                unsigned newLayerIndex );
     bool constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                       Map<unsigned, unsigned> &handledVariableToLayer,
                                       unsigned newLayerIndex );

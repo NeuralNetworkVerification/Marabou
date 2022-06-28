@@ -218,7 +218,7 @@ void Layer::computeAssignment()
         }
     }
 
-    else if ( _type == RECIPROCAL )
+    else if ( _type == POS_RECIPROCAL )
     {
         for ( unsigned i = 0; i < _size; ++i )
         {
@@ -1849,7 +1849,7 @@ void Layer::dump() const
     case MAX:
     case SIGN:
     case SIGMOID:
-    case RECIPROCAL:
+    case POS_RECIPROCAL:
     case EXP:
         for ( unsigned i = 0; i < _size; ++i )
         {
