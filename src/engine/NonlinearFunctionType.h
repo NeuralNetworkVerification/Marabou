@@ -18,7 +18,8 @@
 
 enum NonlinearFunctionType {
     SIGMOID = 0,
-    SOFTMAX = 1,
+    EXPONENTIAL = 1,
+    RECIPROCAL = 2,
 };
 
 #endif // __NonlinearFunctionType_h__
