@@ -18,7 +18,7 @@
 
 enum NonlinearFunctionType {
     SIGMOID = 0,
-    EXPONENTIAL = 1,
+    EXP = 1,
     RECIPROCAL = 2,
 };
 

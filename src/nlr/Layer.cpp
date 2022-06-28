@@ -13,6 +13,7 @@
 
  **/
 
+#include "CommonError.h"
 #include "InputQuery.h"
 #include "Layer.h"
 #include "Options.h"
@@ -203,6 +204,41 @@ void Layer::computeAssignment()
             double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
 
             _assignment[i] = 1 / ( 1 + std::exp( -inputValue ) );
+        }
+    }
+
+    else if ( _type == SIGMOID )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = 1 / ( 1 + std::exp( -inputValue ) );
+        }
+    }
+
+    else if ( _type == RECIPROCAL )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+            if ( FloatUtils::isZero( inputValue ) )
+                throw CommonError( CommonError::DIVISION_BY_ZERO,
+                                   "Input to the reciprocal function is zero." );
+            else
+                _assignment[i] = 1 / inputValue;
+        }
+    }
+
+    else if ( _type == EXP )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+            _assignment[i] = std::exp( inputValue );
         }
     }
 

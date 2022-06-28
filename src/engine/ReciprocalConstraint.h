@@ -26,7 +26,7 @@ class ReciprocalConstraint : public NonlinearConstraint
 {
 public:
     ReciprocalConstraint( unsigned b, unsigned f );
-    ReciprocalConstraint( const String &serializedSigmoid );
+    ReciprocalConstraint( const String &serializedReciprocal );
 
     /*
       Get the type of this constraint.

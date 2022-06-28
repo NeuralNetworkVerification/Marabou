@@ -30,7 +30,7 @@
 #define __attribute__(x)
 #endif
 
-ExponentialConstraint::SigmoidConstraint( unsigned b, unsigned f )
+ExponentialConstraint::ExponentialConstraint( unsigned b, unsigned f )
     : NonlinearConstraint()
     , _b( b )
     , _f( f )
@@ -38,14 +38,14 @@ ExponentialConstraint::SigmoidConstraint( unsigned b, unsigned f )
 {
 }
 
-ExponentialConstraint::SigmoidConstraint( const String &serializedSigmoid )
+ExponentialConstraint::ExponentialConstraint( const String &serializedSigmoid )
     : _haveEliminatedVariables( false )
 {
     String constraintType = serializedExponential.substring( 0, 7 );
     ASSERT( constraintType == String( "sigmoid" ) );
 
     // Remove the constraint type in serialized form
-    String serializedValues = serializedExponential.substring( 8, serializedSigmoid.length() - 5 );
+    String serializedValues = serializedExponential.substring( 8, serializedExponential.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
 
     ASSERT( values.size() == 2 );
@@ -63,14 +63,14 @@ NonlinearFunctionType ExponentialConstraint::getType() const
 
 NonlinearConstraint *ExponentialConstraint::duplicateConstraint() const
 {
-    ExponentialConstraint *clone = new SigmoidConstraint( _b, _f );
+    ExponentialConstraint *clone = new ExponentialConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
 void ExponentialConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const ExponentialConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
+    const ExponentialConstraint *sigmoid = dynamic_cast<const ExponentialConstraint *>( state );
     *this = *sigmoid;
 }
 
@@ -148,7 +148,7 @@ List<unsigned> ExponentialConstraint::getParticipatingVariables() const
 
 void ExponentialConstraint::dump( String &output ) const
 {
-    output = Stringf( "ExponentialConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
+    output = Stringf( "ExponentialConstraint: x%u = Exponential( x%u ).\n", _f, _b );
 
     output += Stringf( "b in [%s, %s], ",
                        existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",

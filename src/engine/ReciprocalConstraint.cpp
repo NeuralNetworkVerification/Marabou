@@ -30,7 +30,7 @@
 #define __attribute__(x)
 #endif
 
-ReciprocalConstraint::SigmoidConstraint( unsigned b, unsigned f )
+ReciprocalConstraint::ReciprocalConstraint( unsigned b, unsigned f )
     : NonlinearConstraint()
     , _b( b )
     , _f( f )
@@ -38,40 +38,27 @@ ReciprocalConstraint::SigmoidConstraint( unsigned b, unsigned f )
 {
 }
 
-ReciprocalConstraint::SigmoidConstraint( const String &serializedSigmoid )
-    : _haveEliminatedVariables( false )
+ReciprocalConstraint::ReciprocalConstraint( const String & )
 {
-    String constraintType = serializedReciprocal.substring( 0, 7 );
-    ASSERT( constraintType == String( "sigmoid" ) );
-
-    // Remove the constraint type in serialized form
-    String serializedValues = serializedReciprocal.substring( 8, serializedSigmoid.length() - 5 );
-    List<String> values = serializedValues.tokenize( "," );
-
-    ASSERT( values.size() == 2 );
-
-    auto var = values.begin();
-    _f = atoi( var->ascii() );
-    ++var;
-    _b = atoi( var->ascii() );
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
 NonlinearFunctionType ReciprocalConstraint::getType() const
 {
-    return NonlinearFunctionType::SIGMOID;
+    return NonlinearFunctionType::RECIPROCAL;
 }
 
 NonlinearConstraint *ReciprocalConstraint::duplicateConstraint() const
 {
-    ReciprocalConstraint *clone = new SigmoidConstraint( _b, _f );
+    ReciprocalConstraint *clone = new ReciprocalConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
 void ReciprocalConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const ReciprocalConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
-    *this = *sigmoid;
+    const ReciprocalConstraint *recip = dynamic_cast<const ReciprocalConstraint *>( state );
+    *this = *recip;
 }
 
 void ReciprocalConstraint::registerAsWatcher( ITableau *tableau )
@@ -105,9 +92,9 @@ void ReciprocalConstraint::notifyLowerBound( unsigned variable, double bound )
     else
     {
         if ( variable == _f )
-            _boundManager->tightenLowerBound( _b, sigmoidInverse( bound ) );
+            _boundManager->tightenUpperBound( _b,  );
         else if ( variable == _b )
-            _boundManager->tightenLowerBound( _f, sigmoid( bound ) );
+            _boundManager->tightenLowerBound( _f, recip( bound ) );
     }
 }
 
@@ -130,9 +117,9 @@ void ReciprocalConstraint::notifyUpperBound( unsigned variable, double bound )
     else
     {
         if ( variable == _f )
-            _boundManager->tightenUpperBound( _b, sigmoidInverse( bound ) );
+            _boundManager->tightenUpperBound( _b, recipInverse( bound ) );
         else if ( variable == _b )
-            _boundManager->tightenUpperBound( _f, sigmoid( bound ) );
+            _boundManager->tightenUpperBound( _f, recip( bound ) );
     }
 }
 
@@ -148,7 +135,7 @@ List<unsigned> ReciprocalConstraint::getParticipatingVariables() const
 
 void ReciprocalConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReciprocalConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
+    output = Stringf( "ReciprocalConstraint: x%u = Reciprocal( x%u ).\n", _f, _b );
 
     output += Stringf( "b in [%s, %s], ",
                        existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
@@ -224,7 +211,7 @@ void ReciprocalConstraint::getEntailedTightenings( List<Tightening> &tightenings
 
 String ReciprocalConstraint::serializeToString() const
 {
-    return Stringf( "sigmoid,%u,%u", _f, _b );
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
 unsigned ReciprocalConstraint::getB() const
@@ -235,20 +222,4 @@ unsigned ReciprocalConstraint::getB() const
 unsigned ReciprocalConstraint::getF() const
 {
     return _f;
-}
-
-double ReciprocalConstraint::sigmoid( double x ) const
-{
-    return 1 / ( 1 + std::exp( -x ) );
-}
-
-double ReciprocalConstraint::sigmoidInverse( double y ) const
-{
-    ASSERT( y != 1 );
-    return log( y / ( 1 - y ) );
-}
-
-double ReciprocalConstraint::sigmoidDerivative( double x ) const
-{
-    return sigmoid( x ) * ( 1 - sigmoid( x ) );
 }
