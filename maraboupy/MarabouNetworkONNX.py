@@ -49,7 +49,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputNames = None
         self.graph = None
         
-    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True):
+    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=False):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
@@ -100,7 +100,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
         else:
-            self.outputVars = self.varMap[self.outputName]
+            self.outputVars = [self.varMap[outputName] for outputName in self.outputNames]
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations

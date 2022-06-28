@@ -157,8 +157,10 @@ void addSoftmaxConstraint(InputQuery& ipq, std::list<unsigned> inputs,
     {
         // v = 1 / sumOfExps
         PosReciprocalConstraint *m = new PosReciprocalConstraint
-            ( preReciprocals[i++], v );
+            ( preReciprocals[i], v );
+        std::cout << preReciprocals[i] << " " << v << std::endl;
         ipq.addNonlinearConstraint( m );
+        ++i;
     }
 }
 

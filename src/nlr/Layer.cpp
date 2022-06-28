@@ -1795,6 +1795,14 @@ String Layer::typeToString( Type type )
         return "SIGN";
         break;
 
+    case EXP:
+        return "EXP";
+        break;
+
+    case POS_RECIPROCAL:
+        return "RECIPROCAL";
+        break;
+
     default:
         return "UNKNOWN TYPE";
         break;
