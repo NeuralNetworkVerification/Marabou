@@ -33,6 +33,7 @@ public:
     /*
       Methods for setting and getting the input part of the query
     */
+    unsigned getFreshVariable();
     void setNumberOfVariables( unsigned numberOfVariables );
     void setLowerBound( unsigned variable, double bound );
     void setUpperBound( unsigned variable, double bound );

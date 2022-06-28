@@ -29,6 +29,7 @@
 #include "DnCManager.h"
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
+#include "ExponentialConstraint.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
@@ -38,11 +39,11 @@
 #include "MaxConstraint.h"
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
+#include "PosReciprocalConstraint.h"
 #include "PropertyParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
-#include "SoftmaxConstraint.h"
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
@@ -117,14 +118,48 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
 
 void addSoftmaxConstraint(InputQuery& ipq, std::list<unsigned> inputs,
                           std::list<unsigned> outputs){
-    Vector<unsigned> inputList;
+
+    Vector<unsigned> preReciprocals;
     for ( const auto &v : inputs )
-        inputList.append( v );
-    Vector<unsigned> outputList;
+    {
+        Equation e;
+        e.setScalar(-1);
+        for ( const auto &u : inputs )
+        {
+            if ( u == v )
+                continue;
+            else
+            {
+                unsigned diffVar = ipq.getFreshVariable();
+                Equation eDiff;
+                eDiff.addAddend( 1, u );
+                eDiff.addAddend( -1, v );
+                eDiff.addAddend( -1, diffVar );
+                // diffVar_i = u - v
+                ipq.addEquation(eDiff);
+
+                unsigned postExp = ipq.getFreshVariable();
+                ExponentialConstraint *m = new ExponentialConstraint
+                    ( diffVar, postExp );
+                ipq.addNonlinearConstraint( m );
+                e.addAddend( 1, postExp );
+            }
+        }
+        unsigned sumOfExps = ipq.getFreshVariable();
+        e.addAddend( -1, sumOfExps );
+        // e^diffVar1 + ... + e^diffVar2 + -1 sumOfExps = -1
+        ipq.addEquation(e);
+        preReciprocals.append(sumOfExps);
+    }
+
+    unsigned i = 0;
     for ( const auto &v : outputs )
-        outputList.append( v );
-    SoftmaxConstraint *m = new SoftmaxConstraint( inputList, outputList );
-    ipq.addNonlinearConstraint( m );
+    {
+        // v = 1 / sumOfExps
+        PosReciprocalConstraint *m = new PosReciprocalConstraint
+            ( preReciprocals[i++], v );
+        ipq.addNonlinearConstraint( m );
+    }
 }
 
 void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
@@ -629,7 +664,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .value("PSE_NUM_RESET_REFERENCE_SPACE", Statistics::StatisticsLongAttribute::PSE_NUM_RESET_REFERENCE_SPACE)
         .value("TIME_MAIN_LOOP_MICRO", Statistics::StatisticsLongAttribute::TIME_MAIN_LOOP_MICRO)
         .value("NUM_MERGED_COLUMNS", Statistics::StatisticsLongAttribute::NUM_MERGED_COLUMNS)
-        .value("NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS", Statistics::StatisticsLongAttribute::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS)
+        .value("NUM_BOUND_NOTIFICATIONS_TO_NONLINEAR_CONSTRAINTS", Statistics::StatisticsLongAttribute::NUM_BOUND_NOTIFICATIONS_TO_NONLINEAR_CONSTRAINTS)
         .value("NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY", Statistics::StatisticsLongAttribute::NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY)
         .value("TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO)
         .value("NUM_TIGHTENINGS_FROM_ROWS", Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_ROWS)

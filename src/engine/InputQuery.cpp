@@ -38,6 +38,11 @@ InputQuery::~InputQuery()
     }
 }
 
+unsigned InputQuery::getFreshVariable()
+{
+    return _numberOfVariables++;
+}
+
 void InputQuery::setNumberOfVariables( unsigned numberOfVariables )
 {
     _numberOfVariables = numberOfVariables;

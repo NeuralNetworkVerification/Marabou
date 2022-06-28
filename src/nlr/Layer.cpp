@@ -1849,7 +1849,8 @@ void Layer::dump() const
     case MAX:
     case SIGN:
     case SIGMOID:
-
+    case RECIPROCAL:
+    case EXP:
         for ( unsigned i = 0; i < _size; ++i )
         {
             if ( _eliminatedNeurons.exists( i ) )
