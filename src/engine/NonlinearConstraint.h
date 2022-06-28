@@ -26,7 +26,6 @@
 #include "Tightening.h"
 
 class Equation;
-class IConstraintBoundTightener;
 class ITableau;
 class InputQuery;
 class String;
@@ -117,13 +116,6 @@ public:
     */
     virtual String serializeToString() const = 0;
 
-    /*
-      Register a constraint bound tightener. If a tightener is registered,
-      this transcendental constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
-
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -137,13 +129,10 @@ public:
     void registerBoundManager( BoundManager *boundManager );
 
 protected:
-    Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
     BoundManager *_boundManager;
-
-    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection

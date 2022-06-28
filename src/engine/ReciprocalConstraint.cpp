@@ -79,7 +79,7 @@ void ReciprocalConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( _statistics )
         _statistics->incLongAttribute(
-            Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_NONLINEAR_CONSTRAINTS );
 
     if ( _boundManager == nullptr )
     {
@@ -104,7 +104,7 @@ void ReciprocalConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( _statistics )
         _statistics->incLongAttribute(
-            Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_NONLINEAR_CONSTRAINTS );
 
     if ( _boundManager == nullptr )
     {

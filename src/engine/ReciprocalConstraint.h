@@ -26,7 +26,7 @@ class ReciprocalConstraint : public NonlinearConstraint
 {
 public:
     ReciprocalConstraint( unsigned b, unsigned f );
-    ReciprocalConstraint( const String &serializedReciprocal );
+    ReciprocalConstraint( const String &/*serializedReciprocal*/ );
 
     /*
       Get the type of this constraint.
@@ -87,9 +87,6 @@ public:
     */
     void dump( String &output ) const override;
 
-    /*
-      Returns string with shape: sigmoid, _f, _b
-    */
     String serializeToString() const override;
 
     /*
@@ -99,22 +96,17 @@ public:
     unsigned getF() const;
 
     /*
-      Compute the sigmoid function.
+      Compute the reciprocal function.
     */
-    double sigmoid( double x ) const;
+    double evaluate( double x ) const
 
     /*
-      Compute the inverse of the sigmoid function.
+      Compute the derivative of the reciprocal function.
     */
-    double sigmoidInverse( double y ) const;
-
-    /*
-      Compute the derivative of the sigmoid function.
-    */
-    double sigmoidDerivative( double x ) const;
+    double derivative( double x ) const;
 
 private:
-    unsigned _b, _f; 
+    unsigned _b, _f;
     bool _haveEliminatedVariables;
 };
 
