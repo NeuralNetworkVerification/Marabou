@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReciprocalConstraint.cpp
+/*! \file PosReciprocalConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Wu
@@ -9,10 +9,10 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** See the description of the class in ReciprocalConstraint.h.
+ ** See the description of the class in PosReciprocalConstraint.h.
  **/
 
-#include "ReciprocalConstraint.h"
+#include "PosReciprocalConstraint.h"
 
 #include "NonlinearConstraint.h"
 #include "Debug.h"
@@ -30,7 +30,7 @@
 #define __attribute__(x)
 #endif
 
-ReciprocalConstraint::ReciprocalConstraint( unsigned b, unsigned f )
+PosReciprocalConstraint::ReciprocalConstraint( unsigned b, unsigned f )
     : NonlinearConstraint()
     , _b( b )
     , _f( f )
@@ -38,42 +38,42 @@ ReciprocalConstraint::ReciprocalConstraint( unsigned b, unsigned f )
 {
 }
 
-ReciprocalConstraint::ReciprocalConstraint( const String & )
+PosReciprocalConstraint::ReciprocalConstraint( const String & )
 {
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
-NonlinearFunctionType ReciprocalConstraint::getType() const
+NonlinearFunctionType PosReciprocalConstraint::getType() const
 {
     return NonlinearFunctionType::RECIPROCAL;
 }
 
-NonlinearConstraint *ReciprocalConstraint::duplicateConstraint() const
+NonlinearConstraint *PosReciprocalConstraint::duplicateConstraint() const
 {
-    ReciprocalConstraint *clone = new ReciprocalConstraint( _b, _f );
+    PosReciprocalConstraint *clone = new ReciprocalConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
-void ReciprocalConstraint::restoreState( const NonlinearConstraint *state )
+void PosReciprocalConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const ReciprocalConstraint *recip = dynamic_cast<const ReciprocalConstraint *>( state );
+    const PosReciprocalConstraint *recip = dynamic_cast<const ReciprocalConstraint *>( state );
     *this = *recip;
 }
 
-void ReciprocalConstraint::registerAsWatcher( ITableau *tableau )
+void PosReciprocalConstraint::registerAsWatcher( ITableau *tableau )
 {
     tableau->registerToWatchVariable( this, _b );
     tableau->registerToWatchVariable( this, _f );
 }
 
-void ReciprocalConstraint::unregisterAsWatcher( ITableau *tableau )
+void PosReciprocalConstraint::unregisterAsWatcher( ITableau *tableau )
 {
     tableau->unregisterToWatchVariable( this, _b );
     tableau->unregisterToWatchVariable( this, _f );
 }
 
-void ReciprocalConstraint::notifyLowerBound( unsigned variable, double bound )
+void PosReciprocalConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -91,14 +91,14 @@ void ReciprocalConstraint::notifyLowerBound( unsigned variable, double bound )
     }
     else
     {
-        if ( variable == _f )
-            _boundManager->tightenUpperBound( _b,  );
-        else if ( variable == _b )
+        if ( variable == _f && FloatUtils::isPositive( bound ) )
+            _boundManager->tightenUpperBound( _b, evaluate( bound ) );
+        else if ( variable == _b &&  )
             _boundManager->tightenLowerBound( _f, recip( bound ) );
     }
 }
 
-void ReciprocalConstraint::notifyUpperBound( unsigned variable, double bound )
+void PosReciprocalConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -123,19 +123,19 @@ void ReciprocalConstraint::notifyUpperBound( unsigned variable, double bound )
     }
 }
 
-bool ReciprocalConstraint::participatingVariable( unsigned variable ) const
+bool PosReciprocalConstraint::participatingVariable( unsigned variable ) const
 {
     return ( variable == _b ) || ( variable == _f );
 }
 
-List<unsigned> ReciprocalConstraint::getParticipatingVariables() const
+List<unsigned> PosReciprocalConstraint::getParticipatingVariables() const
 {
     return List<unsigned>( { _b, _f } );
 }
 
-void ReciprocalConstraint::dump( String &output ) const
+void PosReciprocalConstraint::dump( String &output ) const
 {
-    output = Stringf( "ReciprocalConstraint: x%u = Reciprocal( x%u ).\n", _f, _b );
+    output = Stringf( "PosReciprocalConstraint: x%u = Reciprocal( x%u ).\n", _f, _b );
 
     output += Stringf( "b in [%s, %s], ",
                        existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
@@ -146,7 +146,7 @@ void ReciprocalConstraint::dump( String &output ) const
                        existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
 }
 
-void ReciprocalConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
+void PosReciprocalConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_assignment.exists( newIndex ) &&
@@ -178,7 +178,7 @@ void ReciprocalConstraint::updateVariableIndex( unsigned oldIndex, unsigned newI
         _f = newIndex;
 }
 
-void ReciprocalConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
+void PosReciprocalConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
                                         __attribute__((unused)) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
@@ -187,12 +187,12 @@ void ReciprocalConstraint::eliminateVariable( __attribute__((unused)) unsigned v
     _haveEliminatedVariables = true;
 }
 
-bool ReciprocalConstraint::constraintObsolete() const
+bool PosReciprocalConstraint::constraintObsolete() const
 {
     return _haveEliminatedVariables;
 }
 
-void ReciprocalConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
+void PosReciprocalConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 { 
     ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
             existsUpperBound( _b ) && existsUpperBound( _f ) );
@@ -209,17 +209,17 @@ void ReciprocalConstraint::getEntailedTightenings( List<Tightening> &tightenings
     tightenings.append( Tightening( _f, fUpperBound, Tightening::UB ) );
 }
 
-String ReciprocalConstraint::serializeToString() const
+String PosReciprocalConstraint::serializeToString() const
 {
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
-unsigned ReciprocalConstraint::getB() const
+unsigned PosReciprocalConstraint::getB() const
 {
     return _b;
 }
 
-unsigned ReciprocalConstraint::getF() const
+unsigned PosReciprocalConstraint::getF() const
 {
     return _f;
 }

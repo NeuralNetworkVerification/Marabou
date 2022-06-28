@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file ReciprocalConstraint.h
+/*! \file PosReciprocalConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Wu
@@ -13,8 +13,8 @@
 
 **/
 
-#ifndef __ReciprocalConstraint_h__
-#define __ReciprocalConstraint_h__
+#ifndef __PosReciprocalConstraint_h__
+#define __PosReciprocalConstraint_h__
 
 #include "List.h"
 #include "Map.h"
@@ -22,11 +22,11 @@
 
 #include <cmath>
 
-class ReciprocalConstraint : public NonlinearConstraint
+class PosReciprocalConstraint : public NonlinearConstraint
 {
 public:
-    ReciprocalConstraint( unsigned b, unsigned f );
-    ReciprocalConstraint( const String &/*serializedReciprocal*/ );
+    PosReciprocalConstraint( unsigned b, unsigned f );
+    PosReciprocalConstraint( const String &/*serializedReciprocal*/ );
 
     /*
       Get the type of this constraint.
@@ -110,4 +110,4 @@ private:
     bool _haveEliminatedVariables;
 };
 
-#endif // __ReciprocalConstraint_h__
+#endif // __PosReciprocalConstraint_h__
