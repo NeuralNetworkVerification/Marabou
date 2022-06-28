@@ -30,7 +30,7 @@
 #define __attribute__(x)
 #endif
 
-PosReciprocalConstraint::ReciprocalConstraint( unsigned b, unsigned f )
+PosReciprocalConstraint::PosReciprocalConstraint( unsigned b, unsigned f )
     : NonlinearConstraint()
     , _b( b )
     , _f( f )
@@ -38,26 +38,26 @@ PosReciprocalConstraint::ReciprocalConstraint( unsigned b, unsigned f )
 {
 }
 
-PosReciprocalConstraint::ReciprocalConstraint( const String & )
+PosReciprocalConstraint::PosReciprocalConstraint( const String & )
 {
     throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
 NonlinearFunctionType PosReciprocalConstraint::getType() const
 {
-    return NonlinearFunctionType::RECIPROCAL;
+    return NonlinearFunctionType::POS_RECIPROCAL;
 }
 
 NonlinearConstraint *PosReciprocalConstraint::duplicateConstraint() const
 {
-    PosReciprocalConstraint *clone = new ReciprocalConstraint( _b, _f );
+    PosReciprocalConstraint *clone = new PosReciprocalConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
 void PosReciprocalConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const PosReciprocalConstraint *recip = dynamic_cast<const ReciprocalConstraint *>( state );
+    const PosReciprocalConstraint *recip = dynamic_cast<const PosReciprocalConstraint *>( state );
     *this = *recip;
 }
 
@@ -93,8 +93,8 @@ void PosReciprocalConstraint::notifyLowerBound( unsigned variable, double bound 
     {
         if ( variable == _f && FloatUtils::isPositive( bound ) )
             _boundManager->tightenUpperBound( _b, evaluate( bound ) );
-        else if ( variable == _b &&  )
-            _boundManager->tightenLowerBound( _f, recip( bound ) );
+        else if ( variable == _b && FloatUtils::isPositive( bound ) )
+            _boundManager->tightenUpperBound( _f, evaluate( bound ) );
     }
 }
 
@@ -116,10 +116,10 @@ void PosReciprocalConstraint::notifyUpperBound( unsigned variable, double bound 
     }
     else
     {
-        if ( variable == _f )
-            _boundManager->tightenUpperBound( _b, recipInverse( bound ) );
-        else if ( variable == _b )
-            _boundManager->tightenUpperBound( _f, recip( bound ) );
+        if ( variable == _f && FloatUtils::isPositive( bound ) )
+            _boundManager->tightenLowerBound( _b, evaluate( bound ) );
+        else if ( variable == _b && FloatUtils::isPositive( bound ) )
+            _boundManager->tightenLowerBound( _f, evaluate( bound ) );
     }
 }
 
@@ -135,30 +135,23 @@ List<unsigned> PosReciprocalConstraint::getParticipatingVariables() const
 
 void PosReciprocalConstraint::dump( String &output ) const
 {
-    output = Stringf( "PosReciprocalConstraint: x%u = Reciprocal( x%u ).\n", _f, _b );
+    output = Stringf( "PosReciprocalConstraint: x%u = PosReciprocal( x%u ).\n", _f, _b );
 
     output += Stringf( "b in [%s, %s], ",
-                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
+                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "0",
                        existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
     output += Stringf( "f in [%s, %s]",
-                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "1",
-                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
+                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "0",
+                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
 }
 
 void PosReciprocalConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( _lowerBounds.exists( oldIndex ) )
     {
@@ -194,19 +187,21 @@ bool PosReciprocalConstraint::constraintObsolete() const
 
 void PosReciprocalConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 { 
-    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
-            existsUpperBound( _b ) && existsUpperBound( _f ) );
+    tightenings.append( Tightening( _b, 0, Tightening::LB ) );
+    tightenings.append( Tightening( _f, 0, Tightening::LB ) );
 
-    double bLowerBound = getLowerBound( _b );
-    double fLowerBound = getLowerBound( _f );
-    double bUpperBound = getUpperBound( _b );
-    double fUpperBound = getUpperBound( _f );
-
-    tightenings.append( Tightening( _b, bLowerBound, Tightening::LB ) );
-    tightenings.append( Tightening( _f, fLowerBound, Tightening::LB ) );
-
-    tightenings.append( Tightening( _b, bUpperBound, Tightening::UB ) );
-    tightenings.append( Tightening( _f, fUpperBound, Tightening::UB ) );
+    if ( existsLowerBound( _b ) )
+        tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
+                                        Tightening::UB ) );
+    if ( existsLowerBound( _f ) )
+        tightenings.append( Tightening( _b, evaluate( getLowerBound( _f ) ),
+                                        Tightening::UB ) );
+    if ( existsUpperBound( _b ) )
+        tightenings.append( Tightening( _f, evaluate( getUpperBound( _b ) ),
+                                        Tightening::LB ) );
+    if ( existsUpperBound( _f ) )
+        tightenings.append( Tightening( _b, evaluate( getUpperBound( _f ) ),
+                                        Tightening::LB ) );
 }
 
 String PosReciprocalConstraint::serializeToString() const
@@ -222,4 +217,19 @@ unsigned PosReciprocalConstraint::getB() const
 unsigned PosReciprocalConstraint::getF() const
 {
     return _f;
+}
+
+double PosReciprocalConstraint::evaluate( double x ) const
+{
+    return std::exp( x );
+}
+
+double PosReciprocalConstraint::inverse( double y ) const
+{
+    return log( y );
+}
+
+double PosReciprocalConstraint::derivative( double x ) const
+{
+    return evaluate( x );
 }

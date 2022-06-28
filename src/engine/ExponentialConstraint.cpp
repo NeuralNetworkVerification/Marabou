@@ -38,27 +38,14 @@ ExponentialConstraint::ExponentialConstraint( unsigned b, unsigned f )
 {
 }
 
-ExponentialConstraint::ExponentialConstraint( const String &serializedSigmoid )
-    : _haveEliminatedVariables( false )
+ExponentialConstraint::ExponentialConstraint( const String & )
 {
-    String constraintType = serializedExponential.substring( 0, 7 );
-    ASSERT( constraintType == String( "sigmoid" ) );
-
-    // Remove the constraint type in serialized form
-    String serializedValues = serializedExponential.substring( 8, serializedExponential.length() - 5 );
-    List<String> values = serializedValues.tokenize( "," );
-
-    ASSERT( values.size() == 2 );
-
-    auto var = values.begin();
-    _f = atoi( var->ascii() );
-    ++var;
-    _b = atoi( var->ascii() );
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
 NonlinearFunctionType ExponentialConstraint::getType() const
 {
-    return NonlinearFunctionType::SIGMOID;
+    return NonlinearFunctionType::EXP;
 }
 
 NonlinearConstraint *ExponentialConstraint::duplicateConstraint() const
@@ -70,8 +57,8 @@ NonlinearConstraint *ExponentialConstraint::duplicateConstraint() const
 
 void ExponentialConstraint::restoreState( const NonlinearConstraint *state )
 {
-    const ExponentialConstraint *sigmoid = dynamic_cast<const ExponentialConstraint *>( state );
-    *this = *sigmoid;
+    const ExponentialConstraint *exp = dynamic_cast<const ExponentialConstraint *>( state );
+    *this = *exp;
 }
 
 void ExponentialConstraint::registerAsWatcher( ITableau *tableau )
@@ -105,9 +92,9 @@ void ExponentialConstraint::notifyLowerBound( unsigned variable, double bound )
     else
     {
         if ( variable == _f )
-            _boundManager->tightenLowerBound( _b, sigmoidInverse( bound ) );
+            _boundManager->tightenLowerBound( _b, inverse( bound ) );
         else if ( variable == _b )
-            _boundManager->tightenLowerBound( _f, sigmoid( bound ) );
+            _boundManager->tightenLowerBound( _f, evaluate( bound ) );
     }
 }
 
@@ -130,9 +117,9 @@ void ExponentialConstraint::notifyUpperBound( unsigned variable, double bound )
     else
     {
         if ( variable == _f )
-            _boundManager->tightenUpperBound( _b, sigmoidInverse( bound ) );
+            _boundManager->tightenUpperBound( _b, inverse( bound ) );
         else if ( variable == _b )
-            _boundManager->tightenUpperBound( _f, sigmoid( bound ) );
+            _boundManager->tightenUpperBound( _f, evaluate( bound ) );
     }
 }
 
@@ -162,16 +149,9 @@ void ExponentialConstraint::dump( String &output ) const
 void ExponentialConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( _lowerBounds.exists( oldIndex ) )
     {
@@ -206,25 +186,26 @@ bool ExponentialConstraint::constraintObsolete() const
 }
 
 void ExponentialConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
-{ 
-    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
-            existsUpperBound( _b ) && existsUpperBound( _f ) );
+{
+    tightenings.append( Tightening( _f, 0, Tightening::LB ) );
 
-    double bLowerBound = getLowerBound( _b );
-    double fLowerBound = getLowerBound( _f );
-    double bUpperBound = getUpperBound( _b );
-    double fUpperBound = getUpperBound( _f );
-
-    tightenings.append( Tightening( _b, bLowerBound, Tightening::LB ) );
-    tightenings.append( Tightening( _f, fLowerBound, Tightening::LB ) );
-
-    tightenings.append( Tightening( _b, bUpperBound, Tightening::UB ) );
-    tightenings.append( Tightening( _f, fUpperBound, Tightening::UB ) );
+    if ( existsLowerBound( _b ) )
+        tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
+                                        Tightening::LB ) );
+    if ( existsLowerBound( _f ) )
+        tightenings.append( Tightening( _b, inverse( getLowerBound( _f ) ),
+                                        Tightening::LB ) );
+    if ( existsUpperBound( _b ) )
+        tightenings.append( Tightening( _f, evaluate( getUpperBound( _b ) ),
+                                        Tightening::UB ) );
+    if ( existsUpperBound( _f ) )
+        tightenings.append( Tightening( _b, inverse( getUpperBound( _f ) ),
+                                        Tightening::UB ) );
 }
 
 String ExponentialConstraint::serializeToString() const
 {
-    return Stringf( "sigmoid,%u,%u", _f, _b );
+    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 }
 
 unsigned ExponentialConstraint::getB() const
@@ -237,18 +218,17 @@ unsigned ExponentialConstraint::getF() const
     return _f;
 }
 
-double ExponentialConstraint::sigmoid( double x ) const
+double ExponentialConstraint::evaluate( double x ) const
 {
-    return 1 / ( 1 + std::exp( -x ) );
+    return std::exp( x );
 }
 
-double ExponentialConstraint::sigmoidInverse( double y ) const
+double ExponentialConstraint::inverse( double y ) const
 {
-    ASSERT( y != 1 );
-    return log( y / ( 1 - y ) );
+    return log( y );
 }
 
-double ExponentialConstraint::sigmoidDerivative( double x ) const
+double ExponentialConstraint::derivative( double x ) const
 {
-    return sigmoid( x ) * ( 1 - sigmoid( x ) );
+    return evaluate( x );
 }

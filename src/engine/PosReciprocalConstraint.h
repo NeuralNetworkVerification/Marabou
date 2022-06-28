@@ -95,14 +95,8 @@ public:
     unsigned getB() const;
     unsigned getF() const;
 
-    /*
-      Compute the reciprocal function.
-    */
-    double evaluate( double x ) const
-
-    /*
-      Compute the derivative of the reciprocal function.
-    */
+    double evaluate( double x ) const;
+    double inverse( double x ) const;
     double derivative( double x ) const;
 
 private:

@@ -98,20 +98,9 @@ public:
     unsigned getB() const;
     unsigned getF() const;
 
-    /*
-      Compute the sigmoid function.
-    */
-    double sigmoid( double x ) const;
-
-    /*
-      Compute the inverse of the sigmoid function.
-    */
-    double sigmoidInverse( double y ) const;
-
-    /*
-      Compute the derivative of the sigmoid function.
-    */
-    double sigmoidDerivative( double x ) const;
+    double evaluate( double x ) const;
+    double inverse( double x ) const;
+    double derivative( double x ) const;
 
 private:
     unsigned _b, _f; 

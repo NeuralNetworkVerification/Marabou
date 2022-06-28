@@ -17,7 +17,6 @@
 
 NonlinearConstraint::NonlinearConstraint()
     : _boundManager( nullptr )
-    , _constraintBoundTightener( NULL )
     , _statistics( NULL )
 {
 }
@@ -32,9 +31,4 @@ void NonlinearConstraint::registerBoundManager(
 void NonlinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
-}
-
-void NonlinearConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
-{
-    _constraintBoundTightener = tightener;
 }

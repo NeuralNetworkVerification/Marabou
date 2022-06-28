@@ -162,16 +162,9 @@ void SigmoidConstraint::dump( String &output ) const
 void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
     ASSERT( oldIndex == _b || oldIndex == _f );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( _lowerBounds.exists( oldIndex ) )
     {
