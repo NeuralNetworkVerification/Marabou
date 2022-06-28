@@ -18,14 +18,14 @@
 
 namespace NLR {
 
-DeepPolyPosReciprocalElement::DeepPolySigmoidElement( Layer *layer )
+DeepPolyPosReciprocalElement::DeepPolyPosReciprocalElement( Layer *layer )
 {
     _layer = layer;
     _size = layer->getSize();
     _layerIndex = layer->getLayerIndex();
 }
 
-DeepPolyPosReciprocalElement::~DeepPolySigmoidElement()
+DeepPolyPosReciprocalElement::~DeepPolyPosReciprocalElement()
 {
     freeMemoryIfNeeded();
 }
@@ -130,14 +130,14 @@ void DeepPolyPosReciprocalElement::symbolicBoundInTermsOfPredecessor
           replace f_i with m * b_i + n
         */
 
-        // Symbolic bounds of the PosReciprocal output in terms of the Sigmoid input
+        // Symbolic bounds of the PosReciprocal output in terms of the PosReciprocal input
         // coeffLb * b_i + lowerBias <= f_i <= coeffUb * b_i + upperBias
         double coeffLb = _symbolicLb[i];
         double coeffUb = _symbolicUb[i];
         double lowerBias = _symbolicLowerBias[i];
         double upperBias = _symbolicUpperBias[i];
 
-        // Substitute the PosReciprocal input for the Sigmoid output
+        // Substitute the PosReciprocal input for the PosReciprocal output
         for ( unsigned j = 0; j < targetLayerSize; ++j )
         {
             // The symbolic lower- and upper- bounds of the j-th neuron in the

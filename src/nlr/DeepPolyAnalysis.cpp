@@ -16,10 +16,12 @@
 #include "Debug.h"
 #include "DeepPolyAnalysis.h"
 #include "DeepPolyAbsoluteValueElement.h"
+#include "DeepPolyExponentialElement.h"
 #include "DeepPolyInputElement.h"
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
+#include "DeepPolyPosReciprocalElement.h"
 #include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
 #include "FloatUtils.h"
@@ -213,6 +215,10 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolyMaxPoolElement( layer );
     else if ( type == Layer::SIGMOID )
         deepPolyElement = new DeepPolySigmoidElement( layer );
+    else if ( type == Layer::EXP )
+        deepPolyElement = new DeepPolyExponentialElement( layer );
+    else if ( type == Layer::POS_RECIPROCAL )
+        deepPolyElement = new DeepPolyPosReciprocalElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",

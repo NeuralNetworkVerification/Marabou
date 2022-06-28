@@ -18,14 +18,14 @@
 
 namespace NLR {
 
-DeepPolyExponentialElement::DeepPolySigmoidElement( Layer *layer )
+DeepPolyExponentialElement::DeepPolyExponentialElement( Layer *layer )
 {
     _layer = layer;
     _size = layer->getSize();
     _layerIndex = layer->getLayerIndex();
 }
 
-DeepPolyExponentialElement::~DeepPolySigmoidElement()
+DeepPolyExponentialElement::~DeepPolyExponentialElement()
 {
     freeMemoryIfNeeded();
 }
@@ -130,14 +130,14 @@ void DeepPolyExponentialElement::symbolicBoundInTermsOfPredecessor
           replace f_i with m * b_i + n
         */
 
-        // Symbolic bounds of the Exponential output in terms of the Sigmoid input
+        // Symbolic bounds of the Exponential output in terms of the Exponential input
         // coeffLb * b_i + lowerBias <= f_i <= coeffUb * b_i + upperBias
         double coeffLb = _symbolicLb[i];
         double coeffUb = _symbolicUb[i];
         double lowerBias = _symbolicLowerBias[i];
         double upperBias = _symbolicUpperBias[i];
 
-        // Substitute the Exponential input for the Sigmoid output
+        // Substitute the Exponential input for the Exponential output
         for ( unsigned j = 0; j < targetLayerSize; ++j )
         {
             // The symbolic lower- and upper- bounds of the j-th neuron in the
