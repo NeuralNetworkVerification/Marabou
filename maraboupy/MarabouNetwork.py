@@ -48,6 +48,7 @@ class MarabouNetwork:
         """
         self.numVars = 0
         self.equList = []
+        self.additionalEquList = [] # used to store user defined equations
         self.reluList = []
         self.sigmoidList = []
         self.maxList = []
@@ -60,6 +61,13 @@ class MarabouNetwork:
         self.inputVars = []
         self.outputVars = []
 
+    def clearProperty(self):
+        """Clear the lower bounds and upper bounds map, and the self.additionEquList
+        """
+        self.lowerBounds.clear()
+        self.upperBounds.clear()
+        self.additionalEquList.clear()
+
     def getNewVariable(self):
         """Function to create a new variable
 
@@ -71,13 +79,17 @@ class MarabouNetwork:
         self.numVars += 1
         return self.numVars - 1
 
-    def addEquation(self, x):
+    def addEquation(self, x, isProperty=False):
         """Function to add new equation to the network
 
         Args:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
+            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
         """
-        self.equList += [x]
+        if isProperty:
+            self.additionalEquList += [x]
+        else:
+            self.equList += [x]
 
     def setLowerBound(self, x, v):
         """Function to set lower bound for variable
@@ -175,7 +187,7 @@ class MarabouNetwork:
         """
         return x in self.upperBounds
 
-    def addEquality(self, vars, coeffs, scalar):
+    def addEquality(self, vars, coeffs, scalar, isProperty=False):
         """Function to add equality constraint to network
 
         .. math::
@@ -185,15 +197,16 @@ class MarabouNetwork:
             vars (list of int): Variable numbers
             coeffs (list of float): Coefficients
             scalar (float): Right hand side constant of equation
+            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
         """
         assert len(vars)==len(coeffs)
         e = MarabouUtils.Equation()
         for i in range(len(vars)):
             e.addAddend(coeffs[i], vars[i])
         e.setScalar(scalar)
-        self.addEquation(e)
+        self.addEquation(e, isProperty)
 
-    def addInequality(self, vars, coeffs, scalar):
+    def addInequality(self, vars, coeffs, scalar, isProperty=False):
         """Function to add inequality constraint to network
 
         .. math::
@@ -203,13 +216,14 @@ class MarabouNetwork:
             vars (list of int): Variable numbers
             coeffs (list of float): Coefficients
             scalar (float): Right hand side constant of inequality
+            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
         """
         assert len(vars)==len(coeffs)
         e = MarabouUtils.Equation(MarabouCore.Equation.LE)
         for i in range(len(vars)):
             e.addAddend(coeffs[i], vars[i])
         e.setScalar(scalar)
-        self.addEquation(e)
+        self.addEquation(e, isProperty)
 
     def getMarabouQuery(self):
         """Function to convert network into Marabou InputQuery
@@ -233,6 +247,14 @@ class MarabouNetwork:
                 i+=1
 
         for e in self.equList:
+            eq = MarabouCore.Equation(e.EquationType)
+            for (c, v) in e.addendList:
+                assert v < self.numVars
+                eq.addAddend(c, v)
+            eq.setScalar(e.scalar)
+            ipq.addEquation(eq)
+
+        for e in self.additionalEquList:
             eq = MarabouCore.Equation(e.EquationType)
             for (c, v) in e.addendList:
                 assert v < self.numVars
