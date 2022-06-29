@@ -15,6 +15,15 @@ NETWORK_FOLDER = "../../resources/onnx/"   # Folder for test networks
 np.random.seed(123)                        # Seed random numbers for repeatability
 NUM_RAND = 10                              # Default number of random test points per example
 
+
+def test_tanh():
+    """
+    Test network from SafeRL benchmark repo
+    Uses Add and MatMul layers with Tanh activation function.
+    """
+    filename =  "ckpt_200_with_pre_post_processing.onnx"
+    evaluateFile(filename)
+
 def test_gtsrb():
     """
     Test a convolutional network, exported from tensorflow

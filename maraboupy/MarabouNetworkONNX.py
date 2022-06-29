@@ -203,8 +203,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.addEquations(node, makeEquations)
         elif node.op_type == 'Relu': 
             self.reluEquations(node, makeEquations)
-        elif node.op_type == 'Sigmoid':
+        elif node.op_type == 'Sigmoid': 
             self.sigmoidEquations(node, makeEquations)
+        elif node.op_type == 'Tanh':
+            self.tanhEquations(node, makeEquations)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -677,8 +679,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
+        
         assert shape1[-1] == shape2[0]
+
         self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
+        
         if not makeEquations:
             return
             
@@ -930,6 +935,37 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.addSigmoid(inputVars[i], outputVars[i])
         for f in outputVars:
             self.setLowerBound(f, 0.0)
+            self.setUpperBound(f, 1.0)
+    
+    def tanhEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to Tanh
+
+        Args:
+            node (node): ONNX node representing the Tanh operation
+            makeEquations (bool): True if we need to create new variables and add new Tanhs
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName] 
+        if not makeEquations:
+            return
+
+        # Get variables
+        inputVars = self.varMap[inputName].reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        assert len(inputVars) == len(outputVars)
+        firstAffine = np.array([self.getNewVariable() for i in range(outputVars.size)])
+        sigmoidOutput = np.array([self.getNewVariable() for i in range(outputVars.size)])
+
+        # Generate equations
+        for i in range(len(inputVars)):  # tanh(x) = 2 * \sigmoid(2x) - 1
+            self.addEquality([inputVars[i], firstAffine[i]], [2.0, -1.0], 0.0, isProperty=False)
+            self.addSigmoid(firstAffine[i], sigmoidOutput[i])
+            self.addEquality([sigmoidOutput[i], outputVars[i]], [2.0, -1.0], 1.0, isProperty=False)
+        for f in outputVars:
+            self.setLowerBound(f, -1.0)
             self.setUpperBound(f, 1.0)
 
     def cleanShapes(self):
