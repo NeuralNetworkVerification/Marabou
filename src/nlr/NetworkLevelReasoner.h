@@ -178,6 +178,9 @@ public:
     */
     void dumpBounds();
 
+    void dumpBounds(const InputQuery &ipq);
+
+
     /*
       Get the size of the widest layer
     */

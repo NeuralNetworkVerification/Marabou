@@ -697,6 +697,15 @@ void NetworkLevelReasoner::dumpBounds()
         layer.second->dumpBounds();
 }
 
+void NetworkLevelReasoner::dumpBounds( const InputQuery &inputQuery )
+{
+    obtainCurrentBounds(inputQuery);
+
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->dumpBounds();
+}
+
+
 unsigned NetworkLevelReasoner::getMaxLayerSize() const
 {
     unsigned maxSize = 0;

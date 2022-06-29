@@ -706,7 +706,6 @@ bool InputQuery::constructNetworkLevelReasoner()
                       getNumberOfVariables() ).ascii() );
 
         _networkLevelReasoner = nlr;
-        nlr->dumpTopology();
     }
     else
     {
