@@ -205,7 +205,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.addEquations(node, makeEquations)
         elif node.op_type == 'Relu': 
             self.reluEquations(node, makeEquations)
-        elif node.op_type == 'Sigmoid': 
+        elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
         elif node.op_type == 'Tanh':
             self.tanhEquations(node, makeEquations)
@@ -683,7 +683,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         shape2 = self.shapeMap[inputName2]
         assert shape1[-1] == shape2[0]
         self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
-        
         if not makeEquations:
             return
             
