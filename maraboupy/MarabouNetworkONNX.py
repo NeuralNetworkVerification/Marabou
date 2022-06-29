@@ -681,9 +681,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
-        
         assert shape1[-1] == shape2[0]
-
         self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
         
         if not makeEquations:
