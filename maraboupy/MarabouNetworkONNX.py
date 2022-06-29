@@ -1,8 +1,10 @@
 '''
 Top contributors (to current version):
     - Kyle Julian
+    - Haoze Wu
     - Teruhiro Tagomori
-    
+    - Tobey Shim
+
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
 in the top-level source directory) and their institutional affiliations.
@@ -703,7 +705,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Broadcast first input to make sure the first input is a matrix
         if len(shape1) == 1:
             shape1 = [1] + shape1
-            input1 = input1.reshape(shape1)
+        input1 = input1.reshape(shape1)
 
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
         assert firstInputConstant or secondInputConstant
