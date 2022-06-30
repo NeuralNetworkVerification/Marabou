@@ -428,8 +428,8 @@ public:
     {
         // x2 = x0 + x1
         // x3 = x0 - x1
-        // x4 = simogid(x2) // x1 is fixed => x2 should be fixed...
-        // x5 = simoid(x3) // x2 is fixed, so x3 should be fixed...
+        // x4 = simogid(x2)
+        // x5 = simoid(x3)
         // x6 = 0.2 x4 + 0.5 x5
         // x7 = 0.4 x4 - 0.2 x5
         InputQuery inputQuery;
@@ -449,36 +449,33 @@ public:
         inputQuery.addEquation( equation1 );
 
         Equation equation2;
-        equation1.addAddend( 1.01, 0 );
-        equation1.addAddend( 0.04, 1 );
-        equation1.addAddend( -1, 3 );
-        equation1.setScalar( 2 );
+        equation2.addAddend( 1.01, 0 );
+        equation2.addAddend( 0.04, 1 );
+        equation2.addAddend( -1, 3 );
+        equation2.setScalar( 2 );
         inputQuery.addEquation( equation2 );
 
-        // x7 + x8 = 12
         Equation equation3;
-        equation2.addAddend( 0.8, 4 );
-        equation2.addAddend( 4.12, 5 );
-        equation2.addAddend( -1, 6 );
-        equation2.setScalar( -0.44 );
+        equation3.addAddend( 0.8, 4 );
+        equation3.addAddend( 4.12, 5 );
+        equation3.addAddend( -1, 6 );
+        equation3.setScalar( -0.44 );
         inputQuery.addEquation( equation3 );
 
-        // x7 + x8 = 12
         Equation equation4;
-        equation2.addAddend( 0.18, 4 );
-        equation2.addAddend( 0.17, 5 );
-        equation2.addAddend( -1, 7 );
-        equation2.setScalar( -0.341 );
+        equation4.addAddend( 0.18, 4 );
+        equation4.addAddend( 0.17, 5 );
+        equation4.addAddend( -1, 7 );
+        equation4.setScalar( -0.341 );
         inputQuery.addEquation( equation4 );
 
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint( 2, 4) );
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint( 3, 5) );
+        inputQuery.addTranscendentalConstraint( new SigmoidConstraint(2, 4) );
+        inputQuery.addTranscendentalConstraint( new SigmoidConstraint(3, 5) );
 
         InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // All equations and varaibles should have been eliminated
         TS_ASSERT_EQUALS( processed.getEquations().size(), 0U );
-        processed.dump();
         TS_ASSERT_EQUALS( processed.getTranscendentalConstraints().size(), 0U );
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }

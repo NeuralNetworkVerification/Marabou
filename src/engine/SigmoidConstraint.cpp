@@ -94,12 +94,13 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
         _statistics->incLongAttribute(
             Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    tightenLowerBound( variable, bound );
-
-    if ( variable == _f )
-      tightenLowerBound( _b, sigmoidInverse( bound ) );
-    else if ( variable == _b )
-      tightenLowerBound( _f, sigmoid( bound ) );
+    if ( tightenLowerBound( variable, bound ) )
+    {
+        if ( variable == _f )
+          tightenLowerBound( _b, sigmoidInverse( bound ) );
+        else if ( variable == _b )
+          tightenLowerBound( _f, sigmoid( bound ) );
+    }
 }
 
 void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -110,12 +111,13 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
         _statistics->incLongAttribute(
             Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    tightenUpperBound( variable, bound );
-
-    if ( variable == _f )
-      tightenUpperBound( _b, sigmoidInverse( bound ) );
-    else if ( variable == _b )
-      tightenUpperBound( _f, sigmoid( bound ) );
+    if ( tightenUpperBound( variable, bound ) )
+    {
+      if ( variable == _f )
+        tightenUpperBound( _b, sigmoidInverse( bound ) );
+      else if ( variable == _b )
+        tightenUpperBound( _f, sigmoid( bound ) );
+    }
 }
 
 bool SigmoidConstraint::participatingVariable( unsigned variable ) const
@@ -221,12 +223,21 @@ unsigned SigmoidConstraint::getF() const
 
 double SigmoidConstraint::sigmoid( double x )
 {
-  return 1 / ( 1 + std::exp( -x ) );
+  if ( x > GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+    return 1 - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+  else if ( x < -GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+    return GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+  else
+    return 1 / ( 1 + std::exp( -x ) );
 }
 
 double SigmoidConstraint::sigmoidInverse( double y )
 {
-    ASSERT( y != 1 );
+  if (FloatUtils::areEqual(y, 0))
+    return FloatUtils::negativeInfinity();
+  else if (FloatUtils::areEqual(y,1))
+    return FloatUtils::infinity();
+  else
     return log( y / ( 1 - y ) );
 }
 
