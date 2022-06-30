@@ -2,7 +2,7 @@
 /*! \file SigmoidConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -237,18 +237,18 @@ unsigned SigmoidConstraint::getF() const
     return _f;
 }
 
-double SigmoidConstraint::sigmoid( double x ) const
+double SigmoidConstraint::sigmoid( double x )
 {
-    return 1 / ( 1 + std::exp( -x ) );
+  return 1 / ( 1 + std::exp( -x ) );
 }
 
-double SigmoidConstraint::sigmoidInverse( double y ) const
+double SigmoidConstraint::sigmoidInverse( double y )
 {
     ASSERT( y != 1 );
     return log( y / ( 1 - y ) );
 }
 
-double SigmoidConstraint::sigmoidDerivative( double x ) const
+double SigmoidConstraint::sigmoidDerivative( double x )
 {
     return sigmoid( x ) * ( 1 - sigmoid( x ) );
 }
