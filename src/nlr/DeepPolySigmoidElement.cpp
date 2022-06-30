@@ -50,8 +50,8 @@ void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
         double sourceUb = predecessor->getUpperBound
           ( sourceIndex._neuron );
 
-        _ub[i] = SigmoidConstraint::sigmoid( sourceUb ) + GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
-        _lb[i] = SigmoidConstraint::sigmoid( sourceLb ) - GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+        _ub[i] = SigmoidConstraint::sigmoid( sourceUb );
+        _lb[i] = SigmoidConstraint::sigmoid( sourceLb );
 
         if ( sourceUb == sourceLb )
         {

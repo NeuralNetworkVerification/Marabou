@@ -65,7 +65,7 @@ const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
-const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 1e-11;
+const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 1e-6;
 
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;

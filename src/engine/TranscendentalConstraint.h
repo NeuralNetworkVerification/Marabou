@@ -202,6 +202,29 @@ protected:
         ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
                                      : _upperBounds[var] = value;
     }
+
+    /*
+      Method tighten the lower bound of *var* to *value*.
+    */
+    inline void tightenLowerBound( unsigned var, double value )
+    {
+      if ( _boundManager != nullptr )
+        _boundManager->setLowerBound( var, value );
+      else if ( !existsLowerBound( var ) || _lowerBounds[var] < value )
+        _lowerBounds[var] = value;
+    }
+
+    /*
+      Method sets the upper bound of *var* to *value*.
+    */
+    inline void tightenUpperBound( unsigned var, double value )
+    {
+      if ( _boundManager != nullptr )
+        _boundManager->setUpperBound( var, value );
+      else if ( !existsUpperBound( var ) || _upperBounds[var] > value )
+        _upperBounds[var] = value;
+    }
+
 };
 
 #endif // __TranscendentalConstraint_h__
