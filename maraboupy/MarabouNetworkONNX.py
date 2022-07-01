@@ -1,8 +1,10 @@
 '''
 Top contributors (to current version):
     - Kyle Julian
+    - Haoze Wu
     - Teruhiro Tagomori
-    
+    - Tobey Shim
+
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
 in the top-level source directory) and their institutional affiliations.
@@ -99,7 +101,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             # intermediate variables. This function reassigns variable numbering to match other parsers.
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
-        
+        else:
+            self.outputVars = self.varMap[self.outputName]
+
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
         
@@ -203,6 +207,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
+        elif node.op_type == 'Tanh':
+            self.tanhEquations(node, makeEquations)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -696,7 +702,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Broadcast first input to make sure the first input is a matrix
         if len(shape1) == 1:
             shape1 = [1] + shape1
-            input1 = input1.reshape(shape1)
+        input1 = input1.reshape(shape1)
 
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
         assert firstInputConstant or secondInputConstant
@@ -929,6 +935,37 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for f in outputVars:
             self.setLowerBound(f, 0.0)
             self.setUpperBound(f, 1.0)
+    
+    def tanhEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to Tanh
+
+        Args:
+            node (node): ONNX node representing the Tanh operation
+            makeEquations (bool): True if we need to create new variables and add new Tanhs
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName] 
+        if not makeEquations:
+            return
+
+        # Get variables
+        inputVars = self.varMap[inputName].reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        assert len(inputVars) == len(outputVars)
+        firstAffine = np.array([self.getNewVariable() for i in range(outputVars.size)])
+        sigmoidOutput = np.array([self.getNewVariable() for i in range(outputVars.size)])
+
+        # Generate equations
+        for i in range(len(inputVars)):  # tanh(x) = 2 * \sigmoid(2x) - 1
+            self.addEquality([inputVars[i], firstAffine[i]], [2.0, -1.0], 0.0, isProperty=False)
+            self.addSigmoid(firstAffine[i], sigmoidOutput[i])
+            self.addEquality([sigmoidOutput[i], outputVars[i]], [2.0, -1.0], 1.0, isProperty=False)
+        for f in outputVars:
+            self.setLowerBound(f, -1.0)
+            self.setUpperBound(f, 1.0)
 
     def cleanShapes(self):
         """Remove unused shapes
@@ -986,7 +1023,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for eq in self.equList:
             for i, (c,var) in enumerate(eq.addendList):
                 eq.addendList[i] = (c, self.reassignVariable(var, numInVars, outVars, newOutVars))
-                
+
+        # Adjust equation variables
+        for eq in self.additionalEquList:
+            for i, (c,var) in enumerate(eq.addendList):
+                eq.addendList[i] = (c, self.reassignVariable(var, numInVars, outVars, newOutVars))
+
         # Adjust relu list
         for i, variables in enumerate(self.reluList):
             self.reluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])

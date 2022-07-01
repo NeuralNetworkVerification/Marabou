@@ -193,6 +193,8 @@ public:
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 
+    static const double SIGMOID_CUTOFF_CONSTANT;
+
     /*
       Constraint fixing heuristics
     */
