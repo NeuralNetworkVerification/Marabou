@@ -47,9 +47,9 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
-#include "BoundManager.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
+#include "IBoundManager.h"
 #include "ITableau.h"
 #include "LinearExpression.h"
 #include "List.h"
@@ -64,7 +64,7 @@
 #include "context/context.h"
 
 class Equation;
-class IConstraintBoundTightener;
+class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
@@ -291,18 +291,6 @@ public:
     */
     virtual String serializeToString() const = 0;
 
-    inline void registerTableau( ITableau *tableau )
-    {
-        _tableau = tableau;
-    }
-
-    /*
-      Register a constraint bound tightener. If a tightener is registered,
-      this piecewise linear constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
-
     /*
       Return true if and only if this piecewise linear constraint supports
       the polarity metric
@@ -345,16 +333,32 @@ public:
         _gurobi = gurobi;
     }
 
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
+    /*
+      Method to set PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
+     */
+    void setPhaseStatus( PhaseStatus phaseStatus );
+
+    /*
+      Method to get PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior.
+    */
+    PhaseStatus getPhaseStatus() const;
+
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
     /**********************************************************************/
 
     /*
       Register a bound manager. If a bound manager is registered,
-      this piecewise linear constraint will inform the tightener whenever
+      the piecewise linear constraint will inform the manager whenever
       it discovers a tighter (entailed) bound.
     */
-    void registerBoundManager( BoundManager *boundManager );
+    void registerBoundManager( IBoundManager *boundManager );
 
     /*
        Register context object. Necessary for lazy backtracking features - such
@@ -456,7 +460,9 @@ protected:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
-    BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
 
@@ -477,10 +483,6 @@ protected:
       We pick the PL constraint with the highest score to branch.
      */
     double _score;
-
-    ITableau *_tableau;
-
-    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection
@@ -509,18 +511,6 @@ protected:
        Check whether a case is marked as infeasible under current search prefix.
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
-
-    /*
-       Method to set PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
-     */
-    void setPhaseStatus( PhaseStatus phaseStatus );
-
-    /*
-       Method to get PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior.
-    */
-    PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */

@@ -50,9 +50,12 @@ DnCWorker::DnCWorker( WorkerQueue *workload, std::shared_ptr<IEngine> engine,
     setQueryDivider( divideStrategy );
 
     // Obtain the current state of the engine
-    _initialState = std::make_shared<EngineState>();
-    _engine->storeState( *_initialState,
-                         TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
+    if ( !_parallelDeepSoI )
+    {
+        _initialState = std::make_shared<EngineState>();
+        _engine->storeState( *_initialState,
+                             TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
+    }
 }
 
 void DnCWorker::setQueryDivider( SnCDivideStrategy divideStrategy )
@@ -85,7 +88,8 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
         // Reset the engine state
-        _engine->restoreState( *_initialState );
+        if ( !_parallelDeepSoI )
+            _engine->restoreState( *_initialState );
         _engine->reset();
 
         // TODO: each worker is going to keep a map from *CaseSplit to an

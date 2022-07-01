@@ -30,17 +30,17 @@ def test_abs_constraint():
 
     network = loadNetwork(filename)
 
-    disj1 = MarabouCore.Equation();
+    disj1 = MarabouCore.Equation()
 
     # Replace output variables with their's absolute value
     for out in [0, 2]:
         abs_out = network.getNewVariable()
-        network.addAbsConstraint(network.outputVars[0][out], abs_out)
-        network.outputVars[0][out] = abs_out
+        network.addAbsConstraint(network.outputVars[0][0][out], abs_out)
+        network.outputVars[0][0][out] = abs_out
 
     abs_inp = network.getNewVariable()
-    network.outputVars = np.array([list(network.outputVars[0])+[abs_inp]]) 
-    network.addAbsConstraint(network.inputVars[0][0], abs_inp)
+    network.outputVars = np.array([list(network.outputVars[0][0])+[abs_inp]])
+    network.addAbsConstraint(network.inputVars[0][0][0], abs_inp)
 
     evaluateNetwork(network, testInputs, testOutputs)
 
@@ -55,16 +55,16 @@ def test_disjunction_constraint():
 
     test_out = network.getNewVariable()
 
-    for var in network.inputVars[0]:
+    for var in network.inputVars[0][0]:
         # eq1: 1 * var = 0
-        eq1 = MarabouCore.Equation(MarabouCore.Equation.EQ);
-        eq1.addAddend(1, var);
-        eq1.setScalar(0);
+        eq1 = MarabouCore.Equation(MarabouCore.Equation.EQ)
+        eq1.addAddend(1, var)
+        eq1.setScalar(0)
 
         # eq2: 1 * var = 1
-        eq2 = MarabouCore.Equation(MarabouCore.Equation.EQ);
-        eq2.addAddend(1, var);
-        eq2.setScalar(1);
+        eq2 = MarabouCore.Equation(MarabouCore.Equation.EQ)
+        eq2.addAddend(1, var)
+        eq2.setScalar(1)
 
         # ( var = 0) \/ (var = 1)
         disjunction = [[eq1], [eq2]]
@@ -76,7 +76,7 @@ def test_disjunction_constraint():
 
     exitCode1, vals1, stats1 = network.solve()
 
-    for var in network.inputVars[0]:
+    for var in network.inputVars[0][0]:
         assert(abs(vals1[var] - 1) < 0.0000001 or abs(vals1[var]) < 0.0000001)
 
 def test_sigmoid_constraint():
@@ -103,7 +103,7 @@ def test_batch_norm():
     options = Marabou.createOptions(verbosity = 0)
 
     inputVars = network.inputVars[0][0]
-    outputVars = network.outputVars[0]
+    outputVars = network.outputVars[0][0]
 
     network.setLowerBound(inputVars[0], 1)
     network.setUpperBound(inputVars[0], 1)
@@ -143,7 +143,7 @@ def test_local_robustness_sat():
     # should be not local robustness
     assert(len(vals) > 0)
 
-def test_local_robustness_unsat_of_onnx():
+def  test_local_robustness_unsat_of_onnx():
     """
     Tests local robustness of an onnx network. (UNSAT)
     """
@@ -223,8 +223,6 @@ def evaluateNetwork(network, testInputs, testOutputs):
     """
 
     for testInput, testOutput in zip(testInputs, testOutputs):
-        marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "").flatten()
-
-    assert max(abs(marabouEval - testOutput)) < TOL
-    return network
+        marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "")[0].flatten()
+        assert max(abs(marabouEval - testOutput)) < TOL
 

@@ -16,7 +16,7 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
-#include "BoundManager.h"
+#include "IBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
@@ -39,7 +39,7 @@ class TableauState;
 class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
-    Tableau( BoundManager &boundManager );
+    Tableau( IBoundManager &boundManager );
     ~Tableau();
 
     /*
@@ -48,11 +48,6 @@ public:
       m: number of constraints (rows)
     */
     void setDimensions( unsigned m, unsigned n );
-
-    /*
-      Allocate space for the bound arrays.
-    */
-    void setBoundDimension( unsigned n );
 
     /*
       Initialize the constraint matrix
@@ -156,27 +151,25 @@ public:
     /*
       Get the lower/upper bounds for a variable.
     */
-    double getLowerBound( unsigned variable ) const;
-    double getUpperBound( unsigned variable ) const;
+    inline double getLowerBound( unsigned variable ) const
+    {
+        return _lowerBounds[variable];
+    }
+
+    inline double getUpperBound( unsigned variable ) const
+    {
+        return _upperBounds[variable];
+    }
 
     /*
-      Get all lower and upper bounds.
-    */
-    const double *getLowerBounds() const;
-    const double *getUpperBounds() const;
-
-    BoundManager &getBoundManager() const { return _boundManager; }
+       Update pointers to lower/upper bounds in BoundManager
+     */
+    void setBoundsPointers( const double *lower, const double *upper );
 
     /*
-      Recomputes bound valid status for all variables.
-    */
-    void checkBoundsValid();
-
-    /*
-      Sets bound valid flag to false if bounds are invalid
-      on the given variable.
-    */
-    void checkBoundsValid( unsigned variable );
+      Get BoundManager reference
+     */
+    IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*
       Returns whether any variable's bounds are invalid.
@@ -410,6 +403,7 @@ public:
       variable or status of a basic variable after a lower/upper bound is
       updated.
     */
+    void updateVariablesToComplyWithBounds();
     void updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value );
     void updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value );
 
@@ -474,12 +468,7 @@ public:
        data. After backtracking assignments satisfy bounds, but the
        basic/non-basic status may be out of date, so it is recomputed.
      */
-    void postContextPopHook() { computeBasicStatus(); };
-
-    /*
-       Enables use of BoundManager to store Tableau bounds
-     */
-    void enableBoundManager() { _useBoundManager = true; };
+    void postContextPopHook();
 
 private:
     /*
@@ -497,14 +486,13 @@ private:
     /*
        BoundManager object stores bounds of all variables.
      */
-    BoundManager &_boundManager;
+    IBoundManager &_boundManager;
 
     /*
-       Flag to indicate whether the BoundManager should be used to manage
-       bounds. Temporary flag to enable updating class signatures without using
-       the features until they are ready
+       Direct pointers to _boundManager arrays to avoid multiple dereferencing.
      */
-    bool _useBoundManager; 
+    const double * _lowerBounds;
+    const double * _upperBounds;
 
     /*
       The dimensions of matrix A
@@ -582,17 +570,6 @@ private:
       The assignment of the non basic variables.
     */
     double *_nonBasicAssignment;
-
-    /*
-      Upper and lower bounds for all variables
-    */
-    double *_lowerBounds;
-    double *_upperBounds;
-
-    /*
-      Whether all variables have valid bounds (l <= u).
-    */
-    bool _boundsValid;
 
     /*
       The current assignment for the basic variables

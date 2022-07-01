@@ -149,8 +149,9 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr && existsLowerBound( variable ) &&
+         !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+      return;
 
     setLowerBound( variable, bound );
 
@@ -162,8 +163,9 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr && existsUpperBound( variable ) &&
+         !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+      return;
 
     setUpperBound( variable, bound );
 

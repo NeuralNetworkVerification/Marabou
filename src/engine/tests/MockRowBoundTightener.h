@@ -70,6 +70,7 @@ public:
     void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
     void setStatistics( Statistics */* statistics */ ) {}
     void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ ) {}
+    void setBoundsPointers( const double */* lower */, const double */* upper */ ) {}
 };
 
 #endif // __MockRowBoundTightener_h__

@@ -16,7 +16,7 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
-#include "BoundManager.h"
+#include "MockBoundManager.h"
 #include "context/context.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -49,7 +49,7 @@ public:
         nextLinearlyDependentResult = false;
 
         CVC4::context::Context ctx;
-        _boundManager = new BoundManager( ctx );
+        _boundManager = new MockBoundManager();
     }
 
     ~MockTableau()
@@ -136,6 +136,8 @@ public:
 
         lastBtranInput = new double[m];
         nextBtranOutput = new double[m];
+
+        _boundManager->initialize( m + n );
     }
 
     void setBoundDimension( unsigned n )
@@ -203,23 +205,27 @@ public:
     Map<unsigned, double> lowerBounds;
     double getLowerBound( unsigned variable ) const
     {
+        //return _boundManager->getLowerBound( variable );
         return lowerBounds[variable];
     }
 
     void setLowerBound( unsigned variable, double value )
     {
         lowerBounds[variable] = value;
+        _boundManager->setLowerBound( variable, value );
     }
 
     Map<unsigned, double> upperBounds;
     double getUpperBound( unsigned variable ) const
     {
+        //return _boundManager->getLowerBound( variable );
         return upperBounds[variable];
     }
 
     void setUpperBound( unsigned variable, double value )
     {
         upperBounds[variable] = value;
+        _boundManager->setUpperBound( variable, value );
     }
 
     const double *getLowerBounds() const
@@ -513,6 +519,10 @@ public:
         tightenedUpperBounds[variable] = value;
     }
 
+    void setBoundsPointers( const double */*lower*/, const double */*upper*/ )
+    {
+    }
+
     void applySplit( const PiecewiseLinearCaseSplit &/* split */)
     {
     }
@@ -631,10 +641,30 @@ public:
 
     void postContextPopHook() {}
 
-    BoundManager *_boundManager;
-    BoundManager &getBoundManager() const
+    IBoundManager *_boundManager;
+    IBoundManager &getBoundManager() const
     {
         return *_boundManager;
+    }
+
+    void notifyLowerBound( unsigned /*variable*/, double /*bound*/ )
+    {
+    }
+
+    void notifyUpperBound( unsigned /*variable*/, double /*bound*/ )
+    {
+    }
+
+    void updateVariablesToComplyWithBounds()
+    {
+    }
+
+    void updateVariableToComplyWithLowerBoundUpdate( unsigned /*variable*/, double /*value*/ )
+    {
+    }
+
+    void updateVariableToComplyWithUpperBoundUpdate( unsigned /*variable*/, double /*value*/ )
+    {
     }
 };
 

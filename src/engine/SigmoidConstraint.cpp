@@ -2,7 +2,7 @@
 /*! \file SigmoidConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -14,7 +14,6 @@
 
 #include "SigmoidConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "TranscendentalConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
@@ -92,19 +91,15 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
-
-    setLowerBound( variable, bound );
-
-    if ( _constraintBoundTightener )
+    if ( tightenLowerBound( variable, bound ) )
     {
         if ( variable == _f )
-            _constraintBoundTightener->registerTighterLowerBound( _b, sigmoidInverse(bound) );
+          tightenLowerBound( _b, sigmoidInverse( bound ) );
         else if ( variable == _b )
-            _constraintBoundTightener->registerTighterLowerBound( _f, sigmoid(bound) );
+          tightenLowerBound( _f, sigmoid( bound ) );
     }
 }
 
@@ -113,19 +108,15 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
     ASSERT( variable == _b || variable == _f );
 
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-        return;
-
-    setUpperBound( variable, bound );
-
-    if ( _constraintBoundTightener )
+    if ( tightenUpperBound( variable, bound ) )
     {
-        if ( variable == _f )
-            _constraintBoundTightener->registerTighterUpperBound( _b, sigmoidInverse(bound) );
-        else if ( variable == _b )
-            _constraintBoundTightener->registerTighterUpperBound( _f, sigmoid(bound) );
+      if ( variable == _f )
+        tightenUpperBound( _b, sigmoidInverse( bound ) );
+      else if ( variable == _b )
+        tightenUpperBound( _f, sigmoid( bound ) );
     }
 }
 
@@ -230,18 +221,27 @@ unsigned SigmoidConstraint::getF() const
     return _f;
 }
 
-double SigmoidConstraint::sigmoid( double x ) const
+double SigmoidConstraint::sigmoid( double x )
 {
+  if ( x > GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+    return 1 - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+  else if ( x < -GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+    return GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+  else
     return 1 / ( 1 + std::exp( -x ) );
 }
 
-double SigmoidConstraint::sigmoidInverse( double y ) const
+double SigmoidConstraint::sigmoidInverse( double y )
 {
-    ASSERT( y != 1 );
+  if (FloatUtils::areEqual(y, 0))
+    return FloatUtils::negativeInfinity();
+  else if (FloatUtils::areEqual(y,1))
+    return FloatUtils::infinity();
+  else
     return log( y / ( 1 - y ) );
 }
 
-double SigmoidConstraint::sigmoidDerivative( double x ) const
+double SigmoidConstraint::sigmoidDerivative( double x )
 {
     return sigmoid( x ) * ( 1 - sigmoid( x ) );
 }

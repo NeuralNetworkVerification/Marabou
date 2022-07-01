@@ -24,39 +24,40 @@
 class AutoTableau
 {
 public:
-	AutoTableau( BoundManager &boundManager )
-	{
-		_tableau = T::createTableau( boundManager );
-	}
+    AutoTableau( IBoundManager &boundManager )
+    {
+        _tableau = T::createTableau( boundManager );
+        boundManager.registerTableau( _tableau );
+    }
 
-	~AutoTableau()
-	{
-		T::discardTableau( _tableau );
-		_tableau = 0;
-	}
+    ~AutoTableau()
+    {
+        T::discardTableau( _tableau );
+        _tableau = 0;
+    }
 
-	operator ITableau &()
-	{
-		return *_tableau;
-	}
+    operator ITableau &()
+    {
+        return *_tableau;
+    }
 
-	operator ITableau *()
-	{
-		return _tableau;
-	}
+    operator ITableau *()
+    {
+        return _tableau;
+    }
 
-	ITableau *operator->()
-	{
-		return _tableau;
-	}
+    ITableau *operator->()
+    {
+        return _tableau;
+    }
 
-	const ITableau *operator->() const
-	{
-		return _tableau;
-	}
+    const ITableau *operator->() const
+    {
+        return _tableau;
+    }
 
 private:
-	ITableau *_tableau;
+    ITableau *_tableau;
 };
 
 #endif // __AutoTableau_h__
