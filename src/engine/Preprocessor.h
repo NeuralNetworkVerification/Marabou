@@ -33,7 +33,7 @@ public:
     /*
       Main method of this class: preprocess the input query
     */
-    InputQuery preprocess( const InputQuery &query, bool attemptVariableElimination = true );
+    std::unique_ptr<InputQuery> preprocess( const InputQuery &query, bool attemptVariableElimination = true );
 
     /*
       Have the preprocessor start reporting statistics.
@@ -140,7 +140,7 @@ private:
     /*
       The preprocessed query
     */
-    InputQuery _preprocessed;
+    std::unique_ptr<InputQuery> _preprocessed;
 
     /*
       Statistics collection

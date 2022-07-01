@@ -43,15 +43,15 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
     Args:
         filename (str): Path to tensorflow network
         inputNames (list of str, optional): List of operation names corresponding to inputs
-        outputName (str, optional): Name of operation corresponding to output
+        outputNames (list of str, optional): List of operation names corresponding to outputs
         modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                             Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                             created from either tensorflow versions 1.X or 2.X respectively.
         savedModelTags (list of str, optional): If loading a SavedModel, the user must specify tags used, default is []
     """
-    def __init__(self, filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
+    def __init__(self, filename, inputNames=None, outputNames=None, modelType="frozen", savedModelTags=[]):
         super().__init__()
-        self.readTF(filename, inputNames, outputName, modelType, savedModelTags)
+        self.readTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
     def clear(self):
         """Reset values to represent empty network
@@ -61,17 +61,17 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.varMap = dict()
         self.constantMap = dict()
         self.inputOps = None
-        self.outputOp = None
-        self.outputShape = None
+        self.outputOps = None
+        self.outputShapes = None
         self.sess = None
 
-    def readTF(self, filename, inputNames, outputName, modelType, savedModelTags):
+    def readTF(self, filename, inputNames, outputNames, modelType, savedModelTags):
         """Read a tensorflow file to create a MarabouNetworkTF object
 
         Args:
             filename (str): Path to tensorflow network
             inputNames (list of str, optional): List of operation names corresponding to inputs
-            outputName (str, optional): Name of operation corresponding to output
+            outputNames (list of str, optional): List of operation names corresponding to outputs
             modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                                 Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                                 created from either tensorflow versions 1.X or 2.X respectively.
@@ -86,32 +86,32 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(graph_def, name = "")
             self.sess = tf.compat.v1.Session(graph=graph)
-            
+
         elif modelType == "savedModel_v1":
             # Use default tag for savedModel format for tensorflow 1.X
             if not savedModelTags:
                 savedModelTags = ["serve"]
-                
+
             # Read SavedModel format created by tensorflow version 1.X
             sess = tf.compat.v1.Session()
             tf.compat.v1.saved_model.loader.load(sess, savedModelTags, filename)
 
-            # Simplify graph using outputName, which must be specified for SavedModel
-            simp_graph_def = graph_util.convert_variables_to_constants(sess,sess.graph.as_graph_def(),[outputName])
+            # Simplify graph using outputNames, which must be specified for SavedModel
+            simp_graph_def = graph_util.convert_variables_to_constants(sess,sess.graph.as_graph_def(),outputNames)
             with tf.Graph().as_default() as graph:
                 tf.import_graph_def(simp_graph_def, name = "")
             self.sess = tf.compat.v1.Session(graph=graph)
-            
+
         elif modelType == "savedModel_v2":
             # Use default tag for savedModel format for tensorflow 2.X
             if not savedModelTags:
                 savedModelTags = ["serving_default"]
-                
+
             # Read SavedModel format created by tensorflow version 2.X
             sess = tf.compat.v1.Session()
             loaded = tf.saved_model.load(filename)
             model = loaded.signatures[savedModelTags[0]]
-                
+
             # Create a concrete function from model
             full_model = tf.function(lambda x: model(x))
             full_model = full_model.get_concrete_function(tf.TensorSpec(model.inputs[0].shape, model.inputs[0].dtype))
@@ -119,7 +119,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             # Get frozen ConcreteFunction
             frozen_func = convert_variables_to_constants_v2(full_model)
             self.sess = tf.compat.v1.Session(graph=frozen_func.graph)
-       
+
         else:
             err_msg = "Unknown input to modelType.\n"
             err_msg += "Please use either 'frozen', 'savedModel_v1', or 'savedModel_v2'"
@@ -129,19 +129,27 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         valid_names = [op.node_def.name for op in self.sess.graph.get_operations() if self.isVariable(op)]
 
         # Get output operation if outputName is given
-        if outputName:
-            if outputName not in valid_names:
-                err_msg = "The given output name %s is not an operation in the network.\n" % outputName
-                err_msg += "Valid names are\n" + ", ".join(valid_names)
-                raise RuntimeError(err_msg)
-            outputOp = self.sess.graph.get_operation_by_name(outputName)
+        if outputNames:
+            if isinstance(outputNames, str):
+                outputNames = [outputNames]
+
+            outputOps = []
+            for o in outputNames:
+                if o not in valid_names:
+                    err_msg = "The given output name %s is not an operation in the network.\n" % o
+                    err_msg += "Valid names are\n" + ", ".join(valid_names)
+                    raise RuntimeError(err_msg)
+                outputOps.append(self.sess.graph.get_operation_by_name(o))
         # By default, assume that the last operation is the output if output not specified
-        else: 
-            outputOp = self.sess.graph.get_operations()[-1]
-            
+        else:
+            if modelType == "savedModel_v2":
+                outputOps = [output.op for output in self.sess.graph.outputs]
+            else:
+                outputOps = [self.sess.graph.get_operations()[-1]]
+
         # Get input operations if inputNames is given
+        inputOps = []
         if inputNames:
-            inputOps = []
             for i in inputNames:
                 if i not in valid_names:
                     err_msg = "The input name %s is not an operation in the network.\n" % i
@@ -149,34 +157,40 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
                     raise RuntimeError(err_msg)
                 inputOps.append(self.sess.graph.get_operation_by_name(i))
         # By default, use Placeholders that contribute to output operation as input operations       
-        else: 
-            inputOps = self.findPlaceholders(outputOp, [])
-            
+        else:
+            for o in outputOps:
+                placeholders = self.findPlaceholders(o, [])
+                for i in placeholders:
+                    if i not in inputOps:
+                        inputOps.append(i)
+
         # Input operation should not equal output operation
-        if outputOp in inputOps:
-            raise RuntimeError("%s cannot be used as both input and output" % (outputOp.node_def.name))
-            
+        for o in outputOps:
+            if o in inputOps:
+                raise RuntimeError("%s cannot be used as both input and output" % (o.node_def.name))
+
         self.setInputOps(inputOps)
-        self.setOutputOp(outputOp)
+        self.setOutputOps(outputOps)
 
         # Generate equations corresponding to network
         self.foundnInputFlags = 0
-        self.buildEquations(self.outputOp)
-        
+        for op in self.outputOps:
+            self.buildEquations(op)
+
         # If we did not use all of the input variables, throw an error and tell the user which inputs were used
         if self.foundnInputFlags < len(inputOps):
             good_inputs = []
             for iop in inputOps:
                 if iop in self.madeGraphEquations:
                     good_inputs.append(iop.node_def.name)
-            err_msg = "All given inputs are part of the graph, but not all inputs contributed to the output %s\n"%outputName
+            err_msg = "All given inputs are part of the graph, but not all inputs contributed to one of the outputs %s\n"%outputNames
             err_msg += "Please use only these inputs for the inputName list:\n"
             err_msg += "['" + "', '".join(good_inputs) + "']"
             raise RuntimeError(err_msg)
-            
+
         # Set output variables
-        self.outputVars = self.varMap[self.outputOp].reshape(self.outputShape)
-        
+        self.outputVars = [self.varMap[outputOp].reshape(self.outputShapes[outputOp]) for outputOp in self.outputOps]
+
         # This function changes all of the variables assignments so that the output variables
         # come immediately after input variables (Marabou convention).
         # This feature is optional, and can be disabled by commenting this line out
@@ -223,19 +237,21 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.dummyFeed[op.outputs[0]] = np.zeros(self.inputVars[-1].shape)
         self.inputOps = ops
 
-    def setOutputOp(self, op):
-        """Function to set output operation
+    def setOutputOps(self, ops):
+        """Function to set output operations
 
         Args:
-            op: (tf.op) representing output operation
+            ops: (list of tf.op) list representing output operations
 
         :meta private:
         """
-        shape = op.outputs[0].shape.as_list()
-        if shape[0] == None:
-            shape[0] = 1
-        self.outputShape = shape
-        self.outputOp = op
+        self.outputShapes = {}
+        for op in ops:
+            shape = op.outputs[0].shape.as_list()
+            if shape[0] == None:
+                shape[0] = 1
+            self.outputShapes[op] = shape
+        self.outputOps = ops
 
     def makeNewVariables(self, x):
         """Function to find variables corresponding to operation
@@ -405,7 +421,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         :meta private:
         """
         # If the given operation is the output operation, don't add any scalars
-        if op == self.outputOp:
+        if op in self.outputOps:
             return np.zeros(outputVars.shape), 1, 1
             
         # Look trhough the graph to find operations where the output of given operation is an input
@@ -837,7 +853,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         :meta private:
         """
-        outVars = self.outputVars.flatten()
+        outVars = np.concatenate([outputVars.flatten() for outputVars in self.outputVars])
         numInVars = np.sum([inVar.size for inVar in self.inputVars])
         numOutVars = outVars.size
         newOutVars = np.array(range(numInVars,numInVars+numOutVars))
@@ -879,8 +895,12 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         self.upperBounds = newUpperBounds
 
         # Assign output variables to the new array
-        self.outputVars = newOutVars.reshape(self.outputShape)
-        self.varMap[self.outputOp] = self.outputVars 
+        self.outputVars = []
+        for outputOp in self.outputOps:
+            size = np.prod(self.outputShapes[outputOp])
+            self.outputVars.append(newOutVars[:size].reshape(self.outputShapes[outputOp]))
+            self.varMap[outputOp] = self.outputVars[-1]
+            newOutVars = newOutVars[size:]
         
     def makeEquations(self, op):
         """Function to generate equations corresponding to given operation
@@ -918,7 +938,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
 
         # If we've recursed to find a Placeholder operation, this operation needs to be added the inputName list
         elif op.node_def.op == 'Placeholder':
-            raise RuntimeError("The output %s depends on placeholder %s.\nPlease add '%s' to the inputName list." % (self.outputOp.node_def.name, op.node_def.name, op.node_def.name))
+            raise RuntimeError("One of the outputs in %s depends on placeholder %s.\nPlease add '%s' to the inputName list." % ([self.outputOps[i].node_def.name for i in range(len(self.outputOps))], op.node_def.name, op.node_def.name))
         else:
             raise NotImplementedError("Operation %s not implemented" % (op.node_def.op))
 
@@ -963,7 +983,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             inputValues: (list of np arrays) representing inputs to network
 
         Returns:
-            outputValues: (np array) representing output of network
+            outputValues: (list of np arrays) representing output of network
         """
         if len(inputValues) != len(self.inputOps):
             raise RuntimeError("Bad input given. Please provide a list of %d np arrays"%len(self.inputOps))
@@ -980,7 +1000,7 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         # Evaluate network
         inputNames = [o.outputs[0] for o in self.inputOps]
         feed_dict = dict(zip(inputNames, inReshaped))
-        out = self.sess.run(self.outputOp.outputs[0], feed_dict=feed_dict)
+        out = [self.sess.run(outputOp.outputs[0], feed_dict=feed_dict) for outputOp in self.outputOps]
         
         # Make sure to return output in correct shape
-        return out.reshape(self.varMap[self.outputOp].shape)
+        return [out[i].reshape(self.varMap[outputOp].shape) for i, outputOp in enumerate(self.outputOps)]

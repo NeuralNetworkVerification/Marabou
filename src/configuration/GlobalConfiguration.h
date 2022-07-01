@@ -48,6 +48,7 @@ public:
 
     // How often should the main loop print statistics?
     static const unsigned STATISTICS_PRINTING_FREQUENCY;
+    static const unsigned STATISTICS_PRINTING_FREQUENCY_GUROBI;
 
     // Tolerance when checking whether the value computed for a basic variable is out of bounds
     static const double BOUND_COMPARISON_ADDITIVE_TOLERANCE;
@@ -160,11 +161,8 @@ public:
     // PSE's Gamma function's update tolerance
     static const double PSE_GAMMA_UPDATE_TOLERANCE;
 
-    // The tolerance for checking whether f = Relu( b )
-    static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
-
-    // The tolerance for checking whether f = Abs( b )
-    static const double ABS_CONSTRAINT_COMPARISON_TOLERANCE;
+    // The tolerance for checking whether f = Constraint( b ), Constraint \in { ReLU, ABS, Sign}
+    static const double CONSTRAINT_COMPARISON_TOLERANCE;
 
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
@@ -194,6 +192,8 @@ public:
 
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+
+    static const double SIGMOID_CUTOFF_CONSTANT;
 
     /*
       Constraint fixing heuristics

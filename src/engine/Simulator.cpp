@@ -56,7 +56,7 @@ void Simulator::storeOriginalQuery( const InputQuery &inputQuery )
         }
     }
 
-    _originalQuery = Preprocessor().preprocess( _originalQuery, false );
+    _originalQuery = *( Preprocessor().preprocess( _originalQuery, false ) );
 
     if ( _originalQuery.countInfiniteBounds() != 0 )
         throw MarabouError( MarabouError::SIMULATOR_ERROR, "Preprocessed query has infinite bounds" );
@@ -86,7 +86,7 @@ void Simulator::runSingleSimulation()
     Preprocessor preprocessor;
 
     // If we set elimination to true, the PL constraints will be removed
-    query = preprocessor.preprocess( query, false );
+    query = *( preprocessor.preprocess( query, false ) );
 
     // Extract the result
     Simulator::Result result;

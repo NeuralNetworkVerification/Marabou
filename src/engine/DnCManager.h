@@ -158,7 +158,7 @@ private:
     /*
       True if running parallelDeepSoI mode and false if running SnC mode.
     */
-    bool _runPortfolio;
+    bool _runParallelDeepSoI;
 
     /*
       The strategy for dividing a query

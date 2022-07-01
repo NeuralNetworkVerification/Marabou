@@ -17,7 +17,6 @@
 
 #include "Engine.h"
 #include "InputQuery.h"
-#include "MockConstraintBoundTightenerFactory.h"
 #include "MockConstraintMatrixAnalyzerFactory.h"
 #include "MockCostFunctionManagerFactory.h"
 #include "MockErrno.h"
@@ -34,7 +33,6 @@ class MockForEngine :
     public MockTableauFactory,
     public MockProjectedSteepestEdgeRuleFactory,
     public MockRowBoundTightenerFactory,
-    public MockConstraintBoundTightenerFactory,
     public MockCostFunctionManagerFactory,
     public MockConstraintMatrixAnalyzerFactory
 {
@@ -48,7 +46,6 @@ public:
     MockTableau *tableau;
     MockCostFunctionManager *costFunctionManager;
     MockRowBoundTightener *rowTightener;
-    MockConstraintBoundTightener *constraintTightener;
     MockConstraintMatrixAnalyzer *constraintMatrixAnalyzer;
 
     void setUp()
@@ -58,7 +55,6 @@ public:
         tableau = &( mock->mockTableau );
         costFunctionManager = &( mock->mockCostFunctionManager );
         rowTightener = &( mock->mockRowBoundTightener );
-        constraintTightener = &( mock->mockConstraintBoundTightener );
         constraintMatrixAnalyzer = &( mock->mockConstraintMatrixAnalyzer );
 
         Options::get()->setString( Options::LP_SOLVER, "native" );
@@ -145,9 +141,8 @@ public:
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->setDimensionsWasCalled );
 
-        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 2U );
+        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 1U);
         TS_ASSERT_EQUALS( *( tableau->lastResizeWatchers.begin() ), rowTightener );
-        TS_ASSERT_EQUALS( *( tableau->lastResizeWatchers.rbegin() ), constraintTightener );
 
         TS_ASSERT_EQUALS( tableau->lastCostFunctionManager, costFunctionManager );
 

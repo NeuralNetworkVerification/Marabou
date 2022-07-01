@@ -77,12 +77,22 @@ public:
         return _container.data();
     }
 
+    const T *data() const
+    {
+        return _container.data();
+    }
+
     T get( int index ) const
     {
         return _container.at( index );
     }
 
     T &operator[]( int index )
+    {
+        return _container[index];
+    }
+
+    const T &operator[]( int index ) const
     {
         return _container[index];
     }

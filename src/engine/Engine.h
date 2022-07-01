@@ -16,7 +16,6 @@
 #ifndef __Engine_h__
 #define __Engine_h__
 
-#include "AutoConstraintBoundTightener.h"
 #include "AutoCostFunctionManager.h"
 #include "AutoProjectedSteepestEdge.h"
 #include "AutoRowBoundTightener.h"
@@ -148,9 +147,10 @@ public:
     void applySplit( const PiecewiseLinearCaseSplit &split );
 
     /*
-      Hook invoked after context pop to update context independent data.
+      Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
-    void postContextPopHook() { _tableau->postContextPopHook(); };
+    void postContextPopHook();
+    void preContextPushHook();
 
     /*
       Reset the state of the engine, before solving a new query
@@ -207,6 +207,11 @@ public:
        Register initial split when in SnC mode
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
+
+    /*
+       Apply bound tightenings stored in the bound manager.
+     */
+    void applyBoundTightenings();
 
     /*
       Apply all bound tightenings (row and matrix-based) in
@@ -289,7 +294,7 @@ private:
     /*
       Preprocessed InputQuery
     */
-    InputQuery _preprocessedQuery;
+    std::unique_ptr<InputQuery> _preprocessedQuery;
 
     /*
       Pivot selection strategies.
@@ -364,12 +369,6 @@ private:
       A code indicating how the run terminated.
     */
     ExitCode _exitCode;
-
-    /*
-      An object in charge of managing bound tightenings
-      proposed by the PiecewiseLinearConstriants.
-    */
-    AutoConstraintBoundTightener _constraintBoundTightener;
 
     /*
       The number of visited states when we performed the previous
@@ -458,6 +457,11 @@ private:
       Query Identifier
      */
     String _queryId;
+
+    /*
+      Frequency to print the statistics.
+    */
+    unsigned _statisticsPrintingFrequency;
 
     LinearExpression _heuristicCost;
 
@@ -718,6 +722,16 @@ private:
       the constraints in _gurobi are infeasible. Throw an error otherwise.
     */
     bool minimizeCostWithGurobi( const LinearExpression &costFunction );
+
+    /*
+      Get Context reference
+    */
+    Context &getContext() { return _context; }
+
+    /*
+       Checks whether the current bounds are consistent. Exposed for the SmtCore.
+     */
+    bool consistentBounds() const;
 
     /*
       DEBUG only

@@ -89,7 +89,7 @@ void GurobiWrapper::resetModel()
     _model->getEnv().set
         ( GRB_DoubleParam_IntFeasTol,
           std::max
-          ( GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE, 1e-8 ) );
+          ( GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE, 1e-8 ) );
 
     // Timeout
     setTimeLimit( _timeoutInSeconds );
