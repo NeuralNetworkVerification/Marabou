@@ -49,6 +49,16 @@ SmtCore::~SmtCore()
 {
 }
 
+void SmtCore::reset()
+{
+    _context.popto( 0 );
+    _engine->postContextPopHook();
+    _needToSplit = false;
+    _constraintForSplitting = NULL;
+    _constraintToViolationCount.clear();
+    _numRejectedPhasePatternProposal = 0;
+}
+
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
     ASSERT( !constraint->phaseFixed() );
@@ -126,10 +136,11 @@ void SmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
     ASSERT( constraint->isImplication() || constraint->phaseFixed() );
     SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
     PhaseStatus impliedCase = PHASE_NOT_FIXED;
-    if ( constraint->phaseFixed() )
-      impliedCase = constraint->getPhaseStatus();
-    else
+    if ( constraint->isImplication() )
       impliedCase = constraint->nextFeasibleCase();
+    else
+      impliedCase = constraint->getPhaseStatus();
+    ASSERT( impliedCase != PHASE_NOT_FIXED );
     TrailEntry te( constraint, impliedCase );
     applyTrailEntry( te, false );
     SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
@@ -154,10 +165,7 @@ void SmtCore::decide()
 
     _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
-    // TODO: Ideally we will not ever reach this point
-    // TODO: Maintain a vector of constraints above the threshold
-    //       Iterate until we find an active one
-    if ( !_constraintForSplitting->isActive() )
+   if ( !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
         _constraintToViolationCount[_constraintForSplitting] = 0;
@@ -170,6 +178,7 @@ void SmtCore::decide()
     _constraintForSplitting->setActiveConstraint( false );
 
     decideSplit( _constraintForSplitting );
+    _constraintForSplitting = nullptr;
 }
 
 void SmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
@@ -242,7 +251,7 @@ void SmtCore::pushContext()
 bool SmtCore::popSplit()
 bool SmtCore::popDecisionLevel( TrailEntry &lastDecision )
 {
-    //ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
+    ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
     if ( _decisions.empty() )
         return false;
 
@@ -274,23 +283,15 @@ bool SmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
 {
     SMT_LOG( "Backtracking to a feasible decision..." );
 
-    if ( getDecisionLevel() == 0 )
-        return false;
-
-    popDecisionLevel( lastDecision );
-    lastDecision.markInfeasible();
-
-    while ( !lastDecision.isFeasible() )
+    do
     {
-        interruptIfCompliantWithDebugSolution();
-
         if ( !popDecisionLevel( lastDecision ) )
             return false;
 
         lastDecision.markInfeasible();
+        interruptIfCompliantWithDebugSolution();
     }
-
-    interruptIfCompliantWithDebugSolution();
+    while ( !lastDecision.isFeasible() );
 
     return true;
 }
@@ -499,14 +500,4 @@ bool SmtCore::pickSplitPLConstraint()
         _constraintForSplitting = _engine->pickSplitPLConstraint
             ( _branchingHeuristic );
     return _constraintForSplitting != NULL;
-}
-
-void SmtCore::reset()
-{
-    _context.popto( 0 );
-    _engine->postContextPopHook();
-    _needToSplit = false;
-    _constraintForSplitting = NULL;
-    _constraintToViolationCount.clear();
-    _numRejectedPhasePatternProposal = 0;
 }
