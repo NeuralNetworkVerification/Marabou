@@ -349,7 +349,7 @@ public:
       Method to get PhaseStatus of the constraint. Encapsulates both context
       dependent and context-less behavior.
     */
-    PhaseStatus getPhaseStatus() const;
+    virtual PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -397,6 +397,7 @@ public:
      */
     unsigned numFeasibleCases() const
     {
+        ASSERT( _cdInfeasibleCases != nullptr );
         return _numCases - _cdInfeasibleCases->size();
     }
 
@@ -405,6 +406,7 @@ public:
      */
     bool isFeasible() const
     {
+        ASSERT( _cdInfeasibleCases != nullptr );
         return numFeasibleCases() > 0u;
     }
 

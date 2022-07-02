@@ -172,6 +172,8 @@ public:
     */
     String serializeToString() const override;
 
+    PhaseStatus getPhaseStatus() const override;
+
 private:
     /*
       The disjuncts that form this PL constraint
