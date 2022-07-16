@@ -1,1 +1,0 @@
-This folder contains challenging queries that maybe one day can be efficiently solved.
