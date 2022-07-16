@@ -22,7 +22,7 @@ def main():
     resultName = args.result
     #subprocess.run("{} --input-query {} --summary-file {}".format(MARABOU_LOC,
     #                                                              ipqName, args.result).split())
-    options="--num-workers=8"
+    options="--num-workers=64"
     try:
         r = subprocess.run("{} --input-query {} --summary-file {}"
                            " --verbosity=2 {}".format(MARABOU_LOC,

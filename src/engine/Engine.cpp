@@ -1319,7 +1319,9 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         {
             performSymbolicBoundTightening( &(*_preprocessedQuery) );
             performSimulation();
+            std::cout << "performing" << std::endl;
             performMILPSolverBoundedTightening( &(*_preprocessedQuery) );
+            std::cout << "performing - done" << std::endl;
         }
 
         if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
@@ -1512,7 +1514,7 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
-    if ( _networkLevelReasoner && _isGurobyEnabled && !_performLpTighteningAfterSplit
+    if ( _networkLevelReasoner && _isGurobyEnabled && _performLpTighteningAfterSplit
             && _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
         _networkLevelReasoner->obtainCurrentBounds();
