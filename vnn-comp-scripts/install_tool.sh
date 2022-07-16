@@ -3,7 +3,7 @@
 apt-get -y install protobuf-compiler libprotoc-dev
 
 pip install protobuf
-pip install onnx==1.9.0 numpy onnxruntime
+pip install onnx numpy onnxruntime
 pip install onnx-simplifier
 
 script_name=$(realpath $0)
