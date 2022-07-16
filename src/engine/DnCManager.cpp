@@ -460,6 +460,10 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
       }
       if ( i % 3 == 0 )
       {
+        Options::get()->setFloat(Options::DEEP_SOI_REJECTION_THRESHOLD, 1);
+      }
+      if ( i % 6 == 0 )
+      {
         Options::get()->setInt(Options::DEEP_SOI_REJECTION_THRESHOLD, 5);
       }
       if ( i % 2 == 0 )
