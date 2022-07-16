@@ -47,6 +47,11 @@ def createQuery(args):
     if propPath != None:
         readVNNLibFile(propPath, network)
 
+    print("Number of relus: {}".format(len(network.reluList)))
+    print("Number of maxs: {}".format(len(network.maxList)))
+    print("Number of disjunctions: {}".format(len(network.disjunctionList)))
+    print("Number of equations: {}".format(len(network.equList)))
+    print("Number of variables: {}".format(network.numVars))
     ipq = network.getMarabouQuery()
 
     return ipq, getInputQueryName(networkPath, propPath, args.benchmark_dir)

@@ -27,4 +27,21 @@ fi
 echo $benchmark
 python3 -m onnxsim $onnx "$onnx"-simp
 mv "$onnx"-simp $onnx
+
+
+# uncompress onnx file if needed: "gzip -dk test_zipped.onnx.gz"
+if [[ $vnnlib == *gz ]] # * is used for pattern matching
+then
+    UNCOMPRESSED_vnnlib=${vnnlib%.gz}
+
+    if [ ! -f $UNCOMPRESSED_vnnlib ]
+    then
+        # UNCOMPRESSED_ONNX doesn't exist, create it
+        echo "$UNCOMPRESSED_vnnlib doesn't exist, unzipping"
+        gzip -vdk $vnnlib
+    fi
+
+    vnnlib=$UNCOMPRESSED_vnnlib
+fi
+
 "$SCRIPT_DIR"/../maraboupy/prepare_instance.py $onnx $vnnlib $benchmark_dir

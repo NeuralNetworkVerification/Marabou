@@ -32,7 +32,7 @@ const double GlobalConfiguration::SCORE_BUMP_FOR_PL_CONSTRAINTS_NOT_IN_SOI = 5;
 // and how to repair a ReLU constraint.
 const bool GlobalConfiguration::USE_POLARITY_BASED_DIRECTION_HEURISTICS = true;
 
-const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001;
+const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 1e-6;
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 10000;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI = 100;
@@ -72,7 +72,7 @@ const double GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT = 20;
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
-const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
+const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 1e-5;
 const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = false;
 
 const bool GlobalConfiguration::WARM_START = false;
@@ -83,7 +83,7 @@ const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
-const double GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
+const double GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE = 1e-5;
 
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 

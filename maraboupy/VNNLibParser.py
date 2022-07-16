@@ -20,7 +20,8 @@ def readVNNLibFile(filename, network):
         for var in lst.flatten():
             varMap["X_{}".format(counter)] = var
             counter += 1
-    for i, var in enumerate(network.outputVars.flatten()):
+    assert(len(network.outputVars) == 1)
+    for i, var in enumerate(network.outputVars[0].flatten()):
         varMap["Y_{}".format(i)] = var
 
     with open(filename, 'r') as in_file:

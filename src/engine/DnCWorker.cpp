@@ -105,6 +105,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         IEngine::ExitCode result = IEngine::NOT_DONE;
         if ( fullSolveNeeded )
         {
+            std::cout << timeoutInSeconds << std::endl;;
             _engine->solve( timeoutInSeconds );
             result = _engine->getExitCode();
         }

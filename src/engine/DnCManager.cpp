@@ -425,12 +425,39 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
 
     _baseEngine->setVerbosity( 0 );
 
+    String soiSearchStrategy = Options::get()->getString(Options::SOI_SEARCH_STRATEGY);
+    String splitStrategy = Options::get()->getString(Options::SPLITTING_STRATEGY);
+    unsigned rejectThreshold = Options::get()->getInt(Options::DEEP_SOI_REJECTION_THRESHOLD);
+    double mcmcBeta = Options::get()->getFloat(Options::PROBABILITY_DENSITY_PARAMETER);
+
     // Create engines for each thread
     for ( unsigned i = 1; i < numberOfEngines; ++i )
     {
-        auto engine = std::make_shared<Engine>();
-        engine->setVerbosity( 0 );
-        _engines.append( engine );
+      if ( i % 7 == 0 )
+      {
+        Options::get()->setString(Options::SOI_SEARCH_STRATEGY, "walksat");
+      }
+      if ( i % 4 == 0 )
+      {
+        Options::get()->setString(Options::SPLITTING_STRATEGY, "polarity");
+      }
+      if ( i % 3 == 0 )
+      {
+        Options::get()->setInt(Options::DEEP_SOI_REJECTION_THRESHOLD, 5);
+      }
+      if ( i % 2 == 0 )
+      {
+        Options::get()->setFloat(Options::PROBABILITY_DENSITY_PARAMETER, 10);
+      }
+      auto engine = std::make_shared<Engine>();
+      engine->setVerbosity( 0 );
+
+      Options::get()->setString(Options::SOI_SEARCH_STRATEGY, soiSearchStrategy.ascii());
+      Options::get()->setString(Options::SPLITTING_STRATEGY, splitStrategy.ascii());
+      Options::get()->setInt(Options::DEEP_SOI_REJECTION_THRESHOLD, rejectThreshold);
+      Options::get()->setFloat(Options::PROBABILITY_DENSITY_PARAMETER, mcmcBeta);
+
+      _engines.append( engine );
     }
 
     return true;

@@ -2831,6 +2831,9 @@ bool Engine::performDeepSoILocalSearch()
                                       TimeUtils::timePassed( start, end ) );
         start = end;
 
+        if ( _quitRequested )
+          return false;
+
         if ( lastProposalAccepted )
         {
             /*
