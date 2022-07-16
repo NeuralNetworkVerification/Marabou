@@ -27,4 +27,7 @@ fi
 
 echo $benchmark
 
+python3 -m onnxsim $onnx "$onnx"-simp
+mv "$onnx"-simp $onnx
+
 "$SCRIPT_DIR"/../maraboupy/prepare_instance.py $onnx $vnnlib $benchmark_dir $debug
