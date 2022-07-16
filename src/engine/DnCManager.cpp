@@ -14,6 +14,7 @@
  **/
 
 #include "Debug.h"
+#include "File.h"
 #include "SnCDivideStrategy.h"
 #include "DnCManager.h"
 #include "DnCWorker.h"
@@ -291,17 +292,17 @@ String DnCManager::getResultString()
     switch ( _exitCode )
     {
     case DnCManager::SAT:
-        return "sat";
+      return "sat";
     case DnCManager::UNSAT:
-        return "unsat";
+      return "unsat";
     case DnCManager::ERROR:
-        return "ERROR";
+      return "unknown";
     case DnCManager::NOT_DONE:
-        return "NOT_DONE";
+      return "unknown";
     case DnCManager::QUIT_REQUESTED:
-        return "QUIT_REQUESTED";
+      return "unknown";
     case DnCManager::TIMEOUT:
-        return "TIMEOUT";
+      return "timeout";
     default:
         ASSERT( false );
         return "";
@@ -355,6 +356,15 @@ void DnCManager::getSolution( std::map<int, double> &ret,
 void DnCManager::printResult()
 {
     std::cout << std::endl;
+    String resultString = getResultString();
+    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
+    File summaryFile( summaryFilePath );
+    summaryFile.open( File::MODE_WRITE_TRUNCATE );
+
+    // Field #1: result
+    summaryFile.write( resultString );
+    summaryFile.write( "\n" );
+
     switch ( _exitCode )
     {
     case DnCManager::SAT:
@@ -372,10 +382,12 @@ void DnCManager::printResult()
         double *outputs( outputVector.data() );
 
         printf( "Input assignment:\n" );
+        summaryFile.write( "(" );
         for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
         {
-            printf( "\tx%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
+            printf( "\tx%u = %.15f\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
             inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
+            summaryFile.write( Stringf("(X_%u %.15f)\n", i, inputs[i] ) );
         }
 
         NLR::NetworkLevelReasoner *nlr = _baseInputQuery->getNetworkLevelReasoner();
@@ -387,10 +399,15 @@ void DnCManager::printResult()
         for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
         {
             if ( nlr )
+            {
                 printf( "\tnlr y%u = %lf\n", i, outputs[i] );
+                summaryFile.write( Stringf("(Y_%u %.15f)\n", i, outputs[i] ) );
+            }
             else
                 printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );
         }
+        summaryFile.write( Stringf(")"));
+
         printf( "\n" );
         break;
     }

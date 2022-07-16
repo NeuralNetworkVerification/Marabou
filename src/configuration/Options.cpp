@@ -80,7 +80,7 @@ void Options::initializeDefaultValues()
     _stringOptions[INPUT_FILE_PATH] = "";
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
-    _stringOptions[SUMMARY_FILE] = "";
+    _stringOptions[SUMMARY_FILE] = "test.summary";
     _stringOptions[SPLITTING_STRATEGY] = "auto";
     _stringOptions[SNC_SPLITTING_STRATEGY] = "auto";
     _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "deeppoly";

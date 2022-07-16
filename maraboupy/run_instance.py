@@ -28,9 +28,9 @@ def main():
                            " --verbosity=2 {}".format(MARABOU_LOC,
                                                       ipqName, resultName, options).split(),
                            timeout=args.timeout)
-    except subprocess.TimeoutExpired:
+    except:
         f = open(resultName, 'w')
-        f.write("timeout\n")
+        f.write("unknown\n")
         f.close()
 
     os.remove(ipqName)

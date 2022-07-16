@@ -105,31 +105,9 @@ void DnCMarabou::run()
     displayResults( totalElapsed );
 }
 
-void DnCMarabou::displayResults( unsigned long long microSecondsElapsed ) const
+void DnCMarabou::displayResults( unsigned long long) const
 {
     _dncManager->printResult();
-    String resultString = _dncManager->getResultString();
-    // Create a summary file, if requested
-    String summaryFilePath = Options::get()->getString( Options::SUMMARY_FILE );
-    if ( summaryFilePath != "" )
-    {
-        File summaryFile( summaryFilePath );
-        summaryFile.open( File::MODE_WRITE_TRUNCATE );
-
-        // Field #1: result
-        summaryFile.write( resultString );
-
-        // Field #2: total elapsed time
-        summaryFile.write( Stringf( " %u ", microSecondsElapsed / 1000000 ) );
-
-        // Field #3: number of visited tree states
-        summaryFile.write( Stringf( "0 " ) );
-
-        // Field #4: average pivot time in micro seconds
-        summaryFile.write( Stringf( "0" ) );
-
-        summaryFile.write( "\n" );
-    }
 }
 
 //
