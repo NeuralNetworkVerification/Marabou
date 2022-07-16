@@ -7,18 +7,18 @@ script_path=$(dirname "$script_name")
 project_path=$(dirname "$script_path")
 home=$HOME
 export INSTALL_DIR="$home"
-export GUROBI_HOME="$home/gurobi912/linux64"
+export GUROBI_HOME="$home/gurobi951/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
 export GRB_LICENSE_FILE="$home/gurobi.lic"
 
-if [[ ! -d $home/gurobi912/ ]]
+if [[ ! -d $home/gurobi951/ ]]
 then
-    wget https://packages.gurobi.com/9.1/gurobi9.1.2_linux64.tar.gz
-    tar xvfz gurobi9.1.2_linux64.tar.gz -C $INSTALL_DIR
+    wget https://packages.gurobi.com/9.5/gurobi9.5.1_linux64.tar.gz
+    tar xvfz gurobi9.5.1_linux64.tar.gz -C $INSTALL_DIR
 fi
 
-cd $INSTALL_DIR/gurobi912/linux64/src/build
+cd $INSTALL_DIR/gurobi951/linux64/src/build
 make
 cp libgurobi_c++.a ../../lib/
 
@@ -35,3 +35,5 @@ cd build
 cmake ../ -DENABLE_GUROBI=ON
 make -j48
 cd ../
+
+grbprobe
