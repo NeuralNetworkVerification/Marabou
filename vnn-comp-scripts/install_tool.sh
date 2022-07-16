@@ -1,6 +1,8 @@
 #! /usr/bin/env bash
 
+apt-get install protobuf-compiler libprotoc-dev
 
+pip install protobuf
 pip install onnx onnxruntime
 pip install onnx-simplifier
 
