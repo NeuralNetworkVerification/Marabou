@@ -18,9 +18,4 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 benchmark_dir=$(realpath "$SCRIPT_DIR"/benchmarks/)
 
-if [[ $vnnlib == *gz ]] # * is used for pattern matching
-then
-    vnnlib=${vnnlib%.gz}
-fi
-
 "$SCRIPT_DIR"/../maraboupy/run_instance.py $onnx $vnnlib $result $benchmark_dir --timeout $6
