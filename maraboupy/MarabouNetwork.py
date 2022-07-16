@@ -272,7 +272,11 @@ class MarabouNetwork:
             MarabouCore.addSignConstraint(ipq, b, f)
 
         for disjunction in self.disjunctionList:
-            MarabouCore.addDisjunctionConstraint(ipq, disjunction)
+            if len(disjunction) == 1:
+                for e in disjunction[0]:
+                    ipq.addEquation(e)
+            else:
+                MarabouCore.addDisjunctionConstraint(ipq, disjunction)
 
         for l in self.lowerBounds:
             assert l < self.numVars

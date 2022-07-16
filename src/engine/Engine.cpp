@@ -892,8 +892,20 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
     if ( _preprocessingEnabled )
+    {
+      bool elim = true;
+      for ( const auto &constraint : _plConstraints )
+        {
+          if ( constraint->getType() == DISJUNCTION )
+            {
+              elim = false;
+              break;
+            }
+        }
+      std::cout << "Eliminate varaibles: " << elim << std::endl;
         _preprocessedQuery = _preprocessor.preprocess
-            ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
+            ( inputQuery, elim );
+    }
     else
         _preprocessedQuery = std::unique_ptr<InputQuery>
             ( new InputQuery( inputQuery ) );
