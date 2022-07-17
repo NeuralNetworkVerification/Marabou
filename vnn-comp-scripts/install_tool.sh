@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-apt-get -y install protobuf-compiler libprotoc-dev
+apt-get -y install protobuf-compiler libprotoc-dev cmake
 
 pip install protobuf
 pip install onnx numpy onnxruntime
