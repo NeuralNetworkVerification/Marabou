@@ -1,0 +1,44 @@
+:ù
+$
+W1flatten1"Flatten*
+axis 
+"
+flatten1cast1"Cast*	
+to 
+
+X
+cast1
+b1gemm0"Gemm
+
+gemm0relu0"Relu
+"
+relu0
+flatten1
+b1gemm1"Gemm
+
+gemm1relu1"Relu
+
+relu0
+W2matmul1"MatMul
+
+matmul1relu2"Relu
+
+relu1
+relu2add1"Add
+
+add1
+W2Y"MatMul
+test-model*¡"8/É>JşÚ¾ Ú¿o/Ò=y¼à>\z¾º&v?D½>³4½~ñ\¾ñ• ¾Œê>¬›û½æqa¿,ÎP¾µó>r"¿0+&¿<=¥]‚=h ‰>¹è2?×å>K`c>3Èã>BJµ¾F‡¾!¿ <Ó¾›†>Ÿ×P¿®Ç¾Ó—¾>íN¼Jæ¾˜>À¾BW1*""M‚>BÇä>ê½w¿€eA>——è=×œ.¿Bb1*" Õ¾NjI?ñhc?¼p;Û}>ªÍD¿„»¾˜o.¾àŒ;?¡ˆÿ¾ºû
+½K›x?BŸ=?5g>ö<B¿$'?0S>;™¸=„¡¾”È¾Bğ)¾è¦¹>á;@?tÂª<˜`­>ÿ/>hÍ>°á²>‚G/?wgU¿p?)>¿Ï¿Pd>ÅşN¿IE?BW2*""¾ 1¿å8È>K•¹¾Ü“Ä>øÀŞ=âmc¾Bb2Z
+X
+
+
+b
+Y
+
+
+b
+add1
+
+
+B
