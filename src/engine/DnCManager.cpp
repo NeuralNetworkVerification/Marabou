@@ -234,6 +234,7 @@ void DnCManager::solve()
                                          ( numWorkers ) );
     }
 
+    _engines[numWorkers - 1]->terminateGurobi();
 
     // Now that we are done, tell all workers to quit
     for ( auto &quitThread : quitThreads )
@@ -469,6 +470,11 @@ bool DnCManager::createEngines( unsigned numberOfEngines )
       if ( i % 2 == 0 )
       {
         Options::get()->setFloat(Options::PROBABILITY_DENSITY_PARAMETER, 10);
+      }
+      if ( i == numberOfEngines - 1 )
+      {
+        Options::get()->setInt(Options::NUM_WORKERS, 8);
+        Options::get()->setBool(Options::SOLVE_WITH_MILP, true);
       }
       auto engine = std::make_shared<Engine>();
       engine->setVerbosity( 0 );

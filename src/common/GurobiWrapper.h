@@ -55,6 +55,8 @@ public:
     GurobiWrapper();
     ~GurobiWrapper();
 
+    void terminateModel(){ _model->terminate(); };
+
     // Add a new variabel to the model
     void addVariable( String name, double lb, double ub, VariableType type = CONTINUOUS );
 

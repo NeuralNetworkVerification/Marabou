@@ -227,6 +227,12 @@ public:
 
     void setRandomSeed( unsigned seed );
 
+  void terminateGurobi()
+  {
+    if ( _gurobi != nullptr )
+      _gurobi->terminateModel();
+  }
+
 private:
 
     enum BasisRestorationRequired {

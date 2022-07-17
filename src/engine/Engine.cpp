@@ -2730,8 +2730,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
                                 : timeoutInSeconds );
     ENGINE_LOG( Stringf( "Gurobi timeout set to %f\n", timeoutForGurobi ).ascii() )
     _gurobi->setTimeLimit( timeoutForGurobi );
-    if ( !_sncMode )
-        _gurobi->setNumberOfThreads( Options::get()->getInt( Options::NUM_WORKERS ) );
+    _gurobi->setNumberOfThreads( Options::get()->getInt( Options::NUM_WORKERS ) );
     _gurobi->setVerbosity( _verbosity > 1 );
     _gurobi->solve();
 
@@ -2753,7 +2752,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     else if ( _gurobi->timeout() )
         _exitCode = IEngine::TIMEOUT;
     else
-        throw NLRError( NLRError::UNEXPECTED_RETURN_STATUS_FROM_GUROBI );
+      _exitCode = IEngine::UNKNOWN;
     return false;
 }
 
