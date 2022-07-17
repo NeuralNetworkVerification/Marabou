@@ -7,7 +7,7 @@ vnnlib=$4
 result=$5
 timeout=$6
 
-home=$HOME
+home="/opt"
 export INSTALL_DIR="$home"
 export GUROBI_HOME="$home/gurobi951/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"

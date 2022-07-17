@@ -9,7 +9,8 @@ pip install onnx-simplifier
 script_name=$(realpath $0)
 script_path=$(dirname "$script_name")
 project_path=$(dirname "$script_path")
-home=$HOME
+home="/opt"
+mkdir $home
 export INSTALL_DIR="$home"
 export GUROBI_HOME="$home/gurobi951/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
