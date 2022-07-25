@@ -2,7 +2,7 @@
 /*! \file Test_SigmoidConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -125,7 +125,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete sigmoid2 );
     }
 
-    void test_sigmoid_notify_bounds()
+    void test_sigmoid_notify_bounds_b()
     {
         unsigned b = 1;
         unsigned f = 4;
@@ -133,9 +133,7 @@ public:
         SigmoidConstraint sigmoid( b, f );
 
         sigmoid.notifyLowerBound( b, -1.0 );
-        sigmoid.notifyLowerBound( f, 0.268 );
         sigmoid.notifyUpperBound( b, 1.0 );
-        sigmoid.notifyUpperBound( f, 0.731 );
 
         List<Tightening> tightenings;
         sigmoid.getEntailedTightenings( tightenings );
@@ -143,23 +141,22 @@ public:
         auto it = tightenings.begin();
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, -1.0 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, -1.0, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 0.268 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 0.26894142, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, 1.0 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 0.731 );
-
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1 - 0.26894142, 0.001 ) );
 
         // call notifyLowerBound and notifyUppderBound, but bounds aren't updated.
         sigmoid.notifyLowerBound( b, -2.0 );
@@ -173,12 +170,12 @@ public:
         it = tightenings2.begin();
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, -1.0 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, -1.0, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 0.268 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 0.26894142, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
@@ -188,37 +185,41 @@ public:
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 0.731 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1- 0.26894142, 0.001 ) );
+    }
 
+    void test_sigmoid_notify_bounds_f()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
 
-        // call notifyLowerBound and notifyUppderBound, and bounds are updated.
-        sigmoid.notifyLowerBound( b, -0.5 );
-        sigmoid.notifyLowerBound( f, 0.377 );
-        sigmoid.notifyUpperBound( b, 0.5 );
-        sigmoid.notifyUpperBound( f, 0.622 );
+        SigmoidConstraint sigmoid( b, f );
 
-        List<Tightening> tightenings3;
-        sigmoid.getEntailedTightenings( tightenings3 );
+        sigmoid.notifyLowerBound( f, 0.26894142 );
+        sigmoid.notifyUpperBound( f, 1 - 0.26894142 );
 
-        it = tightenings3.begin();
+        List<Tightening> tightenings;
+        sigmoid.getEntailedTightenings( tightenings );
+
+        auto it = tightenings.begin();
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, -0.5 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, -1.0, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::LB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 0.377 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 0.26894142, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, 0.5 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1, 0.001 ) );
 
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, 0.622 );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1- 0.26894142, 0.001 ) );
     }
 
     void test_sigmoid_update_variable_index()
@@ -244,9 +245,7 @@ public:
         TS_ASSERT( !sigmoid.participatingVariable( new_f ) );
 
         sigmoid.notifyLowerBound( b, -1.0 );
-        sigmoid.notifyLowerBound( f, 0.268 );
         sigmoid.notifyUpperBound( b, 1.0 );
-        sigmoid.notifyUpperBound( f, 0.731 );
 
 
         // update variable index
@@ -263,25 +262,27 @@ public:
         List<Tightening> tightenings;
         sigmoid.getEntailedTightenings( tightenings );
 
-        auto it2 = tightenings.begin();
-        TS_ASSERT_EQUALS( it2->_type, Tightening::LB );
-        TS_ASSERT_EQUALS( it2->_variable, new_b );
-        TS_ASSERT_EQUALS( it2->_value, -1.0 );
+        {
+            auto it = tightenings.begin();
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+            TS_ASSERT_EQUALS( it->_variable, new_b );
+            TS_ASSERT( FloatUtils::areEqual( it->_value, -1.0, 0.001 ) );
 
-        ++it2;
-        TS_ASSERT_EQUALS( it2->_type, Tightening::LB );
-        TS_ASSERT_EQUALS( it2->_variable, new_f );
-        TS_ASSERT_EQUALS( it2->_value, 0.268 );
+            ++it;
+            TS_ASSERT_EQUALS( it->_type, Tightening::LB );
+            TS_ASSERT_EQUALS( it->_variable, new_f );
+            TS_ASSERT( FloatUtils::areEqual( it->_value, 0.26894142, 0.001 ) );
 
-        ++it2;
-        TS_ASSERT_EQUALS( it2->_type, Tightening::UB );
-        TS_ASSERT_EQUALS( it2->_variable, new_b );
-        TS_ASSERT_EQUALS( it2->_value, 1.0 );
+            ++it;
+            TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+            TS_ASSERT_EQUALS( it->_variable, new_b );
+            TS_ASSERT( FloatUtils::areEqual( it->_value, 1, 0.001 ) );
 
-        ++it2;
-        TS_ASSERT_EQUALS( it2->_type, Tightening::UB );
-        TS_ASSERT_EQUALS( it2->_variable, new_f );
-        TS_ASSERT_EQUALS( it2->_value, 0.731 );
+            ++it;
+            TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+            TS_ASSERT_EQUALS( it->_variable, new_f );
+            TS_ASSERT( FloatUtils::areEqual( it->_value, 1- 0.26894142, 0.001 ) );
+        }
     }
 
     void test_register_as_watcher()
@@ -312,28 +313,6 @@ public:
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &sigmoid ) );
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &sigmoid ) );
-    }
-
-    void test_sigmoid_entailed_tightenings()
-    {
-        unsigned b = 1;
-        unsigned f = 4;
-
-        SigmoidConstraint sigmoid( b, f );
-
-        sigmoid.notifyLowerBound( b, -1.0 );
-        sigmoid.notifyLowerBound( f, 0.268 );
-        sigmoid.notifyUpperBound( b, 1.0 );
-        sigmoid.notifyUpperBound( f, 0.731 );
-
-        List<Tightening> entailedTightenings;
-        sigmoid.getEntailedTightenings( entailedTightenings );
-
-        TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0.731, Tightening::UB ) ) );
-        TS_ASSERT( entailedTightenings.exists( Tightening( b, 1.0, Tightening::UB ) ) );
-        TS_ASSERT( entailedTightenings.exists( Tightening( f, 0.268, Tightening::LB ) ) );
-        TS_ASSERT( entailedTightenings.exists( Tightening( b, -1.0, Tightening::LB ) ) );
     }
 
     void test_sigmoid_serialize()

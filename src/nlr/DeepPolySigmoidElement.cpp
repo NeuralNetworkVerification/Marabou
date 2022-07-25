@@ -2,7 +2,7 @@
 /*! \file DeepPolySigmoidElement.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -15,6 +15,7 @@
 
 #include "DeepPolySigmoidElement.h"
 #include "FloatUtils.h"
+#include "SigmoidConstraint.h"
 
 namespace NLR {
 
@@ -45,47 +46,48 @@ void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
         DeepPolyElement *predecessor =
             deepPolyElementsBefore[sourceIndex._layer];
         double sourceLb = predecessor->getLowerBound
-            ( sourceIndex._neuron );
+          ( sourceIndex._neuron );
         double sourceUb = predecessor->getUpperBound
-            ( sourceIndex._neuron );
+          ( sourceIndex._neuron );
 
-        _ub[i] = sigmoid( sourceUb );
-        _lb[i] = sigmoid( sourceLb );
-
-        double lambda = ( _ub[i] - _lb[i] ) / ( sourceUb - sourceLb );
-        double lambdaPrime = std::min( sigmoid_diff( sourceLb ), sigmoid_diff( sourceUb ) );
+        _ub[i] = SigmoidConstraint::sigmoid( sourceUb );
+        _lb[i] = SigmoidConstraint::sigmoid( sourceLb );
 
         if ( FloatUtils::areEqual( sourceUb, sourceLb ) )
         {
             _symbolicUb[i] = 0;
-            _symbolicUpperBias[i] = _lb[i];
+            _symbolicUpperBias[i] = _ub[i];
             _symbolicLb[i] = 0;
             _symbolicLowerBias[i] = _lb[i];
         }
         else
         {
+            double lambda = ( _ub[i] - _lb[i] ) / ( sourceUb - sourceLb );
+            double lambdaPrime = std::min( SigmoidConstraint::sigmoidDerivative( sourceLb ),
+                                           SigmoidConstraint::sigmoidDerivative( sourceUb ) );
+
             // update lower bound
             if ( FloatUtils::isPositive( sourceLb ) )
             {
                 _symbolicLb[i] = lambda;
-                _symbolicLowerBias[i] = sigmoid( sourceLb ) - lambda * sourceLb;   
+                _symbolicLowerBias[i] = SigmoidConstraint::sigmoid( sourceLb ) - lambda * sourceLb;
             }
             else
             {
                 _symbolicLb[i] = lambdaPrime;
-                _symbolicLowerBias[i] = sigmoid( sourceLb ) - lambdaPrime * sourceLb;   
+                _symbolicLowerBias[i] = SigmoidConstraint::sigmoid( sourceLb ) - lambdaPrime * sourceLb;
             }
 
             // update upper bound
             if ( !FloatUtils::isPositive( sourceUb ) )
             {
                 _symbolicUb[i] = lambda;
-                _symbolicUpperBias[i] = sigmoid( sourceUb ) - lambda * sourceUb;            
+                _symbolicUpperBias[i] = SigmoidConstraint::sigmoid( sourceUb ) - lambda * sourceUb;
             }
             else
             {
                 _symbolicUb[i] = lambdaPrime;
-                _symbolicUpperBias[i] = sigmoid( sourceUb ) - lambdaPrime * sourceUb;               
+                _symbolicUpperBias[i] = SigmoidConstraint::sigmoid( sourceUb ) - lambdaPrime * sourceUb;
             }
         }
 
@@ -221,16 +223,6 @@ void DeepPolySigmoidElement::log( const String &message )
 {
     if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
         printf( "DeepPolySigmoidElement: %s\n", message.ascii() );
-}
-
-double DeepPolySigmoidElement::sigmoid( double x )
-{
-    return 1 / ( 1 + std::exp( -x ) );
-}
-
-double DeepPolySigmoidElement::sigmoid_diff( double x )
-{
-    return sigmoid( x ) * ( 1 - sigmoid( x ) );
 }
 
 } // namespace NLR

@@ -68,6 +68,14 @@ def test_KJ_TinyTaxiNet():
     filename =  "KJ_TinyTaxiNet.onnx"
     evaluateFile(filename)
 
+def test_tanh():
+    """
+    Test toy mnist classifier
+    Uses MatMul layers with Tanh activation function.
+    """
+    filename =  "tanh_test.onnx"
+    evaluateFile(filename)
+
 def test_conv_mp1():
     """
     Test a convolutional network using max pool, exported from pytorch

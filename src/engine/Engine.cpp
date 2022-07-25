@@ -1401,7 +1401,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             // Some variable bounds are invalid, so the query is unsat
             throw InfeasibleQueryException();
         }
-
     }
     catch ( const InfeasibleQueryException & )
     {
