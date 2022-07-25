@@ -279,7 +279,7 @@ private:
     /*
       The existing transcendental constraints.
     */
-    List<NonlinearConstraint *> _tsConstraints;
+    List<NonlinearConstraint *> _nlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.

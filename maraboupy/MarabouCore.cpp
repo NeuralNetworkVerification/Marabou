@@ -99,7 +99,7 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    NonlinearConstraint* s = new SigmoidConstraint(var1, var2);
+    NonlinearConstraint *s = new SigmoidConstraint(var1, var2);
     ipq.addNonlinearConstraint(s);
 }
 
@@ -116,8 +116,8 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
-void addSoftmaxConstraint(InputQuery& ipq, std::list<unsigned> inputs,
-                          std::list<unsigned> outputs){
+void addSoftmaxConstraint( InputQuery& ipq, std::list<unsigned> inputs,
+                           std::list<unsigned> outputs ){
 
     Vector<unsigned> preReciprocals;
     for ( const auto &v : inputs )

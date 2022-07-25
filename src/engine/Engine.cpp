@@ -870,13 +870,13 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
         }
     }
 
-    for ( const auto &tsConstraint : inputQuery.getNonlinearConstraints() )
+    for ( const auto &nlConstraint : inputQuery.getNonlinearConstraints() )
     {
-        List<unsigned> variables = tsConstraint->getParticipatingVariables();
+        List<unsigned> variables = nlConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
         {
-            tsConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
-            tsConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+            nlConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            nlConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
     }
 }
@@ -1279,8 +1279,8 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         constraint->setStatistics( &_statistics );
     }
 
-    _tsConstraints = _preprocessedQuery->getNonlinearConstraints();
-    for ( const auto &constraint : _tsConstraints )
+    _nlConstraints = _preprocessedQuery->getNonlinearConstraints();
+    for ( const auto &constraint : _nlConstraints )
     {
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
@@ -1323,8 +1323,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             performSimulation();
             performMILPSolverBoundedTightening( &(*_preprocessedQuery) );
         }
-
-        _networkLevelReasoner->dumpBounds( inputQuery );
 
         if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
             for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
@@ -1392,8 +1390,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->registerTableau( _tableau );
         }
 
-        //if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
-        _networkLevelReasoner->dumpBounds();
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+          _networkLevelReasoner->dumpBounds();
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
         {
