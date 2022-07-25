@@ -891,26 +891,12 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
 
     // If processing is enabled, invoke the preprocessor
     _preprocessingEnabled = preprocess;
-    //if ( _preprocessingEnabled )
-    //    _preprocessedQuery = _preprocessor.preprocess
-    //        ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
-    //else
-
-        _preprocessedQuery = std::unique_ptr<InputQuery>
-            ( new InputQuery( inputQuery ) );
-        _preprocessedQuery->constructNetworkLevelReasoner();
-
-        for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
-            plConstraint->transformToUseAuxVariables( *_preprocessedQuery );
-
-        for ( unsigned i = 0; i < _preprocessedQuery->getNumberOfVariables(); ++i )
-            {
-                if ( !_preprocessedQuery->getLowerBounds().exists( i ) )
-                    _preprocessedQuery->setLowerBound( i, FloatUtils::negativeInfinity() );
-                if ( !_preprocessedQuery->getUpperBounds().exists( i ) )
-                    _preprocessedQuery->setUpperBound( i, FloatUtils::infinity() );
-            }
-
+    if ( _preprocessingEnabled )
+        _preprocessedQuery = _preprocessor.preprocess
+            ( inputQuery, GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES );
+    else
+      _preprocessedQuery = std::unique_ptr<InputQuery>
+        ( new InputQuery( inputQuery ) );
 
     if ( _verbosity > 0 )
         printf( "Engine::processInputQuery: Input query (after preprocessing): "
@@ -918,13 +904,13 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
                 _preprocessedQuery->getEquations().size(),
                 _preprocessedQuery->getNumberOfVariables() );
 
-    //unsigned infiniteBounds = _preprocessedQuery->countInfiniteBounds();
-    //if ( infiniteBounds != 0 )
-    //{
-    //    _exitCode = Engine::ERROR;
-    //    throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-    //                         Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
-    //}
+    unsigned infiniteBounds = _preprocessedQuery->countInfiniteBounds();
+    if ( infiniteBounds != 0 )
+    {
+        _exitCode = Engine::ERROR;
+        throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                             Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
+    }
 }
 
 void Engine::printInputBounds( const InputQuery &inputQuery ) const

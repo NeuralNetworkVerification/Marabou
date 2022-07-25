@@ -118,50 +118,15 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
 
 void addSoftmaxConstraint( InputQuery& ipq, std::list<unsigned> inputs,
                            std::list<unsigned> outputs ){
+  List<unsigned> inputList;
+  for ( const auto &e :inputs )
+    inputList.append(e);
 
-    Vector<unsigned> preReciprocals;
-    for ( const auto &v : inputs )
-    {
-        Equation e;
-        e.setScalar(-1);
-        for ( const auto &u : inputs )
-        {
-            if ( u == v )
-                continue;
-            else
-            {
-                unsigned diffVar = ipq.getFreshVariable();
-                Equation eDiff;
-                eDiff.addAddend( 1, u );
-                eDiff.addAddend( -1, v );
-                eDiff.addAddend( -1, diffVar );
-                // diffVar_i = u - v
-                ipq.addEquation(eDiff);
+  List<unsigned> outputList;
+  for ( const auto &e :outputs )
+    outputList.append(e);
 
-                unsigned postExp = ipq.getFreshVariable();
-                ExponentialConstraint *m = new ExponentialConstraint
-                    ( diffVar, postExp );
-                ipq.addNonlinearConstraint( m );
-                e.addAddend( 1, postExp );
-            }
-        }
-        unsigned sumOfExps = ipq.getFreshVariable();
-        e.addAddend( -1, sumOfExps );
-        // e^diffVar1 + ... + e^diffVar2 + -1 sumOfExps = -1
-        ipq.addEquation(e);
-        preReciprocals.append(sumOfExps);
-    }
-
-    unsigned i = 0;
-    for ( const auto &v : outputs )
-    {
-        // v = 1 / sumOfExps
-        PosReciprocalConstraint *m = new PosReciprocalConstraint
-            ( preReciprocals[i], v );
-        std::cout << preReciprocals[i] << " " << v << std::endl;
-        ipq.addNonlinearConstraint( m );
-        ++i;
-    }
+  ipq.addSoftmaxConstraint(inputList, outputList);
 }
 
 void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){

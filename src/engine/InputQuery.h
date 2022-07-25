@@ -56,6 +56,7 @@ public:
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
   
     void addNonlinearConstraint( NonlinearConstraint *constraint );
+    void addSoftmaxConstraint( List<unsigned> inputs, List<unsigned> outputs );
     const List<NonlinearConstraint *> &getNonlinearConstraints() const;
     List<NonlinearConstraint *> &getNonlinearConstraints();
 

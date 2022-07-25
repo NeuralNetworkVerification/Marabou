@@ -109,6 +109,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
 
+    std::cout << _uneliminableVariables.size() << std::endl;
+
     /*
       Set any missing bounds
     */
