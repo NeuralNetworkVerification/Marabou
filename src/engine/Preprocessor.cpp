@@ -97,9 +97,13 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
       Collect input and output variables
     */
     for ( const auto &var : _preprocessed->getInputVariables() )
-        _inputOutputVariables.insert( var );
+        _uneliminableVariables.insert( var );
     for ( const auto &var : _preprocessed->getOutputVariables() )
-        _inputOutputVariables.insert( var );
+        _uneliminableVariables.insert( var );
+    for ( const auto &constraint : _preprocessed->getPiecewiseLinearConstraints() )
+        if ( !constraint->supportVariableElimination() )
+            for ( const auto &var : constraint->getParticipatingVariables() )
+                _uneliminableVariables.insert( var );
 
     /*
       Set any missing bounds
@@ -613,8 +617,8 @@ bool Preprocessor::processIdenticalVariables()
         unsigned v2 = term2._variable;
 
         // Input and output variables should not be merged
-        if ( _inputOutputVariables.exists( v1 ) ||
-             _inputOutputVariables.exists( v2 ) )
+        if ( _uneliminableVariables.exists( v1 ) ||
+             _uneliminableVariables.exists( v2 ) )
         {
             ++equation;
             continue;
@@ -809,7 +813,7 @@ void Preprocessor::eliminateVariables()
     {
         for ( const auto &fixed : _fixedVariables )
         {
-            if ( _inputOutputVariables.exists( fixed.first ) )
+            if ( _uneliminableVariables.exists( fixed.first ) )
                 continue;
 
             _preprocessed->_networkLevelReasoner->eliminateVariable( fixed.first, fixed.second );
@@ -822,7 +826,7 @@ void Preprocessor::eliminateVariables()
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
     {
         if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
-             !_inputOutputVariables.exists( i ) )
+             !_uneliminableVariables.exists( i ) )
         {
             ++numEliminated;
             ++offset;
@@ -967,7 +971,7 @@ void Preprocessor::eliminateVariables()
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
     {
         if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
-			 !_inputOutputVariables.exists( i ) )
+			 !_uneliminableVariables.exists( i ) )
             continue;
 
         ASSERT( _oldIndexToNewIndex.at( i ) <= i );

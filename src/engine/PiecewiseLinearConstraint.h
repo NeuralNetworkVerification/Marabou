@@ -260,6 +260,8 @@ public:
     */
     virtual bool supportSoI() const { return false; };
 
+    virtual bool supportVariableElimination() const { return true; };
+
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to
       the given phase to the cost function.

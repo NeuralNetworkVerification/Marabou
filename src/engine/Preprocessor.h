@@ -135,7 +135,7 @@ private:
     /*
       All input/output variables
     */
-    Set<unsigned> _inputOutputVariables;
+    Set<unsigned> _uneliminableVariables;
 
     /*
       The preprocessed query
