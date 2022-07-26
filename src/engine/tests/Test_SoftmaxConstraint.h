@@ -77,7 +77,7 @@ public:
     }
 
   void test_softmax_constraint_construction_2()
-    {
+  {
         List<unsigned> inputs = { 1, 2, 3 };
         List<unsigned> outputs = { 4, 5, 6 };
 
@@ -138,6 +138,68 @@ public:
         TS_ASSERT( FloatUtils::areEqual(outputArr[3], 0.015876239976467));
         TS_ASSERT( FloatUtils::areEqual(outputArr[4], 0.1173104278262));
         TS_ASSERT( FloatUtils::areEqual(outputArr[5], 0.86681333219734));
+
+        for ( unsigned i = 0; i < ipq.getNumberOfVariables(); ++i )
+        {
+          ipq.setLowerBound(i, FloatUtils::negativeInfinity());
+          ipq.setUpperBound(i, FloatUtils::infinity());
+        }
+
+        for ( unsigned i = 0; i < 3; ++i )
+        {
+          ipq.setLowerBound(ipq.inputVariableByIndex(i), 3);
+          ipq.setUpperBound(ipq.inputVariableByIndex(i), 3);
+        }
+
+        ipq.setLowerBound(ipq.inputVariableByIndex(3), 1);
+        ipq.setUpperBound(ipq.inputVariableByIndex(3), 1);
+        ipq.setLowerBound(ipq.inputVariableByIndex(4), 3);
+        ipq.setUpperBound(ipq.inputVariableByIndex(4), 3);
+        ipq.setLowerBound(ipq.inputVariableByIndex(5), 5);
+        ipq.setUpperBound(ipq.inputVariableByIndex(5), 5);
+
+        TS_ASSERT_THROWS_NOTHING( nlr->obtainCurrentBounds(ipq) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr->deepPolyPropagation() );
+
+        List<Tightening> tightenings;
+        nlr->getConstraintTightenings( tightenings );
+
+        TS_ASSERT(hasLowerBound( tightenings, 4, 0.333333333333333) );
+        TS_ASSERT(hasUpperBound( tightenings, 4, 0.333333333333333) );
+        TS_ASSERT(hasLowerBound( tightenings, 5, 0.333333333333333) );
+        TS_ASSERT(hasUpperBound( tightenings, 5, 0.333333333333333) );
+        TS_ASSERT(hasLowerBound( tightenings, 6, 0.333333333333333) );
+        TS_ASSERT(hasUpperBound( tightenings, 6, 0.333333333333333) );
+
+        TS_ASSERT(hasLowerBound( tightenings, 10, 0.015876239976467) );
+        TS_ASSERT(hasUpperBound( tightenings, 10, 0.015876239976467) );
+        TS_ASSERT(hasLowerBound( tightenings, 11, 0.1173104278262) );
+        TS_ASSERT(hasUpperBound( tightenings, 11, 0.1173104278262) );
+        TS_ASSERT(hasLowerBound( tightenings, 12, 0.86681333219734) );
+        TS_ASSERT(hasUpperBound( tightenings, 12, 0.86681333219734) );
     }
+
+  bool hasLowerBound( List<Tightening> tightenings, unsigned variable,
+                           double bound )
+  {
+    for( const auto &t : tightenings )
+      {
+        if ( t._variable == variable && t._type == Tightening::LB )
+          return FloatUtils::areEqual( t._value, bound );
+      }
+    return false;
+  }
+
+  bool hasUpperBound( List<Tightening> tightenings, unsigned variable,
+                      double bound )
+  {
+    for( const auto &t : tightenings )
+      {
+        if ( t._variable == variable && t._type == Tightening::UB )
+          return FloatUtils::areEqual( t._value, bound );
+      }
+    return false;
+  }
 
 };
