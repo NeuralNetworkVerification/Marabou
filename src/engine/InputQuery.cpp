@@ -213,7 +213,6 @@ void InputQuery::addSoftmaxConstraint( List<unsigned> inputs, List<unsigned> out
         // v = 1 / sumOfExps
         PosReciprocalConstraint *m = new PosReciprocalConstraint
             ( preReciprocals[i], v );
-        std::cout << preReciprocals[i] << " " << v << std::endl;
         addNonlinearConstraint( m );
         ++i;
     }
