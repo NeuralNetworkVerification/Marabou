@@ -109,8 +109,6 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
 
-    std::cout << _uneliminableVariables.size() << std::endl;
-
     /*
       Set any missing bounds
     */
@@ -127,7 +125,6 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
         _lowerBounds[i] = _preprocessed->getLowerBound( i );
         _upperBounds[i] = _preprocessed->getUpperBound( i );
     }
-
 
     /*
       Do the preprocessing steps:
@@ -445,7 +442,6 @@ bool Preprocessor::processEquations()
                     setUpperBound( xi, upperBound );
                 }
             }
-
             if ( FloatUtils::gt( getLowerBound( xi ),
                                  getUpperBound( xi ),
                                  GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
@@ -453,7 +449,6 @@ bool Preprocessor::processEquations()
                 delete[] ciTimesLb;
                 delete[] ciTimesUb;
                 delete[] ciSign;
-
                 throw InfeasibleQueryException();
             }
         }
@@ -490,7 +485,11 @@ bool Preprocessor::processEquations()
             for ( const auto &addend : equation->_addends )
                 sum += addend._coefficient * getLowerBound( addend._variable );
 
-            if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+            if ( ( FloatUtils::isZero(equation->_scalar ) &&
+                   FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+                   ||
+                 ( !FloatUtils::isZero(equation->_scalar ) &&
+                   FloatUtils::areDisequal( sum / equation->_scalar, 1, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) ) )
             {
                 throw InfeasibleQueryException();
             }

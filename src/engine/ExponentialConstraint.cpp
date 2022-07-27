@@ -192,7 +192,7 @@ void ExponentialConstraint::getEntailedTightenings( List<Tightening> &tightening
     if ( existsLowerBound( _b ) )
         tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
                                         Tightening::LB ) );
-    if ( existsLowerBound( _f ) )
+    if ( existsLowerBound( _f ) && getLowerBound( _f ) >= 0 )
         tightenings.append( Tightening( _b, inverse( getLowerBound( _f ) ),
                                         Tightening::LB ) );
     if ( existsUpperBound( _b ) )
@@ -220,11 +220,23 @@ unsigned ExponentialConstraint::getF() const
 
 double ExponentialConstraint::evaluate( double x ) const
 {
+  if ( x > 0 && !FloatUtils::isFinite(x) )
+    return FloatUtils::infinity();
+  else if ( !FloatUtils::isFinite(x) )
+    return 0;
+  else
     return std::exp( x );
 }
 
 double ExponentialConstraint::inverse( double y ) const
 {
+  if ( y > 0 && !FloatUtils::isFinite(y) )
+    return FloatUtils::infinity();
+  else if ( FloatUtils::isZero(y) )
+  {
+    return FloatUtils::negativeInfinity();
+  }
+  else
     return log( y );
 }
 

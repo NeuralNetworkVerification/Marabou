@@ -190,16 +190,16 @@ void PosReciprocalConstraint::getEntailedTightenings( List<Tightening> &tighteni
     tightenings.append( Tightening( _b, 0, Tightening::LB ) );
     tightenings.append( Tightening( _f, 0, Tightening::LB ) );
 
-    if ( existsLowerBound( _b ) )
+    if ( existsLowerBound( _b ) && getLowerBound( _b ) > 0 )
         tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
                                         Tightening::UB ) );
-    if ( existsLowerBound( _f ) )
+    if ( existsLowerBound( _f ) && getLowerBound( _f ) > 0  )
         tightenings.append( Tightening( _b, evaluate( getLowerBound( _f ) ),
                                         Tightening::UB ) );
-    if ( existsUpperBound( _b ) )
+    if ( existsUpperBound( _b ) && getUpperBound( _b ) > 0 )
         tightenings.append( Tightening( _f, evaluate( getUpperBound( _b ) ),
                                         Tightening::LB ) );
-    if ( existsUpperBound( _f ) )
+    if ( existsUpperBound( _f ) && getUpperBound( _f ) > 0 )
         tightenings.append( Tightening( _b, evaluate( getUpperBound( _f ) ),
                                         Tightening::LB ) );
 }
@@ -221,12 +221,18 @@ unsigned PosReciprocalConstraint::getF() const
 
 double PosReciprocalConstraint::evaluate( double x ) const
 {
+  ASSERT( x >= 0 );
+  if ( !FloatUtils::isFinite(x) )
+    return 0;
+  else if ( FloatUtils::isZero(x) )
+    return FloatUtils::infinity();
+  else
     return 1/x;
 }
 
 double PosReciprocalConstraint::inverse( double y ) const
 {
-    return 1/y;
+  return evaluate(y);
 }
 
 double PosReciprocalConstraint::derivative( double x ) const
