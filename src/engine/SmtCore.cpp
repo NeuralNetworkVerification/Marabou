@@ -150,6 +150,7 @@ void SmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
 {
     if ( isDecision )
     {
+        _engine->preContextPushHook();
         _context.push();
         _decisions.push_back( te );
     }
