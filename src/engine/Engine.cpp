@@ -1287,8 +1287,6 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
 
       _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
       _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
-      std::cout << _tableau->allBoundsValid() << std::endl;
-
     }
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
