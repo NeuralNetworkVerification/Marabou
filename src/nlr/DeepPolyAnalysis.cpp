@@ -136,7 +136,8 @@ void DeepPolyAnalysis::run()
             if ( layer->neuronEliminated( j ) )
                 continue;
             double lb = deepPolyElement->getLowerBound( j );
-            if ( layer->getLb( j ) < lb )
+            if ( FloatUtils::isFinite(lb) &&
+                 layer->getLb( j ) < lb )
             {
                 log( Stringf( "Neuron %u_%u lower-bound updated from  %f to %f",
                               index, j, layer->getLb( j ), lb ) );
@@ -146,7 +147,7 @@ void DeepPolyAnalysis::run()
                                   lb, Tightening::LB ) );
             }
             double ub = deepPolyElement->getUpperBound( j );
-            if ( layer->getUb( j ) > ub )
+            if ( FloatUtils::isFinite(ub) && layer->getUb( j ) > ub )
             {
                 log( Stringf( "Neuron %u_%u upper-bound updated from  %f to %f",
                               index, j, layer->getUb( j ), ub ) );

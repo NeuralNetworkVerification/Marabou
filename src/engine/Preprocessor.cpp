@@ -483,13 +483,11 @@ bool Preprocessor::processEquations()
         {
             double sum = 0;
             for ( const auto &addend : equation->_addends )
+            {
                 sum += addend._coefficient * getLowerBound( addend._variable );
+            }
 
-            if ( ( FloatUtils::isZero(equation->_scalar ) &&
-                   FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-                   ||
-                 ( !FloatUtils::isZero(equation->_scalar ) &&
-                   FloatUtils::areDisequal( sum / equation->_scalar, 1, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) ) )
+            if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
                 throw InfeasibleQueryException();
             }
@@ -583,6 +581,11 @@ bool Preprocessor::processConstraints()
                                  getUpperBound( tightening._variable ),
                                  GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
+                String s;
+                constraint->dump( s );
+                std::cout << s.ascii() << std::endl;
+                std::cout << "x" << tightening._variable << " " << getLowerBound( tightening._variable )
+                          << " " <<  getUpperBound( tightening._variable ) << std::endl;
                 throw InfeasibleQueryException();
             }
         }
@@ -880,7 +883,9 @@ void Preprocessor::eliminateVariables()
 
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
+            {
                 throw InfeasibleQueryException();
+            }
             else
                 equation = equations.erase( equation );
         }

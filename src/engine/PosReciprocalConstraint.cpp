@@ -91,10 +91,6 @@ void PosReciprocalConstraint::notifyLowerBound( unsigned variable, double bound 
     }
     else
     {
-        if ( variable == _f && FloatUtils::isPositive( bound ) )
-            _boundManager->tightenUpperBound( _b, evaluate( bound ) );
-        else if ( variable == _b && FloatUtils::isPositive( bound ) )
-            _boundManager->tightenUpperBound( _f, evaluate( bound ) );
     }
 }
 
@@ -116,10 +112,6 @@ void PosReciprocalConstraint::notifyUpperBound( unsigned variable, double bound 
     }
     else
     {
-        if ( variable == _f && FloatUtils::isPositive( bound ) )
-            _boundManager->tightenLowerBound( _b, evaluate( bound ) );
-        else if ( variable == _b && FloatUtils::isPositive( bound ) )
-            _boundManager->tightenLowerBound( _f, evaluate( bound ) );
     }
 }
 

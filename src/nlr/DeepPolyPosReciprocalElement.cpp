@@ -211,11 +211,23 @@ void DeepPolyPosReciprocalElement::log( const String &message )
 
 double DeepPolyPosReciprocalElement::reciprocal( double x )
 {
-    return 1 / x;
+  ASSERT( x >= 0 );
+  if ( !FloatUtils::isFinite(x) )
+    return 0;
+  else if ( FloatUtils::isZero(x) )
+    return FloatUtils::infinity();
+  else
+    return 1/x;
 }
 
 double DeepPolyPosReciprocalElement::reciprocalDerivative( double x )
 {
+  ASSERT( x >= 0 );
+  if ( !FloatUtils::isFinite(x) )
+    return 0;
+  else if ( FloatUtils::isZero(x) )
+    return FloatUtils::infinity();
+  else
     return -1/(x * x);
 }
 

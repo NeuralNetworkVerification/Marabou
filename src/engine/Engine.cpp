@@ -903,14 +903,16 @@ void Engine::invokePreprocessor( const InputQuery &inputQuery, bool preprocess )
                 "%u equations, %u variables\n\n",
                 _preprocessedQuery->getEquations().size(),
                 _preprocessedQuery->getNumberOfVariables() );
-
+    /*
     unsigned infiniteBounds = _preprocessedQuery->countInfiniteBounds();
+
     if ( infiniteBounds != 0 )
     {
         _exitCode = Engine::ERROR;
         throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
                              Stringf( "Error! Have %u infinite bounds", infiniteBounds ).ascii() );
     }
+    */
 }
 
 void Engine::printInputBounds( const InputQuery &inputQuery ) const
@@ -1274,8 +1276,19 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
 
     for ( unsigned i = 0; i < numberOfVariables; ++i )
     {
-        _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
-        _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+      if ( _preprocessedQuery->getLowerBound( i ) == INFINITY )
+        _preprocessedQuery->setLowerBound( i, FloatUtils::infinity() );
+      else if ( _preprocessedQuery->getLowerBound( i ) == -INFINITY )
+        _preprocessedQuery->setLowerBound( i, FloatUtils::negativeInfinity() );
+      if ( _preprocessedQuery->getUpperBound( i ) == INFINITY )
+        _preprocessedQuery->setUpperBound( i, FloatUtils::infinity() );
+      else if ( _preprocessedQuery->getUpperBound( i ) == -INFINITY )
+        _preprocessedQuery->setUpperBound( i, FloatUtils::negativeInfinity() );
+
+      _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+      _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+      std::cout << _tableau->allBoundsValid() << std::endl;
+
     }
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,

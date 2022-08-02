@@ -91,10 +91,6 @@ void ExponentialConstraint::notifyLowerBound( unsigned variable, double bound )
     }
     else
     {
-        if ( variable == _f )
-            _boundManager->tightenLowerBound( _b, inverse( bound ) );
-        else if ( variable == _b )
-            _boundManager->tightenLowerBound( _f, evaluate( bound ) );
     }
 }
 
@@ -116,10 +112,6 @@ void ExponentialConstraint::notifyUpperBound( unsigned variable, double bound )
     }
     else
     {
-        if ( variable == _f )
-            _boundManager->tightenUpperBound( _b, inverse( bound ) );
-        else if ( variable == _b )
-            _boundManager->tightenUpperBound( _f, evaluate( bound ) );
     }
 }
 
@@ -192,13 +184,15 @@ void ExponentialConstraint::getEntailedTightenings( List<Tightening> &tightening
     if ( existsLowerBound( _b ) )
         tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
                                         Tightening::LB ) );
-    if ( existsLowerBound( _f ) && getLowerBound( _f ) >= 0 )
+    if ( existsLowerBound( _f ) && getLowerBound( _f ) >= 0 &&
+         FloatUtils::isFinite( getLowerBound( _f ) ) )
         tightenings.append( Tightening( _b, inverse( getLowerBound( _f ) ),
                                         Tightening::LB ) );
     if ( existsUpperBound( _b ) )
         tightenings.append( Tightening( _f, evaluate( getUpperBound( _b ) ),
                                         Tightening::UB ) );
-    if ( existsUpperBound( _f ) )
+    if ( existsUpperBound( _f ) &&
+         FloatUtils::isPositive( getUpperBound( _f ) ) )
         tightenings.append( Tightening( _b, inverse( getUpperBound( _f ) ),
                                         Tightening::UB ) );
 }
@@ -220,9 +214,9 @@ unsigned ExponentialConstraint::getF() const
 
 double ExponentialConstraint::evaluate( double x ) const
 {
-  if ( x > 0 && !FloatUtils::isFinite(x) )
+  if ( x > GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
     return FloatUtils::infinity();
-  else if ( !FloatUtils::isFinite(x) )
+  else if ( x < -GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
     return 0;
   else
     return std::exp( x );

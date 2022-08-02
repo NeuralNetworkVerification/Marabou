@@ -118,7 +118,8 @@ public:
 
     static bool isFinite( double x )
     {
-        return ( x != infinity() ) && ( x != negativeInfinity() );
+        return ( x != infinity() ) && ( x != negativeInfinity() ) &&
+            x != INFINITY && x != -INFINITY;
     }
 
     static bool wellFormed( double x )

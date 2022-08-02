@@ -214,12 +214,17 @@ void DeepPolyExponentialElement::log( const String &message )
 
 double DeepPolyExponentialElement::exp( double x )
 {
+  if ( x > GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+    return FloatUtils::infinity();
+  else if ( x < -GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+    return 0;
+  else
     return std::exp( x );
 }
 
 double DeepPolyExponentialElement::expDerivative( double x )
 {
-    return std::exp( x );
+  return exp(x);
 }
 
 } // namespace NLR
