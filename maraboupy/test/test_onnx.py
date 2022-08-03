@@ -134,6 +134,13 @@ def test_batch_norm():
     filename =  "linear2-3_bn1-linear3-1.onnx"
     evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
 
+def test_concat():
+    """
+    Test a network exported from pytorch
+    """
+    filename =  "concat_axis_0.onnx"
+    evaluateFile(filename, inputNames = ['X', 'Y'], outputName = 'Z')
+
 def test_errors():
     """
     This function tests that the ONNX parser catches errors.

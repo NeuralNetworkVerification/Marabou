@@ -202,6 +202,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
+        elif node.op_type == 'Concat':
+            self.concatEquations(node, makeEquations)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -732,6 +734,44 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 e.addAddend(-1, outputVariables[i])
                 e.setScalar(0.0)
                 self.addEquation(e)
+
+    def concatEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to concat
+
+        Args:
+            node (node): ONNX node representing the Concat operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        
+        # Get attributes
+        axis = None
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+
+        # Set output shape
+        inputVars = np.asarray([self.varMap[input] for input in node.input])
+        outputShape = np.concatenate(inputVars, axis).shape
+        self.shapeMap[nodeName] = outputShape
+        if not makeEquations:
+            return
+
+        # Get variables
+        inputVars = inputVars.reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        
+        assert len(inputVars) == len(outputVars)
+
+        for i in range(len(inputVars)):
+            # Add equation
+            e = MarabouUtils.Equation()
+            e.addAddend(-1, outputVars[i])
+            e.addAddend(1, inputVars[i])
+            e.setScalar(0)
+            self.addEquation(e)     
 
     def mulEquations(self, node, makeEquations):
         nodeName = node.output[0]

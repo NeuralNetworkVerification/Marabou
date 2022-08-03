@@ -113,6 +113,32 @@ def test_batch_norm():
     exitCode, vals, _ = network.solve(options = options)
     assert abs(vals[outputVars[0]] - 9.9999799728) < TOL
 
+def test_concat():
+    """
+    Tests a concat.
+    """
+    # axis = 0
+    filename =  "concat_axis_0.onnx"
+    network = loadNetworkInONNX(filename)
+    assert network.shapeMap['X'] == [2, 2, 2]
+    assert network.shapeMap['Y'] == [2, 2, 2]
+    assert network.shapeMap['Z'] == (4, 2, 2)
+
+    # axis = 1
+    filename =  "concat_axis_1.onnx"
+    network = loadNetworkInONNX(filename)
+    assert network.shapeMap['X'] == [2, 2, 2]
+    assert network.shapeMap['Y'] == [2, 2, 2]
+    assert network.shapeMap['Z'] == (2, 4, 2)
+
+    # axis = 2
+    filename =  "concat_axis_2.onnx"
+    network = loadNetworkInONNX(filename)
+    assert network.shapeMap['X'] == [2, 2, 2]
+    assert network.shapeMap['Y'] == [2, 2, 2]
+    assert network.shapeMap['Z'] == (2, 2, 4)
+
+
 def test_local_robustness_unsat():
     """
     Tests local robustness of an nnet network. (UNSAT)
