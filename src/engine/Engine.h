@@ -399,7 +399,7 @@ private:
     /*
       Disjunction that is used for splitting but doesn't exist in the beginning
     */
-    std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
+    Vector<PiecewiseLinearConstraint *> _disjunctionForSplitting;
 
     /*
       Solve the query with MILP encoding

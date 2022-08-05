@@ -91,6 +91,9 @@ Engine::~Engine()
         delete[] _work;
         _work = NULL;
     }
+
+    for ( auto d : _disjunctionForSplitting )
+      delete d;
 }
 
 void Engine::setVerbosity( unsigned verbosity )
@@ -2144,7 +2147,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getLowerBound( var.first ) );
 
-                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR, "Check bound compliance with debug solution" );
             }
 
             if ( FloatUtils::lt( _tableau->getUpperBound( var.first ), var.second, 1e-5 ) )
@@ -2155,7 +2158,7 @@ void Engine::checkBoundCompliancyWithDebugSolution()
                         var.second,
                         _tableau->getUpperBound( var.first ) );
 
-                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+                throw MarabouError( MarabouError::DEBUGGING_ERROR, "Check bound compliance with debug solution" );
             }
         }
     }
@@ -2580,12 +2583,11 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnIntervalWidth()
         List<PiecewiseLinearCaseSplit> splits;
         splits.append( s1 );
         splits.append( s2 );
-        _disjunctionForSplitting = std::unique_ptr<DisjunctionConstraint>
-            ( new DisjunctionConstraint( splits ) );
-        _disjunctionForSplitting->registerBoundManager( &_boundManager );
-        _disjunctionForSplitting->initializeCDOs( &_context );
+        _disjunctionForSplitting.append( new DisjunctionConstraint( splits ) );
+        _disjunctionForSplitting.last()->registerBoundManager( &_boundManager );
+        _disjunctionForSplitting.last()->initializeCDOs( &_context );
 
-        return _disjunctionForSplitting.get();
+        return _disjunctionForSplitting.last();
     }
 }
 
