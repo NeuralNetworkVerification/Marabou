@@ -25,7 +25,6 @@ tools/boost_1_68_0
 /tools/onnx-1.10.2
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
-.vscode
 
 /* CMAKE */
 CMakeLists.txt.user

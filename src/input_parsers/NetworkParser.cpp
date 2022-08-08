@@ -8,6 +8,8 @@
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
+ **
+ ** This file provides a general interface for parsing a neural network.
 **/
 
 #include "NetworkParser.h"
@@ -20,6 +22,7 @@
 #include "MString.h"
 #include "Set.h"
 #include "MStringf.h"
+#include "Debug.h"
 #include <assert.h>
 
 NetworkParser::NetworkParser()
@@ -99,24 +102,24 @@ void NetworkParser::getMarabouQuery(InputQuery& query)
     for (ReluConstraint* constraintPtr : _reluList)
     {
         ReluConstraint constraint = *constraintPtr;
-        assert(constraint.getB() < _numVars && constraint.getF() < _numVars);
+        ASSERT(constraint.getB() < _numVars && constraint.getF() < _numVars);
         query.addPiecewiseLinearConstraint(constraintPtr);
     }
 
     for (SigmoidConstraint* constraintPtr : _sigmoidList)
     {
         SigmoidConstraint constraint = *constraintPtr;
-        assert( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
         query.addTranscendentalConstraint(constraintPtr);
     }
 
     for (MaxConstraint* constraintPtr : _maxList)
     {
         MaxConstraint constraint = *constraintPtr;
-        assert( constraint.getF() < _numVars );
+        ASSERT( constraint.getF() < _numVars );
         for ([[maybe_unused]] Variable var : constraint.getElements())
         {
-            assert (var < _numVars );
+            ASSERT (var < _numVars );
         }
         query.addPiecewiseLinearConstraint(constraintPtr);
     }
@@ -124,27 +127,27 @@ void NetworkParser::getMarabouQuery(InputQuery& query)
     for (AbsoluteValueConstraint* constraintPtr : _absList)
     {
         AbsoluteValueConstraint constraint = *constraintPtr;
-        assert(constraint.getB() < _numVars && constraint.getF() < _numVars);
+        ASSERT(constraint.getB() < _numVars && constraint.getF() < _numVars);
         query.addPiecewiseLinearConstraint(constraintPtr);
     }
 
     for (SignConstraint* constraintPtr : _signList)
     {
         SignConstraint constraint = *constraintPtr;
-        assert(constraint.getB() < _numVars && constraint.getF() < _numVars);
+        ASSERT(constraint.getB() < _numVars && constraint.getF() < _numVars);
         query.addPiecewiseLinearConstraint(constraintPtr);
     }
 
     // TODO check this last two
     for (std::pair<Variable,float> lower : _lowerBounds)
     {
-        assert(lower.first < _numVars);
+        ASSERT(lower.first < _numVars);
         query.setLowerBound(lower.first,lower.second);
     }
 
     for (std::pair<Variable,float> upper : _upperBounds)
     {
-        assert(upper.first < _numVars);
+        ASSERT(upper.first < _numVars);
         query.setLowerBound(upper.first,upper.second);
     }
 }
@@ -157,7 +160,7 @@ int NetworkParser::findEquationWithOutputVariable( Variable variable )
         Equation::Addend outputAddend = equation._addends.back();
         if (variable == outputAddend._variable)
         {
-            assert (outputAddend._coefficient == -1);
+            ASSERT(outputAddend._coefficient == -1);
             return i;
         }
         i++;

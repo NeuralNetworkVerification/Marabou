@@ -1,32 +1,16 @@
-/*
-* SCRIPT DESCRIPTION
-* This script helps define neural networks in marabou format for direct cpp integration
-*/
-    /* class representing general Marabou network
-
-    Attributes:
-        numVars (int): Total number of variables to represent network
-        equList (list of :class:`~maraboupy.Equation`): Network equations
-        reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
-        sigmoidList (list of tuples): List of sigmoid constraint tuples, where each tuple contains the backward and forward variables
-        maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
-        absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
-        signList (list of tuples): List of sign constraint tuples, where each tuple conatins the input variable and the output variable
-        lowerBounds (Dict[int, float]): Lower bounds of variables
-        upperBounds (Dict[int, float]): Upper bounds of variables
-        inputVars (list of numpy arrays): Input variables
-        outputVars (numpy array): Output variables
-    */
-
-
-    /*
-
- TODO:
-    - discuss self and implement properly
-        - currently just return updated of type (depends on usage)
-    - change C types to Marabou types.
-
- */
+/*********************                                                        */
+/*! \file NetworkParser.cpp
+ ** \verbatim
+ ** Top contributors (to current version):
+ **   Matthew Daggitt
+ ** This file is part of the Marabou project.
+ ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
+ ** in the top-level source directory) and their institutional affiliations.
+ ** All rights reserved. See the file COPYING in the top-level source
+ ** directory for licensing information.\endverbatim
+ **
+ ** This file provides a general interface for parsing a neural network.
+ **/
 
 #ifndef __NetworkParser_h__
 #define __NetworkParser_h__

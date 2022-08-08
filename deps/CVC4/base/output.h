@@ -404,6 +404,8 @@ extern DumpOutC DumpOutChannel CVC4_PUBLIC;
 #  define Debug ::CVC4::__cvc4_true() ? ::CVC4::nullCvc4Stream : ::CVC4::DebugChannel
 #  define Warning ::CVC4::__cvc4_true() ? ::CVC4::nullCvc4Stream : ::CVC4::WarningChannel
 #  define WarningOnce ::CVC4::__cvc4_true() ? ::CVC4::nullCvc4Stream : ::CVC4::WarningChannel
+// This line is (manually) excluded because it clashes with the function
+// of the same name found in `onnx.proto3.pb.h`.
 // #  define Message ::CVC4::__cvc4_true() ? ::CVC4::nullCvc4Stream : ::CVC4::MessageChannel
 #  define Notice ::CVC4::__cvc4_true() ? ::CVC4::nullCvc4Stream : ::CVC4::NoticeChannel
 #  define Chat ::CVC4::__cvc4_true() ? ::CVC4::nullCvc4Stream : ::CVC4::ChatChannel
@@ -419,6 +421,8 @@ extern DumpOutC DumpOutChannel CVC4_PUBLIC;
 #  endif /* CVC4_DEBUG && CVC4_TRACING */
 #  define Warning (! ::CVC4::WarningChannel.isOn()) ? ::CVC4::nullCvc4Stream : ::CVC4::WarningChannel
 #  define WarningOnce (! ::CVC4::WarningChannel.isOn() || ! ::CVC4::WarningChannel.warnOnce(__FILE__,__LINE__)) ? ::CVC4::nullCvc4Stream : ::CVC4::WarningChannel
+// This line is (manually) excluded because it clashes with the function
+// of the same name found in `onnx.proto3.pb.h`.
 // #  define Message (! ::CVC4::MessageChannel.isOn()) ? ::CVC4::nullCvc4Stream : ::CVC4::MessageChannel
 #  define Notice (! ::CVC4::NoticeChannel.isOn()) ? ::CVC4::nullCvc4Stream : ::CVC4::NoticeChannel
 #  define Chat (! ::CVC4::ChatChannel.isOn()) ? ::CVC4::nullCvc4Stream : ::CVC4::ChatChannel

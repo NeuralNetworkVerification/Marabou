@@ -25,7 +25,6 @@
 #include "PropertyParser.h"
 #include "MarabouError.h"
 #include "QueryLoader.h"
-#include <boost/algorithm/string/predicate.hpp>
 
 #ifdef _WIN32
 #undef ERROR
@@ -101,7 +100,7 @@ void Marabou::prepareInputQuery()
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
-        if ( networkFilePath.endsWith( ".onnx" ) )
+        if ( ((MString) networkFilePath).endsWith( ".onnx" ) )
         {
             printf ( "Onnx network!\n" );
             _onnxParser = new OnnxParser( networkFilePath );

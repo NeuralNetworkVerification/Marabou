@@ -68,7 +68,7 @@ private:
     AcasParser *_acasParser;
 
     /*
-      ACAS network parser
+      ONNX network parser
     */
     OnnxParser *_onnxParser;
 
