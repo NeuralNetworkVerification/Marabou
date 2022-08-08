@@ -9,6 +9,8 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
+ ** A parser for ONNX neural network files.
+ **
  ** Some hard won knowledge about the design in this file:
  **   - The data is annoyingly heterogenous. Inputs and outputs of the onnx graph
  **   have different types from the nodes in the onnx graph, which have different
