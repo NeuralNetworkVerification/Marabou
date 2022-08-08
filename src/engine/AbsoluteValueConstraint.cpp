@@ -33,7 +33,8 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
-    : _auxVarsInUse( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _auxVarsInUse( false )
     , _haveEliminatedVariables( false )
 {
     String constraintType = serializedAbs.substring( 0, 13 );
@@ -450,6 +451,8 @@ void AbsoluteValueConstraint::dump( String &output ) const
                            existsLowerBound( _negAux ) ? Stringf( "%lf", getLowerBound( _negAux ) ).ascii() : "-inf",
                            existsUpperBound( _negAux ) ? Stringf( "%lf", getUpperBound( _negAux ) ).ascii() : "inf" );
     }
+
+    serializeInfeasibleCases( output );
 }
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

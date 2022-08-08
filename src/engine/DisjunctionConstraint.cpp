@@ -342,6 +342,8 @@ void DisjunctionConstraint::dump( String &output ) const
     }
 
     output += Stringf( "Active? %s.", _constraintActive ? "Yes" : "No" );
+
+    serializeInfeasibleCases( output );
 }
 
 void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

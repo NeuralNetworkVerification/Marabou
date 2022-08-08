@@ -516,6 +516,8 @@ protected:
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
 
+    void serializeInfeasibleCases( String &output ) const;
+
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
     /**********************************************************************/

@@ -42,7 +42,8 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -612,6 +613,8 @@ void ReluConstraint::dump( String &output ) const
                            existsLowerBound( _aux ) ? Stringf( "%lf", getLowerBound( _aux ) ).ascii() : "-inf",
                            existsUpperBound( _aux ) ? Stringf( "%lf", getUpperBound( _aux ) ).ascii() : "inf" );
     }
+
+    serializeInfeasibleCases( output );
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )

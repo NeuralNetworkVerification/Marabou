@@ -39,7 +39,8 @@ SignConstraint::SignConstraint( unsigned b, unsigned f )
 }
 
 SignConstraint::SignConstraint( const String &serializedSign )
-    : _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedSign.substring( 0, 4 );
     ASSERT( constraintType == String( "sign" ) );
@@ -581,6 +582,8 @@ void SignConstraint::dump( String &output ) const
     output += Stringf( "f in [%s, %s]\n",
                        existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
                        existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
+
+    serializeInfeasibleCases( output );
 }
 
 double SignConstraint::computePolarity() const

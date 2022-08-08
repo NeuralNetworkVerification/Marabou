@@ -211,6 +211,19 @@ bool PiecewiseLinearConstraint::phaseFixed() const
     else
         return _phaseStatus != PHASE_NOT_FIXED;
 };
+
+void PiecewiseLinearConstraint::serializeInfeasibleCases( String &output ) const
+{
+    output += " CDO info \n ------------------------------";
+    output += Stringf(" Num cases: %d", _numCases );
+
+    if ( _cdInfeasibleCases )
+    {
+        output += Stringf( "Infeasible cases (%d):", _cdInfeasibleCases->size() );
+        for ( auto infeasible : *_cdInfeasibleCases )
+            output += Stringf("%d", infeasible);
+    }
+}
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

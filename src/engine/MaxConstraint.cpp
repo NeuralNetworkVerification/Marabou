@@ -669,6 +669,7 @@ String MaxConstraint::serializeToString() const
         // Will be ignored in any case
         output += Stringf( ",%u", 0 );
 
+    //serializeInfeasibleCases( output );
     return output;
 }
 
