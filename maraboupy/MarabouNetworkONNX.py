@@ -721,11 +721,17 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
-        assert shape1[-1] == shape2[0]
-        self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
+        if len(shape1) > 2 and shape1[0] == 1:
+            shape1 = shape1[1:]
+        if len(shape2) > 2 and shape2[0] == 1:
+            shape2 = shape2[1:]
+        a = np.zeros(shape1)
+        b = np.zeros(shape2)
+        c = np.matmul(a, b)
+        self.shapeMap[nodeName] = c.shape
         if not makeEquations:
             return
-            
+
         firstInputConstant = False; secondInputConstant = False
         if inputName1 in self.constantMap:
             input1 = self.constantMap[inputName1]
@@ -743,6 +749,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if len(shape1) == 1:
             shape1 = [1] + shape1
         input1 = input1.reshape(shape1)
+
+        input2 = input2.reshape(shape2)
 
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
         #assert firstInputConstant or secondInputConstant

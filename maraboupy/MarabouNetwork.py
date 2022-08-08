@@ -53,7 +53,7 @@ class MarabouNetwork:
         self.sigmoidList = []
         self.maxList = []
         self.softmaxList = []
-        self.qudraticList = []
+        self.quadList = []
         self.absList = []
         self.signList = []
         self.disjunctionList = []
@@ -125,7 +125,7 @@ class MarabouNetwork:
         Args:
             x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
         """
-        self.quadList += [v1, v2, v3]
+        self.quadList += [(v1, v2, v3)]
 
     def addSigmoid(self, v1, v2):
         """Function to add a new Sigmoid constraint

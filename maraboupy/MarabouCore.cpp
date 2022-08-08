@@ -514,6 +514,16 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addQuadConstraint", &addQuadConstraint, R"pbdoc(
+        Add a Quad constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Quad constraint
+            var2 (int): Input variable to Quad constraint
+            var3 (int): Output variable to Quad constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("var3"));
     m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
         Add a Sigmoid constraint to the InputQuery
 
