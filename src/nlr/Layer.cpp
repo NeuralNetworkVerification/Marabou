@@ -1863,6 +1863,7 @@ void Layer::dump() const
     case SIGMOID:
     case POS_RECIPROCAL:
     case EXP:
+    case QUADRATIC:
         for ( unsigned i = 0; i < _size; ++i )
         {
             if ( _eliminatedNeurons.exists( i ) )

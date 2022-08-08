@@ -41,6 +41,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "PosReciprocalConstraint.h"
 #include "PropertyParser.h"
+#include "QuadraticConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
@@ -96,6 +97,12 @@ void restoreOutputStream(int outputStream)
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addQuadraticConstraint(InputQuery& ipq, unsigned var1, unsigned var2,
+                            unsigned var3){
+  NonlinearConstraint* r = new QuadraticConstraint(var1, var2, var3);
+  ipq.addNonlinearConstraint(r);
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){

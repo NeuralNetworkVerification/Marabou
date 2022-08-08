@@ -745,7 +745,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         input1 = input1.reshape(shape1)
 
         # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
-        assert firstInputConstant or secondInputConstant
+        #assert firstInputConstant or secondInputConstant
 
         # If both inputs are constant, than the output is constant as well, and we don't need new variables or equations
         if firstInputConstant and secondInputConstant:
@@ -755,38 +755,60 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Create new variables
         outputVariables = self.makeNewVariables(nodeName)
 
-        # Pad the output if needed (matrix-matrix multiplication)
-        if len(outputVariables.shape) == 1 and len(shape2) > 1:
-            outputVariables = outputVariables.reshape([1, outputVariables.shape[0]])
 
-        # Generate equations
-        for i in range(shape1[0]):
-            # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
-            if len(shape2)>1:
-                for j in range(shape2[1]):
+        if not firstInputConstant and not secondInputConstant:
+            # bi-linear constraints
+            # Generate equations
+            for i in range(shape1[0]):
+                # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
+                if len(shape2)>1:
+                    for j in range(shape2[1]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[1]):
+                            v = self.getNewVariable()
+                            self.addQuadratic(input1[i][k], input2[k][j], v)
+                            e.addAddend(1, v)
+
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+                else:
+                    assert(False)
+        else:
+
+            # Pad the output if needed (matrix-matrix multiplication)
+            if len(outputVariables.shape) == 1 and len(shape2) > 1:
+                outputVariables = outputVariables.reshape([1, outputVariables.shape[0]])
+
+            # Generate equations
+            for i in range(shape1[0]):
+                # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
+                if len(shape2)>1:
+                    for j in range(shape2[1]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[1]):
+                            if firstInputConstant:
+                                e.addAddend(input1[i][k], input2[k][j])
+                            else:
+                                e.addAddend(input2[k][j], input1[i][k])
+
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+                else:
                     e = MarabouUtils.Equation()
                     for k in range(shape1[1]):
                         if firstInputConstant:
-                            e.addAddend(input1[i][k], input2[k][j])
+                            e.addAddend(input1[i][k], input2[k])
                         else:
-                            e.addAddend(input2[k][j], input1[i][k])
+                            e.addAddend(input2[k], input1[i][k])
 
                     # Put output variable as the last addend last
-                    e.addAddend(-1, outputVariables[i][j])
+                    e.addAddend(-1, outputVariables[i])
                     e.setScalar(0.0)
                     self.addEquation(e)
-            else:
-                e = MarabouUtils.Equation()
-                for k in range(shape1[1]):
-                    if firstInputConstant:
-                        e.addAddend(input1[i][k], input2[k])
-                    else:
-                        e.addAddend(input2[k], input1[i][k])
-
-                # Put output variable as the last addend last
-                e.addAddend(-1, outputVariables[i])
-                e.setScalar(0.0)
-                self.addEquation(e)
 
     def mulEquations(self, node, makeEquations):
         nodeName = node.output[0]

@@ -20,6 +20,7 @@ enum NonlinearFunctionType {
     SIGMOID = 0,
     EXP = 1,
     POS_RECIPROCAL = 2,
+    QUADRATIC = 3,
 };
 
 #endif // __NonlinearFunctionType_h__

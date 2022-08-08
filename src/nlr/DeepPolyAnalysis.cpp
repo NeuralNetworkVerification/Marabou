@@ -19,6 +19,7 @@
 #include "DeepPolyExponentialElement.h"
 #include "DeepPolyInputElement.h"
 #include "DeepPolyMaxPoolElement.h"
+#include "DeepPolyQuadraticElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
 #include "DeepPolyPosReciprocalElement.h"
@@ -220,6 +221,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolyExponentialElement( layer );
     else if ( type == Layer::POS_RECIPROCAL )
         deepPolyElement = new DeepPolyPosReciprocalElement( layer );
+    else if ( type == Layer::QUADRATIC )
+      deepPolyElement = new DeepPolyQuadraticElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",

@@ -47,6 +47,7 @@ public:
         SIGMOID,
         EXP,
         POS_RECIPROCAL,
+        QUADRATIC,
     };
 
     /*
