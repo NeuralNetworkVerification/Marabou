@@ -100,7 +100,7 @@ void Marabou::prepareInputQuery()
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
-        if ( ((MString) networkFilePath).endsWith( ".onnx" ) )
+        if ( ((String) networkFilePath).endsWith( ".onnx" ) )
         {
             printf ( "Onnx network!\n" );
             _onnxParser = new OnnxParser( networkFilePath );
