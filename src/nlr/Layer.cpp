@@ -462,7 +462,7 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
 {
     ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX ||
             _type == SIGN || _type == SIGMOID || _type == EXP ||
-            _type == POS_RECIPROCAL );
+            _type == POS_RECIPROCAL || _type == QUADRATIC );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -1802,6 +1802,10 @@ String Layer::typeToString( Type type )
     case POS_RECIPROCAL:
         return "RECIPROCAL";
         break;
+
+    case QUADRATIC:
+      return "QUADRATIC";
+      break;
 
     default:
         return "UNKNOWN TYPE";

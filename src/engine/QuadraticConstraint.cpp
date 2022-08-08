@@ -78,7 +78,7 @@ void QuadraticConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void QuadraticConstraint::notifyLowerBound( unsigned variable, double bound )
 {
-    ASSERT( variable == _b1 || variable == _b1 || variable == _f );
+    ASSERT( variable == _b1 || variable == _b2 || variable == _f );
 
     if ( _statistics )
         _statistics->incLongAttribute(
@@ -99,7 +99,7 @@ void QuadraticConstraint::notifyLowerBound( unsigned variable, double bound )
 
 void QuadraticConstraint::notifyUpperBound( unsigned variable, double bound )
 {
-    ASSERT( variable == _b1 || variable == _b1 || variable == _f );
+    ASSERT( variable == _b1 || variable == _b2 || variable == _f );
 
     if ( _statistics )
         _statistics->incLongAttribute(
@@ -120,7 +120,7 @@ void QuadraticConstraint::notifyUpperBound( unsigned variable, double bound )
 
 bool QuadraticConstraint::participatingVariable( unsigned variable ) const
 {
-  return variable == _b1 || variable == _b1 || variable == _f;
+  return variable == _b1 || variable == _b2 || variable == _f;
 }
 
 List<unsigned> QuadraticConstraint::getParticipatingVariables() const
@@ -147,7 +147,7 @@ void QuadraticConstraint::dump( String &output ) const
 
 void QuadraticConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-    ASSERT( oldIndex == _b1 || oldIndex == _b1 || oldIndex == _f );
+    ASSERT( oldIndex == _b1 || oldIndex == _b2 || oldIndex == _f );
 
     ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
