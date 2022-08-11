@@ -2,7 +2,7 @@
 /*! \file PiecewiseLinearConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Aleksandar Zeljic, Derek Huang
+ **   Guy Katz, Aleksandar Zeljic, Derek Huang, Haoze (Andrew) Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -47,11 +47,14 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
-#include "BoundManager.h"
 #include "FloatUtils.h"
+#include "GurobiWrapper.h"
+#include "IBoundManager.h"
 #include "ITableau.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
+#include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "Queue.h"
@@ -61,7 +64,7 @@
 #include "context/context.h"
 
 class Equation;
-class IConstraintBoundTightener;
+class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
@@ -78,9 +81,9 @@ enum PhaseStatus : unsigned {
     SIGN_PHASE_NEGATIVE = 6,
 
     // SPECIAL VALUE FOR ELIMINATED MAX CASES
-    MAX_PHASE_ELIMINATED = 65534,
+    MAX_PHASE_ELIMINATED = 999999,
     // SENTINEL VALUE
-    CONSTRAINT_INFEASIBLE = 65535
+    CONSTRAINT_INFEASIBLE = 1000000,
 };
 
 class PiecewiseLinearConstraint : public ITableau::VariableWatcher
@@ -148,7 +151,6 @@ public:
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
-    virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
     virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
     virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
@@ -238,21 +240,49 @@ public:
     */
     virtual void getEntailedTightenings( List<Tightening> &tightenings ) const = 0;
 
+    /*
+      Transform the piecewise linear constraint so that each disjunct contains
+      only bound constraints.
+    */
+    virtual void transformToUseAuxVariables( InputQuery & ) {};
+
     void setStatistics( Statistics *statistics );
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      Before solving: get additional auxiliary euqations (typically bound-dependent)
+      that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquations( InputQuery &/* inputQuery */ ) {}
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                          &/* inputQuery */ ) {}
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
+      Whether the constraint can contribute the SoI cost function.
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &/* cost */ ) const {}
+    virtual bool supportSoI() const { return false; };
+
+    virtual bool supportVariableElimination() const { return true; };
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function.
+      Nothing should be added when the constraint is fixed or inactive.
+      Minimizing the added term should lead to the constraint being
+      "closer to satisfied" in the given phase status.
+    */
+    virtual void getCostFunctionComponent( LinearExpression &/* cost */,
+                                           PhaseStatus /* phase */ ) const {}
+
+    /*
+      Return the phase status corresponding to the values of the input
+      variables in the given assignment. For instance, for ReLU, if the input
+      variable's assignment is positive, then the method returns 
+      RELU_PHASE_ACTIVE. Otherwise, it returns RELU_PHASE_INACTIVE.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &/* assignment */ ) const
+    {
+        throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+    }
 
     /*
       Produce string representation of the piecewise linear constraint.
@@ -262,13 +292,6 @@ public:
       (ie. "relu", "max", etc)
     */
     virtual String serializeToString() const = 0;
-
-    /*
-      Register a constraint bound tightener. If a tightener is registered,
-      this piecewise linear constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
     /*
       Return true if and only if this piecewise linear constraint supports
@@ -304,16 +327,40 @@ public:
         _score = score;
     }
 
+    /*
+      Register the GurobiWrapper object. We will query it for assignment.
+    */
+    inline void registerGurobi( GurobiWrapper *gurobi )
+    {
+        _gurobi = gurobi;
+    }
+
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
+    /*
+      Method to set PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
+     */
+    void setPhaseStatus( PhaseStatus phaseStatus );
+
+    /*
+      Method to get PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior.
+    */
+    PhaseStatus getPhaseStatus() const;
+
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
     /**********************************************************************/
 
     /*
       Register a bound manager. If a bound manager is registered,
-      this piecewise linear constraint will inform the tightener whenever
+      the piecewise linear constraint will inform the manager whenever
       it discovers a tighter (entailed) bound.
     */
-    void registerBoundManager( BoundManager *boundManager );
+    void registerBoundManager( IBoundManager *boundManager );
 
     /*
        Register context object. Necessary for lazy backtracking features - such
@@ -415,7 +462,9 @@ protected:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
-    BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
 
@@ -437,12 +486,15 @@ protected:
      */
     double _score;
 
-    IConstraintBoundTightener *_constraintBoundTightener;
-
     /*
       Statistics collection
     */
     Statistics *_statistics;
+
+    /*
+      The gurobi object for solving the LPs during the search.
+    */
+    GurobiWrapper *_gurobi;
 
     /*
       Initialize CDOs.
@@ -461,18 +513,6 @@ protected:
        Check whether a case is marked as infeasible under current search prefix.
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
-
-    /*
-       Method to set PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
-     */
-    void setPhaseStatus( PhaseStatus phaseStatus );
-
-    /*
-       Method to get PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior.
-     */
-    PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
@@ -533,6 +573,29 @@ protected:
     {
         ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
                                      : _upperBounds[var] = value;
+    }
+
+    /**********************************************************************/
+    /*                      ASSIGNMENT WRAPPER METHODS                    */
+    /**********************************************************************/
+    inline bool existsAssignment( unsigned variable ) const
+    {
+        if ( _gurobi )
+            return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        else if ( _tableau )
+            return _tableau->existsValue( variable );
+        else
+            return false;
+    }
+
+    inline double getAssignment( unsigned variable ) const
+    {
+        if ( _gurobi == nullptr )
+        {
+            return _tableau->getValue( variable );
+        }
+        else
+            return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
 };
 

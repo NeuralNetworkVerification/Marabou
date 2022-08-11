@@ -118,6 +118,18 @@ void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
 
+void loadProperty(InputQuery &inputQuery, std::string propertyFilePath)
+{
+    String propertyFilePathM = String(propertyFilePath);
+    if ( propertyFilePath != "" )
+    {
+        printf( "Property: %s\n", propertyFilePathM.ascii() );
+        PropertyParser().parse( propertyFilePathM, inputQuery );
+    }
+    else
+        printf( "Property: None\n" );
+}
+
 bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::string propertyFilePath){
   try{
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );
@@ -191,6 +203,7 @@ struct MarabouOptions {
         , _solveWithMILP( Options::get()->getBool( Options::SOLVE_WITH_MILP ) )
         , _dumpBounds( Options::get()->getBool( Options::DUMP_BOUNDS ) )
         , _numWorkers( Options::get()->getInt( Options::NUM_WORKERS ) )
+        , _numBlasThreads( Options::get()->getInt( Options::NUM_BLAS_THREADS ) )
         , _initialTimeout( Options::get()->getInt( Options::INITIAL_TIMEOUT ) )
         , _initialDivides( Options::get()->getInt( Options::NUM_INITIAL_DIVIDES ) )
         , _onlineDivides( Options::get()->getInt( Options::NUM_ONLINE_DIVIDES ) )
@@ -198,7 +211,7 @@ struct MarabouOptions {
         , _timeoutInSeconds( Options::get()->getInt( Options::TIMEOUT ) )
         , _splitThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
         , _numSimulations( Options::get()->getInt( Options::NUMBER_OF_SIMULATIONS ) )
-        , _skipLpTighteningAfterSplit( Options::get()->getBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT ) )
+        , _performLpTighteningAfterSplit( Options::get()->getBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT ) )
         , _timeoutFactor( Options::get()->getFloat( Options::TIMEOUT_FACTOR ) )
         , _preprocessorBoundTolerance( Options::get()->getFloat( Options::PREPROCESSOR_BOUND_TOLERANCE ) )
         , _milpSolverTimeout( Options::get()->getFloat( Options::MILP_SOLVER_TIMEOUT ) )
@@ -206,6 +219,7 @@ struct MarabouOptions {
         , _sncSplittingStrategyString( Options::get()->getString( Options::SNC_SPLITTING_STRATEGY ).ascii() )
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
+        , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
     {};
 
   void setOptions()
@@ -215,10 +229,11 @@ struct MarabouOptions {
     Options::get()->setBool( Options::RESTORE_TREE_STATES, _restoreTreeStates );
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
-    Options::get()->setBool( Options::SKIP_LP_TIGHTENING_AFTER_SPLIT, _skipLpTighteningAfterSplit ); 
+    Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT, _performLpTighteningAfterSplit );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
+    Options::get()->setInt( Options::NUM_BLAS_THREADS, _numBlasThreads );
     Options::get()->setInt( Options::INITIAL_TIMEOUT, _initialTimeout );
     Options::get()->setInt( Options::NUM_INITIAL_DIVIDES, _initialDivides );
     Options::get()->setInt( Options::NUM_ONLINE_DIVIDES, _onlineDivides );
@@ -236,14 +251,16 @@ struct MarabouOptions {
     Options::get()->setString( Options::SNC_SPLITTING_STRATEGY, _sncSplittingStrategyString );
     Options::get()->setString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE, _tighteningStrategyString );
     Options::get()->setString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE, _milpTighteningString );
+    Options::get()->setString( Options::LP_SOLVER, _lpSolverString );
   }
 
     bool _snc;
     bool _restoreTreeStates;
     bool _solveWithMILP;
     bool _dumpBounds;
-    bool _skipLpTighteningAfterSplit;
+    bool _performLpTighteningAfterSplit;
     unsigned _numWorkers;
+    unsigned _numBlasThreads;
     unsigned _initialTimeout;
     unsigned _initialDivides;
     unsigned _onlineDivides;
@@ -258,6 +275,7 @@ struct MarabouOptions {
     std::string _sncSplittingStrategyString;
     std::string _tighteningStrategyString;
     std::string _milpTighteningString;
+    std::string _lpSolverString;
 };
 
 
@@ -268,12 +286,12 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
     // Arguments: InputQuery object, filename to redirect output
     // Returns: Preprocessed input query
 
+    options.setOptions();
     Engine engine;
     int output=-1;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        options.setOptions();
         engine.processInputQuery(inputQuery);
     }
     catch(const MarabouError &e){
@@ -286,33 +304,57 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
     return *(engine.getInputQuery());
 }
 
-
+std::string exitCodeToString( IEngine::ExitCode code )
+{
+    switch ( code )
+    {
+    case IEngine::UNSAT:
+        return "unsat";
+    case IEngine::SAT:
+        return "sat";
+    case IEngine::ERROR:
+        return "ERROR";
+    case IEngine::UNKNOWN:
+        return "UNKNOWN";
+    case IEngine::TIMEOUT:
+        return "TIMEOUT";
+    case IEngine::QUIT_REQUESTED:
+        return "QUIT_REQUESTED";
+    default:
+        return "UNKNOWN";
+    }
+}
 
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
-std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, MarabouOptions &options,
-                                                   std::string redirect=""){
+std::tuple<std::string, std::map<int, double>, Statistics>
+    solve(InputQuery &inputQuery, MarabouOptions &options,
+          std::string redirect="")
+{
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
+    std::string resultString = "";
     std::map<int, double> ret;
     Statistics retStats;
     int output=-1;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-
         options.setOptions();
 
         bool dnc = Options::get()->getBool( Options::DNC_MODE );
 
         Engine engine;
 
-        if(!engine.processInputQuery(inputQuery)) return std::make_pair(ret, *(engine.getStatistics()));
+        if(!engine.processInputQuery(inputQuery))
+            return std::make_tuple(exitCodeToString(engine.getExitCode()),
+                                   ret, *(engine.getStatistics()));
         if ( dnc )
         {
             auto dncManager = std::unique_ptr<DnCManager>( new DnCManager( &inputQuery ) );
 
             dncManager->solve();
+            resultString = dncManager->getResultString().ascii();
             switch ( dncManager->getExitCode() )
             {
             case DnCManager::SAT:
@@ -325,30 +367,37 @@ std::pair<std::map<int, double>, Statistics> solve(InputQuery &inputQuery, Marab
             {
                 retStats = Statistics();
                 retStats.timeout();
-                return std::make_pair( ret, retStats );
+                return std::make_tuple( resultString, ret, retStats );
             }
             default:
-                return std::make_pair( ret, Statistics() ); // TODO: meaningful DnCStatistics
+                return std::make_tuple( resultString, ret, Statistics() ); // TODO: meaningful DnCStatistics
             }
         } else
         {
             unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-            if(!engine.solve(timeoutInSeconds)) return std::make_pair(ret, *(engine.getStatistics()));
+            engine.solve(timeoutInSeconds);
+
+            resultString = exitCodeToString(engine.getExitCode());
 
             if (engine.getExitCode() == Engine::SAT)
+            {
                 engine.extractSolution(inputQuery);
+                for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
+                    ret[i] = inputQuery.getSolutionValue(i);
+            }
+
             retStats = *(engine.getStatistics());
-            for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
-                ret[i] = inputQuery.getSolutionValue(i);
         }
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
-        return std::make_pair(ret, retStats);
+        return std::make_tuple
+            ("ERROR",
+             ret, retStats);
     }
     if(output != -1)
         restoreOutputStream(output);
-    return std::make_pair(ret, retStats);
+    return std::make_tuple(resultString, ret, retStats);
 }
 
 void saveQuery(InputQuery& inputQuery, std::string filename){
@@ -366,6 +415,7 @@ PYBIND11_MODULE(MarabouCore, m) {
     py::class_<MarabouOptions>(m, "Options")
         .def(py::init())
         .def_readwrite("_numWorkers", &MarabouOptions::_numWorkers)
+        .def_readwrite("_numBlasThreads", &MarabouOptions::_numBlasThreads)
         .def_readwrite("_initialTimeout", &MarabouOptions::_initialTimeout)
         .def_readwrite("_initialDivides", &MarabouOptions::_initialDivides)
         .def_readwrite("_onlineDivides", &MarabouOptions::_onlineDivides)
@@ -383,8 +433,10 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_sncSplittingStrategy", &MarabouOptions::_sncSplittingStrategyString)
         .def_readwrite("_tighteningStrategy", &MarabouOptions::_tighteningStrategyString)
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
+        .def_readwrite("_lpSolver", &MarabouOptions::_lpSolverString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_skipLpTighteningAfterSplit", &MarabouOptions::_skipLpTighteningAfterSplit);
+        .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit);
+    m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
          Takes a reference to an InputQuery and preproccesses it with Marabou preprocessor.
@@ -408,6 +460,7 @@ PYBIND11_MODULE(MarabouCore, m) {
 
         Returns:
             (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
@@ -516,19 +569,78 @@ PYBIND11_MODULE(MarabouCore, m) {
     eq.def(py::init<Equation::EquationType>());
     eq.def("addAddend", &Equation::addAddend);
     eq.def("setScalar", &Equation::setScalar);
+    py::enum_<Statistics::StatisticsUnsignedAttribute>(m, "StatisticsUnsignedAttribute")
+        .value("NUM_POPS", Statistics::StatisticsUnsignedAttribute::NUM_POPS)
+        .value("CURRENT_DECISION_LEVEL", Statistics::StatisticsUnsignedAttribute::CURRENT_DECISION_LEVEL)
+        .value("NUM_PL_SMT_ORIGINATED_SPLITS", Statistics::StatisticsUnsignedAttribute::NUM_PL_SMT_ORIGINATED_SPLITS)
+        .value("NUM_VISITED_TREE_STATES", Statistics::StatisticsUnsignedAttribute::NUM_VISITED_TREE_STATES)
+        .value("PP_NUM_TIGHTENING_ITERATIONS", Statistics::StatisticsUnsignedAttribute::PP_NUM_TIGHTENING_ITERATIONS)
+        .value("NUM_PL_VALID_SPLITS", Statistics::StatisticsUnsignedAttribute::NUM_PL_VALID_SPLITS)
+        .value("PP_NUM_ELIMINATED_VARS", Statistics::StatisticsUnsignedAttribute::PP_NUM_ELIMINATED_VARS)
+        .value("PP_NUM_EQUATIONS_REMOVED", Statistics::StatisticsUnsignedAttribute::PP_NUM_EQUATIONS_REMOVED)
+        .value("NUM_PL_CONSTRAINTS", Statistics::StatisticsUnsignedAttribute::NUM_PL_CONSTRAINTS)
+        .value("CURRENT_TABLEAU_M", Statistics::StatisticsUnsignedAttribute::CURRENT_TABLEAU_M)
+        .value("NUM_SPLITS", Statistics::StatisticsUnsignedAttribute::NUM_SPLITS)
+        .value("TOTAL_NUMBER_OF_VALID_CASE_SPLITS", Statistics::StatisticsUnsignedAttribute::TOTAL_NUMBER_OF_VALID_CASE_SPLITS)
+        .value("NUM_PRECISION_RESTORATIONS", Statistics::StatisticsUnsignedAttribute::NUM_PRECISION_RESTORATIONS)
+        .value("PP_NUM_CONSTRAINTS_REMOVED", Statistics::StatisticsUnsignedAttribute::PP_NUM_CONSTRAINTS_REMOVED)
+        .value("CURRENT_TABLEAU_N", Statistics::StatisticsUnsignedAttribute::CURRENT_TABLEAU_N)
+        .value("MAX_DECISION_LEVEL", Statistics::StatisticsUnsignedAttribute::MAX_DECISION_LEVEL)
+        .value("NUM_ACTIVE_PL_CONSTRAINTS", Statistics::StatisticsUnsignedAttribute::NUM_ACTIVE_PL_CONSTRAINTS)
+        .export_values();
+    py::enum_<Statistics::StatisticsLongAttribute>(m, "StatisticsLongAttribute")
+        .value("NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS", Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS)
+        .value("TOTAL_TIME_SMT_CORE_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_SMT_CORE_MICRO)
+        .value("TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_PERFORMING_VALID_CASE_SPLITS_MICRO)
+        .value("PREPROCESSING_TIME_MICRO", Statistics::StatisticsLongAttribute::PREPROCESSING_TIME_MICRO)
+        .value("NUM_SIMPLEX_UNSTABLE_PIVOTS", Statistics::StatisticsLongAttribute::NUM_SIMPLEX_UNSTABLE_PIVOTS)
+        .value("NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS", Statistics::StatisticsLongAttribute::NUM_BOUND_TIGHTENINGS_ON_EXPLICIT_BASIS)
+        .value("NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS", Statistics::StatisticsLongAttribute::NUM_BOUNDS_PROPOSED_BY_PL_CONSTRAINTS)
+        .value("TIME_SIMPLEX_STEPS_MICRO", Statistics::StatisticsLongAttribute::TIME_SIMPLEX_STEPS_MICRO)
+        .value("TIME_PIVOTS_MICRO", Statistics::StatisticsLongAttribute::TIME_PIVOTS_MICRO)
+        .value("NUM_TIGHTENED_BOUNDS", Statistics::StatisticsLongAttribute::NUM_TIGHTENED_BOUNDS)
+        .value("PSE_NUM_ITERATIONS", Statistics::StatisticsLongAttribute::PSE_NUM_ITERATIONS)
+        .value("NUM_TABLEAU_PIVOTS", Statistics::StatisticsLongAttribute::NUM_TABLEAU_PIVOTS)
+        .value("NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX", Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX)
+        .value("NUM_TABLEAU_DEGENERATE_PIVOTS_BY_REQUEST", Statistics::StatisticsLongAttribute::NUM_TABLEAU_DEGENERATE_PIVOTS_BY_REQUEST)
+        .value("NUM_ADDED_ROWS", Statistics::StatisticsLongAttribute::NUM_ADDED_ROWS)
+        .value("PSE_NUM_RESET_REFERENCE_SPACE", Statistics::StatisticsLongAttribute::PSE_NUM_RESET_REFERENCE_SPACE)
+        .value("TIME_MAIN_LOOP_MICRO", Statistics::StatisticsLongAttribute::TIME_MAIN_LOOP_MICRO)
+        .value("NUM_MERGED_COLUMNS", Statistics::StatisticsLongAttribute::NUM_MERGED_COLUMNS)
+        .value("NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS", Statistics::StatisticsLongAttribute::NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS)
+        .value("NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY", Statistics::StatisticsLongAttribute::NUM_SIMPLEX_PIVOT_SELECTIONS_IGNORED_FOR_STABILITY)
+        .value("TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_CONSTRAINT_MATRIX_BOUND_TIGHTENING_MICRO)
+        .value("NUM_TIGHTENINGS_FROM_ROWS", Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_ROWS)
+        .value("NUM_CONSTRAINT_FIXING_STEPS", Statistics::StatisticsLongAttribute::NUM_CONSTRAINT_FIXING_STEPS)
+        .value("TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING", Statistics::StatisticsLongAttribute::TOTAL_TIME_PERFORMING_SYMBOLIC_BOUND_TIGHTENING)
+        .value("NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING", Statistics::StatisticsLongAttribute::NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING)
+        .value("NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER", Statistics::StatisticsLongAttribute::NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER)
+        .value("TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO)
+        .value("NUM_BASIS_REFACTORIZATIONS", Statistics::StatisticsLongAttribute::NUM_BASIS_REFACTORIZATIONS)
+        .value("NUM_SIMPLEX_STEPS", Statistics::StatisticsLongAttribute::NUM_SIMPLEX_STEPS)
+        .value("NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS", Statistics::StatisticsLongAttribute::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS)
+        .value("NUM_MAIN_LOOP_ITERATIONS", Statistics::StatisticsLongAttribute::NUM_MAIN_LOOP_ITERATIONS)
+        .value("NUM_TABLEAU_DEGENERATE_PIVOTS", Statistics::StatisticsLongAttribute::NUM_TABLEAU_DEGENERATE_PIVOTS)
+        .value("TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_APPLYING_STORED_TIGHTENINGS_MICRO)
+        .value("TOTAL_TIME_HANDLING_STATISTICS_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_HANDLING_STATISTICS_MICRO)
+        .value("TOTAL_TIME_PRECISION_RESTORATION", Statistics::StatisticsLongAttribute::TOTAL_TIME_PRECISION_RESTORATION)
+        .value("NUM_BOUND_TIGHTENINGS_ON_CONSTRAINT_MATRIX", Statistics::StatisticsLongAttribute::NUM_BOUND_TIGHTENINGS_ON_CONSTRAINT_MATRIX)
+        .value("NUM_TABLEAU_BOUND_HOPPING", Statistics::StatisticsLongAttribute::NUM_TABLEAU_BOUND_HOPPING)
+        .value("TOTAL_TIME_DEGRADATION_CHECKING", Statistics::StatisticsLongAttribute::TOTAL_TIME_DEGRADATION_CHECKING)
+        .value("TIME_CONSTRAINT_FIXING_STEPS_MICRO", Statistics::StatisticsLongAttribute::TIME_CONSTRAINT_FIXING_STEPS_MICRO)
+        .value("TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_UPDATING_SOI_PHASE_PATTERN_MICRO)
+        .value("NUM_PROPOSED_PHASE_PATTERN_UPDATE", Statistics::StatisticsLongAttribute::NUM_PROPOSED_PHASE_PATTERN_UPDATE)
+        .value("NUM_ACCEPTED_PHASE_PATTERN_UPDATE", Statistics::StatisticsLongAttribute::NUM_ACCEPTED_PHASE_PATTERN_UPDATE)
+        .value("TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO", Statistics::StatisticsLongAttribute::TOTAL_TIME_OBTAIN_CURRENT_ASSIGNMENT_MICRO)
+        .export_values();
+    py::enum_<Statistics::StatisticsDoubleAttribute>(m, "StatisticsDoubleAttribute")
+        .value("MAX_DEGRADATION", Statistics::StatisticsDoubleAttribute::MAX_DEGRADATION)
+        .value("CURRENT_DEGRADATION", Statistics::StatisticsDoubleAttribute::CURRENT_DEGRADATION)
+        .export_values();
     py::class_<Statistics>(m, "Statistics")
-        .def("getMaxStackDepth", &Statistics::getMaxDecisionLevel)
-        .def("getNumPops", &Statistics::getNumPops)
-        .def("getNumVisitedTreeStates", &Statistics::getNumVisitedTreeStates)
-        .def("getNumSplits", &Statistics::getNumSplits)
-        .def("getTotalTime", &Statistics::getTotalTime)
-        .def("getNumTableauPivots", &Statistics::getNumTableauPivots)
-        .def("getMaxDegradation", &Statistics::getMaxDegradation)
-        .def("getNumPrecisionRestorations", &Statistics::getNumPrecisionRestorations)
-        .def("getNumSimplexPivotSelectionsIgnoredForStability", &Statistics::getNumSimplexPivotSelectionsIgnoredForStability)
-        .def("getNumSimplexUnstablePivots", &Statistics::getNumSimplexUnstablePivots)
-        .def("getNumMainLoopIterations", &Statistics::getNumMainLoopIterations)
-        .def("getTimeSimplexStepsMicro", &Statistics::getTimeSimplexStepsMicro)
-        .def("getNumConstraintFixingSteps", &Statistics::getNumConstraintFixingSteps)
+        .def("getUnsignedAttribute", &Statistics::getUnsignedAttribute)
+        .def("getLongAttribute", &Statistics::getLongAttribute)
+        .def("getDoubleAttribute", &Statistics::getDoubleAttribute)
+        .def("getTotalTimeInMicro", &Statistics::getTotalTimeInMicro)
         .def("hasTimedOut", &Statistics::hasTimedOut);
 }

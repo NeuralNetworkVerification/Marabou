@@ -369,7 +369,7 @@ void SparseFTFactorization::factorizeBasis()
     }
 
     if ( _statistics )
-        _statistics->incNumBasisRefactorizations();
+        _statistics->incLongAttribute( Statistics::NUM_BASIS_REFACTORIZATIONS );
 }
 
 void SparseFTFactorization::storeFactorization( IBasisFactorization *other )

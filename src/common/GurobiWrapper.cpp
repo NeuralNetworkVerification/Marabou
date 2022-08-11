@@ -2,7 +2,7 @@
 /*! \file GurobiWrapper.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Haoze Andrew Wu
+ **   Guy Katz, Haoze Andrew Wu, Teruhiro Tagomori
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -79,6 +79,17 @@ void GurobiWrapper::resetModel()
     // Thread number
     _model->getEnv().set( GRB_IntParam_Threads,
                           GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
+
+    // Numeral parameters
+    _model->getEnv().set
+        ( GRB_DoubleParam_FeasibilityTol,
+          std::max
+          ( GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS, 1e-9 ) );
+
+    _model->getEnv().set
+        ( GRB_DoubleParam_IntFeasTol,
+          std::max
+          ( GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE, 1e-8 ) );
 
     // Timeout
     setTimeLimit( _timeoutInSeconds );
@@ -185,7 +196,46 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
     }
 }
 
-void GurobiWrapper::setCost( const List<Term> &terms )
+void GurobiWrapper::addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+{
+    addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_LESS_EQUAL );
+}
+
+void GurobiWrapper::addGeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+{
+    addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_GREATER_EQUAL );
+}
+
+void GurobiWrapper::addEqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+{
+    addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_EQUAL );
+}
+
+void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar, char sense )
+{
+    try
+    {
+        GRBLinExpr constraint;
+
+        for ( const auto &term : terms )
+        {
+            ASSERT( _nameToVariable.exists( term._variable ) );
+            constraint += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
+        }
+
+        ASSERT( _nameToVariable.exists( binVarName ) );
+        _model->addGenConstrIndicator( *_nameToVariable[binVarName], binVal, constraint, sense, scalar );
+    }
+    catch ( GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
+}
+
+void GurobiWrapper::setCost( const List<Term> &terms, double constant )
 {
     try
     {
@@ -196,6 +246,8 @@ void GurobiWrapper::setCost( const List<Term> &terms )
             ASSERT( _nameToVariable.exists( term._variable ) );
             cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
         }
+
+        cost += constant;
 
         _model->setObjective( cost, GRB_MINIMIZE );
     }
@@ -208,7 +260,7 @@ void GurobiWrapper::setCost( const List<Term> &terms )
     }
 }
 
-void GurobiWrapper::setObjective( const List<Term> &terms )
+void GurobiWrapper::setObjective( const List<Term> &terms, double constant )
 {
     try
     {
@@ -219,6 +271,8 @@ void GurobiWrapper::setObjective( const List<Term> &terms )
             ASSERT( _nameToVariable.exists( term._variable ) );
             cost += GRBLinExpr( *_nameToVariable[term._variable], term._coefficient );
         }
+
+        cost += constant;
 
         _model->setObjective( cost, GRB_MAXIMIZE );
     }
@@ -241,6 +295,7 @@ void GurobiWrapper::solve()
     try
     {
         _model->optimize();
+        log( Stringf( "Model status: %u\n", _model->get( GRB_IntAttr_Status ) ) );
     }
     catch ( GRBException e )
     {
@@ -261,7 +316,7 @@ bool GurobiWrapper::cutoffOccurred()
     return _model->get( GRB_IntAttr_Status ) == GRB_CUTOFF;
 }
 
-bool GurobiWrapper::infeasbile()
+bool GurobiWrapper::infeasible()
 {
     return _model->get( GRB_IntAttr_Status ) == GRB_INFEASIBLE;
 }

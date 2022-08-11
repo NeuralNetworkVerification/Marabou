@@ -2,7 +2,7 @@
 /*! \file main.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -17,6 +17,10 @@
 #include "Error.h"
 #include "Marabou.h"
 #include "Options.h"
+
+#ifdef ENABLE_OPENBLAS
+#include "cblas.h"
+#endif
 
 static std::string getCompiler() {
     std::stringstream ss;
@@ -72,10 +76,18 @@ int main( int argc, char **argv )
             return 0;
         };
 
-        if ( options->getBool( Options::DNC_MODE ) )
+        if ( options->getBool( Options::DNC_MODE ) ||
+             ( !options->getBool( Options::NO_PARALLEL_DEEPSOI ) &&
+               !options->getBool( Options::SOLVE_WITH_MILP ) &&
+               options->getInt( Options::NUM_WORKERS ) > 1 ) )
             DnCMarabou().run();
         else
+	{
+#ifdef ENABLE_OPENBLAS
+	    openblas_set_num_threads( options->getInt( Options::NUM_BLAS_THREADS ) );
+#endif
             Marabou().run();
+	}
     }
     catch ( const Error &e )
     {

@@ -20,6 +20,7 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "context/context.h"
 
 class String;
 
@@ -92,9 +93,10 @@ public:
     }
 
     void postContextPopHook() {};
+    void preContextPushHook() {};
 
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, bool /* storeAlsoTableauState */ ) const
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
     {
         lastStoredState = &state;
     }
@@ -171,7 +173,7 @@ public:
         _constraintsToSplit.append( constraint );
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -198,6 +200,15 @@ public:
     void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
     {
     }
+
+    void applyAllBoundTightenings() {};
+
+    bool applyAllValidConstraintCaseSplits() { return false; };
+
+    CVC4::context::Context _dontCare;
+    CVC4::context::Context &getContext() { return _dontCare; }
+
+    bool consistentBounds() const { return true; }
 };
 
 #endif // __MockEngine_h__

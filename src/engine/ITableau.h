@@ -16,11 +16,15 @@
 #ifndef __ITableau_h__
 #define __ITableau_h__
 
+
+#include "IBoundManager.h"
 #include "List.h"
 #include "Set.h"
+#include "TableauStateStorageLevel.h"
 
 class EntrySelectionStrategy;
 class Equation;
+class GurobiWrapper;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class SparseMatrix;
@@ -60,12 +64,6 @@ public:
     {
     public:
         /*
-          This callback will be invoked when the variable's value
-          changes.
-        */
-        virtual void notifyVariableValue( unsigned /* variable */, double /* value */ ) {}
-
-        /*
           These callbacks will be invoked when the variable's
           lower/upper bounds change.
         */
@@ -99,16 +97,21 @@ public:
     virtual void setRightHandSide( unsigned index, double value ) = 0;
     virtual void markAsBasic( unsigned variable ) = 0;
     virtual void initializeTableau( const List<unsigned> &initialBasicVariables ) = 0;
-    virtual double getValue( unsigned variable ) = 0;
+    virtual bool existsValue( unsigned variable ) const = 0;
+    virtual double getValue( unsigned variable ) const = 0;
     virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
-    virtual const double *getLowerBounds() const = 0;
-    virtual const double *getUpperBounds() const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
+    virtual void setBoundsPointers( const double *lower, const double *upper ) = 0;
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;
     virtual void tightenUpperBound( unsigned variable, double value ) = 0;
+    virtual void notifyLowerBound( unsigned variable, double bound ) = 0;
+    virtual void notifyUpperBound( unsigned variable, double bound ) = 0;
+    virtual void updateVariablesToComplyWithBounds() = 0;
+    virtual void updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value ) = 0;
+    virtual void updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual unsigned getBasicStatusByIndex( unsigned basicIndex ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
@@ -159,8 +162,9 @@ public:
     virtual const SparseUnsortedList *getSparseARow( unsigned row ) const = 0;
     virtual const SparseMatrix *getSparseA() const = 0;
     virtual void performDegeneratePivot() = 0;
-    virtual void storeState( TableauState &state ) const = 0;
-    virtual void restoreState( const TableauState &state ) = 0;
+    virtual void storeState( TableauState &state, TableauStateStorageLevel level ) const = 0;
+    virtual void restoreState( const TableauState &state, TableauStateStorageLevel level ) = 0;
+    virtual void setGurobi( GurobiWrapper *gurobi ) = 0;
     virtual void setStatistics( Statistics *statistics ) = 0;
     virtual const double *getRightHandSide() const = 0;
     virtual void forwardTransformation( const double *y, double *x ) const = 0;
@@ -180,6 +184,20 @@ public:
     virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     virtual void postContextPopHook() = 0;
+    virtual IBoundManager &getBoundManager() const = 0;
+
+    bool isOptimizing() const
+    {
+        return _optimizing;
+    }
+
+    void toggleOptimization( bool optimizing )
+    {
+        _optimizing = optimizing;
+    }
+
+protected:
+    bool _optimizing = false;
 };
 
 #endif // __ITableau_h__

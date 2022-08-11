@@ -2,7 +2,7 @@
 /*! \file DisjunctionConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Duligur Ibeling, Christopher Lazarus
+ **   Guy Katz, Duligur Ibeling, Christopher Lazarus, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -64,7 +64,6 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
 
@@ -145,25 +144,28 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return false;
+    }
+
+    virtual bool supportVariableElimination() const override
+    {
+      return false;
+    }
+
+    /*
+      Transform the disjunction into a disjunction where each disjunct only
+      contains variable bounds.
+    */
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+
+    /*
       Dump the current state of the constraint.
     */
     void dump( String &output ) const override;
-
-    /*
-      For preprocessing: get any auxiliary equations that this
-      constraint would like to add to the equation pool. In the Disjunction
-      case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
-    */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
-
-    /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
-    */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const override;
 
     /*
       Returns string with shape: disjunction, _f, _b

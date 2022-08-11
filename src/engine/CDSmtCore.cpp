@@ -2,7 +2,7 @@
 /*! \file CDSmtCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Aleksandar Zeljic, Parth Shah
+ **   Guy Katz, Aleksandar Zeljic, Haoze Wu, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -22,6 +22,7 @@
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
 
 using namespace CVC4::context;
@@ -36,6 +37,11 @@ CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
     , _constraintForSplitting( NULL )
     , _constraintViolationThreshold
       ( Options::CONSTRAINT_VIOLATION_THRESHOLD )
+    , _deepSoIRejectionThreshold( Options::get()->getInt
+                                  ( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
+    , _branchingHeuristic( Options::get()->getDivideStrategy() )
+    , _scoreTracker( nullptr )
+    , _numRejectedPhasePatternProposal( 0 )
 {
 }
 
@@ -71,6 +77,35 @@ unsigned CDSmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) 
         return 0;
 
     return _constraintToViolationCount[constraint];
+}
+
+void CDSmtCore::initializeScoreTrackerIfNeeded( const
+                                                List<PiecewiseLinearConstraint *>
+                                                &plConstraints )
+{
+    if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
+        {
+            _scoreTracker = std::unique_ptr<PseudoImpactTracker>
+                ( new PseudoImpactTracker() );
+            _scoreTracker->initialize( plConstraints );
+
+            SMT_LOG( "\tTracking Pseudo Impact..." );
+        }
+}
+
+void CDSmtCore::reportRejectedPhasePatternProposal()
+{
+    ++_numRejectedPhasePatternProposal;
+
+    if ( _numRejectedPhasePatternProposal >=
+         _deepSoIRejectionThreshold )
+        {
+            _needToSplit = true;
+            if ( !pickSplitPLConstraint() )
+                // If pickSplitConstraint failed to pick one, use the native
+                // relu-violation based splitting heuristic.
+                _constraintForSplitting = _scoreTracker->topUnfixed();
+        }
 }
 
 bool CDSmtCore::needToSplit() const
@@ -112,6 +147,7 @@ void CDSmtCore::decide()
     ASSERT( _needToSplit );
     SMT_LOG( "Performing a ReLU split" );
 
+    _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
     // TODO: Ideally we will not ever reach this point
     // TODO: Maintain a vector of constraints above the threshold
@@ -137,8 +173,8 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
 
     if ( _statistics )
     {
-        _statistics->incNumSplits();
-        _statistics->incNumVisitedTreeStates();
+        _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
     }
 
     if ( !constraint->isFeasible() )
@@ -151,9 +187,16 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
 
     if ( _statistics )
     {
-        _statistics->setCurrentDecisionLevel( _context.getLevel() );
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
+
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
     SMT_LOG( "Performing a ReLU split - DONE" );
 }
@@ -230,7 +273,7 @@ bool CDSmtCore::backtrackAndContinueSearch()
     ASSERT( feasibleDecision.isFeasible() );
 
     if ( _statistics )
-        _statistics->incNumVisitedTreeStates();
+        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
 
     PiecewiseLinearConstraint *pwlc = feasibleDecision._pwlConstraint;
     if ( pwlc->isImplication() )
@@ -240,9 +283,15 @@ bool CDSmtCore::backtrackAndContinueSearch()
 
     if ( _statistics )
     {
-        _statistics->setCurrentDecisionLevel( getDecisionLevel() );
+        unsigned level = _context.getLevel();
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->addTimeSmtCore( TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
 
     checkSkewFromDebuggingSolution();
@@ -252,6 +301,7 @@ bool CDSmtCore::backtrackAndContinueSearch()
 void CDSmtCore::resetReportedViolations()
 {
     _constraintToViolationCount.clear();
+    _numRejectedPhasePatternProposal = 0;
     _needToSplit = false;
 }
 
@@ -413,7 +463,8 @@ PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing( List<Pi
 bool CDSmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
-        _constraintForSplitting = _engine->pickSplitPLConstraint();
+        _constraintForSplitting = _engine->pickSplitPLConstraint
+            ( _branchingHeuristic );
     return _constraintForSplitting != NULL;
 }
 
@@ -424,12 +475,5 @@ void CDSmtCore::reset()
     _needToSplit = false;
     _constraintForSplitting = NULL;
     _constraintToViolationCount.clear();
+    _numRejectedPhasePatternProposal = 0;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

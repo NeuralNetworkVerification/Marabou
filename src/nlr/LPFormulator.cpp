@@ -58,9 +58,11 @@ double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
     else
         gurobi.setCost( terms );
 
+    gurobi.setTimeLimit( FloatUtils::infinity() );
+
     gurobi.solve();
 
-    if ( gurobi.infeasbile() )
+    if ( gurobi.infeasible() )
     {
         if ( infeasible )
         {
@@ -143,7 +145,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             gurobi.setObjective( terms );
             gurobi.solve();
 
-            if ( gurobi.infeasbile() )
+            if ( gurobi.infeasible() )
                 throw InfeasibleQueryException();
 
             if ( gurobi.cutoffOccurred() )
@@ -190,7 +192,7 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             gurobi.setCost( terms );
             gurobi.solve();
 
-            if ( gurobi.infeasbile() )
+            if ( gurobi.infeasible() )
                 throw InfeasibleQueryException();
 
             if ( gurobi.cutoffOccurred() )

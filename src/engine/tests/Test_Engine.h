@@ -17,7 +17,6 @@
 
 #include "Engine.h"
 #include "InputQuery.h"
-#include "MockConstraintBoundTightenerFactory.h"
 #include "MockConstraintMatrixAnalyzerFactory.h"
 #include "MockCostFunctionManagerFactory.h"
 #include "MockErrno.h"
@@ -34,7 +33,6 @@ class MockForEngine :
     public MockTableauFactory,
     public MockProjectedSteepestEdgeRuleFactory,
     public MockRowBoundTightenerFactory,
-    public MockConstraintBoundTightenerFactory,
     public MockCostFunctionManagerFactory,
     public MockConstraintMatrixAnalyzerFactory
 {
@@ -48,7 +46,6 @@ public:
     MockTableau *tableau;
     MockCostFunctionManager *costFunctionManager;
     MockRowBoundTightener *rowTightener;
-    MockConstraintBoundTightener *constraintTightener;
     MockConstraintMatrixAnalyzer *constraintMatrixAnalyzer;
 
     void setUp()
@@ -58,8 +55,9 @@ public:
         tableau = &( mock->mockTableau );
         costFunctionManager = &( mock->mockCostFunctionManager );
         rowTightener = &( mock->mockRowBoundTightener );
-        constraintTightener = &( mock->mockConstraintBoundTightener );
         constraintMatrixAnalyzer = &( mock->mockConstraintMatrixAnalyzer );
+
+        Options::get()->setString( Options::LP_SOLVER, "native" );
     }
 
     void tearDown()
@@ -143,9 +141,8 @@ public:
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->setDimensionsWasCalled );
 
-        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 2U );
+        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 1U);
         TS_ASSERT_EQUALS( *( tableau->lastResizeWatchers.begin() ), rowTightener );
-        TS_ASSERT_EQUALS( *( tableau->lastResizeWatchers.rbegin() ), constraintTightener );
 
         TS_ASSERT_EQUALS( tableau->lastCostFunctionManager, costFunctionManager );
 
@@ -337,13 +334,12 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
-        Options::get()->setString( Options::SPLITTING_STRATEGY, "polarity" );
         Engine engine;
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
-        constraintToSplit = engine.pickSplitPLConstraint();
+        constraintToSplit = engine.pickSplitPLConstraint(DivideStrategy::Polarity );
         constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity );
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
@@ -439,13 +435,12 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
-        Options::get()->setString( Options::SPLITTING_STRATEGY, "earliest-relu" );
         Engine engine;
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
-        constraintToSplit = engine.pickSplitPLConstraint();
+        constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::EarliestReLU );
         constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::EarliestReLU );
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
@@ -545,7 +540,7 @@ public:
         TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
-        constraintToSplit = engine.pickSplitPLConstraint();
+        constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::LargestInterval );
 
         PiecewiseLinearCaseSplit interval1;
         interval1.storeBoundTightening( Tightening( 1, 0.5, Tightening::UB ) );

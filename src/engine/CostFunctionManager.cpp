@@ -117,6 +117,56 @@ void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heur
     computeReducedCosts();
 }
 
+void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double>
+                                                    &heuristicCost )
+{
+    /*
+      The heuristic cost may include variables that are basic and variables
+      that are non-basic. The basic variables are added to the vector of basic
+      costs, which is normally used in computing the core cost fuction.
+      Afterwards, once the modified core cost function has been computed,
+      the remaining, non-basic variables are added.
+    */
+
+    // This method assumes that we are in optimization mode.
+    ASSERT( !_tableau->existsBasicOutOfBounds() );
+    ASSERT( _tableau->isOptimizing() );
+
+    // Reset cost function
+    std::fill( _costFunction, _costFunction + _n - _m, 0.0 );
+
+    // Iterate over the heuristic costs. Add any basic variables to the basic
+    // cost vector, and the rest directly to the cost function.
+    for ( const auto &variableCost : heuristicCost )
+    {
+        unsigned variable = variableCost.first;
+        double cost = variableCost.second;
+        unsigned variableIndex = _tableau->variableToIndex( variable );
+        if ( _tableau->isBasic( variable ) )
+            _basicCosts[variableIndex] += cost;
+        else
+            _costFunction[variableIndex] += cost;
+    }
+
+    // Complete the calculation of the modified core cost function
+    computeMultipliers();
+    computeReducedCosts();
+
+    _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
+}
+
+double CostFunctionManager::computeGivenCostFunctionDirectly( const Map<unsigned, double>
+                                                              &heuristicCost )
+{
+    double cost = 0;
+    for ( const auto &pair : heuristicCost )
+        {
+            double value = _tableau->getValue( pair.first );
+            cost += pair.second * value;
+        }
+    return cost;
+}
+
 void CostFunctionManager::computeCoreCostFunction()
 {
     /*

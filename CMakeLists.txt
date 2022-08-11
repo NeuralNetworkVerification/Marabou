@@ -38,7 +38,7 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
-set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.9")
+set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
 if (NOT OPENBLAS_DIR)
     set(OPENBLAS_DIR ${OPENBLAS_DEFAULT_DIR})
 endif()
@@ -131,7 +131,7 @@ if(${BUILD_PYTHON})
 endif()
 
 if (NOT MSVC)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
        set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD -Qunused-arguments ) #-Wno-deprecated 
      else()
        set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD ) #-Wno-deprecated 
@@ -200,7 +200,7 @@ if (${ENABLE_GUROBI})
   add_compile_definitions(ENABLE_GUROBI)
 
   set(GUROBI_LIB1 "gurobi_c++")
-  set(GUROBI_LIB2 "gurobi90")
+  set(GUROBI_LIB2 "gurobi95")
 
   add_library(${GUROBI_LIB1} SHARED IMPORTED)
   set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
@@ -211,9 +211,9 @@ if (${ENABLE_GUROBI})
 
   # MACOSx uses .dylib instead of .so for its Gurobi downloads.
   if (APPLE)
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.dylib)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.dylib)
   else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.so)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.so)
   endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})

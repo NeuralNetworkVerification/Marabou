@@ -17,9 +17,9 @@
 
 namespace T
 {
-	ITableau *createTableau()
+	ITableau *createTableau( IBoundManager &boundManager )
 	{
-		return new Tableau();
+		return new Tableau( boundManager );
 	}
 
 	void discardTableau( ITableau *tableau )

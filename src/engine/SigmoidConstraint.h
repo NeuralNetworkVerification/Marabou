@@ -2,7 +2,7 @@
 /*! \file SigmoidConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -53,7 +53,6 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
 
@@ -102,12 +101,17 @@ public:
     /*
       Compute the sigmoid function.
     */
-    double sigmoid( double x ) const;
+    static double sigmoid( double x );
 
     /*
       Compute the inverse of the sigmoid function.
     */
-    double sigmoidInverse( double y ) const;
+    static double sigmoidInverse( double y );
+
+    /*
+      Compute the derivative of the sigmoid function.
+    */
+    static double sigmoidDerivative( double x );
 
 private:
     unsigned _b, _f; 

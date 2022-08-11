@@ -475,6 +475,7 @@ public:
         populateNetwork( nlr );
 
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 14 );
 
         // Initialize the bounds
         tableau.setLowerBound( 0, -1 );
@@ -680,6 +681,7 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 1 ), 13 );
 
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 14 );
 
         // Initialize the bounds
         tableau.setLowerBound( 0, -1 );
@@ -863,6 +865,7 @@ public:
         // Very loose bounds for neurons except inputs
         double large = 1000000;
 
+        tableau.getBoundManager().initialize( 7 );
         tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
@@ -1176,6 +1179,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1288,6 +1292,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1404,6 +1409,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1524,6 +1530,7 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
+        tableau.getBoundManager().initialize( 7 );
         nlr.setTableau( &tableau );
 
         // Create the layers
@@ -1970,5 +1977,129 @@ public:
             TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 0 ).get( i ), 4 ) );
             TS_ASSERT( FloatUtils::areEqual( ( *( nlr.getLayer( nlr.getNumberOfLayers() - 1 )->getSimulations() ) ).get( 1 ).get( i ), 4 ) );
         }
+    }
+
+    void test_concretize_input_assignment()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+
+        populateNetwork( nlr );
+
+        // With ReLUs, Inputs are zeros, only biases count
+        tableau.nextValues[0] = 0;
+        tableau.nextValues[1] = 0;
+
+        Map<unsigned, double> assignment;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 4 ) );
+
+        TS_ASSERT( assignment.size() == 14 );
+        TS_ASSERT( FloatUtils::areEqual( assignment[12], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( assignment[13], 4 ) );
+
+        // With ReLUs, case 1
+        tableau.nextValues[0] = 1;
+        tableau.nextValues[1] = 1;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 1 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( assignment[12], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( assignment[13], 1 ) );
+
+        // With ReLUs, case 2
+        tableau.nextValues[0] = 1;
+        tableau.nextValues[1] = 2;
+
+        TS_ASSERT_THROWS_NOTHING( nlr.concretizeInputAssignment( assignment ) );
+
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 0 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 5 )->getAssignment( 1 ), 0 ) );
+
+        TS_ASSERT( FloatUtils::areEqual( assignment[12], 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( assignment[13], 0 ) );
+    }
+
+
+    void test_obtain_bound_from_ipq()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork( nlr );
+
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables(14);
+
+
+        // Initialize the bounds
+        inputQuery.setLowerBound( 0, -1 );
+        inputQuery.setUpperBound( 0, 1 );
+        inputQuery.setLowerBound( 1, -1 );
+        inputQuery.setUpperBound( 1, 1 );
+
+        double large = 1000;
+        inputQuery.setLowerBound( 2, -large ); inputQuery.setUpperBound( 2, large );
+        inputQuery.setLowerBound( 3, -large ); inputQuery.setUpperBound( 3, large );
+        inputQuery.setLowerBound( 4, -large ); inputQuery.setUpperBound( 4, large );
+        inputQuery.setLowerBound( 5, -large ); inputQuery.setUpperBound( 5, large );
+        inputQuery.setLowerBound( 6, -large ); inputQuery.setUpperBound( 6, large );
+        inputQuery.setLowerBound( 7, -large ); inputQuery.setUpperBound( 7, large );
+        inputQuery.setLowerBound( 8, -large ); inputQuery.setUpperBound( 8, large );
+        inputQuery.setLowerBound( 9, -large ); inputQuery.setUpperBound( 9, large );
+        inputQuery.setLowerBound( 10, -large ); inputQuery.setUpperBound( 10, large );
+        inputQuery.setLowerBound( 11, -large ); inputQuery.setUpperBound( 11, large );
+        inputQuery.setLowerBound( 12, -large ); inputQuery.setUpperBound( 12, large );
+        inputQuery.setLowerBound( 13, -large ); inputQuery.setUpperBound( 13, large );
+
+        // Initialize
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds( inputQuery ) );
+
+        // Perform the tightening pass
+        TS_ASSERT_THROWS_NOTHING( nlr.intervalArithmeticBoundPropagation() );
+
+        List<Tightening> expectedBounds({
+                Tightening( 2, 0, Tightening::LB ),
+                Tightening( 2, 2, Tightening::UB ),
+                Tightening( 3, 0, Tightening::LB ),
+                Tightening( 3, 2, Tightening::UB ),
+
+                Tightening( 4, -5, Tightening::LB ),
+                Tightening( 4, 5, Tightening::UB ),
+                Tightening( 5, 0, Tightening::LB ),
+                Tightening( 5, 5, Tightening::UB ),
+
+                Tightening( 6, -1, Tightening::LB ),
+                Tightening( 6, 1, Tightening::UB ),
+                Tightening( 7, 0, Tightening::LB ),
+                Tightening( 7, 1, Tightening::UB ),
+
+                Tightening( 8, -1, Tightening::LB ),
+                Tightening( 8, 7, Tightening::UB ),
+                Tightening( 9, 0, Tightening::LB ),
+                Tightening( 9, 7, Tightening::UB ),
+
+                Tightening( 10, -1, Tightening::LB ),
+                Tightening( 10, 7, Tightening::UB ),
+                Tightening( 11, 0, Tightening::LB ),
+                Tightening( 11, 7, Tightening::UB ),
+
+                Tightening( 12, 0, Tightening::LB ),
+                Tightening( 12, 7, Tightening::UB ),
+                Tightening( 13, 0, Tightening::LB ),
+                Tightening( 13, 28, Tightening::UB ),
+            });
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+        for ( const auto &bound : expectedBounds )
+            TS_ASSERT( bounds.exists( bound ) );
     }
 };

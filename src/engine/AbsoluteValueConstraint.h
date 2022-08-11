@@ -68,7 +68,6 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
 
@@ -159,9 +158,34 @@ public:
 
     /*
       For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      like to add to the equation pool. This way, case splits will be bound
+      update of the aux variables.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+
+    /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Abs is:
+      _f - _b for the active phase
+      _f + _b for the inactive phase
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
+      Return the phase status corresponding to the values of the *input*
+      variables in the given assignment.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
 
     /*
       Returns string with shape: absoluteValue,_f,_b
@@ -171,6 +195,11 @@ public:
     inline unsigned getB() const { return _b; };
 
     inline unsigned getF() const { return _f; };
+
+    inline bool auxVariablesInUse() const { return _auxVarsInUse; };
+
+    inline unsigned getPosAux() const { return _posAux; };
+    inline unsigned getNegAux() const { return _negAux; };
 
 private:
     /*
@@ -196,6 +225,11 @@ private:
     */
     PiecewiseLinearCaseSplit getPositiveSplit() const;
     PiecewiseLinearCaseSplit getNegativeSplit() const;
+
+    /*
+      Return true iff _b and _f are not both within bounds.
+    */
+    bool haveOutOfBoundVariables() const;
 };
 
 #endif // __AbsoluteValueConstraint_h__

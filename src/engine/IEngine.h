@@ -18,7 +18,9 @@
 
 #include "DivideStrategy.h"
 #include "SnCDivideStrategy.h"
+#include "TableauStateStorageLevel.h"
 #include "List.h"
+#include "context/context.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -40,8 +42,9 @@ public:
         UNSAT = 0,
         SAT = 1,
         ERROR = 2,
-        TIMEOUT = 3,
-        QUIT_REQUESTED = 4,
+        UNKNOWN = 3,
+        TIMEOUT = 4,
+        QUIT_REQUESTED = 5,
 
         NOT_DONE = 999,
     };
@@ -57,14 +60,15 @@ public:
     virtual void applySnCSplit( PiecewiseLinearCaseSplit split, String queryId ) = 0;
 
     /*
-      Hook invoked after context pop to update context independent data.
+      Hooks invoked before/after context push/pop to store/restore/update context independent data.
     */
+    virtual void preContextPushHook() = 0;
     virtual void postContextPopHook() = 0;
 
     /*
       Methods for storing and restoring the state of the engine.
     */
-    virtual void storeState( EngineState &state, bool storeAlsoTableauState ) const = 0;
+    virtual void storeState( EngineState &state, TableauStateStorageLevel level ) const = 0;
     virtual void restoreState( const EngineState &state ) = 0;
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
@@ -99,7 +103,8 @@ public:
     /*
       Pick the piecewise linear constraint for internal splitting
     */
-    virtual PiecewiseLinearConstraint *pickSplitPLConstraint() = 0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy
+                                                              strategy ) = 0;
 
     /*
       Pick the piecewise linear constraint for SnC splitting
@@ -107,6 +112,15 @@ public:
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
 
+    virtual void applyAllBoundTightenings() = 0;
+
+    virtual bool applyAllValidConstraintCaseSplits() = 0;
+    /*
+      Get Context reference
+     */
+    virtual CVC4::context::Context &getContext() = 0;
+
+    virtual bool consistentBounds() const = 0;
 };
 
 #endif // __IEngine_h__

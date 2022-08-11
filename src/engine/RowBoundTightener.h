@@ -16,7 +16,7 @@
 #ifndef __RowBoundTightener_h__
 #define __RowBoundTightener_h__
 
-#include "BoundManager.h"
+#include "IBoundManager.h"
 #include "Equation.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
@@ -36,29 +36,11 @@ public:
     void setDimensions();
 
     /*
-      Initialize tightest lower/upper bounds using the talbeau.
-    */
-    void resetBounds();
-
-    /*
-      Clear all learned bounds, without reallocating memory.
-    */
-    void clear();
-
-    /*
-      Callbacks from the Tableau, to inform of bounds tightened by,
-      e.g., the PL constraints.
-    */
-    void notifyLowerBound( unsigned variable, double bound );
-    void notifyUpperBound( unsigned variable, double bound );
-
-    /*
        Method obtains lower bound of *var*.
      */
     inline double getLowerBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getLowerBound( var )
-                                            : _lowerBounds[var];
+        return  _lowerBounds[var];// _boundManager.getLowerBound( var );
     }
 
     /*
@@ -66,45 +48,21 @@ public:
      */
     inline double getUpperBound( unsigned var ) const
     {
-        return ( _boundManager != nullptr ) ? _boundManager->getUpperBound( var )
-                                            : _upperBounds[var];
+        return _upperBounds[var];//_boundManager.getUpperBound( var );
     }
 
     /*
-       Method sets the lower bound of *var* to *value*.
-     */
-    inline void setLowerBound( unsigned var, double value )
-    {
-        ( _boundManager != nullptr ) ? _boundManager->setLowerBound( var, value )
-                                     : _lowerBounds[var] = value;
-    }
-
-    /*
-       Method sets the upper bound of *var* to *value*.
-     */
-    inline void setUpperBound( unsigned var, double value )
-    {
-        ( _boundManager != nullptr ) ? _boundManager->setUpperBound( var, value )
-                                     : _upperBounds[var] = value;
-    }
-
-    /*
-     * Local register new bound functions
-     * NOTE: Used post integration, currently these methods are not used anywhere atm.
+     * Register a new tighter bound
      */
     inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound)
     {
-        return _boundManager->tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
-    }
-    inline unsigned registerTighterUpperBound( unsigned variable, double newLowerBound)
-    {
-        return _boundManager->tightenUpperBound( variable, newLowerBound ) ? 1u : 0u;
+        return _boundManager.tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
     }
 
-    /*
-      Callback from the Tableau, to inform of a change in dimensions
-    */
-    void notifyDimensionChange( unsigned m, unsigned n );
+    inline unsigned registerTighterUpperBound( unsigned variable, double newLowerBound)
+    {
+        return _boundManager.tightenUpperBound( variable, newLowerBound ) ? 1u : 0u;
+    }
 
     /*
       Derive and enqueue new bounds for all varaibles, using the
@@ -148,27 +106,27 @@ public:
      */
     void setStatistics( Statistics *statistics );
 
+    /*
+       Update pointers to local lower/upper bounds in BoundManager
+     */
+    void setBoundsPointers( const double *lower, const double *upper );
+
 private:
     const ITableau &_tableau;
     unsigned _n;
     unsigned _m;
 
     /*
-      Work space for the tightener to derive tighter bounds. These
-      represent the tightest bounds currently known, either taken
-      from the tableau or derived by the tightener. The flags indicate
-      whether each bound has been tightened by the tightener.
-    */
-    double *_lowerBounds;
-    double *_upperBounds;
-    bool *_tightenedLower;
-    bool *_tightenedUpper;
+     * Object that stores current bounds from all the sources
+     */
+    IBoundManager &_boundManager;
 
     /*
-       BoundManager object stores bounds of all variables.
-       NOT YET IN USE
+       Direct pointers to _boundManager arrays to avoid multiple dereferencing.
      */
-    BoundManager *_boundManager;
+    const double * _lowerBounds;
+    const double * _upperBounds;
+
 
     /*
       Work space for the inverted basis matrix tighteners

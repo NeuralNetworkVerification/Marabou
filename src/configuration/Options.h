@@ -17,11 +17,14 @@
 #define __Options_h__
 
 #include "DivideStrategy.h"
+#include "LPSolverType.h"
 #include "MString.h"
 #include "Map.h"
 #include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
+#include "SoIInitializationStrategy.h"
+#include "SoISearchStrategy.h"
 #include "SymbolicBoundTighteningType.h"
 
 #include "boost/program_options.hpp"
@@ -55,7 +58,12 @@ public:
         SOLVE_WITH_MILP,
 
         // Whether to call a LP tightening after a case split
-        SKIP_LP_TIGHTENING_AFTER_SPLIT
+        PERFORM_LP_TIGHTENING_AFTER_SPLIT,
+
+        // If false, when multiple threads are allowed, run the DeepSoI-based procedure
+        // with a different random seed on each thread. The problem is solved once
+        // any of the thread finishes.
+        NO_PARALLEL_DEEPSOI,
     };
 
     enum IntOptions {
@@ -73,8 +81,18 @@ public:
 
         CONSTRAINT_VIOLATION_THRESHOLD,
 
+        // The number of rejected phase pattern proposal allowed before
+        // splitting at a search state.
+        DEEP_SOI_REJECTION_THRESHOLD,
+
         // The number of simulations
         NUMBER_OF_SIMULATIONS,
+
+        // The random seed used throughout the execution.
+        SEED,
+      
+        // The number of threads to use for OpenBLAS matrix multiplication.
+        NUM_BLAS_THREADS,
     };
 
     enum FloatOptions{
@@ -86,6 +104,9 @@ public:
 
         // Engine's Preprocessor options
         PREPROCESSOR_BOUND_TOLERANCE,
+
+        // The beta parameter used in converting the soi f to a probability
+        PROBABILITY_DENSITY_PARAMETER,
     };
 
     enum StringOptions {
@@ -98,6 +119,14 @@ public:
         SYMBOLIC_BOUND_TIGHTENING_TYPE,
         MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
+
+        // The strategy used for soi minimization
+        SOI_SEARCH_STRATEGY,
+        // The strategy used for initializing the soi
+        SOI_INITIALIZATION_STRATEGY,
+
+        // The procedure/solver for solving the LP
+        LP_SOLVER,
     };
 
     /*
@@ -126,6 +155,9 @@ public:
     SnCDivideStrategy getSnCDivideStrategy() const;
     SymbolicBoundTighteningType getSymbolicBoundTighteningType() const;
     MILPSolverBoundTighteningType getMILPSolverBoundTighteningType() const;
+    SoIInitializationStrategy getSoIInitializationStrategy() const;
+    SoISearchStrategy getSoISearchStrategy() const;
+    LPSolverType getLPSolverType() const;
 
     /*
       Retrieve the value of the various options, by type

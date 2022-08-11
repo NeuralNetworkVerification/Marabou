@@ -63,6 +63,22 @@ public:
         --it;
         TS_ASSERT_EQUALS( it, list.begin() );
         TS_ASSERT_EQUALS( *it, 3 );
+
+        List<int> otherList = { -1, -2 };
+        list.appendHead( otherList );
+
+        it = list.begin();
+        TS_ASSERT_EQUALS( *it, -1 );
+        ++it;
+        TS_ASSERT_EQUALS( *it, -2 );
+        ++it;
+        TS_ASSERT_EQUALS( *it, 3 );
+        ++it;
+        TS_ASSERT_EQUALS( *it, 5 );
+        ++it;
+        TS_ASSERT_EQUALS( *it, 8 );
+        ++it;
+        TS_ASSERT_EQUALS( it, list.end() );
     }
 
     void test_erase()
@@ -272,6 +288,27 @@ public:
                                  const CommonError &e,
                                  e.getCode(),
                                  CommonError::LIST_IS_EMPTY );
+    }
+
+    void test_remove_if()
+    {
+        List<int> a;
+
+        a.append( -1 );
+        a.append( 0 );
+        a.append( 1 );
+        a.append( -2 );
+
+        a.removeIf( [] ( int number ) { return number < 0; } );
+
+        auto it = a.begin();
+        TS_ASSERT_EQUALS( *it, 0 );
+
+        ++it;
+        TS_ASSERT_EQUALS( *it, 1 );
+
+        ++it;
+        TS_ASSERT_EQUALS( it, a.end() );
     }
 };
 

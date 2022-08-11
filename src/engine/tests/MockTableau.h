@@ -16,6 +16,8 @@
 #ifndef __MockTableau_h__
 #define __MockTableau_h__
 
+#include "MockBoundManager.h"
+#include "context/context.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
 #include "Map.h"
@@ -45,6 +47,9 @@ public:
         lastCostFunctionManager = NULL;
 
         nextLinearlyDependentResult = false;
+
+        CVC4::context::Context ctx;
+        _boundManager = new MockBoundManager();
     }
 
     ~MockTableau()
@@ -78,10 +83,15 @@ public:
             delete[] nextCostFunction;
             nextCostFunction = NULL;
         }
+
+        if ( _boundManager )
+        {
+            delete _boundManager;
+        }
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
     List<unsigned> mockCandidates;
     unsigned mockEnteringVariable;
@@ -95,18 +105,18 @@ public:
         mockEnteringVariable = nonBasic;
     }
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     bool setDimensionsCalled;
     unsigned lastM;
@@ -126,6 +136,13 @@ public:
 
         lastBtranInput = new double[m];
         nextBtranOutput = new double[m];
+
+        _boundManager->initialize( m + n );
+    }
+
+    void setBoundDimension( unsigned n )
+    {
+        lastN = n;
     }
 
     double *lastEntries;
@@ -168,7 +185,18 @@ public:
     }
 
     Map<unsigned, double> nextValues;
-    double getValue( unsigned variable )
+
+    void setValue( unsigned variable, double value )
+    {
+        nextValues[variable] = value;
+    }
+
+    bool existsValue( unsigned variable ) const
+    {
+        return nextValues.exists( variable );
+    }
+
+    double getValue( unsigned variable ) const
     {
         TS_ASSERT( nextValues.exists( variable ) );
         return nextValues[variable];
@@ -177,23 +205,27 @@ public:
     Map<unsigned, double> lowerBounds;
     double getLowerBound( unsigned variable ) const
     {
+        //return _boundManager->getLowerBound( variable );
         return lowerBounds[variable];
     }
 
     void setLowerBound( unsigned variable, double value )
     {
         lowerBounds[variable] = value;
+        _boundManager->setLowerBound( variable, value );
     }
 
     Map<unsigned, double> upperBounds;
     double getUpperBound( unsigned variable ) const
     {
+        //return _boundManager->getLowerBound( variable );
         return upperBounds[variable];
     }
 
     void setUpperBound( unsigned variable, double value )
     {
         upperBounds[variable] = value;
+        _boundManager->setUpperBound( variable, value );
     }
 
     const double *getLowerBounds() const
@@ -465,11 +497,13 @@ public:
     {
     }
 
-    void storeState( TableauState &/* state */ ) const
+    void storeState( TableauState &/* state */,
+                     TableauStateStorageLevel /*level*/ ) const
     {
     }
 
-    void restoreState( const TableauState &/* state */ )
+    void restoreState( const TableauState &/* state */,
+                       TableauStateStorageLevel /*level*/ )
     {
     }
 
@@ -483,6 +517,10 @@ public:
     void tightenUpperBound( unsigned variable, double value )
     {
         tightenedUpperBounds[variable] = value;
+    }
+
+    void setBoundsPointers( const double */*lower*/, const double */*upper*/ )
+    {
     }
 
     void applySplit( const PiecewiseLinearCaseSplit &/* split */)
@@ -519,6 +557,10 @@ public:
     }
 
     void computeBasicCosts()
+    {
+    }
+
+    void setGurobi( GurobiWrapper */* gurobi */ )
     {
     }
 
@@ -598,6 +640,32 @@ public:
     }
 
     void postContextPopHook() {}
+
+    IBoundManager *_boundManager;
+    IBoundManager &getBoundManager() const
+    {
+        return *_boundManager;
+    }
+
+    void notifyLowerBound( unsigned /*variable*/, double /*bound*/ )
+    {
+    }
+
+    void notifyUpperBound( unsigned /*variable*/, double /*bound*/ )
+    {
+    }
+
+    void updateVariablesToComplyWithBounds()
+    {
+    }
+
+    void updateVariableToComplyWithLowerBoundUpdate( unsigned /*variable*/, double /*value*/ )
+    {
+    }
+
+    void updateVariableToComplyWithUpperBoundUpdate( unsigned /*variable*/, double /*value*/ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__
