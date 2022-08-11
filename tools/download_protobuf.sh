@@ -17,9 +17,8 @@ tar -xzf protobuf-cpp-3.19.2.tar.gz # >> /dev/null
 echo "installing protobuf"
 cd protobuf-3.19.2
 mkdir -p $installdir
-./configure --disable-shared --prefix=$installdir
+./configure --disable-shared --prefix=$installdir --enable-fast-install
 make
-make check
 make install
 
 cd $curdir
