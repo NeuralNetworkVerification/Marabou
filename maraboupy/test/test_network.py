@@ -118,26 +118,268 @@ def test_concat():
     Tests a concat.
     """
     # axis = 0
-    filename =  "concat_axis_0.onnx"
+    filename =  "concat/concat_axis_0.onnx"
     network = loadNetworkInONNX(filename)
     assert network.shapeMap['X'] == [2, 2, 2]
     assert network.shapeMap['Y'] == [2, 2, 2]
     assert network.shapeMap['Z'] == (4, 2, 2)
 
     # axis = 1
-    filename =  "concat_axis_1.onnx"
+    filename =  "concat/concat_axis_1.onnx"
     network = loadNetworkInONNX(filename)
     assert network.shapeMap['X'] == [2, 2, 2]
     assert network.shapeMap['Y'] == [2, 2, 2]
     assert network.shapeMap['Z'] == (2, 4, 2)
 
     # axis = 2
-    filename =  "concat_axis_2.onnx"
+    filename =  "concat/concat_axis_2.onnx"
     network = loadNetworkInONNX(filename)
     assert network.shapeMap['X'] == [2, 2, 2]
     assert network.shapeMap['Y'] == [2, 2, 2]
     assert network.shapeMap['Z'] == (2, 2, 4)
 
+def test_split():
+    """
+    Tests a split.
+    """
+    options = Marabou.createOptions(verbosity = 0)
+
+    # input: 1d
+    # split: 2 (scalar)
+    # axis: 0
+    filename =  'split/split_1d_split-2_axis-0.onnx'
+
+    # output1
+    network = loadNetworkInONNX(filename, outputName='Y1')
+    assert network.shapeMap['X'] == [6]
+    assert network.shapeMap['Y1'] == (2,)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        network.setLowerBound(inputVars[i], i + 1)
+        network.setUpperBound(inputVars[i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0]] - 1.0) < TOL
+    assert abs(vals[outputVars[1]] - 2.0) < TOL
+
+    # output2
+    network = loadNetworkInONNX(filename, outputName='Y2')
+    assert network.shapeMap['X'] == [6]
+    assert network.shapeMap['Y2'] == (2,)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        network.setLowerBound(inputVars[i], i + 1)
+        network.setUpperBound(inputVars[i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0]] - 6.0) < TOL
+    assert abs(vals[outputVars[1]] - 8.0) < TOL
+
+    # output3
+    network = loadNetworkInONNX(filename, outputName='Y3')
+    assert network.shapeMap['X'] == [6]
+    assert network.shapeMap['Y3'] == (2,)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        network.setLowerBound(inputVars[i], i + 1)
+        network.setUpperBound(inputVars[i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0]] - 15.0) < TOL
+    assert abs(vals[outputVars[1]] - 18.0) < TOL
+
+    # input: 1d
+    # split: [2, 4] (array)
+    # axis: 0
+    filename =  'split/split_1d_split-2-4_axis-0.onnx'
+
+    # output1
+    network = loadNetworkInONNX(filename, outputName='Y1')
+    assert network.shapeMap['X'] == [6]
+    assert network.shapeMap['Y1'] == (2,)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        network.setLowerBound(inputVars[i], i + 1)
+        network.setUpperBound(inputVars[i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0]] - 1.0) < TOL
+    assert abs(vals[outputVars[1]] - 2.0) < TOL
+
+    # output2
+    network = loadNetworkInONNX(filename, outputName='Y2')
+    assert network.shapeMap['X'] == [6]
+    assert network.shapeMap['Y2'] == (4,)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        network.setLowerBound(inputVars[i], i + 1)
+        network.setUpperBound(inputVars[i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0]] - 6.0) < TOL
+    assert abs(vals[outputVars[1]] - 8.0) < TOL
+    assert abs(vals[outputVars[2]] - 10.0) < TOL
+    assert abs(vals[outputVars[3]] - 12.0) < TOL
+
+    # input: 2d
+    # split: 3 (scalar)
+    # axis: 1
+    filename =  'split/split_2d_split-3_axis-1.onnx'
+
+    # output1
+    network = loadNetworkInONNX(filename, outputName='Y1')
+    assert network.shapeMap['X'] == [2, 6]
+    assert network.shapeMap['Y1'] == (2, 3)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        for j in range(len(inputVars[i])):
+            network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+            network.setUpperBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0]] - 1.0) < TOL
+    assert abs(vals[outputVars[0][1]] - 2.0) < TOL
+    assert abs(vals[outputVars[0][2]] - 3.0) < TOL
+    assert abs(vals[outputVars[1][0]] - 7.0) < TOL
+    assert abs(vals[outputVars[1][1]] - 8.0) < TOL
+    assert abs(vals[outputVars[1][2]] - 9.0) < TOL
+
+    # output2
+    network = loadNetworkInONNX(filename, outputName='Y2')
+    assert network.shapeMap['X'] == [2, 6]
+    assert network.shapeMap['Y2'] == (2, 3)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        for j in range(len(inputVars[i])):
+            network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+            network.setUpperBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0]] - 8.0) < TOL
+    assert abs(vals[outputVars[0][1]] - 10.0) < TOL
+    assert abs(vals[outputVars[0][2]] - 12.0) < TOL
+    assert abs(vals[outputVars[1][0]] - 20.0) < TOL
+    assert abs(vals[outputVars[1][1]] - 22.0) < TOL
+    assert abs(vals[outputVars[1][2]] - 24.0) < TOL
+
+    # input: 2d
+    # split: [2, 4] (array)
+    # axis: 1
+    filename =  'split/split_2d_split-2-4_axis-1.onnx'
+
+    # output1
+    network = loadNetworkInONNX(filename, outputName='Y1')
+    assert network.shapeMap['X'] == [2, 6]
+    assert network.shapeMap['Y1'] == (2, 2)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        for j in range(len(inputVars[i])):
+            network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+            network.setUpperBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0]] - 1.0) < TOL
+    assert abs(vals[outputVars[0][1]] - 2.0) < TOL
+    assert abs(vals[outputVars[1][0]] - 7.0) < TOL
+    assert abs(vals[outputVars[1][1]] - 8.0) < TOL
+
+    # output2
+    network = loadNetworkInONNX(filename, outputName='Y2')
+    assert network.shapeMap['X'] == [2, 6]
+    assert network.shapeMap['Y2'] == (2, 4)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(len(inputVars)):
+        for j in range(len(inputVars[i])):
+            network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+            network.setUpperBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0]] - 6.0) < TOL
+    assert abs(vals[outputVars[0][1]] - 8.0) < TOL
+    assert abs(vals[outputVars[0][2]] - 10.0) < TOL
+    assert abs(vals[outputVars[0][3]] - 12.0) < TOL
+    assert abs(vals[outputVars[1][0]] - 18.0) < TOL
+    assert abs(vals[outputVars[1][1]] - 20.0) < TOL
+    assert abs(vals[outputVars[1][2]] - 22.0) < TOL
+    assert abs(vals[outputVars[1][3]] - 24.0) < TOL
+
+    # For the case used in YOLOv5
+    # input: 5d
+    # split: [2, 2, 81] (array)
+    # axis: 4
+    filename =  'split/split_5d_split-2-2-81_axis-4.onnx'
+
+    # output1
+    network = loadNetworkInONNX(filename, outputName='Y1')
+    assert network.shapeMap['X'] == [1, 1, 1, 1, 85]
+    assert network.shapeMap['Y1'] == (1, 1, 1, 1, 2)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(85):
+        network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
+        network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0][0][0][0]] - 1.0) < TOL
+    assert abs(vals[outputVars[0][0][0][0][1]] - 2.0) < TOL
+
+    # output2
+    network = loadNetworkInONNX(filename, outputName='Y2')
+    assert network.shapeMap['X'] == [1, 1, 1, 1, 85]
+    assert network.shapeMap['Y2'] == (1, 1, 1, 1, 2)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(85):
+        network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
+        network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0][0][0][0]] - 6.0) < TOL
+    assert abs(vals[outputVars[0][0][0][0][1]] - 8.0) < TOL
+
+    # output3
+    network = loadNetworkInONNX(filename, outputName='Y3')
+    assert network.shapeMap['X'] == [1, 1, 1, 1, 85]
+    assert network.shapeMap['Y3'] == (1, 1, 1, 1, 81)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(85):
+        network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
+        network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    
+    for i in range(81):
+        assert abs(vals[outputVars[0][0][0][0][i]] - (i + 5) * 3) < TOL
+        assert abs(vals[outputVars[0][0][0][0][i]] - (i + 5) * 3) < TOL
+
+    #
+    # Split -> Mul -> Concat
+    #
+    filename =  'split/split_5d_split-2-2-81_axis-4-mul-concat.onnx'
+
+    # output1
+    network = loadNetworkInONNX(filename, outputName='Y')
+    assert network.shapeMap['X'] == [1, 1, 1, 1, 85]
+    assert network.shapeMap['Y'] == (1, 1, 1, 1, 85)
+
+    inputVars = network.inputVars[0]
+    outputVars = network.outputVars
+    for i in range(85):
+        network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
+        network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
+    exitCode, vals, _ = network.solve(options = options)
+    for i in range(85):
+        assert abs(vals[outputVars[0][0][0][0][i]] - (i + 1.0) * 2) < TOL
 
 def test_local_robustness_unsat():
     """
@@ -238,10 +480,10 @@ def loadNetwork(filename):
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
     return Marabou.read_nnet(filename)
 
-def loadNetworkInONNX(filename):
+def loadNetworkInONNX(filename, inputNames=None, outputName=None):
     # Load network in onnx relative to this file's location
     filename = os.path.join(os.path.dirname(__file__), NETWORK_ONNX_FOLDER, filename)
-    return Marabou.read_onnx(filename)
+    return Marabou.read_onnx(filename, inputNames, outputName)
 
 def evaluateNetwork(network, testInputs, testOutputs):
     """

@@ -21,6 +21,7 @@ from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
 from onnx import TensorProto
 import itertools
+import torch
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkONNX object from an ONNX file
@@ -204,6 +205,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.sigmoidEquations(node, makeEquations)
         elif node.op_type == 'Concat':
             self.concatEquations(node, makeEquations)
+        elif node.op_type == 'Split':
+            self.splitEquations(node, nodeName, makeEquations)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -753,16 +756,16 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 axis = get_attribute_value(attr)
 
         # Set output shape
-        inputVars = np.asarray([self.varMap[input] for input in node.input])
+        inputVars = list([self.varMap[input] for input in node.input])
         outputShape = np.concatenate(inputVars, axis).shape
         self.shapeMap[nodeName] = outputShape
         if not makeEquations:
             return
 
         # Get variables
-        inputVars = inputVars.reshape(-1)
+        inputVars = np.concatenate(inputVars, axis).reshape(-1)
         outputVars = self.makeNewVariables(nodeName).reshape(-1)
-        
+
         assert len(inputVars) == len(outputVars)
 
         for i in range(len(inputVars)):
@@ -773,13 +776,61 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             e.setScalar(0)
             self.addEquation(e)     
 
+    def splitEquations(self, node, nodeName, makeEquations):
+        """Function to generate equations corresponding to split
+
+        Args:
+            node (node): ONNX node representing the Split operation
+            nodeName (str): Name of target node
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
+
+        :meta private:
+        """
+        # Get attributes
+        axis = None
+        split = None
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+            if attr.name == "split":
+                split = get_attribute_value(attr)
+        
+        inputName = node.input[0]
+        inputVars = torch.from_numpy(self.varMap[inputName]) # rely on torch since split opereation of numpy behaves differently from that of onnx
+        inputVars = inputVars.split(split, axis) # tuple
+
+        assert len(inputVars) == len(node.output)
+
+        # Set a shape of target output
+        for i in range(len(node.output)):
+            if node.output[i] == nodeName:
+                self.shapeMap[node.output[i]] = inputVars[i].numpy().shape
+                break
+
+        if not makeEquations:
+            return
+
+        # Get variables and add quations
+        for i in range(len(node.output)):
+            if node.output[i] == nodeName:
+                reshapedInputVars = inputVars[i].reshape(-1)
+                outputVars = self.makeNewVariables(node.output[i]).reshape(-1)
+                for j in range(len(reshapedInputVars)):
+                    # Add equation
+                    e = MarabouUtils.Equation()
+                    e.addAddend(-1, outputVars[j])
+                    e.addAddend(1, reshapedInputVars[j])
+                    e.setScalar(0)
+                    self.addEquation(e)
+                break
+  
     def mulEquations(self, node, makeEquations):
         nodeName = node.output[0]
 
         # Get the inputs
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
-        shape2 = self.shapeMap[inputName2]
+        # shape2 = self.shapeMap[inputName2] # comment out since this is never used.
 
 
         # Get the broadcasted shape

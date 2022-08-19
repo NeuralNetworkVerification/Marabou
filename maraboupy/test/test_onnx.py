@@ -138,8 +138,15 @@ def test_concat():
     """
     Test a network exported from pytorch
     """
-    filename =  "concat_axis_0.onnx"
+    filename =  "concat/concat_axis_0.onnx"
     evaluateFile(filename, inputNames = ['X', 'Y'], outputName = 'Z')
+
+def test_split():
+    """
+    Test a network exported from pytorch
+    """
+    filename =  "split/split_5d_split-2-2-81_axis-4-mul-concat.onnx"
+    evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
 
 def test_errors():
     """
