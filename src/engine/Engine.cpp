@@ -1641,16 +1641,16 @@ void Engine::storeState( EngineState &state, TableauStateStorageLevel level ) co
     state._numPlConstraintsDisabledByValidSplits = _numPlConstraintsDisabledByValidSplits;
 }
 
-void Engine::restoreState( const EngineState &/*state*/ )
+void Engine::restoreState( const EngineState &state )
 {
-    //ENGINE_LOG( "Restore state starting" );
+    ENGINE_LOG( "Restore state starting" );
 
-    // if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
-    //     throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
+    if ( state._tableauStateStorageLevel == TableauStateStorageLevel::STORE_NONE )
+        throw MarabouError( MarabouError::RESTORING_ENGINE_FROM_INVALID_STATE );
 
-    // ENGINE_LOG( "\tRestoring tableau state" );
-    // _tableau->restoreState( state._tableauState,
-    //                         state._tableauStateStorageLevel );
+    ENGINE_LOG( "\tRestoring tableau state" );
+    _tableau->restoreState( state._tableauState,
+                            state._tableauStateStorageLevel );
 
     // ENGINE_LOG( "\tRestoring constraint states" );
     // for ( auto &constraint : _plConstraints )
@@ -1663,17 +1663,17 @@ void Engine::restoreState( const EngineState &/*state*/ )
 
     // _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
-    // if ( _lpSolverType == LPSolverType::NATIVE )
-    // {
-    //    // Make sure the data structures are initialized to the correct size
-    //    _rowBoundTightener->setDimensions();
-    //    adjustWorkMemorySize();
-    //    _activeEntryStrategy->resizeHook( _tableau );
-    //    _costFunctionManager->initialize();
-    //}
+    if ( _lpSolverType == LPSolverType::NATIVE )
+    {
+       // Make sure the data structures are initialized to the correct size
+       _rowBoundTightener->setDimensions();
+       adjustWorkMemorySize();
+       _activeEntryStrategy->resizeHook( _tableau );
+       _costFunctionManager->initialize();
+    }
 
-    // Reset the violation counts in the SMT core
-    // _smtCore.resetSplitConditions();
+    //Reset the violation counts in the SMT core
+    _smtCore.resetSplitConditions();
 }
 
 void Engine::setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints )

@@ -502,3 +502,10 @@ bool SmtCore::pickSplitPLConstraint()
             ( _branchingHeuristic );
     return _constraintForSplitting != NULL;
 }
+
+void SmtCore::resetSplitConditions()
+{
+    _constraintToViolationCount.clear();
+    _numRejectedPhasePatternProposal = 0;
+    _needToSplit = false;
+}

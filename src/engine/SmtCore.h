@@ -244,6 +244,11 @@ public:
     bool pickSplitPLConstraint();
 
     /*
+       Reset violation counts and number of rejected proposal patterns.
+     */
+    void resetSplitConditions();
+
+    /*
      * For testing purposes
      */
     PiecewiseLinearCaseSplit getDecision( unsigned decisionLevel ) const;
