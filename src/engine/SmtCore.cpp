@@ -51,8 +51,11 @@ SmtCore::~SmtCore()
 
 void SmtCore::reset()
 {
-    _context.popto( 0 );
-    _engine->postContextPopHook();
+    if ( _context.getLevel() > 0 )
+    {
+      _context.popto( 0 );
+      _engine->postContextPopHook();
+    }
     _needToSplit = false;
     _constraintForSplitting = NULL;
     _constraintToViolationCount.clear();
