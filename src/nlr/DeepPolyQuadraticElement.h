@@ -42,13 +42,6 @@ public:
       unsigned targetLayerSize, DeepPolyElement *predecessor );
 
 private:
-
-    /*
-      The index of the source variable used in the symbolic bounds.
-    */
-    Map<unsigned, NeuronIndex> _sourceIndexForSymbolicBounds;
-    Map<unsigned, bool> _phaseFixed;
-
     void allocateMemory();
     void freeMemoryIfNeeded();
     void log( const String &message );

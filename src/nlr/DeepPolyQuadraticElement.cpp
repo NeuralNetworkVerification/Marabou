@@ -44,72 +44,53 @@ void DeepPolyQuadraticElement::execute( const Map<unsigned, DeepPolyElement *>
         log( Stringf( "Handling Neuron %u_%u...", _layerIndex, i ) );
         List<NeuronIndex> sources = _layer->getActivationSources( i );
 
-        NeuronIndex indexOfMaxLowerBound = *( sources.begin() );
-        double maxLowerBound = FloatUtils::negativeInfinity();
-        double maxUpperBound = FloatUtils::negativeInfinity();
-
-        Map<NeuronIndex, double> sourceLbs;
-        Map<NeuronIndex, double> sourceUbs;
-        for ( const auto &sourceIndex : sources )
+        ASSERT(sources.size() == 2);
+        double sourceLbs[2];
+        double sourceUbs[2];
+        unsigned counter = 0;
+        for (const auto &sourceIndex : sources)
         {
             DeepPolyElement *predecessor =
                 deepPolyElementsBefore[sourceIndex._layer];
             double sourceLb = predecessor->getLowerBound
                 ( sourceIndex._neuron );
-            sourceLbs[sourceIndex] = sourceLb;
+            sourceLbs[counter] = sourceLb;
             double sourceUb = predecessor->getUpperBound
                 ( sourceIndex._neuron );
-            sourceUbs[sourceIndex] = sourceUb;
-
-            if ( maxLowerBound < sourceLb )
-            {
-                indexOfMaxLowerBound = sourceIndex;
-                maxLowerBound = sourceLb;
-            }
-            if ( maxUpperBound < sourceUb )
-            {
-                maxUpperBound = sourceUb;
-            }
+            sourceUbs[counter] = sourceUb;
+            ++counter;
         }
 
-        // The phase is fixed if the lower-bound of a source variable x_b is
-        // larger than the upper-bounds of the other source variables.
-        bool phaseFixed = true;
-        for ( const auto &sourceIndex : sources )
-        {
-            if ( sourceIndex != indexOfMaxLowerBound &&
-                 FloatUtils::gt( sourceUbs[sourceIndex], maxLowerBound ) )
-            {
-                phaseFixed = false;
-                break;
-            }
-        }
 
-        if ( phaseFixed )
+        double lb = FloatUtils::infinity();
+        double ub = FloatUtils::negativeInfinity();
+        List<double> values = {sourceLbs[0] * sourceLbs[1],
+                               sourceLbs[0] * sourceUbs[1],
+                               sourceUbs[0] * sourceLbs[1],
+                               sourceUbs[0] * sourceUbs[1]};
+        for (const auto &v : values)
         {
-            log( Stringf( "Neuron %u_%u fixed to Neuron %u_%u",
-                          _layerIndex, i, indexOfMaxLowerBound._layer,
-                          indexOfMaxLowerBound._neuron ) );
-            // Phase fixed
-            // Symbolic bound: x_b <= x_f <= x_b
-            // Concrete bound: lb_b <= x_f <= ub_b
-            _sourceIndexForSymbolicBounds[i] = indexOfMaxLowerBound;
-            _ub[i] = sourceUbs[indexOfMaxLowerBound];
-            _lb[i] = maxLowerBound;
+          if (v < lb)
+            lb = v;
+          if (v > ub)
+            ub = v;
         }
-        else
-        {
-            log( Stringf( "Neuron %u_%u not fixed",
-                          _layerIndex, i ) );
-            // Quadratic not fixed
-            // Symbolic bounds: x_b <= x_f <= maxUpperBound
-            // Concrete bounds: lb_b <= x_f <= maxUpperBound
-            _sourceIndexForSymbolicBounds[i] = indexOfMaxLowerBound;
-            _ub[i] = maxUpperBound;
-            _lb[i] = maxLowerBound;
-        }
-        log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
-        log( Stringf( "Handling Neuron %u_%u - done", _layerIndex, i ) );
+        _lb[i] = lb;
+        _ub[i] = ub;
+
+        // Symbolic lower bound:
+        // out >= alpha * x + beta * y + gamma
+        // where alpha = lb_y, beta = lb_x, gamma = -lb_x * lb_y
+        _symbolicLb[2*i] = sourceLbs[1];
+        _symbolicLb[2*i + 1] = sourceLbs[0];
+        _symbolicLowerBias[i] = -sourceLbs[0] * sourceLbs[1];
+
+        // Symbolic upper bound:
+        // out <= alpha * x + beta * y + gamma
+        // where alpha = ub_y, beta = lb_x, gamma = -lb_x * ub_y
+        _symbolicUb[2*i] = sourceUbs[1];
+        _symbolicUb[2*i + 1] = sourceLbs[0];
+        _symbolicUpperBias[i] = -sourceLbs[0] * sourceUbs[1];
     }
     log( "Executing - done" );
 }
@@ -136,10 +117,17 @@ void DeepPolyQuadraticElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
+      NeuronIndex sourceIndexX = *( _layer->
+                                   getActivationSources( i ).begin() );
+      NeuronIndex sourceIndexY = *( _layer->
+                                    getActivationSources( i ).rbegin() );
+
+      unsigned sourceNeuronIndexX = sourceIndexX._neuron;
+      unsigned sourceNeuronIndexY = sourceIndexY._neuron;
+
         DEBUG({
-                NeuronIndex sourceIndex = *( _layer->
-                                             getActivationSources( i ).begin() );
-                ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
+                ASSERT( predecessor->getLayerIndex() == sourceIndexX._layer );
+                ASSERT( predecessor->getLayerIndex() == sourceIndexY._layer );
             });
 
         /*
@@ -147,62 +135,56 @@ void DeepPolyQuadraticElement::symbolicBoundInTermsOfPredecessor
           Suppose the symbolic upper bound of the j-th neuron in the
           target layer is ... + a_i * f_i + ...,
           and the symbolic bounds of f_i in terms of b_i is
-          k <= f_i <= maxUpperBound
-          If a_i >= 0, replace f_i with k, otherwise,
-          replace f_i with maxUpperBound
+          m * b_i + n <= f_i <= p * b_i + q.
+          If a_i >= 0, replace f_i with p * b_i + q, otherwise,
+          replace f_i with m * b_i + n
         */
 
-        // Symbolic bounds of the Quadratic output in terms of the Quadratic input
-        // If phase fixed:
-        //    b_sourceIndex <= f_i <= b_sourceIndex
-        // If phase not fixed:
-        //    b_sourceIndex <= f_i <= maxUpperBound
-        NeuronIndex sourceNeuronIndex = _sourceIndexForSymbolicBounds[i];
-        ASSERT( sourceNeuronIndex._layer == predecessor->getLayerIndex() );
-        unsigned sourceIndex =  sourceNeuronIndex._neuron;
-        ASSERT( sourceIndex < predecessorSize );
-        // coeffLb = 1
-        // lowerBias = 0
-        bool phaseFixed =  _phaseFixed[i];
-        double coeffUb = phaseFixed ? 1 : 0;
-        double upperBias = phaseFixed ? 0 : _ub[i];
+        // Symbolic bounds of the ReLU output in terms of the ReLU input
+        // coeffLb * b_i + lowerBias <= f_i <= coeffUb * b_i + upperBias
+        double coeffLbX = _symbolicLb[2*i];
+        double coeffLbY = _symbolicLb[2*i+1];
+        double coeffUbX = _symbolicUb[2*i];
+        double coeffUbY = _symbolicUb[2*i+1];
+        double lowerBias = _symbolicLowerBias[i];
+        double upperBias = _symbolicUpperBias[i];
 
-        // Substitute the Quadratic input for the Quadratic output
+        // Substitute the ReLU input for the ReLU output
         for ( unsigned j = 0; j < targetLayerSize; ++j )
         {
             // The symbolic lower- and upper- bounds of the j-th neuron in the
             // target layer are ... + weightLb * f_i + ...
             // and ... + weightUb * f_i + ..., respectively.
-            unsigned indexInNewSymbolicBound = sourceIndex * targetLayerSize + j;
-            unsigned indexInOldSymbolicBound = i * targetLayerSize + j;
+            unsigned newIndexX = sourceNeuronIndexX * targetLayerSize + j;
+            unsigned newIndexY = sourceNeuronIndexY * targetLayerSize + j;
+            unsigned oldIndex = i * targetLayerSize + j;
 
             // Update the symbolic lower bound
-            double weightLb = symbolicLb[indexInOldSymbolicBound];
+            double weightLb = symbolicLb[oldIndex];
             if ( weightLb >= 0 )
             {
-                symbolicLbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightLb;
-                // symbolicLowerBias[j] += weightLb * lowerBias;
-            }
-            else
+                symbolicLbInTermsOfPredecessor[newIndexX] += weightLb * coeffLbX;
+                symbolicLbInTermsOfPredecessor[newIndexY] += weightLb * coeffLbY;
+                symbolicLowerBias[j] += weightLb * lowerBias;
+            } else
             {
-                symbolicLbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightLb * coeffUb;
+                symbolicLbInTermsOfPredecessor[newIndexX] += weightLb * coeffUbX;
+                symbolicLbInTermsOfPredecessor[newIndexY] += weightLb * coeffUbY;
                 symbolicLowerBias[j] += weightLb * upperBias;
             }
 
             // Update the symbolic upper bound
-            double weightUb = symbolicUb[indexInOldSymbolicBound];
+            double weightUb = symbolicUb[oldIndex];
             if ( weightUb >= 0 )
             {
-                symbolicUbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightUb * coeffUb;
+                symbolicUbInTermsOfPredecessor[newIndexX] += weightUb * coeffUbX;
+                symbolicUbInTermsOfPredecessor[newIndexY] += weightUb * coeffUbY;
                 symbolicUpperBias[j] += weightUb * upperBias;
             } else
             {
-                symbolicUbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightUb;
-                //symbolicUpperBias[j] += weightUb * lowerBias;
+                symbolicUbInTermsOfPredecessor[newIndexX] += weightUb * coeffLbX;
+                symbolicUbInTermsOfPredecessor[newIndexY] += weightUb * coeffLbY;
+                symbolicUpperBias[j] += weightUb * lowerBias;
             }
         }
     }
@@ -212,13 +194,45 @@ void DeepPolyQuadraticElement::allocateMemory()
 {
     freeMemoryIfNeeded();
     DeepPolyElement::allocateMemory();
+
+    // Arranged as a1, b1, a2, b2, ... where ai, bi are the coefficients in
+    // of x and y respectively for neuron i.
+    _symbolicLb = new double[_size*2];
+    _symbolicUb = new double[_size*2];
+
+    std::fill_n( _symbolicLb, _size*2, 0 );
+    std::fill_n( _symbolicUb, _size*2, 0 );
+
+    _symbolicLowerBias = new double[_size];
+    _symbolicUpperBias = new double[_size];
+
+    std::fill_n( _symbolicLowerBias, _size, 0 );
+    std::fill_n( _symbolicUpperBias, _size, 0 );
 }
 
 void DeepPolyQuadraticElement::freeMemoryIfNeeded()
 {
     DeepPolyElement::freeMemoryIfNeeded();
-    _sourceIndexForSymbolicBounds.clear();
-    _phaseFixed.clear();
+    if ( _symbolicLb )
+      {
+        delete[] _symbolicLb;
+        _symbolicLb = NULL;
+      }
+    if ( _symbolicUb )
+      {
+        delete[] _symbolicUb;
+        _symbolicUb = NULL;
+      }
+    if ( _symbolicLowerBias )
+      {
+        delete[] _symbolicLowerBias;
+        _symbolicLowerBias = NULL;
+      }
+    if ( _symbolicUpperBias )
+      {
+        delete[] _symbolicUpperBias;
+        _symbolicUpperBias = NULL;
+      }
 }
 
 void DeepPolyQuadraticElement::log( const String &message )

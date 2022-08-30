@@ -1211,4 +1211,139 @@ public:
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 0 ), 5.43, 0.1 ) );
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 0 ), 14.766, 0.1 ) );
     }
+
+
+      void populateNetworkWithBilinear( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
+    {
+        /*
+
+              1       Q      1
+          x0 --- x2 --- x4  --- x6
+                   \    / \    /
+                    \  / 1 \  /
+                     \/     \/
+                     /\     /\
+                    /  \ 1 /  \
+                   /    \ /    \
+          x1 --- x3 --- x5 --- x7
+              1      Q     -1
+
+        */
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 2 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 2, NLR::Layer::QUADRATIC, 2 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, 0 );
+        nlr.setWeight( 0, 1, 1, 0, 0 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 0, 3, 1, 1 );
+        nlr.setWeight( 2, 1, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 1, -1 );
+
+        // Mark the  quadratic sources
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 0 );
+        nlr.addActivationSource( 1, 0, 2, 1 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 5 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 7 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.getBoundManager().initialize( 8 );
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+    }
+
+    void test_deeppoly_bilinear()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkWithBilinear( nlr, tableau );
+
+        tableau.setLowerBound( 0, 0.5 );
+        tableau.setUpperBound( 0, 0.5 );
+        tableau.setLowerBound( 1, 0.5 );
+        tableau.setUpperBound( 1, 0.5 );
+
+        // Invoke Deeppoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        // Layer 2
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getLb( 0 ), 0.25 );
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getUb( 0 ), 0.25 );
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getLb( 1 ), 0.25 );
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getUb( 1 ), 0.25 );
+
+        // Layer 3
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 0 ), 0.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 0 ), 0.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 1 ), 0 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 1 ), 0 ) );
+    }
+
+
+  void test_deeppoly_bilinear2()
+    {
+        NLR::NetworkLevelReasoner nlr;
+        MockTableau tableau;
+        nlr.setTableau( &tableau );
+        populateNetworkWithBilinear( nlr, tableau );
+
+        tableau.setLowerBound( 0, -1 );
+        tableau.setUpperBound( 0, 1 );
+        tableau.setLowerBound( 1, 0 );
+        tableau.setUpperBound( 1, 1 );
+
+        // Invoke Deeppoly
+        TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+        TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+        List<Tightening> bounds;
+        TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+        // Layer 2
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getLb( 0 ), -1 );
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getUb( 0 ), 1 );
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getLb( 1 ), -1 );
+        TS_ASSERT_EQUALS(nlr.getLayer(2)->getUb( 1 ), 1 );
+
+        // Layer 3
+        TS_ASSERT_EQUALS(nlr.getLayer(3)->getLb( 0 ), -2 );
+        TS_ASSERT_EQUALS(nlr.getLayer(3)->getUb( 0 ), 2 );
+        TS_ASSERT_EQUALS(nlr.getLayer(3)->getLb( 1 ), -2 );
+        TS_ASSERT_EQUALS(nlr.getLayer(3)->getUb( 1 ), 2 );
+    }
 };
