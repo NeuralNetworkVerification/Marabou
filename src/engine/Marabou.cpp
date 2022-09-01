@@ -105,7 +105,6 @@ void Marabou::prepareInputQuery()
             printf ( "Onnx network!\n" );
             _onnxParser = new OnnxParser( networkFilePath );
             _onnxParser->generateQuery( _inputQuery );
-            //throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
         }
         else
         {

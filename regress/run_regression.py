@@ -14,7 +14,6 @@ def run_process(args, cwd, timeout, s_input=None):
     input to be sent to the process over stdin. Returns the output, the error
     output and the exit code of the process. If the process times out, the
     output and the error output are empty and the exit code is 124."""
-
     proc = subprocess.Popen(
         args,
         cwd=cwd,
@@ -43,11 +42,11 @@ def run_process(args, cwd, timeout, s_input=None):
 
 
 def analyze_process_result(out, err, exit_status, expected_result):
-    if exit_status != 0:
-        print("exit status: {}".format(exit_status))
-        return False
-    if err != '':
-        print("err: {}".format(err))
+    if exit_status != 0 or err != '':
+        if exit_status != 0:
+            print("exit status: {}".format(exit_status))
+        if err != '':
+            print("err: {}".format(err))
         return False
 
     # If the output is unsat there is no \n after the unsat statement
@@ -133,7 +132,7 @@ def run_input_query(marabou_binary, input_query_path, expected_result, timeout=D
         sys.exit(
             '"{}" does not exist or is not executable'.format(marabou_binary))
     if not os.path.isfile(input_query_path):
-        sys.exit('"{}" does not exist or is not a file'.format(network_path))
+        sys.exit('"{}" does not exist or is not a file'.format(input_query_path))
     if expected_result not in {'sat', 'unsat'}:
         sys.exit('"{}" is not a marabou supported result'.format(expected_result))
 
@@ -159,20 +158,20 @@ def main():
 
     binary = args.marabou_binary
     network_file = os.path.abspath(args.network_file)
+    network_file_extension = os.path.splitext(network_file)[1]
     expected_result = args.expected_result
 
-    if args.network_file.endswith('nnet'):
-        property_file = os.path.abspath(args.property_file)
-
     marabou_args = unknown
-    if args.network_file.endswith('nnet'):
+    if network_file_extension in ['.nnet', '.onnx']:
+        property_file = os.path.abspath(args.property_file)
         return run_marabou(binary, network_file, property_file, expected_result, args.timeout, marabou_args)
-    elif args.network_file.endswith('mps'):
+    elif network_file_extension == '.mps':
         return run_mpsparser(binary, network_file, expected_result, marabou_args)
-    if args.network_file.endswith('ipq'):
+    if network_file_extension == '.ipq':
         return run_input_query(binary, network_file, expected_result, args.timeout, marabou_args)
     else:
-        raise NotImplementedError('supporting only nnet, ipq, and mps file format')
+        message = 'invalid extension "{}", supporting only nnet, onnx, ipq, and mps file format'
+        raise NotImplementedError(message.format(network_file_extension))
 
 if __name__ == "__main__":
     if main():

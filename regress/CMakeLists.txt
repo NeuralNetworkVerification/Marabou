@@ -31,14 +31,17 @@ macro(marabou_add_coav_test level net_file result)
 endmacro()
 
 macro(marabou_add_acasxu_test level net_file prop_num result)
-    marabou_add_regress_test(${level} 
-        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}"
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "" "acasxu")
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/onnx/acasxu/${net_file}.onnx"
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "" "acasxu")
 endmacro()
 
 macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
     marabou_add_regress_test(${level} 
-        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}"
+        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--snc" "acasxu")
 endmacro()
 

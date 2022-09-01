@@ -1,13 +1,13 @@
 
 marabou_add_coav_test(1 "reluBenchmark1.30941200256s_UNSAT.nnet" unsat) 
 marabou_add_coav_test(1 "reluBenchmark0.94518494606s_SAT.nnet" sat) 
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_8.nnet" "3" sat)
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_2_9.nnet" "3" unsat)
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_6.nnet" "3" unsat)
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_3_6.nnet" "4" unsat)
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_7.nnet" "4" sat)
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_8.nnet" "4" sat)
-marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_9.nnet" "4" sat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_8" "3" sat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_2_9" "3" unsat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_6" "3" unsat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_3_6" "4" unsat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_7" "4" sat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_8" "4" sat)
+marabou_add_acasxu_test(1 "ACASXU_experimental_v2a_1_9" "4" sat)
 
 
 marabou_add_mnist_test(1 "mnist10x10.nnet" "image2_target2_epsilon0.005.txt" unsat)
@@ -20,8 +20,8 @@ marabou_add_mnist_test(1 "mnist10x10.nnet" "image3_target2_epsilon0.05.txt" sat)
 marabou_add_mnist_test(1 "mnist10x10.nnet" "image3_target4_epsilon0.005.txt" unsat)
 
 
-marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_5_7.nnet" "3" unsat)
-marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_4_7.nnet" "4" unsat)
+marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_5_7" "3" unsat)
+marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_4_7" "4" unsat)
 
 marabou_add_coav_test(1 "reluBenchmark0.453322172165s_UNSAT.nnet" unsat)
 marabou_add_coav_test(1 "reluBenchmark0.30711388588s_UNSAT.nnet" unsat)
