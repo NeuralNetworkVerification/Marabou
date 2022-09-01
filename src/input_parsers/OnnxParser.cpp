@@ -643,7 +643,11 @@ void OnnxParser::makeMarabouEquations(onnx::NodeProto &node, bool makeEquations)
     }
     else if (strcmp(nodeType, "Add") == 0)
     {
-        addEquations(node, makeEquations);
+        scaleAndAddEquations(node, makeEquations, 1, 1);
+    }
+    else if (strcmp(nodeType, "Sub") == 0)
+    {
+        scaleAndAddEquations(node, makeEquations, 1, -1);
     }
     else if (strcmp(nodeType, "Relu") == 0)
     {
@@ -917,13 +921,14 @@ void OnnxParser::reluEquations( onnx::NodeProto& node, bool makeEquations )
 }
 
 /**
- * @brief Function to generate equations corresponding to addition
- * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Add
+ * @brief Function to generate equations corresponding to addition (and subtraction)
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Add (with args 1.0, 1.0)
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Sub (with args 1.0, -1.0)
  *
  * @param node ONNX node representing the Add operation
  * @param makeEquations True if we need to create new variables and write Marabou equations
  */
-void OnnxParser::addEquations( onnx::NodeProto& node, bool makeEquations )
+void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations, double coefficient1, double coefficient2 )
 {
     String outputName = node.output()[0];
     String input1Name = node.input()[0];
@@ -968,8 +973,8 @@ void OnnxParser::addEquations( onnx::NodeProto& node, bool makeEquations )
         for (size_t i = 0; i < input1Variables.size(); i++)
         {
             Equation e = Equation();
-            e.addAddend(1, input1Variables[i]);
-            e.addAddend(1, input2Variables[i]);
+            e.addAddend(coefficient1, input1Variables[i]);
+            e.addAddend(coefficient2, input2Variables[i]);
             e.addAddend(-1, outputVariables[i]);
             e.setScalar(0.0);
             addEquation(e);
@@ -985,17 +990,23 @@ void OnnxParser::addEquations( onnx::NodeProto& node, bool makeEquations )
     // activation functions) then we will need new equations.
     Vector<double> inputConstants = getTensorFloatValues(*_constantMap[input1IsConstant ? input1Name : input2Name]);
     Vector<Variable> inputVariables = _varMap[input1IsConstant ? input2Name : input1Name];
+    double constantCoefficient = input1IsConstant ? coefficient1 : coefficient2;
+    double variableCoefficient = input1IsConstant ? coefficient2 : coefficient1;
     assert( inputConstants.size() == inputVariables.size() );
 
     // Adjust equations to incorporate the constant addition
     long unsigned int numberOfEquationsChanged = 0;
     for (size_t i = 0; i < inputVariables.size(); i++)
     {
-        int equationIndex = findEquationWithOutputVariable(inputVariables[i]);
+        Variable inputVariable = inputVariables[i];
+        double inputConstant = inputConstants[i];
+        int equationIndex = findEquationWithOutputVariable(inputVariable);
         if (equationIndex != -1)
         {
             Equation equation = _equationList[equationIndex];
-            equation.setScalar(equation._scalar - inputConstants[i]);
+            double currentVariableCoefficient = equation.getCoefficient(inputVariable);
+            equation.setCoefficient(inputVariable, variableCoefficient * currentVariableCoefficient);
+            equation.setScalar(equation._scalar - constantCoefficient * inputConstant);
             _equationList[equationIndex] = equation;
             numberOfEquationsChanged += 1;
         }
@@ -1016,9 +1027,9 @@ void OnnxParser::addEquations( onnx::NodeProto& node, bool makeEquations )
         for (size_t i = 0; i < outputVariables.size(); i++)
         {
             Equation e = Equation();
-            e.addAddend(1, inputVariables[i]);
+            e.addAddend(variableCoefficient, inputVariables[i]);
             e.addAddend(-1, outputVariables[i]);
-            e.setScalar(-inputConstants[i]);
+            e.setScalar(-constantCoefficient*inputConstants[i]);
             addEquation(e);
         }
     }

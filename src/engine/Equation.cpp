@@ -210,6 +210,20 @@ double Equation::getCoefficient( unsigned variable ) const
     return 0;
 }
 
+void Equation::setCoefficient( unsigned variable, double newCoefficient)
+{
+    for ( auto &addend : _addends )
+    {
+        if ( addend._variable == variable )
+        {
+            addend._coefficient = newCoefficient;
+            return;
+        }
+    }
+
+    addAddend(newCoefficient, variable);
+}
+
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

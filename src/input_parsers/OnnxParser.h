@@ -74,7 +74,7 @@ private:
     void maxPoolEquations( onnx::NodeProto& node, bool makeEquations );
     void convEquations( onnx::NodeProto& node, bool makeEquations );
     void gemmEquations( onnx::NodeProto& node, bool makeEquations );
-    void addEquations( onnx::NodeProto& node, bool makeEquations );
+    void scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations, double coefficient1, double coefficient2 );
     void matMulEquations( onnx::NodeProto& node, bool makeEquations );
     void reluEquations( onnx::NodeProto& node, bool makeEquations );
     void sigmoidEquations( onnx::NodeProto& node, bool makeEquations );
