@@ -119,11 +119,6 @@ public:
     PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
 
     /*
-      Check if the constraint's phase has been fixed.
-    */
-    bool phaseFixed() const override;
-
-    /*
       If the constraint's phase has been fixed, get the implied case split.
     */
     PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
