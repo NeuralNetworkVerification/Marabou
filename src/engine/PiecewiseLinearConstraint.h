@@ -390,7 +390,7 @@ public:
       Worst case complexity O(n^2)
       This method is overloaded in MAX and DISJUNCTION constraints.
      */
-    virtual PhaseStatus nextFeasibleCase();
+    virtual PhaseStatus nextFeasibleCase() const;
 
     /*
        Returns number of cases not yet marked as infeasible.

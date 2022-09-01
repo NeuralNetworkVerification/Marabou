@@ -168,7 +168,7 @@ void PiecewiseLinearConstraint::markInfeasible(
     _cdInfeasibleCases->push_back( infeasibleCase );
 }
 
-PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase()
+PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase() const
 {
     //ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
 
