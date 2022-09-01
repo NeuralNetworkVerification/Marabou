@@ -91,7 +91,7 @@ void OnnxParser::generatePartialQuery( InputQuery& query, Set<String>& inputName
 
 void illTypedAttributeError(onnx::NodeProto &node, const onnx::AttributeProto& attr, onnx::AttributeProto_AttributeType expectedType)
 {
-    String errorMessage = Stringf("Expected attribute %s on Onnx node of type %s to be of type %s but is actually of type %s", attr.name(), node.op_type().c_str(), expectedType, attr.type());
+    String errorMessage = Stringf("Expected attribute %s on Onnx node of type %s to be of type %s but is actually of type %s", attr.name().c_str(), node.op_type().c_str(), expectedType, attr.type());
     throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
 }
 
@@ -386,7 +386,7 @@ void OnnxParser::validateUserOutputNames(String &outputName)
         }
     }
 
-    String errorMessage = Stringf("Output %s not found in graph!", outputName);
+    String errorMessage = Stringf("Output %s not found in graph!", outputName.ascii());
     throw MarabouError( MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii() );
 }
 
