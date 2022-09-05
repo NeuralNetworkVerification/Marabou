@@ -40,7 +40,9 @@ def main():
         if not os.access(marabou_binary, os.X_OK):
             sys.exit('"{}" does not exist or is not executable'.format(marabou_binary))
 
-        network.solve()
+        res, _, _ = network.solve()
+        with open(args.summary_file, 'w') as out_file:
+                out_file.write(res + "\n")
         #temp = tempfile.NamedTemporaryFile(dir=args.temp_dir, delete=False)
         #name = temp.name
         #MarabouCore.saveQuery(query, name)
@@ -162,6 +164,8 @@ def arguments():
                         help='The target of the adversarial attack')
     parser.add_argument('-i,', '--index', type=int, default=0,
                         help='The index of the point in the test set')
+    parser.add_argument('-s,', '--summary-file', type=str, default="result",
+                        help='Result')
     parser.add_argument('--temp-dir', type=str, default="/tmp/",
                         help='Temporary directory')
     marabou_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()),
