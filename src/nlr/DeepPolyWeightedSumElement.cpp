@@ -115,6 +115,12 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         // now compute the symbolic bounds in terms of currentElement's
         // predecessor.
         predecessorIndices = currentElement->getPredecessorIndices();
+        if (currentElement->getLayerType() == Layer::QUADRATIC &&
+            predecessorIndices.size() > 1){
+          std::cout << "stop back substituting!" << std::endl;
+          break;
+        }
+
         counter = 0;
         numPredecessors = predecessorIndices.size();
         ASSERT( numPredecessors > 0 );

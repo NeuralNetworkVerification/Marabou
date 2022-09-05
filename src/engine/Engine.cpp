@@ -68,6 +68,8 @@ Engine::Engine()
     , _sncMode( false )
     , _queryId( "" )
 {
+  setVerbosity(0);
+
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );
@@ -158,6 +160,9 @@ void Engine::exportInputQueryWithError( String errorMessage )
 
 bool Engine::solve( unsigned timeoutInSeconds )
 {
+  _exitCode = UNKNOWN;
+  return false;
+
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
 
@@ -1387,7 +1392,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->registerTableau( _tableau );
         }
 
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        //if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        if ( _networkLevelReasoner )
           _networkLevelReasoner->dumpBounds();
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )

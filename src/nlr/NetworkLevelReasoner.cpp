@@ -335,8 +335,8 @@ void NetworkLevelReasoner::dumpTopology() const
             printf(" %u", sourceLayer.first );
         printf("\n");
     }
-    for ( const auto &layer : _layerIndexToLayer )
-        layer.second->dump();
+    //for ( const auto &layer : _layerIndexToLayer )
+    //    layer.second->dump();
 }
 
 unsigned NetworkLevelReasoner::getNumberOfLayers() const
@@ -692,9 +692,7 @@ void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex
 void NetworkLevelReasoner::dumpBounds()
 {
     obtainCurrentBounds();
-
-    for ( const auto &layer : _layerIndexToLayer )
-        layer.second->dumpBounds();
+    _layerIndexToLayer[_layerIndexToLayer.size() - 2]->dumpBounds();
 }
 
 void NetworkLevelReasoner::dumpBounds( const InputQuery &inputQuery )
