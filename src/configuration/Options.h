@@ -64,6 +64,12 @@ public:
         // with a different random seed on each thread. The problem is solved once
         // any of the thread finishes.
         NO_PARALLEL_DEEPSOI,
+
+        // Export SAT assignment into a file, use EXPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
+        EXPORT_ASSIGNMENT,
+
+        // Import assignment for debugging purposes, use IMPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
+        DEBUG_ASSIGNMENT,
     };
 
     enum IntOptions {
@@ -90,7 +96,7 @@ public:
 
         // The random seed used throughout the execution.
         SEED,
-      
+
         // The number of threads to use for OpenBLAS matrix multiplication.
         NUM_BLAS_THREADS,
     };
@@ -119,6 +125,8 @@ public:
         SYMBOLIC_BOUND_TIGHTENING_TYPE,
         MILP_SOLVER_BOUND_TIGHTENING_TYPE,
         QUERY_DUMP_FILE,
+        EXPORT_ASSIGNMENT_FILE_PATH,
+        IMPORT_ASSIGNMENT_FILE_PATH,
 
         // The strategy used for soi minimization
         SOI_SEARCH_STRATEGY,
@@ -127,6 +135,7 @@ public:
 
         // The procedure/solver for solving the LP
         LP_SOLVER,
+
     };
 
     /*

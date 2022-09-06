@@ -43,7 +43,7 @@ void OptionParser::initialize()
     _positional.add_options()
         ( "input",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::INPUT_FILE_PATH] )->default_value( (*_stringOptions)[Options::INPUT_FILE_PATH] ),
-          "Neural netowrk file." )
+          "Neural network file." )
         ( "property",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::PROPERTY_FILE_PATH] )->default_value( (*_stringOptions)[Options::PROPERTY_FILE_PATH] ),
           "Property file." )
@@ -94,6 +94,18 @@ void OptionParser::initialize()
         ( "summary-file",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::SUMMARY_FILE]) )->default_value( (*_stringOptions)[Options::SUMMARY_FILE] ),
           "Produce a summary file of the run." )
+        ( "export-assignment",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::EXPORT_ASSIGNMENT]) )->default_value( (*_boolOptions)[Options::EXPORT_ASSIGNMENT] ),
+          "Export a satisfying assignment if found." )
+        ( "export-assignment-file",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] )->default_value( (*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] ),
+          "Specifies a file to export the assignment." )
+        ( "debug-assignment",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DEBUG_ASSIGNMENT]) )->default_value( (*_boolOptions)[Options::DEBUG_ASSIGNMENT] ),
+          "Import an assignment for debugging." )
+        ( "debug-assignment-file",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] )->default_value( (*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] ),
+          "Specifies a file to import the assignment for debugging." )
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
         ;

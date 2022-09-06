@@ -15,6 +15,7 @@
  **/
 
 #include "AcasParser.h"
+#include "AutoFile.h"
 #include "GlobalConfiguration.h"
 #include "File.h"
 #include "MStringf.h"
@@ -54,6 +55,9 @@ void Marabou::run()
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
+
+    if( Options::get()->getBool( Options::EXPORT_ASSIGNMENT ) )
+        exportAssignment();
 }
 
 void Marabou::prepareInputQuery()
@@ -107,6 +111,9 @@ void Marabou::prepareInputQuery()
         printf( "\n" );
     }
 
+    if ( Options::get()->getBool( Options::DEBUG_ASSIGNMENT ) )
+        importDebuggingSolution();
+
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )
     {
@@ -114,6 +121,60 @@ void Marabou::prepareInputQuery()
         printf( "\nInput query successfully dumped to file\n" );
         exit( 0 );
     }
+}
+
+void Marabou::importDebuggingSolution()
+{
+    String fileName=  Options::get()->getString( Options::IMPORT_ASSIGNMENT_FILE_PATH );
+    AutoFile input( fileName );
+
+    if ( !IFile::exists( fileName ) )
+    {
+        throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
+    }
+
+    input->open( IFile::MODE_READ );
+
+    unsigned numVars = atoi( input->readLine().trim().ascii() );
+    ASSERT( numVars == _inputQuery.getNumberOfVariables() );
+
+    unsigned var;
+    double value;
+    String line;
+
+    // Import each assignment
+    for ( unsigned i = 0;  i < numVars; ++i )
+    {
+        line = input->readLine();
+        List<String> tokens = line.tokenize( "," );
+        auto it = tokens.begin();
+        var = atoi( it->ascii() );
+        ASSERT( var == i );
+        it++;
+        value = atof( it->ascii() );
+        it++;
+        ASSERT( it == tokens.end() );
+        _inputQuery.storeDebuggingSolution( var, value);
+    }
+
+    input->close();
+}
+
+void Marabou::exportAssignment() const
+{
+    String assignmentFileName = "assignment.txt";
+    AutoFile exportFile( assignmentFileName );
+    exportFile->open( IFile::MODE_WRITE_TRUNCATE );
+
+    unsigned numberOfVariables = _inputQuery.getNumberOfVariables();
+    // Number of Variables
+    exportFile->write( Stringf( "%u\n", numberOfVariables ) );
+
+    // Export each assignment
+    for ( unsigned var = 0;  var < numberOfVariables; ++var )
+        exportFile->write( Stringf( "%u, %f\n", var, _inputQuery.getSolutionValue( var ) ) );
+
+    exportFile->close();
 }
 
 void Marabou::solveQuery()
