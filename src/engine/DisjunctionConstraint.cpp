@@ -381,7 +381,7 @@ void DisjunctionConstraint::eliminateVariable( unsigned /* variable */, double /
 
 bool DisjunctionConstraint::constraintObsolete() const
 {
-    return _feasibleDisjuncts.empty();
+    return false; // A Disjunction is obsolete only when a literal is always true.
 }
 
 void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tightenings */ ) const
