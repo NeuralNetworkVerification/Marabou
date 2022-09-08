@@ -2,7 +2,7 @@
 /*! \file DisjunctionConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Duligur Ibeling, Christopher Lazarus, Haoze Wu
+ **   Guy Katz, Duligur Ibeling, Christopher Lazarus, Haoze Wu, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,16 +13,22 @@
  ** e1 \/ e2 \/ ... \/ eM, where _elements = { e1, e2, ..., eM }
  **
  ** The constraint introduces identifiers for its PiecewiseLinearCaseSplit
- ** elements.
+ ** elements. The mapping between the cases (PhaseStatus) and local indices is
+ ** available via indToPhaseStatus and phaseStatusToInd methods.
  **
  ** The constraint is implemented as PiecewiseLinearConstraint
  ** and operates in two modes:
- **   * pre-processing mode, which stores bounds locally, and
- **   * context dependent mode, used during the search.
+ **   * pre-processing mode, which stores _feasibleDisjuncts locally, and
+ **   * context dependent mode, used during the SMT search.
  **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
  ** DisjunctionConstraint object synchronizes its state automatically with the central
  ** Context object.
+ **
+ ** TODOs:
+ **    - Eliminate updateFeasibleDisjuncts (and its quadratic complexity) by
+ ** introducing a map between variables and the disjuncts they participate in
+ ** which enables direct access to disjunct to check feasibility.
  **/
 
 #ifndef __DisjunctionConstraint_h__
