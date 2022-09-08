@@ -212,14 +212,23 @@ bool PiecewiseLinearConstraint::phaseFixed() const
         return _phaseStatus != PHASE_NOT_FIXED;
 };
 
+PhaseStatus PiecewiseLinearConstraint::getImpliedCase() const
+{
+    ASSERT( isImplication() || phaseFixed() );
+    PhaseStatus impliedCase = PHASE_NOT_FIXED;
+    if ( isImplication() )
+      impliedCase = nextFeasibleCase();
+    else
+      impliedCase = getPhaseStatus();
+
+    ASSERT( impliedCase != PHASE_NOT_FIXED );
+    return impliedCase;
+}
 void PiecewiseLinearConstraint::serializeInfeasibleCases( String &output ) const
 {
-    output += " CDO info \n ------------------------------";
-    output += Stringf(" Num cases: %d", _numCases );
-
     if ( _cdInfeasibleCases )
     {
-        output += Stringf( "Infeasible cases (%d):", _cdInfeasibleCases->size() );
+        output += Stringf( "Infeasible cases ( %d/%d):", _cdInfeasibleCases->size(), _numCases );
         for ( auto infeasible : *_cdInfeasibleCases )
             output += Stringf("%d", infeasible);
     }

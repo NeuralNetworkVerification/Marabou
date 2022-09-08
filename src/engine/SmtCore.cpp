@@ -138,13 +138,7 @@ void SmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
 {
     ASSERT( constraint->isImplication() || constraint->phaseFixed() );
     SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
-    PhaseStatus impliedCase = PHASE_NOT_FIXED;
-    if ( constraint->isImplication() )
-      impliedCase = constraint->nextFeasibleCase();
-    else
-      impliedCase = constraint->getPhaseStatus();
-    ASSERT( impliedCase != PHASE_NOT_FIXED );
-    TrailEntry te( constraint, impliedCase );
+    TrailEntry te( constraint, constraint->getImpliedCase() );
     applyTrailEntry( te, false );
     SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
 }

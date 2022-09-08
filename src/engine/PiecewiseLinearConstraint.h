@@ -208,6 +208,11 @@ public:
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
 
     /*
+       Get implied case split - either based on search (_cdInfeasibleCases) or assignment (_cdPhaseFixed)
+     */
+    PhaseStatus getImpliedCase() const;
+
+    /*
        Returns a list of all cases of this constraint. Used by the
        nextFeasibleCase to track the state during search. The order of returned
        cases affects the search, and this method is where related heuristics
@@ -455,6 +460,8 @@ public:
         return _cdInfeasibleCases;
     }
 
+    void serializeInfeasibleCases( String &output ) const;
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -516,7 +523,6 @@ protected:
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
 
-    void serializeInfeasibleCases( String &output ) const;
 
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
