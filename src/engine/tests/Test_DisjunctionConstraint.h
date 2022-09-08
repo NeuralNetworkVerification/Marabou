@@ -455,7 +455,7 @@ public:
         PiecewiseLinearCaseSplit validSplit = dc.getImpliedCaseSplit();
         TS_ASSERT_EQUALS( validSplit, *cs3 );
 
-        dc.markInfeasible( dc.getPhaseStatus() );
+        dc.markInfeasible( dc.getImpliedCase() );
         TS_ASSERT( !dc.isFeasible() );
         TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
     }

@@ -153,7 +153,7 @@ void PiecewiseLinearConstraint::initializeDuplicateCDOs(
         ASSERT( clone->_cdPhaseStatus != nullptr );
         clone->_cdPhaseStatus = nullptr;
         clone->initializeCDPhaseStatus();
-        clone->setPhaseStatus( this->getPhaseStatus() );
+        clone->setPhaseStatus( *_cdPhaseStatus );
 
         ASSERT( clone->_cdInfeasibleCases != nullptr );
         clone->_cdInfeasibleCases = nullptr;

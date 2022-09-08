@@ -232,6 +232,7 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getCaseSplit( PhaseStatus phase 
 
 PhaseStatus DisjunctionConstraint::getPhaseStatus() const
 {
+    ASSERT ( phaseFixed() );
     return indToPhaseStatus( *_feasibleDisjuncts.begin() );
 }
 
