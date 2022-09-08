@@ -203,7 +203,6 @@ private:
       still feasible, given the current variable bounds
     */
     void updateFeasibleDisjuncts();
-    bool disjunctIsFeasible( unsigned ind ) const;
     bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit & caseSplit ) const;
 
     inline PhaseStatus indToPhaseStatus( unsigned ind ) const

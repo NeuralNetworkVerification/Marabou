@@ -155,6 +155,8 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
 
     setLowerBound( variable, bound );
 
+    //TODO: Maintain a mapping from variables to disjuncts and only check relevant
+    // disjuncts for feasibility
     updateFeasibleDisjuncts();
 }
 
@@ -169,6 +171,8 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
 
     setUpperBound( variable, bound );
 
+    //TODO: Maintain a mapping from variables to disjuncts and only check relevant
+    // disjuncts for feasibility
     updateFeasibleDisjuncts();
 }
 
@@ -476,23 +480,25 @@ bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &d
 
 void DisjunctionConstraint::updateFeasibleDisjuncts()
 {
-    _feasibleDisjuncts.clear();
-
-    for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+    if ( _cdInfeasibleCases )
     {
-        if ( disjunctIsFeasible( ind ) )
-            _feasibleDisjuncts.append( ind );
-        else if ( _cdInfeasibleCases && !isCaseInfeasible( indToPhaseStatus( ind ) ) )
-            markInfeasible( indToPhaseStatus( ind ) );
+        for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+        {
+             if ( !isCaseInfeasible( indToPhaseStatus( ind ) ) &&
+                  !caseSplitIsFeasible( _disjuncts.get( ind ) )  )
+               markInfeasible( indToPhaseStatus( ind ) );
+        }
     }
-}
+    else
+    {
+        _feasibleDisjuncts.clear();
 
-bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const
-{
-    if ( _cdInfeasibleCases && isCaseInfeasible( indToPhaseStatus( ind ) ) )
-        return false;
-
-    return caseSplitIsFeasible( _disjuncts.get( ind ) );
+        for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+        {
+          if ( caseSplitIsFeasible( _disjuncts.get( ind ) ) )
+                _feasibleDisjuncts.append( ind );
+        }
+    }
 }
 
 bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const
