@@ -14,6 +14,7 @@
 **/
 
 #include "PiecewiseLinearConstraint.h"
+
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
@@ -170,8 +171,6 @@ void PiecewiseLinearConstraint::markInfeasible(
 
 PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase() const
 {
-    //ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
-
     if ( !isFeasible() )
         return CONSTRAINT_INFEASIBLE;
 
@@ -217,9 +216,9 @@ PhaseStatus PiecewiseLinearConstraint::getImpliedCase() const
     ASSERT( isImplication() || phaseFixed() );
     PhaseStatus impliedCase = PHASE_NOT_FIXED;
     if ( isImplication() )
-      impliedCase = nextFeasibleCase();
+        impliedCase = nextFeasibleCase();
     else
-      impliedCase = getPhaseStatus();
+        impliedCase = getPhaseStatus();
 
     ASSERT( impliedCase != PHASE_NOT_FIXED );
     return impliedCase;
@@ -230,7 +229,7 @@ void PiecewiseLinearConstraint::serializeInfeasibleCases( String &output ) const
     {
         output += Stringf( "Infeasible cases ( %d/%d):", _cdInfeasibleCases->size(), _numCases );
         for ( auto infeasible : *_cdInfeasibleCases )
-            output += Stringf("%d", infeasible);
+            output += Stringf( "%d", infeasible );
     }
 }
 //

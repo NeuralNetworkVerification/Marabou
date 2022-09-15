@@ -126,7 +126,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
 
     if ( _boundManager == nullptr && existsLowerBound( variable ) &&
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-      return;
+        return;
 
     setLowerBound( variable, bound );
 
@@ -180,7 +180,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
          !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-     setUpperBound( variable, bound );
+    setUpperBound( variable, bound );
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
 
@@ -321,7 +321,7 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes()
     return fixes;
 }
 
-List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( ITableau */* tableau */ ) const
+List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( ITableau * /* tableau */ ) const
 {
     return getPossibleFixes();
 }
@@ -601,8 +601,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery
-                                                                  &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
 {
     /*
       We want to add the two equations
@@ -661,7 +660,7 @@ void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
                                                         PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     ASSERT( phase == ABS_PHASE_NEGATIVE || phase == ABS_PHASE_POSITIVE );

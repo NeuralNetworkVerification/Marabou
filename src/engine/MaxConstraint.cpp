@@ -503,7 +503,7 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _auxToElement[auxVar] = newIndex;
 
         if ( _phaseStatus == variableToPhase( oldIndex ) )
-            _phaseStatus = variableToPhase( newIndex ) ;
+            _phaseStatus = variableToPhase( newIndex );
     }
     else
     {
@@ -615,7 +615,7 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
                                               PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     if ( phase == MAX_PHASE_ELIMINATED )
@@ -669,7 +669,6 @@ String MaxConstraint::serializeToString() const
         // Will be ignored in any case
         output += Stringf( ",%u", 0 );
 
-    //serializeInfeasibleCases( output );
     return output;
 }
 

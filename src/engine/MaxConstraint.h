@@ -46,9 +46,9 @@
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
-#include "PiecewiseLinearConstraint.h"
 #include "LinearExpression.h"
 #include "Map.h"
+#include "PiecewiseLinearConstraint.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
 

@@ -14,7 +14,6 @@
 
 #include "ReluConstraint.h"
 
-#include "PiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -24,6 +23,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearConstraint.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -122,12 +122,12 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound )
 {
-  if ( variable == _f && FloatUtils::isPositive( bound ) )
-    setPhaseStatus( RELU_PHASE_ACTIVE );
-  else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-    setPhaseStatus( RELU_PHASE_ACTIVE );
-  else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
-    setPhaseStatus( RELU_PHASE_INACTIVE );
+    if ( variable == _f && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+    else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( RELU_PHASE_INACTIVE );
 }
 
 void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -849,7 +849,7 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
                                                PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     // This should not be called when the linear constraints have

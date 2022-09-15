@@ -17,8 +17,8 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "InputQuery.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -298,11 +298,10 @@ String SignConstraint::serializeToString() const
     return Stringf( "sign,%u,%u", _f, _b );
 }
 
-void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
-                                               PhaseStatus phase ) const
+void SignConstraint::getCostFunctionComponent( LinearExpression &cost, PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     ASSERT( phase == SIGN_PHASE_NEGATIVE || phase == SIGN_PHASE_POSITIVE );
