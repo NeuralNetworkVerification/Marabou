@@ -170,7 +170,7 @@ void SmtCore::performSplit()
     _engine->storeState( *stateBeforeSplits,
                          TableauStateStorageLevel::STORE_BOUNDS_ONLY );
     _engine->preContextPushHook();
-    _context.push();
+    pushContext();
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
@@ -211,6 +211,32 @@ unsigned SmtCore::getStackDepth() const
     return _stack.size();
 }
 
+void SmtCore::popContext()
+{
+    struct timespec start = TimeUtils::sampleMicro();
+    _context.pop();
+    struct timespec end = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+    {
+        _statistics->incUnsignedAttribute( Statistics::NUM_CONTEXT_POPS );
+        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_POP, TimeUtils::timePassed( start, end ) );
+    }
+}
+
+void SmtCore::pushContext()
+{
+    struct timespec start = TimeUtils::sampleMicro();
+    _context.push();
+    struct timespec end = TimeUtils::sampleMicro();
+
+    if ( _statistics )
+    {
+        _statistics->incUnsignedAttribute( Statistics::NUM_CONTEXT_PUSHES );
+        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_PUSH, TimeUtils::timePassed( start, end ) );
+    }
+}
+
 bool SmtCore::popSplit()
 {
     SMT_LOG( "Performing a pop" );
@@ -245,7 +271,8 @@ bool SmtCore::popSplit()
             delete _stack.back()->_engineState;
             delete _stack.back();
             _stack.popBack();
-            _context.pop();
+            popContext();
+
 
             if ( _stack.empty() )
                 return false;
@@ -260,7 +287,7 @@ bool SmtCore::popSplit()
 
         SmtStackEntry *stackEntry = _stack.back();
 
-        _context.pop();
+        popContext();
         _engine->postContextPopHook();
         // Restore the state of the engine
         SMT_LOG( "\tRestoring engine state..." );
@@ -277,7 +304,7 @@ bool SmtCore::popSplit()
         SMT_LOG( "\tApplying new split..." );
         ASSERT( split->getEquations().size() == 0 );
         _engine->preContextPushHook();
-        _context.push();
+        pushContext();
         _engine->applySplit( *split );
         SMT_LOG( "\tApplying new split - DONE" );
 
