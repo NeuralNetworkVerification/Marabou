@@ -3089,3 +3089,13 @@ bool Engine::consistentBounds() const
 {
     return _boundManager.consistentBounds();
 }
+
+
+InputQuery Engine::buildQueryFromCurrentState() const {
+    InputQuery query = _preprocessedQuery;
+    for ( unsigned i = 0; i < query.getNumberOfVariables(); ++i ) {
+        query.setLowerBound( i, _tableau->getLowerBound( i ) );
+        query.setUpperBound( i, _tableau->getUpperBound( i ) );
+    }
+    return query;
+}
