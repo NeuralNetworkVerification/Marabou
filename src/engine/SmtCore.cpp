@@ -148,7 +148,7 @@ void SmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
     if ( isDecision )
     {
         _engine->preContextPushHook();
-        _context.push();
+        pushContext();
         _decisions.push_back( te );
     }
 
@@ -246,7 +246,6 @@ void SmtCore::pushContext()
     }
 }
 
-bool SmtCore::popSplit()
 bool SmtCore::popDecisionLevel( TrailEntry &lastDecision )
 {
     ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
@@ -255,7 +254,7 @@ bool SmtCore::popDecisionLevel( TrailEntry &lastDecision )
 
     SMT_LOG( "Popping trail ..." );
     lastDecision = _decisions.back();
-    _context.pop();
+    popContext();
     _engine->postContextPopHook();
     SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
     return true;

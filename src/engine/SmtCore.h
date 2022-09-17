@@ -187,6 +187,12 @@ public:
     bool popSplit();
 
     /*
+       Encapsulations of _context.push/pop calls for statistics purposes.
+     */
+    void pushContext();
+    void popContext();
+
+    /*
       Pop a context level - lazily backtracking trail, bounds, etc.
       Return true if successful, false if the stack is empty.
     */
