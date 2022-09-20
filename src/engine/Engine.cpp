@@ -3090,7 +3090,6 @@ bool Engine::consistentBounds() const
     return _boundManager.consistentBounds();
 }
 
-
 InputQuery Engine::buildQueryFromCurrentState() const {
     InputQuery query = _preprocessedQuery;
     for ( unsigned i = 0; i < query.getNumberOfVariables(); ++i ) {
