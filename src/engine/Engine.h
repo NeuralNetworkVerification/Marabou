@@ -126,6 +126,8 @@ public:
 
     InputQuery *getInputQuery();
 
+    InputQuery buildQueryFromCurrentState() const;
+
     /*
       Get the exit code
     */
