@@ -3091,7 +3091,7 @@ bool Engine::consistentBounds() const
 }
 
 InputQuery Engine::buildQueryFromCurrentState() const {
-    InputQuery query = _preprocessedQuery;
+    InputQuery query = *_preprocessedQuery;
     for ( unsigned i = 0; i < query.getNumberOfVariables(); ++i ) {
         query.setLowerBound( i, _tableau->getLowerBound( i ) );
         query.setUpperBound( i, _tableau->getUpperBound( i ) );
