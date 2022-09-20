@@ -116,6 +116,17 @@ public:
     bool popSplit();
 
     /*
+         Pop _context, record statistics
+     */
+    void popContext();
+
+    /*
+         Push _context, record statistics
+     */
+    void pushContext();
+
+
+    /*
       The current stack depth.
     */
     unsigned getStackDepth() const;

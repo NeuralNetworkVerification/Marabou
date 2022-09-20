@@ -2304,13 +2304,22 @@ bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
 
 void Engine::preContextPushHook()
 {
+    struct timespec start = TimeUtils::sampleMicro();
     _boundManager.storeLocalBounds();
+    struct timespec end = TimeUtils::sampleMicro();
+
+    _statistics.incLongAttribute( Statistics::TIME_CONTEXT_PUSH_HOOK, TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::postContextPopHook()
 {
+    struct timespec start = TimeUtils::sampleMicro();
+
     _boundManager.restoreLocalBounds();
     _tableau->postContextPopHook();
+
+    struct timespec end = TimeUtils::sampleMicro();
+    _statistics.incLongAttribute( Statistics::TIME_CONTEXT_POP_HOOK, TimeUtils::timePassed( start, end ) );
 }
 
 void Engine::reset()

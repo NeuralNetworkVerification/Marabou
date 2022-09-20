@@ -29,6 +29,8 @@ Statistics::Statistics()
     _unsignedAttributes[MAX_DECISION_LEVEL] = 0;
     _unsignedAttributes[NUM_SPLITS] = 0;
     _unsignedAttributes[NUM_POPS] = 0;
+    _unsignedAttributes[NUM_CONTEXT_PUSHES] = 0;
+    _unsignedAttributes[NUM_CONTEXT_POPS] = 0;
     _unsignedAttributes[NUM_VISITED_TREE_STATES] = 1;
     _unsignedAttributes[CURRENT_TABLEAU_M] = 0;
     _unsignedAttributes[CURRENT_TABLEAU_N] = 0;
@@ -83,6 +85,10 @@ Statistics::Statistics()
     _longAttributes[TOTAL_TIME_LOCAL_SEARCH_MICRO] = 0;
     _longAttributes[TOTAL_TIME_GETTING_SOI_PHASE_PATTERN_MICRO] = 0;
     _longAttributes[TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO] = 0;
+    _longAttributes[TIME_CONTEXT_PUSH] = 0;
+    _longAttributes[TIME_CONTEXT_POP] = 0;
+    _longAttributes[TIME_CONTEXT_PUSH_HOOK] = 0;
+    _longAttributes[TIME_CONTEXT_POP_HOOK] = 0;
 
     _doubleAttributes[CURRENT_DEGRADATION] = 0.0;
     _doubleAttributes[MAX_DEGRADATION] = 0.0;
@@ -391,6 +397,53 @@ void Statistics::print()
             , totalTimeGettingSoIPhasePatternMicro
             , printPercents( totalTimeGettingSoIPhasePatternMicro,
                              timeMainLoopMicro ) );
+
+    printf( "\t--- Context dependent statistics ---\n" );
+    printf( "\tNumber of pushes / pops: %u / %u\n"
+            , getUnsignedAttribute( Statistics::NUM_CONTEXT_PUSHES )
+            , getUnsignedAttribute( Statistics::NUM_CONTEXT_POPS )
+            );
+       unsigned long long totalTimeContextPushHook =
+        getLongAttribute( Statistics::TIME_CONTEXT_PUSH_HOOK );
+    printf( "\t\t[%.2lf%%] Pre-Push hook: %llu milli\n"
+            , printPercents( totalTimeContextPushHook,
+                             timeMainLoopMicro )
+            , totalTimeContextPushHook/ 1000
+            );
+    unsigned long long totalTimeContextPush =
+        getLongAttribute( Statistics::TIME_CONTEXT_PUSH );
+    printf( "\t\t[%.2lf%%] Push : %llu milli\n"
+            , printPercents( totalTimeContextPush,
+                             timeMainLoopMicro )
+            , totalTimeContextPush/ 1000
+            );
+    unsigned long long totalTimeContextPopHook =
+        getLongAttribute( Statistics::TIME_CONTEXT_POP_HOOK );
+    printf( "\t\t[%.2lf%%] Post-Pop hook: %llu milli\n"
+            , printPercents( totalTimeContextPopHook,
+                             timeMainLoopMicro )
+            , totalTimeContextPopHook/ 1000
+            );
+    unsigned long long totalTimeContextPop =
+        getLongAttribute( Statistics::TIME_CONTEXT_POP );
+    printf( "\t\t[%.2lf%%] Pop : %llu milli\n"
+            , printPercents( totalTimeContextPop,
+                             timeMainLoopMicro )
+            , totalTimeContextPop/ 1000
+            );
+
+    unsigned long long totalContextTime =
+        totalTimeContextPop +
+        totalTimeContextPopHook +
+        totalTimeContextPush +
+        totalTimeContextPushHook;
+
+    printf( "\t\t[%.2lf%%] Total context-switching time: %llu milli\n"
+            , printPercents( totalContextTime, timeMainLoopMicro )
+            , totalContextTime / 1000
+            );
+
+
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
