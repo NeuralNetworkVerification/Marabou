@@ -1652,16 +1652,7 @@ void Engine::restoreState( const EngineState &state )
     _tableau->restoreState( state._tableauState,
                             state._tableauStateStorageLevel );
 
-    // ENGINE_LOG( "\tRestoring constraint states" );
-    // for ( auto &constraint : _plConstraints )
-    // {
-    //     if ( !state._plConstraintToState.exists( constraint ) )
-    //         throw MarabouError( MarabouError::MISSING_PL_CONSTRAINT_STATE );
-
-    //     constraint->restoreState( state._plConstraintToState[constraint] );
-    // }
-
-    // _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
+    _numPlConstraintsDisabledByValidSplits = state._numPlConstraintsDisabledByValidSplits;
 
     if ( _lpSolverType == LPSolverType::NATIVE )
     {
