@@ -708,6 +708,10 @@ void OnnxParser::identity( onnx::NodeProto& node )
     {
         _constantMap[outputNodeName] = _constantMap[inputNodeName];
     }
+    else
+    {
+        missingNodeError( inputNodeName );
+    }
 }
 
 
@@ -756,6 +760,10 @@ void OnnxParser::reshape( onnx::NodeProto& node )
     {
         _constantMap[outputNodeName] = _constantMap[inputNode1Name];
     }
+    else
+    {
+        missingNodeError( inputNode1Name );
+    }
 }
 
 /**
@@ -798,6 +806,10 @@ void OnnxParser::flatten( onnx::NodeProto& node )
     else if ( _constantMap.exists( inputNodeName ) )
     {
         _constantMap[outputNodeName] = _constantMap[inputNodeName];
+    }
+    else
+    {
+        missingNodeError( inputNodeName );
     }
 }
 
@@ -1260,4 +1272,10 @@ Vector<int> OnnxParser::getTensorIntValues( const onnx::TensorProto& tensor )
         }
     }
     return result;
+}
+
+void OnnxParser::missingNodeError( String& missingNodeName )
+{
+    String errorMessage = Stringf( "Internal invariant violated: missing node '%s' not found", missingNodeName.ascii() );
+    throw MarabouError(  MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }

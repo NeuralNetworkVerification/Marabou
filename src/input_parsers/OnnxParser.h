@@ -81,6 +81,8 @@ private:
     void matMulEquations( onnx::NodeProto& node, bool makeEquations );
     void reluEquations( onnx::NodeProto& node, bool makeEquations );
     void sigmoidEquations( onnx::NodeProto& node, bool makeEquations );
+
+    void missingNodeError( String& missingNodeName );
 };
 
 #endif // __OnnxParser_h__
