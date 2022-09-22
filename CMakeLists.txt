@@ -58,6 +58,14 @@ file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
 file(GLOB DEPS_CVC4_BASE "${CVC4_BASE_DIR}/*.cpp")
 include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
+# Onnx
+if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
+    message("generating ONNX protobuf file")
+    execute_process(COMMAND ${TOOLS_DIR}/download_onnx.sh)
+endif()
+file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
+include_directories(SYSTEM ${ONNX_DIR})
+
 set(OPENBLAS_LIB openblas)
 
 set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
@@ -260,14 +268,6 @@ add_library(${PROTOBUF_LIB} SHARED IMPORTED)
 set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
 list(APPEND LIBS ${PROTOBUF_LIB})
 target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
-
-# Onnx
-if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
-    message("generating ONNX protobuf file")
-    execute_process(COMMAND ${TOOLS_DIR}/download_onnx.sh)
-endif()
-file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
-include_directories(SYSTEM ${ONNX_DIR})
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
