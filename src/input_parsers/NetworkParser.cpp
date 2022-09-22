@@ -42,7 +42,7 @@ Variable NetworkParser::getNewVariable(){
 
 void NetworkParser::addEquation( Equation &eq )
 {
-    _equationList.append(eq);
+    _equationList.append( eq );
 }
 
 void NetworkParser::setLowerBound( Variable var, float value )
@@ -57,114 +57,114 @@ void NetworkParser::setUpperBound( Variable var, float value )
 
 void NetworkParser::addRelu( Variable inputVar, Variable outputVar )
 {
-    _reluList.append(new ReluConstraint(inputVar, outputVar));
+    _reluList.append( new ReluConstraint( inputVar, outputVar ) );
 }
 
 void NetworkParser::addSigmoid( Variable inputVar, Variable outputVar )
 {
-    _signList.append(new SignConstraint(inputVar, outputVar));
+    _signList.append( new SignConstraint( inputVar, outputVar ) );
 }
 
 void NetworkParser::addMaxConstraint( Variable var, Set<Variable> elements )
 {
-    _maxList.append(new MaxConstraint(var, elements));
+    _maxList.append( new MaxConstraint( var, elements ) );
 }
 
 void NetworkParser::addSignConstraint( Variable inputVar, Variable outputVar )
 {
-    _signList.append(new SignConstraint(inputVar, outputVar));
+    _signList.append( new SignConstraint( inputVar, outputVar ) );
 }
 
 void NetworkParser::addAbsConstraint( Variable inputVar, Variable outputVar )
 {
-    _absList.append(new AbsoluteValueConstraint(inputVar, outputVar));
+    _absList.append( new AbsoluteValueConstraint( inputVar, outputVar ) );
 }
 
-void NetworkParser::getMarabouQuery(InputQuery& query)
+void NetworkParser::getMarabouQuery( InputQuery& query )
 {
-    query.setNumberOfVariables(_numVars);
+    query.setNumberOfVariables( _numVars );
 
     int i = 0;
-    for (Variable inputVar : _inputVars)
+    for ( Variable inputVar : _inputVars )
     {
-        query.markInputVariable(inputVar,i);
+        query.markInputVariable( inputVar, i );
         i++;
     }
 
     int j = 0;
-    for (Variable outputVar : _outputVars)
+    for ( Variable outputVar : _outputVars )
     {
-        query.markOutputVariable(outputVar, j);
+        query.markOutputVariable( outputVar, j );
         j++;
     }
 
-    for (Equation equation : _equationList)
+    for ( Equation equation : _equationList )
     {
-        query.addEquation(equation);
+        query.addEquation( equation );
     }
 
-    for (ReluConstraint* constraintPtr : _reluList)
+    for ( ReluConstraint* constraintPtr : _reluList )
     {
         ReluConstraint constraint = *constraintPtr;
-        ASSERT(constraint.getB() < _numVars && constraint.getF() < _numVars);
-        query.addPiecewiseLinearConstraint(constraintPtr);
+        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for (SigmoidConstraint* constraintPtr : _sigmoidList)
+    for ( SigmoidConstraint* constraintPtr : _sigmoidList )
     {
         SigmoidConstraint constraint = *constraintPtr;
         ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        query.addTranscendentalConstraint(constraintPtr);
+        query.addTranscendentalConstraint( constraintPtr );
     }
 
-    for (MaxConstraint* constraintPtr : _maxList)
+    for ( MaxConstraint* constraintPtr : _maxList )
     {
         MaxConstraint constraint = *constraintPtr;
         ASSERT( constraint.getF() < _numVars );
-        for ([[maybe_unused]] Variable var : constraint.getElements())
+        for ( [[maybe_unused]] Variable var : constraint.getElements() )
         {
-            ASSERT (var < _numVars );
+            ASSERT ( var < _numVars );
         }
-        query.addPiecewiseLinearConstraint(constraintPtr);
+        query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for (AbsoluteValueConstraint* constraintPtr : _absList)
+    for ( AbsoluteValueConstraint* constraintPtr : _absList )
     {
         AbsoluteValueConstraint constraint = *constraintPtr;
-        ASSERT(constraint.getB() < _numVars && constraint.getF() < _numVars);
-        query.addPiecewiseLinearConstraint(constraintPtr);
+        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for (SignConstraint* constraintPtr : _signList)
+    for ( SignConstraint* constraintPtr : _signList )
     {
         SignConstraint constraint = *constraintPtr;
-        ASSERT(constraint.getB() < _numVars && constraint.getF() < _numVars);
-        query.addPiecewiseLinearConstraint(constraintPtr);
+        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     // TODO check this last two
-    for (std::pair<Variable,float> lower : _lowerBounds)
+    for ( std::pair<Variable,float> lower : _lowerBounds )
     {
-        ASSERT(lower.first < _numVars);
-        query.setLowerBound(lower.first,lower.second);
+        ASSERT( lower.first < _numVars );
+        query.setLowerBound( lower.first,lower.second );
     }
 
-    for (std::pair<Variable,float> upper : _upperBounds)
+    for ( std::pair<Variable,float> upper : _upperBounds )
     {
-        ASSERT(upper.first < _numVars);
-        query.setLowerBound(upper.first,upper.second);
+        ASSERT( upper.first < _numVars );
+        query.setLowerBound( upper.first,upper.second );
     }
 }
 
 int NetworkParser::findEquationWithOutputVariable( Variable variable )
 {
     int i = 0;
-    for (Equation& equation : _equationList)
+    for ( Equation& equation : _equationList )
     {
         Equation::Addend outputAddend = equation._addends.back();
-        if (variable == outputAddend._variable)
+        if ( variable == outputAddend._variable )
         {
-            ASSERT(outputAddend._coefficient == -1);
+            ASSERT( outputAddend._coefficient == -1 );
             return i;
         }
         i++;

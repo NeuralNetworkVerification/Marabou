@@ -48,13 +48,13 @@ private:
     Map<String, TensorShape> _shapeMap;
     Map<String, Vector<Variable>> _varMap;
 
-    void readNetwork(const String& path);
+    void readNetwork( const String& path );
     Set<String> readInputNames();
     String readOutputName();
     void initializeMaps();
     void initializeShapeMap();
-    void validateUserInputNames(Set<String>& inputNames);
-    void validateUserOutputNames(String& outputName);
+    void validateUserInputNames( Set<String>& inputNames) ;
+    void validateUserOutputNames( String& outputName );
     void validateAllInputsAndOutputsFound();
 
     void processGraph( Set<String>& inputNames, String& outputName , InputQuery &inputQuery );
