@@ -13,7 +13,7 @@
 
 #include "Engine.h"
 #include "InputQuery.h"
-#include "MpsParser.h"
+#include "OnnxParser.h"
 #include <cstdio>
 
 int main( int argc, char *argv[] )

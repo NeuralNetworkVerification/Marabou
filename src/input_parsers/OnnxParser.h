@@ -24,6 +24,9 @@
 #include "InputQuery.h"
 #include "NetworkParser.h"
 
+#define ONNX_LOG(x, ...) LOG(GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x)
+
+
 class OnnxParser : public NetworkParser
 {
 public:
@@ -37,7 +40,7 @@ private:
     Set<String> _inputNames;
     String _outputName;
     Set<String> _processedNodes;
-    uint _numberOfFoundInputs;
+    unsigned _numberOfFoundInputs;
 
     Map<String, const onnx::NodeProto*> _nodeMap;
     Map<String, const onnx::TensorProto*> _constantMap;
@@ -48,8 +51,8 @@ private:
     void readNetwork(const String& path);
     Set<String> readInputNames();
     String readOutputName();
-    void initialiseMaps();
-    void initialiseShapeMap();
+    void initializeMaps();
+    void initializeShapeMap();
     void validateUserInputNames(Set<String>& inputNames);
     void validateUserOutputNames(String& outputName);
     void validateAllInputsAndOutputsFound();

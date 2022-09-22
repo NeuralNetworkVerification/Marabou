@@ -9,7 +9,11 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** This file provides a general interface for parsing a neural network.
+ ** This file provides a general interface for parsing a neural network file.
+ ** Keeps track of internal state such as equations and variables that
+ ** may be altered during parsing of a network. Once the network has been parsed
+ ** they are then loaded into an InputQuery.
+ ** Future parsers for individual network formats should extend this interface.
  **/
 
 #ifndef __NetworkParser_h__

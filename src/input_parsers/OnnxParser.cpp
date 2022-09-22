@@ -15,7 +15,7 @@
  **   - The data is annoyingly heterogenous. Inputs and outputs of the onnx graph
  **   have different types from the nodes in the onnx graph, which have different
  **   types from the initializers (i.e. the constants (biases, filter weights etc.).
- **   This explains why all the methods takes the names of things as inputs
+ **   This explains why all the methods take the names of things as inputs
  **   rather than passing references to onnx::NodeProto as one might expect.
  **   Likewise, this is why we store the shape data in a separate data structure
  **   rather than simply retrieving it when needed.
@@ -29,7 +29,6 @@
 #include "ReluConstraint.h"
 #include "onnx.proto3.pb.h"
 #include <fstream>
-#include <assert.h>
 #include <iostream>
 #include <math.h>
 
@@ -55,7 +54,7 @@ OnnxParser::OnnxParser(const String &path)
     model.ParseFromArray(buffer.data(), size);
     _network = model.graph();
 
-    initialiseMaps();
+    initializeMaps();
 }
 /**
  * @brief Generates the variables for a query over the whole network.
@@ -92,31 +91,31 @@ void OnnxParser::generatePartialQuery( InputQuery& query, Set<String>& inputName
 void illTypedAttributeError(onnx::NodeProto &node, const onnx::AttributeProto& attr, onnx::AttributeProto_AttributeType expectedType)
 {
     String errorMessage = Stringf("Expected attribute %s on Onnx node of type %s to be of type %s but is actually of type %s", attr.name().c_str(), node.op_type().c_str(), expectedType, attr.type());
-    throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+    throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
 }
 
 void missingAttributeError(onnx::NodeProto &node, String attributeName)
 {
     String errorMessage = Stringf("Onnx node of type %s is missing the expected attribute %s", node.op_type().c_str(), attributeName.ascii());
-    throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+    throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
 }
 
 void unimplementedError(onnx::NodeProto &node)
 {
     String errorMessage = Stringf("Onnx operation %s not yet implemented for command line support. Should be relatively easy to add.", node.op_type().c_str());
-    throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+    throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
 }
 
 void unsupportedError(onnx::NodeProto &node)
 {
     String errorMessage = Stringf("Onnx operation %s not currently supported by Marabou", node.op_type().c_str());
-    throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+    throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
 }
 
 template <typename T>
 T lookup2D(Vector<T> array, int i1, int i2, [[maybe_unused]] int rows, int cols)
 {
-    assert(array.size() == (uint) (rows * cols));
+    ASSERT(array.size() == (uint) (rows * cols));
     return array[i1 * cols + i2];
 }
 
@@ -125,7 +124,7 @@ void checkTensorDataSourceIsInternal(const onnx::TensorProto& tensor)
     if (tensor.data_location() == onnx::TensorProto_DataLocation_EXTERNAL)
     {
         String errorMessage = Stringf("External data locations not yet implemented for command line Onnx support");
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 }
 
@@ -137,7 +136,7 @@ void checkTensorDataType(const onnx::TensorProto& tensor, int32_t expectedDataTy
         std::string actualName = onnx::TensorProto_DataType_Name(actualDataType);
         std::string expectedName = onnx::TensorProto_DataType_Name(actualDataType);
         String errorMessage = Stringf("Expected tensor '%s' to be of type %s but actually of type %s", expectedName.c_str(), actualName.c_str());
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 }
 
@@ -147,6 +146,11 @@ TensorShape shapeOfInput(onnx::ValueInfoProto &input)
     for (auto dim : input.type().tensor_type().shape().dim())
     {
         int size = dim.dim_value();
+        if (size <= 0)
+        {
+            String errorMessage = Stringf("Found input tensor in ONNX file with invalid size '%d'", size);
+            throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
+        }
         // This is copied from the Python code, but it feels like an
         // error should be thrown if the size is non-positive.
         int adjustedSize = size > 0 ? size : 1;
@@ -188,7 +192,7 @@ TensorShape getBroadcastShape(TensorShape shape1, TensorShape shape2)
         if (d1 != d2)
         {
             String errorMessage = Stringf("Mismatch in tensor dimensions found while broadcasting (%d v %d)", d1, d2);
-            throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+            throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
         }
 
         output.insertHead(d1);
@@ -249,10 +253,10 @@ void checkEndianness()
 {
     int num = 1;
     bool systemIsLittleEndian = *(char *)&num == 1;
-    if (! systemIsLittleEndian)
+    if (!systemIsLittleEndian)
     {
         String errorMessage = "Support for Onnx files on non-little endian systems is not currently implemented on the command line";
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 }
 
@@ -279,7 +283,7 @@ float getFloatAttribute(onnx::NodeProto& node, String name, float defaultValue)
     {
         return defaultValue;
     }
-    return (*attr).f();
+    return attr->f();
 }
 
 int getIntAttribute(onnx::NodeProto& node, String name, int defaultValue)
@@ -289,7 +293,7 @@ int getIntAttribute(onnx::NodeProto& node, String name, int defaultValue)
     {
         return defaultValue;
     }
-    return (*attr).f();
+    return attr->f();
 }
 
 const onnx::TensorProto& getTensorAttribute(onnx::NodeProto& node, String name)
@@ -299,7 +303,7 @@ const onnx::TensorProto& getTensorAttribute(onnx::NodeProto& node, String name)
     {
         missingAttributeError(node, name);
     }
-    return (*attr).t();
+    return attr->t();
 }
 
 Vector<int> getIntsAttribute(onnx::NodeProto& node, String name, Vector<int>& defaultValue)
@@ -311,9 +315,9 @@ Vector<int> getIntsAttribute(onnx::NodeProto& node, String name, Vector<int>& de
     }
 
     Vector<int> result;
-    for (int i = 0; i < (*attr).ints_size(); i++)
+    for (int i = 0; i < attr->ints_size(); i++)
     {
-        result.append((*attr).ints(i));
+        result.append(attr->ints(i));
     }
     return result;
  }
@@ -326,7 +330,7 @@ Vector<int> getIntsAttribute(onnx::NodeProto& node, String name, Vector<int>& de
  * @brief Initialises the mapping from node names to nodes and
  * checks the invariant that there are no duplicate names.
  */
-void OnnxParser::initialiseMaps()
+void OnnxParser::initializeMaps()
 {
     Set<std::string> names;
     for (const onnx::NodeProto& node : _network.node())
@@ -334,8 +338,8 @@ void OnnxParser::initialiseMaps()
         const std::string name = node.name();
         if (names.exists(name))
         {
-            String errorMessage = "nodes in Onnx network must have a unique name";
-            throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+            String errorMessage = "Nodes in Onnx network must have a unique name";
+            throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
         }
         else
         {
@@ -349,8 +353,8 @@ void OnnxParser::initialiseMaps()
         const std::string name = initializer.name();
         if (names.exists(name))
         {
-            String errorMessage = "nodes in Onnx network must have a unique name";
-            throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+            String errorMessage = "Nodes in Onnx network must have a unique name";
+            throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
         }
         else
         {
@@ -368,7 +372,7 @@ void OnnxParser::validateUserInputNames(Set<String>& inputNames)
         if ( !_nodeMap.exists(inputName) )
         {
             String errorMessage = Stringf("Input %s not found in graph!", inputName.ascii());
-            throw MarabouError( MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii() );
+            throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
         }
     }
 }
@@ -380,19 +384,17 @@ void OnnxParser::validateUserOutputNames(String &outputName)
         for (String outputNodeName : node.output())
         {
             if (outputName == outputNodeName)
-            {
                 return;
-            }
         }
     }
 
     String errorMessage = Stringf("Output %s not found in graph!", outputName.ascii());
-    throw MarabouError( MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii() );
+    throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
 Set<String> OnnxParser::readInputNames()
 {
-    assert(_network.input().size() >= 1);
+    ASSERT(_network.input().size() >= 1);
 
     Set<String> initializerNames;
     for (auto &initNode : _network.initializer())
@@ -422,13 +424,13 @@ String OnnxParser::readOutputName()
         {
             message += " " + output.name();
         }
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, message.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, message.ascii());
     }
     std::cout << "\noutput: " + _network.output()[0].name();
     return _network.output()[0].name();
 }
 
-void OnnxParser::initialiseShapeMap()
+void OnnxParser::initializeShapeMap()
 {
     // Add shapes for inputs
     for (auto input : _network.input())
@@ -468,7 +470,7 @@ void OnnxParser::validateAllInputsAndOutputsFound()
                 errorMessage += space + inputName;
             }
         }
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 
     // Mark the output variables
@@ -478,12 +480,20 @@ void OnnxParser::validateAllInputsAndOutputsFound()
     }
 }
 
+/**
+ * @brief Processes the graph, adding all the generated constraints to the query.
+ * Unlike the Python implementation, at the moment assumes there is only a single output.
+ *
+ * @param inputNames The names of the input nodes to start at.
+ * @param outputName The names of the output node to end at.
+ * @param query The query in which to store the generated constraints.
+ */
 void OnnxParser::processGraph(Set<String> &inputNames, String &outputName, InputQuery& query)
 {
     _inputNames = inputNames;
     _outputName = outputName;
 
-    initialiseShapeMap();
+    initializeShapeMap();
     processNode(outputName, true);
     validateAllInputsAndOutputsFound();
     getMarabouQuery(query);
@@ -500,9 +510,7 @@ void OnnxParser::processGraph(Set<String> &inputNames, String &outputName, Input
 void OnnxParser::processNode(String &nodeName, bool makeEquations)
 {
     if (_processedNodes.exists(nodeName))
-    {
         return;
-    }
 
     if (_inputNames.exists(nodeName))
     {
@@ -516,7 +524,7 @@ void OnnxParser::processNode(String &nodeName, bool makeEquations)
     _processedNodes.insert(nodeName);
 
     List<onnx::NodeProto> nodes = getNodesWithOutput(nodeName);
-    assert(nodes.size() == 1);
+    ASSERT(nodes.size() == 1);
     onnx::NodeProto& node = nodes.front();
 
     // First recursively process the input nodes.
@@ -541,7 +549,7 @@ void OnnxParser::processNode(String &nodeName, bool makeEquations)
  */
 Vector<Variable> OnnxParser::makeNodeVariables( String &nodeName, bool isInput )
 {
-    assert(!_varMap.exists(nodeName));
+    ASSERT(!_varMap.exists(nodeName));
     TensorShape shape = _shapeMap[nodeName];
     int size = tensorSize(shape);
 
@@ -598,7 +606,7 @@ Set<String> OnnxParser::getInputsToNode(onnx::NodeProto &node)
  */
 void OnnxParser::makeMarabouEquations(onnx::NodeProto &node, bool makeEquations)
 {
-    printf("\nProcessing %s", node.name().c_str());
+    ONNX_LOG( Stringf( "\nProcessing %s", node.name().c_str() ).ascii() );
     auto nodeType = node.op_type().c_str();
 
     if (strcmp(nodeType, "Constant") == 0)
@@ -817,9 +825,7 @@ void OnnxParser::batchNormEquations( onnx::NodeProto& node, bool makeEquations )
     _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
 
     if (!makeEquations)
-    {
         return;
-    }
 
     // Get inputs
     double epsilon = getFloatAttribute(node, "epsilon", 1e-05);
@@ -831,7 +837,7 @@ void OnnxParser::batchNormEquations( onnx::NodeProto& node, bool makeEquations )
     // Get variables
     Vector<Variable> inputVars = _varMap[inputNodeName];
     Vector<Variable> outputVars = makeNodeVariables(outputNodeName, false);
-    assert (inputVars.size() == outputVars.size());
+    ASSERT (inputVars.size() == outputVars.size());
 
     for (uint i = 0; inputVars.size(); i++)
     {
@@ -901,14 +907,12 @@ void OnnxParser::reluEquations( onnx::NodeProto& node, bool makeEquations )
 
     _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
     if (!makeEquations)
-    {
         return;
-    }
 
     // Get variables
     Vector<Variable> inputVars  = _varMap[inputNodeName];
     Vector<Variable> outputVars = makeNodeVariables(outputNodeName, false);
-    assert (inputVars.size() == outputVars.size());
+    ASSERT (inputVars.size() == outputVars.size());
 
     // Generate equations
     for (size_t i = 0; i < inputVars.size(); i++)
@@ -942,9 +946,7 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations
     _shapeMap[outputName] = outputShape;
 
     if (!makeEquations)
-    {
         return;
-    }
 
     // Decide which inputs are variables and which are constants
 
@@ -957,7 +959,7 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations
     if (input1IsConstant && input2IsConstant)
     {
         String errorMessage = "Addition of constant tensors not yet supported for command-line Onnx files";
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 
     // If both inputs are variables, then we need a new variable to represent
@@ -967,8 +969,8 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations
         Vector<Variable> outputVariables = makeNodeVariables(outputName, false);
         Vector<Variable> input1Variables = _varMap[input1Name];
         Vector<Variable> input2Variables = _varMap[input2Name];
-        assert( input1Variables.size() == input2Variables.size() );
-        assert( input2Variables.size() == outputVariables.size() );
+        ASSERT( input1Variables.size() == input2Variables.size() );
+        ASSERT( input2Variables.size() == outputVariables.size() );
 
         for (size_t i = 0; i < input1Variables.size(); i++)
         {
@@ -992,7 +994,7 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations
     Vector<Variable> inputVariables = _varMap[input1IsConstant ? input2Name : input1Name];
     double constantCoefficient = input1IsConstant ? coefficient1 : coefficient2;
     double variableCoefficient = input1IsConstant ? coefficient2 : coefficient1;
-    assert( inputConstants.size() == inputVariables.size() );
+    ASSERT( inputConstants.size() == inputVariables.size() );
 
     // Adjust equations to incorporate the constant addition
     long unsigned int numberOfEquationsChanged = 0;
@@ -1022,7 +1024,7 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations
     {
         // Otherwise, assert no equations were changed,
         // and we need to create new equations
-        assert (numberOfEquationsChanged == 0);
+        ASSERT (numberOfEquationsChanged == 0);
         Vector<Variable> outputVariables = makeNodeVariables(outputName, false);
         for (size_t i = 0; i < outputVariables.size(); i++)
         {
@@ -1052,9 +1054,9 @@ void OnnxParser::matMulEquations(onnx::NodeProto &node, bool makeEquations)
     TensorShape input1Shape = _shapeMap[input1Name];
     TensorShape input2Shape = _shapeMap[input2Name];
 
-    assert( input1Shape.last() == input2Shape.first() );
-    assert( input1Shape.size() <= 2 );
-    assert( input2Shape.size() <= 2 );
+    ASSERT( input1Shape.last() == input2Shape.first() );
+    ASSERT( input1Shape.size() <= 2 );
+    ASSERT( input2Shape.size() <= 2 );
 
     // Calculate the output shape
     TensorShape outputShape;
@@ -1069,9 +1071,7 @@ void OnnxParser::matMulEquations(onnx::NodeProto &node, bool makeEquations)
 
     _shapeMap.insert(nodeName, outputShape);
     if (!makeEquations)
-    {
         return;
-    }
 
     // Assume that at exactly one input is a constant as
     // we cannot represent variable products with linear equations.
@@ -1082,13 +1082,13 @@ void OnnxParser::matMulEquations(onnx::NodeProto &node, bool makeEquations)
     if (input1IsConstant && input2IsConstant)
     {
         String errorMessage = "Matrix multiplication of constant tensors not yet implemented for command-line Onnx files";
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 
     if (!input1IsConstant && !input2IsConstant)
     {
         String errorMessage = "Matrix multiplication of variable tensors is not supported";
-        throw MarabouError(MarabouError::ONNX_PARSE_ERROR, errorMessage.ascii());
+        throw MarabouError(MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii());
     }
 
     String constantName = input1IsConstant ? input1Name : input2Name;
@@ -1187,14 +1187,12 @@ void OnnxParser::sigmoidEquations(onnx::NodeProto &node, bool makeEquations)
     _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
 
     if(!makeEquations)
-    {
         return;
-    }
 
     // Get variables
     Vector<Variable> inputVars  = _varMap[inputNodeName];
     Vector<Variable> outputVars = makeNodeVariables(outputNodeName, false);
-    assert(inputVars.size() == outputVars.size());
+    ASSERT(inputVars.size() == outputVars.size());
 
     // Generate equations
     for (uint i = 0; i < inputVars.size(); i++)
