@@ -207,6 +207,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.concatEquations(node, makeEquations)
         elif node.op_type == 'Split':
             self.splitEquations(node, nodeName, makeEquations)
+        elif node.op_type == 'Resize':
+            self.resizeEquations(node, makeEquations)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -823,7 +825,73 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                     e.setScalar(0)
                     self.addEquation(e)
                 break
-  
+
+    def resizeEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to resize
+
+        Args:
+            node (node): ONNX node representing the Resize operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+
+        # Check numper of dimension of input
+        inputVars = self.varMap[inputName]
+        inputShape = inputVars.shape
+        if inputVars.ndim != 4:
+            raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
+
+        # Get and check attributes
+        coordinate_transformation_mode = None
+        cubic_coeff_a = None
+        mode = None
+        nearest_mode = None
+
+        for attr in node.attribute:
+            value = get_attribute_value(attr)
+            if attr.name == "coordinate_transformation_mode" and value.decode() == "asymmetric":
+                coordinate_transformation_mode = value
+            elif attr.name == "cubic_coeff_a" and value == -0.75:
+                cubic_coeff_a = value
+            elif attr.name == "mode" and value.decode() == "nearest":
+                mode = value
+            elif attr.name == "nearest_mode" and value.decode() == "floor":
+                nearest_mode = value
+            else:
+                raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
+        
+        # Get scales
+        scales = None
+        if len(node.input) == 3  and np.all(self.constantMap[node.input[2]] == [1., 1., 2., 2.]):
+            scales = [1, 1, 2, 2]
+        else:
+             raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
+
+        # Set output shape
+        outputShape = (inputShape[0], inputShape[1], inputShape[2] * scales[2], inputShape[3] * scales[3])
+        self.shapeMap[nodeName] = outputShape
+
+        if not makeEquations:
+            return
+
+        # Get variables
+        outputVars = self.makeNewVariables(nodeName)
+
+        assert scales[2] * scales[3] * inputVars.size == outputVars.size
+
+        for i in range(outputShape[1]):
+            for j in range(outputShape[2]):
+                for k in range(outputShape[3]):
+                    # Add equation
+                    e = MarabouUtils.Equation()
+                    e.addAddend(-1, outputVars[0][i][j][k])
+                    e.addAddend(1, inputVars[0][i][int(j / 2)][int(k / 2)])
+                    e.setScalar(0)
+                    self.addEquation(e) 
+
     def mulEquations(self, node, makeEquations):
         nodeName = node.output[0]
 
