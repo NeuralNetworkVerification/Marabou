@@ -82,7 +82,6 @@ file(GLOB SRCS_ENGINE_MOCK "${ENGINE_MOCK}/*.cpp")
 
 set(MPS_PARSER mps)
 set(ACAS_PARSER acas)
-set(ONNX_PARSER onnx)
 set(BERKELEY_PARSER berkeley)
 set(INPUT_PARSERS_DIR input_parsers)
 
@@ -398,7 +397,7 @@ endif()
 # Add the input parsers
 add_custom_target(build_input_parsers)
 add_dependencies(build_input_parsers ${MPS_PARSER} ${ACAS_PARSER}
-    ${BERKELEY_PARSER} ${ONNX_PARSER})
+    ${BERKELEY_PARSER})
 
 add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
