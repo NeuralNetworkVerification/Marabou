@@ -58,6 +58,22 @@ file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
 file(GLOB DEPS_CVC4_BASE "${CVC4_BASE_DIR}/*.cpp")
 include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
+# Protobuf (needed to compile Onnx file below)
+if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
+    message("Can't find protobuf, installing. If protobuf is installed please use the PROTOBUF_DIR parameter to pass the path")
+    if (${PROTOBUF_DIR} STREQUAL ${PROTOBUF_DEFAULT_DIR})
+        message("installing protobuf")
+        execute_process(COMMAND ${TOOLS_DIR}/download_protobuf.sh)
+    else()
+        message(FATAL_ERROR "Can't find protobuf in the supplied directory")
+    endif()
+endif()
+
+set(PROTOBUF_LIB protobuf)
+add_library(${PROTOBUF_LIB} SHARED IMPORTED)
+set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
+target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
+
 # Onnx
 if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
     message("generating ONNX protobuf file")
@@ -251,22 +267,7 @@ if (${ENABLE_OPENBLAS})
 endif()
 endif()
 
-# Protobuf
-if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
-    message("Can't find protobuf, installing. If protobuf is installed please use the PROTOBUF_DIR parameter to pass the path")
-    if (${PROTOBUF_DIR} STREQUAL ${PROTOBUF_DEFAULT_DIR})
-        message("installing protobuf")
-        execute_process(COMMAND ${TOOLS_DIR}/download_protobuf.sh)
-    else()
-        message(FATAL_ERROR "Can't find protobuf in the supplied directory")
-    endif()
-endif()
-
-set(PROTOBUF_LIB protobuf)
-add_library(${PROTOBUF_LIB} SHARED IMPORTED)
-set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
 list(APPEND LIBS ${PROTOBUF_LIB})
-target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
