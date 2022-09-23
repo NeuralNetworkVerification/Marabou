@@ -73,6 +73,7 @@ set(PROTOBUF_LIB protobuf)
 add_library(${PROTOBUF_LIB} SHARED IMPORTED)
 set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
 target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
+list(APPEND LIBS ${PROTOBUF_LIB})
 
 # Onnx
 if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
@@ -214,7 +215,7 @@ if (NOT ${Boost_FOUND})
     find_package(Boost REQUIRED COMPONENTS program_options timer chrono thread)
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
-set(LIBS ${Boost_LIBRARIES})
+list(APPEND LIBS ${Boost_LIBRARIES})
 
 # Gurobi
 if (${ENABLE_GUROBI})
@@ -266,8 +267,6 @@ if (${ENABLE_OPENBLAS})
     target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
 endif()
 endif()
-
-list(APPEND LIBS ${PROTOBUF_LIB})
 
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
