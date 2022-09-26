@@ -399,14 +399,14 @@ Set<String> OnnxParser::readInputNames()
     Set<String> initializerNames;
     for ( auto &initNode : _network.initializer() )
     {
-        std::cout << "\ninitialiser: " + initNode.name();
+        ONNX_LOG( " Found initialiser: " + initNode.name() );
         initializerNames.insert( initNode.name() );
     }
 
     Set<String> inputNames;
     for ( auto &inputNode : _network.input() )
     {
-        std::cout << "\ninput: " + inputNode.name();
+        ONNX_LOG( "Found input: " + inputNode.name() );
         inputNames.insert( inputNode.name() );
     }
 
@@ -426,7 +426,7 @@ String OnnxParser::readOutputName()
         }
         throw MarabouError( MarabouError::ONNX_PARSER_ERROR, message.ascii() );
     }
-    std::cout << "\noutput: " + _network.output()[0].name();
+    ONNX_LOG( "Found output: " + _network.output()[0].name() );
     return _network.output()[0].name();
 }
 
