@@ -399,14 +399,14 @@ Set<String> OnnxParser::readInputNames()
     Set<String> initializerNames;
     for ( auto &initNode : _network.initializer() )
     {
-        ONNX_LOG( " Found initialiser: " + initNode.name() );
+        ONNX_LOG( Stringf( "Found initialiser: %s", initNode.name().c_str() ).ascii() );
         initializerNames.insert( initNode.name() );
     }
 
     Set<String> inputNames;
     for ( auto &inputNode : _network.input() )
     {
-        ONNX_LOG( "Found input: " + inputNode.name() );
+        ONNX_LOG( Stringf( "Found input: %s", inputNode.name().c_str() ).ascii() );
         inputNames.insert( inputNode.name() );
     }
 
@@ -426,8 +426,9 @@ String OnnxParser::readOutputName()
         }
         throw MarabouError( MarabouError::ONNX_PARSER_ERROR, message.ascii() );
     }
-    ONNX_LOG( "Found output: " + _network.output()[0].name() );
-    return _network.output()[0].name();
+    auto &outputNode = _network.output()[0];
+    ONNX_LOG( Stringf( "Found input: %s", outputNode.name().c_str() ).ascii() );
+    return outputNode.name();
 }
 
 void OnnxParser::initializeShapeMap()
