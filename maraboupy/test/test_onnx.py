@@ -148,6 +148,13 @@ def test_split():
     filename =  "split/split_5d_split-2-2-81_axis-4-mul-concat.onnx"
     evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
 
+def test_resize():
+    """
+    Test a network exported from pytorch
+    """
+    filename =  "resize/resize_4dims.onnx"
+    evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
+
 def test_errors():
     """
     This function tests that the ONNX parser catches errors.

@@ -381,6 +381,62 @@ def test_split():
     for i in range(85):
         assert abs(vals[outputVars[0][0][0][0][i]] - (i + 1.0) * 2) < TOL
 
+def test_resize():
+    """
+    Tests a resize.
+    """
+    options = Marabou.createOptions(verbosity = 0)
+    filename =  'resize/resize_4dims.onnx'
+
+    network = loadNetworkInONNX(filename, outputName='Y')
+    assert network.shapeMap['X'] == [1, 3, 2, 2]
+    assert network.shapeMap['Y'] == (1, 3, 4, 4)
+
+    inputVars = network.inputVars[0]
+    inputValues = np.array(
+        [[[[ 1.,  2.],
+          [ 3.,  4.]],
+
+         [[ 5.,  6.],
+          [ 7.,  8.]],
+
+         [[ 9., 10.],
+          [11., 12.]]]])
+
+    # set upper and lower bounds
+    for i in range(len(inputVars)):
+        for j in range(len(inputVars[i])):
+            for k in range(len(inputVars[i][j])):
+                for l in range(len(inputVars[i][j][k])):
+                    network.setLowerBound(inputVars[i][j][k][l], inputValues[i][j][k][l])
+                    network.setUpperBound(inputVars[i][j][k][l], inputValues[i][j][k][l])
+
+    # solve
+    _, vals, _ = network.solve(options = options)
+
+    outputVars = network.outputVars
+    assumedOutputValues = np.array(
+        [[[[ 1.,  1.,  2.,  2.],
+          [ 1.,  1.,  2.,  2.],
+          [ 3.,  3.,  4.,  4.],
+          [ 3.,  3.,  4.,  4.]],
+
+         [[ 5.,  5.,  6.,  6.],
+          [ 5.,  5.,  6.,  6.],
+          [ 7.,  7.,  8.,  8.],
+          [ 7.,  7.,  8.,  8.]],
+
+         [[ 9.,  9., 10., 10.],
+          [ 9.,  9., 10., 10.],
+          [11., 11., 12., 12.],
+          [11., 11., 12., 12.]]]])
+
+    for i in range(len(outputVars)):
+        for j in range(len(outputVars[i])):
+            for k in range(len(outputVars[i][j])):
+                for l in range(len(outputVars[i][j][k])):
+                    assert abs(vals[outputVars[i][j][k][l]] - assumedOutputValues[i][j][k][l]) < TOL
+
 def test_local_robustness_unsat():
     """
     Tests local robustness of an nnet network. (UNSAT)
