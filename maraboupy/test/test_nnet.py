@@ -126,7 +126,7 @@ def test_evaluateUNSAT():
 
     # Add a constraint that makes the system UNSAT at the evaluation point
     # The sum of output values must be less than -100
-    outputVars = network.outputVars[0]
+    outputVars = network.outputVars[0][0]
     outputWeights = [1.0] * len(outputVars)
     network.addInequality(outputVars, outputWeights, -100.0)
 
@@ -153,7 +153,7 @@ def evaluateFile(filename, testInputs, testOutputs, normalize = False, normInput
         if normInput:
             for i in range(len(testInput)):
                 testInput[i] = (testInput[i] - network.inputMeans[i]) / network.inputRanges[i]
-        marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "").flatten()
+        marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "")[0].flatten()
         
         # Manually de-normalize network output using network's stored outputMean and outputRange
         if denormOutput:

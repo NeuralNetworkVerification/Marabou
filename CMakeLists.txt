@@ -200,7 +200,7 @@ if (${ENABLE_GUROBI})
   add_compile_definitions(ENABLE_GUROBI)
 
   set(GUROBI_LIB1 "gurobi_c++")
-  set(GUROBI_LIB2 "gurobi90")
+  set(GUROBI_LIB2 "gurobi95")
 
   add_library(${GUROBI_LIB1} SHARED IMPORTED)
   set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
@@ -211,9 +211,9 @@ if (${ENABLE_GUROBI})
 
   # MACOSx uses .dylib instead of .so for its Gurobi downloads.
   if (APPLE)
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.dylib)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.dylib)
   else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi91.so)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.so)
   endif ()
 
   list(APPEND LIBS ${GUROBI_LIB2})

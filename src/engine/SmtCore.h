@@ -24,6 +24,7 @@
 #include "Stack.h"
 #include "SmtStackEntry.h"
 #include "Statistics.h"
+#include "context/context.h"
 
 #include <memory>
 
@@ -32,6 +33,8 @@
 class EngineState;
 class IEngine;
 class String;
+
+using CVC4::context::Context;
 
 class SmtCore
 {
@@ -113,6 +116,17 @@ public:
     bool popSplit();
 
     /*
+         Pop _context, record statistics
+     */
+    void popContext();
+
+    /*
+         Push _context, record statistics
+     */
+    void pushContext();
+
+
+    /*
       The current stack depth.
     */
     unsigned getStackDepth() const;
@@ -188,6 +202,10 @@ private:
     */
     IEngine *_engine;
 
+    /*
+      Context for synchronizing the search.
+     */
+    Context &_context;
     /*
       Do we need to perform a split and on which constraint.
     */

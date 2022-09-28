@@ -48,7 +48,9 @@ void Options::initializeDefaultValues()
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
     _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
-    _boolOptions[PARALLEL_DEEPSOI] = true;
+    _boolOptions[NO_PARALLEL_DEEPSOI] = false;
+    _boolOptions[EXPORT_ASSIGNMENT] = false;
+    _boolOptions[DEBUG_ASSIGNMENT] = false;
 
     /*
       Int options
@@ -86,6 +88,8 @@ void Options::initializeDefaultValues()
     _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "deeppoly";
     _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "none";
     _stringOptions[QUERY_DUMP_FILE] = "";
+    _stringOptions[IMPORT_ASSIGNMENT_FILE_PATH] = "assignment.txt";
+    _stringOptions[EXPORT_ASSIGNMENT_FILE_PATH] = "assignment.txt";
     _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";

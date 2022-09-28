@@ -575,6 +575,12 @@ void InputQuery::dump() const
         printf( "\t%s\n", constraintString.ascii() );
     }
 
+    for ( const auto &ts : _tsConstraints )
+      {
+        ts->dump( constraintString );
+        printf( "\t%s\n", constraintString.ascii() );
+      }
+
     printf( "Equations:\n" );
     for ( const auto &e : _equations )
     {
