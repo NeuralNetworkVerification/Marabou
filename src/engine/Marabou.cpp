@@ -20,6 +20,7 @@
 #include "File.h"
 #include "MStringf.h"
 #include "Marabou.h"
+#include "OnnxParser.h"
 #include "Options.h"
 #include "PropertyParser.h"
 #include "MarabouError.h"
@@ -31,6 +32,7 @@
 
 Marabou::Marabou()
     : _acasParser( NULL )
+    , _onnxParser( NULL )
     , _engine()
 {
 }
@@ -41,6 +43,12 @@ Marabou::~Marabou()
     {
         delete _acasParser;
         _acasParser = NULL;
+    }
+
+    if ( _onnxParser )
+    {
+        delete _onnxParser;
+        _onnxParser = NULL;
     }
 }
 
@@ -84,6 +92,7 @@ void Marabou::prepareInputQuery()
           Step 1: extract the network
         */
         String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
+
         if ( !File::exists( networkFilePath ) )
         {
             printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
@@ -91,9 +100,17 @@ void Marabou::prepareInputQuery()
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
-        // For now, assume the network is given in ACAS format
-        _acasParser = new AcasParser( networkFilePath );
-        _acasParser->generateQuery( _inputQuery );
+        if ( ((String) networkFilePath).endsWith( ".onnx" ) )
+        {
+            _onnxParser = new OnnxParser( networkFilePath );
+            _onnxParser->generateQuery( _inputQuery );
+        }
+        else
+        {
+            _acasParser = new AcasParser( networkFilePath );
+            _acasParser->generateQuery( _inputQuery );
+        }
+
         _inputQuery.constructNetworkLevelReasoner();
 
         /*

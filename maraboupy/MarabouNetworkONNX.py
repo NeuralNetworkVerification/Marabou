@@ -251,7 +251,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         Args:
             nodeName (str): Name of node
-            saveConstant (bool): If true, save constant variables to self.constantMap
 
         Returns:
             (list of str): Names of nodes that are inputs to the given node
