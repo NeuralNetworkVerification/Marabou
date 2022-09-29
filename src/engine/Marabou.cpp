@@ -30,33 +30,23 @@
 #undef ERROR
 #endif
 
-Marabou::Marabou()
-    : _acasParser( NULL )
-    , _onnxParser( NULL )
+Marabou::Marabou( InputQuery& inputQuery )
+    : _inputQuery( inputQuery )
     , _engine()
 {
 }
 
 Marabou::~Marabou()
 {
-    if ( _acasParser )
-    {
-        delete _acasParser;
-        _acasParser = NULL;
-    }
-
-    if ( _onnxParser )
-    {
-        delete _onnxParser;
-        _onnxParser = NULL;
-    }
 }
 
 void Marabou::run()
 {
+    if ( Options::get()->getBool( Options::DEBUG_ASSIGNMENT ) )
+        importDebuggingSolution();
+
     struct timespec start = TimeUtils::sampleMicro();
 
-    prepareInputQuery();
     solveQuery();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -66,78 +56,6 @@ void Marabou::run()
 
     if( Options::get()->getBool( Options::EXPORT_ASSIGNMENT ) )
         exportAssignment();
-}
-
-void Marabou::prepareInputQuery()
-{
-    String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
-    if ( inputQueryFilePath.length() > 0 )
-    {
-        /*
-          Step 1: extract the query
-        */
-        if ( !File::exists( inputQueryFilePath ) )
-        {
-            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
-            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
-        }
-
-        printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
-        _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
-        _inputQuery.constructNetworkLevelReasoner();
-    }
-    else
-    {
-        /*
-          Step 1: extract the network
-        */
-        String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
-
-        if ( !File::exists( networkFilePath ) )
-        {
-            printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
-            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
-        }
-        printf( "Network: %s\n", networkFilePath.ascii() );
-
-        if ( ((String) networkFilePath).endsWith( ".onnx" ) )
-        {
-            _onnxParser = new OnnxParser( networkFilePath );
-            _onnxParser->generateQuery( _inputQuery );
-        }
-        else
-        {
-            _acasParser = new AcasParser( networkFilePath );
-            _acasParser->generateQuery( _inputQuery );
-        }
-
-        _inputQuery.constructNetworkLevelReasoner();
-
-        /*
-          Step 2: extract the property in question
-        */
-        String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
-        if ( propertyFilePath != "" )
-        {
-            printf( "Property: %s\n", propertyFilePath.ascii() );
-            PropertyParser().parse( propertyFilePath, _inputQuery );
-        }
-        else
-            printf( "Property: None\n" );
-
-        printf( "\n" );
-    }
-
-    if ( Options::get()->getBool( Options::DEBUG_ASSIGNMENT ) )
-        importDebuggingSolution();
-
-    String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
-    if ( queryDumpFilePath.length() > 0 )
-    {
-        _inputQuery.saveQuery( queryDumpFilePath );
-        printf( "\nInput query successfully dumped to file\n" );
-        exit( 0 );
-    }
 }
 
 void Marabou::importDebuggingSolution()
