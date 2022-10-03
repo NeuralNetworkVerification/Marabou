@@ -46,7 +46,7 @@ def test_fc2():
     """
     filename =  "fc2.onnx"
     evaluateFile(filename)
-    
+
 def test_KJ_TinyTaxiNet():
     """
     Test a convolutional network, exported from tensorflow
@@ -78,7 +78,7 @@ def test_intermediate_input_output():
     This function tests the parser's ability to use intermediate layers as the network
     inputs or output, effectively truncating the network. ONNX does not allow arbitrary
     layers to be used as inputs or outputs, which complicates testing.
-    
+
     The network "conv_mp1.onnx" was modified to add the intermediate layer and first fully-connected
     layer, named '11', to the list of outputs, and saved as conv_mp1_intermediateOutput.onnx
     """
@@ -107,7 +107,7 @@ def test_twoBranches():
     filename =  "oneInput_twoBranches.onnx"
     evaluateFile(filename, outputNames = ['Y'])
     evaluateIntermediateLayers(filename, inputNames = ['X'], outputNames = ['Y'], intermediateNames = ['add1'])
-    
+
 def test_multiInput_add(tmpdir):
     """
     Test a custom network that has two input arrays, which have separate Gemm and Relu operations
@@ -149,12 +149,12 @@ def test_multiOutput():
 def test_shallow_clear():
     filename = "tanh_test.onnx"
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
-    network = Marabou.read_onnx(filename)
+    network = Marabou.read_onnx(filename, reindexOutputVars=False)
     numVar1 = network.numVars
     numEq1 = len(network.equList)
     numSigmoid1 = len(network.sigmoidList)
     network.shallowClear()
-    network = network.readONNX(filename, None, None, reindexOutputVars=False)
+    network.readONNX(filename, None, None, reindexOutputVars=False)
     numVar2 = network.numVars
     numEq2 = len(network.equList)
     numSigmoid2 = len(network.sigmoidList)
@@ -162,6 +162,17 @@ def test_shallow_clear():
     assert(numVar1 == numVar2 / 2)
     assert(numEq1 == numEq2 / 2)
     assert(numSigmoid1 == numSigmoid2 / 2)
+
+    for i in range(numEq1):
+        eq1 = network.equList[i]
+        eq2 = network.equList[i + numEq1]
+        assert(eq1.EquationType == eq2.EquationType)
+        for j in range(len(eq1.addendList)):
+            print(eq1.addendList, eq2.addendList)
+            c1, v1 = eq1.addendList[j]
+            c2, v2 = eq2.addendList[j]
+            assert(c1 == c2 and v1 + numVar1 == v2)
+        assert(eq1.scalar == eq2.scalar)
 
 def test_batch_norm():
     """

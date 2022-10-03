@@ -35,9 +35,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames)
+        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
     def clear(self):
         """Reset values to represent empty network
