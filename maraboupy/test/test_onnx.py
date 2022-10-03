@@ -146,6 +146,23 @@ def test_multiOutput():
     filename = "conv_mp1_intermediateOutput.onnx"
     evaluateFile(filename)
 
+def test_shallow_clear():
+    filename = "tanh_test.onnx"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
+    network = Marabou.read_onnx(filename)
+    numVar1 = network.numVars
+    numEq1 = len(network.equList)
+    numSigmoid1 = len(network.sigmoidList)
+    network.shallowClear()
+    network = network.readONNX(filename, None, None, reindexOutputVars=False)
+    numVar2 = network.numVars
+    numEq2 = len(network.equList)
+    numSigmoid2 = len(network.sigmoidList)
+
+    assert(numVar1 == numVar2 / 2)
+    assert(numEq1 == numEq2 / 2)
+    assert(numSigmoid1 == numSigmoid2 / 2)
+
 def test_batch_norm():
     """
     Test a network exported from pytorch
