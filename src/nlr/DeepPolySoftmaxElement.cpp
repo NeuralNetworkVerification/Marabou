@@ -78,15 +78,19 @@ void DeepPolySoftmaxElement::execute
                       _lb[i], _ub[i] ) );
 
         // Compute symbolic bound
+        std::cout << "Using L_LSE1" << std::endl;
         _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, i);
-        _symbolicUpperBias[i] = U_LSE(sourceMids, i);
-
         for (unsigned j = 0; j < _size; ++j)
         {
           double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs,i, j);
           _symbolicLb[_size * j + i] = dldj;
           _symbolicLowerBias[i] -= dldj * sourceMids[j];
+        }
 
+        std::cout << "Using U_LSE" << std::endl;
+        _symbolicUpperBias[i] = U_LSE(sourceMids, i);
+        for (unsigned j = 0; j < _size; ++j)
+        {
           double dudj = dU_LSEdx(sourceMids, i, j);
           _symbolicUb[_size * j + i] = dudj;
           _symbolicUpperBias[i] -= dudj * sourceMids[j];
