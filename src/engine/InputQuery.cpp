@@ -20,6 +20,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
+#include "SoftmaxConstraint.h"
 
 #define INPUT_QUERY_LOG( x, ... ) LOG( GlobalConfiguration::INPUT_QUERY_LOGGING, "Input Query: %s\n", x )
 
@@ -683,7 +684,8 @@ bool InputQuery::constructNetworkLevelReasoner()
             constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
             constructSigmoidLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex )
+            constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
+            constructSoftmaxLayer( nlr, handledVariableToLayer, newLayerIndex )
             )
     {
         ++newLayerIndex;
@@ -1252,6 +1254,115 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
     }
 
     nlr->addLayer( newLayerIndex, NLR::Layer::MAX, newNeurons.size() );
+
+    NLR::Layer *layer = nlr->getLayer( newLayerIndex );
+    for ( const auto &newNeuron : newNeurons )
+    {
+        handledVariableToLayer[newNeuron._variable] = newLayerIndex;
+
+        layer->setLb( newNeuron._neuron, _lowerBounds.exists( newNeuron._variable ) ?
+                      _lowerBounds[newNeuron._variable] : FloatUtils::negativeInfinity() );
+        layer->setUb( newNeuron._neuron, _upperBounds.exists( newNeuron._variable ) ?
+                      _upperBounds[newNeuron._variable] : FloatUtils::infinity() );
+
+        // Add the new neuron
+        nlr->setNeuronVariable( NLR::NeuronIndex( newLayerIndex, newNeuron._neuron ), newNeuron._variable );
+
+        for ( const auto &sourceVariable : newNeuron._sourceVariables )
+        {
+            unsigned sourceLayer = handledVariableToLayer[sourceVariable];
+            unsigned sourceNeuron = nlr->getLayer( sourceLayer )->variableToNeuron( sourceVariable );
+
+            // Mark the layer dependency
+            nlr->addLayerDependency( sourceLayer, newLayerIndex );
+
+            // Mark the activation connection
+            nlr->addActivationSource( sourceLayer,
+                                      sourceNeuron,
+                                      newLayerIndex,
+                                      newNeuron._neuron );
+        }
+    }
+
+    INPUT_QUERY_LOG( "\tSuccessful!" );
+    return true;
+}
+
+bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
+                                    Map<unsigned, unsigned> &handledVariableToLayer,
+                                    unsigned newLayerIndex )
+{
+    INPUT_QUERY_LOG( "Attempting to construct SoftmaxLayer..." );
+    struct NeuronInformation
+    {
+    public:
+
+        NeuronInformation( unsigned variable,
+                           unsigned neuron,
+                           const Vector<unsigned> &sourceVariables )
+            : _variable( variable )
+            , _neuron( neuron )
+            , _sourceVariables( sourceVariables )
+        {
+        }
+
+      unsigned _variable;
+      unsigned _neuron;
+      Vector<unsigned> _sourceVariables;
+    };
+
+    List<NeuronInformation> newNeurons;
+
+    // Look for Maxes where all the element variables have already been handled
+    const List<TranscendentalConstraint *> &tsConstraints =
+        getTranscendentalConstraints();
+
+    for ( const auto &ts : tsConstraints )
+    {
+      // Only consider Signs
+      if ( ts->getType() != SOFTMAX )
+        continue;
+
+      const SoftmaxConstraint *softmax = (const SoftmaxConstraint *)ts;
+
+      // Have all elements been handled?
+      bool missingElement = false;
+      for ( const auto &element : softmax->getInputs() )
+      {
+        if ( !handledVariableToLayer.exists( element ) )
+          {
+            missingElement = true;
+            break;
+          }
+      }
+
+      if ( missingElement )
+        continue;
+
+      // If the f variable has also been handled, ignore this constraint
+      for ( const auto &element : softmax->getOutputs() )
+      {
+        if ( handledVariableToLayer.exists( element ) )
+          continue;
+      }
+
+      for ( const auto &element : softmax->getOutputs() )
+      {
+        // Elements have been handled, f hasn't. Add f
+        newNeurons.append( NeuronInformation( element,
+                                              newNeurons.size(),
+                                              softmax->getInputs() ) );
+      }
+    }
+
+    // No neurons found for the new layer
+    if ( newNeurons.empty() )
+    {
+        INPUT_QUERY_LOG( "\tFailed!" );
+        return false;
+    }
+
+    nlr->addLayer( newLayerIndex, NLR::Layer::SOFTMAX, newNeurons.size() );
 
     NLR::Layer *layer = nlr->getLayer( newLayerIndex );
     for ( const auto &newNeuron : newNeurons )

@@ -758,9 +758,6 @@ public:
         List<Tightening> bounds;
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
-        for ( const auto &bound : bounds )
-            std::cout << "x" << bound._variable << (bound._type ? " <= " : " >= " ) << bound._value << std::endl;
-
         TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
         for ( const auto &bound : expectedBounds )
             TS_ASSERT( bounds.exists( bound ) );
@@ -909,4 +906,158 @@ public:
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 1 ), -0.5516, 0.0001 ) );
         TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 1 ), 0.5516, 0.0001 ) );
     }
+
+    void populateNetworkSoftmax( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
+    {
+        /*
+
+
+          x0      x3  S  x6
+
+          x1      x4  S  x7
+
+          x2      x5  S  x8
+
+          x3 = x0 - x1 + x2 + 1
+          x4 = -x0 + x1 + x2 + 2
+          x5 = -x0 - x1 - x2 + 3
+
+          x6 x7 x8 = softmax(x3, x4, x5)
+
+        */
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 3 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 3 );
+        nlr.addLayer( 2, NLR::Layer::SOFTMAX, 3 );
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 2; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, -1 );
+        nlr.setWeight( 0, 0, 1, 2, 1 );
+        nlr.setWeight( 0, 1, 1, 0, -1 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 2, 1 );
+        nlr.setWeight( 0, 2, 1, 0, -1 );
+        nlr.setWeight( 0, 2, 1, 1, -1 );
+        nlr.setWeight( 0, 2, 1, 2, -1 );
+
+        nlr.setBias( 1, 0, 1 );
+        nlr.setBias( 1, 1, 2 );
+        nlr.setBias( 1, 2, 3 );
+
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 1, 2, 0 );
+        nlr.addActivationSource( 1, 2, 2, 0 );
+        nlr.addActivationSource( 1, 0, 2, 1 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 1, 2, 2, 1 );
+        nlr.addActivationSource( 1, 0, 2, 2 );
+        nlr.addActivationSource( 1, 1, 2, 2 );
+        nlr.addActivationSource( 1, 2, 2, 2 );
+
+
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 2 ), 2 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 3 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 2 ), 5 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 6 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 7 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 2 ), 8 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.getBoundManager().initialize( 9 );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+    }
+
+
+  void test_deeppoly_softmax1()
+  {
+      NLR::NetworkLevelReasoner nlr;
+      MockTableau tableau;
+      nlr.setTableau( &tableau );
+      populateNetworkSoftmax( nlr, tableau );
+
+      tableau.setLowerBound( 0, -1 );
+      tableau.setUpperBound( 0, 1 );
+      tableau.setLowerBound( 1, -1 );
+      tableau.setUpperBound( 1, 1 );
+      tableau.setLowerBound( 2, -1 );
+      tableau.setUpperBound( 2, 1 );
+
+      // Invoke DeepPoly
+      TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+      TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+  }
+
+  void test_deeppoly_softmax2()
+  {
+      NLR::NetworkLevelReasoner nlr;
+      MockTableau tableau;
+      nlr.setTableau( &tableau );
+      populateNetworkSoftmax( nlr, tableau );
+
+      tableau.setLowerBound( 0, 1 );
+      tableau.setUpperBound( 0, 1.001 );
+      tableau.setLowerBound( 1, 1 );
+      tableau.setUpperBound( 1, 1.001 );
+      tableau.setLowerBound( 2, 1 );
+      tableau.setUpperBound( 2, 1.001 );
+
+      // Invoke DeepPoly
+      TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+      TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+      /*
+        Input ranges:
+
+        x0: [-1, 1]
+        x1: [-1, 1]
+        x2: [-1, 1]
+      */
+
+      List<Tightening> expectedBounds({
+              Tightening( 2, -2, Tightening::LB ),
+              Tightening( 2, 0, Tightening::UB ),
+              Tightening( 3, 3, Tightening::LB ),
+              Tightening( 3, 5, Tightening::UB ),
+              Tightening( 4, 0, Tightening::LB ),
+              Tightening( 4, 0, Tightening::UB ),
+              Tightening( 5, 3, Tightening::LB ),
+              Tightening( 5, 5, Tightening::UB ),
+              Tightening( 6, 3, Tightening::LB ),
+              Tightening( 6, 5, Tightening::UB ),
+              Tightening( 7, 6, Tightening::LB ),
+              Tightening( 7, 10, Tightening::UB ),
+              Tightening( 8, 6, Tightening::LB ),
+              Tightening( 8, 10, Tightening::UB )
+
+        });
+
+      List<Tightening> bounds;
+      TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+      for ( const auto &b : bounds )
+        b.dump();
+
+      TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+      for ( const auto &bound : expectedBounds )
+          TS_ASSERT( bounds.exists( bound ) );
+  }
 };

@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file DeepPolyWeightedSumElement.cpp
+/*! \file DeepPolySoftmaxElement.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Haoze Andrew Wu
@@ -13,14 +13,15 @@
 
 **/
 
-#include "DeepPolyWeightedSumElement.h"
+#include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
+#include "SoftmaxConstraint.h"
 
 #include <string.h>
 
 namespace NLR {
 
-DeepPolyWeightedSumElement::DeepPolyWeightedSumElement( Layer *layer )
+DeepPolySoftmaxElement::DeepPolySoftmaxElement( Layer *layer )
     : _workLb( NULL )
     , _workUb( NULL )
 {
@@ -29,24 +30,75 @@ DeepPolyWeightedSumElement::DeepPolyWeightedSumElement( Layer *layer )
     _layerIndex = layer->getLayerIndex();
 }
 
-DeepPolyWeightedSumElement::~DeepPolyWeightedSumElement()
+DeepPolySoftmaxElement::~DeepPolySoftmaxElement()
 {
     freeMemoryIfNeeded();
 }
 
-void DeepPolyWeightedSumElement::execute
+void DeepPolySoftmaxElement::execute
 ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Executing..." );
     ASSERT( hasPredecessor() );
     allocateMemory();
     getConcreteBounds();
+
+    // Update the symbolic and concrete upper- and lower- bounds
+    // of each neuron
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        log( Stringf( "Handling Neuron %u_%u...", _layerIndex, i ) );
+        List<NeuronIndex> sources = _layer->getActivationSources( i );
+
+        Vector<double> sourceLbs;
+        Vector<double> sourceUbs;
+        Vector<double> sourceMids;
+        for ( const auto &sourceIndex : sources )
+        {
+            DeepPolyElement *predecessor =
+                deepPolyElementsBefore[sourceIndex._layer];
+            double sourceLb = predecessor->getLowerBound
+                ( sourceIndex._neuron );
+            sourceLbs.append(sourceLb);
+            double sourceUb = predecessor->getUpperBound
+                ( sourceIndex._neuron );
+            sourceUbs.append(sourceUb);
+            sourceMids.append((sourceLb + sourceUb) / 2);
+        }
+
+        // Compute concrete bound
+
+        double lb = L_Linear(sourceLbs, sourceUbs, i);
+        double ub = U_Linear(sourceLbs, sourceUbs, i);
+        if ( lb > _lb[i])
+          _lb[i] = lb;
+        if ( ub < _ub[i])
+          _ub[i] = ub;
+        log( Stringf( "Current bounds of neuron %u: [%f, %f]", i,
+                      _lb[i], _ub[i] ) );
+
+        // Compute symbolic bound
+        _symbolicLowerBias[i] = L_LSE(sourceMids, sourceLbs, sourceUbs, i);
+        _symbolicUpperBias[i] = U_LSE(sourceMids, i);
+
+        for (unsigned j = 0; j < _size; ++j)
+        {
+          double dldj = dLdx(sourceMids, sourceLbs, sourceUbs,i, j);
+          _symbolicLb[_size * j + i] = dldj;
+          _symbolicLowerBias[i] -= dldj * sourceMids[j];
+
+          double dudj = dUdx(sourceMids, i, j);
+          _symbolicUb[_size * j + i] = dudj;
+          _symbolicUpperBias[i] -= dudj * sourceMids[j];
+        }
+    }
+
     // Compute bounds with back-substitution
     computeBoundWithBackSubstitution( deepPolyElementsBefore );
     log( "Executing - done" );
 }
 
-void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
+void DeepPolySoftmaxElement::computeBoundWithBackSubstitution
 ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Computing bounds with back substitution..." );
@@ -54,34 +106,9 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     // Start with the symbolic upper-/lower- bounds of this layer with
     // respect to its immediate predecessor.
     Map<unsigned, unsigned> predecessorIndices = getPredecessorIndices();
+    ASSERT( predecessorIndices.size() == 1 );
 
-    unsigned counter = 0;
-    unsigned numPredecessors = predecessorIndices.size();
-    ASSERT( numPredecessors > 0 );
-    // # The invariant we are maintaining:
-    // thisLayer <= ( residualUb * residualLayer for each residualLayer ) +
-    //                _work1SymbolicUb * currentElement + _workSymbolicUpperBias;
-    // thisLayer >= ( residualLb * residualLayer for each residualLayer ) +
-    //                _work1SymbolicLb * currentElement + _workSymbolicLowerBias;
-
-    unsigned predecessorIndex = 0;
-    for ( const auto &pair : predecessorIndices )
-    {
-        predecessorIndex = pair.first;
-        if ( counter < numPredecessors - 1 )
-        {
-            log( Stringf( "Adding residual from layer %u...",
-                          predecessorIndex ) );
-            allocateMemoryForResidualsIfNeeded( predecessorIndex, pair.second );
-            const double *weights = _layer->getWeights( predecessorIndex );
-            memcpy( _residualLb[predecessorIndex], weights,
-                    _size * pair.second * sizeof(double) );
-            memcpy( _residualUb[predecessorIndex], weights,
-                    _size * pair.second * sizeof(double) );
-            ++counter;
-            log( Stringf( "Adding residual from layer %u - done", pair.first ) );
-        }
-    }
+    unsigned predecessorIndex = predecessorIndices.begin()->first;
 
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessorIndex ) );
@@ -89,15 +116,15 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         deepPolyElementsBefore[predecessorIndex];
     unsigned sourceLayerSize = precedingElement->getSize();
 
-    const double *weights = _layer->getWeights( predecessorIndex );
-    memcpy( _work1SymbolicLb,
-            weights, _size * sourceLayerSize * sizeof(double) );
-    memcpy( _work1SymbolicUb,
-            weights, _size * sourceLayerSize * sizeof(double) );
+    ASSERT(sourceLayerSize == _size);
 
-    double *bias = _layer->getBiases();
-    memcpy( _workSymbolicLowerBias, bias, _size * sizeof(double) );
-    memcpy( _workSymbolicUpperBias, bias, _size * sizeof(double) );
+    memcpy( _work1SymbolicLb,
+            _symbolicLb, _size * sourceLayerSize * sizeof(double) );
+    memcpy( _work1SymbolicUb,
+            _symbolicUb, _size * sourceLayerSize * sizeof(double) );
+
+    memcpy( _workSymbolicLowerBias, _symbolicLowerBias, _size * sizeof(double) );
+    memcpy( _workSymbolicUpperBias, _symbolicUpperBias, _size * sizeof(double) );
 
     DeepPolyElement *currentElement = precedingElement;
     concretizeSymbolicBound( _work1SymbolicLb, _work1SymbolicUb,
@@ -115,8 +142,8 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
         // now compute the symbolic bounds in terms of currentElement's
         // predecessor.
         predecessorIndices = currentElement->getPredecessorIndices();
-        counter = 0;
-        numPredecessors = predecessorIndices.size();
+        unsigned counter = 0;
+        unsigned numPredecessors = predecessorIndices.size();
         ASSERT( numPredecessors > 0 );
         for ( const auto &pair : predecessorIndices )
         {
@@ -196,7 +223,7 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     log( "Computing bounds with back substitution - done" );
 }
 
-void DeepPolyWeightedSumElement::concretizeSymbolicBound
+void DeepPolySoftmaxElement::concretizeSymbolicBound
 ( const double *symbolicLb, const double*symbolicUb, double const
   *symbolicLowerBias, const double *symbolicUpperBias, DeepPolyElement
   *sourceElement, const Map<unsigned, DeepPolyElement *>
@@ -223,18 +250,18 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBound
     }
     for ( unsigned i = 0; i <_size; ++i )
     {
+      log( Stringf( "Neuron%u previous LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
         if ( _lb[i] < _workLb[i] )
             _lb[i] = _workLb[i];
         if ( _ub[i] > _workUb[i] )
             _ub[i] = _workUb[i];
         log( Stringf( "Neuron%u working LB: %f, UB: %f", i, _workLb[i], _workUb[i] ) );
-        log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
 
     log( "Concretizing bound - done" );
 }
 
-void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
+void DeepPolySoftmaxElement::concretizeSymbolicBoundForSourceLayer
 ( const double *symbolicLb, const double*symbolicUb, const double
   *symbolicLowerBias, const double *symbolicUpperBias, DeepPolyElement
   *sourceElement )
@@ -325,12 +352,14 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
 }
 
 
-void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
+void DeepPolySoftmaxElement::symbolicBoundInTermsOfPredecessor
 ( const double *symbolicLb, const double*symbolicUb, double
   *symbolicLowerBias, double *symbolicUpperBias, double
   *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
   unsigned targetLayerSize, DeepPolyElement *predecessor )
 {
+  std::cout << "Should never reach here!" << std::endl;
+
     unsigned predecessorIndex = predecessor->getLayerIndex();
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessorIndex ) );
@@ -360,7 +389,7 @@ void DeepPolyWeightedSumElement::symbolicBoundInTermsOfPredecessor
                   predecessorIndex ) );
 }
 
-void DeepPolyWeightedSumElement::allocateMemoryForResidualsIfNeeded
+void DeepPolySoftmaxElement::allocateMemoryForResidualsIfNeeded
 ( unsigned residualLayerIndex, unsigned residualLayerSize )
 {
     _residualLayerIndices.insert( residualLayerIndex );
@@ -379,7 +408,7 @@ void DeepPolyWeightedSumElement::allocateMemoryForResidualsIfNeeded
     }
 }
 
-void DeepPolyWeightedSumElement::allocateMemory()
+void DeepPolySoftmaxElement::allocateMemory()
 {
     freeMemoryIfNeeded();
 
@@ -390,9 +419,22 @@ void DeepPolyWeightedSumElement::allocateMemory()
 
     std::fill_n( _workLb, _size, FloatUtils::negativeInfinity() );
     std::fill_n( _workUb, _size, FloatUtils::infinity() );
+
+    unsigned size = _size * _size;
+    _symbolicLb = new double[size];
+    _symbolicUb = new double[size];
+
+    std::fill_n( _symbolicLb, size, 0 );
+    std::fill_n( _symbolicUb, size, 0 );
+
+    _symbolicLowerBias = new double[_size];
+    _symbolicUpperBias = new double[_size];
+
+    std::fill_n( _symbolicLowerBias, _size, 0 );
+    std::fill_n( _symbolicUpperBias, _size, 0 );
 }
 
-void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
+void DeepPolySoftmaxElement::freeMemoryIfNeeded()
 {
     DeepPolyElement::freeMemoryIfNeeded();
     if ( _workLb )
@@ -404,6 +446,26 @@ void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
     {
         delete[] _workUb;
         _workUb = NULL;
+    }
+    if ( _symbolicLb )
+    {
+      delete[] _symbolicLb;
+      _symbolicLb = NULL;
+    }
+    if ( _symbolicUb )
+    {
+      delete[] _symbolicUb;
+      _symbolicUb = NULL;
+    }
+    if ( _symbolicLowerBias )
+    {
+      delete[] _symbolicLowerBias;
+      _symbolicLowerBias = NULL;
+    }
+    if ( _symbolicUpperBias )
+    {
+      delete[] _symbolicUpperBias;
+      _symbolicUpperBias = NULL;
     }
     for ( auto const &pair : _residualLb )
     {
@@ -418,10 +480,103 @@ void DeepPolyWeightedSumElement::freeMemoryIfNeeded()
     _residualLayerIndices.clear();
 }
 
-void DeepPolyWeightedSumElement::log( const String &message )
+void DeepPolySoftmaxElement::log( const String &message )
 {
     if ( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING )
-        printf( "DeepPolyWeightedSumElement: %s\n", message.ascii() );
+        printf( "DeepPolySoftmaxElement: %s\n", message.ascii() );
+}
+
+double DeepPolySoftmaxElement::L_LSE( const Vector<double> &input,
+                                      const Vector<double> &inputLb,
+                                      const Vector<double> &inputUb,
+                                      unsigned i )
+{
+  double sum = 0;
+  for (unsigned j = 0; j < input.size(); ++j) {
+    double lj = inputLb[j];
+    double uj = inputUb[j];
+    double xj = input[j];
+
+    sum += (uj - xj) / (uj - lj) * std::exp(lj) + (xj - lj)/(uj - lj) * std::exp(uj);
+  }
+
+  return std::exp(input[i]) / sum;
+}
+
+double DeepPolySoftmaxElement::dLdx( const Vector<double> &c,
+                                     const Vector<double> &inputLb,
+                                     const Vector<double> &inputUb,
+                                     unsigned i, unsigned di)
+{
+  double val = 0;
+  if (i == di)
+    val += L_LSE(c, inputLb, inputUb, i);
+
+  double ldi = inputLb[di];
+  double udi = inputUb[di];
+
+  double sum = 0;
+  for (unsigned j = 0; j < c.size(); ++j) {
+    double lj = inputLb[j];
+    double uj = inputUb[j];
+    double xj = c[j];
+
+    sum += (uj - xj) / (uj - lj) * std::exp(lj) + (xj - lj)/(uj - lj) * std::exp(uj);
+  }
+
+  val -= std::exp(c[i]) / (sum * sum) * (std::exp(udi) - std::exp(ldi)) / (udi - ldi);
+
+  return val;
+}
+
+
+double DeepPolySoftmaxElement::U_LSE( const Vector<double> &input, unsigned i )
+{
+  double li = _lb[i];
+  double ui = _ub[i];
+
+  Vector<double> inputTilda;
+  SoftmaxConstraint::xTilda(input, input[i], inputTilda);
+
+  return ((li * std::log(ui) - ui * std::log(li)) / (std::log(ui) - std::log(li)) -
+          (ui - li) / (std::log(ui) - std::log(li)) * SoftmaxConstraint::LSE(inputTilda));
+}
+
+double DeepPolySoftmaxElement::dUdx( const Vector<double> &c,
+                                     unsigned i, unsigned di)
+{
+  double li = _lb[i];
+  double ui = _ub[i];
+
+  double val = -(ui - li) / (std::log(ui) - std::log(li));
+
+  double val2 = std::exp(c[i]) / SoftmaxConstraint::SE(c);
+  if (i == di)
+    val2 -= 1;
+
+  return val * val2;
+}
+
+double DeepPolySoftmaxElement::L_Linear( const Vector<double> &inputLb,
+                                         const Vector<double> &inputUb,
+                                         unsigned i )
+{
+  Vector<double> uTilda;
+  SoftmaxConstraint::xTilda(inputUb, inputLb[i], uTilda);
+  uTilda[i] = 0;
+  return 1 / SoftmaxConstraint::SE(uTilda);
+}
+
+double DeepPolySoftmaxElement::U_Linear( const Vector<double> &inputLb,
+                                         const Vector<double> &inputUb,
+                                         unsigned i )
+{
+  Vector<double> lTilda;
+  SoftmaxConstraint::xTilda(inputLb, inputUb[i], lTilda);
+  lTilda[i] = 0;
+  return 1 / SoftmaxConstraint::SE(lTilda);
+
+
 }
 
 } // namespace NLR

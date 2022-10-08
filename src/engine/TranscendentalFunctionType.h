@@ -18,6 +18,7 @@
 
 enum TranscendentalFunctionType {
     SIGMOID = 0,
+    SOFTMAX = 1,
 };
 
 #endif // __TranscendentalFunctionType_h__

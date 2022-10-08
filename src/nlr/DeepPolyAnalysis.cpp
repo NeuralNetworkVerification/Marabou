@@ -22,6 +22,7 @@
 #include "DeepPolyReLUElement.h"
 #include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
+#include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "Layer.h"
@@ -213,6 +214,14 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolyMaxPoolElement( layer );
     else if ( type == Layer::SIGMOID )
         deepPolyElement = new DeepPolySigmoidElement( layer );
+    else if ( type == Layer::SOFTMAX )
+    {
+      deepPolyElement = new DeepPolySoftmaxElement( layer );
+      deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
+                                         _work2SymbolicLb, _work2SymbolicUb,
+                                         _workSymbolicLowerBias,
+                                         _workSymbolicUpperBias );
+    }
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",

@@ -219,10 +219,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.addEquations(node, makeEquations)
         elif node.op_type == 'Relu': 
             self.reluEquations(node, makeEquations)
+        elif node.op_type == 'Clip':
+            self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
         elif node.op_type == 'Tanh':
             self.tanhEquations(node, makeEquations)
+        elif node.op_type == 'Softmax':
+            self.softmaxEquations(node, makeEquations)
         else:
             raise NotImplementedError("Operation {} not implemented".format(node.op_type))
     
@@ -528,7 +532,50 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                             if di < inputShape[2] and dj < inputShape[3]:
                                 maxVars.add(inVars[0][k][di][dj])
                     self.addMaxConstraint(maxVars, outVars[0][k][i][j])
-        
+
+
+    def softmaxEquations(self, node, makeEquations):
+        """Function to generate maxpooling equations
+
+        Args:
+        node (node): ONNX node representing maxpool operation
+        makeEquations (bool): True if we need to create new variables and maxpool constraints
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+
+        # Extract attributes and define shape
+        inputShape = self.shapeMap[node.input[0]]
+        for attr in node.attribute:
+            if attr.name == 'axis':
+                axis = get_attribute_value(attr)
+
+        self.shapeMap[nodeName] = inputShape
+
+        if not makeEquations:
+            return
+
+        inVars = self.varMap[node.input[0]]
+        outVars = self.makeNewVariables(nodeName)
+
+        if len(inputShape) == 2 and inputShape[0] == 1:
+            self.addSoftmaxConstraint(inVars, outVars[0])
+        else:
+
+            axis = ( len(inputShape) + axis ) % len(inputShape)
+            perm = []
+            for i, s in enumerate(inputShape):
+                if i == axis:
+                    continue
+                perm.append(i)
+                perm.append(axis)
+
+            inVarsReshaped = np.transpose(inVars, perm).reshape(-1, inputShape[axis])
+            outVarsReshaped = np.transpose(outVars, perm).reshape(-1, inputShape[axis])
+            for i in range(inVarsReshaped.shape[0]):
+                self.addSoftmaxConstraint(inVarsReshaped[i], outVarsReshaped[i])
+
     def convEquations(self, node, makeEquations):
         """Function to generate equations for a 2D convolution
 
