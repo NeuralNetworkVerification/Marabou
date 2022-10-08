@@ -78,16 +78,16 @@ void DeepPolySoftmaxElement::execute
                       _lb[i], _ub[i] ) );
 
         // Compute symbolic bound
-        _symbolicLowerBias[i] = L_LSE(sourceMids, sourceLbs, sourceUbs, i);
+        _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, i);
         _symbolicUpperBias[i] = U_LSE(sourceMids, i);
 
         for (unsigned j = 0; j < _size; ++j)
         {
-          double dldj = dLdx(sourceMids, sourceLbs, sourceUbs,i, j);
+          double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs,i, j);
           _symbolicLb[_size * j + i] = dldj;
           _symbolicLowerBias[i] -= dldj * sourceMids[j];
 
-          double dudj = dUdx(sourceMids, i, j);
+          double dudj = dU_LSEdx(sourceMids, i, j);
           _symbolicUb[_size * j + i] = dudj;
           _symbolicUpperBias[i] -= dudj * sourceMids[j];
         }
@@ -486,7 +486,7 @@ void DeepPolySoftmaxElement::log( const String &message )
         printf( "DeepPolySoftmaxElement: %s\n", message.ascii() );
 }
 
-double DeepPolySoftmaxElement::L_LSE( const Vector<double> &input,
+double DeepPolySoftmaxElement::L_LSE1( const Vector<double> &input,
                                       const Vector<double> &inputLb,
                                       const Vector<double> &inputUb,
                                       unsigned i )
@@ -503,14 +503,14 @@ double DeepPolySoftmaxElement::L_LSE( const Vector<double> &input,
   return std::exp(input[i]) / sum;
 }
 
-double DeepPolySoftmaxElement::dLdx( const Vector<double> &c,
+double DeepPolySoftmaxElement::dL_LSE1dx( const Vector<double> &c,
                                      const Vector<double> &inputLb,
                                      const Vector<double> &inputUb,
                                      unsigned i, unsigned di)
 {
   double val = 0;
   if (i == di)
-    val += L_LSE(c, inputLb, inputUb, i);
+    val += L_LSE1(c, inputLb, inputUb, i);
 
   double ldi = inputLb[di];
   double udi = inputUb[di];
@@ -542,7 +542,7 @@ double DeepPolySoftmaxElement::U_LSE( const Vector<double> &input, unsigned i )
           (ui - li) / (std::log(ui) - std::log(li)) * SoftmaxConstraint::LSE(inputTilda));
 }
 
-double DeepPolySoftmaxElement::dUdx( const Vector<double> &c,
+double DeepPolySoftmaxElement::dU_LSEdx( const Vector<double> &c,
                                      unsigned i, unsigned di)
 {
   double li = _lb[i];
