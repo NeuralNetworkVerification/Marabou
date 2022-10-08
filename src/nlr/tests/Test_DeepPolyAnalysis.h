@@ -938,12 +938,12 @@ public:
         // Set the weights and biases for the weighted sum layers
         nlr.setWeight( 0, 0, 1, 0, 1 );
         nlr.setWeight( 0, 0, 1, 1, -1 );
-        nlr.setWeight( 0, 0, 1, 2, 1 );
+        nlr.setWeight( 0, 0, 1, 2, -1 );
         nlr.setWeight( 0, 1, 1, 0, -1 );
         nlr.setWeight( 0, 1, 1, 1, 1 );
-        nlr.setWeight( 0, 1, 1, 2, 1 );
-        nlr.setWeight( 0, 2, 1, 0, -1 );
-        nlr.setWeight( 0, 2, 1, 1, -1 );
+        nlr.setWeight( 0, 1, 1, 2, -1 );
+        nlr.setWeight( 0, 2, 1, 0, 1 );
+        nlr.setWeight( 0, 2, 1, 1, 1 );
         nlr.setWeight( 0, 2, 1, 2, -1 );
 
         nlr.setBias( 1, 0, 1 );
@@ -1014,11 +1014,11 @@ public:
       populateNetworkSoftmax( nlr, tableau );
 
       tableau.setLowerBound( 0, 1 );
-      tableau.setUpperBound( 0, 1.001 );
+      tableau.setUpperBound( 0, 1.00001 );
       tableau.setLowerBound( 1, 1 );
-      tableau.setUpperBound( 1, 1.001 );
+      tableau.setUpperBound( 1, 1.00001 );
       tableau.setLowerBound( 2, 1 );
-      tableau.setUpperBound( 2, 1.001 );
+      tableau.setUpperBound( 2, 1.00001 );
 
       // Invoke DeepPoly
       TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
@@ -1027,26 +1027,24 @@ public:
       /*
         Input ranges:
 
-        x0: [-1, 1]
-        x1: [-1, 1]
-        x2: [-1, 1]
+        x0: [1, 1.0001]
+        x1: [1, 1.0001]
+        x2: [1, 1.0001]
       */
 
       List<Tightening> expectedBounds({
-              Tightening( 2, -2, Tightening::LB ),
-              Tightening( 2, 0, Tightening::UB ),
-              Tightening( 3, 3, Tightening::LB ),
-              Tightening( 3, 5, Tightening::UB ),
-              Tightening( 4, 0, Tightening::LB ),
-              Tightening( 4, 0, Tightening::UB ),
-              Tightening( 5, 3, Tightening::LB ),
-              Tightening( 5, 5, Tightening::UB ),
-              Tightening( 6, 3, Tightening::LB ),
-              Tightening( 6, 5, Tightening::UB ),
-              Tightening( 7, 6, Tightening::LB ),
-              Tightening( 7, 10, Tightening::UB ),
-              Tightening( 8, 6, Tightening::LB ),
-              Tightening( 8, 10, Tightening::UB )
+              Tightening( 3, 2, Tightening::LB ),
+              Tightening( 3, 2, Tightening::UB ),
+              Tightening( 4, 3, Tightening::LB ),
+              Tightening( 4, 3, Tightening::UB ),
+              Tightening( 5, 0, Tightening::LB ),
+              Tightening( 5, 0, Tightening::UB ),
+              Tightening( 6, 0.2595, Tightening::LB ),
+              Tightening( 6, 0.2595, Tightening::UB ),
+              Tightening( 7, 0.7054, Tightening::LB ),
+              Tightening( 7, 0.7054, Tightening::UB ),
+              Tightening( 8, 0.0351, Tightening::LB ),
+              Tightening( 8, 0.0351, Tightening::UB )
 
         });
 
@@ -1058,6 +1056,19 @@ public:
 
       TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
       for ( const auto &bound : expectedBounds )
-          TS_ASSERT( bounds.exists( bound ) );
+        TS_ASSERT( existsBound( bounds, bound ) );
   }
+
+  bool existsBound(const List<Tightening> &bounds, const Tightening &t)
+  {
+    for ( const auto &bound : bounds )
+    {
+      if ( bound._type == t._type &&
+           bound._variable == t._variable &&
+           FloatUtils::areEqual(bound._value, t._value, 0.001) )
+        return true;
+    }
+    return false;
+  }
+
 };
