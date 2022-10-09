@@ -535,7 +535,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
 
     def softmaxEquations(self, node, makeEquations):
-        """Function to generate maxpooling equations
+        """Function to generate softmax equations
 
         Args:
         node (node): ONNX node representing maxpool operation
@@ -560,16 +560,15 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         outVars = self.makeNewVariables(nodeName)
 
         if len(inputShape) == 2 and inputShape[0] == 1:
-            self.addSoftmaxConstraint(inVars, outVars[0])
+            self.addSoftmaxConstraint(list(np.array(inVars).flatten()), list(np.array(outVars).flatten()))
         else:
-
             axis = ( len(inputShape) + axis ) % len(inputShape)
             perm = []
             for i, s in enumerate(inputShape):
                 if i == axis:
                     continue
                 perm.append(i)
-                perm.append(axis)
+            perm.append(axis)
 
             inVarsReshaped = np.transpose(inVars, perm).reshape(-1, inputShape[axis])
             outVarsReshaped = np.transpose(outVars, perm).reshape(-1, inputShape[axis])
@@ -741,8 +740,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
-        assert shape1[-1] == shape2[0]
-        self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
+        if len(shape1) > 2 and shape1[0] == 1:
+            shape1 = shape1[1:]
+        if len(shape2) > 2 and shape2[0] == 1:
+            shape2 = shape2[1:]
+        a = np.zeros(shape1)
+        b = np.zeros(shape2)
+        c = np.matmul(a, b)
+        self.shapeMap[nodeName] = c.shape
         if not makeEquations:
             return
             
@@ -763,9 +768,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if len(shape1) == 1:
             shape1 = [1] + shape1
         input1 = input1.reshape(shape1)
-
-        # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
-        assert firstInputConstant or secondInputConstant
+        input2 = input2.reshape(shape2)
 
         # If both inputs are constant, than the output is constant as well, and we don't need new variables or equations
         if firstInputConstant and secondInputConstant:
@@ -775,38 +778,53 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Create new variables
         outputVariables = self.makeNewVariables(nodeName)
 
-        # Pad the output if needed (matrix-matrix multiplication)
-        if len(outputVariables.shape) == 1 and len(shape2) > 1:
-            outputVariables = outputVariables.reshape([1, outputVariables.shape[0]])
+        if not firstInputConstant and not secondInputConstant:
+            # bi-linear constraints
+            # Generate equations
+            for i in range(shape1[0]):
+                if len(shape2)>1:
+                    for j in range(shape2[1]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[1]):
+                            v = self.getNewVariable()
+                            self.addQuadratic(input1[i][k], input2[k][j], v)
+                            e.addAddend(1, v)
 
-        # Generate equations
-        for i in range(shape1[0]):
-            # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
-            if len(shape2)>1:
-                for j in range(shape2[1]):
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+                else:
+                    assert(False)
+        else:
+            # Generate equations
+            for i in range(shape1[0]):
+                # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
+                if len(shape2)>1:
+                    for j in range(shape2[1]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[1]):
+                            if firstInputConstant:
+                                e.addAddend(input1[i][k], input2[k][j])
+                            else:
+                                e.addAddend(input2[k][j], input1[i][k])
+
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+                else:
                     e = MarabouUtils.Equation()
                     for k in range(shape1[1]):
                         if firstInputConstant:
-                            e.addAddend(input1[i][k], input2[k][j])
+                            e.addAddend(input1[i][k], input2[k])
                         else:
-                            e.addAddend(input2[k][j], input1[i][k])
+                            e.addAddend(input2[k], input1[i][k])
 
                     # Put output variable as the last addend last
-                    e.addAddend(-1, outputVariables[i][j])
+                    e.addAddend(-1, outputVariables[i])
                     e.setScalar(0.0)
                     self.addEquation(e)
-            else:
-                e = MarabouUtils.Equation()
-                for k in range(shape1[1]):
-                    if firstInputConstant:
-                        e.addAddend(input1[i][k], input2[k])
-                    else:
-                        e.addAddend(input2[k], input1[i][k])
-
-                # Put output variable as the last addend last
-                e.addAddend(-1, outputVariables[i])
-                e.setScalar(0.0)
-                self.addEquation(e)
 
     def mulEquations(self, node, makeEquations):
         nodeName = node.output[0]
@@ -1096,6 +1114,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Adjust sigmoid list
         for i, variables in enumerate(self.sigmoidList):
             self.sigmoidList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
+
+        # Adjust quad list
+        for i, variables in enumerate(self.quadList):
+            self.quadList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
 
         # Adjust softmax list
         for i, (inputs, outputs) in enumerate(self.softmaxList):

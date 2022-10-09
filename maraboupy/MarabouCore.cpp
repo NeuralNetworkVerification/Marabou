@@ -38,6 +38,7 @@
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
+#include "QuadraticConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
@@ -95,6 +96,12 @@ void restoreOutputStream(int outputStream)
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
   PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
   ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addQuadConstraint(InputQuery& ipq, unsigned var1, unsigned var2,
+                       unsigned var3){
+  TranscendentalConstraint* r = new QuadraticConstraint(var1, var2, var3);
+  ipq.addTranscendentalConstraint(r);
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -514,6 +521,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addQuadConstraint", &addQuadConstraint, R"pbdoc(
+        Add a Quad constraint to the InputQuery
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Quad constraint
+            var2 (int): Input variable to Quad constraint
+            var3 (int): Output variable to Quad constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("var3"));
     m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
         Add a Sigmoid constraint to the InputQuery
 
