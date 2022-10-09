@@ -105,9 +105,14 @@ private:
                     const Vector<double> &inputLb,
                     const Vector<double> &inputUb,
                     unsigned i, unsigned di);
-  double U_LSE( const Vector<double> &input, unsigned i );
+  double U_LSE( const Vector<double> &input,
+                const Vector<double> &outputLb,
+                const Vector<double> &outputUb,
+                unsigned i );
   double dU_LSEdx( const Vector<double> &c,
-               unsigned i, unsigned di);
+                   const Vector<double> &outputLb,
+                   const Vector<double> &outputUb,
+                   unsigned i, unsigned di);
   double U_ER( const Vector<double> &input, unsigned i );
   double dU_ERdx( const Vector<double> &c,
                    unsigned i, unsigned di);

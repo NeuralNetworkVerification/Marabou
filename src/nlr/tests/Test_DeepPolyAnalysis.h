@@ -1090,4 +1090,185 @@ public:
     return false;
   }
 
+
+  void populateNetworkSoftmax2( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
+  {
+        /*
+
+
+          x0      x3  S  x8
+
+          x1      x4  S  x9
+
+          x2      x5  S  x10
+
+                  x6  S  x11
+
+                  x7  S  x12
+
+          x3 = x0 - x1 + x2 + 1
+          x4 = -x0 + x1 + x2 + 2
+          x5 = -x0 - x1 - x2 + 3
+          x6 = -x0 - x1 - x2 + 2
+          x7 = -x0 - x1 - x2 + 1
+
+          x8 x10 x12 = softmax(x3, x5, x7)
+
+          x9 x11 = softmax(x4, x6)
+
+          x13 = x8 + x10 + x12
+          x14 = -x8 - x10 - x12
+          x15 = x9 + x11
+          x16 = -x9 - x11
+
+        */
+
+        // Create the layers
+        nlr.addLayer( 0, NLR::Layer::INPUT, 3 );
+        nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 5 );
+        nlr.addLayer( 2, NLR::Layer::SOFTMAX, 5 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 4 );
+
+        // Mark layer dependencies
+        for ( unsigned i = 1; i <= 3; ++i )
+            nlr.addLayerDependency( i - 1, i );
+
+        // Set the weights and biases for the weighted sum layers
+        nlr.setWeight( 0, 0, 1, 0, 1 );
+        nlr.setWeight( 0, 0, 1, 1, -1 );
+        nlr.setWeight( 0, 0, 1, 2, -1 );
+        nlr.setWeight( 0, 0, 1, 3, -1 );
+        nlr.setWeight( 0, 0, 1, 4, -1 );
+        nlr.setWeight( 0, 1, 1, 0, -1 );
+        nlr.setWeight( 0, 1, 1, 1, 1 );
+        nlr.setWeight( 0, 1, 1, 2, -1 );
+        nlr.setWeight( 0, 1, 1, 3, -1 );
+        nlr.setWeight( 0, 1, 1, 4, -1 );
+        nlr.setWeight( 0, 2, 1, 0, 1 );
+        nlr.setWeight( 0, 2, 1, 1, 1 );
+        nlr.setWeight( 0, 2, 1, 2, -1 );
+        nlr.setWeight( 0, 2, 1, 3, -1 );
+        nlr.setWeight( 0, 2, 1, 4, -1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 2, 3, 0, 1 );
+        nlr.setWeight( 2, 4, 3, 0, 1 );
+        nlr.setWeight( 2, 0, 3, 1, -1 );
+        nlr.setWeight( 2, 2, 3, 1, -1 );
+        nlr.setWeight( 2, 4, 3, 1, -1 );
+        nlr.setWeight( 2, 1, 3, 2, 1 );
+        nlr.setWeight( 2, 3, 3, 2, 1 );
+        nlr.setWeight( 2, 1, 3, 3, -1 );
+        nlr.setWeight( 2, 3, 3, 3, -1 );
+
+        nlr.setBias( 1, 0, 1 );
+        nlr.setBias( 1, 1, 2 );
+        nlr.setBias( 1, 2, 3 );
+        nlr.setBias( 1, 3, 2 );
+        nlr.setBias( 1, 4, 1 );
+
+        nlr.addActivationSource( 1, 0, 2, 0 );
+        nlr.addActivationSource( 1, 2, 2, 0 );
+        nlr.addActivationSource( 1, 4, 2, 0 );
+        nlr.addActivationSource( 1, 0, 2, 2 );
+        nlr.addActivationSource( 1, 2, 2, 2 );
+        nlr.addActivationSource( 1, 4, 2, 2 );
+        nlr.addActivationSource( 1, 0, 2, 4 );
+        nlr.addActivationSource( 1, 2, 2, 4 );
+        nlr.addActivationSource( 1, 4, 2, 4 );
+        nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 1, 3, 2, 1 );
+        nlr.addActivationSource( 1, 1, 2, 3 );
+        nlr.addActivationSource( 1, 3, 2, 3 );
+
+        // Variable indexing
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 2 ), 2 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 3 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 4 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 2 ), 5 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 3 ), 6 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 1, 4 ), 7 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 0 ), 8 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 9 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 2 ), 10 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 3 ), 11 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 2, 4 ), 12 );
+
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 13 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 14 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 2 ), 15 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 3 ), 16 );
+
+        // Very loose bounds for neurons except inputs
+        double large = 1000000;
+
+        tableau.getBoundManager().initialize( 17 );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
+        tableau.setLowerBound( 11, -large ); tableau.setUpperBound( 11, large );
+        tableau.setLowerBound( 12, -large ); tableau.setUpperBound( 12, large );
+        tableau.setLowerBound( 13, -large ); tableau.setUpperBound( 13, large );
+        tableau.setLowerBound( 14, -large ); tableau.setUpperBound( 14, large );
+        tableau.setLowerBound( 15, -large ); tableau.setUpperBound( 15, large );
+        tableau.setLowerBound( 16, -large ); tableau.setUpperBound( 16, large );
+    }
+
+  void test_deeppoly_softmax3()
+  {
+    std::cout << "test 3" << std::endl;
+      NLR::NetworkLevelReasoner nlr;
+      MockTableau tableau;
+      nlr.setTableau( &tableau );
+      populateNetworkSoftmax2( nlr, tableau );
+
+      tableau.setLowerBound( 0, 1 );
+      tableau.setUpperBound( 0, 1.00001 );
+      tableau.setLowerBound( 1, 1 );
+      tableau.setUpperBound( 1, 1.00001 );
+      tableau.setLowerBound( 2, 1 );
+      tableau.setUpperBound( 2, 1.00001 );
+
+      // Invoke DeepPoly
+      TS_ASSERT_THROWS_NOTHING( nlr.obtainCurrentBounds() );
+      TS_ASSERT_THROWS_NOTHING( nlr.deepPolyPropagation() );
+
+      /*
+        Input ranges:
+
+        x0: [1, 1.0001]
+        x1: [1, 1.0001]
+        x2: [1, 1.0001]
+      */
+
+      List<Tightening> expectedBounds({
+              Tightening( 13, 1, Tightening::LB ),
+              Tightening( 13, 1, Tightening::UB ),
+              Tightening( 14, -1, Tightening::LB ),
+              Tightening( 14, -1, Tightening::UB ),
+              Tightening( 15, 1, Tightening::LB ),
+              Tightening( 15, 1, Tightening::UB ),
+              Tightening( 16, -1, Tightening::LB ),
+              Tightening( 16, -1, Tightening::UB )
+
+        });
+
+      List<Tightening> bounds;
+      TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
+
+      for ( const auto &b : bounds )
+        b.dump();
+
+      for ( const auto &bound : expectedBounds )
+        TS_ASSERT( existsBound( bounds, bound ) );
+  }
+
 };

@@ -52,48 +52,64 @@ void DeepPolySoftmaxElement::execute
 
         Vector<double> sourceLbs;
         Vector<double> sourceUbs;
+        Vector<double> targetLbs;
+        Vector<double> targetUbs;
+
         Vector<double> sourceMids;
+        unsigned outputIndex = 0;
+        unsigned index = 0;
         for ( const auto &sourceIndex : sources )
         {
-            DeepPolyElement *predecessor =
-                deepPolyElementsBefore[sourceIndex._layer];
-            double sourceLb = predecessor->getLowerBound
-              ( sourceIndex._neuron ) - GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
-            sourceLbs.append(sourceLb);
-            double sourceUb = predecessor->getUpperBound
-              ( sourceIndex._neuron ) + GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
-            sourceUbs.append(sourceUb);
-            sourceMids.append((sourceLb + sourceUb) / 2);
+          if ( sourceIndex._neuron == i )
+            outputIndex = index;
+          DeepPolyElement *predecessor =
+            deepPolyElementsBefore[sourceIndex._layer];
+          double sourceLb = predecessor->getLowerBound
+            ( sourceIndex._neuron ) - GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+          sourceLbs.append(sourceLb);
+          double sourceUb = predecessor->getUpperBound
+            ( sourceIndex._neuron ) + GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+          sourceUbs.append(sourceUb);
+          sourceMids.append((sourceLb + sourceUb) / 2);
+
+          targetLbs.append(_lb[i]);
+          targetUbs.append(_ub[i]);
+          ++index;
         }
 
         // Compute concrete bound
-
-        double lb = L_Linear(sourceLbs, sourceUbs, i);
-        double ub = U_Linear(sourceLbs, sourceUbs, i);
+        double lb = L_Linear(sourceLbs, sourceUbs, outputIndex);
+        double ub = U_Linear(sourceLbs, sourceUbs, outputIndex);
         if ( lb > _lb[i])
           _lb[i] = lb;
         if ( ub < _ub[i])
           _ub[i] = ub;
         log( Stringf( "Current bounds of neuron %u: [%f, %f]", i,
                       _lb[i], _ub[i] ) );
+        targetLbs[outputIndex] = _lb[i];
+        targetUbs[outputIndex] = _ub[i];
 
         // Compute symbolic bound
         std::cout << "Using L_LSE1" << std::endl;
-        _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, i);
-        for (unsigned j = 0; j < _size; ++j)
+        _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
+        unsigned counter = 0;
+        for (const auto &sourceIndex : sources)
         {
-          double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs,i, j);
-          _symbolicLb[_size * j + i] = dldj;
-          _symbolicLowerBias[i] -= dldj * sourceMids[j];
+          double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+          _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+          _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+          ++counter;
         }
 
         std::cout << "Using U_LSE" << std::endl;
-        _symbolicUpperBias[i] = U_LSE(sourceMids, i);
-        for (unsigned j = 0; j < _size; ++j)
+        _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
+        counter = 0;
+        for (const auto &sourceIndex : sources)
         {
-          double dudj = dU_LSEdx(sourceMids, i, j);
-          _symbolicUb[_size * j + i] = dudj;
-          _symbolicUpperBias[i] -= dudj * sourceMids[j];
+          double dudj = dU_LSEdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+          _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+          _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+          ++counter;
         }
     }
 
@@ -365,11 +381,6 @@ void DeepPolySoftmaxElement::symbolicBoundInTermsOfPredecessor
                   predecessor->getLayerIndex() ) );
 
     unsigned predecessorSize = predecessor->getSize();
-    std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
-    std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
-
     ASSERT(predecessorSize == _size);
 
     /*
@@ -391,7 +402,8 @@ void DeepPolySoftmaxElement::symbolicBoundInTermsOfPredecessor
                 weightLb * _symbolicLb[k * _size + j];
             }
             symbolicLowerBias[i] += _symbolicLowerBias[j] * weightLb;
-          } else
+          }
+          else
           {
             for ( unsigned k = 0; k < predecessorSize; ++k )
             {
@@ -567,10 +579,13 @@ double DeepPolySoftmaxElement::dL_LSE1dx( const Vector<double> &c,
 }
 
 
-double DeepPolySoftmaxElement::U_LSE( const Vector<double> &input, unsigned i )
+double DeepPolySoftmaxElement::U_LSE( const Vector<double> &input,
+                                      const Vector<double> &outputLb,
+                                      const Vector<double> &outputUb,
+                                      unsigned i )
 {
-  double li = _lb[i];
-  double ui = _ub[i];
+  double li = outputLb[i];
+  double ui = outputUb[i];
 
   Vector<double> inputTilda;
   SoftmaxConstraint::xTilda(input, input[i], inputTilda);
@@ -580,14 +595,16 @@ double DeepPolySoftmaxElement::U_LSE( const Vector<double> &input, unsigned i )
 }
 
 double DeepPolySoftmaxElement::dU_LSEdx( const Vector<double> &c,
-                                     unsigned i, unsigned di)
+                                         const Vector<double> &outputLb,
+                                         const Vector<double> &outputUb,
+                                         unsigned i, unsigned di)
 {
-  double li = _lb[i];
-  double ui = _ub[i];
+  double li = outputLb[i];
+  double ui = outputUb[i];
 
   double val = -(ui - li) / (std::log(ui) - std::log(li));
 
-  double val2 = std::exp(c[i]) / SoftmaxConstraint::SE(c);
+  double val2 = std::exp(c[di]) / SoftmaxConstraint::SE(c);
   if (i == di)
     val2 -= 1;
 

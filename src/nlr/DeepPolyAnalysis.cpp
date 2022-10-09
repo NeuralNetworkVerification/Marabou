@@ -17,6 +17,7 @@
 #include "DeepPolyAnalysis.h"
 #include "DeepPolyAbsoluteValueElement.h"
 #include "DeepPolyInputElement.h"
+#include "DeepPolyQuadraticElement.h"
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
@@ -217,6 +218,14 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
     else if ( type == Layer::SOFTMAX )
     {
       deepPolyElement = new DeepPolySoftmaxElement( layer );
+      deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
+                                         _work2SymbolicLb, _work2SymbolicUb,
+                                         _workSymbolicLowerBias,
+                                         _workSymbolicUpperBias );
+    }
+    else if ( type == Layer::QUADRATIC )
+    {
+      deepPolyElement = new DeepPolyQuadraticElement( layer );
       deepPolyElement->setWorkingMemory( _work1SymbolicLb, _work1SymbolicUb,
                                          _work2SymbolicLb, _work2SymbolicUb,
                                          _workSymbolicLowerBias,
