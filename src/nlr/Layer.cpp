@@ -16,6 +16,7 @@
 #include "InputQuery.h"
 #include "Layer.h"
 #include "Options.h"
+#include "SoftmaxConstraint.h"
 #include "SymbolicBoundTighteningType.h"
 
 namespace NLR {
@@ -204,6 +205,31 @@ void Layer::computeAssignment()
 
             _assignment[i] = 1 / ( 1 + std::exp( -inputValue ) );
         }
+    }
+
+    else if ( _type == SOFTMAX )
+    {
+      for ( unsigned i = 0; i < _size; ++i )
+      {
+        _assignment[i] = FloatUtils::negativeInfinity();
+
+        Vector<double> inputs;
+        Vector<double> outputs;
+        unsigned outputIndex = 0;
+        unsigned index = 0;
+        for ( const auto &input : _neuronToActivationSources[i] )
+        {
+          if ( input._neuron == i )
+            outputIndex = index;
+          double value = _layerOwner->getLayer( input._layer )->getAssignment( input._neuron );
+          inputs.append(value);
+          ++index;
+        }
+
+        SoftmaxConstraint::softmax(inputs, outputs);
+        _assignment[i] = outputs[outputIndex];
+
+      }
     }
 
     else

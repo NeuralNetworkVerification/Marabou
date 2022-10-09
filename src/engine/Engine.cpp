@@ -1305,6 +1305,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         initializeNetworkLevelReasoning();
         if ( preprocess )
         {
+          _networkLevelReasoner->dumpTopology();
             performSymbolicBoundTightening( &(*_preprocessedQuery) );
             performSimulation();
             performMILPSolverBoundedTightening( &(*_preprocessedQuery) );

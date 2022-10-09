@@ -1340,11 +1340,17 @@ bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
         continue;
 
       // If the f variable has also been handled, ignore this constraint
+      bool outputHandled = false;
       for ( const auto &element : softmax->getOutputs() )
       {
         if ( handledVariableToLayer.exists( element ) )
-          continue;
+        {
+          outputHandled = true;
+          break;
+        }
       }
+
+      if ( outputHandled ) continue;
 
       for ( const auto &element : softmax->getOutputs() )
       {

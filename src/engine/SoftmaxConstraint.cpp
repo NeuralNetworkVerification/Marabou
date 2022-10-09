@@ -38,9 +38,29 @@ SoftmaxConstraint::SoftmaxConstraint( const Vector<unsigned> &inputs,
   ASSERT( _inputs.size() == _outputs.size() );
 }
 
-SoftmaxConstraint::SoftmaxConstraint( const String & )
+SoftmaxConstraint::SoftmaxConstraint( const String &serializedSoftmax )
 {
-  throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+  String constraintType = serializedSoftmax.substring( 0, 7 );
+  ASSERT( constraintType == String( "softmax" ) );
+
+  // Remove the constraint type in serialized form
+  String serializedValues = serializedSoftmax.substring( 8, serializedSoftmax.length() - 8 );
+  List<String> tokens = serializedValues.tokenize(",");
+  unsigned d = atoi(tokens.begin()->ascii());
+  unsigned i = 0;
+  for ( const auto &token : tokens )
+  {
+    ++i;
+    if ( i == 1 )
+      continue;
+    if ( i <= d + 1 )
+      _inputs.append(atoi(token.ascii()));
+    else
+      _outputs.append(atoi(token.ascii()));
+  }
+
+  ASSERT( _inputs.size() == _outputs.size() );
+  ASSERT( _inputs.size() == d );
 }
 
 TranscendentalFunctionType SoftmaxConstraint::getType() const
@@ -195,7 +215,13 @@ void SoftmaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) 
 
 String SoftmaxConstraint::serializeToString() const
 {
-  throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+  String s = Stringf( "softmax" );
+  s += Stringf( ",%u", _inputs.size());
+  for (const auto &input : _inputs)
+    s += Stringf( ",%u", input);
+  for (const auto &output : _outputs)
+    s += Stringf( ",%u", output);
+  return s;
 }
 
 const Vector<unsigned> &SoftmaxConstraint::getInputs() const

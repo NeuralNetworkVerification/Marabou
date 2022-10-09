@@ -362,35 +362,69 @@ void DeepPolySoftmaxElement::symbolicBoundInTermsOfPredecessor
   *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
   unsigned targetLayerSize, DeepPolyElement *predecessor )
 {
-  std::cout << "Should never reach here!" << std::endl;
-
-    unsigned predecessorIndex = predecessor->getLayerIndex();
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
-                  predecessorIndex ) );
+                  predecessor->getLayerIndex() ) );
+
     unsigned predecessorSize = predecessor->getSize();
+    std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
+                 predecessorSize, 0 );
+    std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
+                 predecessorSize, 0 );
 
-    double *weights = _layer->getWeights( predecessorIndex );
-    double *biases = _layer->getBiases();
+    ASSERT(predecessorSize == _size);
 
-    // newSymbolicLb = weights * symbolicLb
-    // newSymbolicUb = weights * symbolicUb
-    matrixMultiplication( weights, symbolicLb,
-                          symbolicLbInTermsOfPredecessor, predecessorSize,
-                          _size, targetLayerSize );
-    matrixMultiplication( weights, symbolicUb,
-                          symbolicUbInTermsOfPredecessor, predecessorSize,
-                          _size, targetLayerSize );
+    /*
+      We have the symbolic bound of the target layer in terms of the
+      MaxPool outputs, the goal is to compute the symbolic bound of the target
+      layer in terms of the MaxPool inputs.
+    */
+    for ( unsigned i = 0; i < targetLayerSize; ++i )
+    {
+      for ( unsigned j = 0; j < _size; ++j )
+      {
+        {
+          double weightLb = symbolicLb[j * targetLayerSize + i];
+          if ( weightLb >= 0 )
+          {
+            for ( unsigned k = 0; k < predecessorSize; ++k )
+            {
+              symbolicLbInTermsOfPredecessor[k * targetLayerSize + i] +=
+                weightLb * _symbolicLb[k * _size + j];
+            }
+            symbolicLowerBias[i] += _symbolicLowerBias[j] * weightLb;
+          } else
+          {
+            for ( unsigned k = 0; k < predecessorSize; ++k )
+            {
+              symbolicLbInTermsOfPredecessor[k * targetLayerSize + i] +=
+                weightLb * _symbolicUb[k * _size + j];
+            }
+            symbolicLowerBias[i] += _symbolicUpperBias[j] * weightLb;
+          }
+        }
 
-    // symbolicLowerBias = biases * symbolicLb
-    // symbolicUpperBias = biases * symbolicUb
-    if  ( symbolicLowerBias )
-        matrixMultiplication( biases, symbolicLb, symbolicLowerBias, 1,
-                              _size, targetLayerSize );
-    if  ( symbolicUpperBias )
-        matrixMultiplication( biases, symbolicUb, symbolicUpperBias, 1,
-                              _size, targetLayerSize );
-    log( Stringf( "Computing symbolic bounds with respect to layer %u - done",
-                  predecessorIndex ) );
+        {
+          double weightUb = symbolicUb[j * targetLayerSize + i];
+          if ( weightUb >= 0 )
+            {
+              for ( unsigned k = 0; k < predecessorSize; ++k )
+                {
+                  symbolicUbInTermsOfPredecessor[k * targetLayerSize + i] +=
+                    weightUb * _symbolicUb[k * _size + j];
+                }
+              symbolicUpperBias[i] += _symbolicUpperBias[j] * weightUb;
+            } else
+            {
+              for ( unsigned k = 0; k < predecessorSize; ++k )
+                {
+                  symbolicUbInTermsOfPredecessor[k * targetLayerSize + i] +=
+                    weightUb * _symbolicLb[k * _size + j];
+                }
+              symbolicUpperBias[i] += _symbolicLowerBias[j] * weightUb;
+            }
+        }
+      }
+    }
 }
 
 void DeepPolySoftmaxElement::allocateMemoryForResidualsIfNeeded

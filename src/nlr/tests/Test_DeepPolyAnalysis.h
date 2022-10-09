@@ -924,15 +924,19 @@ public:
 
           x6 x7 x8 = softmax(x3, x4, x5)
 
+          x9 = x6 + x7 + x8
+          x10 = x6 + x7 + x8
+
         */
 
         // Create the layers
         nlr.addLayer( 0, NLR::Layer::INPUT, 3 );
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 3 );
         nlr.addLayer( 2, NLR::Layer::SOFTMAX, 3 );
+        nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
 
         // Mark layer dependencies
-        for ( unsigned i = 1; i <= 2; ++i )
+        for ( unsigned i = 1; i <= 3; ++i )
             nlr.addLayerDependency( i - 1, i );
 
         // Set the weights and biases for the weighted sum layers
@@ -945,6 +949,12 @@ public:
         nlr.setWeight( 0, 2, 1, 0, 1 );
         nlr.setWeight( 0, 2, 1, 1, 1 );
         nlr.setWeight( 0, 2, 1, 2, -1 );
+        nlr.setWeight( 2, 0, 3, 0, 1 );
+        nlr.setWeight( 2, 1, 3, 0, 1 );
+        nlr.setWeight( 2, 2, 3, 0, 1 );
+        nlr.setWeight( 2, 0, 3, 1, -1 );
+        nlr.setWeight( 2, 1, 3, 1, -1 );
+        nlr.setWeight( 2, 2, 3, 1, -1 );
 
         nlr.setBias( 1, 0, 1 );
         nlr.setBias( 1, 1, 2 );
@@ -974,16 +984,21 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 2, 1 ), 7 );
         nlr.setNeuronVariable( NLR::NeuronIndex( 2, 2 ), 8 );
 
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 9 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 10 );
+
         // Very loose bounds for neurons except inputs
         double large = 1000000;
 
-        tableau.getBoundManager().initialize( 9 );
+        tableau.getBoundManager().initialize( 11 );
         tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
         tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
         tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
         tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
         tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
+        tableau.setLowerBound( 10, -large ); tableau.setUpperBound( 10, large );
     }
 
 
@@ -1044,7 +1059,11 @@ public:
               Tightening( 7, 0.7054, Tightening::LB ),
               Tightening( 7, 0.7054, Tightening::UB ),
               Tightening( 8, 0.0351, Tightening::LB ),
-              Tightening( 8, 0.0351, Tightening::UB )
+              Tightening( 8, 0.0351, Tightening::UB ),
+              Tightening( 9, 1, Tightening::LB ),
+              Tightening( 9, 1, Tightening::UB ),
+              Tightening( 10, -1, Tightening::LB ),
+              Tightening( 10, -1, Tightening::UB )
 
         });
 
