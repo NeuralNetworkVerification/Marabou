@@ -355,7 +355,6 @@ void DeepPolySoftmaxElement::concretizeSymbolicBoundForSourceLayer
     }
 }
 
-
 void DeepPolySoftmaxElement::symbolicBoundInTermsOfPredecessor
 ( const double *symbolicLb, const double*symbolicUb, double
   *symbolicLowerBias, double *symbolicUpperBias, double

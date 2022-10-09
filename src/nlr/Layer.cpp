@@ -1844,6 +1844,7 @@ void Layer::dump() const
     case MAX:
     case SIGN:
     case SIGMOID:
+    case QUADRATIC:
     case SOFTMAX:
         for ( unsigned i = 0; i < _size; ++i )
         {

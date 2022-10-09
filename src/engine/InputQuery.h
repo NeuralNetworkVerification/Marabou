@@ -176,9 +176,12 @@ private:
     bool constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
                             Map<unsigned, unsigned> &handledVariableToLayer,
                             unsigned newLayerIndex );
-  bool constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
-                              Map<unsigned, unsigned> &handledVariableToLayer,
-                              unsigned newLayerIndex );
+    bool constructQuadraticLayer( NLR::NetworkLevelReasoner *nlr,
+                                  Map<unsigned, unsigned> &handledVariableToLayer,
+                                  unsigned newLayerIndex );
+    bool constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
+                                Map<unsigned, unsigned> &handledVariableToLayer,
+                                unsigned newLayerIndex );
 
 public:
     /*
