@@ -93,6 +93,8 @@ public:
     virtual void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) = 0;
     virtual bool constraintObsolete() const = 0;
 
+    virtual bool supportVariableElimination() const { return false; };
+
     /*
       Get the tightenings entailed by the constraint.
     */

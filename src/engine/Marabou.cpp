@@ -85,6 +85,18 @@ void Marabou::prepareInputQuery()
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
         _inputQuery.constructNetworkLevelReasoner();
+
+        /*
+          _inputQuery._networkLevelReasoner->dumpTopology();
+          double inputs[784];
+          double outputs[10];
+          for ( unsigned i = 0; i < 784; ++i )
+              inputs[i] = _inputQuery.getLowerBound(i);
+          _inputQuery._networkLevelReasoner->evaluate(inputs, outputs);
+          for ( unsigned i = 0; i < 10; ++i)
+              std::cout << outputs[i] << std::endl;
+          exit(0);
+        */
     }
     else
     {

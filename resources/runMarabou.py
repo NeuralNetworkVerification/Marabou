@@ -88,19 +88,32 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     from tensorflow.keras.datasets import mnist
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     point = np.array(X_test[index]).flatten() / 255
+    networkOutput = network.evaluateWithoutMarabou([point])[0][0]
+    print("network output", networkOutput)
+    prediction = np.argmax(networkOutput)
     print("correct label: {}".format(Y_test[index]))
+    if  prediction != Y_test[index]:
+        print("misclassify!")
+        return
+
     for x in np.array(network.inputVars).flatten():
         network.setLowerBound(x, max(0, point[x] - epsilon))
         network.setUpperBound(x, min(1, point[x] + epsilon))
     if target_label == -1:
-        print("No output constraint!")
-    else:
-        outputVars = network.outputVars[0].flatten()
-        for i in range(10):
-            if i != target_label:
-                network.addInequality([outputVars[i],
-                                       outputVars[target_label]],
-                                      [1, -1], 0)
+        networkOutput[prediction] = -100000
+        target_label = np.argmax(networkOutput)
+        print(f"No target label given. Picking second largest label: {target_label}")
+
+    outputVars = network.outputVars[0].flatten()
+    for i in range(10):
+        if i != target_label:
+            network.addInequality([outputVars[i],
+                                   outputVars[target_label]],
+                                  [1, -1], 0)
+    print("correct label: {}".format(Y_test[index]))
+    for x in np.array(network.inputVars).flatten():
+        network.setLowerBound(x, max(0, point[x] - epsilon))
+        network.setUpperBound(x, min(1, point[x] + epsilon))
     return
 
 def encode_cifar10_linf(network, index, epsilon, target_label):

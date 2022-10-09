@@ -153,13 +153,14 @@ bool QuadraticConstraint::constraintObsolete() const
 
 void QuadraticConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-  double min = FloatUtils::infinity();
-  double max = FloatUtils::negativeInfinity();
   if ( existsLowerBound( _b1 ) && FloatUtils::isFinite( getLowerBound( _b1 ) ) &&
        existsLowerBound( _b2 ) && FloatUtils::isFinite( getLowerBound( _b2 ) ) &&
        existsUpperBound( _b1 ) && FloatUtils::isFinite( getUpperBound( _b1 ) ) &&
        existsUpperBound( _b2 ) && FloatUtils::isFinite( getUpperBound( _b2 ) ) )
   {
+    double min = FloatUtils::infinity();
+    double max = FloatUtils::negativeInfinity();
+
     double value = getLowerBound( _b1 ) * getLowerBound( _b2 );
     if ( value < min )
       min = value;
@@ -183,9 +184,10 @@ void QuadraticConstraint::getEntailedTightenings( List<Tightening> &tightenings 
       min = value;
     if ( value > max )
       max = value;
+
+    tightenings.append( Tightening( _f, min, Tightening::LB ) );
+    tightenings.append( Tightening( _f, max, Tightening::UB ) );
   }
-  tightenings.append( Tightening( _f, min, Tightening::LB ) );
-  tightenings.append( Tightening( _f, max, Tightening::UB ) );
 }
 
 String QuadraticConstraint::serializeToString() const

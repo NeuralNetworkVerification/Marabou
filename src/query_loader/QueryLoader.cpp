@@ -23,6 +23,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
+#include "QuadraticConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
@@ -236,6 +237,11 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
                 eq.addAddend(1, output);
             eq.setScalar(1);
             inputQuery.addEquation(eq);
+        }
+        else if ( coType == "quad")
+        {
+            QuadraticConstraint *quad = new QuadraticConstraint( serializeConstraint );
+            inputQuery.addTranscendentalConstraint(quad);
         }
         else
         {

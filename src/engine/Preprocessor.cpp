@@ -104,6 +104,11 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
         if ( !constraint->supportVariableElimination() )
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
+    for ( const auto &constraint : _preprocessed->getTranscendentalConstraints() ) {
+        if ( !constraint->supportVariableElimination() )
+            for ( const auto &var : constraint->getParticipatingVariables() )
+                _uneliminableVariables.insert( var );
+    }
 
     /*
       Set any missing bounds
@@ -447,6 +452,7 @@ bool Preprocessor::processEquations()
                 delete[] ciTimesUb;
                 delete[] ciSign;
 
+                std::cout << xi << " " << getLowerBound( xi ) << " " << getUpperBound( xi ) << std::endl;
                 throw InfeasibleQueryException();
             }
         }
@@ -891,7 +897,7 @@ void Preprocessor::eliminateVariables()
         List<unsigned> participatingVariables = (*constraint)->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
-            if ( _fixedVariables.exists( variable ) )
+            if ( (*constraint)->supportVariableElimination() && _fixedVariables.exists( variable ) )
                 (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
         }
 
@@ -932,7 +938,7 @@ void Preprocessor::eliminateVariables()
         List<unsigned> participatingVariables = (*tsConstraint)->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
-            if ( _fixedVariables.exists( variable ) )
+            if ( (*tsConstraint)->supportVariableElimination() && _fixedVariables.exists( variable ) )
             {
                 (*tsConstraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
             }
