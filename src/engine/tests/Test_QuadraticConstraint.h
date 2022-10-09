@@ -103,6 +103,23 @@ public:
     TS_ASSERT( containsTightening(t, Tightening(2, -2, Tightening::UB)) );
   }
 
+  void test_tighten_bounds5()
+  {
+    QuadraticConstraint softmax (0, 1, 2);
+
+    softmax.notifyLowerBound(0, 1);
+    softmax.notifyUpperBound(0, 2);
+    softmax.notifyLowerBound(1, 2);
+    softmax.notifyUpperBound(1, 4);
+
+    List<Tightening> t;
+    TS_ASSERT_THROWS_NOTHING(softmax.getEntailedTightenings(t));
+    TS_ASSERT_EQUALS( t.size(), 2u );
+
+    TS_ASSERT( containsTightening(t, Tightening(2, 2, Tightening::LB)) );
+    TS_ASSERT( containsTightening(t, Tightening(2, 8, Tightening::UB)) );
+  }
+
   bool containsTightening(const List<Tightening> &ts, Tightening t){
     for ( const auto &ts_ : ts)
     {
