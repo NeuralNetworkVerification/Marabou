@@ -92,6 +92,7 @@ void DeepPolySoftmaxElement::execute
         // Compute symbolic bound
         if ( GlobalConfiguration::SOFTMAX_BOUND_TYPE == GlobalConfiguration::LSE1 )
         {
+          std::cout << "Using LSE1 bounds" << std::endl;
           _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
           unsigned counter = 0;
           for (const auto &sourceIndex : sources)
@@ -114,15 +115,16 @@ void DeepPolySoftmaxElement::execute
         }
         else if ( GlobalConfiguration::SOFTMAX_BOUND_TYPE == GlobalConfiguration::LSE2 )
         {
-          _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
+          std::cout << "Using LSE2 bounds" << std::endl;
+          _symbolicLowerBias[i] = L_LSE2(sourceMids, sourceLbs, sourceUbs, outputIndex);
           unsigned counter = 0;
           for (const auto &sourceIndex : sources)
-            {
-              double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
-              _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
-              _symbolicLowerBias[i] -= dldj * sourceMids[counter];
-              ++counter;
-            }
+          {
+            double dldj = dL_LSE2dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+            _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+            _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+            ++counter;
+          }
 
           _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
           counter = 0;
@@ -136,25 +138,26 @@ void DeepPolySoftmaxElement::execute
         }
         else if ( GlobalConfiguration::SOFTMAX_BOUND_TYPE == GlobalConfiguration::ER )
         {
-          _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
+          std::cout << "Using ER bounds" << std::endl;
+          _symbolicLowerBias[i] = L_ER(sourceMids, sourceLbs, sourceUbs, outputIndex);
           unsigned counter = 0;
           for (const auto &sourceIndex : sources)
-            {
-              double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
-              _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
-              _symbolicLowerBias[i] -= dldj * sourceMids[counter];
-              ++counter;
-            }
+          {
+            double dldj = dL_ERdx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+            _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+            _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+            ++counter;
+          }
 
-          _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
+          _symbolicUpperBias[i] = U_ER(sourceMids, targetLbs, targetUbs, outputIndex);
           counter = 0;
           for (const auto &sourceIndex : sources)
-            {
-              double dudj = dU_LSEdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
-              _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
-              _symbolicUpperBias[i] -= dudj * sourceMids[counter];
-              ++counter;
-            }
+          {
+            double dudj = dU_ERdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+            _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+            _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+            ++counter;
+          }
         }
     }
 
@@ -580,6 +583,95 @@ void DeepPolySoftmaxElement::log( const String &message )
         printf( "DeepPolySoftmaxElement: %s\n", message.ascii() );
 }
 
+double DeepPolySoftmaxElement::L_LSE2( const Vector<double> &input,
+                                      const Vector<double> &inputLb,
+                                      const Vector<double> &inputUb,
+                                      unsigned i )
+{
+  double max = FloatUtils::negativeInfinity();
+  unsigned  maxInputIndex = 0;
+  unsigned index = 0;
+  for ( const auto &mid : input )
+  {
+    if ( mid > max )
+    {
+      max = mid;
+      maxInputIndex = index;
+    }
+    ++index;
+  }
+
+  if ( maxInputIndex == i )
+    return L_ER(input, inputLb, inputUb, i);
+  else
+  {
+    double sum = 0;
+    for (unsigned j = 0; j < input.size(); ++j) {
+      if ( j == maxInputIndex )
+        sum += 1;
+      else
+      {
+        double ljjstar = inputLb[j] - inputUb[maxInputIndex];
+        double ujjstar = inputUb[j] - inputLb[maxInputIndex];
+        double xjjstar = input[j] - input[maxInputIndex];
+
+        sum += (ujjstar - xjjstar) / (ujjstar - ljjstar) * std::exp(ljjstar) + (xjjstar - ljjstar)/(ujjstar - ljjstar) * std::exp(ujjstar);
+      }
+    }
+
+    return std::exp(input[i] - input[maxInputIndex]) / sum;
+  }
+}
+
+double DeepPolySoftmaxElement::dL_LSE2dx( const Vector<double> &c,
+                                     const Vector<double> &inputLb,
+                                     const Vector<double> &inputUb,
+                                     unsigned i, unsigned di)
+{
+  double max = FloatUtils::negativeInfinity();
+  unsigned  maxInputIndex = 0;
+  unsigned index = 0;
+  for ( const auto &mid : c )
+  {
+    if ( mid > max )
+    {
+      max = mid;
+      maxInputIndex = index;
+    }
+    ++index;
+  }
+
+  if ( maxInputIndex == i )
+    return dL_ERdx(c, inputLb, inputUb, i, di);
+  else
+  {
+    double val = 0;
+    if (i == di)
+      val += L_LSE2(c, inputLb, inputUb, i);
+
+    double ldijstar = inputLb[di] - inputUb[maxInputIndex];
+    double udijstar = inputUb[di] - inputLb[maxInputIndex];
+
+    double sum = 0;
+    for (unsigned j = 0; j < c.size(); ++j) {
+      if ( j == maxInputIndex )
+        sum += 1;
+      else
+      {
+        double ljjstar = inputLb[j] - inputUb[maxInputIndex];
+        double ujjstar = inputUb[j] - inputLb[maxInputIndex];
+        double xjjstar = c[j] - c[maxInputIndex];
+
+        sum += (ujjstar - xjjstar) / (ujjstar - ljjstar) * std::exp(ljjstar) + (xjjstar - ljjstar)/(ujjstar - ljjstar) * std::exp(ujjstar);
+      }
+    }
+
+    val -= std::exp(c[i]) / (sum * sum) * (std::exp(udijstar) - std::exp(ldijstar)) / (udijstar - ldijstar);
+
+    return val;
+  }
+}
+
 double DeepPolySoftmaxElement::L_LSE1( const Vector<double> &input,
                                       const Vector<double> &inputLb,
                                       const Vector<double> &inputUb,
@@ -661,16 +753,25 @@ double DeepPolySoftmaxElement::L_ER( const Vector<double> &input,
                                      const Vector<double> &inputUb,
                                      unsigned i )
 {
+  Vector<double> inputTilda;
+  SoftmaxConstraint::xTilda(input, input[i], inputTilda);
+
   double sum = 0;
   for (unsigned j = 0; j < input.size(); ++j) {
-    double lj = inputLb[j];
-    double uj = inputUb[j];
-    double xj = input[j];
+    if ( i == j )
+      sum += 1;
+    else
+    {
+      double ljTilda = inputLb[j] - inputUb[i];
+      double ujTilda = inputUb[j] - inputLb[i];
+      double xjTilda = inputTilda[j];
 
-    sum += (uj - xj) / (uj - lj) * std::exp(lj) + (xj - lj)/(uj - lj) * std::exp(uj);
+      sum += (ujTilda - xjTilda) / (ujTilda - ljTilda) * std::exp(ljTilda) +
+        (xjTilda - ljTilda)/(ujTilda - ljTilda) * std::exp(ujTilda);
+    }
   }
 
-  return std::exp(input[i]) / sum;
+  return 1 / sum;
 }
 
 double DeepPolySoftmaxElement::dL_ERdx( const Vector<double> &c,
@@ -678,23 +779,29 @@ double DeepPolySoftmaxElement::dL_ERdx( const Vector<double> &c,
                                      const Vector<double> &inputUb,
                                      unsigned i, unsigned di)
 {
-  double val = 0;
-  if (i == di)
-    val += L_LSE1(c, inputLb, inputUb, i);
+  double val = L_ER(c, inputLb, inputUb, i);
+  val = -val * val;
 
-  double ldi = inputLb[di];
-  double udi = inputUb[di];
 
-  double sum = 0;
-  for (unsigned j = 0; j < c.size(); ++j) {
-    double lj = inputLb[j];
-    double uj = inputUb[j];
-    double xj = c[j];
 
-    sum += (uj - xj) / (uj - lj) * std::exp(lj) + (xj - lj)/(uj - lj) * std::exp(uj);
+  double ldiTilda = inputLb[di] - inputUb[i];
+  double udiTilda = inputUb[di] - inputLb[i];
+
+  if ( i != di )
+    val *= ( std::exp(udiTilda) - std::exp(ldiTilda ) ) / (udiTilda - ldiTilda) * (c[di] - c[i]);
+  else {
+    double val2 = 0;
+    for ( unsigned j = 0; j < c.size(); ++j ) {
+      if ( j != i )
+      {
+        double ljTilda = inputLb[j] - inputUb[i];
+        double ujTilda = inputUb[j] - inputLb[i];
+        val2 -= (std::exp(ujTilda) - std::exp(ljTilda)) / (ujTilda - ljTilda) * (c[j] - c[i]);
+      }
+    }
+    val *= val2;
+
   }
-
-  val -= std::exp(c[i]) / (sum * sum) * (std::exp(udi) - std::exp(ldi)) / (udi - ldi);
 
   return val;
 }
@@ -710,8 +817,7 @@ double DeepPolySoftmaxElement::U_ER( const Vector<double> &input,
   Vector<double> inputTilda;
   SoftmaxConstraint::xTilda(input, input[i], inputTilda);
 
-  return ((li * std::log(ui) - ui * std::log(li)) / (std::log(ui) - std::log(li)) -
-          (ui - li) / (std::log(ui) - std::log(li)) * SoftmaxConstraint::LSE(inputTilda));
+  return ui + li - ui * li * SoftmaxConstraint::SE(inputTilda);
 }
 
 double DeepPolySoftmaxElement::dU_ERdx( const Vector<double> &c,
@@ -722,11 +828,17 @@ double DeepPolySoftmaxElement::dU_ERdx( const Vector<double> &c,
   double li = outputLb[i];
   double ui = outputUb[i];
 
-  double val = -(ui - li) / (std::log(ui) - std::log(li));
+  double val = -ui * li;
 
-  double val2 = std::exp(c[di]) / SoftmaxConstraint::SE(c);
+  double val2 = 0;
+
   if (i == di)
-    val2 -= 1;
+  {
+    for ( unsigned j = 0; j < c.size(); ++j )
+      val2 -= std::exp(c[j] - c[i]);
+  }
+  else
+    val2 = std::exp(c[di] - c[i]);
 
   return val * val2;
 }

@@ -91,7 +91,7 @@ const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration:
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
-const GlobalConfiguration::SoftmaxBoundType GlobalConfiguration::SOFTMAX_BOUND_TYPE = GlobalConfiguration::LSE1;
+const GlobalConfiguration::SoftmaxBoundType GlobalConfiguration::SOFTMAX_BOUND_TYPE = GlobalConfiguration::ER;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
