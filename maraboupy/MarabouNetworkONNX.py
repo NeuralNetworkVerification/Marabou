@@ -36,9 +36,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames)
+        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
     def clear(self):
         """Reset values to represent empty network
@@ -51,7 +51,21 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.inputNames = None
         self.outputNames = None
         self.graph = None
-        
+
+    def shallowClear(self):
+        """Reset values to represent new copy
+        of network while maintaining
+        previous constraints. Used for
+        unrolling system dynamics.
+        """
+        self.madeGraphEquations = []
+        self.varMap = dict()
+        self.constantMap = dict()
+        self.shapeMap = dict()
+        self.inputNames = None
+        self.outputNames = None
+        self.graph = None
+
     def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
@@ -103,7 +117,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
         else:
-            self.outputVars = self.varMap[self.outputName]
+            self.outputVars = [self.varMap[outputName] for outputName in self.outputNames]
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
@@ -258,7 +272,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         Args:
             nodeName (str): Name of node
-            saveConstant (bool): If true, save constant variables to self.constantMap
 
         Returns:
             (list of str): Names of nodes that are inputs to the given node
