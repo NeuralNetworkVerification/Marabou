@@ -65,10 +65,10 @@ void DeepPolySoftmaxElement::execute
           DeepPolyElement *predecessor =
             deepPolyElementsBefore[sourceIndex._layer];
           double sourceLb = predecessor->getLowerBound
-            ( sourceIndex._neuron ) - GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+            ( sourceIndex._neuron );
           sourceLbs.append(sourceLb);
           double sourceUb = predecessor->getUpperBound
-            ( sourceIndex._neuron ) + GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+            ( sourceIndex._neuron );
           sourceUbs.append(sourceUb);
           sourceMids.append((sourceLb + sourceUb) / 2);
 

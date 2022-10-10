@@ -452,7 +452,6 @@ bool Preprocessor::processEquations()
                 delete[] ciTimesUb;
                 delete[] ciSign;
 
-                std::cout << xi << " " << getLowerBound( xi ) << " " << getUpperBound( xi ) << std::endl;
                 throw InfeasibleQueryException();
             }
         }
