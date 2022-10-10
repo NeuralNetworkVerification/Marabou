@@ -155,7 +155,7 @@ def test_split():
     assert network.shapeMap['Y1'] == (2,)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         network.setLowerBound(inputVars[i], i + 1)
         network.setUpperBound(inputVars[i], i + 1)
@@ -169,7 +169,7 @@ def test_split():
     assert network.shapeMap['Y2'] == (2,)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         network.setLowerBound(inputVars[i], i + 1)
         network.setUpperBound(inputVars[i], i + 1)
@@ -183,7 +183,7 @@ def test_split():
     assert network.shapeMap['Y3'] == (2,)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         network.setLowerBound(inputVars[i], i + 1)
         network.setUpperBound(inputVars[i], i + 1)
@@ -202,7 +202,7 @@ def test_split():
     assert network.shapeMap['Y1'] == (2,)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         network.setLowerBound(inputVars[i], i + 1)
         network.setUpperBound(inputVars[i], i + 1)
@@ -216,7 +216,7 @@ def test_split():
     assert network.shapeMap['Y2'] == (4,)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         network.setLowerBound(inputVars[i], i + 1)
         network.setUpperBound(inputVars[i], i + 1)
@@ -237,7 +237,7 @@ def test_split():
     assert network.shapeMap['Y1'] == (2, 3)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         for j in range(len(inputVars[i])):
             network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
@@ -256,7 +256,7 @@ def test_split():
     assert network.shapeMap['Y2'] == (2, 3)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         for j in range(len(inputVars[i])):
             network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
@@ -280,7 +280,7 @@ def test_split():
     assert network.shapeMap['Y1'] == (2, 2)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         for j in range(len(inputVars[i])):
             network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
@@ -297,7 +297,7 @@ def test_split():
     assert network.shapeMap['Y2'] == (2, 4)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(len(inputVars)):
         for j in range(len(inputVars[i])):
             network.setLowerBound(inputVars[i][j], (len(inputVars[i])) * i + j + 1)
@@ -324,7 +324,7 @@ def test_split():
     assert network.shapeMap['Y1'] == (1, 1, 1, 1, 2)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(85):
         network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
         network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
@@ -338,7 +338,7 @@ def test_split():
     assert network.shapeMap['Y2'] == (1, 1, 1, 1, 2)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(85):
         network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
         network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
@@ -352,7 +352,7 @@ def test_split():
     assert network.shapeMap['Y3'] == (1, 1, 1, 1, 81)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(85):
         network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
         network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
@@ -373,7 +373,7 @@ def test_split():
     assert network.shapeMap['Y'] == (1, 1, 1, 1, 85)
 
     inputVars = network.inputVars[0]
-    outputVars = network.outputVars
+    outputVars = network.outputVars[0]
     for i in range(85):
         network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
         network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
@@ -414,8 +414,8 @@ def test_resize():
     # solve
     _, vals, _ = network.solve(options = options)
 
-    outputVars = network.outputVars
-    assumedOutputValues = np.array(
+    outputVars = network.outputVars[0]
+    expectedOutputValues = np.array(
         [[[[ 1.,  1.,  2.,  2.],
           [ 1.,  1.,  2.,  2.],
           [ 3.,  3.,  4.,  4.],
@@ -435,7 +435,7 @@ def test_resize():
         for j in range(len(outputVars[i])):
             for k in range(len(outputVars[i][j])):
                 for l in range(len(outputVars[i][j][k])):
-                    assert abs(vals[outputVars[i][j][k][l]] - assumedOutputValues[i][j][k][l]) < TOL
+                    assert abs(vals[outputVars[i][j][k][l]] - expectedOutputValues[i][j][k][l]) < TOL
 
 def test_local_robustness_unsat():
     """

@@ -187,21 +187,21 @@ def test_concat():
     Test a network exported from pytorch
     """
     filename =  "concat/concat_axis_0.onnx"
-    evaluateFile(filename, inputNames = ['X', 'Y'], outputName = 'Z')
+    evaluateFile(filename, inputNames = ['X', 'Y'], outputNames = 'Z')
 
 def test_split():
     """
     Test a network exported from pytorch
     """
     filename =  "split/split_5d_split-2-2-81_axis-4-mul-concat.onnx"
-    evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
+    evaluateFile(filename, inputNames = ['X'], outputNames = 'Y')
 
 def test_resize():
     """
     Test a network exported from pytorch
     """
     filename =  "resize/resize_4dims.onnx"
-    evaluateFile(filename, inputNames = ['X'], outputName = 'Y')
+    evaluateFile(filename, inputNames = ['X'], outputNames = 'Y')
 
 def test_errors():
     """
