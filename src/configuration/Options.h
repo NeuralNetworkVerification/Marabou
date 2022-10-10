@@ -136,6 +136,7 @@ public:
         // The procedure/solver for solving the LP
         LP_SOLVER,
 
+        SOFTMAX_BOUND_TYPE,
     };
 
     /*

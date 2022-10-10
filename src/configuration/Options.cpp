@@ -93,6 +93,7 @@ void Options::initializeDefaultValues()
     _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
+    _stringOptions[SOFTMAX_BOUND_TYPE] = "lse2";
 }
 
 void Options::parseOptions( int argc, char **argv )

@@ -47,6 +47,8 @@ private:
     double *_workLb;
     double *_workUb;
 
+  String _boundType;
+
     Set<unsigned>  _residualLayerIndices;
     Map<unsigned, double *>  _residualLb;
     Map<unsigned, double *>  _residualUb;

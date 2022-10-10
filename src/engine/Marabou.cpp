@@ -209,7 +209,8 @@ void Marabou::exportAssignment() const
 void Marabou::solveQuery()
 {
     if ( _engine.processInputQuery( _inputQuery ) )
-        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+        return;
+    //_engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
@@ -276,7 +277,7 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
     else
     {
         resultString = "UNKNOWN";
-        printf( "UNKNOWN EXIT CODE! (this should not happen)" );
+        printf( "UNKNOWN\n" );
     }
 
     // Create a summary file, if requested

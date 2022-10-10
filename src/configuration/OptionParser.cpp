@@ -106,6 +106,9 @@ void OptionParser::initialize()
         ( "debug-assignment-file",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] )->default_value( (*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] ),
           "Specifies a file to import the assignment for debugging." )
+        ( "softmax-bound",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::SOFTMAX_BOUND_TYPE] )->default_value( (*_stringOptions)[Options::SOFTMAX_BOUND_TYPE] ),
+          "Softmax bound type." )
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
         ;

@@ -15,6 +15,7 @@
 
 #include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
+#include "Options.h"
 #include "SoftmaxConstraint.h"
 
 #include <string.h>
@@ -24,6 +25,7 @@ namespace NLR {
 DeepPolySoftmaxElement::DeepPolySoftmaxElement( Layer *layer )
     : _workLb( NULL )
     , _workUb( NULL )
+    , _boundType( Options::get()->getString( Options::SOFTMAX_BOUND_TYPE ) )
 {
     _layer = layer;
     _size = layer->getSize();
@@ -90,7 +92,7 @@ void DeepPolySoftmaxElement::execute
         targetUbs[outputIndex] = _ub[i];
 
         // Compute symbolic bound
-        if ( GlobalConfiguration::SOFTMAX_BOUND_TYPE == GlobalConfiguration::LSE1 )
+        if ( _boundType == "lse1" )
         {
           std::cout << "Using LSE1 bounds" << std::endl;
           _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
@@ -113,7 +115,7 @@ void DeepPolySoftmaxElement::execute
             ++counter;
           }
         }
-        else if ( GlobalConfiguration::SOFTMAX_BOUND_TYPE == GlobalConfiguration::LSE2 )
+        else if ( _boundType == "lse2" )
         {
           std::cout << "Using LSE2 bounds" << std::endl;
           _symbolicLowerBias[i] = L_LSE2(sourceMids, sourceLbs, sourceUbs, outputIndex);
@@ -136,7 +138,7 @@ void DeepPolySoftmaxElement::execute
               ++counter;
             }
         }
-        else if ( GlobalConfiguration::SOFTMAX_BOUND_TYPE == GlobalConfiguration::ER )
+        else if ( _boundType == "er" )
         {
           std::cout << "Using ER bounds" << std::endl;
           _symbolicLowerBias[i] = L_ER(sourceMids, sourceLbs, sourceUbs, outputIndex);
