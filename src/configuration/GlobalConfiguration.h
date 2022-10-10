@@ -190,6 +190,15 @@ public:
       Symbolic bound tightening options
     */
 
+    enum SoftmaxBoundType
+        {
+         LSE1,
+         LSE2,
+         ER
+        };
+
+    static const SoftmaxBoundType SOFTMAX_BOUND_TYPE;
+
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 

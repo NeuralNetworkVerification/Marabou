@@ -230,9 +230,9 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
         resultString = "sat";
         printf( "sat\n" );
 
-        printf( "Input assignment:\n" );
-        for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+        //printf( "Input assignment:\n" );
+        //for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
+        //    printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
         if ( _inputQuery._networkLevelReasoner )
         {

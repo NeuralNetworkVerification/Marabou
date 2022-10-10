@@ -150,7 +150,6 @@ class MarabouNetwork:
             inputs (set of int): Variable representing input to max constraint
             outputs (set of int): Variables representing outputs of max constraint
         """
-        print(inputs, outputs)
         self.softmaxList += [(inputs, outputs)]
 
     def addAbsConstraint(self, b, f):

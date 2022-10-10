@@ -97,14 +97,6 @@ private:
                     const Vector<double> &inputLb,
                     const Vector<double> &inputUb,
                     unsigned i, unsigned di);
-  double L_ER( const Vector<double> &input,
-                 const Vector<double> &inputLb,
-                 const Vector<double> &inputUb,
-                 unsigned i );
-  double dL_ERdx( const Vector<double> &c,
-                    const Vector<double> &inputLb,
-                    const Vector<double> &inputUb,
-                    unsigned i, unsigned di);
   double U_LSE( const Vector<double> &input,
                 const Vector<double> &outputLb,
                 const Vector<double> &outputUb,
@@ -113,8 +105,21 @@ private:
                    const Vector<double> &outputLb,
                    const Vector<double> &outputUb,
                    unsigned i, unsigned di);
-  double U_ER( const Vector<double> &input, unsigned i );
+  double L_ER( const Vector<double> &input,
+               const Vector<double> &inputLb,
+               const Vector<double> &inputUb,
+               unsigned i );
+  double dL_ERdx( const Vector<double> &c,
+                  const Vector<double> &inputLb,
+                  const Vector<double> &inputUb,
+                  unsigned i, unsigned di);
+  double U_ER( const Vector<double> &input,
+                const Vector<double> &outputLb,
+                const Vector<double> &outputUb,
+                unsigned i );
   double dU_ERdx( const Vector<double> &c,
+                   const Vector<double> &outputLb,
+                   const Vector<double> &outputUb,
                    unsigned i, unsigned di);
   double L_Linear( const Vector<double> &inputLb,
                    const Vector<double> &inputUb,
