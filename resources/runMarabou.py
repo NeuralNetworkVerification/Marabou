@@ -94,7 +94,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     print("correct label: {}".format(Y_test[index]))
     if  prediction != Y_test[index]:
         print("misclassify!")
-        return
+        exit(0)
 
     for x in np.array(network.inputVars).flatten():
         network.setLowerBound(x, max(0, point[x] - epsilon))
