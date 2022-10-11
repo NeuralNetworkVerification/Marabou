@@ -21,6 +21,7 @@
 #include "Layer.h"
 #include "NetworkLevelReasoner.h"
 #include "Tightening.h"
+#include "DeepPolySoftmaxElement.h"
 
 class DeepPolyAnalysisTestSuite : public CxxTest::TestSuite
 {
@@ -1269,6 +1270,99 @@ public:
 
       for ( const auto &bound : expectedBounds )
         TS_ASSERT( existsBound( bounds, bound ) );
+  }
+
+  void test_softmax_bounds()
+  {
+    Vector<double> inputLb = {-1, 0, 1};
+    Vector<double> inputUb = {0, 2, 4};
+    Vector<double> input = {-0.5, 1, 2.5};
+
+    double value = NLR::DeepPolySoftmaxElement::L_ER(input, inputLb, inputUb, 0);
+    std::cout << "L_ER: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.0114799, 0.00001) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_ERdx(input, inputLb, inputUb, 0, 0);
+    std::cout << "dL_ERdx0: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.00563867, 0.00001) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_ERdx(input, inputLb, inputUb, 0, 1);
+    std::cout << "dL_ERdx1: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.000838421, 0.00001) );
+
+
+    Vector<double> outputLb = {0.2, 0, 0};
+    Vector<double> outputUb = {0.4, 0.1, 0.1};
+
+    value = NLR::DeepPolySoftmaxElement::U_ER(input, outputLb, outputUb, 0);
+    std::cout << "U_ER: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -1.44538, 0.001) );
+
+    value = NLR::DeepPolySoftmaxElement::dU_ERdx(input, outputLb, outputUb, 0, 0);
+    std::cout << "dU_ERdx0: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 1.96538, 0.00001) );
+
+    value = NLR::DeepPolySoftmaxElement::dU_ERdx(input, outputLb, outputUb, 0, 1);
+    std::cout << "dU_ERdx1: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.358535, 0.00001) );
+  }
+
+  void test_softmax_bounds_lse1()
+  {
+    Vector<double> inputLb = {-1, 0, 1};
+    Vector<double> inputUb = {0, 2, 3};
+    Vector<double> input = {-0.5, 1, 2};
+
+    double value = NLR::DeepPolySoftmaxElement::L_LSE1(input, inputLb, inputUb, 0);
+    std::cout << "L_LSE1: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.0365458, 0.01) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_LSE1dx(input, inputLb, inputUb, 0, 0);
+    std::cout << "dL_LSE1dx0: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.0365458, 0.01) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_LSE1dx(input, inputLb, inputUb, 0, 1);
+    std::cout << "dL_LSE1dx1: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.00703444 , 0.01) );
+
+
+    Vector<double> outputLb = {0.2, 0, 0};
+    Vector<double> outputUb = {0.4, 0.1, 0.1};
+
+    value = NLR::DeepPolySoftmaxElement::U_LSE(input, outputLb, outputUb, 0);
+    std::cout << "U_LSE: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.164165, 0.00001) );
+
+    value = NLR::DeepPolySoftmaxElement::dU_LSEdx(input, outputLb, outputUb, 0, 0);
+    std::cout << "dU_LSEdx0: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.272204, 0.00001) );
+
+    value = NLR::DeepPolySoftmaxElement::dU_LSEdx(input, outputLb, outputUb, 0, 1);
+    std::cout << "dU_LSEdx1: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.073207 , 0.00001) );
+  }
+
+  void test_softmax_bounds_lse2()
+  {
+    Vector<double> inputLb = {-1, 0, 1, 2};
+    Vector<double> inputUb = {0, 2, 3, 4};
+    Vector<double> input = {-0.5, 1, 2, 3};
+
+    double value = NLR::DeepPolySoftmaxElement::L_LSE2(input, inputLb, inputUb, 0);
+    std::cout << "L_LSE2: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.0101873, 0.000001) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_LSE2dx(input, inputLb, inputUb, 0, 0);
+    std::cout << "dL_LSE2dx0: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, 0.0100399, 0.000001) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_LSE2dx(input, inputLb, inputUb, 0, 1);
+    std::cout << "dL_LSE2dx1: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.000843447, 0.000001) );
+
+    value = NLR::DeepPolySoftmaxElement::dL_LSE2dx(input, inputLb, inputUb, 0, 3);
+    std::cout << "dL_LSE2dx3: " << value << std::endl;
+    TS_ASSERT( FloatUtils::areEqual(value, -0.00690377, 0.000001) );
   }
 
 };

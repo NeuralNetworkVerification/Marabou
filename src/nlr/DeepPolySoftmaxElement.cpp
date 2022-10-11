@@ -27,6 +27,7 @@ DeepPolySoftmaxElement::DeepPolySoftmaxElement( Layer *layer )
     , _workUb( NULL )
     , _boundType( Options::get()->getString( Options::SOFTMAX_BOUND_TYPE ) )
 {
+  std::cout << "Softmax bound type: " << _boundType.ascii() << std::endl;
     _layer = layer;
     _size = layer->getSize();
     _layerIndex = layer->getLayerIndex();
@@ -94,7 +95,6 @@ void DeepPolySoftmaxElement::execute
         // Compute symbolic bound
         if ( _boundType == "lse1" )
         {
-          std::cout << "Using LSE1 bounds" << std::endl;
           _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
           unsigned counter = 0;
           for (const auto &sourceIndex : sources)
@@ -117,7 +117,6 @@ void DeepPolySoftmaxElement::execute
         }
         else if ( _boundType == "lse2" )
         {
-          std::cout << "Using LSE2 bounds" << std::endl;
           _symbolicLowerBias[i] = L_LSE2(sourceMids, sourceLbs, sourceUbs, outputIndex);
           unsigned counter = 0;
           for (const auto &sourceIndex : sources)
@@ -140,7 +139,6 @@ void DeepPolySoftmaxElement::execute
         }
         else if ( _boundType == "er" )
         {
-          std::cout << "Using ER bounds" << std::endl;
           _symbolicLowerBias[i] = L_ER(sourceMids, sourceLbs, sourceUbs, outputIndex);
           unsigned counter = 0;
           for (const auto &sourceIndex : sources)
@@ -156,6 +154,28 @@ void DeepPolySoftmaxElement::execute
           for (const auto &sourceIndex : sources)
           {
             double dudj = dU_ERdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+            _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+            _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+            ++counter;
+          }
+        }
+        else if ( _boundType == "linear" )
+        {
+          _symbolicLowerBias[i] = L_LS(sourceMids, sourceLbs, sourceUbs, outputIndex);
+          unsigned counter = 0;
+          for (const auto &sourceIndex : sources)
+          {
+            double dldj = dL_LSdx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+            _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+            _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+            ++counter;
+          }
+
+          _symbolicUpperBias[i] = U_LS(sourceMids, sourceLbs, sourceUbs, outputIndex);
+          counter = 0;
+          for (const auto &sourceIndex : sources)
+          {
+            double dudj = dU_LSdx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
             _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
             _symbolicUpperBias[i] -= dudj * sourceMids[counter];
             ++counter;
@@ -647,30 +667,50 @@ double DeepPolySoftmaxElement::dL_LSE2dx( const Vector<double> &c,
     return dL_ERdx(c, inputLb, inputUb, i, di);
   else
   {
-    double val = 0;
-    if (i == di)
-      val += L_LSE2(c, inputLb, inputUb, i);
-
-    double ldijstar = inputLb[di] - inputUb[maxInputIndex];
-    double udijstar = inputUb[di] - inputLb[maxInputIndex];
+    double val = L_LSE2(c, inputLb, inputUb, i);
 
     double sum = 0;
     for (unsigned j = 0; j < c.size(); ++j) {
       if ( j == maxInputIndex )
         sum += 1;
       else
-      {
-        double ljjstar = inputLb[j] - inputUb[maxInputIndex];
-        double ujjstar = inputUb[j] - inputLb[maxInputIndex];
-        double xjjstar = c[j] - c[maxInputIndex];
-
-        sum += (ujjstar - xjjstar) / (ujjstar - ljjstar) * std::exp(ljjstar) + (xjjstar - ljjstar)/(ujjstar - ljjstar) * std::exp(ujjstar);
-      }
+        {
+          double ljjstar = inputLb[j] - inputUb[maxInputIndex];
+          double ujjstar = inputUb[j] - inputLb[maxInputIndex];
+          double xjjstar = c[j] - c[maxInputIndex];
+          sum += (ujjstar - xjjstar) / (ujjstar - ljjstar) * std::exp(ljjstar) + (xjjstar - ljjstar)/(ujjstar - ljjstar) * std::exp(ujjstar);
+        }
     }
+    double val2 = std::exp(c[i] - c[maxInputIndex]) / (sum * sum);
 
-    val -= std::exp(c[i]) / (sum * sum) * (std::exp(udijstar) - std::exp(ldijstar)) / (udijstar - ldijstar);
+    if (i == di)
+    {
+      double ldijstar = inputLb[i] - inputUb[maxInputIndex];
+      double udijstar = inputUb[i] - inputLb[maxInputIndex];
+      return val - val2 * (std::exp(udijstar) - std::exp(ldijstar)) / (udijstar - ldijstar);
+    }
+    else if ( maxInputIndex == di )
+    {
+      double sum2 = 0;
+      for (unsigned j = 0; j < c.size(); ++j) {
+        if ( j == maxInputIndex )
+          continue;
+        else
+        {
+          double ljjstar = inputLb[j] - inputUb[maxInputIndex];
+          double ujjstar = inputUb[j] - inputLb[maxInputIndex];
+          sum2 += (std::exp(ujjstar) - std::exp(ljjstar)) / (ujjstar - ljjstar);
+        }
+      }
+      return -val + val2 * sum2;
+    }
+    else
+    {
+      double ldijstar = inputLb[di] - inputUb[maxInputIndex];
+      double udijstar = inputUb[di] - inputLb[maxInputIndex];
+      return - val2 * (std::exp(udijstar) - std::exp(ldijstar)) / (udijstar - ldijstar);
 
-    return val;
+    }
   }
 }
 
@@ -782,15 +822,13 @@ double DeepPolySoftmaxElement::dL_ERdx( const Vector<double> &c,
                                      unsigned i, unsigned di)
 {
   double val = L_ER(c, inputLb, inputUb, i);
-  val = -val * val;
-
-
-
-  double ldiTilda = inputLb[di] - inputUb[i];
-  double udiTilda = inputUb[di] - inputLb[i];
 
   if ( i != di )
-    val *= ( std::exp(udiTilda) - std::exp(ldiTilda ) ) / (udiTilda - ldiTilda) * (c[di] - c[i]);
+  {
+    double ldiTilda = inputLb[di] - inputUb[i];
+    double udiTilda = inputUb[di] - inputLb[i];
+    return -val * val * (std::exp(udiTilda) - std::exp(ldiTilda)) / (udiTilda - ldiTilda);
+  }
   else {
     double val2 = 0;
     for ( unsigned j = 0; j < c.size(); ++j ) {
@@ -798,14 +836,11 @@ double DeepPolySoftmaxElement::dL_ERdx( const Vector<double> &c,
       {
         double ljTilda = inputLb[j] - inputUb[i];
         double ujTilda = inputUb[j] - inputLb[i];
-        val2 -= (std::exp(ujTilda) - std::exp(ljTilda)) / (ujTilda - ljTilda) * (c[j] - c[i]);
+        val2 += (std::exp(ujTilda) - std::exp(ljTilda)) / (ujTilda - ljTilda);
       }
     }
-    val *= val2;
-
+    return val * val * val2;
   }
-
-  return val;
 }
 
 double DeepPolySoftmaxElement::U_ER( const Vector<double> &input,
@@ -830,19 +865,111 @@ double DeepPolySoftmaxElement::dU_ERdx( const Vector<double> &c,
   double li = outputLb[i];
   double ui = outputUb[i];
 
-  double val = -ui * li;
-
-  double val2 = 0;
 
   if (i == di)
   {
+    double val2 = -1;
     for ( unsigned j = 0; j < c.size(); ++j )
-      val2 -= std::exp(c[j] - c[i]);
+      val2 += std::exp(c[j] - c[i]);
+    return li * ui * val2;
   }
   else
-    val2 = std::exp(c[di] - c[i]);
+    return -li * ui * std::exp(c[di] - c[i]);
+}
 
-  return val * val2;
+double DeepPolySoftmaxElement::L_LS( const Vector<double> &input,
+                                     const Vector<double> &inputLb,
+                                     const Vector<double> &inputUb,
+                                     unsigned i )
+{
+    double lqi = 0;
+    for ( unsigned j = 0; j < inputLb.size(); ++j )
+      {
+        double ujTilda = inputUb[j] - inputLb[i];
+        double ljTilda = inputLb[j] - inputUb[i];
+        double tj = std::fmin(std::log((std::exp(ujTilda)-std::exp(ljTilda))/(ujTilda-ljTilda)), ljTilda + 1);
+
+        if (j == i) lqi += 1;
+        else {
+          lqi += std::exp(tj) * (ljTilda - tj + 1);
+        }
+      }
+    double uqi = 1 / (L_Linear(inputLb, inputUb, i));
+
+    double tqi = std::fmax(std::sqrt(lqi * uqi), uqi / 2);
+
+    double sum = 0;
+    for (unsigned j = 0; j < input.size(); ++j) {
+      if ( j == i )
+        sum += 1;
+      else
+      {
+        double ljTilda = inputLb[j] - inputUb[i];
+        double ujTilda = inputUb[j] - inputLb[i];
+        double xjTilda = input[j] - input[i];
+        sum += (ujTilda - xjTilda) / (ujTilda - ljTilda) * std::exp(ljTilda) + (xjTilda - ljTilda)/(ujTilda - ljTilda) * std::exp(ujTilda);
+      }
+    }
+
+    return (2 - sum / tqi) / tqi;
+}
+
+
+double DeepPolySoftmaxElement::dL_LSdx( const Vector<double> &c,
+                                        const Vector<double> &inputLb,
+                                        const Vector<double> &inputUb,
+                                        unsigned i, unsigned di)
+{
+  Vector<double> cDiff = c;
+  cDiff[di] -= 1;
+  return L_LS(c, inputLb, inputUb, i) - L_LS(cDiff, inputLb, inputUb, i);
+}
+
+double DeepPolySoftmaxElement::U_LS( const Vector<double> &input,
+                                     const Vector<double> &inputLb,
+                                     const Vector<double> &inputUb,
+                                     unsigned i )
+{
+  double lqi = 0;
+  for ( unsigned j = 0; j < input.size(); ++j )
+    {
+      if (j == i) lqi += 1;
+      else {
+        double ujTilda = inputUb[j] - inputLb[i];
+        double ljTilda = inputLb[j] - inputUb[i];
+        double tj = std::fmin(std::log((std::exp(ujTilda)-std::exp(ljTilda))/(ujTilda-ljTilda)), ljTilda + 1);
+
+
+        lqi += std::exp(tj) * (ljTilda - tj + 1);
+      }
+    }
+  double lpi = L_Linear(inputLb, inputUb, i);
+
+  double sum = 0;
+  for ( unsigned j = 0; j < input.size(); ++j)
+  {
+    if ( i == j) sum += 1;
+    else
+    {
+      double ujTilda = inputUb[j] - inputLb[i];
+      double ljTilda = inputLb[j] - inputUb[i];
+      double xjTilda = input[j] - input[i];
+      double tj = std::fmin(std::log((std::exp(ujTilda)-std::exp(ljTilda))/(ujTilda-ljTilda)), ljTilda + 1);
+      sum += std::exp(tj) * (xjTilda - tj + 1);
+    }
+  }
+
+  return 1 / lqi + lpi - lpi / lqi * sum;
+}
+  
+double DeepPolySoftmaxElement::dU_LSdx( const Vector<double> &c,
+                                        const Vector<double> &inputLb,
+                                        const Vector<double> &inputUb,
+                                        unsigned i, unsigned di)
+{
+  Vector<double> cDiff = c;
+  cDiff[di] -= 1;
+  return U_LS(c, inputLb, inputUb, i) - U_LS(cDiff, inputLb, inputUb, i);
 }
 
 double DeepPolySoftmaxElement::L_Linear( const Vector<double> &inputLb,
