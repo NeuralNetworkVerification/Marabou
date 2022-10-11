@@ -885,12 +885,12 @@ double DeepPolySoftmaxElement::L_LS( const Vector<double> &input,
     double lqi = 0;
     for ( unsigned j = 0; j < inputLb.size(); ++j )
       {
-        double ujTilda = inputUb[j] - inputLb[i];
-        double ljTilda = inputLb[j] - inputUb[i];
-        double tj = std::fmin(std::log((std::exp(ujTilda)-std::exp(ljTilda))/(ujTilda-ljTilda)), ljTilda + 1);
 
         if (j == i) lqi += 1;
         else {
+          double ujTilda = inputUb[j] - inputLb[i];
+          double ljTilda = inputLb[j] - inputUb[i];
+          double tj = std::fmin(std::log((std::exp(ujTilda)-std::exp(ljTilda))/(ujTilda-ljTilda)), ljTilda + 1);
           lqi += std::exp(tj) * (ljTilda - tj + 1);
         }
       }
@@ -931,15 +931,14 @@ double DeepPolySoftmaxElement::U_LS( const Vector<double> &input,
                                      unsigned i )
 {
   double lqi = 0;
-  for ( unsigned j = 0; j < input.size(); ++j )
+  for ( unsigned j = 0; j < inputLb.size(); ++j )
     {
+
       if (j == i) lqi += 1;
       else {
         double ujTilda = inputUb[j] - inputLb[i];
         double ljTilda = inputLb[j] - inputUb[i];
         double tj = std::fmin(std::log((std::exp(ujTilda)-std::exp(ljTilda))/(ujTilda-ljTilda)), ljTilda + 1);
-
-
         lqi += std::exp(tj) * (ljTilda - tj + 1);
       }
     }
