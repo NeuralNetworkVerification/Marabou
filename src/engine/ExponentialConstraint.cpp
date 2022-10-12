@@ -184,16 +184,8 @@ void ExponentialConstraint::getEntailedTightenings( List<Tightening> &tightening
     if ( existsLowerBound( _b ) )
         tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
                                         Tightening::LB ) );
-    if ( existsLowerBound( _f ) && getLowerBound( _f ) >= 0 &&
-         FloatUtils::isFinite( getLowerBound( _f ) ) )
-        tightenings.append( Tightening( _b, inverse( getLowerBound( _f ) ),
-                                        Tightening::LB ) );
     if ( existsUpperBound( _b ) )
         tightenings.append( Tightening( _f, evaluate( getUpperBound( _b ) ),
-                                        Tightening::UB ) );
-    if ( existsUpperBound( _f ) &&
-         FloatUtils::isPositive( getUpperBound( _f ) ) )
-        tightenings.append( Tightening( _b, inverse( getUpperBound( _f ) ),
                                         Tightening::UB ) );
 }
 

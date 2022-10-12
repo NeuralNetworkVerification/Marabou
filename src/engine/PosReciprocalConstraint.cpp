@@ -185,14 +185,8 @@ void PosReciprocalConstraint::getEntailedTightenings( List<Tightening> &tighteni
     if ( existsLowerBound( _b ) && getLowerBound( _b ) > 0 )
         tightenings.append( Tightening( _f, evaluate( getLowerBound( _b ) ),
                                         Tightening::UB ) );
-    if ( existsLowerBound( _f ) && getLowerBound( _f ) > 0  )
-        tightenings.append( Tightening( _b, evaluate( getLowerBound( _f ) ),
-                                        Tightening::UB ) );
     if ( existsUpperBound( _b ) && getUpperBound( _b ) > 0 )
         tightenings.append( Tightening( _f, evaluate( getUpperBound( _b ) ),
-                                        Tightening::LB ) );
-    if ( existsUpperBound( _f ) && getUpperBound( _f ) > 0 )
-        tightenings.append( Tightening( _b, evaluate( getUpperBound( _f ) ),
                                         Tightening::LB ) );
 }
 

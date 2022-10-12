@@ -1396,7 +1396,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         if ( _networkLevelReasoner )
           _networkLevelReasoner->dumpBounds();
 
-        exit(0);
+        //exit(0);
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
         {

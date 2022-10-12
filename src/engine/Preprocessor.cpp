@@ -57,7 +57,7 @@ void Preprocessor::freeMemoryIfNeeded()
     }
 }
 
-std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
+std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, bool /*attemptVariableElimination*/ )
 {
     _preprocessed = std::unique_ptr<InputQuery>( new InputQuery( query ) );
 
@@ -141,8 +141,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
-        if ( attemptVariableElimination )
-            continueTightening = processIdenticalVariables() || continueTightening;
+        //if ( attemptVariableElimination )
+        //    continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
             _statistics->
@@ -152,8 +152,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     collectFixedValues();
     separateMergedAndFixed();
 
-    if ( attemptVariableElimination )
-        eliminateVariables();
+    //if ( attemptVariableElimination )
+    //    eliminateVariables();
 
     /*
       Update the bounds.

@@ -35,13 +35,24 @@ QuadraticConstraint::QuadraticConstraint( unsigned b1, unsigned b2, unsigned f )
     , _b1( b1 )
     , _b2( b2 )
     , _f( f )
-    , _haveEliminatedVariables( false )
 {
 }
 
-QuadraticConstraint::QuadraticConstraint( const String & )
+QuadraticConstraint::QuadraticConstraint( const String &serializedQuadratic )
 {
-    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+  String constraintType = serializedQuadratic.substring( 0, 4 );
+  ASSERT( constraintType == String( "quad" ) );
+
+  // Remove the constraint type in serialized form
+  String serializedValues = serializedQuadratic.substring( 5, serializedQuadratic.length() - 5 );
+  List<String> tokens = serializedValues.tokenize(",");
+  Vector<String> tokensVec;
+  for (const auto &token : tokens)
+    tokensVec.append(token);
+
+  _b1 = atoi(tokensVec[0].ascii());
+  _b2 = atoi(tokensVec[1].ascii());
+  _f = atoi(tokensVec[2].ascii());
 }
 
 NonlinearFunctionType QuadraticConstraint::getType() const
@@ -80,42 +91,14 @@ void QuadraticConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b1 || variable == _b2 || variable == _f );
 
-    if ( _statistics )
-        _statistics->incLongAttribute(
-            Statistics::NUM_BOUND_NOTIFICATIONS_TO_NONLINEAR_CONSTRAINTS );
-
-    if ( _boundManager == nullptr )
-    {
-        if ( existsLowerBound( variable ) &&
-             !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-            return;
-
-        setLowerBound( variable, bound );
-    }
-    else
-    {
-    }
+    tightenLowerBound(variable, bound);
 }
 
 void QuadraticConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     ASSERT( variable == _b1 || variable == _b2 || variable == _f );
 
-    if ( _statistics )
-        _statistics->incLongAttribute(
-            Statistics::NUM_BOUND_NOTIFICATIONS_TO_NONLINEAR_CONSTRAINTS );
-
-    if ( _boundManager == nullptr )
-    {
-        if ( existsUpperBound( variable ) &&
-             !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-            return;
-
-        setUpperBound( variable, bound );
-    }
-    else
-    {
-    }
+    tightenUpperBound(variable, bound);
 }
 
 bool QuadraticConstraint::participatingVariable( unsigned variable ) const
@@ -126,23 +109,6 @@ bool QuadraticConstraint::participatingVariable( unsigned variable ) const
 List<unsigned> QuadraticConstraint::getParticipatingVariables() const
 {
   return List<unsigned>( { _b1, _b2, _f } );
-}
-
-void QuadraticConstraint::dump( String &output ) const
-{
-  output = Stringf( "QuadraticConstraint: x%u = Quadratic( x%u, x%u ).\n", _f, _b1, _b2 );
-
-    output += Stringf( "b1 in [%s, %s], ",
-                       existsLowerBound( _b1 ) ? Stringf( "%lf", getLowerBound( _b1 ) ).ascii() : "-inf",
-                       existsUpperBound( _b1 ) ? Stringf( "%lf", getUpperBound( _b1 ) ).ascii() : "inf" );
-
-    output += Stringf( "b2 in [%s, %s], ",
-                       existsLowerBound( _b2 ) ? Stringf( "%lf", getLowerBound( _b2 ) ).ascii() : "-inf",
-                       existsUpperBound( _b2 ) ? Stringf( "%lf", getUpperBound( _b2 ) ).ascii() : "inf" );
-
-    output += Stringf( "f in [%s, %s]",
-                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "1",
-                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
 }
 
 void QuadraticConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -176,24 +142,57 @@ void QuadraticConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIn
 void QuadraticConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
                                         __attribute__((unused)) double fixedValue )
 {
-    ASSERT( variable == _b1 || variable == _b2 || variable == _f );
-
-    // In a Quadratic constraint, if a variable is removed the entire constraint can be discarded.
-    _haveEliminatedVariables = true;
+  throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
+                      "Eliminate variable from a Quadratic constraint" );
 }
 
 bool QuadraticConstraint::constraintObsolete() const
 {
-    return _haveEliminatedVariables;
+    return false;
 }
 
-void QuadraticConstraint::getEntailedTightenings( List<Tightening> & ) const
+void QuadraticConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
+  if ( existsLowerBound( _b1 ) && FloatUtils::isFinite( getLowerBound( _b1 ) ) &&
+       existsLowerBound( _b2 ) && FloatUtils::isFinite( getLowerBound( _b2 ) ) &&
+       existsUpperBound( _b1 ) && FloatUtils::isFinite( getUpperBound( _b1 ) ) &&
+       existsUpperBound( _b2 ) && FloatUtils::isFinite( getUpperBound( _b2 ) ) )
+  {
+    double min = FloatUtils::infinity();
+    double max = FloatUtils::negativeInfinity();
+
+    double value = getLowerBound( _b1 ) * getLowerBound( _b2 );
+    if ( value < min )
+      min = value;
+    if ( value > max )
+      max = value;
+
+    value = getLowerBound( _b1 ) * getUpperBound( _b2 );
+    if ( value < min )
+      min = value;
+    if ( value > max )
+      max = value;
+
+    value = getUpperBound( _b1 ) * getLowerBound( _b2 );
+    if ( value < min )
+      min = value;
+    if ( value > max )
+      max = value;
+
+    value = getUpperBound( _b1 ) * getUpperBound( _b2 );
+    if ( value < min )
+      min = value;
+    if ( value > max )
+      max = value;
+
+    tightenings.append( Tightening( _f, min, Tightening::LB ) );
+    tightenings.append( Tightening( _f, max, Tightening::UB ) );
+  }
 }
 
 String QuadraticConstraint::serializeToString() const
 {
-    throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+  return Stringf( "quad,%u,%u,%u", _b1, _b2, _f );
 }
 
 List<unsigned> QuadraticConstraint::getBs() const
@@ -204,9 +203,4 @@ List<unsigned> QuadraticConstraint::getBs() const
 unsigned QuadraticConstraint::getF() const
 {
     return _f;
-}
-
-double QuadraticConstraint::evaluate( double x, double y ) const
-{
-  return x * y;
 }
