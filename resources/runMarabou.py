@@ -64,6 +64,7 @@ def createQuery(args):
             network = Marabou.read_onnx(networkPath, outputNames=["model_1/dense_4/BiasAdd:0"])
         else:
             network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
+        network2 = Marabou.read_onnx(networkPath)
     else:
         print("The network must be in .pb, .nnet, or .onnx format!")
         return None, None
@@ -74,7 +75,7 @@ def createQuery(args):
         return query, network
 
     if args.dataset == 'mnist':
-        encode_mnist_linf(network, args.index, args.epsilon, args.target_label)
+        encode_mnist_linf(network, args.index, args.epsilon, args.target_label, network2)
         return network.getMarabouQuery(), network
     elif args.dataset == 'cifar10':
         encode_cifar10_linf(network, args.index, args.epsilon, args.target_label)
@@ -87,11 +88,11 @@ def createQuery(args):
 
         return network.getMarabouQuery(), network
 
-def encode_mnist_linf(network, index, epsilon, target_label):
+def encode_mnist_linf(network, index, epsilon, target_label, network2):
     from tensorflow.keras.datasets import mnist
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     point = np.array(X_test[index]).flatten() / 255
-    networkOutput = network.evaluateWithMarabou([point])[0][0]
+    networkOutput = network2.evaluateWithoutMarabou([point])[0][0]
     print("network output", networkOutput)
     prediction = np.argmax(networkOutput)
     print("correct label: {}".format(Y_test[index]))
