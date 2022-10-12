@@ -215,6 +215,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.matMulEquations(node, makeEquations)
         elif node.op_type == 'Mul':
             self.mulEquations(node, makeEquations)
+        elif node.op_type == 'Div':
+            self.divEquations(node, makeEquations)
         elif node.op_type == 'Add':
             self.addEquations(node, makeEquations)
         elif node.op_type == 'Relu': 
@@ -381,6 +383,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         
         # Assume first input is array to be reshaped, second input is the new shape array
         reshapeVals = self.constantMap[inputName2]
+        if reshapeVals[0] == 0:
+            reshapeVals[0] = 1
         self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(reshapeVals).shape)
         if inputName1 in self.varMap:
             self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
@@ -850,6 +854,35 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for i in range(len(input1)):
             e = MarabouUtils.Equation()
             e.addAddend(multiple, input1[i])
+            e.addAddend(-1, outputVariables[i])
+            e.setScalar(0.0)
+            self.addEquation(e)
+        return
+
+    def divEquations(self, node, makeEquations):
+        nodeName = node.output[0]
+
+        # Get the inputs
+        inputName1, inputName2 = node.input
+        shape1 = self.shapeMap[inputName1]
+        shape2 = self.shapeMap[inputName2]
+
+
+        # Get the broadcasted shape
+        outShape = shape1
+        self.shapeMap[nodeName] = outShape
+        if not makeEquations:
+            return
+
+        multiple = self.constantMap[inputName2]
+        input1 = self.varMap[inputName1]
+        outputVariables = self.makeNewVariables(nodeName)
+        input1 = input1.reshape(-1)
+        outputVariables = outputVariables.reshape(-1)
+
+        for i in range(len(input1)):
+            e = MarabouUtils.Equation()
+            e.addAddend(1/multiple, input1[i])
             e.addAddend(-1, outputVariables[i])
             e.setScalar(0.0)
             self.addEquation(e)

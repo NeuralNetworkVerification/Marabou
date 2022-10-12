@@ -60,7 +60,10 @@ def createQuery(args):
     elif suffix == "pb":
         network = Marabou.read_tf(networkPath)
     elif suffix == "onnx":
-        network = Marabou.read_onnx(networkPath)
+        if "small" in networkPath:
+            network = Marabou.read_onnx(networkPath, outputNames=["model_1/dense_4/BiasAdd:0"])
+        else:
+            network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
     else:
         print("The network must be in .pb, .nnet, or .onnx format!")
         return None, None
@@ -88,7 +91,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     from tensorflow.keras.datasets import mnist
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     point = np.array(X_test[index]).flatten() / 255
-    networkOutput = network.evaluateWithoutMarabou([point])[0][0]
+    networkOutput = network.evaluateWithMarabou([point])[0][0]
     print("network output", networkOutput)
     prediction = np.argmax(networkOutput)
     print("correct label: {}".format(Y_test[index]))
