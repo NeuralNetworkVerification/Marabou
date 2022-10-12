@@ -98,6 +98,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     if  prediction != Y_test[index]:
         print("misclassify!")
         return
+    sys.stdout.flush()
 
     for x in np.array(network.inputVars).flatten():
         network.setLowerBound(x, max(0, point[x] - epsilon))
@@ -106,6 +107,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
         networkOutput[prediction] = -100000
         target_label = np.argmax(networkOutput)
         print(f"No target label given. Picking second largest label: {target_label}")
+        return
 
     outputVars = network.outputVars[0].flatten()
     for i in range(10):

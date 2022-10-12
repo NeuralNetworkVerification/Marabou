@@ -692,7 +692,8 @@ void NetworkLevelReasoner::reduceLayerIndex( unsigned layer, unsigned startIndex
 void NetworkLevelReasoner::dumpBounds()
 {
     obtainCurrentBounds();
-    _layerIndexToLayer[_layerIndexToLayer.size() - 2]->dumpBounds();
+    for ( const auto &layer : _layerIndexToLayer )
+      layer.second->dumpBounds();
 }
 
 void NetworkLevelReasoner::dumpBounds( const InputQuery &inputQuery )

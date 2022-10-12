@@ -205,6 +205,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.mulEquations(node, makeEquations)
         elif node.op_type == 'Add':
             self.addEquations(node, makeEquations)
+        elif node.op_type == 'Clip':
+            self.reluEquations(node, makeEquations)
         elif node.op_type == 'Relu': 
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
@@ -543,18 +545,22 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inVars = self.varMap[node.input[0]]
         outVars = self.makeNewVariables(nodeName)
 
-        axis = ( len(inputShape) + axis ) % len(inputShape)
-        perm = []
-        for i, s in enumerate(inputShape):
-            if i == axis:
-                continue
-            perm.append(i)
-        perm.append(axis)
+        if inputShape == [1,10]:
+            self.addSoftmaxConstraint(inVars, outVars[0])
+        else:
 
-        inVarsReshaped = np.transpose(inVars, perm).reshape(-1, inputShape[axis])
-        outVarsReshaped = np.transpose(outVars, perm).reshape(-1, inputShape[axis])
-        for i in range(inVarsReshaped.shape[0]):
-            self.addSoftmaxConstraint(inVarsReshaped[i], outVarsReshaped[i])
+            axis = ( len(inputShape) + axis ) % len(inputShape)
+            perm = []
+            for i, s in enumerate(inputShape):
+                if i == axis:
+                    continue
+                perm.append(i)
+            perm.append(axis)
+
+            inVarsReshaped = np.transpose(inVars, perm).reshape(-1, inputShape[axis])
+            outVarsReshaped = np.transpose(outVars, perm).reshape(-1, inputShape[axis])
+            for i in range(inVarsReshaped.shape[0]):
+                self.addSoftmaxConstraint(inVarsReshaped[i], outVarsReshaped[i])
 
     def convEquations(self, node, makeEquations):
         """Function to generate equations for a 2D convolution
