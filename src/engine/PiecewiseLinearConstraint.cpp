@@ -14,6 +14,7 @@
 **/
 
 #include "PiecewiseLinearConstraint.h"
+
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
@@ -153,7 +154,7 @@ void PiecewiseLinearConstraint::initializeDuplicateCDOs(
         ASSERT( clone->_cdPhaseStatus != nullptr );
         clone->_cdPhaseStatus = nullptr;
         clone->initializeCDPhaseStatus();
-        clone->setPhaseStatus( this->getPhaseStatus() );
+        clone->setPhaseStatus( *_cdPhaseStatus );
 
         ASSERT( clone->_cdInfeasibleCases != nullptr );
         clone->_cdInfeasibleCases = nullptr;
@@ -168,12 +169,13 @@ void PiecewiseLinearConstraint::markInfeasible(
     _cdInfeasibleCases->push_back( infeasibleCase );
 }
 
-PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase()
+PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase() const
 {
-    ASSERT( getPhaseStatus() == PHASE_NOT_FIXED );
-
     if ( !isFeasible() )
         return CONSTRAINT_INFEASIBLE;
+
+    if ( phaseFixed() )
+        return getPhaseStatus();
 
     List<PhaseStatus> allCases = getAllCases();
     for ( PhaseStatus thisCase : allCases )
@@ -201,6 +203,35 @@ void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
+bool PiecewiseLinearConstraint::phaseFixed() const
+{
+    if ( _cdPhaseStatus != nullptr )
+        return *_cdPhaseStatus != PHASE_NOT_FIXED;
+    else
+        return _phaseStatus != PHASE_NOT_FIXED;
+};
+
+PhaseStatus PiecewiseLinearConstraint::getImpliedCase() const
+{
+    ASSERT( isImplication() || phaseFixed() );
+    PhaseStatus impliedCase = PHASE_NOT_FIXED;
+    if ( isImplication() )
+        impliedCase = nextFeasibleCase();
+    else
+        impliedCase = getPhaseStatus();
+
+    ASSERT( impliedCase != PHASE_NOT_FIXED );
+    return impliedCase;
+}
+void PiecewiseLinearConstraint::serializeInfeasibleCases( String &output ) const
+{
+    if ( _cdInfeasibleCases )
+    {
+        output += Stringf( "Infeasible cases ( %d/%d):", _cdInfeasibleCases->size(), _numCases );
+        for ( auto infeasible : *_cdInfeasibleCases )
+            output += Stringf( "%d", infeasible );
+    }
+}
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

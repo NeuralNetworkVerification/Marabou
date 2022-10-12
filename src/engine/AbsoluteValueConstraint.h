@@ -23,8 +23,8 @@
  **   * context dependent mode, used during the search.
  **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** AbsoluteValueConstraint object synchronizes its state automatically with the central
- ** Context object.
+ ** AbsoluteValueConstraint object synchronizes its state automatically with the
+ ** central Context object.
  **/
 
 #ifndef __AbsoluteValueConstraint_h__
@@ -34,7 +34,6 @@
 
 class AbsoluteValueConstraint : public PiecewiseLinearConstraint
 {
-
 public:
     /*
       The f variable is the absolute value of the b variable:
@@ -61,8 +60,8 @@ public:
     /*
       Register/unregister the constraint with a talbeau.
      */
-    void registerAsWatcher( ITableau *tableau) override;
-    void unregisterAsWatcher( ITableau *tableau) override;
+    void registerAsWatcher( ITableau *tableau ) override;
+    void unregisterAsWatcher( ITableau *tableau ) override;
 
     /*
       These callbacks are invoked when a watched variable's value
@@ -114,8 +113,8 @@ public:
 
     /*
        Returns a list of all cases - { ABS_POSITIVE, ABS_NEGATIVE }
-       The order of returned cases affects the search, and this method is where related
-       heuristics should be implemented.
+       The order of returned cases affects the search, and this method is where
+       related heuristics should be implemented.
      */
     List<PhaseStatus> getAllCases() const override;
 
@@ -133,7 +132,6 @@ public:
       Check whether the constraint's phase has been fixed.
      */
     void fixPhaseIfNeeded();
-    bool phaseFixed() const override;
 
     /*
       Preprocessing related functions, to inform that a variable has
@@ -233,4 +231,3 @@ private:
 };
 
 #endif // __AbsoluteValueConstraint_h__
-

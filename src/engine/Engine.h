@@ -176,17 +176,6 @@ public:
     void setVerbosity( unsigned verbosity );
 
     /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
-      found in this process.
-    */
-    bool restoreSmtState( SmtState &smtState );
-
-    /*
-      Store the current stack of the smtCore into smtState
-    */
-    void storeSmtState( SmtState &smtState );
-
-    /*
       Pick the piecewise linear constraint for splitting
     */
     PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy );
@@ -412,7 +401,7 @@ private:
     /*
       Disjunction that is used for splitting but doesn't exist in the beginning
     */
-    std::unique_ptr<PiecewiseLinearConstraint> _disjunctionForSplitting;
+    Vector<PiecewiseLinearConstraint *> _disjunctionForSplitting;
 
     /*
       Solve the query with MILP encoding

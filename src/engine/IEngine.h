@@ -73,17 +73,6 @@ public:
     virtual void setNumPlConstraintsDisabledByValidSplits( unsigned numConstraints ) = 0;
 
     /*
-      Store the current stack of the smtCore into smtState
-    */
-    virtual void storeSmtState( SmtState &smtState ) = 0;
-
-    /*
-      Apply the stack to the newly created SmtCore, returns false if UNSAT is
-      found in this process.
-    */
-    virtual bool restoreSmtState( SmtState &smtState ) = 0;
-
-    /*
       Solve the encoded query.
     */
     virtual bool solve( unsigned timeoutInSeconds ) = 0;

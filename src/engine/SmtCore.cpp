@@ -2,16 +2,17 @@
 /*! \file SmtCore.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Parth Shah, Duligur Ibeling
+ **   Guy Katz, Aleksandar Zeljic, Haoze Wu, Parth Shah
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
-
+ ** See the description of the class in SmtCore.h.
  **/
+
+#include "SmtCore.h"
 
 #include "Debug.h"
 #include "DivideStrategy.h"
@@ -21,20 +22,23 @@
 #include "IEngine.h"
 #include "MStringf.h"
 #include "MarabouError.h"
-#include "Options.h"
 #include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
-#include "SmtCore.h"
 
-SmtCore::SmtCore( IEngine *engine )
+using namespace CVC4::context;
+
+SmtCore::SmtCore( IEngine *engine, Context &ctx )
     : _statistics( NULL )
+    , _context( ctx )
+    , _trail( &_context )
+    , _decisions( &_context )
     , _engine( engine )
-    , _context( _engine->getContext() )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
-    , _stateId( 0 )
-    , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
-    , _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
+    , _constraintViolationThreshold
+      ( (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+    , _deepSoIRejectionThreshold( Options::get()->getInt
+                                  ( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
     , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
     , _numRejectedPhasePatternProposal( 0 )
@@ -43,33 +47,25 @@ SmtCore::SmtCore( IEngine *engine )
 
 SmtCore::~SmtCore()
 {
-    freeMemory();
-}
-
-void SmtCore::freeMemory()
-{
-    for ( const auto &stackEntry : _stack )
-    {
-        delete stackEntry->_engineState;
-        delete stackEntry;
-    }
-
-    _stack.clear();
 }
 
 void SmtCore::reset()
 {
-    freeMemory();
-    _impliedValidSplitsAtRoot.clear();
+    if ( _context.getLevel() > 0 )
+    {
+      _context.popto( 0 );
+      _engine->postContextPopHook();
+    }
     _needToSplit = false;
     _constraintForSplitting = NULL;
-    _stateId = 0;
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
 }
 
 void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 {
+    ASSERT( !constraint->phaseFixed() );
+
     if ( !_constraintToViolationCount.exists( constraint ) )
         _constraintToViolationCount[constraint] = 0;
 
@@ -79,10 +75,12 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
          _constraintViolationThreshold )
     {
         _needToSplit = true;
-        if ( !pickSplitPLConstraint() )
+        if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
+             DivideStrategy::ReLUViolation || !pickSplitPLConstraint() )
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
+        ASSERT( !_constraintForSplitting->phaseFixed() );
     }
 }
 
@@ -95,17 +93,17 @@ unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) co
 }
 
 void SmtCore::initializeScoreTrackerIfNeeded( const
-                                              List<PiecewiseLinearConstraint *>
-                                              &plConstraints )
+                                                List<PiecewiseLinearConstraint *>
+                                                &plConstraints )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
-    {
-        _scoreTracker = std::unique_ptr<PseudoImpactTracker>
-            ( new PseudoImpactTracker() );
-        _scoreTracker->initialize( plConstraints );
+        {
+            _scoreTracker = std::unique_ptr<PseudoImpactTracker>
+                ( new PseudoImpactTracker() );
+            _scoreTracker->initialize( plConstraints );
 
-        SMT_LOG( "\tTracking Pseudo Impact..." );
-    }
+            SMT_LOG( "\tTracking Pseudo Impact..." );
+        }
 }
 
 void SmtCore::reportRejectedPhasePatternProposal()
@@ -114,15 +112,13 @@ void SmtCore::reportRejectedPhasePatternProposal()
 
     if ( _numRejectedPhasePatternProposal >=
          _deepSoIRejectionThreshold )
-    {
-        _needToSplit = true;
-        _engine->applyAllBoundTightenings();
-        _engine->applyAllValidConstraintCaseSplits();
-        if ( !pickSplitPLConstraint() )
-            // If pickSplitConstraint failed to pick one, use the native
-            // relu-violation based splitting heuristic.
-            _constraintForSplitting = _scoreTracker->topUnfixed();
-    }
+        {
+            _needToSplit = true;
+            if ( !pickSplitPLConstraint() )
+                // If pickSplitConstraint failed to pick one, use the native
+                // relu-violation based splitting heuristic.
+                _constraintForSplitting = _scoreTracker->topUnfixed();
+        }
 }
 
 bool SmtCore::needToSplit() const
@@ -130,24 +126,63 @@ bool SmtCore::needToSplit() const
     return _needToSplit;
 }
 
-void SmtCore::performSplit()
+void SmtCore::pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision )
+{
+    SMT_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
+    TrailEntry te( constraint, decision );
+    applyTrailEntry( te, true );
+    SMT_LOG( Stringf( "Decision push @ %d DONE", _context.getLevel() ).ascii() );
+}
+
+void SmtCore::pushImplication( PiecewiseLinearConstraint *constraint )
+{
+    ASSERT( constraint->isImplication() || constraint->phaseFixed() );
+    SMT_LOG( Stringf( "Implication @ %d ... ", _context.getLevel() ).ascii() );
+    TrailEntry te( constraint, constraint->getImpliedCase() );
+    applyTrailEntry( te, false );
+    SMT_LOG( Stringf( "Implication @ %d DONE", _context.getLevel() ).ascii() );
+}
+
+void SmtCore::applyTrailEntry( TrailEntry &te, bool isDecision )
+{
+    if ( isDecision )
+    {
+        _engine->preContextPushHook();
+        pushContext();
+        _decisions.push_back( te );
+    }
+
+    _trail.push_back( te );
+    _engine->applySplit( te.getPiecewiseLinearCaseSplit() );
+}
+
+void SmtCore::decide()
 {
     ASSERT( _needToSplit );
+    SMT_LOG( "Performing a ReLU split" );
 
     _numRejectedPhasePatternProposal = 0;
     // Maybe the constraint has already become inactive - if so, ignore
-    if ( !_constraintForSplitting->isActive() )
+   if ( !_constraintForSplitting->isActive() )
     {
         _needToSplit = false;
         _constraintToViolationCount[_constraintForSplitting] = 0;
-        _constraintForSplitting = NULL;
+        _constraintForSplitting = nullptr;
         return;
     }
 
-    struct timespec start = TimeUtils::sampleMicro();
-
     ASSERT( _constraintForSplitting->isActive() );
     _needToSplit = false;
+    _constraintForSplitting->setActiveConstraint( false );
+
+    decideSplit( _constraintForSplitting );
+    _constraintForSplitting = nullptr;
+}
+
+void SmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
+{
+    ASSERT( constraint != nullptr );
+    struct timespec start = TimeUtils::sampleMicro();
 
     if ( _statistics )
     {
@@ -155,60 +190,34 @@ void SmtCore::performSplit()
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
     }
 
-    // Before storing the state of the engine, we:
-    //   1. Obtain the splits.
-    //   2. Disable the constraint, so that it is marked as disbaled in the EngineState.
-    List<PiecewiseLinearCaseSplit> splits = _constraintForSplitting->getCaseSplits();
-    ASSERT( !splits.empty() );
-    ASSERT( splits.size() >= 2 ); // Not really necessary, can add code to handle this case.
-    _constraintForSplitting->setActiveConstraint( false );
+    if ( !constraint->isFeasible() )
+        throw MarabouError( MarabouError::DEBUGGING_ERROR );
+    ASSERT( constraint->isFeasible() );
+    ASSERT( !constraint->isImplication() );
 
-    // Obtain the current state of the engine
-    EngineState *stateBeforeSplits = new EngineState;
-    stateBeforeSplits->_stateId = _stateId;
-    ++_stateId;
-    _engine->storeState( *stateBeforeSplits,
-                         TableauStateStorageLevel::STORE_BOUNDS_ONLY );
-    _engine->preContextPushHook();
-    pushContext();
-    SmtStackEntry *stackEntry = new SmtStackEntry;
-    // Perform the first split: add bounds and equations
-    List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
-    ASSERT( split->getEquations().size() == 0 );
-    _engine->applySplit( *split );
-    stackEntry->_activeSplit = *split;
-
-    // Store the remaining splits on the stack, for later
-    stackEntry->_engineState = stateBeforeSplits;
-    ++split;
-    while ( split != splits.end() )
-    {
-        stackEntry->_alternativeSplits.append( *split );
-        ++split;
-    }
-
-    _stack.append( stackEntry );
+    PhaseStatus decision = constraint->nextFeasibleCase();
+    pushDecision( constraint, decision );
 
     if ( _statistics )
     {
-        unsigned level = getStackDepth();
+        unsigned level = _context.getLevel();
         _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
                                            level );
         if ( level > _statistics->getUnsignedAttribute
              ( Statistics::MAX_DECISION_LEVEL ) )
             _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
                                                level );
+
         struct timespec end = TimeUtils::sampleMicro();
         _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
-
-    _constraintForSplitting = NULL;
+    SMT_LOG( "Performing a ReLU split - DONE" );
 }
 
-unsigned SmtCore::getStackDepth() const
+
+unsigned SmtCore::getDecisionLevel() const
 {
-    ASSERT( _stack.size() == static_cast<unsigned>( _context.getLevel() ) );
-    return _stack.size();
+    return _decisions.size();
 }
 
 void SmtCore::popContext()
@@ -237,86 +246,75 @@ void SmtCore::pushContext()
     }
 }
 
-bool SmtCore::popSplit()
+bool SmtCore::popDecisionLevel( TrailEntry &lastDecision )
 {
-    SMT_LOG( "Performing a pop" );
-
-    if ( _stack.empty() )
+    ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
+    if ( _decisions.empty() )
         return false;
 
+    SMT_LOG( "Popping trail ..." );
+    lastDecision = _decisions.back();
+    popContext();
+    _engine->postContextPopHook();
+    SMT_LOG( Stringf( "to %d DONE", _context.getLevel() ).ascii() );
+    return true;
+}
+
+void SmtCore::interruptIfCompliantWithDebugSolution()
+{
+    if ( checkSkewFromDebuggingSolution() )
+    {
+        SMT_LOG( "Error! Popping from a compliant stack\n" );
+        throw MarabouError( MarabouError::DEBUGGING_ERROR );
+    }
+}
+
+PiecewiseLinearCaseSplit SmtCore::getDecision( unsigned decisionLevel ) const
+{
+    ASSERT( decisionLevel <= getDecisionLevel() );
+    ASSERT( decisionLevel > 0 );
+    return _decisions[decisionLevel - 1].getPiecewiseLinearCaseSplit();
+}
+
+bool SmtCore::backtrackToFeasibleDecision( TrailEntry &lastDecision )
+{
+    SMT_LOG( "Backtracking to a feasible decision..." );
+
+    do
+    {
+        if ( !popDecisionLevel( lastDecision ) )
+            return false;
+
+        lastDecision.markInfeasible();
+        interruptIfCompliantWithDebugSolution();
+    }
+    while ( !lastDecision.isFeasible() );
+
+    return true;
+}
+
+bool SmtCore::backtrackAndContinueSearch()
+{
+    TrailEntry feasibleDecision( nullptr, CONSTRAINT_INFEASIBLE );
     struct timespec start = TimeUtils::sampleMicro();
 
+    if ( !backtrackToFeasibleDecision( feasibleDecision ) )
+        return false;
+
+    ASSERT( feasibleDecision.isFeasible() );
+
     if ( _statistics )
-    {
-        _statistics->incUnsignedAttribute( Statistics::NUM_POPS );
-        // A pop always sends us to a state that we haven't seen before - whether
-        // from a sibling split, or from a lower level of the tree.
         _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-    }
 
-    bool inconsistent = true;
-    while ( inconsistent )
-    {
-        // Remove any entries that have no alternatives
-        String error;
-        while ( _stack.back()->_alternativeSplits.empty() )
-        {
-            if ( checkSkewFromDebuggingSolution() )
-            {
-                // Pops should not occur from a compliant stack!
-                printf( "Error! Popping from a compliant stack\n" );
-                throw MarabouError( MarabouError::DEBUGGING_ERROR );
-            }
-
-            delete _stack.back()->_engineState;
-            delete _stack.back();
-            _stack.popBack();
-            popContext();
-
-
-            if ( _stack.empty() )
-                return false;
-        }
-
-        if ( checkSkewFromDebuggingSolution() )
-        {
-            // Pops should not occur from a compliant stack!
-            printf( "Error! Popping from a compliant stack\n" );
-            throw MarabouError( MarabouError::DEBUGGING_ERROR );
-        }
-
-        SmtStackEntry *stackEntry = _stack.back();
-
-        popContext();
-        _engine->postContextPopHook();
-        // Restore the state of the engine
-        SMT_LOG( "\tRestoring engine state..." );
-        _engine->restoreState( *( stackEntry->_engineState ) );
-        SMT_LOG( "\tRestoring engine state - DONE" );
-
-        // Apply the new split and erase it from the list
-        auto split = stackEntry->_alternativeSplits.begin();
-
-        // Erase any valid splits that were learned using the split we just
-        // popped
-        stackEntry->_impliedValidSplits.clear();
-
-        SMT_LOG( "\tApplying new split..." );
-        ASSERT( split->getEquations().size() == 0 );
-        _engine->preContextPushHook();
-        pushContext();
-        _engine->applySplit( *split );
-        SMT_LOG( "\tApplying new split - DONE" );
-
-        stackEntry->_activeSplit = *split;
-        stackEntry->_alternativeSplits.erase( split );
-
-        inconsistent = !_engine->consistentBounds();
-    }
+    PiecewiseLinearConstraint *pwlc = feasibleDecision._pwlConstraint;
+    if ( pwlc->isImplication() )
+        pushImplication( pwlc );
+    else
+        decideSplit( pwlc );
 
     if ( _statistics )
     {
-        unsigned level = getStackDepth();
+        unsigned level = _context.getLevel();
         _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
                                            level );
         if ( level > _statistics->getUnsignedAttribute
@@ -328,40 +326,22 @@ bool SmtCore::popSplit()
     }
 
     checkSkewFromDebuggingSolution();
-
     return true;
 }
 
-void SmtCore::resetSplitConditions()
+void SmtCore::resetReportedViolations()
 {
     _constraintToViolationCount.clear();
     _numRejectedPhasePatternProposal = 0;
     _needToSplit = false;
 }
 
-void SmtCore::recordImpliedValidSplit( PiecewiseLinearCaseSplit &validSplit )
-{
-    if ( _stack.empty() )
-        _impliedValidSplitsAtRoot.append( validSplit );
-    else
-        _stack.back()->_impliedValidSplits.append( validSplit );
-
-    checkSkewFromDebuggingSolution();
-}
-
 void SmtCore::allSplitsSoFar( List<PiecewiseLinearCaseSplit> &result ) const
 {
     result.clear();
 
-    for ( const auto &it : _impliedValidSplitsAtRoot )
-        result.append( it );
-
-    for ( const auto &it : _stack )
-    {
-        result.append( it->_activeSplit );
-        for ( const auto &impliedSplit : it->_impliedValidSplits )
-            result.append( impliedSplit );
-    }
+    for ( auto trailEntry : _trail )
+        result.append( trailEntry.getPiecewiseLinearCaseSplit() );
 }
 
 void SmtCore::setStatistics( Statistics *statistics )
@@ -383,41 +363,47 @@ bool SmtCore::checkSkewFromDebuggingSolution()
 
     String error;
 
+    int decisionLevel = 0;
+    bool isDecision = false;
     // First check that the valid splits implied at the root level are okay
-    for ( const auto &split : _impliedValidSplitsAtRoot )
+    for ( const auto &trailEntry : _trail )
     {
-        if ( !splitAllowsStoredSolution( split, error ) )
+        if ( trailEntry._pwlConstraint != _decisions[decisionLevel]._pwlConstraint )
+            isDecision = false;
+        else
         {
-            printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
-            throw MarabouError( MarabouError::DEBUGGING_ERROR );
+            ASSERT( trailEntry._phase == _decisions[decisionLevel]._phase );
+            isDecision = true;
+            ++decisionLevel;
         }
-    }
 
-    // Now go over the stack from oldest to newest and check that each level is compliant
-    for ( const auto &stackEntry : _stack )
-    {
-        // If the active split is non-compliant but there are alternatives, that's fine
-        if ( !splitAllowsStoredSolution( stackEntry->_activeSplit, error ) )
+        PiecewiseLinearCaseSplit caseSplit = trailEntry.getPiecewiseLinearCaseSplit();
+        if ( decisionLevel == 0 )
         {
-            if ( stackEntry->_alternativeSplits.empty() )
+            if ( !splitAllowsStoredSolution( caseSplit, error ) )
             {
-                printf( "Error! Have a split that is non-compliant with the stored solution, "
-                        "without alternatives:\n\t%s\n", error.ascii() );
+                printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
-
-            // Active split is non-compliant but this is fine, because there are alternatives. We're done.
-            return false;
         }
-
-        // Did we learn any valid splits that are non-compliant?
-        for ( auto const &split : stackEntry->_impliedValidSplits )
+        else
         {
-            if ( !splitAllowsStoredSolution( split, error ) )
+            // If the active split is non-compliant but there are alternatives,
+            // i.e. it was a decision, that's fine
+            if ( isDecision && !splitAllowsStoredSolution( caseSplit, error ) )
             {
-                printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
-                        error.ascii() );
-                throw MarabouError( MarabouError::DEBUGGING_ERROR );
+                // Active split is non-compliant but this is fine, because there
+                // are alternatives. We're done.
+                return false;
+            }
+            else // Implied split
+            {
+                if ( !splitAllowsStoredSolution( caseSplit, error ) )
+                {
+                    printf( "Error with one of the splits implied at this stack level:\n\t%s\n",
+                            error.ascii() );
+                    throw MarabouError( MarabouError::DEBUGGING_ERROR );
+                }
             }
         }
     }
@@ -433,7 +419,7 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     if ( _debuggingSolution.empty() )
         return true;
 
-    for ( const auto &bound : split.getBoundTightenings() )
+    for ( const auto bound : split.getBoundTightenings() )
     {
         unsigned variable = bound._variable;
 
@@ -465,6 +451,11 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, 
     }
 
     return true;
+}
+
+void SmtCore::setConstraintViolationThreshold( unsigned threshold )
+{
+    _constraintViolationThreshold = threshold;
 }
 
 PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
@@ -500,61 +491,17 @@ PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<Piec
     return candidate;
 }
 
-void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
-{
-    struct timespec start = TimeUtils::sampleMicro();
-
-    if ( _statistics )
-    {
-        _statistics->incUnsignedAttribute( Statistics::NUM_SPLITS );
-        _statistics->incUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES );
-    }
-
-    // Obtain the current state of the engine
-    EngineState *stateBeforeSplits = new EngineState;
-    stateBeforeSplits->_stateId = _stateId;
-    ++_stateId;
-    _engine->storeState( *stateBeforeSplits,
-                         TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
-    stackEntry->_engineState = stateBeforeSplits;
-
-    // Apply all the splits
-    _engine->applySplit( stackEntry->_activeSplit );
-    for ( const auto &impliedSplit : stackEntry->_impliedValidSplits )
-        _engine->applySplit( impliedSplit );
-
-    _stack.append( stackEntry );
-
-    if ( _statistics )
-    {
-        unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
-                                           level );
-        if ( level > _statistics->getUnsignedAttribute
-             ( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
-                                               level );
-        struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
-    }
-}
-
-void SmtCore::storeSmtState( SmtState &smtState )
-{
-    smtState._impliedValidSplitsAtRoot = _impliedValidSplitsAtRoot;
-
-    for ( auto &stackEntry : _stack )
-        smtState._stack.append( stackEntry->duplicateSmtStackEntry() );
-
-    smtState._stateId = _stateId;
-}
-
 bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
-    {
         _constraintForSplitting = _engine->pickSplitPLConstraint
             ( _branchingHeuristic );
-    }
     return _constraintForSplitting != NULL;
+}
+
+void SmtCore::resetSplitConditions()
+{
+    _constraintToViolationCount.clear();
+    _numRejectedPhasePatternProposal = 0;
+    _needToSplit = false;
 }

@@ -197,7 +197,7 @@ public:
     /*
       Check if the constraint's phase has been fixed.
     */
-    virtual bool phaseFixed() const = 0;
+    virtual bool phaseFixed() const;
 
     /*
       If the constraint's phase has been fixed, get the (valid) case split.
@@ -206,6 +206,11 @@ public:
     */
     virtual PiecewiseLinearCaseSplit getValidCaseSplit() const = 0;
     virtual PiecewiseLinearCaseSplit getImpliedCaseSplit() const = 0;
+
+    /*
+       Get implied case split - either based on search (_cdInfeasibleCases) or assignment (_cdPhaseFixed)
+     */
+    PhaseStatus getImpliedCase() const;
 
     /*
        Returns a list of all cases of this constraint. Used by the
@@ -244,7 +249,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ) {};
+    virtual void transformToUseAuxVariables( InputQuery & ){};
 
     void setStatistics( Statistics *statistics );
 
@@ -349,7 +354,7 @@ public:
       Method to get PhaseStatus of the constraint. Encapsulates both context
       dependent and context-less behavior.
     */
-    PhaseStatus getPhaseStatus() const;
+    virtual PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -390,13 +395,14 @@ public:
       Worst case complexity O(n^2)
       This method is overloaded in MAX and DISJUNCTION constraints.
      */
-    virtual PhaseStatus nextFeasibleCase();
+    virtual PhaseStatus nextFeasibleCase() const;
 
     /*
        Returns number of cases not yet marked as infeasible.
      */
     unsigned numFeasibleCases() const
     {
+        ASSERT( _cdInfeasibleCases != nullptr );
         return _numCases - _cdInfeasibleCases->size();
     }
 
@@ -405,6 +411,7 @@ public:
      */
     bool isFeasible() const
     {
+        ASSERT( _cdInfeasibleCases != nullptr );
         return numFeasibleCases() > 0u;
     }
 
@@ -452,6 +459,8 @@ public:
     {
         return _cdInfeasibleCases;
     }
+
+    void serializeInfeasibleCases( String &output ) const;
 
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
@@ -513,6 +522,7 @@ protected:
        Check whether a case is marked as infeasible under current search prefix.
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
+
 
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */

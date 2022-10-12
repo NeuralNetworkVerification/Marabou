@@ -2,7 +2,7 @@
 /*! \file DisjunctionConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Duligur Ibeling, Christopher Lazarus, Haoze Wu
+ **   Guy Katz, Duligur Ibeling, Christopher Lazarus, Haoze Wu, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,28 +13,34 @@
  ** e1 \/ e2 \/ ... \/ eM, where _elements = { e1, e2, ..., eM }
  **
  ** The constraint introduces identifiers for its PiecewiseLinearCaseSplit
- ** elements.
+ ** elements. The mapping between the cases (PhaseStatus) and local indices is
+ ** available via indToPhaseStatus and phaseStatusToInd methods.
  **
  ** The constraint is implemented as PiecewiseLinearConstraint
  ** and operates in two modes:
- **   * pre-processing mode, which stores bounds locally, and
- **   * context dependent mode, used during the search.
+ **   * pre-processing mode, which stores _feasibleDisjuncts locally, and
+ **   * context dependent mode, used during the SMT search.
  **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
  ** DisjunctionConstraint object synchronizes its state automatically with the central
  ** Context object.
+ **
+ ** TODOs:
+ **    - Eliminate updateFeasibleDisjuncts (and its quadratic complexity) by
+ ** introducing a map between variables and the disjuncts they participate in
+ ** which enables direct access to disjunct to check feasibility.
  **/
 
 #ifndef __DisjunctionConstraint_h__
 #define __DisjunctionConstraint_h__
 
-#include "Vector.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Vector.h"
 
 class DisjunctionConstraint : public PiecewiseLinearConstraint
 {
 public:
-    ~DisjunctionConstraint() {};
+    ~DisjunctionConstraint(){};
     DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const String &serializedDisjunction );
@@ -119,11 +125,6 @@ public:
     PiecewiseLinearCaseSplit getCaseSplit( PhaseStatus phase ) const override;
 
     /*
-      Check if the constraint's phase has been fixed.
-    */
-    bool phaseFixed() const override;
-
-    /*
       If the constraint's phase has been fixed, get the implied case split.
     */
     PiecewiseLinearCaseSplit getImpliedCaseSplit() const override;
@@ -153,7 +154,7 @@ public:
 
     virtual bool supportVariableElimination() const override
     {
-      return false;
+        return false;
     }
 
     /*
@@ -171,6 +172,8 @@ public:
       Returns string with shape: disjunction, _f, _b
     */
     String serializeToString() const override;
+
+    PhaseStatus getPhaseStatus() const override;
 
 private:
     /*
@@ -206,8 +209,7 @@ private:
       still feasible, given the current variable bounds
     */
     void updateFeasibleDisjuncts();
-    bool disjunctIsFeasible( unsigned ind ) const;
-    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit & caseSplit ) const;
+    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit &caseSplit ) const;
 
     inline PhaseStatus indToPhaseStatus( unsigned ind ) const
     {
@@ -216,7 +218,7 @@ private:
 
     inline unsigned phaseStatusToInd( PhaseStatus phase ) const
     {
-        //ASSERT( phase != PHASE_NOT_FIXED );
+        // ASSERT( phase != PHASE_NOT_FIXED );
         return static_cast<unsigned>( phase ) - 1;
     }
 };

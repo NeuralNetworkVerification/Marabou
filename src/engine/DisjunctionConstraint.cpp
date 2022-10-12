@@ -49,24 +49,24 @@ DisjunctionConstraint::DisjunctionConstraint( const String &serializedDisjunctio
         ( 5, serializedDisjunction.length() - 5 );
     List<String> values = serializedValues.tokenize( "," );
     auto val = values.begin();
-    unsigned numDisjuncts = atoi(val->ascii());
+    unsigned numDisjuncts = atoi( val->ascii() );
     ++val;
     for ( unsigned i = 0; i < numDisjuncts; ++i )
     {
         PiecewiseLinearCaseSplit split;
-        unsigned numBounds = atoi(val->ascii());
+        unsigned numBounds = atoi( val->ascii() );
         ++val;
         for ( unsigned bi = 0; bi < numBounds; ++bi )
         {
-            Tightening::BoundType type = ( *val == "l") ? Tightening::LB : Tightening::UB;
+            Tightening::BoundType type = ( *val == "l" ) ? Tightening::LB : Tightening::UB;
             ++val;
-            unsigned var = atoi(val->ascii());
+            unsigned var = atoi( val->ascii() );
             ++val;
-            double bd = atof(val->ascii());
+            double bd = atof( val->ascii() );
             ++val;
-            split.storeBoundTightening( Tightening(var, bd, type) );
+            split.storeBoundTightening( Tightening( var, bd, type ) );
         }
-        unsigned numEquations = atoi(val->ascii());
+        unsigned numEquations = atoi( val->ascii() );
 
         ++val;
         for ( unsigned ei = 0; ei < numEquations; ++ei )
@@ -78,29 +78,29 @@ DisjunctionConstraint::DisjunctionConstraint( const String &serializedDisjunctio
                 type = Equation::GE;
             else
             {
-                ASSERT( *val == "e");
+                ASSERT( *val == "e" );
             }
-            Equation eq(type);
+            Equation eq( type );
             ++val;
-            unsigned numAddends = atoi(val->ascii());
+            unsigned numAddends = atoi( val->ascii() );
             ++val;
             for ( unsigned ai = 0; ai < numAddends; ++ai )
             {
-                double coef = atof(val->ascii());
+                double coef = atof( val->ascii() );
                 ++val;
-                unsigned var = atoi(val->ascii());
+                unsigned var = atoi( val->ascii() );
                 ++val;
                 eq.addAddend( coef, var );
             }
-            eq.setScalar(atof(val->ascii()));
+            eq.setScalar( atof( val->ascii() ) );
             ++val;
-            split.addEquation(eq);
+            split.addEquation( eq );
         }
-        disjuncts.append(split);
+        disjuncts.append( split );
     }
     _disjuncts = disjuncts;
 
-    for ( unsigned ind = 0;  ind < disjuncts.size();  ++ind )
+    for ( unsigned ind = 0; ind < disjuncts.size(); ++ind )
         _feasibleDisjuncts.append( ind );
 
     extractParticipatingVariables();
@@ -151,10 +151,12 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( _boundManager == nullptr && existsLowerBound( variable ) &&
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-      return;
+        return;
 
     setLowerBound( variable, bound );
 
+    // TODO: Maintain a mapping from variables to disjuncts and only check relevant
+    // disjuncts for feasibility
     updateFeasibleDisjuncts();
 }
 
@@ -165,10 +167,12 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( _boundManager == nullptr && existsUpperBound( variable ) &&
          !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-      return;
+        return;
 
     setUpperBound( variable, bound );
 
+    // TODO: Maintain a mapping from variables to disjuncts and only check relevant
+    // disjuncts for feasibility
     updateFeasibleDisjuncts();
 }
 
@@ -203,7 +207,7 @@ List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getPossibleFixes() c
     return List<PiecewiseLinearConstraint::Fix>();
 }
 
-List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITableau */* tableau */ ) const
+List<PiecewiseLinearConstraint::Fix> DisjunctionConstraint::getSmartFixes( ITableau * /* tableau */ ) const
 {
     // Reluplex does not currently work with Gurobi.
     ASSERT( _gurobi == NULL );
@@ -226,17 +230,20 @@ List<PhaseStatus> DisjunctionConstraint::getAllCases() const
 
 PiecewiseLinearCaseSplit DisjunctionConstraint::getCaseSplit( PhaseStatus phase ) const
 {
+    ASSERT( phase != PHASE_NOT_FIXED );
     return _disjuncts.get( phaseStatusToInd( phase ) );
 }
 
-bool DisjunctionConstraint::phaseFixed() const
+PhaseStatus DisjunctionConstraint::getPhaseStatus() const
 {
-    return _feasibleDisjuncts.size() == 1;
+    ASSERT( phaseFixed() );
+    return indToPhaseStatus( *_feasibleDisjuncts.begin() );
 }
 
 PiecewiseLinearCaseSplit DisjunctionConstraint::getImpliedCaseSplit() const
 {
-    return _disjuncts.get( *_feasibleDisjuncts.begin() );
+    ASSERT( isImplication() );
+    return _disjuncts.get( phaseStatusToInd( getImpliedCase() ) );
 }
 
 PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
@@ -244,8 +251,7 @@ PiecewiseLinearCaseSplit DisjunctionConstraint::getValidCaseSplit() const
     return getImpliedCaseSplit();
 }
 
-void DisjunctionConstraint::transformToUseAuxVariables( InputQuery
-                                                                &inputQuery )
+void DisjunctionConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
 {
     Vector<PiecewiseLinearCaseSplit> newDisjuncts;
     for ( const auto &disjunct : _disjuncts )
@@ -336,6 +342,8 @@ void DisjunctionConstraint::dump( String &output ) const
     }
 
     output += Stringf( "Active? %s.", _constraintActive ? "Yes" : "No" );
+
+    serializeInfeasibleCases( output );
 }
 
 void DisjunctionConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -378,42 +386,42 @@ void DisjunctionConstraint::eliminateVariable( unsigned /* variable */, double /
 
 bool DisjunctionConstraint::constraintObsolete() const
 {
-    return _feasibleDisjuncts.empty();
+    return false; // A Disjunction is obsolete only when a literal is always true.
 }
 
-void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tightenings */ ) const
+void DisjunctionConstraint::getEntailedTightenings( List<Tightening> & /* tightenings */ ) const
 {
 }
 
 String DisjunctionConstraint::serializeToString() const
 {
     String s = "disj,";
-    s += Stringf("%u,", _disjuncts.size());
+    s += Stringf( "%u,", _disjuncts.size() );
     for ( const auto &disjunct : _disjuncts )
     {
-        s += Stringf("%u,", disjunct.getBoundTightenings().size());
+        s += Stringf( "%u,", disjunct.getBoundTightenings().size() );
         for ( const auto &bound : disjunct.getBoundTightenings() )
         {
             if ( bound._type == Tightening::LB )
-                s += Stringf("l,%u,%f,", bound._variable, bound._value);
+                s += Stringf( "l,%u,%f,", bound._variable, bound._value );
             else if ( bound._type == Tightening::UB )
-                s += Stringf("u,%u,%f,", bound._variable, bound._value);
+                s += Stringf( "u,%u,%f,", bound._variable, bound._value );
         }
-        s += Stringf("%u,", disjunct.getEquations().size());
+        s += Stringf( "%u,", disjunct.getEquations().size() );
         for ( const auto &equation : disjunct.getEquations() )
         {
             if ( equation._type == Equation::LE )
-                s += Stringf("l,");
+                s += Stringf( "l," );
             else if ( equation._type == Equation::GE )
-                s += Stringf("g,");
+                s += Stringf( "g," );
             else
-                s += Stringf("e,");
-            s += Stringf("%u,", equation._addends.size());
+                s += Stringf( "e," );
+            s += Stringf( "%u,", equation._addends.size() );
             for ( const auto &addend : equation._addends )
             {
-                s += Stringf("%f,%u,", addend._coefficient, addend._variable);
+                s += Stringf( "%f,%u,", addend._coefficient, addend._variable );
             }
-            s += Stringf("%f,", equation._scalar );
+            s += Stringf( "%f,", equation._scalar );
         }
     }
     return s;
@@ -471,23 +479,25 @@ bool DisjunctionConstraint::disjunctSatisfied( const PiecewiseLinearCaseSplit &d
 
 void DisjunctionConstraint::updateFeasibleDisjuncts()
 {
-    _feasibleDisjuncts.clear();
-
-    for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+    if ( _cdInfeasibleCases )
     {
-        if ( disjunctIsFeasible( ind ) )
-            _feasibleDisjuncts.append( ind );
-        else if ( _cdInfeasibleCases && !isCaseInfeasible( indToPhaseStatus( ind ) ) )
-            markInfeasible( indToPhaseStatus( ind ) );
+        for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+        {
+             if ( !isCaseInfeasible( indToPhaseStatus( ind ) ) &&
+                  !caseSplitIsFeasible( _disjuncts.get( ind ) )  )
+               markInfeasible( indToPhaseStatus( ind ) );
+        }
     }
-}
+    else
+    {
+        _feasibleDisjuncts.clear();
 
-bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const
-{
-    if ( _cdInfeasibleCases && isCaseInfeasible( indToPhaseStatus( ind ) ) )
-        return false;
-
-    return caseSplitIsFeasible( _disjuncts.get( ind ) );
+        for ( unsigned ind = 0; ind < _disjuncts.size(); ++ind )
+        {
+            if ( caseSplitIsFeasible( _disjuncts.get( ind ) ) )
+                _feasibleDisjuncts.append( ind );
+        }
+    }
 }
 
 bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit &disjunct ) const

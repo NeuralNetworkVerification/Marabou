@@ -14,7 +14,6 @@
 
 #include "ReluConstraint.h"
 
-#include "PiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -24,6 +23,7 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
+#include "PiecewiseLinearConstraint.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
@@ -42,7 +42,8 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
-    : _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -121,12 +122,12 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
 
 void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound )
 {
-  if ( variable == _f && FloatUtils::isPositive( bound ) )
-    setPhaseStatus( RELU_PHASE_ACTIVE );
-  else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-    setPhaseStatus( RELU_PHASE_ACTIVE );
-  else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
-    setPhaseStatus( RELU_PHASE_INACTIVE );
+    if ( variable == _f && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+        setPhaseStatus( RELU_PHASE_ACTIVE );
+    else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
+        setPhaseStatus( RELU_PHASE_INACTIVE );
 }
 
 void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
@@ -574,11 +575,6 @@ PiecewiseLinearCaseSplit ReluConstraint::getActiveSplit() const
     return activePhase;
 }
 
-bool ReluConstraint::phaseFixed() const
-{
-    return _phaseStatus != PHASE_NOT_FIXED;
-}
-
 PiecewiseLinearCaseSplit ReluConstraint::getImpliedCaseSplit() const
 {
     ASSERT( _phaseStatus != PHASE_NOT_FIXED );
@@ -617,6 +613,8 @@ void ReluConstraint::dump( String &output ) const
                            existsLowerBound( _aux ) ? Stringf( "%lf", getLowerBound( _aux ) ).ascii() : "-inf",
                            existsUpperBound( _aux ) ? Stringf( "%lf", getUpperBound( _aux ) ).ascii() : "inf" );
     }
+
+    serializeInfeasibleCases( output );
 }
 
 void ReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -851,7 +849,7 @@ void ReluConstraint::getCostFunctionComponent( LinearExpression &cost,
                                                PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     // This should not be called when the linear constraints have

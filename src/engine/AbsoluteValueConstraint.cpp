@@ -33,7 +33,8 @@ AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
 }
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( const String &serializedAbs )
-    : _auxVarsInUse( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _auxVarsInUse( false )
     , _haveEliminatedVariables( false )
 {
     String constraintType = serializedAbs.substring( 0, 13 );
@@ -125,7 +126,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
 
     if ( _boundManager == nullptr && existsLowerBound( variable ) &&
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-      return;
+        return;
 
     setLowerBound( variable, bound );
 
@@ -179,7 +180,7 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
          !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-     setUpperBound( variable, bound );
+    setUpperBound( variable, bound );
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
 
@@ -320,7 +321,7 @@ List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes()
     return fixes;
 }
 
-List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( ITableau */* tableau */ ) const
+List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getSmartFixes( ITableau * /* tableau */ ) const
 {
     return getPossibleFixes();
 }
@@ -395,10 +396,6 @@ PiecewiseLinearCaseSplit AbsoluteValueConstraint::getPositiveSplit() const
     return positivePhase;
 }
 
-bool AbsoluteValueConstraint::phaseFixed() const
-{
-    return _phaseStatus != PhaseStatus::PHASE_NOT_FIXED;
-}
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getImpliedCaseSplit() const
 {
@@ -454,6 +451,8 @@ void AbsoluteValueConstraint::dump( String &output ) const
                            existsLowerBound( _negAux ) ? Stringf( "%lf", getLowerBound( _negAux ) ).ascii() : "-inf",
                            existsUpperBound( _negAux ) ? Stringf( "%lf", getUpperBound( _negAux ) ).ascii() : "inf" );
     }
+
+    serializeInfeasibleCases( output );
 }
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
@@ -602,8 +601,7 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery
-                                                                  &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
 {
     /*
       We want to add the two equations
@@ -662,7 +660,7 @@ void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
                                                         PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     ASSERT( phase == ABS_PHASE_NEGATIVE || phase == ABS_PHASE_POSITIVE );

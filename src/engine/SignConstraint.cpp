@@ -17,8 +17,8 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "InputQuery.h"
 #include "ITableau.h"
+#include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -39,7 +39,8 @@ SignConstraint::SignConstraint( unsigned b, unsigned f )
 }
 
 SignConstraint::SignConstraint( const String &serializedSign )
-    : _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedSign.substring( 0, 4 );
     ASSERT( constraintType == String( "sign" ) );
@@ -217,10 +218,6 @@ PiecewiseLinearCaseSplit SignConstraint::getPositiveSplit() const
     return positivePhase;
 }
 
-bool SignConstraint::phaseFixed() const
-{
-    return _phaseStatus != PHASE_NOT_FIXED;
-}
 
 void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
                                                               &inputQuery )
@@ -301,11 +298,10 @@ String SignConstraint::serializeToString() const
     return Stringf( "sign,%u,%u", _f, _b );
 }
 
-void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
-                                               PhaseStatus phase ) const
+void SignConstraint::getCostFunctionComponent( LinearExpression &cost, PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     ASSERT( phase == SIGN_PHASE_NEGATIVE || phase == SIGN_PHASE_POSITIVE );
@@ -585,6 +581,8 @@ void SignConstraint::dump( String &output ) const
     output += Stringf( "f in [%s, %s]\n",
                        existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
                        existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
+
+    serializeInfeasibleCases( output );
 }
 
 double SignConstraint::computePolarity() const

@@ -148,6 +148,12 @@ void Statistics::print()
             , printPercents( timeSimplexStepsMicro, timeMainLoopMicro )
             , timeSimplexStepsMicro / 1000
             );
+    unsigned long long totalTimePerformingLocalSearch =
+        getLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO );
+    printf( "\t\t\t[%.2lf%%] SoI-based local search: %llu milli\n"
+            , printPercents( totalTimePerformingLocalSearch, timeMainLoopMicro )
+            , totalTimePerformingLocalSearch / 1000
+            );
     unsigned long long totalTimeExplicitBasisBoundTighteningMicro =
         getLongAttribute(TOTAL_TIME_EXPLICIT_BASIS_BOUND_TIGHTENING_MICRO );
     printf( "\t\t[%.2lf%%] Explicit-basis bound tightening: %llu milli\n"
@@ -211,12 +217,6 @@ void Statistics::print()
     printf( "\t\t[%.2lf%%] Symbolic Bound Tightening: %llu milli\n"
             , printPercents( totalTimePerformingSymbolicBoundTightening, timeMainLoopMicro )
             , totalTimePerformingSymbolicBoundTightening / 1000
-            );
-    unsigned long long totalTimePerformingLocalSearch =
-        getLongAttribute( Statistics::TOTAL_TIME_LOCAL_SEARCH_MICRO );
-    printf( "\t\t[%.2lf%%] SoI-based local search: %llu milli\n"
-            , printPercents( totalTimePerformingLocalSearch, timeMainLoopMicro )
-            , totalTimePerformingLocalSearch / 1000
             );
     unsigned long long totalTimeAddingConstraintsToMILPSolver =
         getLongAttribute( Statistics::TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO );
@@ -326,7 +326,7 @@ void Statistics::print()
             , getUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL )
             , getUnsignedAttribute( Statistics::NUM_VISITED_TREE_STATES )
             , getUnsignedAttribute( Statistics::NUM_SPLITS )
-            , getUnsignedAttribute( Statistics::NUM_POPS ) );
+            , getUnsignedAttribute( Statistics::NUM_CONTEXT_POPS ) );
     printf( "\tMax stack depth: %u\n"
             , getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) );
 

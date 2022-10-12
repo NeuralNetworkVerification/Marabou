@@ -13,16 +13,15 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "DisjunctionConstraint.h"
+#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "InputQuery.h"
 
-class MockForDisjunctionConstraint
-    : public MockErrno
+#include <cxxtest/TestSuite.h>
+
+class MockForDisjunctionConstraint : public MockErrno
 {
 public:
 };
@@ -49,6 +48,7 @@ public:
     PiecewiseLinearCaseSplit *cs1;
     PiecewiseLinearCaseSplit *cs2;
     PiecewiseLinearCaseSplit *cs3;
+    Context ctx;
 
     void setUp()
     {
@@ -195,8 +195,10 @@ public:
           5 <= x0       -->   x1 = 2x2 + 5
         */
 
+
         {
             DisjunctionConstraint dc( caseSplits );
+            dc.initializeCDOs( &ctx );
 
             dc.notifyLowerBound( 0, -10 );
             dc.notifyUpperBound( 0, 10 );
@@ -205,16 +207,16 @@ public:
             dc.notifyLowerBound( 2, -10 );
             dc.notifyUpperBound( 2, 10 );
 
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyLowerBound( 0, -1 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyLowerBound( 0, 2 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyLowerBound( 0, 6 );
-            TS_ASSERT( dc.phaseFixed() );
+            TS_ASSERT( dc.isImplication() );
 
             PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
             TS_ASSERT_EQUALS( validSplit, *cs3 );
@@ -222,6 +224,7 @@ public:
 
         {
             DisjunctionConstraint dc( caseSplits );
+            dc.initializeCDOs( &ctx );
 
             dc.notifyLowerBound( 0, -10 );
             dc.notifyUpperBound( 0, 10 );
@@ -230,16 +233,16 @@ public:
             dc.notifyLowerBound( 2, -10 );
             dc.notifyUpperBound( 2, 10 );
 
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyUpperBound( 0, 7 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyUpperBound( 0, 2 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyUpperBound( 0, -2 );
-            TS_ASSERT( dc.phaseFixed() );
+            TS_ASSERT( dc.isImplication() );
 
             PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
             TS_ASSERT_EQUALS( validSplit, *cs1 );
@@ -261,6 +264,7 @@ public:
             BoundManager boundManager( context );
             boundManager.initialize( 11 );
             dc.registerBoundManager( &boundManager );
+            dc.initializeCDOs( &context );
 
             dc.notifyLowerBound( 0, -10 );
             dc.notifyUpperBound( 0, 10 );
@@ -269,16 +273,16 @@ public:
             dc.notifyLowerBound( 2, -10 );
             dc.notifyUpperBound( 2, 10 );
 
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyLowerBound( 0, -1 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyLowerBound( 0, 2 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyLowerBound( 0, 6 );
-            TS_ASSERT( dc.phaseFixed() );
+            TS_ASSERT( dc.isImplication() );
 
             PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
             TS_ASSERT_EQUALS( validSplit, *cs3 );
@@ -290,6 +294,7 @@ public:
             BoundManager boundManager( context );
             boundManager.initialize( 11 );
             dc.registerBoundManager( &boundManager );
+            dc.initializeCDOs( &context );
 
             dc.notifyLowerBound( 0, -10 );
             dc.notifyUpperBound( 0, 10 );
@@ -298,16 +303,16 @@ public:
             dc.notifyLowerBound( 2, -10 );
             dc.notifyUpperBound( 2, 10 );
 
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyUpperBound( 0, 7 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyUpperBound( 0, 2 );
-            TS_ASSERT( !dc.phaseFixed() );
+            TS_ASSERT( !dc.isImplication() );
 
             dc.notifyUpperBound( 0, -2 );
-            TS_ASSERT( dc.phaseFixed() );
+            TS_ASSERT( dc.isImplication() );
 
             PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
             TS_ASSERT_EQUALS( validSplit, *cs1 );
@@ -322,15 +327,15 @@ public:
 
         DisjunctionConstraint disjunction( caseSplits );
 
-        TS_ASSERT_EQUALS( disjunction.getContext(), static_cast<Context*>( nullptr ) );
-        TS_ASSERT_EQUALS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getContext(), static_cast<Context *>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus> *>( nullptr ) );
         TS_ASSERT_THROWS_NOTHING( disjunction.initializeCDOs( &context ) );
         TS_ASSERT_EQUALS( disjunction.getContext(), &context );
-        TS_ASSERT_DIFFERS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus> *>( nullptr ) );
 
         bool active = false;
         TS_ASSERT_THROWS_NOTHING( active = disjunction.isActive() );
@@ -449,7 +454,7 @@ public:
         PiecewiseLinearCaseSplit validSplit = dc.getImpliedCaseSplit();
         TS_ASSERT_EQUALS( validSplit, *cs3 );
 
-        dc.markInfeasible( dc.getPhaseStatus() );
+        dc.markInfeasible( dc.getImpliedCase() );
         TS_ASSERT( !dc.isFeasible() );
         TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
     }
@@ -514,7 +519,7 @@ public:
             Tightening t2( 0, 5, Tightening::UB );
             Tightening t3( 3, 0, Tightening::UB ); // First aux introduced here.
             Tightening t4( 4, 0, Tightening::LB ); // Second aux introduced here.
-            for ( const auto &t : {t1, t2, t3, t4} )
+            for ( const auto &t : { t1, t2, t3, t4 } )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
         ++split;
@@ -525,7 +530,7 @@ public:
             Tightening t1( 0, 5, Tightening::LB );
             Tightening t2( 5, 0, Tightening::UB ); // Third aux introduced here.
             Tightening t3( 6, 0, Tightening::LB ); // Fourth aux
-            for ( const auto &t : {t1, t2, t3} )
+            for ( const auto &t : { t1, t2, t3 } )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
         ++split;
@@ -535,7 +540,7 @@ public:
             TS_ASSERT( split->getEquations().empty() );
             Tightening t1( 7, 0, Tightening::LB ); // 5th aux
             Tightening t2( 8, 0, Tightening::UB ); // 6th aux
-            for ( const auto &t : {t1, t2} )
+            for ( const auto &t : { t1, t2 } )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
 
@@ -617,8 +622,8 @@ public:
         List<PiecewiseLinearCaseSplit> recoveredCaseSplits =
             recoveredDisj.getCaseSplits();
         auto split = recoveredCaseSplits.begin();
-        TS_ASSERT_EQUALS( *split++, *cs1);
-        TS_ASSERT_EQUALS( *split++, *cs2);
-        TS_ASSERT_EQUALS( *split, *cs3);
+        TS_ASSERT_EQUALS( *split++, *cs1 );
+        TS_ASSERT_EQUALS( *split++, *cs2 );
+        TS_ASSERT_EQUALS( *split, *cs3 );
     }
 };
