@@ -60,10 +60,7 @@ def createQuery(args):
     elif suffix == "pb":
         network = Marabou.read_tf(networkPath)
     elif suffix == "onnx":
-        if "small" in networkPath:
-            network = Marabou.read_onnx(networkPath, outputNames=["model_1/dense_4/BiasAdd:0"])
-        else:
-            network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
+        network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
         network2 = Marabou.read_onnx(networkPath)
     else:
         print("The network must be in .pb, .nnet, or .onnx format!")
