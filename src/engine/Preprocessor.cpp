@@ -136,8 +136,9 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
       Then, eliminate fixed variables.
     */
 
+    unsigned round = 100;
     bool continueTightening = true;
-    while ( continueTightening )
+    while ( continueTightening && round > 0 )
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
@@ -147,6 +148,7 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
         if ( _statistics )
             _statistics->
                 incUnsignedAttribute( Statistics::PP_NUM_TIGHTENING_ITERATIONS );
+	--round;
     }
 
     collectFixedValues();

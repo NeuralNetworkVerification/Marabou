@@ -10,7 +10,6 @@
  ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
-
 **/
 
 #ifndef __DeepPolyQuadraticElement_h__
@@ -42,6 +41,14 @@ public:
       unsigned targetLayerSize, DeepPolyElement *predecessor );
 
 private:
+    double *_symbolicLbA;
+    double *_symbolicUbA;
+    double *_symbolicLbB;
+    double *_symbolicUbB;
+
+    Vector<NeuronIndex> _indexA;
+    Vector<NeuronIndex> _indexB;
+
     void allocateMemory();
     void freeMemoryIfNeeded();
     void log( const String &message );

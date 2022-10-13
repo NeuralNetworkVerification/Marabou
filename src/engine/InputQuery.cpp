@@ -175,47 +175,32 @@ void InputQuery::addNonlinearConstraint( NonlinearConstraint *constraint )
 
 void InputQuery::addSoftmaxConstraint( List<unsigned> inputs, List<unsigned> outputs )
 {
-    Vector<unsigned> preReciprocals;
+    Vector<unsigned> postExps;
+    Equation e;
+    e.setScalar(0);
     for ( const auto &v : inputs )
     {
-        Equation e;
-        e.setScalar(-1);
-        for ( const auto &u : inputs )
-        {
-            if ( u == v )
-                continue;
-            else
-            {
-                unsigned diffVar = getFreshVariable();
-                Equation eDiff;
-                eDiff.addAddend( 1, u );
-                eDiff.addAddend( -1, v );
-                eDiff.addAddend( -1, diffVar );
-                // diffVar_i = u - v
-                addEquation(eDiff);
-
-                unsigned postExp = getFreshVariable();
-                ExponentialConstraint *m = new ExponentialConstraint
-                    ( diffVar, postExp );
-                addNonlinearConstraint( m );
-                e.addAddend( 1, postExp );
-            }
-        }
-        unsigned sumOfExps = getFreshVariable();
-        e.addAddend( -1, sumOfExps );
-        // e^diffVar1 + ... + e^diffVar2 + -1 sumOfExps = -1
-        addEquation(e);
-        preReciprocals.append(sumOfExps);
+      unsigned postExp = getFreshVariable();
+      postExps.append(postExp);
+      ExponentialConstraint *m = new ExponentialConstraint( v, postExp );
+      addNonlinearConstraint( m );
+      e.addAddend( 1, postExp );
     }
+    unsigned sumOfExps = getFreshVariable();
+    e.addAddend( -1, sumOfExps );
+    addEquation(e);
+
+    unsigned recip = getFreshVariable();
+    PosReciprocalConstraint *m = new PosReciprocalConstraint(sumOfExps, recip);
+    addNonlinearConstraint( m );
 
     unsigned i = 0;
     for ( const auto &v : outputs )
     {
-        // v = 1 / sumOfExps
-        PosReciprocalConstraint *m = new PosReciprocalConstraint
-            ( preReciprocals[i], v );
-        addNonlinearConstraint( m );
-        ++i;
+      // v = 1 / sumOfExps
+      QuadraticConstraint *q = new QuadraticConstraint( recip, postExps[i], v);
+      addNonlinearConstraint( q );
+      ++i;
     }
 }
 

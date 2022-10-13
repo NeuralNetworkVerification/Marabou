@@ -35,21 +35,8 @@ def main():
                   "3. Provide a network, a dataset (--dataset), an epsilon (-e), "
                   "target label (-t), and the index of the point in the test set (-i).")
             exit(1)
-
-        marabou_binary = args.marabou_binary
-        if not os.access(marabou_binary, os.X_OK):
-            sys.exit('"{}" does not exist or is not executable'.format(marabou_binary))
-
         res, _, _ = network.solve()
-        with open(args.summary_file, 'w') as out_file:
-                out_file.write(res + "\n")
-        #temp = tempfile.NamedTemporaryFile(dir=args.temp_dir, delete=False)
-        #name = temp.name
-        #MarabouCore.saveQuery(query, name)
-
-        #print("Running Marabou with the following arguments: ", unknown)
-        #subprocess.run([marabou_binary] + ["--input-query={}".format(name)] + unknown )
-        #os.remove(name)
+  
 
 def createQuery(args):
     if args.input_query:
@@ -63,7 +50,8 @@ def createQuery(args):
     elif suffix == "pb":
         network = Marabou.read_tf(networkPath)
     elif suffix == "onnx":
-        network = Marabou.read_onnx(networkPath)
+        network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
+        network2 = Marabou.read_onnx(networkPath)
     else:
         print("The network must be in .pb, .nnet, or .onnx format!")
         return None, None
@@ -74,7 +62,7 @@ def createQuery(args):
         return query, network
 
     if args.dataset == 'mnist':
-        encode_mnist_linf(network, args.index, args.epsilon, args.target_label)
+        encode_mnist_linf(network, args.index, args.epsilon, args.target_label, network2)
         return network.getMarabouQuery(), network
     elif args.dataset == 'cifar10':
         encode_cifar10_linf(network, args.index, args.epsilon, args.target_label)
@@ -87,18 +75,17 @@ def createQuery(args):
 
         return network.getMarabouQuery(), network
 
-def encode_mnist_linf(network, index, epsilon, target_label):
+def encode_mnist_linf(network, index, epsilon, target_label, network2):
     from tensorflow.keras.datasets import mnist
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     point = np.array(X_test[index]).flatten() / 255
-    networkOutput = network.evaluateWithoutMarabou([point])[0][0]
+    networkOutput = network2.evaluateWithoutMarabou([point])[0][0]
     print("network output", networkOutput)
     prediction = np.argmax(networkOutput)
     print("correct label: {}".format(Y_test[index]))
     if  prediction != Y_test[index]:
         print("misclassify!")
-        return
-    sys.stdout.flush()
+        exit(0)
 
     for x in np.array(network.inputVars).flatten():
         network.setLowerBound(x, max(0, point[x] - epsilon))
@@ -107,7 +94,6 @@ def encode_mnist_linf(network, index, epsilon, target_label):
         networkOutput[prediction] = -100000
         target_label = np.argmax(networkOutput)
         print(f"No target label given. Picking second largest label: {target_label}")
-        return
 
     outputVars = network.outputVars[0].flatten()
     for i in range(10):
@@ -115,6 +101,10 @@ def encode_mnist_linf(network, index, epsilon, target_label):
             network.addInequality([outputVars[i],
                                    outputVars[target_label]],
                                   [1, -1], 0)
+    print("correct label: {}".format(Y_test[index]))
+    for x in np.array(network.inputVars).flatten():
+        network.setLowerBound(x, max(0, point[x] - epsilon))
+        network.setUpperBound(x, min(1, point[x] + epsilon))
     return
 
 def encode_cifar10_linf(network, index, epsilon, target_label):
@@ -166,8 +156,6 @@ def arguments():
                         help='The target of the adversarial attack')
     parser.add_argument('-i,', '--index', type=int, default=0,
                         help='The index of the point in the test set')
-    parser.add_argument('-s,', '--summary-file', type=str, default="result",
-                        help='Result')
     parser.add_argument('--temp-dir', type=str, default="/tmp/",
                         help='Temporary directory')
     marabou_path = os.path.join(str(pathlib.Path(__file__).parent.absolute()),

@@ -107,20 +107,20 @@ void DeepPolyWeightedSumElement::computeBoundWithBackSubstitution
     log( Stringf( "Computing symbolic bounds with respect to layer %u - done",
                   predecessorIndex ) );
 
+    //if ( currentElement->getLayerIndex() > 7 && currentElement->getLayerIndex() < 12 )
+    //  return;
+      
     while ( currentElement->hasPredecessor() )
     {
+      //if ( currentElement->getLayerIndex() == 11 )
+      //	break;
+      
         // We have the symbolic bounds in terms of the current abstract
         // element--currentElement, stored in _work1SymbolicLb,
         // _work1SymbolicUb, _workSymbolicLowerBias, _workSymbolicLowerBias,
         // now compute the symbolic bounds in terms of currentElement's
         // predecessor.
         predecessorIndices = currentElement->getPredecessorIndices();
-        if (currentElement->getLayerType() == Layer::QUADRATIC &&
-            predecessorIndices.size() > 1){
-          std::cout << "stop back substituting!" << std::endl;
-          break;
-        }
-
         counter = 0;
         numPredecessors = predecessorIndices.size();
         ASSERT( numPredecessors > 0 );
@@ -245,7 +245,6 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
   *symbolicLowerBias, const double *symbolicUpperBias, DeepPolyElement
   *sourceElement )
 {
-    /*
     DEBUG({
             log( Stringf( "Source layer: %u", sourceElement->getLayerIndex() ) );
             String s = Stringf( "Symbolic lowerbounds w.r.t. layer %u: \n ", sourceElement->getLayerIndex() );
@@ -288,7 +287,6 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
             }
             log( s );
         });
-    */
 
     // Get concrete bounds
     for ( unsigned i = 0; i < sourceElement->getSize(); ++i )
@@ -296,7 +294,7 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
         double sourceLb = sourceElement->getLowerBoundFromLayer( i );
         double sourceUb = sourceElement->getUpperBoundFromLayer( i );
 
-        log( Stringf( "Bounds of neuron%u_%u: [%f, %f]\n", sourceElement->
+        log( Stringf( "Bounds of neuron%u_%u: [%f, %f]", sourceElement->
                       getLayerIndex(), i, sourceLb, sourceUb ) );
 
         for ( unsigned j = 0; j < _size; ++j )
