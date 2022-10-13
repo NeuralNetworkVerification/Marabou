@@ -138,7 +138,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     */
 
     bool continueTightening = true;
-    while ( continueTightening )
+    unsigned round = 1000;
+    while ( continueTightening && round > 0 )
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
@@ -148,6 +149,7 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
         if ( _statistics )
             _statistics->
                 incUnsignedAttribute( Statistics::PP_NUM_TIGHTENING_ITERATIONS );
+        --round;
     }
 
     collectFixedValues();

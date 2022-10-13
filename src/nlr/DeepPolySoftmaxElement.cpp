@@ -137,12 +137,126 @@ void DeepPolySoftmaxElement::execute
               ++counter;
             }
         }
-        else if ( _boundType == "lseh" )
+        else if ( _boundType == "lse0.6" )
+        {
+          unsigned strategy = 1;
+          for ( const auto &lb : targetLbs )
+          {
+            if ( lb > 0.6 )
+            {
+              strategy = 2;
+            }
+          }
+
+          if ( strategy == 1 )
+            {
+              _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
+              unsigned counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+                  _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+                  _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+                  ++counter;
+                }
+
+              _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
+              counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dudj = dU_LSEdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+                  _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+                  _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+                  ++counter;
+                }
+            }
+          else
+            {
+              _symbolicLowerBias[i] = L_LSE2(sourceMids, sourceLbs, sourceUbs, outputIndex);
+              unsigned counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dldj = dL_LSE2dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+                  _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+                  _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+                  ++counter;
+                }
+
+              _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
+              counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dudj = dU_LSEdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+                  _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+                  _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+                  ++counter;
+                }
+            }
+
+        }
+        else if ( _boundType == "lse0.8" )
         {
           unsigned strategy = 1;
           for ( const auto &lb : targetLbs )
           {
             if ( lb > 0.8 )
+            {
+              strategy = 2;
+            }
+          }
+
+          if ( strategy == 1 )
+            {
+              _symbolicLowerBias[i] = L_LSE1(sourceMids, sourceLbs, sourceUbs, outputIndex);
+              unsigned counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dldj = dL_LSE1dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+                  _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+                  _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+                  ++counter;
+                }
+
+              _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
+              counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dudj = dU_LSEdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+                  _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+                  _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+                  ++counter;
+                }
+            }
+          else
+            {
+              _symbolicLowerBias[i] = L_LSE2(sourceMids, sourceLbs, sourceUbs, outputIndex);
+              unsigned counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dldj = dL_LSE2dx(sourceMids, sourceLbs, sourceUbs, outputIndex, counter);
+                  _symbolicLb[_size * sourceIndex._neuron + i] = dldj;
+                  _symbolicLowerBias[i] -= dldj * sourceMids[counter];
+                  ++counter;
+                }
+
+              _symbolicUpperBias[i] = U_LSE(sourceMids, targetLbs, targetUbs, outputIndex);
+              counter = 0;
+              for (const auto &sourceIndex : sources)
+                {
+                  double dudj = dU_LSEdx(sourceMids, targetLbs, targetUbs, outputIndex, counter);
+                  _symbolicUb[_size * sourceIndex._neuron + i] = dudj;
+                  _symbolicUpperBias[i] -= dudj * sourceMids[counter];
+                  ++counter;
+                }
+            }
+
+        }
+        else if ( _boundType == "lse0.9" )
+        {
+          unsigned strategy = 1;
+          for ( const auto &lb : targetLbs )
+          {
+            if ( lb > 0.9 )
             {
               strategy = 2;
             }
@@ -238,6 +352,12 @@ void DeepPolySoftmaxElement::execute
             ++counter;
           }
         }
+        else
+          {
+            std::cout << "Wrong bounds" << std::endl;
+            exit(0);
+          }
+
     }
 
     // Compute bounds with back-substitution
