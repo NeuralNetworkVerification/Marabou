@@ -206,6 +206,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.transpose(node)
         elif node.op_type == "BatchNormalization":
             self.batchNorm(node, makeEquations)
+        elif node.op_type == 'Concat':
+            self.concatEquations(node)
         elif node.op_type == "MaxPool":
             self.maxpoolEquations(node, makeEquations)
         elif node.op_type == "Conv":
@@ -222,8 +224,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
-        elif node.op_type == 'Concat':
-            self.concatEquations(node, makeEquations)
         elif node.op_type == 'Split':
             self.splitEquations(node, nodeName, makeEquations)
         elif node.op_type == 'Resize':
@@ -768,12 +768,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 e.setScalar(0.0)
                 self.addEquation(e)
 
-    def concatEquations(self, node, makeEquations):
+    def concatEquations(self, node):
         """Function to generate equations corresponding to concat
 
         Args:
             node (node): ONNX node representing the Concat operation
-            makeEquations (bool): True if we need to create new variables and write Marabou equations
 
         :meta private:
         """
@@ -785,26 +784,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             if attr.name == "axis":
                 axis = get_attribute_value(attr)
 
-        # Set output shape
+        # Set maps of shape and var
         inputVars = list([self.varMap[input] for input in node.input])
-        outputShape = np.concatenate(inputVars, axis).shape
-        self.shapeMap[nodeName] = outputShape
-        if not makeEquations:
-            return
-
-        # Get variables
-        inputVars = np.concatenate(inputVars, axis).reshape(-1)
-        outputVars = self.makeNewVariables(nodeName).reshape(-1)
-
-        assert len(inputVars) == len(outputVars)
-
-        for i in range(len(inputVars)):
-            # Add equation
-            e = MarabouUtils.Equation()
-            e.addAddend(-1, outputVars[i])
-            e.addAddend(1, inputVars[i])
-            e.setScalar(0)
-            self.addEquation(e)     
+        outputVars = np.concatenate(inputVars, axis)
+        self.shapeMap[nodeName] = outputVars.shape
+        self.varMap[nodeName] = outputVars 
 
     def splitEquations(self, node, nodeName, makeEquations):
         """Function to generate equations corresponding to split

@@ -122,13 +122,17 @@ def test_concat():
     # axis = 0
     filename =  "concat/concat_axis_0.onnx"
     network = loadNetworkInONNX(filename)
-    assert network.shapeMap['X'] == [2, 2, 2]
-    assert network.shapeMap['Y'] == [2, 2, 2]
-    assert network.shapeMap['Z'] == (4, 2, 2)
+
+    # Y = concat(X1, X2) + X3
+    assert network.shapeMap['X1'] == [2, 2, 2]
+    assert network.shapeMap['X2'] == [2, 2, 2]
+    assert network.shapeMap['X3'] == [4, 2, 2]
+    assert network.shapeMap['Y'] == [4, 2, 2]
 
     inputVars = network.inputVars
     outputVars = network.outputVars[0]
 
+    # set bounds for X1 and X2
     num = 1
     for i in range(len(inputVars[0])):
         for j in range(len(inputVars[0][i])):
@@ -138,6 +142,13 @@ def test_concat():
                 network.setLowerBound(inputVars[1][i][j][k], num + 10)
                 network.setUpperBound(inputVars[1][i][j][k], num + 10)
                 num += 1
+
+    # set bounds for X3
+    for i in range(len(inputVars[2])):
+        for j in range(len(inputVars[2][i])):
+            for k in range(len(inputVars[2][i][j])):
+                network.setLowerBound(inputVars[2][i][j][k], 0)
+                network.setUpperBound(inputVars[2][i][j][k], 0)
 
     _, vals, _ = network.solve(options = options)
     assert abs(vals[outputVars[0][0][0]] - 1.0) < TOL
@@ -160,13 +171,17 @@ def test_concat():
     # axis = 1
     filename =  "concat/concat_axis_1.onnx"
     network = loadNetworkInONNX(filename)
-    assert network.shapeMap['X'] == [2, 2, 2]
-    assert network.shapeMap['Y'] == [2, 2, 2]
-    assert network.shapeMap['Z'] == (2, 4, 2)
+
+    # Y = concat(X1, X2) + X3
+    assert network.shapeMap['X1'] == [2, 2, 2]
+    assert network.shapeMap['X2'] == [2, 2, 2]
+    assert network.shapeMap['X3'] == [2, 4, 2]
+    assert network.shapeMap['Y'] == [2, 4, 2]
 
     inputVars = network.inputVars
     outputVars = network.outputVars[0]
 
+    # set bounds for X1 and X2
     num = 1
     for i in range(len(inputVars[0])):
         for j in range(len(inputVars[0][i])):
@@ -176,6 +191,13 @@ def test_concat():
                 network.setLowerBound(inputVars[1][i][j][k], num + 10)
                 network.setUpperBound(inputVars[1][i][j][k], num + 10)
                 num += 1
+
+    # set bounds for X3
+    for i in range(len(inputVars[2])):
+        for j in range(len(inputVars[2][i])):
+            for k in range(len(inputVars[2][i][j])):
+                network.setLowerBound(inputVars[2][i][j][k], 0)
+                network.setUpperBound(inputVars[2][i][j][k], 0)
 
     _, vals, _ = network.solve(options = options)
     assert abs(vals[outputVars[0][0][0]] - 1.0) < TOL
@@ -198,13 +220,17 @@ def test_concat():
     # axis = 2
     filename =  "concat/concat_axis_2.onnx"
     network = loadNetworkInONNX(filename)
-    assert network.shapeMap['X'] == [2, 2, 2]
-    assert network.shapeMap['Y'] == [2, 2, 2]
-    assert network.shapeMap['Z'] == (2, 2, 4)
+
+    # Y = concat(X1, X2) + X3
+    assert network.shapeMap['X1'] == [2, 2, 2]
+    assert network.shapeMap['X2'] == [2, 2, 2]
+    assert network.shapeMap['X3'] == [2, 2, 4]
+    assert network.shapeMap['Y'] == [2, 2, 4]
 
     inputVars = network.inputVars
     outputVars = network.outputVars[0]
 
+    # set bounds for X1 and X2
     num = 1
     for i in range(len(inputVars[0])):
         for j in range(len(inputVars[0][i])):
@@ -214,6 +240,13 @@ def test_concat():
                 network.setLowerBound(inputVars[1][i][j][k], num + 10)
                 network.setUpperBound(inputVars[1][i][j][k], num + 10)
                 num += 1
+
+    # set bounds for X3
+    for i in range(len(inputVars[2])):
+        for j in range(len(inputVars[2][i])):
+            for k in range(len(inputVars[2][i][j])):
+                network.setLowerBound(inputVars[2][i][j][k], 0)
+                network.setUpperBound(inputVars[2][i][j][k], 0)
 
     _, vals, _ = network.solve(options = options)
     assert abs(vals[outputVars[0][0][0]] - 1.0) < TOL
