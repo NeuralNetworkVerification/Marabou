@@ -117,12 +117,45 @@ def test_concat():
     """
     Tests a concat.
     """
+    options = Marabou.createOptions(verbosity = 0)
+
     # axis = 0
     filename =  "concat/concat_axis_0.onnx"
     network = loadNetworkInONNX(filename)
     assert network.shapeMap['X'] == [2, 2, 2]
     assert network.shapeMap['Y'] == [2, 2, 2]
     assert network.shapeMap['Z'] == (4, 2, 2)
+
+    inputVars = network.inputVars
+    outputVars = network.outputVars[0]
+
+    num = 1
+    for i in range(len(inputVars[0])):
+        for j in range(len(inputVars[0][i])):
+            for k in range(len(inputVars[0][i][j])):
+                network.setLowerBound(inputVars[0][i][j][k], num)
+                network.setUpperBound(inputVars[0][i][j][k], num)
+                network.setLowerBound(inputVars[1][i][j][k], num + 10)
+                network.setUpperBound(inputVars[1][i][j][k], num + 10)
+                num += 1
+
+    _, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0][0]] - 1.0) < TOL
+    assert abs(vals[outputVars[0][0][1]] - 2.0) < TOL
+    assert abs(vals[outputVars[0][1][0]] - 3.0) < TOL
+    assert abs(vals[outputVars[0][1][1]] - 4.0) < TOL
+    assert abs(vals[outputVars[1][0][0]] - 5.0) < TOL
+    assert abs(vals[outputVars[1][0][1]] - 6.0) < TOL
+    assert abs(vals[outputVars[1][1][0]] - 7.0) < TOL
+    assert abs(vals[outputVars[1][1][1]] - 8.0) < TOL
+    assert abs(vals[outputVars[2][0][0]] - 11.0) < TOL
+    assert abs(vals[outputVars[2][0][1]] - 12.0) < TOL
+    assert abs(vals[outputVars[2][1][0]] - 13.0) < TOL
+    assert abs(vals[outputVars[2][1][1]] - 14.0) < TOL
+    assert abs(vals[outputVars[3][0][0]] - 15.0) < TOL
+    assert abs(vals[outputVars[3][0][1]] - 16.0) < TOL
+    assert abs(vals[outputVars[3][1][0]] - 17.0) < TOL
+    assert abs(vals[outputVars[3][1][1]] - 18.0) < TOL
 
     # axis = 1
     filename =  "concat/concat_axis_1.onnx"
@@ -131,12 +164,74 @@ def test_concat():
     assert network.shapeMap['Y'] == [2, 2, 2]
     assert network.shapeMap['Z'] == (2, 4, 2)
 
+    inputVars = network.inputVars
+    outputVars = network.outputVars[0]
+
+    num = 1
+    for i in range(len(inputVars[0])):
+        for j in range(len(inputVars[0][i])):
+            for k in range(len(inputVars[0][i][j])):
+                network.setLowerBound(inputVars[0][i][j][k], num)
+                network.setUpperBound(inputVars[0][i][j][k], num)
+                network.setLowerBound(inputVars[1][i][j][k], num + 10)
+                network.setUpperBound(inputVars[1][i][j][k], num + 10)
+                num += 1
+
+    _, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0][0]] - 1.0) < TOL
+    assert abs(vals[outputVars[0][0][1]] - 2.0) < TOL
+    assert abs(vals[outputVars[0][1][0]] - 3.0) < TOL
+    assert abs(vals[outputVars[0][1][1]] - 4.0) < TOL
+    assert abs(vals[outputVars[0][2][0]] - 11.0) < TOL
+    assert abs(vals[outputVars[0][2][1]] - 12.0) < TOL
+    assert abs(vals[outputVars[0][3][0]] - 13.0) < TOL
+    assert abs(vals[outputVars[0][3][1]] - 14.0) < TOL
+    assert abs(vals[outputVars[1][0][0]] - 5.0) < TOL
+    assert abs(vals[outputVars[1][0][1]] - 6.0) < TOL
+    assert abs(vals[outputVars[1][1][0]] - 7.0) < TOL
+    assert abs(vals[outputVars[1][1][1]] - 8.0) < TOL
+    assert abs(vals[outputVars[1][2][0]] - 15.0) < TOL
+    assert abs(vals[outputVars[1][2][1]] - 16.0) < TOL
+    assert abs(vals[outputVars[1][3][0]] - 17.0) < TOL
+    assert abs(vals[outputVars[1][3][1]] - 18.0) < TOL
+
     # axis = 2
     filename =  "concat/concat_axis_2.onnx"
     network = loadNetworkInONNX(filename)
     assert network.shapeMap['X'] == [2, 2, 2]
     assert network.shapeMap['Y'] == [2, 2, 2]
     assert network.shapeMap['Z'] == (2, 2, 4)
+
+    inputVars = network.inputVars
+    outputVars = network.outputVars[0]
+
+    num = 1
+    for i in range(len(inputVars[0])):
+        for j in range(len(inputVars[0][i])):
+            for k in range(len(inputVars[0][i][j])):
+                network.setLowerBound(inputVars[0][i][j][k], num)
+                network.setUpperBound(inputVars[0][i][j][k], num)
+                network.setLowerBound(inputVars[1][i][j][k], num + 10)
+                network.setUpperBound(inputVars[1][i][j][k], num + 10)
+                num += 1
+
+    _, vals, _ = network.solve(options = options)
+    assert abs(vals[outputVars[0][0][0]] - 1.0) < TOL
+    assert abs(vals[outputVars[0][0][1]] - 2.0) < TOL
+    assert abs(vals[outputVars[0][0][2]] - 11.0) < TOL
+    assert abs(vals[outputVars[0][0][3]] - 12.0) < TOL
+    assert abs(vals[outputVars[0][1][0]] - 3.0) < TOL
+    assert abs(vals[outputVars[0][1][1]] - 4.0) < TOL
+    assert abs(vals[outputVars[0][1][2]] - 13.0) < TOL
+    assert abs(vals[outputVars[0][1][3]] - 14.0) < TOL
+    assert abs(vals[outputVars[1][0][0]] - 5.0) < TOL
+    assert abs(vals[outputVars[1][0][1]] - 6.0) < TOL
+    assert abs(vals[outputVars[1][0][2]] - 15.0) < TOL
+    assert abs(vals[outputVars[1][0][3]] - 16.0) < TOL
+    assert abs(vals[outputVars[1][1][0]] - 7.0) < TOL
+    assert abs(vals[outputVars[1][1][1]] - 8.0) < TOL
+    assert abs(vals[outputVars[1][1][2]] - 17.0) < TOL
+    assert abs(vals[outputVars[1][1][3]] - 18.0) < TOL
 
 def test_split():
     """
