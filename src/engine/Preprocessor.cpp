@@ -891,6 +891,9 @@ void Preprocessor::eliminateVariables()
         List<unsigned> participatingVariables = (*constraint)->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
+	    if ( _uneliminableVariables.exists( variable ) )
+                continue;
+
             if ( _fixedVariables.exists( variable ) )
                 (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
         }
@@ -932,6 +935,9 @@ void Preprocessor::eliminateVariables()
         List<unsigned> participatingVariables = (*tsConstraint)->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
+	    if ( _uneliminableVariables.exists( variable ) )
+                continue;
+
             if ( _fixedVariables.exists( variable ) )
             {
                 (*tsConstraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
