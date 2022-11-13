@@ -162,16 +162,14 @@ if(${BUILD_PYTHON})
 endif()
 
 if (NOT MSVC)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS  -Wall -Wextra -MMD -Qunused-arguments ) #-Wno-deprecated
+    if (CMAKE_BUILD_TYPE MATCHES "Release")
+        set(COMPILE_FLAGS  -Wall )
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments ) #-Wno-deprecated
     else()
-        set(COMPILE_FLAGS  -Wall -Wextra -MMD ) #-Wno-deprecated
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD ) #-Wno-deprecated
     endif()
     set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
-
-    if (CMAKE_BUILD_TYPE MATCHES Debug)
-        set(COMPILE_FLAGS ${COMPILE_FLAGS} -Werror)
-    endif()
 endif()
 
 if (RUN_MEMORY_TEST)
