@@ -38,9 +38,9 @@ void DeepPolyWeightedSumElement::execute
 ( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Executing..." );
-    ASSERT( hasPredecessor() );
     allocateMemory();
     getConcreteBounds();
+    if ( hasPredecessor() )
     // Compute bounds with back-substitution
     computeBoundWithBackSubstitution( deepPolyElementsBefore );
     log( "Executing - done" );
