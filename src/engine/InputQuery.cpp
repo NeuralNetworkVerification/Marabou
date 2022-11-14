@@ -659,6 +659,14 @@ bool InputQuery::constructNetworkLevelReasoner()
 
     // First, put all the input neurons in layer 0
     List<unsigned> inputs = getInputVariables();
+    // If there is no input variable, don't construct the nlr
+    if ( inputs.empty() )
+    {
+        INPUT_QUERY_LOG( "unsuccessful\n" );
+        delete nlr;
+        return false;
+    }
+
     nlr->addLayer( 0, NLR::Layer::INPUT, inputs.size() );
     unsigned index = 0;
 
