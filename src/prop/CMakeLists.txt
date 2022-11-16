@@ -1,9 +1,14 @@
-file(GLOB SRCS "*.cpp")
+file(GLOB SRCS "*.cpp"
+prop/minisat/core/Solver.cc
+prop/minisat/simp/SimpSolver.cc
+)
 
 file(GLOB HEADERS "*.h"
   prop/minisat/core/Dimacs.h
   prop/minisat/core/Solver.h
   prop/minisat/core/SolverTypes.h
+  prop/minisat/minisat.cpp
+  prop/minisat/minisat.h
   prop/minisat/mtl/Alg.h
   prop/minisat/mtl/Alloc.h
   prop/minisat/mtl/Heap.h
