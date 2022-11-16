@@ -169,7 +169,7 @@ void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equatio
             {
                 // Add bounds as tightenings
                 unsigned var = eq._addends.front()._variable;
-                unsigned coeff = eq._addends.front()._coefficient;
+                double coeff = eq._addends.front()._coefficient;
                 if ( coeff == 0 )
                     throw CommonError( CommonError::DIVISION_BY_ZERO,
                                        "AddDisjunctionConstraint: zero coefficient encountered" );
@@ -181,9 +181,10 @@ void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equatio
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
                 }
-                else if ( type == Equation::GE || coeff < 0 )
+                else if ( ( type == Equation::GE && coeff > 0 ) ||
+                          ( type == Equation::LE && coeff < 0 ) )
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
-                else if ( type == Equation::LE || coeff < 0 )
+                else
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
             }
             else
