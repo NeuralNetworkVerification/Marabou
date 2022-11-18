@@ -18,17 +18,16 @@
 #include "theory_proxy.h"
 
 #include "context/context.h"
-#include "theory/theory_engine.h"
 
 namespace cvc5::internal {
 namespace prop {
 
-                         PropEngine* propEngine,
-                         TheoryEngine* theoryEngine,
-      d_theoryEngine(theoryEngine),
-TheoryProxy::TheoryProxy()
-    : d_queue(context()),
-      d_stopSearch(false, userContext())
+class TheoryEngine;
+
+TheoryProxy::TheoryProxy( TheoryEngine* theoryEngine )
+  : d_theoryEngine(theoryEngine)//,
+    //d_queue(CVC4::context::Context()),
+    //d_stopSearch(false, CVC4::context::UserContext())
 {
 }
 
@@ -36,45 +35,16 @@ TheoryProxy::~TheoryProxy() {
   /* nothing to do for now */
 }
 
-void TheoryProxy::variableNotify(SatVariable var) {
+  void TheoryProxy::variableNotify(SatVariable /*var*/) {
   //  d_theoryEngine->preRegister(getNode(SatLiteral(var)));
 }
 
-void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
+  void TheoryProxy::theoryCheck(theory::Theory::Effort /*effort*/) {
   // while (!d_queue.empty()) {
   //   TNode assertion = d_queue.front();
   //   d_queue.pop();
-  //   if (d_zll != nullptr)
-  //   {
-  //     if (d_stopSearch.get())
-  //     {
-  //       break;
-  //     }
-  //     int32_t alevel = d_propEngine->getDecisionLevel(assertion);
-  //     if (!d_zll->notifyAsserted(assertion, alevel))
-  //     {
-  //       d_stopSearch = true;
-  //       break;
-  //     }
-  //   }
   //   // now, assert to theory engine
   //   d_theoryEngine->assertFact(assertion);
-  //   if (d_dmNeedsActiveDefs)
-  //   {
-  //     Assert(d_skdm != nullptr);
-  //     Trace("sat-rlv-assert")
-  //         << "Assert to theory engine: " << assertion << std::endl;
-  //     // Assertion makes all skolems in assertion active,
-  //     // which triggers their definitions to becoming active.
-  //     std::vector<TNode> activeSkolemDefs;
-  //     d_skdm->notifyAsserted(assertion, activeSkolemDefs);
-  //     if (!activeSkolemDefs.empty())
-  //     {
-  //       // notify the decision engine of the skolem definitions that have become
-  //       // active due to the assertion.
-  //       d_decisionEngine->notifyActiveSkolemDefs(activeSkolemDefs);
-  //     }
-  //   }
   // }
   // if (!d_stopSearch.get())
   // {
@@ -82,7 +52,7 @@ void TheoryProxy::theoryCheck(theory::Theory::Effort effort) {
   // }
 }
 
-void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
+  void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& /*output*/) {
   // // Get the propagated literals
   // std::vector<TNode> outputNodes;
   // d_theoryEngine->getPropagatedLiterals(outputNodes);
@@ -92,7 +62,7 @@ void TheoryProxy::theoryPropagate(std::vector<SatLiteral>& output) {
   // }
 }
 
-void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
+  void TheoryProxy::explainPropagation(SatLiteral /*l*/, SatClause& /*explanation*/) {
   // TNode lNode = d_cnfStream->getNode(l);
   // Trace("prop-explain") << "explainPropagation(" << lNode << ")" << std::endl;
 
@@ -131,7 +101,7 @@ void TheoryProxy::explainPropagation(SatLiteral l, SatClause& explanation) {
   // }
 }
 
-void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
+  void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& /*l*/) {
   // Node literalNode = d_cnfStream->getNode(l);
   // Trace("prop") << "enqueueing theory literal " << l << " " << literalNode << std::endl;
   // Assert(!literalNode.isNull());
@@ -140,7 +110,8 @@ void TheoryProxy::enqueueTheoryLiteral(const SatLiteral& l) {
 
 SatLiteral TheoryProxy::getNextTheoryDecisionRequest() {
   // TNode n = d_theoryEngine->getNextDecisionRequest();
-  // return n.isNull() ? undefSatLiteral : d_cnfStream->getLiteral(n);
+  //return n.isNull() ? undefSatLiteral : d_cnfStream->getLiteral(n);
+  return undefSatLiteral;
 }
 
 bool TheoryProxy::theoryNeedCheck() const {
@@ -149,14 +120,11 @@ bool TheoryProxy::theoryNeedCheck() const {
   //   return false;
   // }
   // return d_theoryEngine->needCheck();
+  return false;
 }
 
 void TheoryProxy::notifyRestart() {
   //d_theoryEngine->notifyRestart();
-}
-
-void TheoryProxy::preRegister(Node n) {
-  // d_theoryEngine->preRegister(n);
 }
 
 }  // namespace prop

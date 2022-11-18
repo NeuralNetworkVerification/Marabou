@@ -20,30 +20,56 @@
 
 #include <unordered_set>
 
-#include "context/cdhashset.h"
 #include "context/cdqueue.h"
-#include "expr/node.h"
-#include "registrar.h"
+#include "context/cdo.h"
 #include "sat_solver_types.h"
-#include "smt/env_obj.h"
+
+namespace cvc5::theory
+{
+  class Theory {
+  public:
+  /**
+   * Subclasses of Theory may add additional efforts.  DO NOT CHECK
+   * equality with one of these values (e.g. if STANDARD xxx) but
+   * rather use range checks (or use the helper functions below).
+   * Normally we call QUICK_CHECK or STANDARD; at the leaves we call
+   * with FULL_EFFORT.
+   */
+  enum Effort
+  {
+    /**
+     * Standard effort where theory need not do anything
+     */
+    EFFORT_STANDARD = 50,
+    /**
+     * Full effort requires the theory make sure its assertions are
+     * satisfiable or not
+     */
+    EFFORT_FULL = 100,
+    /**
+     * Last call effort, called after theory combination has completed with
+     * no lemmas and a model is available.
+     */
+    EFFORT_LAST_CALL = 200
+  }; /* enum Effort */
+  };
+}
 
 namespace cvc5::internal {
 
-class Env;
-class TheoryEngine;
-
-namespace decision {
-class DecisionEngine;
-}
+using namespace CVC4::context;
 
 namespace prop {
 
+  class TheoryEngine;
+  class TNode;
+  class Node;
 /**
  * The proxy class that allows the SatSolver to communicate with the theories
  */
-class TheoryProxy : protected EnvObj, public Registrar
+class TheoryProxy
 {
-  using NodeSet = context::CDHashSet<Node>;
+  //using NodeSet = CDHashSet<Node>;
 
  public:
   TheoryProxy(TheoryEngine* theoryEngine);
@@ -94,18 +120,15 @@ class TheoryProxy : protected EnvObj, public Registrar
 
   SatValue getDecisionPolarity(SatVariable var);
 
-  /** Preregister term */
-  void preRegister(Node n) override;
-
-  private:
+   private:
   /** The theory engine we are using. */
   TheoryEngine* d_theoryEngine;
 
   /** Queue of asserted facts */
-  context::CDQueue<TNode> d_queue;
+  //CDQueue<TNode> d_queue;
 
   /** Whether we have been requested to stop the search */
-  context::CDO<bool> d_stopSearch;
+  //CDO<bool> d_stopSearch;
 }; /* class TheoryProxy */
 
 }  // namespace prop
