@@ -264,7 +264,7 @@ if (${ENABLE_OPENBLAS})
     add_library(${OPENBLAS_LIB} SHARED IMPORTED)
     set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
     list(APPEND LIBS ${OPENBLAS_LIB})
-    target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
+    target_include_directories(${OPENBLAS_LIB} SYSTEM INTERFACE ${OPENBLAS_DIR}/installed/include)
 endif()
 endif()
 
