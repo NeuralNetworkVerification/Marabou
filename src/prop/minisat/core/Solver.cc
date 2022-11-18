@@ -18,7 +18,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
-#include "prop/minisat/core/Solver.h"
+#include "minisat/core/Solver.h"
 
 #include <math.h>
 
@@ -32,9 +32,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "options/prop_options.h"
 #include "options/smt_options.h"
 #include "proof/clause_id.h"
-#include "prop/minisat/minisat.h"
-#include "prop/minisat/mtl/Sort.h"
-#include "prop/theory_proxy.h"
+#include "minisat/minisat.h"
+#include "minisat/mtl/Sort.h"
+#include "theory_proxy.h"
 
 using namespace cvc5::internal::prop;
 

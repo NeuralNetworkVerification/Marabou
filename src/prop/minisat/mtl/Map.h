@@ -21,8 +21,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Minisat_Map_h
 
 #include "base/check.h"
-#include "prop/minisat/mtl/IntTypes.h"
-#include "prop/minisat/mtl/Vec.h"
+#include "minisat/mtl/IntTypes.h"
+#include "minisat/mtl/Vec.h"
 
 namespace cvc5::internal {
 namespace Minisat {

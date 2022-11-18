@@ -24,8 +24,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <new>
 
 #include "base/check.h"
-#include "prop/minisat/mtl/IntTypes.h"
-#include "prop/minisat/mtl/XAlloc.h"
+#include "minisat/mtl/IntTypes.h"
+#include "minisat/mtl/XAlloc.h"
 
 namespace cvc5::internal {
 namespace Minisat {

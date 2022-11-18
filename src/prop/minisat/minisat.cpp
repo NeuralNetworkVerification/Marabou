@@ -15,14 +15,14 @@
  * Implementation of the minisat interface for cvc5.
  */
 
-#include "prop/minisat/minisat.h"
+#include "minisat/minisat.h"
 
 #include "options/base_options.h"
 #include "options/decision_options.h"
 #include "options/prop_options.h"
 #include "options/smt_options.h"
 #include "proof/clause_id.h"
-#include "prop/minisat/simp/SimpSolver.h"
+#include "minisat/simp/SimpSolver.h"
 #include "util/statistics_stats.h"
 
 namespace cvc5::internal {

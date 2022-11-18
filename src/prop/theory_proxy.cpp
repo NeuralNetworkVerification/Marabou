@@ -15,7 +15,7 @@
  * [[ Add lengthier description here ]]
  * \todo document this file
  */
-#include "prop/theory_proxy.h"
+#include "theory_proxy.h"
 
 #include "context/context.h"
 #include "decision/decision_engine.h"
