@@ -36,7 +36,7 @@ public:
 		}
 	}
 
-	ITableau *createTableau( BoundManager &/*boundManager*/ )
+	ITableau *createTableau( IBoundManager &/*boundManager*/ )
 	{
 		mockTableau.mockConstructor();
 		return &mockTableau;

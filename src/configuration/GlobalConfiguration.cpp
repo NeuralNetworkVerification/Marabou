@@ -67,6 +67,8 @@ const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
 const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000005;
 
+const double GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT = 20;
+
 const bool GlobalConfiguration::PREPROCESS_INPUT_QUERY = true;
 const bool GlobalConfiguration::PREPROCESSOR_ELIMINATE_VARIABLES = true;
 const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING = true;
@@ -81,8 +83,7 @@ const unsigned GlobalConfiguration::PSE_ITERATIONS_BEFORE_RESET = 1000;
 const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
-const double GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
-const double GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
+const double GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
 
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
@@ -118,6 +119,7 @@ const bool GlobalConfiguration::QUERY_LOADER_LOGGING = false;
 const bool GlobalConfiguration::SYMBOLIC_BOUND_TIGHTENER_LOGGING = false;
 const bool GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING = false;
 const bool GlobalConfiguration::MPS_PARSER_LOGGING= false;
+const bool GlobalConfiguration::ONNX_PARSER_LOGGING= false;
 const bool GlobalConfiguration::SOI_LOGGING = false;
 const bool GlobalConfiguration::SCORE_TRACKER_LOGGING = false;
 
@@ -154,7 +156,7 @@ void GlobalConfiguration::print()
     printf( "  PREPROCESSOR_ELIMINATE_VARIABLES: %s\n", PREPROCESSOR_ELIMINATE_VARIABLES ? "Yes" : "No" );
     printf( "  PSE_ITERATIONS_BEFORE_RESET: %u\n", PSE_ITERATIONS_BEFORE_RESET );
     printf( "  PSE_GAMMA_ERROR_THRESHOLD: %.15lf\n", PSE_GAMMA_ERROR_THRESHOLD );
-    printf( "  RELU_CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", RELU_CONSTRAINT_COMPARISON_TOLERANCE );
+    printf( "  CONSTRAINT_COMPARISON_TOLERANCE: %.15lf\n", CONSTRAINT_COMPARISON_TOLERANCE );
 
     String basisBoundTighteningType;
     switch ( EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE )

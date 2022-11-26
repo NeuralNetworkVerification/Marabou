@@ -19,7 +19,7 @@
 #if defined( __linux__ )
 #include <sched.h>
 #define getCPUId( cpu ) { cpu = sched_getcpu(); }
-#elif __APPLE__
+#elif __APPLE__ && (!defined(__arm64__))
 #include <cpuid.h>
 
 #define CPUId( INFO, LEAF, SUBLEAF ) __cpuid_count( LEAF, SUBLEAF, INFO[0],  \

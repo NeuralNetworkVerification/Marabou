@@ -4,7 +4,7 @@ mydir="${0%/*}"
 
 cd $mydir
 
-echo "Downloding openBLAS"
+echo "Downloading openBLAS"
 wget -q https://github.com/xianyi/OpenBLAS/releases/download/v0.3.19/OpenBLAS-0.3.19.tar.gz -O OpenBLASv0.3.19.tar.gz
 echo "Unzipping openBLAS"
 tar -xzf OpenBLASv0.3.19.tar.gz >> /dev/null

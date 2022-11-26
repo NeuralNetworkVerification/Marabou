@@ -161,11 +161,8 @@ public:
     // PSE's Gamma function's update tolerance
     static const double PSE_GAMMA_UPDATE_TOLERANCE;
 
-    // The tolerance for checking whether f = Relu( b )
-    static const double RELU_CONSTRAINT_COMPARISON_TOLERANCE;
-
-    // The tolerance for checking whether f = Abs( b )
-    static const double ABS_CONSTRAINT_COMPARISON_TOLERANCE;
+    // The tolerance for checking whether f = Constraint( b ), Constraint \in { ReLU, ABS, Sign}
+    static const double CONSTRAINT_COMPARISON_TOLERANCE;
 
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
@@ -195,6 +192,8 @@ public:
 
     // Symbolic tightening rounding constant
     static const double SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+
+    static const double SIGMOID_CUTOFF_CONSTANT;
 
     /*
       Constraint fixing heuristics
@@ -258,6 +257,7 @@ public:
     static const bool SYMBOLIC_BOUND_TIGHTENER_LOGGING;
     static const bool NETWORK_LEVEL_REASONER_LOGGING;
     static const bool MPS_PARSER_LOGGING;
+    static const bool ONNX_PARSER_LOGGING;
     static const bool SOI_LOGGING;
     static const bool SCORE_TRACKER_LOGGING;
 };

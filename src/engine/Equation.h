@@ -81,6 +81,10 @@ public:
       Retrieve the coefficient of a variable
     */
     double getCoefficient( unsigned variable ) const;
+    /*
+     Set the coefficient of a variable
+    */
+    void setCoefficient( unsigned variable, double newCoefficient );
 
     List<Addend> _addends;
     double _scalar;

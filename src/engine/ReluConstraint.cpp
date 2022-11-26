@@ -14,7 +14,6 @@
 
 #include "ReluConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "PiecewiseLinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
@@ -120,110 +119,137 @@ void ReluConstraint::unregisterAsWatcher( ITableau *tableau )
         tableau->unregisterToWatchVariable( this, _aux );
 }
 
-void ReluConstraint::notifyLowerBound( unsigned variable, double bound )
+void ReluConstraint::checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound )
 {
-    if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
-
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
-
-    setLowerBound( variable, bound );
-
-    if ( variable == _f && FloatUtils::isPositive( bound ) )
-        setPhaseStatus( RELU_PHASE_ACTIVE );
-    else if ( variable == _b && !FloatUtils::isNegative( bound ) )
-        setPhaseStatus( RELU_PHASE_ACTIVE );
-    else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
-        setPhaseStatus( RELU_PHASE_INACTIVE );
-
-    if ( isActive() && _constraintBoundTightener )
-    {
-        // A positive lower bound is always propagated between f and b
-        if ( ( variable == _f || variable == _b ) && bound > 0 )
-        {
-            unsigned partner = ( variable == _f ) ? _b : _f;
-            _constraintBoundTightener->registerTighterLowerBound( partner, bound );
-
-            // If we're in the active phase, aux should be 0
-            if ( _auxVarInUse )
-                _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
-        }
-
-        // If b is non-negative, we're in the active phase
-        else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
-        {
-            _constraintBoundTightener->registerTighterUpperBound( _aux, 0 );
-        }
-
-        // A positive lower bound for aux means we're inactive: f is 0, b is non-positive
-        // When inactive, b = -aux
-        else if ( _auxVarInUse && variable == _aux && bound > 0 )
-        {
-            _constraintBoundTightener->registerTighterUpperBound( _b, -bound );
-            _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
-        }
-
-        // A negative lower bound for b could tighten aux's upper bound
-        else if ( _auxVarInUse && variable == _b && bound < 0 )
-        {
-            _constraintBoundTightener->registerTighterUpperBound( _aux, -bound );
-        }
-
-        // Also, if for some reason we only know a negative lower bound for f,
-        // we attempt to tighten it to 0
-        else if ( bound < 0 && variable == _f )
-        {
-            _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
-        }
-    }
+  if ( variable == _f && FloatUtils::isPositive( bound ) )
+    setPhaseStatus( RELU_PHASE_ACTIVE );
+  else if ( variable == _b && !FloatUtils::isNegative( bound ) )
+    setPhaseStatus( RELU_PHASE_ACTIVE );
+  else if ( _auxVarInUse && variable == _aux && FloatUtils::isPositive( bound ) )
+    setPhaseStatus( RELU_PHASE_INACTIVE );
 }
 
-void ReluConstraint::notifyUpperBound( unsigned variable, double bound )
+void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound )
 {
-    if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
-
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-        return;
-
-    setUpperBound( variable, bound );
-
     if ( ( variable == _f || variable == _b ) && !FloatUtils::isPositive( bound ) )
         setPhaseStatus( RELU_PHASE_INACTIVE );
 
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
+}
+void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
+{
+    if ( _statistics )
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( isActive() && _constraintBoundTightener )
+    if ( _boundManager == nullptr )
     {
-        if ( variable == _f )
-        {
-            // Any bound that we learned of f should be propagated to b
-            _constraintBoundTightener->registerTighterUpperBound( _b, bound );
-        }
-        else if ( variable == _b )
-        {
-            if ( !FloatUtils::isPositive( bound ) )
-            {
-                // If b has a non-positive upper bound, f's upper bound is 0
-                _constraintBoundTightener->registerTighterUpperBound( _f, 0 );
+        if ( existsLowerBound( variable ) && !FloatUtils::gt( newBound, getLowerBound( variable ) ) )
+            return;
+        setLowerBound( variable, newBound );
+        checkIfLowerBoundUpdateFixesPhase( variable, newBound );
+    }
+    else if ( !phaseFixed() )
+    {
+        ASSERT( _boundManager != nullptr );
 
+        double bound = getLowerBound( variable );
+        checkIfLowerBoundUpdateFixesPhase( variable, bound );
+
+        if ( isActive() )
+        {
+            // A positive lower bound is always propagated between f and b
+            if ( ( variable == _f || variable == _b ) && bound > 0 )
+            {
+                unsigned partner = ( variable == _f ) ? _b : _f;
+                _boundManager->tightenLowerBound( partner, bound );
+
+                // If we're in the active phase, aux should be 0
                 if ( _auxVarInUse )
+                    _boundManager->tightenUpperBound( _aux, 0 );
+            }
+
+            // If b is non-negative, we're in the active phase
+            else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
+            {
+                _boundManager->tightenUpperBound( _aux, 0 );
+            }
+
+            // A positive lower bound for aux means we're inactive: f is 0, b is
+            // non-positive When inactive, b = -aux
+            else if ( _auxVarInUse && variable == _aux && bound > 0 )
+            {
+                _boundManager->tightenUpperBound( _b, -bound );
+                _boundManager->tightenUpperBound( _f, 0 );
+            }
+
+            // A negative lower bound for b could tighten aux's upper bound
+            else if ( _auxVarInUse && variable == _b && bound < 0 )
+            {
+                _boundManager->tightenUpperBound( _aux, -bound );
+            }
+
+            // Also, if for some reason we only know a negative lower bound for
+            // f, we attempt to tighten it to 0
+            else if ( bound < 0 && variable == _f )
+            {
+                _boundManager->tightenLowerBound( _f, 0 );
+            }
+        }
+    }
+}
+
+void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
+{
+    if ( _statistics )
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+
+    if ( _boundManager == nullptr )
+    {
+        if ( existsUpperBound( variable ) &&
+             !FloatUtils::lt( newBound, getUpperBound( variable ) ) )
+            return;
+
+        setUpperBound( variable, newBound );
+        checkIfUpperBoundUpdateFixesPhase( variable, newBound );
+    }
+    else if ( !phaseFixed() )
+    {
+        ASSERT( _boundManager != nullptr );
+        double bound = getUpperBound( variable );
+        checkIfUpperBoundUpdateFixesPhase( variable, bound );
+
+        if ( isActive() )
+        {
+            if ( variable == _f )
+            {
+                // Any bound that we learned of f should be propagated to b
+                _boundManager->tightenUpperBound( _b, bound );
+            }
+            else if ( variable == _b )
+            {
+                if ( !FloatUtils::isPositive( bound ) )
                 {
-                    // Aux's range is minus the range of b
-                    _constraintBoundTightener->registerTighterLowerBound( _aux, -bound );
+                    // If b has a non-positive upper bound, f's upper bound is 0
+                    _boundManager->tightenUpperBound( _f, 0 );
+
+                    if ( _auxVarInUse )
+                    {
+                        // Aux's range is minus the range of b
+                        _boundManager->tightenLowerBound( _aux, -bound );
+                    }
+                }
+                else
+                {
+                    // b has a positive upper bound, propagate to f
+                    _boundManager->tightenUpperBound( _f, bound );
                 }
             }
-            else
+            else if ( _auxVarInUse && variable == _aux )
             {
-                // b has a positive upper bound, propagate to f
-                _constraintBoundTightener->registerTighterUpperBound( _f, bound );
+                _boundManager->tightenLowerBound( _b, -bound );
             }
-        }
-        else if ( _auxVarInUse && variable == _aux )
-        {
-            _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
         }
     }
 }
@@ -252,7 +278,7 @@ bool ReluConstraint::satisfied() const
         return false;
 
     if ( FloatUtils::isPositive( fValue ) )
-        return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE );
+        return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
     else
         return !FloatUtils::isPositive( bValue );
 }
@@ -869,12 +895,12 @@ bool ReluConstraint::haveOutOfBoundVariables() const
     double bValue = getAssignment( _b );
     double fValue = getAssignment( _f );
 
-    if ( FloatUtils::gt( getLowerBound( _b ), bValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
-         || FloatUtils::lt( getUpperBound( _b ), bValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE )
+         || FloatUtils::lt( getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
-    if ( FloatUtils::gt( getLowerBound( _f ), fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE )
-         || FloatUtils::lt( getUpperBound( _f ), fValue, GlobalConfiguration::RELU_CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE )
+         || FloatUtils::lt( getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     return false;

@@ -151,6 +151,11 @@ public:
         return false;
     }
 
+    virtual bool supportVariableElimination() const override
+    {
+      return false;
+    }
+
     /*
       Transform the disjunction into a disjunction where each disjunct only
       contains variable bounds.

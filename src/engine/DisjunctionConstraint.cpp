@@ -15,6 +15,7 @@
 #include "DisjunctionConstraint.h"
 
 #include "Debug.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -149,8 +150,9 @@ void DisjunctionConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsLowerBound( variable ) && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr && existsLowerBound( variable ) &&
+         !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+      return;
 
     setLowerBound( variable, bound );
 
@@ -162,8 +164,9 @@ void DisjunctionConstraint::notifyUpperBound( unsigned variable, double bound )
     if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( existsUpperBound( variable ) && !FloatUtils::lt( bound, getUpperBound( variable ) ) )
-        return;
+    if ( _boundManager == nullptr && existsUpperBound( variable ) &&
+         !FloatUtils::lt( bound, getUpperBound( variable ) ) )
+      return;
 
     setUpperBound( variable, bound );
 
@@ -376,7 +379,7 @@ void DisjunctionConstraint::eliminateVariable( unsigned /* variable */, double /
 
 bool DisjunctionConstraint::constraintObsolete() const
 {
-    return _feasibleDisjuncts.empty();
+    return false;
 }
 
 void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tightenings */ ) const
@@ -478,6 +481,8 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
         else if ( _cdInfeasibleCases && !isCaseInfeasible( indToPhaseStatus( ind ) ) )
             markInfeasible( indToPhaseStatus( ind ) );
     }
+
+    if ( _feasibleDisjuncts.size() == 0 ) throw InfeasibleQueryException();
 }
 
 bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const

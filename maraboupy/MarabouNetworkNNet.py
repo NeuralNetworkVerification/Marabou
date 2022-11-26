@@ -187,7 +187,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
         self.variableRanges()
 
         # Set input variable bounds
-        for i, i_var in enumerate(self.inputVars[0]):
+        for i, i_var in enumerate(self.inputVars[0][0]):
             self.setLowerBound(i_var, self.getInputMinimum(i_var))
             self.setUpperBound(i_var, self.getInputMaximum(i_var))
 
@@ -385,10 +385,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             offset = sum([x * 2 for x in hidden_layers[:len(hidden_layers) - 1]])
             output_variables.append(self.layerSizes[0] + offset + i + 2 * hidden_layers[-1])
 
-        self.inputVars = np.array([input_variables])
+        self.inputVars = [np.array([input_variables])]
         self.b_variables = b_variables
         self.f_variables = f_variables
-        self.outputVars = np.array([output_variables])
+        self.outputVars = [np.array([output_variables])]
 
     def nodeTo_b(self, layer, node):
         """Get variable number for the backward variable corresponding to layer, node
@@ -576,10 +576,10 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             inputValues (list of np array): Input to network
 
         Returns:
-            (np array): Output of the network
+            (list of np array): Output of the network
         """
-        return self.evaluateNNet(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
-                                 normalize_outputs=self.normalize)
+        return [self.evaluateNNet(inputValues.flatten().tolist(), normalize_inputs=self.normalize,
+                                 normalize_outputs=self.normalize)]
 
     def evaluateNNet(self, inputs, first_layer = 0, last_layer=-1, normalize_inputs=False,
                      normalize_outputs=False, activate_output_layer=False):
@@ -666,7 +666,7 @@ class MarabouNetworkNNet(MarabouNetwork.MarabouNetwork):
             (list of float)
         """
         inputs = []
-        for input_var in self.inputVars.flatten():
+        for input_var in self.inputVars[0].flatten():
             assert self.upperBoundExists(input_var)
             assert self.lowerBoundExists(input_var)
             random_value = np.random.uniform(low=self.lowerBounds[input_var],

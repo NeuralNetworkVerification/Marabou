@@ -19,12 +19,12 @@ def test_dnc_unsat():
     network = Marabou.read_nnet(filename)
     centerPoint = [-0.2454504737724233, -0.4774648292756546, 0.0, -0.3181818181818182, 0.0]
 
-    for var, val in zip(network.inputVars[0], centerPoint):
+    for var, val in zip(network.inputVars[0][0], centerPoint):
         network.setLowerBound(var, val - 0.002)
         network.setUpperBound(var, val + 0.002)
 
     # Set high lower bound on first output variable
-    outVar = network.outputVars[0][0]
+    outVar = network.outputVars[0][0][0]
     network.setLowerBound(outVar, 0.1)
 
     # Expect UNSAT result
@@ -41,12 +41,12 @@ def test_dnc_sat():
     network = Marabou.read_nnet(filename)
     centerPoint = [-0.2454504737724233, -0.4774648292756546, 0.0, -0.3181818181818182, 0.0]
 
-    for var, val in zip(network.inputVars[0], centerPoint):
+    for var, val in zip(network.inputVars[0][0], centerPoint):
         network.setLowerBound(var, val - 0.002)
         network.setUpperBound(var, val + 0.002)
 
     # Set a reduced lower bound on first output variable, which can be satisfied
-    outVar = network.outputVars[0][0]
+    outVar = network.outputVars[0][0][0]
     network.setLowerBound(outVar, 0.0)
 
     # Expect SAT result, which should return a dictionary with a value for every network variable
@@ -86,5 +86,5 @@ def evaluateFile(filename, testInputs, testOutputs):
     if testOutputs:
         # Evaluate test points using Marabou and compare to known output
         for testInput, testOutput in zip(testInputs, testOutputs):
-            marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "").flatten()
+            marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "")[0].flatten()
             assert max(abs(marabouEval - testOutput)) < TOL

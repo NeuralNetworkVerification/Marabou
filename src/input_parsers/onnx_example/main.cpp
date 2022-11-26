@@ -1,25 +1,30 @@
 /*********************                                                        */
-/*! \file ConstraintBoundTightenerFactory.cpp
+/*! \file main.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Matthew Daggitt
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ **/
 
-**/
+#include "Engine.h"
+#include "InputQuery.h"
+#include "OnnxParser.h"
+#include <cstdio>
 
-#define CXXTEST_MOCK_TEST_SOURCE_FILE
-#include "T/ConstraintBoundTightenerFactory.h"
+int main( int argc, char *argv[] )
+{
+    return 0;
+}
 
 //
 // Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
+// compile-command: "make -C ../../.. "
+// tags-file-name: "../../../TAGS"
 // c-basic-offset: 4
 // End:
 //

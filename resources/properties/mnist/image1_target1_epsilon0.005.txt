@@ -1,3 +1,4 @@
+// Input variables (test comment)
 x0 >= -0.005
 x0 <= 0.005
 x1 >= -0.005
@@ -1566,6 +1567,7 @@ x782 >= -0.005
 x782 <= 0.005
 x783 >= -0.005
 x783 <= 0.005
+// Output variables (test comment)
 +y0 -y1 <= 0
 +y2 -y1 <= 0
 +y3 -y1 <= 0
@@ -1575,3 +1577,4 @@ x783 <= 0.005
 +y7 -y1 <= 0
 +y8 -y1 <= 0
 +y9 -y1 <= 0
+// End of file

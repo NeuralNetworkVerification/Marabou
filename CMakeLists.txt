@@ -38,19 +38,50 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
+set(ONNX_DIR "${TOOLS_DIR}/onnx-1.10.2")
 set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
 if (NOT OPENBLAS_DIR)
     set(OPENBLAS_DIR ${OPENBLAS_DEFAULT_DIR})
+endif()
+set(PROTOBUF_DEFAULT_DIR "${TOOLS_DIR}/protobuf-3.19.2")
+if (NOT PROTOBUF_DIR)
+    set(PROTOBUF_DIR ${PROTOBUF_DEFAULT_DIR})
 endif()
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
 set(CVC4_DIR "${DEPS_DIR}/CVC4")
 
+# CVC4
 set(CONTEXT_DIR "${CVC4_DIR}/context")
 set(CVC4_BASE_DIR "${CVC4_DIR}/base")
 file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
 file(GLOB DEPS_CVC4_BASE "${CVC4_BASE_DIR}/*.cpp")
 include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
+
+# Protobuf (needed to compile Onnx file below)
+if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
+    message("Can't find protobuf, installing. If protobuf is installed please use the PROTOBUF_DIR parameter to pass the path")
+    if (${PROTOBUF_DIR} STREQUAL ${PROTOBUF_DEFAULT_DIR})
+        message("installing protobuf")
+        execute_process(COMMAND ${TOOLS_DIR}/download_protobuf.sh)
+    else()
+        message(FATAL_ERROR "Can't find protobuf in the supplied directory")
+    endif()
+endif()
+
+set(PROTOBUF_LIB protobuf)
+add_library(${PROTOBUF_LIB} SHARED IMPORTED)
+set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
+target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
+list(APPEND LIBS ${PROTOBUF_LIB})
+
+# Onnx
+if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
+    message("generating ONNX protobuf file")
+    execute_process(COMMAND ${TOOLS_DIR}/download_onnx.sh)
+endif()
+file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
+include_directories(SYSTEM ${ONNX_DIR})
 
 set(OPENBLAS_LIB openblas)
 
@@ -104,7 +135,7 @@ endif()
 
 # We build a static library that is the core of the project, the link it to the
 # API's (executable and python at the moment)
-add_library(${MARABOU_LIB} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
+add_library(${MARABOU_LIB} ${DEPS_ONNX} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
 target_include_directories(${MARABOU_LIB} PRIVATE SYSTEM)
 
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
@@ -175,12 +206,6 @@ else()
     set(SCRIPT_EXTENSION sh)
 endif()
 
-if (MSVC)
-    set(SCRIPT_EXTENSION bat)
-    set(Boost_NAMESPACE libboost)
-else()
-    set(SCRIPT_EXTENSION sh)
-endif()
 find_package(Boost COMPONENTS program_options timer chrono thread)
 # Find boost
 if (NOT ${Boost_FOUND})
@@ -190,8 +215,9 @@ if (NOT ${Boost_FOUND})
     find_package(Boost REQUIRED COMPONENTS program_options timer chrono thread)
 endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
-set(LIBS ${Boost_LIBRARIES})
+list(APPEND LIBS ${Boost_LIBRARIES})
 
+# Gurobi
 if (${ENABLE_GUROBI})
   message(STATUS "Using Gurobi for LP relaxation for bound tightening")
   if (NOT DEFINED GUROBI_DIR)
@@ -220,11 +246,11 @@ if (${ENABLE_GUROBI})
   target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
 endif()
 
+#OpenBLAS
 if (NOT MSVC)
 if (${ENABLE_OPENBLAS})
     message(STATUS "using openblas for matrix multiplication")
     add_compile_definitions(ENABLE_OPENBLAS)
-    #OpenBLAS
     if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
         message("Can't find open blas, installing. If open blas is isntalled please use the OPENBLAS_DIR parameter to pass the path")
         if (${OPENBLAS_DIR} STREQUAL ${OPENBLAS_DEFAULT_DIR})
@@ -246,6 +272,7 @@ endif()
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND LIBS Threads::Threads)
+
 
 if (BUILD_STATIC_MARABOU)
   # build a static library

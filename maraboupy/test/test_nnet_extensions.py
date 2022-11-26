@@ -30,10 +30,10 @@ def test_evaluate_network():
         assert (output1 == output2).all()
 
         # Compare evaluation with and without Marabou
-        without_marabou_output = nnet_object.evaluate(np.array([inputs]),useMarabou=False).flatten()
+        without_marabou_output = nnet_object.evaluate(np.array([inputs]),useMarabou=False)[0].flatten()
         without_marabou_output_rounded = np.array([float(round(y,8)) for y in without_marabou_output])
 
-        with_marabou_output = nnet_object.evaluate(np.array([inputs]),useMarabou=True).flatten()
+        with_marabou_output = nnet_object.evaluate(np.array([inputs]),useMarabou=True)[0].flatten()
         with_marabou_output_rounded = np.array([float(round(y,8)) for y in with_marabou_output])
 
         # Assert that all of the above agree, at least up to 10^-8
@@ -87,8 +87,8 @@ def test_write_read_evaluate(tmpdir):
         assert (output1 == output2).all()
 
         # Compare evaluation with and without Marabou
-        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=False).flatten()
-        with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True).flatten()
+        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=False)[0].flatten()
+        with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True)[0].flatten()
 
         # Assert that all of the above agree up to TOL
         assert (output2 == without_marabou_output).all()
@@ -120,10 +120,10 @@ def test_normalize_read_flag(tmpdir):
         output2 = nnet_object_a.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         assert (output1 == output2).all()
 
-        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=False).flatten()
+        without_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=False)[0].flatten()
         assert (output2 == without_marabou_output).all()
 
-        with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True).flatten()
+        with_marabou_output = nnet_object_a.evaluate(np.array([inputs]), useMarabou=True)[0].flatten()
         assert (abs(without_marabou_output - with_marabou_output) < TOL).all()
 
 def test_reset_network():
@@ -172,10 +172,10 @@ def test_reset_network():
         output2_norm = nnet_object2.evaluateNNet(inputs, normalize_inputs=True, normalize_outputs=True)
         assert (abs(output1_norm - output2_norm) < TOL).all()
 
-        without_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=False).flatten()
-        with_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=True).flatten()
-        without_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=False).flatten()
-        with_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=True).flatten()
+        without_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=False)[0].flatten()
+        with_marabou_output1 = nnet_object1.evaluate(np.array([inputs]), useMarabou=True)[0].flatten()
+        without_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=False)[0].flatten()
+        with_marabou_output2 = nnet_object2.evaluate(np.array([inputs]), useMarabou=True)[0].flatten()
 
         assert (abs(with_marabou_output1 - with_marabou_output2) < TOL).all()
         assert (abs(without_marabou_output1 - without_marabou_output2) < TOL).all()
