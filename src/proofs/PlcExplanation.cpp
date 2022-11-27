@@ -20,15 +20,13 @@ PLCExplanation::PLCExplanation( unsigned causingVar,
                                 BoundType causingVarBound,
                                 BoundType affectedVarBound,
                                 const Vector<double> &explanation,
-                                PiecewiseLinearFunctionType constraintType,
-                                unsigned decisionLevel )
+                                PiecewiseLinearFunctionType constraintType )
     : _causingVar( causingVar )
     , _affectedVar( affectedVar )
     , _bound( bound )
     , _causingVarBound( causingVarBound )
     , _affectedVarBound( affectedVarBound )
     , _constraintType( constraintType )
-    , _decisionLevel( decisionLevel )
 {
     if ( explanation.empty() )
         _explanation = NULL;
@@ -81,9 +79,4 @@ const double *PLCExplanation::getExplanation() const
 PiecewiseLinearFunctionType PLCExplanation::getConstraintType() const
 {
     return _constraintType;
-}
-
-unsigned PLCExplanation::getDecisionLevel() const
-{
-    return _decisionLevel;
 }

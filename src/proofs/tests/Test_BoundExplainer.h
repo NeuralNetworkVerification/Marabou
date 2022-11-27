@@ -14,12 +14,29 @@
 
 #include "BoundExplainer.h"
 #include "context/cdlist.h"
+#include "context/cdo.h"
 #include "context/context.h"
 #include <cxxtest/TestSuite.h>
+
+using CVC4::context::Context;
+using namespace CVC4::context;
 
 class BoundsExplainerTestSuite : public CxxTest::TestSuite
 {
 public:
+    Context * context;
+
+    void setUp()
+    {
+        TS_ASSERT_THROWS_NOTHING( context = new Context );
+    }
+
+    void tearDown()
+    {
+        TS_ASSERT_THROWS_NOTHING( delete context; );
+    }
+
+
     /*
       Test initialization of BoundExplainer
     */
@@ -27,15 +44,15 @@ public:
     {
         unsigned numberOfVariables = 3;
         unsigned numberOfRows = 5;
-        BoundExplainer be( numberOfVariables, numberOfRows );
+        BoundExplainer be( numberOfVariables, numberOfRows, *context );
 
         TS_ASSERT_EQUALS( be.getNumberOfRows(), numberOfRows );
         TS_ASSERT_EQUALS( be.getNumberOfVariables(), numberOfVariables );
 
         for ( unsigned i = 0; i < numberOfVariables; ++i )
         {
-            TS_ASSERT( be.getExplanation( i, true ).empty() );
-            TS_ASSERT( be.getExplanation( i, false ).empty() );
+            TS_ASSERT( be.isExplanationTrivial( i, true ) );
+            TS_ASSERT( be.isExplanationTrivial( i, false ) );
         }
     }
 
@@ -47,13 +64,13 @@ public:
         unsigned numberOfVariables = 2;
         unsigned numberOfRows = 2;
         double value = -2.55;
-        BoundExplainer be( numberOfVariables, numberOfRows );
+        BoundExplainer be( numberOfVariables, numberOfRows, *context );
 
         TS_ASSERT_THROWS_NOTHING( be.setExplanation( Vector<double>( numberOfVariables, value ), 0, true ) );
         auto explanation = be.getExplanation( 0, true );
 
         for ( auto num : explanation )
-            TS_ASSERT_EQUALS( num, value );
+            TS_ASSERT_EQUALS( num->get(), value );
     }
 
     /*
@@ -63,7 +80,7 @@ public:
     {
         unsigned numberOfVariables = 2;
         unsigned numberOfRows = 2;
-        BoundExplainer be( numberOfVariables, numberOfRows );
+        BoundExplainer be( numberOfVariables, numberOfRows, *context );
 
         TS_ASSERT_THROWS_NOTHING( be.setExplanation( Vector<double>( numberOfVariables, 1 ), numberOfVariables - 1, true ) );
         TS_ASSERT_THROWS_NOTHING( be.setExplanation( Vector<double>( numberOfVariables, 5 ), numberOfVariables - 1, false ) );
@@ -74,12 +91,12 @@ public:
 
         for ( unsigned i = 0; i < numberOfVariables; ++ i )
         {
-            TS_ASSERT( be.getExplanation( i, true ).empty() || ( be.getExplanation( i, true ).last() == 0 && be.getExplanation( i, true ).size() == numberOfVariables + 1 ) );
-            TS_ASSERT( be.getExplanation( i, false ).empty() || ( be.getExplanation( i, false ).last() == 0 && be.getExplanation( i, false ).size() == numberOfVariables + 1 ) );
+            TS_ASSERT( be.isExplanationTrivial( i, true ) || ( be.getExplanation( i, true ).last()->get() == 0 && be.getExplanation( i, true ).size() == numberOfVariables + 1 ) );
+            TS_ASSERT( be.isExplanationTrivial( i, false ) || ( be.getExplanation( i, false ).last()->get() == 0 && be.getExplanation( i, false ).size() == numberOfVariables + 1 ) );
         }
 
-        TS_ASSERT( be.getExplanation( numberOfVariables, true ).empty() );
-        TS_ASSERT( be.getExplanation( numberOfVariables, false ).empty() ) ;
+        TS_ASSERT( be.isExplanationTrivial( numberOfVariables, true ) );
+        TS_ASSERT( be.isExplanationTrivial( numberOfVariables, false ) ) ;
     }
 
     /*
@@ -89,13 +106,13 @@ public:
     {
         unsigned numberOfVariables = 1;
         unsigned numberOfRows = 1;
-        BoundExplainer be( numberOfVariables, numberOfRows );
+        BoundExplainer be( numberOfVariables, numberOfRows, *context );
 
         TS_ASSERT_THROWS_NOTHING( be.setExplanation( Vector<double>( numberOfRows, 1 ), 0, true ) );
-        TS_ASSERT( !be.getExplanation( 0 , true ).empty() );
+        TS_ASSERT( !be.isExplanationTrivial( 0, true ) );
 
         be.resetExplanation( 0, true );
-        TS_ASSERT( be.getExplanation( 0 , true ).empty() );
+        TS_ASSERT( be.isExplanationTrivial( 0, true ) );
     }
 
     /*
@@ -105,7 +122,7 @@ public:
     {
         unsigned numberOfVariables = 6;
         unsigned numberOfRows = 3;
-        BoundExplainer be( numberOfVariables, numberOfRows );
+        BoundExplainer be( numberOfVariables, numberOfRows, *context );
         Vector<double> row1 { 1, 0, 0 };
         Vector<double> row2 { 0, -1, 0 };
         Vector<double> row3 { 0, 0, 2.5 };
@@ -131,17 +148,22 @@ public:
         be.updateBoundExplanation( updateTableauRow, true );
         // Result is { 1, 0, 0 } + 2 * { 0, -1, 0 } + { 1, -1, 0}
         Vector<double> res1 { 2, -3, 0 };
-        TS_ASSERT_EQUALS( be.getExplanation( 2, true ), res1 );
+
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT_EQUALS( be.getExplanation( 2, true )[i]->get(), res1[i] );
 
         be.updateBoundExplanation( updateTableauRow, false, 3 );
         // Result is 2 * { 0, 0, 2.5 } + { -1, 1, 0 }
         Vector<double> res2 { -1, 2, 5 };
-        TS_ASSERT_EQUALS( be.getExplanation( 3, false ), res2 );
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT_EQUALS( be.getExplanation( 3, false )[i]->get(), res2[i] );
 
         be.updateBoundExplanation( updateTableauRow, false, 1 );
         // Result is -0.5 * { 1, 0, 0 } + 0.5 * { -1, 2, 5 } - 0.5 * { 1, -1, 0 }
         Vector<double> res3 { -1.5, 1.5, 2.5 };
-        TS_ASSERT_EQUALS( be.getExplanation( 1, false ), res3 );
+
+        for ( unsigned i = 0; i < 3; ++i )
+            TS_ASSERT_EQUALS( be.getExplanation( 1, false )[i]->get(), res3[i] );
 
         // row3:= x1 = x5
         // Row coefficients are { 0, 0, 2.5 }
@@ -152,6 +174,7 @@ public:
         be.updateBoundExplanationSparse( updateSparseRow, true, 5 );
         // Result is  ( 1 / 2.5 ) * ( -2.5 ) * { -1.5, 1.5, 2.5 } + ( 1 / 2.5 ) * { 0, 0, 2.5 }
         Vector<double> res4 { 1.5, -1.5, -1.5 };
-        TS_ASSERT_EQUALS( be.getExplanation( 5, true ), res4 );
+        for ( unsigned i = 0; i < 3; ++i)
+            TS_ASSERT_EQUALS( be.getExplanation( 5, true )[i]->get(), res4[i] );
     }
 };

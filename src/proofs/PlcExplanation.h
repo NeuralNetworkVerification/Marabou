@@ -16,13 +16,8 @@
 #define __PlcExplanation_h__
 
 #include "PiecewiseLinearConstraint.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Vector.h"
-
-enum BoundType : unsigned
-{
-    UPPER = 1,
-    LOWER = 0,
-};
 
 /*
   Contains all necessary info of a ground bound update during a run (i.e from ReLU phase-fixing)
@@ -36,8 +31,7 @@ public:
                     BoundType causingVarBound,
                     BoundType affectedVarBound,
                     const Vector<double> &explanation,
-                    PiecewiseLinearFunctionType constraintType,
-                    unsigned decisionLevel );
+                    PiecewiseLinearFunctionType constraintType );
 
     ~PLCExplanation();
 
@@ -52,7 +46,6 @@ public:
     BoundType getAffectedVarBound() const;
     const double *getExplanation() const;
     PiecewiseLinearFunctionType getConstraintType() const;
-    unsigned getDecisionLevel() const;
 
 private:
     unsigned _causingVar;
@@ -62,7 +55,6 @@ private:
     BoundType _affectedVarBound;
     double *_explanation;
     PiecewiseLinearFunctionType _constraintType;
-    unsigned _decisionLevel;
 };
 
 #endif //__PlcExplanation_h__

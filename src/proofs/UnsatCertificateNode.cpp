@@ -85,11 +85,6 @@ void UnsatCertificateNode::addPLCExplanation( std::shared_ptr<PLCExplanation> &e
     _PLCExplanations.append( explanation );
 }
 
-void UnsatCertificateNode::setPLCExplanations( const List<std::shared_ptr<PLCExplanation>> &explanations )
-{
-    _PLCExplanations.clear();
-    _PLCExplanations = explanations;
-}
 
 UnsatCertificateNode *UnsatCertificateNode::getChildBySplit( const PiecewiseLinearCaseSplit &split ) const
 {
@@ -149,11 +144,6 @@ void UnsatCertificateNode::makeLeaf()
     }
 
     _children.clear();
-}
-
-void UnsatCertificateNode::removePLCExplanationsBelowDecisionLevel( unsigned decisionLevel )
-{
-    _PLCExplanations.removeIf( [decisionLevel] ( std::shared_ptr<PLCExplanation> &explanation ){ return explanation->getDecisionLevel() <= decisionLevel; } );
 }
 
 bool UnsatCertificateNode::isValidLeaf() const

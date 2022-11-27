@@ -67,6 +67,10 @@ public:
      // Total number of valid case splits performed so far (including in other
      // branches of the search tree, that have since been popped)
      TOTAL_NUMBER_OF_VALID_CASE_SPLITS,
+
+	 // Total number of delegated and certified leaves in the search tree
+     NUM_CERTIFIED_LEAVES,
+     NUM_DELEGATED_LEAVES,
     };
 
     enum StatisticsLongAttribute
@@ -205,7 +209,10 @@ public:
      TIME_CONTEXT_PUSH,
      TIME_CONTEXT_POP,
      TIME_CONTEXT_PUSH_HOOK,
-     TIME_CONTEXT_POP_HOOK
+     TIME_CONTEXT_POP_HOOK,
+
+	 // Total Certification Time
+     TOTAL_CERTIFICATION_TIME,
     };
 
     enum StatisticsDoubleAttribute
@@ -307,6 +314,12 @@ public:
       For debugging purposes
     */
     void printStartingIteration( unsigned long long iteration, String message );
+
+    /*
+      Print a long attribute in time format
+     */
+    void printLongAttributeAsTime( unsigned long long longAsNumber );
+
 
 private:
     // Initial timestamp

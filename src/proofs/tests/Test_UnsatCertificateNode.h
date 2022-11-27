@@ -68,7 +68,7 @@ public:
         auto upperBoundExplanation = Vector<double>(1, 1);
         auto lowerBoundExplanation = Vector<double>(1, 1);
 
-        auto *contradiction = new Contradiction( 0, upperBoundExplanation, lowerBoundExplanation );
+        auto *contradiction = new Contradiction( Vector<double>(1, 0 ) );
         root.setContradiction( contradiction );
         TS_ASSERT_EQUALS( root.getContradiction(), contradiction );
     }
@@ -81,9 +81,9 @@ public:
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
         Vector<double> emptyVec;
 
-        auto explanation1 = std::shared_ptr<PLCExplanation>( new PLCExplanation( 1, 1, 0, UPPER, UPPER, emptyVec, RELU, 0 ) );
-        auto explanation2 = std::shared_ptr<PLCExplanation>( new PLCExplanation( 1, 1, -1, UPPER, UPPER, emptyVec, RELU, 1 ) );
-        auto explanation3 = std::shared_ptr<PLCExplanation>( new PLCExplanation( 1, 1, -4, UPPER, UPPER, emptyVec, RELU, 2 ) );
+        auto explanation1 = std::shared_ptr<PLCExplanation>( new PLCExplanation( 1, 1, 0, UPPER, UPPER, emptyVec, RELU ) );
+        auto explanation2 = std::shared_ptr<PLCExplanation>( new PLCExplanation( 1, 1, -1, UPPER, UPPER, emptyVec, RELU ) );
+        auto explanation3 = std::shared_ptr<PLCExplanation>( new PLCExplanation( 1, 1, -4, UPPER, UPPER, emptyVec, RELU ) );
 
         TS_ASSERT( root.getPLCExplanations().empty() );
 
@@ -92,17 +92,7 @@ public:
         root.addPLCExplanation( explanation3 );
         TS_ASSERT_EQUALS( root.getPLCExplanations().size(), 3U );
 
-        root.removePLCExplanationsBelowDecisionLevel( 0 );
-        TS_ASSERT_EQUALS( root.getPLCExplanations().size(), 2U );
-        TS_ASSERT_EQUALS( root.getPLCExplanations().front(), explanation2 );
-        TS_ASSERT_EQUALS( root.getPLCExplanations().back(), explanation3 );
-
         root.deletePLCExplanations();
         TS_ASSERT( root.getPLCExplanations().empty() );
-
-        List<std::shared_ptr<PLCExplanation>> list = { explanation1 };
-        root.setPLCExplanations( list );
-        TS_ASSERT_EQUALS( root.getPLCExplanations().size(), 1U );
-        TS_ASSERT_EQUALS( root.getPLCExplanations().front(), explanation1 );
     }
 };

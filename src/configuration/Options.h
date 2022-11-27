@@ -70,6 +70,9 @@ public:
 
         // Import assignment for debugging purposes, use IMPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
         DEBUG_ASSIGNMENT,
+
+        // Produce proofs of unsatisfiability and check them
+        PRODUCE_PROOFS
     };
 
     enum IntOptions {

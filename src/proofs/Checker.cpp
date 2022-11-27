@@ -15,11 +15,13 @@
 #include "Checker.h"
 
 Checker::Checker( const UnsatCertificateNode *root,
-                  const Vector<Vector<double>> &initialTableau,
+                  unsigned proofSize,
+                  const SparseMatrix *initialTableau,
                   const Vector<double> &groundUpperBounds,
                   const Vector<double> &groundLowerBounds,
                   const List<PiecewiseLinearConstraint *> &problemConstraints )
     : _root( root )
+    , _proofSize( proofSize )
     , _initialTableau( initialTableau )
     , _groundUpperBounds( groundUpperBounds )
     , _groundLowerBounds( groundLowerBounds )
@@ -53,7 +55,7 @@ bool Checker::checkNode( const UnsatCertificateNode *node )
     }
 
     // Check all PLC bound propagations
-    if ( !checkAllPLCExplanations( node, UNSATCertificateUtils::CERTIFICATION_TOLERANCE ) )
+    if ( !checkAllPLCExplanations( node, GlobalConfiguration::LEMMAS_CERTIFICATION_TOLERANCE ) )
         return false;
 
     // Save to file if marked
@@ -128,12 +130,17 @@ bool Checker::checkNode( const UnsatCertificateNode *node )
 bool Checker::checkContradiction( const UnsatCertificateNode *node ) const
 {
     ASSERT( node->isValidLeaf() && !node->getSATSolutionFlag() );
-    unsigned var = node->getContradiction()->getVar();
+    auto contradictionVec = node->getContradiction()->getContradictionVec();
 
-    double computedUpper = explainBound( var, true, node->getContradiction()->getUpperBoundExplanation() );
-    double computedLower = explainBound( var, false, node->getContradiction()->getLowerBoundExplanation() );
+    if ( contradictionVec == NULL )
+    {
+        double infeasibleVar = node->getContradiction()->getVar();
+        return FloatUtils::isNegative( _groundUpperBounds[infeasibleVar] - _groundLowerBounds[infeasibleVar] );
+    }
 
-    return computedUpper < computedLower;
+    double contradictionUpperBound = UNSATCertificateUtils::computeCombinationUpperBound( contradictionVec, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+
+    return FloatUtils::isNegative( contradictionUpperBound );
 }
 
 bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double epsilon )
@@ -156,7 +163,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
         BoundType affectedVarBound = plcExplanation->getAffectedVarBound();
         PiecewiseLinearFunctionType constraintType = plcExplanation->getConstraintType();
 
-        double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == UPPER, explanation, _initialTableau, _groundUpperBounds, _groundLowerBounds );
+        double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
         unsigned b = 0;
         unsigned f = 0;
         unsigned aux = 0;
@@ -234,7 +241,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
             return false;
 
         // If so, update the ground bounds and continue
-        Vector<double> &temp = affectedVarBound == UPPER ? _groundUpperBounds : _groundLowerBounds;
+        auto &temp = affectedVarBound == UPPER ? _groundUpperBounds : _groundLowerBounds;
         bool isTighter = affectedVarBound ? FloatUtils::lt( bound, temp[affectedVar] ) : FloatUtils::gt( bound, temp[affectedVar] );
         if ( isTighter )
         {
@@ -248,7 +255,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
 
 double Checker::explainBound( unsigned var, bool isUpper, const double *explanation ) const
 {
-    return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _initialTableau, _groundUpperBounds, _groundLowerBounds );
+    return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
 }
 
 PiecewiseLinearConstraint *Checker::getCorrespondingReLUConstraint( const List<PiecewiseLinearCaseSplit> &splits )
@@ -293,15 +300,20 @@ void Checker::writeToFile()
 
     // Write with SmtLibWriter
     unsigned b, f;
-    unsigned m = _initialTableau.size();
+    unsigned m = _proofSize;
     unsigned n = _groundUpperBounds.size();
 
     SmtLibWriter::addHeader( n, leafInstance );
     SmtLibWriter::addGroundUpperBounds( _groundUpperBounds, leafInstance );
     SmtLibWriter::addGroundLowerBounds( _groundLowerBounds, leafInstance );
 
+    auto tableauRow = SparseUnsortedList();
+
     for ( unsigned i = 0; i < m; ++i )
-        SmtLibWriter::addTableauRow( ( _initialTableau )[i], leafInstance );
+    {
+        _initialTableau->getRow( i, &tableauRow );
+        SmtLibWriter::addTableauRow(  tableauRow , leafInstance );
+    }
 
     for ( auto &constraint : _problemConstraints )
         if ( constraint->getType() == PiecewiseLinearFunctionType::RELU )

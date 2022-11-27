@@ -221,6 +221,7 @@ struct MarabouOptions {
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
+        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ))
     {};
 
   void setOptions()
@@ -231,6 +232,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
     Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT, _performLpTighteningAfterSplit );
+    Options::get()->setBool( Options::PRODUCE_PROOFS, _produceProofs );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -260,6 +262,7 @@ struct MarabouOptions {
     bool _solveWithMILP;
     bool _dumpBounds;
     bool _performLpTighteningAfterSplit;
+    bool _produceProofs;
     unsigned _numWorkers;
     unsigned _numBlasThreads;
     unsigned _initialTimeout;
@@ -442,7 +445,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_milpTightening", &MarabouOptions::_milpTighteningString)
         .def_readwrite("_lpSolver", &MarabouOptions::_lpSolverString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
-        .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit);
+        .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit)
+        .def_readwrite("_produceProofs", &MarabouOptions::_produceProofs);
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
