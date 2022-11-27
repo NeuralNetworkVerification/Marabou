@@ -327,9 +327,9 @@ void BoundExplainer::resetExplanation( unsigned var, bool isUpper )
 void BoundExplainer::setExplanation( const Vector<double> &explanation, unsigned var, bool isUpper )
 {
     ASSERT( var < _numberOfVariables && ( explanation.empty() || explanation.size() == _numberOfRows ) );
-    auto temp = isUpper ? &_upperBoundExplanations[var] : &_lowerBoundExplanations[var];
+    auto temp = isUpper ? _upperBoundExplanations[var] : _lowerBoundExplanations[var];
     for ( unsigned i = 0; i < _numberOfRows; ++i )
-        ( *temp )[i]->set( explanation[i] );
+        temp[i]->set( explanation[i] );
 
     isUpper ? _trivialUpperBoundExplanation[var]->set( false ) : _trivialLowerBoundExplanation[var]->set( false );
 }
