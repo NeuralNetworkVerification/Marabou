@@ -5,3 +5,4 @@ numpy==1.19.2
 tensorflow==2.5.2
 onnx==1.10.2
 onnxruntime==1.10.0
+torch==1.11.0
