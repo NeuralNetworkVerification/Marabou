@@ -130,15 +130,15 @@ bool Checker::checkNode( const UnsatCertificateNode *node )
 bool Checker::checkContradiction( const UnsatCertificateNode *node ) const
 {
     ASSERT( node->isValidLeaf() && !node->getSATSolutionFlag() );
-    auto contradictionVec = node->getContradiction()->getContradictionVec();
+    const double *contradiction = node->getContradiction()->getContradiction();
 
-    if ( contradictionVec == NULL )
+    if ( contradiction == NULL )
     {
         double infeasibleVar = node->getContradiction()->getVar();
         return FloatUtils::isNegative( _groundUpperBounds[infeasibleVar] - _groundLowerBounds[infeasibleVar] );
     }
 
-    double contradictionUpperBound = UNSATCertificateUtils::computeCombinationUpperBound( contradictionVec, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double contradictionUpperBound = UNSATCertificateUtils::computeCombinationUpperBound( contradiction, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
 
     return FloatUtils::isNegative( contradictionUpperBound );
 }
