@@ -55,7 +55,7 @@ bool Checker::checkNode( const UnsatCertificateNode *node )
     }
 
     // Check all PLC bound propagations
-    if ( !checkAllPLCExplanations( node, GlobalConfiguration::LEMMAS_CERTIFICATION_TOLERANCE ) )
+    if ( !checkAllPLCExplanations( node, GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE ) )
         return false;
 
     // Save to file if marked

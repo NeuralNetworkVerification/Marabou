@@ -23,7 +23,7 @@
 class Contradiction
 {
 public:
-    Contradiction( const Vector<double> &contradictionVec );
+    Contradiction( const Vector<double> &contradiction );
     Contradiction( unsigned var );
 
     ~Contradiction();
@@ -32,11 +32,11 @@ public:
       Getters for all fields
      */
     unsigned getVar() const;
-    const double *getContradictionVec() const;
+    const double *getContradiction() const;
 
 private:
     unsigned _var;
-    double *_contradictionVec;
+    double *_contradiction;
 };
 
 #endif //__Contradiction_h__

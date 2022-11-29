@@ -26,7 +26,7 @@ public:
     /*
       Tests the whole functionality of the SmtLibWriter module
     */
-    void testSmtLibWriting()
+    void test_smtlib_writing()
     {
         file = new MockFile();
         Vector<double> row = { 1, 1 };

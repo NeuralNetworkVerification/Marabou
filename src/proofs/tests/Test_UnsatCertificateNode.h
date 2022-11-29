@@ -24,7 +24,7 @@ public:
     /*
       Tests a simple tree construction
     */
-    void testTreeRelations()
+    void test_tree_telations()
     {
         Vector<double> groundUpperBounds( 6, 1 );
         Vector<double> groundLowerBounds( 6, 0 );
@@ -61,7 +61,7 @@ public:
     /*
       Tests methods that set and get the contradiction
      */
-    void testContradiction()
+    void test_contradiction()
     {
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
 
@@ -76,7 +76,7 @@ public:
     /*
       Tests changes in PLC Explanations list
     */
-    void testPLCExplChanges()
+    void test_plc_explanation_changes()
     {
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
         Vector<double> emptyVec;

@@ -57,7 +57,7 @@ void SmtLibWriter::addTableauRow( const SparseUnsortedList &row, List<String> &i
     }
 
     // Add last element
-    assertRowLine += String( " ( * " ) + signedValue(entry->_value ) + " x" + std::to_string( entry->_index ) + " )";
+    assertRowLine += String( " ( * " ) + signedValue( entry->_value ) + " x" + std::to_string( entry->_index ) + " )";
 
     for ( unsigned i = 0; i < counter + 2 ; ++i )
         assertRowLine += String( " )" );

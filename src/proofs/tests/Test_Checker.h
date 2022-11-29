@@ -22,7 +22,7 @@ public:
     /*
       Tests certification methods
     */
-    void testCertification()
+    void test_certification()
     {
         unsigned m = 3, n = 6;
         double A[] = { 1, 0, -1, 1, 0, 0, 0, -1, 2, 0, 1, 0, 0.5, 0, -1, 0, 0, 1 };

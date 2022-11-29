@@ -30,8 +30,8 @@
 
 enum BoundType : unsigned
 {
-    UPPER = 1,
     LOWER = 0,
+    UPPER = 1,
 };
 
 class Tightening;

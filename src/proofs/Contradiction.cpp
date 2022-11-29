@@ -14,29 +14,29 @@
 
 #include "Contradiction.h"
 
-Contradiction::Contradiction( const Vector<double> &contradictionVec )
+Contradiction::Contradiction( const Vector<double> &contradiction )
 {
-    if ( contradictionVec.empty() )
-        _contradictionVec = NULL;
+    if ( contradiction.empty() )
+        _contradiction = NULL;
     else
     {
-        _contradictionVec = new double[contradictionVec.size()];
-        std::copy( contradictionVec.begin(), contradictionVec.end(), _contradictionVec );
+        _contradiction = new double[contradiction.size()];
+        std::copy( contradiction.begin(), contradiction.end(), _contradiction );
     }
 }
 
 Contradiction::Contradiction( unsigned var )
     : _var( var )
-    , _contradictionVec( NULL )
+    , _contradiction( NULL )
 {
 }
 
 Contradiction::~Contradiction()
 {
-    if ( _contradictionVec )
+    if ( _contradiction )
     {
-        delete [] _contradictionVec;
-        _contradictionVec = NULL;
+        delete [] _contradiction;
+        _contradiction = NULL;
     }
 }
 
@@ -45,7 +45,7 @@ unsigned Contradiction::getVar() const
     return _var;
 }
 
-const double *Contradiction::getContradictionVec() const
+const double *Contradiction::getContradiction() const
 {
-    return _contradictionVec;
+    return _contradiction;
 }

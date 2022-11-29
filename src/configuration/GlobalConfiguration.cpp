@@ -36,7 +36,7 @@ const double GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS = 0.0000000001
 const unsigned GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION = 10;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY = 10000;
 const unsigned GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI = 100;
-const double GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE = 0.0000000001;
+const double GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE = 0.0000001;
 const double GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE = 0.001 * 0.0000001;
 const double GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE = 0.000000001;
 const double GlobalConfiguration::PIVOT_ROW_AND_COLUMN_TOLERANCE = 0.01;
@@ -100,7 +100,7 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 const double GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING = 0.01;
-const double GlobalConfiguration::LEMMAS_CERTIFICATION_TOLERANCE = 0.0000001;
+const double GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE = 0.0000001;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;

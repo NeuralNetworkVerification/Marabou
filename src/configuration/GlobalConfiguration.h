@@ -238,7 +238,7 @@ public:
 
     /* The tolerance of errors when checking lemmas in the proof-checking process
     */
-    static const double LEMMAS_CERTIFICATION_TOLERANCE;
+    static const double LEMMA_CERTIFICATION_TOLERANCE;
 
 #ifdef ENABLE_GUROBI
     /*
