@@ -850,7 +850,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         nodeName = node.output[0]
         inputName = node.input[0]
 
-        # Check numper of dimension of input
+        # Check number of dimension of input
         inputVars = self.varMap[inputName]
         inputShape = inputVars.shape
         if inputVars.ndim != 4:
@@ -873,6 +873,13 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             elif attr.name == "nearest_mode" and value.decode() == "floor":
                 nearest_mode = value
             else:
+                # Marabou supports Resize only very specific case below.
+                #  coordinate_transformation_mode: asymmetric
+                #  cubic_coeff_a: -0.75
+                #  mode: nearest
+                #  nearest_mode: floor
+                # There are many cases other than the above case according to https://github.com/onnx/onnx/blob/main/docs/Operators.md#resize
+                # Please note that we should carefully expand this operation beyond this case.
                 raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
         
         # Get scales
