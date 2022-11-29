@@ -106,6 +106,9 @@ void OptionParser::initialize()
         ( "debug-assignment-file",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] )->default_value( (*_stringOptions)[Options::EXPORT_ASSIGNMENT_FILE_PATH] ),
           "Specifies a file to import the assignment for debugging." )
+        ( "prove-unsat",
+        boost::program_options::bool_switch( &((*_boolOptions)[Options::PRODUCE_PROOFS]) )->default_value( (*_boolOptions)[Options::PRODUCE_PROOFS] ),
+        "Produce proofs of UNSAT and check them" )
 #ifdef ENABLE_GUROBI
 #endif // ENABLE_GUROBI
         ;

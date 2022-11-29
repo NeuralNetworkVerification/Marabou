@@ -15,9 +15,9 @@
 #ifndef __Checker_h__
 #define __Checker_h__
 
-#include "UnsatCertificateNode.h"
 #include "Set.h"
 #include "Stack.h"
+#include "UnsatCertificateNode.h"
 
 /*
   A class responsible to certify the UnsatCertificate
@@ -26,7 +26,8 @@ class Checker
 {
 public:
     Checker( const UnsatCertificateNode *root,
-             const Vector<Vector<double>> &initialTableau,
+             unsigned proofSize,
+             const SparseMatrix *initialTableau,
              const Vector<double> &groundUpperBounds,
              const Vector<double> &groundLowerBounds,
              const List<PiecewiseLinearConstraint *> &_problemConstraints );
@@ -40,9 +41,10 @@ public:
 private:
     // The root of the tree to check
     const UnsatCertificateNode *_root;
+    unsigned _proofSize;
 
     // Additional context data
-    const Vector<Vector<double>> &_initialTableau;
+    const SparseMatrix *_initialTableau;
 
     Vector<double> _groundUpperBounds;
     Vector<double> _groundLowerBounds;

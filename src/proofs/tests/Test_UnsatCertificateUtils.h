@@ -12,9 +12,8 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "context/cdlist.h"
-#include "context/context.h"
-#include <cxxtest/TestSuite.h>
+#include "CSRMatrix.h"
+#include "cxxtest/TestSuite.h"
 #include "UnsatCertificateUtils.h"
 
 class UnsatCertificateUtilsTestSuite : public CxxTest::TestSuite
@@ -22,10 +21,9 @@ class UnsatCertificateUtilsTestSuite : public CxxTest::TestSuite
 public:
     void test_bound_computation()
     {
-        Vector<double> row1 = { 1, 0, -1, 1, 0, 0 };
-        Vector<double> row2 = { 0, -1, 2, 0, 1, 0 };
-        Vector<double> row3 = { 0.5, 0, -1, 0, 0, 1 };
-        Vector<Vector<double>> initialTableau = { row1, row2, row3 };
+        unsigned m = 3, n = 6;
+        double A[] = {1, 0, -1, 1, 0, 0, 0, -1, 2, 0, 1, 0, 0.5, 0, -1, 0, 0, 1 };
+        auto initialTableau = CSRMatrix( A, m, n );
 
         Vector<double> groundUpperBounds = { 1, 1 ,1 ,1 ,1 ,1 };
         Vector<double> groundLowerBounds = { 0, 0, 0, 0, 0, 0 };
@@ -37,7 +35,7 @@ public:
 
         unsigned var = 0;
 
-        UNSATCertificateUtils::getExplanationRowCombination( var, rowCombination, explanation, initialTableau );
+        UNSATCertificateUtils::getExplanationRowCombination( var, explanation, rowCombination, &initialTableau, m, n );
 
         auto it = rowCombination.begin();
         TS_ASSERT_EQUALS( *it, 2 );
@@ -54,7 +52,7 @@ public:
         ++it;
         TS_ASSERT_EQUALS( it, rowCombination.end() );
 
-        double explainedBound = UNSATCertificateUtils::computeBound( var, true, explanation, initialTableau, groundUpperBounds, groundLowerBounds );
+        double explainedBound = UNSATCertificateUtils::computeBound( var, true, explanation, &initialTableau, groundUpperBounds.data(), groundLowerBounds.data(), 3, groundUpperBounds.size() );
 
         TS_ASSERT_EQUALS( explainedBound, 5 );
     }

@@ -46,7 +46,7 @@ public:
     /*
       Adds a line representing a Tableau Row, in SMTLIB format, to the SMTLIB instance
     */
-    static void addTableauRow( const Vector<double> &row, List<String> &instance );
+    static void addTableauRow( const SparseUnsortedList &row, List<String> &instance );
 
     /*
       Adds lines representing the ground upper bounds, in SMTLIB format, to the SMTLIB instance

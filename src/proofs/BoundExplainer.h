@@ -15,6 +15,8 @@
 #ifndef __BoundsExplainer_h__
 #define __BoundsExplainer_h__
 
+#include "context/cdo.h"
+#include "context/context.h"
 #include "SparseUnsortedList.h"
 #include "TableauRow.h"
 #include "Vector.h"
@@ -25,8 +27,10 @@
 class BoundExplainer
 {
 public:
-    BoundExplainer( unsigned numberOfVariables, unsigned numberOfRows );
+    BoundExplainer( unsigned numberOfVariables, unsigned numberOfRows, CVC4::context::Context &ctx );
+    ~BoundExplainer();
 
+    BoundExplainer &operator=( const BoundExplainer &other );
     /*
       Returns the number of rows
      */
@@ -40,7 +44,7 @@ public:
     /*
       Returns a bound explanation
     */
-    const Vector<double> &getExplanation( unsigned var, bool isUpper );
+    const Vector<CVC4::context::CDO<double> *> &getExplanation( unsigned var, bool isUpper );
 
     /*
       Given a row, updates the values of the bound explanations of its lhs according to the row
@@ -72,15 +76,28 @@ public:
      */
     void setExplanation( const Vector<double> &explanation, unsigned var, bool isUpper );
 
+    /*
+     * Returns true iff an explanation is the zero vector
+     */
+    bool isExplanationTrivial( unsigned var, bool isUpper ) const;
+
 private:
+    CVC4::context::Context &_context;
+
     unsigned _numberOfVariables;
     unsigned _numberOfRows;
-    Vector<Vector<double>> _upperBoundExplanations;
-    Vector<Vector<double>> _lowerBoundExplanations;
+
+    Vector<Vector<CVC4::context::CDO<double> *>> _upperBoundExplanations;
+    Vector<Vector<CVC4::context::CDO<double> *>> _lowerBoundExplanations;
+
+    Vector<CVC4::context::CDO<bool> *> _trivialUpperBoundExplanation;
+    Vector<CVC4::context::CDO<bool> *> _trivialLowerBoundExplanation;
 
     /*
       Adds a multiplication of an array by scalar to another array
     */
+    void addVecTimesScalar( Vector<double> &sum, const Vector<CVC4::context::CDO<double> *> &input, double scalar ) const;
+
     void addVecTimesScalar( Vector<double> &sum, const Vector<double> &input, double scalar ) const;
 
     /*

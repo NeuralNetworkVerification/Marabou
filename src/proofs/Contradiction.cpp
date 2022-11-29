@@ -14,38 +14,29 @@
 
 #include "Contradiction.h"
 
-Contradiction::Contradiction( unsigned var, const Vector<double> &upperBoundExplanation, const Vector<double> &lowerBoundExplanation )
-    : _var( var )
+Contradiction::Contradiction( const Vector<double> &contradiction )
 {
-    if ( upperBoundExplanation.empty() )
-        _upperBoundExplanation = NULL;
+    if ( contradiction.empty() )
+        _contradiction = NULL;
     else
     {
-        _upperBoundExplanation = new double[upperBoundExplanation.size()];
-        std::copy( upperBoundExplanation.begin(), upperBoundExplanation.end(), _upperBoundExplanation );
+        _contradiction = new double[contradiction.size()];
+        std::copy( contradiction.begin(), contradiction.end(), _contradiction );
     }
+}
 
-    if ( lowerBoundExplanation.empty() )
-        _lowerBoundExplanation = NULL;
-    else
-    {
-        _lowerBoundExplanation = new double[lowerBoundExplanation.size()];
-        std::copy( lowerBoundExplanation.begin(), lowerBoundExplanation.end(), _lowerBoundExplanation );
-    }
+Contradiction::Contradiction( unsigned var )
+    : _var( var )
+    , _contradiction( NULL )
+{
 }
 
 Contradiction::~Contradiction()
 {
-    if ( _upperBoundExplanation )
+    if ( _contradiction )
     {
-        delete [] _upperBoundExplanation;
-        _upperBoundExplanation = NULL;
-    }
-
-    if ( _lowerBoundExplanation )
-    {
-        delete [] _lowerBoundExplanation;
-        _lowerBoundExplanation = NULL;
+        delete [] _contradiction;
+        _contradiction = NULL;
     }
 }
 
@@ -54,12 +45,7 @@ unsigned Contradiction::getVar() const
     return _var;
 }
 
-const double *Contradiction::getUpperBoundExplanation() const
+const double *Contradiction::getContradiction() const
 {
-    return _upperBoundExplanation;
-}
-
-const double *Contradiction::getLowerBoundExplanation() const
-{
-    return _lowerBoundExplanation;
+    return _contradiction;
 }

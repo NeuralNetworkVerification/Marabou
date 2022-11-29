@@ -70,11 +70,6 @@ public:
     const List<std::shared_ptr<PLCExplanation>> &getPLCExplanations() const;
 
     /*
-      Sets  the list of PLC explanations of the node
-    */
-    void setPLCExplanations( const List<std::shared_ptr<PLCExplanation>> &explanations );
-
-    /*
       Adds an PLC explanation to the list
     */
     void addPLCExplanation( std::shared_ptr<PLCExplanation> &explanation );
@@ -123,11 +118,6 @@ public:
       Deletes all offsprings of the node and makes it a leaf
     */
     void makeLeaf();
-
-    /*
-      Removes all PLCExplanations above a certain decision level WITHOUT deleting them
-    */
-    void removePLCExplanationsBelowDecisionLevel( unsigned decisionLevel );
 
     /*
      Checks if the node is a valid leaf

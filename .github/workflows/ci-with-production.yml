@@ -78,7 +78,7 @@ jobs:
         run: ccache -s
         
       - name: Run system tests
-        run: ctest -L system -j 2 
+        run: ctest -L system -j 2
         working-directory: build
  
       - name: Run regression tests
