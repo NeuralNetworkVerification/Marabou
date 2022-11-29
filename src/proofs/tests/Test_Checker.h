@@ -13,9 +13,8 @@
  **/
 
 #include "Checker.h"
-#include "context/cdlist.h"
-#include "context/context.h"
-#include <cxxtest/TestSuite.h>
+#include "CSRMatrix.h"
+#include "cxxtest/TestSuite.h"
 
 class CheckerTestSuite : public CxxTest::TestSuite
 {
@@ -23,16 +22,16 @@ public:
     /*
       Tests certification methods
     */
-    void testCertification()
+    void test_certification()
     {
-        Vector<double> row1 = { 1, 0, -1, 0, 1, 0, 0 }; // Row of ReLU1
-        Vector<double> row2 = { 0, 1, 0, -1, 0, 1, 0 }; // Row of ReLU2
-        Vector<double> row3 = { 0.5, 0, -1, 0, 0, 0, 1 };
-        Vector<Vector<double>> initialTableau = { row1, row2, row3 };
+        unsigned m = 3, n = 6;
+        double A[] = { 1, 0, -1, 1, 0, 0, 0, -1, 2, 0, 1, 0, 0.5, 0, -1, 0, 0, 1 };
 
-        Vector<double> groundUpperBounds( row1.size(), 1 );
-        Vector<double> groundLowerBounds( row1.size(), 0 );
-        groundUpperBounds[6] = 2;
+        auto initialTableau = CSRMatrix( A, m, n );
+
+        Vector<double> groundUpperBounds( n, 1 );
+        Vector<double> groundLowerBounds( n, 0 );
+        groundUpperBounds[5] = 2;
 
         ReluConstraint relu1 = ReluConstraint( 0, 2 ); // aux var is 4
         ReluConstraint relu2 = ReluConstraint( 1, 3 ) ; // aux var is 5
@@ -41,7 +40,7 @@ public:
         // Set a complete tree of depth 3, using 2 ReLUs
         auto *root = new UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
 
-        Checker checker( root, initialTableau, groundUpperBounds, groundLowerBounds, constraintsList );
+        Checker checker( root, m, &initialTableau, groundUpperBounds, groundLowerBounds, constraintsList );
 
         auto splits1 = relu1.getCaseSplits();
         auto splits2 = relu2.getCaseSplits();

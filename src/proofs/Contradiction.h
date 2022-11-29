@@ -23,20 +23,20 @@
 class Contradiction
 {
 public:
-    Contradiction( unsigned var, const Vector<double> &upperBoundExplanation, const Vector<double> &lowerBoundExplanation );
+    Contradiction( const Vector<double> &contradiction );
+    Contradiction( unsigned var );
+
     ~Contradiction();
 
     /*
       Getters for all fields
      */
     unsigned getVar() const;
-    const double *getUpperBoundExplanation() const;
-    const double *getLowerBoundExplanation() const;
+    const double *getContradiction() const;
 
 private:
     unsigned _var;
-    double *_upperBoundExplanation;
-    double *_lowerBoundExplanation;
+    double *_contradiction;
 };
 
 #endif //__Contradiction_h__

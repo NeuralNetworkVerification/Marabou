@@ -51,6 +51,7 @@ void Options::initializeDefaultValues()
     _boolOptions[NO_PARALLEL_DEEPSOI] = false;
     _boolOptions[EXPORT_ASSIGNMENT] = false;
     _boolOptions[DEBUG_ASSIGNMENT] = false;
+    _boolOptions[PRODUCE_PROOFS] = false;
 
     /*
       Int options

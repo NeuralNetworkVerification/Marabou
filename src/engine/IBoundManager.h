@@ -28,6 +28,12 @@
 
 #include "List.h"
 
+enum BoundType : unsigned
+{
+    LOWER = 0,
+    UPPER = 1,
+};
+
 class Tightening;
 class ITableau;
 class IRowBoundTightener;

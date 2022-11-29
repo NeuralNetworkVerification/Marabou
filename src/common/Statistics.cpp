@@ -39,6 +39,8 @@ Statistics::Statistics()
     _unsignedAttributes[PP_NUM_CONSTRAINTS_REMOVED] = 0;
     _unsignedAttributes[PP_NUM_EQUATIONS_REMOVED] = 0;
     _unsignedAttributes[TOTAL_NUMBER_OF_VALID_CASE_SPLITS] = 0;
+    _unsignedAttributes[NUM_CERTIFIED_LEAVES] = 0;
+    _unsignedAttributes[NUM_DELEGATED_LEAVES] = 0;
 
     _longAttributes[NUM_MAIN_LOOP_ITERATIONS] = 0;
     _longAttributes[NUM_SIMPLEX_STEPS] = 0;
@@ -89,6 +91,7 @@ Statistics::Statistics()
     _longAttributes[TIME_CONTEXT_POP] = 0;
     _longAttributes[TIME_CONTEXT_PUSH_HOOK] = 0;
     _longAttributes[TIME_CONTEXT_POP_HOOK] = 0;
+    _longAttributes[TOTAL_CERTIFICATION_TIME] = 0;
 
     _doubleAttributes[CURRENT_DEGRADATION] = 0.0;
     _doubleAttributes[MAX_DEGRADATION] = 0.0;
@@ -117,8 +120,7 @@ void Statistics::print()
     printf( "\tTotal time elapsed: %llu milli (%02u:%02u:%02u)\n",
             totalElapsed / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 
-    unsigned long long timeMainLoopMicro = getLongAttribute
-        ( Statistics::TIME_MAIN_LOOP_MICRO );
+    unsigned long long timeMainLoopMicro = getLongAttribute( Statistics::TIME_MAIN_LOOP_MICRO );
     seconds = timeMainLoopMicro / 1000000;
     minutes = seconds / 60;
     hours = minutes / 60;
@@ -443,7 +445,9 @@ void Statistics::print()
             , totalContextTime / 1000
             );
 
-
+    printf( "\t--- Proof Certificate ---\n" );
+    printf( "\tNumber of certified leaves: %u\n", getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES ) );
+    printf( "\tNumber of leaves to delegate: %u\n", getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) );
 }
 
 unsigned long long Statistics::getTotalTimeInMicro() const
@@ -490,4 +494,13 @@ double Statistics::printAverage( unsigned long long part, unsigned long long tot
         return 0;
 
     return (double)part / total;
+}
+
+void Statistics::printLongAttributeAsTime( unsigned long long longAsNumber ) const
+{
+	unsigned int seconds = longAsNumber / 1000000;
+	unsigned int minutes = seconds / 60;
+	unsigned int hours = minutes / 60;
+	printf( "%llu milli (%02u:%02u:%02u)\n",
+           longAsNumber / 1000, hours, minutes - ( hours * 60 ), seconds - ( minutes * 60 ) );
 }

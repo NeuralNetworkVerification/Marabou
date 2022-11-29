@@ -37,23 +37,27 @@ void SmtLibWriter::addReLUConstraint( unsigned b, unsigned f, const PhaseStatus 
         instance.append(  "( assert ( = x" + std::to_string( f ) + " 0 ) )\n" );
 }
 
-void SmtLibWriter::addTableauRow( const Vector<double> &row, List<String> &instance )
+void SmtLibWriter::addTableauRow( const SparseUnsortedList &row, List<String> &instance )
 {
-    unsigned size = row.size();
+    unsigned size = row.getSize();
     unsigned counter = 0;
     String assertRowLine = "( assert ( = 0";
+    auto entry = row.begin();
 
-    for ( unsigned i = 0; i < size - 1; ++i )
+    for ( ; entry != row.end(); ++entry )
     {
-        if ( FloatUtils::isZero( row[i] ) )
+        if ( FloatUtils::isZero( entry->_value ) )
             continue;
 
-        assertRowLine += String( " ( + ( * " ) + signedValue( row[i] ) + " x" + std::to_string( i ) + " )";
+        if ( counter == size - 1 )
+            break;
+
+        assertRowLine += String( " ( + ( * " ) + signedValue( entry->_value ) + " x" + std::to_string( entry->_index ) + " )";
         ++counter;
     }
 
     // Add last element
-    assertRowLine += String( " ( * " ) + signedValue( row[size - 1] ) + " x" + std::to_string( size - 1 ) + " )";
+    assertRowLine += String( " ( * " ) + signedValue( entry->_value ) + " x" + std::to_string( entry->_index ) + " )";
 
     for ( unsigned i = 0; i < counter + 2 ; ++i )
         assertRowLine += String( " )" );
