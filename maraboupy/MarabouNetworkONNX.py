@@ -23,6 +23,7 @@ from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
 from onnx import TensorProto
 import itertools
+import torch
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkONNX object from an ONNX file
@@ -205,6 +206,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.transpose(node)
         elif node.op_type == "BatchNormalization":
             self.batchNorm(node, makeEquations)
+        elif node.op_type == 'Concat':
+            self.concatEquations(node)
         elif node.op_type == "MaxPool":
             self.maxpoolEquations(node, makeEquations)
         elif node.op_type == "Conv":
@@ -221,6 +224,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
+        elif node.op_type == 'Split':
+            self.splitEquations(node, nodeName, makeEquations)
+        elif node.op_type == 'Resize':
+            self.resizeEquations(node, makeEquations)
         elif node.op_type == 'Tanh':
             self.tanhEquations(node, makeEquations)
         else:
@@ -761,13 +768,156 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 e.setScalar(0.0)
                 self.addEquation(e)
 
+    def concatEquations(self, node):
+        """Function to generate equations corresponding to concat
+
+        Args:
+            node (node): ONNX node representing the Concat operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        
+        # Get attributes
+        axis = None
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+
+        # Set maps of shape and var
+        inputVars = list([self.varMap[input] for input in node.input])
+        outputVars = np.concatenate(inputVars, axis)
+        self.shapeMap[nodeName] = outputVars.shape
+        self.varMap[nodeName] = outputVars 
+
+    def splitEquations(self, node, nodeName, makeEquations):
+        """Function to generate equations corresponding to split
+
+        Args:
+            node (node): ONNX node representing the Split operation
+            nodeName (str): Name of target node
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
+
+        :meta private:
+        """
+        # Get attributes
+        axis = None
+        split = None
+        for attr in node.attribute:
+            if attr.name == "axis":
+                axis = get_attribute_value(attr)
+            if attr.name == "split":
+                split = get_attribute_value(attr)
+        
+        inputName = node.input[0]
+        inputVars = torch.from_numpy(self.varMap[inputName]) # rely on torch since split opereation of numpy behaves differently from that of onnx
+        inputVars = inputVars.split(split, axis) # tuple
+
+        assert len(inputVars) == len(node.output)
+
+        # Set a shape of target output
+        for i in range(len(node.output)):
+            if node.output[i] == nodeName:
+                self.shapeMap[node.output[i]] = inputVars[i].numpy().shape
+                break
+
+        if not makeEquations:
+            return
+
+        # Get variables and add quations
+        for i in range(len(node.output)):
+            if node.output[i] == nodeName:
+                reshapedInputVars = inputVars[i].reshape(-1)
+                outputVars = self.makeNewVariables(node.output[i]).reshape(-1)
+                for j in range(len(reshapedInputVars)):
+                    # Add equation
+                    e = MarabouUtils.Equation()
+                    e.addAddend(-1, outputVars[j])
+                    e.addAddend(1, reshapedInputVars[j])
+                    e.setScalar(0)
+                    self.addEquation(e)
+                break
+
+    def resizeEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to resize
+
+        Args:
+            node (node): ONNX node representing the Resize operation
+            makeEquations (bool): True if we need to create new variables and write Marabou equations
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+
+        # Check number of dimension of input
+        inputVars = self.varMap[inputName]
+        inputShape = inputVars.shape
+        if inputVars.ndim != 4:
+            raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
+
+        # Get and check attributes
+        coordinate_transformation_mode = None
+        cubic_coeff_a = None
+        mode = None
+        nearest_mode = None
+
+        for attr in node.attribute:
+            value = get_attribute_value(attr)
+            if attr.name == "coordinate_transformation_mode" and value.decode() == "asymmetric":
+                coordinate_transformation_mode = value
+            elif attr.name == "cubic_coeff_a" and value == -0.75:
+                cubic_coeff_a = value
+            elif attr.name == "mode" and value.decode() == "nearest":
+                mode = value
+            elif attr.name == "nearest_mode" and value.decode() == "floor":
+                nearest_mode = value
+            else:
+                # Marabou supports Resize only very specific case below.
+                #  coordinate_transformation_mode: asymmetric
+                #  cubic_coeff_a: -0.75
+                #  mode: nearest
+                #  nearest_mode: floor
+                # There are many cases other than the above case according to https://github.com/onnx/onnx/blob/main/docs/Operators.md#resize
+                # Please note that we should carefully expand this operation beyond this case.
+                raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
+        
+        # Get scales
+        scales = None
+        if len(node.input) == 3  and np.all(self.constantMap[node.input[2]] == [1., 1., 2., 2.]):
+            scales = [1, 1, 2, 2]
+        else:
+             raise NotImplementedError("Marabou only supports resize operator for very specific upsample case used in YOLO now.")
+
+        # Set output shape
+        outputShape = (inputShape[0], inputShape[1], inputShape[2] * scales[2], inputShape[3] * scales[3])
+        self.shapeMap[nodeName] = outputShape
+
+        if not makeEquations:
+            return
+
+        # Get variables
+        outputVars = self.makeNewVariables(nodeName)
+
+        assert scales[2] * scales[3] * inputVars.size == outputVars.size
+
+        for i in range(outputShape[1]):
+            for j in range(outputShape[2]):
+                for k in range(outputShape[3]):
+                    # Add equation
+                    e = MarabouUtils.Equation()
+                    e.addAddend(-1, outputVars[0][i][j][k])
+                    e.addAddend(1, inputVars[0][i][int(j / 2)][int(k / 2)])
+                    e.setScalar(0)
+                    self.addEquation(e) 
+
     def mulEquations(self, node, makeEquations):
         nodeName = node.output[0]
 
         # Get the inputs
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
-        shape2 = self.shapeMap[inputName2]
+        # shape2 = self.shapeMap[inputName2] # comment out since this is never used.
 
 
         # Get the broadcasted shape
