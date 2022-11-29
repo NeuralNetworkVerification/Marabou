@@ -15,6 +15,7 @@
 #include "DisjunctionConstraint.h"
 
 #include "Debug.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
@@ -378,7 +379,7 @@ void DisjunctionConstraint::eliminateVariable( unsigned /* variable */, double /
 
 bool DisjunctionConstraint::constraintObsolete() const
 {
-    return _feasibleDisjuncts.empty();
+    return false;
 }
 
 void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tightenings */ ) const
@@ -480,6 +481,8 @@ void DisjunctionConstraint::updateFeasibleDisjuncts()
         else if ( _cdInfeasibleCases && !isCaseInfeasible( indToPhaseStatus( ind ) ) )
             markInfeasible( indToPhaseStatus( ind ) );
     }
+
+    if ( _feasibleDisjuncts.size() == 0 ) throw InfeasibleQueryException();
 }
 
 bool DisjunctionConstraint::disjunctIsFeasible( unsigned ind ) const
