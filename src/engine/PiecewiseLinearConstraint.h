@@ -275,7 +275,7 @@ public:
     /*
       Return the phase status corresponding to the values of the input
       variables in the given assignment. For instance, for ReLU, if the input
-      variable's assignment is positive, then the method returns 
+      variable's assignment is positive, then the method returns
       RELU_PHASE_ACTIVE. Otherwise, it returns RELU_PHASE_INACTIVE.
     */
     virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
@@ -453,6 +453,11 @@ public:
         return _cdInfeasibleCases;
     }
 
+	void setTableauAuxVar( unsigned var )
+	{
+    	_tableauAuxVar = var;
+	}
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -597,6 +602,9 @@ protected:
         else
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
+
+	unsigned _tableauAuxVar;
+
 };
 
 #endif // __PiecewiseLinearConstraint_h__

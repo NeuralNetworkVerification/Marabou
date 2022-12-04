@@ -27,6 +27,9 @@
 #define __IBoundManager_h__
 
 #include "List.h"
+#include "Vector.h"
+#include "BoundExplainer.h"
+#include "PiecewiseLinearFunctionType.h"
 
 enum BoundType : unsigned
 {
@@ -109,7 +112,47 @@ public:
      */
     virtual void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener ) = 0;
 
+    /*
+       Tighten bounds and update their explanations according to some object representing the row
+    */
+    virtual bool tightenLowerBound( unsigned variable, double value, const TableauRow &row ) = 0;
+    virtual bool tightenUpperBound( unsigned variable, double value, const TableauRow &row ) = 0;
 
+    virtual bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList &row ) = 0;
+    virtual bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList &row ) = 0;
+
+    /*
+      Add a lemma to the UNSATCertificateNode object
+      Return true iff adding the lemma has succeeded
+    */
+    virtual bool addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
+                                      unsigned causingVar, BoundType causingVarBound,
+                                      PiecewiseLinearFunctionType constraintType ) = 0;
+
+    /*
+      Return the content of the object containing all explanations for variable bounds in the tableau
+    */
+    virtual BoundExplainer *getBoundExplainer() const = 0;
+
+    /*
+      Deep-copy the BoundExplainer object content
+     */
+    virtual void setBoundExplainerContent( BoundExplainer* boundExplainer ) = 0;
+
+    /*
+      Initialize the boundExplainer
+     */
+    virtual void initializeBoundExplainer( unsigned numberOfVariables, unsigned numberOfRows ) = 0;
+
+    /*
+      Get the index of a variable with inconsistent bounds, if exists, or -1 otherwise
+    */
+    virtual int getInconsistentVariable() const = 0;
+
+    /*
+      Return true iff boundManager should produce proofs
+    */
+    virtual bool shouldProduceProofs() const = 0;
 };
 
 #endif // __IBoundManager_h__

@@ -216,6 +216,15 @@ public:
     {
     }
 
+    BoundExplainer* getBoundExplainer() const
+    {
+        return NULL;
+    }
+
+    void setBoundExplainerContent(BoundExplainer* /* boundsExplanations */ )
+    {
+    }
+
 private:
     unsigned _size;
 
@@ -227,6 +236,47 @@ private:
     /* Map<unsigned, double> _upperBounds; */
     /* Map<unsigned, bool> _tightenedLower; */
     /* Map<unsigned, bool> _tightenedUpper; */
+
+    bool tightenLowerBound( unsigned variable, double value, const TableauRow &/* row */ )
+    {
+        return tightenLowerBound( variable, value);
+    }
+    bool tightenUpperBound( unsigned variable, double value, const TableauRow &/* row */ )
+    {
+        return tightenUpperBound( variable, value);
+    }
+
+    bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList &/* row */ )
+    {
+        return tightenLowerBound( variable, value);
+    }
+
+    bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList &/* row */ )
+    {
+        return tightenUpperBound( variable, value);
+    }
+
+    bool addLemmaExplanation( unsigned /* var */, double /* value */, BoundType /* affectedVarBound */,
+                              unsigned /* causingVar */, BoundType /* causingVarBound */,
+                              PiecewiseLinearFunctionType /* constraintType */ )
+    {
+        return true;
+    }
+
+    void initializeBoundExplainer( unsigned /* numberOfVariables */, unsigned /* numberOfRows */ )
+    {
+
+    }
+
+    int getInconsistentVariable() const
+    {
+        return 0;
+    }
+
+    bool shouldProduceProofs() const
+    {
+        return true;
+    }
 };
 
 #endif // __MockBoundManager_h__
