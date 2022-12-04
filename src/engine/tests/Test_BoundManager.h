@@ -259,7 +259,7 @@ public:
 
         // Test initialization of data structures
         MockEngine engine;
-        TS_ASSERT_THROWS_NOTHING( boundManager.setEngine( &engine ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.registerEngine( &engine ) );
 
         unsigned numberOfVariables = 5u;
         unsigned numberOfRows = 3u;

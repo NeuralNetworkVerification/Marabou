@@ -137,7 +137,7 @@ public:
     /*
       Deep-copy the BoundExplainer object content
      */
-    virtual void setBoundExplainerContent( BoundExplainer* boundExplainer ) = 0;
+    virtual void setBoundExplainerContent( BoundExplainer *boundExplainer ) = 0;
 
     /*
       Initialize the boundExplainer

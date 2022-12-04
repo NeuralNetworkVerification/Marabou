@@ -239,21 +239,21 @@ private:
 
     bool tightenLowerBound( unsigned variable, double value, const TableauRow &/* row */ )
     {
-        return tightenLowerBound( variable, value);
+        return tightenLowerBound( variable, value );
     }
     bool tightenUpperBound( unsigned variable, double value, const TableauRow &/* row */ )
     {
-        return tightenUpperBound( variable, value);
+        return tightenUpperBound( variable, value );
     }
 
     bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList &/* row */ )
     {
-        return tightenLowerBound( variable, value);
+        return tightenLowerBound( variable, value );
     }
 
     bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList &/* row */ )
     {
-        return tightenUpperBound( variable, value);
+        return tightenUpperBound( variable, value );
     }
 
     bool addLemmaExplanation( unsigned /* var */, double /* value */, BoundType /* affectedVarBound */,
@@ -265,7 +265,6 @@ private:
 
     void initializeBoundExplainer( unsigned /* numberOfVariables */, unsigned /* numberOfRows */ )
     {
-
     }
 
     int getInconsistentVariable() const
