@@ -23,9 +23,6 @@
 #include "MarabouError.h"
 
 class Tableau;
-class Engine;
-class TableauRow;
-class SparseUnsortedList;
 class MockBoundManager : public IBoundManager
 {
 public:

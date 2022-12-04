@@ -37,6 +37,9 @@ enum BoundType : unsigned
     UPPER = 1,
 };
 
+class BoundExplainer;
+class SparseUnsortedList;
+class TableauRow;
 class Tightening;
 class ITableau;
 class IRowBoundTightener;
