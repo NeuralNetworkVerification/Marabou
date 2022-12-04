@@ -23,6 +23,8 @@
 #include "MarabouError.h"
 
 class Tableau;
+class Engine;
+
 class MockBoundManager : public IBoundManager
 {
 public:
