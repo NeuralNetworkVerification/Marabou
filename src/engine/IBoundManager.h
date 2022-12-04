@@ -28,7 +28,6 @@
 
 #include "List.h"
 #include "Vector.h"
-#include "BoundExplainer.h"
 #include "PiecewiseLinearFunctionType.h"
 
 enum BoundType : unsigned
