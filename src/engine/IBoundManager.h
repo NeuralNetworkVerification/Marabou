@@ -37,6 +37,12 @@ enum BoundType : unsigned
     UPPER = 1,
 };
 
+enum BoundType : unsigned
+{
+    LOWER = 0,
+    UPPER = 1,
+};
+
 class Tightening;
 class ITableau;
 class IRowBoundTightener;
