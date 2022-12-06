@@ -60,7 +60,9 @@ def createQuery(args):
     elif suffix == "pb":
         network = Marabou.read_tf(networkPath)
     elif suffix == "onnx":
-        if "small" in networkPath:
+        if "sst" in networkPath:
+            network = Marabou.read_onnx(networkPath)
+        elif "small" in networkPath:
             network = Marabou.read_onnx(networkPath, outputNames=["model_1/dense_4/BiasAdd:0"])
         else:
             network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
@@ -77,6 +79,9 @@ def createQuery(args):
     if args.dataset == 'mnist':
         encode_mnist_linf(network, args.index, args.epsilon, args.target_label, network2)
         return network.getMarabouQuery(), network
+    if args.dataset == 'sst':
+        encode_sst_linf(network, args.index, args.epsilon, args.target_label)
+        return network.getMarabouQuery(), network
     elif args.dataset == 'cifar10':
         encode_cifar10_linf(network, args.index, args.epsilon, args.target_label)
         return network.getMarabouQuery(), network
@@ -87,6 +92,51 @@ def createQuery(args):
         print("No property encoded!")
 
         return network.getMarabouQuery(), network
+
+def encode_sst_linf(network, index, epsilon, target_label):
+    import pickle
+    VAL_SEQ = "/home/haozewu/Projects/softmax/bounding-softmax/transformer_experiment/training/validation_sequences.pickle"
+    VAL_LAB = "/home/haozewu/Projects/softmax/bounding-softmax/transformer_experiment/training/validation_labels.pickle"
+    EMBED = "/home/haozewu/Projects/softmax/bounding-softmax/transformer_experiment/training/self-attention-sst-sim-embedding.onnx"
+    with open(VAL_SEQ, 'rb') as fp:
+        sequences = pickle.load(fp)
+
+    with open(VAL_LAB, 'rb') as fp:
+        labels = pickle.load(fp)
+
+    import onnxruntime
+    seq = np.array(sequences[index]).astype(np.float32)
+    lab = labels[index]
+
+    session = onnxruntime.InferenceSession(EMBED, None)
+    inputName = session.get_inputs()[0].name
+    outputName = session.get_outputs()[0].name
+    embedding = session.run([outputName], {inputName: seq[None,:]})[0][0]
+
+    networkOutput = network.evaluateWithoutMarabou([embedding])[0][0]
+    print("network output", networkOutput)
+    prediction = int(networkOutput > 0)
+    print("correct label: {}".format(lab))
+    if  prediction != lab:
+        print("misclassify!")
+        exit(0)
+
+    for x in np.array(network.inputVars).flatten():
+        network.setLowerBound(x, embedding[x] - epsilon)
+        network.setUpperBound(x, embedding[x] + epsilon)
+    if target_label == -1:
+        target_label = 1 - lab
+        print(f"No target label given. Picking alternative label: {target_label}")
+
+    outputVar = network.outputVars[0].flatten()[0]
+
+    if target_label == 1:
+        network.setLowerBound(outputVar, 0)
+    elif target_label == 0:
+        network.setUpperBound(outputVar, 0)
+    else:
+        print("Problematic target label!")
+        return
 
 def encode_mnist_linf(network, index, epsilon, target_label, network2):
     from tensorflow.keras.datasets import mnist
