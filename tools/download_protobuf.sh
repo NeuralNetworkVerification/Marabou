@@ -23,7 +23,7 @@ echo "installing protobuf"
 cd protobuf-3.19.2
 mkdir -p $installdir
 ./configure --disable-shared --prefix=$installdir --enable-fast-install
-make
+make -j16
 make install
 
 cd $curdir
