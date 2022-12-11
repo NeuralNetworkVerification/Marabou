@@ -26,6 +26,7 @@
 #ifndef __IBoundManager_h__
 #define __IBoundManager_h__
 
+#include <cstdint>
 #include "List.h"
 #include "Vector.h"
 #include "PiecewiseLinearFunctionType.h"
