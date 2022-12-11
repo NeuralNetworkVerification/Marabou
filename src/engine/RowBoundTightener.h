@@ -56,12 +56,14 @@ public:
      */
     inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound )
     {
-        return _boundManager.tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
+        unsigned tighteningsToAdd = _boundManager.tightenLowerBound( variable, newLowerBound ) ? 1u : 0u;
+        return tighteningsToAdd;
     }
 
     inline unsigned registerTighterUpperBound( unsigned variable, double newUpperBound )
     {
-        return _boundManager.tightenUpperBound( variable, newUpperBound ) ? 1u : 0u;
+        unsigned tighteningsToAdd = _boundManager.tightenUpperBound( variable, newUpperBound ) ? 1u : 0u;
+        return tighteningsToAdd;
     }
 
     /*
@@ -69,12 +71,14 @@ public:
     */
     inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound, const TableauRow &row )
     {
-        return _boundManager.tightenLowerBound( variable, newLowerBound, row ) ? 1u : 0u;
+        unsigned tighteningsToAdd = _boundManager.tightenLowerBound( variable, newLowerBound, row ) ? 1u : 0u;
+        return tighteningsToAdd;
     }
 
     inline unsigned registerTighterUpperBound( unsigned variable, double newUpperBound, const TableauRow &row )
     {
-        return _boundManager.tightenUpperBound( variable, newUpperBound, row ) ? 1u : 0u;
+        unsigned tighteningsToAdd = _boundManager.tightenUpperBound( variable, newUpperBound, row ) ? 1u : 0u;
+        return tighteningsToAdd;
     }
 
     /*
@@ -82,12 +86,14 @@ public:
     */
     inline unsigned registerTighterLowerBound( unsigned variable, double newLowerBound, const SparseUnsortedList &row )
     {
-        return _boundManager.tightenLowerBound( variable, newLowerBound, row ) ? 1u : 0u;
+        unsigned tighteningsToAdd = _boundManager.tightenLowerBound( variable, newLowerBound, row ) ? 1u : 0u;
+        return tighteningsToAdd;
     }
 
     inline unsigned registerTighterUpperBound( unsigned variable, double newUpperBound, const SparseUnsortedList &row )
     {
-        return _boundManager.tightenUpperBound( variable, newUpperBound, row ) ? 1u : 0u;
+        unsigned tighteningsToAdd = _boundManager.tightenUpperBound( variable, newUpperBound, row ) ? 1u : 0u;
+        return tighteningsToAdd;
     }
 
     /*

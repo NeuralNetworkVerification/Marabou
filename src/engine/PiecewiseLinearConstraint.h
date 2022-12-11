@@ -453,10 +453,10 @@ public:
         return _cdInfeasibleCases;
     }
 
-	void setTableauAuxVar( unsigned var )
-	{
-    	_tableauAuxVar = var;
-	}
+    void setTableauAuxVar( unsigned var )
+    {
+        _tableauAuxVar = var;
+    }
 
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
@@ -603,7 +603,7 @@ protected:
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
 
-	unsigned _tableauAuxVar;
+    unsigned _tableauAuxVar;
 
 };
 

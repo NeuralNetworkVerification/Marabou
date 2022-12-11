@@ -525,8 +525,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
         // Now divide everything by ci, switching signs if needed.
         ci = entry._value;
-		if ( FloatUtils::lt( abs( ci ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
-			continue;
+        if ( FloatUtils::lt( abs( ci ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
+            continue;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;

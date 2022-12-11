@@ -296,7 +296,7 @@ public:
 
         // Test boundExplainer setting and getting
         BoundExplainer secondExplainer( numberOfVariables, numberOfRows, *context );
-        TS_ASSERT_THROWS_NOTHING( boundManager.setBoundExplainerContent(&secondExplainer) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.copyBoundExplainerContent( &secondExplainer ) );
 
         // Setting is effective if the non-trivial explanation became trivial
         TS_ASSERT_THROWS_NOTHING( boundManager.isExplanationTrivial( 1, false ) );

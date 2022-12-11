@@ -19,15 +19,14 @@
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "ITableau.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
+#include "ITableau.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "Statistics.h"
 #include "TableauRow.h"
-#include "InfeasibleQueryException.h"
-#include "PlcExplanation.h"
 
 #ifdef _WIN32
 #define __attribute__(x)
@@ -163,17 +162,19 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
         checkIfLowerBoundUpdateFixesPhase( variable, bound );
         if ( isActive() )
         {
-            createTighteningRow();
             bool proofs = _boundManager->shouldProduceProofs();
+
+            if ( proofs )
+                createTighteningRow();
 
             // A positive lower bound is always propagated between f and b
             if ( ( variable == _f || variable == _b ) && bound > 0 )
             {
                 // If we're in the active phase, aux should be 0
-            if ( proofs && _auxVarInUse )
-                _boundManager->addLemmaExplanation( _aux, 0, UPPER, variable, LOWER, getType() );
-            else if ( !proofs && _auxVarInUse )
-                _boundManager->tightenUpperBound( _aux, 0 );
+                if ( proofs && _auxVarInUse )
+                    _boundManager->addLemmaExplanation( _aux, 0, UPPER, variable, LOWER, getType() );
+                else if ( !proofs && _auxVarInUse )
+                    _boundManager->tightenUpperBound( _aux, 0 );
 
 			// After updating to active phase
 			unsigned partner = ( variable == _f ) ? _b : _f;
@@ -223,7 +224,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
             {
                 if ( proofs )
                     _boundManager->addLemmaExplanation( _f, 0, LOWER, variable, LOWER, getType() );
-			    else
+                else
                     _boundManager->tightenLowerBound( _f, 0 );
             }
         }
@@ -252,8 +253,10 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
 
         if ( isActive() )
         {
-            createTighteningRow();
             bool proofs = _boundManager->shouldProduceProofs();
+
+            if ( proofs )
+                createTighteningRow();
 
             if ( variable == _f )
             {

@@ -39,17 +39,17 @@
 #ifndef __BoundManager_h__
 #define __BoundManager_h__
 
-#include "IBoundManager.h"
-#include "IRowBoundTightener.h"
-#include "ITableau.h"
-#include "IEngine.h"
-#include "List.h"
-#include "Tightening.h"
-#include "Vector.h"
 #include "context/cdo.h"
 #include "context/context.h"
+#include "IBoundManager.h"
+#include "IEngine.h"
+#include "IRowBoundTightener.h"
+#include "ITableau.h"
+#include "List.h"
 #include "PlcExplanation.h"
+#include "Tightening.h"
 #include "UnsatCertificateNode.h"
+#include "Vector.h"
 
 class ITableau;
 class IEngine;
@@ -147,17 +147,27 @@ public:
     /*
       Return the content of the object containing all explanations for variable bounds in the tableau.
     */
-    BoundExplainer *getBoundExplainer() const;
+    const BoundExplainer *getBoundExplainer() const;
 
     /*
       Deep-copy the BoundExplainer object content
      */
-    void setBoundExplainerContent( BoundExplainer *boundsExplainer );
+    void copyBoundExplainerContent( const BoundExplainer *boundsExplainer );
 
     /*
       Initialize the boundExplainer
      */
     void initializeBoundExplainer( unsigned numberOfVariables, unsigned numberOfRows );
+
+    /*
+      Given a row, updates the values of the bound explanations of a var according to the row
+    */
+    void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned var );
+
+    /*
+      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row
+    */
+    void updateBoundExplanationSparse( const SparseUnsortedList &row, bool isUpper, unsigned var );
 
     /*
       Reset a bound explanation
@@ -182,7 +192,7 @@ public:
     /*
       Get the index of a variable with inconsistent bounds, if exists, or -1 otherwise
     */
-    int getInconsistentVariable() const;
+    unsigned getInconsistentVariable() const;
 
     /*
       Computes the bound imposed by a row's rhs on its lhs
