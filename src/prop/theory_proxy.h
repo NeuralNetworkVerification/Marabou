@@ -13,8 +13,6 @@
  * SAT Solver.
  */
 
-#include "cvc5_private.h"
-
 #ifndef CVC5__PROP__SAT_H
 #define CVC5__PROP__SAT_H
 
@@ -55,8 +53,6 @@ namespace cvc5::theory
   };
 }
 
-namespace cvc5::internal {
-
 using namespace CVC4::context;
 
 namespace prop {
@@ -75,7 +71,7 @@ class TheoryProxy
   TheoryProxy(TheoryEngine* theoryEngine);
 
   ~TheoryProxy();
-  void theoryCheck(theory::Theory::Effort effort);
+  void theoryCheck(cvc5::theory::Theory::Effort effort);
 
   /** Get an explanation for literal `l` and save it on clause `explanation`. */
   void explainPropagation(SatLiteral l, SatClause& explanation);
@@ -132,6 +128,5 @@ class TheoryProxy
 }; /* class TheoryProxy */
 
 }  // namespace prop
-}  // namespace cvc5::internal
 
 #endif

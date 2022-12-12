@@ -43,6 +43,10 @@
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 
+#include "theory_proxy.h"
+#include "minisat/minisat.h"
+
+
 #include <context/context.h>
 #include <atomic>
 

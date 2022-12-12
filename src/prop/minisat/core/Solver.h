@@ -26,28 +26,17 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "base/check.h"
 #include "base/output.h"
 #include "context/context.h"
-#include "cvc5_private.h"
-#include "proof/clause_id.h"
-#include "proof/proof_node_manager.h"
 #include "minisat/core/SolverTypes.h"
 #include "minisat/mtl/Alg.h"
 #include "minisat/mtl/Heap.h"
 #include "minisat/mtl/Vec.h"
 #include "minisat/utils/Options.h"
-#include "sat_proof_manager.h"
-#include "smt/env_obj.h"
-#include "theory/theory.h"
-#include "util/resource_manager.h"
-
-namespace cvc5::internal {
 
 namespace prop {
 class PropEngine;
 class TheoryProxy;
 }  // namespace prop
-}  // namespace cvc5::internal
 
-namespace cvc5::internal {
 namespace Minisat {
 
 //=================================================================================================
@@ -56,9 +45,7 @@ namespace Minisat {
 class Solver : protected EnvObj
 {
   /** The only two cvc5 entry points to the private solver data */
-  friend class cvc5::internal::prop::PropEngine;
-  friend class cvc5::internal::prop::TheoryProxy;
-  friend class cvc5::internal::prop::SatProofManager;
+  friend class prop::TheoryProxy;
 
  public:
   static CRef TCRef_Undef;
@@ -72,7 +59,7 @@ class Solver : protected EnvObj
 
  protected:
   /** The pointer to the proxy that provides interfaces to the SMT engine */
-  cvc5::internal::prop::TheoryProxy* d_proxy;
+  prop::TheoryProxy* d_proxy;
 
   /** The contexts from the SMT solver */
   context::Context* d_context;
@@ -87,7 +74,7 @@ class Solver : protected EnvObj
   Var varFalse;
 
   /** The resolution proof manager */
-  std::unique_ptr<cvc5::internal::prop::SatProofManager> d_pfManager;
+  std::unique_ptr<prop::SatProofManager> d_pfManager;
 
  public:
   /** Returns the current user assertion level */
@@ -131,7 +118,7 @@ public:
     // Constructor/Destructor:
     //
  Solver(Env& env,
-        cvc5::internal::prop::TheoryProxy* proxy,
+        prop::TheoryProxy* proxy,
         context::Context* context,
         context::UserContext* userContext,
         ProofNodeManager* pnm,
@@ -148,9 +135,6 @@ public:
                                     // specifying variable mode.
  Var trueVar() const { return varTrue; }
  Var falseVar() const { return varFalse; }
-
- /** Retrive the SAT proof manager */
- cvc5::internal::prop::SatProofManager* getProofManager();
 
  /** Retrive the refutation proof */
  std::shared_ptr<ProofNode> getProof();
@@ -508,7 +492,7 @@ protected:
     CRef     propagateBool    ();                                                      // Perform Boolean propagation. Returns possibly conflicting clause.
     void     propagateTheory  ();                                                      // Perform Theory propagation.
     void theoryCheck(
-        cvc5::internal::theory::Theory::Effort
+            theory::Theory::Effort
             effort);  // Perform a theory satisfiability check. Adds lemmas.
     CRef     updateLemmas     ();                                                      // Add the lemmas, backtraking if necessary and return a conflict if there is one
     void     cancelUntil      (int level);                                             // Backtrack until a certain level.
@@ -733,6 +717,5 @@ inline void     Solver::toDimacs     (const char* file, Lit p, Lit q, Lit r){ ve
 
 //=================================================================================================
 }  // namespace Minisat
-}  // namespace cvc5::internal
 
 #endif

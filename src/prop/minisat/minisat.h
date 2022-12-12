@@ -18,11 +18,6 @@
 #pragma once
 
 #include "minisat/simp/SimpSolver.h"
-#include "sat_solver.h"
-#include "smt/env_obj.h"
-#include "util/statistics_registry.h"
-
-namespace cvc5::internal {
 
 template <class Solver>
 prop::SatLiteral toSatLiteral(typename Solver::TLit lit);
@@ -161,4 +156,3 @@ class MinisatSatSolver : public CDCLTSatSolverInterface, protected EnvObj
 }; /* class MinisatSatSolver */
 
 }  // namespace prop
-}  // namespace cvc5::internal

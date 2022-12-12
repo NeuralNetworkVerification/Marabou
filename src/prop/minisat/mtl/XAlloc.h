@@ -24,7 +24,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <errno.h>
 #include <stdlib.h>
 
-namespace cvc5::internal {
 namespace Minisat {
 
 //=================================================================================================
@@ -42,6 +41,5 @@ static inline void* xrealloc(void *ptr, size_t size)
 
 //=================================================================================================
 }
-}  // namespace cvc5::internal
 
 #endif
