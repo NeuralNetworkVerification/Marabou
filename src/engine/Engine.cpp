@@ -3380,7 +3380,7 @@ unsigned Engine::explainFailureWithCostFunction()
     unsigned infVar = IBoundManager::NO_VARIABLE_FOUND;
     double curCost;
     bool curUpper;
-    SparseUnsortedList *costRow = _costFunctionManager->createRowOfCostFunction();
+    const SparseUnsortedList *costRow = _costFunctionManager->createRowOfCostFunction();
 
     for ( unsigned i = 0; i < _tableau->getM(); ++i )
     {

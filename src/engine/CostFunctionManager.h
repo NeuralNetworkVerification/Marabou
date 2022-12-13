@@ -96,7 +96,7 @@ public:
     /*
       Returns the cost function as a SparseUnsortedList object, so it can be viewed as a Tableau row.
     */
-    SparseUnsortedList* createRowOfCostFunction() const;
+    const SparseUnsortedList* createRowOfCostFunction() const;
 private:
     /*
       The tableau.
