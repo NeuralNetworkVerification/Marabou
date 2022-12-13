@@ -42,9 +42,9 @@
 #include "context/cdo.h"
 #include "context/context.h"
 #include "IBoundManager.h"
-#include "IEngine.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
+#include "IEngine.h"
 #include "List.h"
 #include "PlcExplanation.h"
 #include "Tightening.h"
@@ -177,7 +177,7 @@ public:
     /*
       Insert the bounds explanation of a variable in the tableau to the argument vector
     */
-    void explainBound( unsigned variable, bool isUpper, Vector<double> &explanation ) const;
+    void getExplanation( unsigned variable, bool isUpper, Vector<double> &explanation ) const;
 
     /*
       Artificially update an explanation, without using the recursive rule
@@ -187,7 +187,7 @@ public:
     /*
       Register Engine pointer for callbacks
     */
-    void registerEngine( IEngine *engine );
+    void registerEngine( IEngine *engine);
 
     /*
       Get the index of a variable with inconsistent bounds, if exists, or -1 otherwise

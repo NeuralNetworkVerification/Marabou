@@ -20,11 +20,17 @@
 #include "MarabouError.h"
 #include "SmtCore.h"
 #include "TableauStateStorageLevel.h"
+#include "UnsatCertificateNode.h"
 
 void PrecisionRestorer::storeInitialEngineState( const IEngine &engine )
 {
     engine.storeState( _initialEngineState,
                        TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
+}
+
+void PrecisionRestorer::restoreInitialEngineState( const IEngine &engine )
+{
+    engine.restoreState( _initialEngineState );
 }
 
 void PrecisionRestorer::restorePrecision( IEngine &engine,
@@ -42,6 +48,34 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
     EngineState targetEngineState;
     engine.storeState( targetEngineState,
                        TableauStateStorageLevel::STORE_NONE );
+
+    BoundExplainer boundExplainerBackup( targetN, targetM, engine.getContext() );
+    Vector<double> groundUpperBoundsBackup;
+    Vector<double> groundLowerBoundsBackup;
+
+    Vector<double> upperBoundsBackup;
+    Vector<double> lowerBoundsBackup;
+
+    if ( engine.shouldProduceProofs() )
+    {
+        groundUpperBoundsBackup = Vector<double>( targetN, 0 );
+        groundLowerBoundsBackup = Vector<double>( targetN, 0 );
+
+        upperBoundsBackup = Vector<double>( targetN, 0 );
+        lowerBoundsBackup = Vector<double>( targetN, 0 );
+
+        boundExplainerBackup = *engine.getBoundExplainer();
+
+        for ( unsigned i = 0; i < targetN; ++i )
+        {
+            lowerBoundsBackup[i] = tableau.getLowerBound( i );
+            upperBoundsBackup[i] = tableau.getUpperBound( i );
+
+            groundUpperBoundsBackup[i] = engine.getGroundBound( i, UPPER );
+            groundLowerBoundsBackup[i] = engine.getGroundBound( i, LOWER );
+        }
+    }
+
 
     // Store the case splits performed so far
     List<PiecewiseLinearCaseSplit> targetSplits;
@@ -103,6 +137,25 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
                     "basis after setting basics" );
             }
         }
+    }
+
+    if ( engine.shouldProduceProofs() )
+    {
+        engine.setBoundExplainerContent( &boundExplainerBackup );
+
+        for ( unsigned i = 0; i < targetN; ++i )
+        {
+            engine.updateGroundUpperBound( i, groundUpperBoundsBackup[i] );
+            engine.updateGroundLowerBound( i, groundLowerBoundsBackup[i] );
+        }
+
+        for ( unsigned i = 0; i < targetN; ++i )
+        {
+            tableau.tightenUpperBoundNaively( i, upperBoundsBackup[i] );
+            tableau.tightenLowerBoundNaively( i, lowerBoundsBackup[i] );
+        }
+
+        engine.propagateBoundManagerTightenings();
     }
 
     // Restore constraint status

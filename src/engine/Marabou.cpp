@@ -199,6 +199,9 @@ void Marabou::solveQuery()
     if ( _engine.processInputQuery( _inputQuery ) )
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
 
+    if ( _engine.shouldProduceProofs() && _engine.getExitCode() == Engine::UNSAT )
+        _engine.certifyUNSATCertificate();
+
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
 }

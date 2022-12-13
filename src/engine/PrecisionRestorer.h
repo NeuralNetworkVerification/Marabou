@@ -29,6 +29,7 @@ public:
     };
 
     void storeInitialEngineState( const IEngine &engine );
+    void restoreInitialEngineState( const IEngine &engine );
 
     void restorePrecision( IEngine &engine,
                            ITableau &tableau,

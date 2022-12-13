@@ -287,7 +287,7 @@ public:
         TS_ASSERT( !boundManager.isExplanationTrivial( 0, true ) );
         boundManager.setExplanation( expl, 1, false );
 
-        boundManager.explainBound( 1, false, explained );
+        boundManager.getExplanation( 1, false, explained );
         TS_ASSERT(  explained == expl );
 
         // Test explanation resetting

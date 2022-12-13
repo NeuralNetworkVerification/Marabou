@@ -305,9 +305,9 @@ void BoundManager::registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTig
     _rowBoundTightener = ptrRowBoundTightener;
 }
 
-void BoundManager::explainBound( unsigned variable, bool isUpper, Vector<double> &explanation ) const
+void BoundManager::getExplanation( unsigned variable, bool isUpper, Vector<double> &explanation ) const
 {
-    ASSERT( shouldProduceProofs() && variable < _size );
+    ASSERT( _engine->shouldProduceProofs() && variable < _size );
     auto temp = _boundExplainer->getExplanation( variable, isUpper );
     explanation = Vector<double>( temp.size() );
     for ( unsigned i = 0; i < temp.size(); ++i )
@@ -320,7 +320,7 @@ bool BoundManager::tightenLowerBound( unsigned variable, double value, const Tab
 
     if ( tightened )
     {
-        if ( shouldProduceProofs() )
+        if ( _engine->shouldProduceProofs() )
             _boundExplainer->updateBoundExplanation( row, LOWER, variable );
 
         if ( _tableau != nullptr )
@@ -335,7 +335,7 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value, const Tab
 
     if ( tightened )
     {
-        if ( shouldProduceProofs() )
+        if ( _engine->shouldProduceProofs() )
             _boundExplainer->updateBoundExplanation( row, UPPER, variable );
 
         if ( _tableau != nullptr )
@@ -350,7 +350,7 @@ bool BoundManager::tightenLowerBound( unsigned variable, double value, const Spa
 
     if ( tightened )
     {
-        if ( shouldProduceProofs() )
+        if ( _engine->shouldProduceProofs() )
             _boundExplainer->updateBoundExplanationSparse( row, LOWER, variable );
 
         if ( _tableau != nullptr )
@@ -365,7 +365,7 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value, const Spa
 
     if ( tightened )
     {
-        if ( shouldProduceProofs() )
+        if ( _engine->shouldProduceProofs() )
             _boundExplainer->updateBoundExplanationSparse( row, UPPER, variable );
 
         if ( _tableau != nullptr )
@@ -417,31 +417,29 @@ bool BoundManager::addLemmaExplanation( unsigned var, double value, BoundType af
 
     // Register new ground bound, update certificate, and reset explanation
     Vector<double> explanation( 0 );
-    explainBound( causingVar, causingVarBound, explanation );
+    getExplanation( causingVar, causingVarBound, explanation );
 
     bool tightened = affectedVarBound == UPPER ? tightenUpperBound( var, value ) : tightenLowerBound( var, value );
 
     if ( tightened )
     {
         std::shared_ptr<PLCExplanation> PLCExpl = std::make_shared<PLCExplanation>( causingVar, var, value, causingVarBound, affectedVarBound, explanation, constraintType );
-        // TODO uncomment when proof producing engine is integrated
-        // _engine->getUNSATCertificateCurrentPointer()->addPLCExplanation( PLCExpl );
-        // affectedVarBound == UPPER ? _engine->updateGroundUpperBound( var, value ) : _engine->updateGroundLowerBound( var, value );
+        _engine->getUNSATCertificateCurrentPointer()->addPLCExplanation( PLCExpl );
+        affectedVarBound == UPPER ? _engine->updateGroundUpperBound( var, value ) : _engine->updateGroundLowerBound( var, value );
         resetExplanation( var, affectedVarBound );
     }
     return true;
 }
 
-void BoundManager::registerEngine( IEngine *engine )
+void BoundManager::registerEngine( IEngine *engine)
 {
     _engine = engine;
 }
 
 void BoundManager::initializeBoundExplainer( unsigned numberOfVariables, unsigned numberOfRows )
 {
-    // TODO uncomment when proof producing engine is integrated
-    // if ( _engine->shouldProduceProofs() )
-    _boundExplainer = new BoundExplainer( numberOfVariables, numberOfRows, _context );
+    if ( _engine->shouldProduceProofs() )
+        _boundExplainer = new BoundExplainer( numberOfVariables, numberOfRows, _context );
 }
 
 unsigned BoundManager::getInconsistentVariable() const

@@ -22,6 +22,7 @@
 #include "AutoTableau.h"
 #include "BlandsRule.h"
 #include "BoundManager.h"
+#include "Checker.h"
 #include "DantzigsRule.h"
 #include "DegradationChecker.h"
 #include "DivideStrategy.h"
@@ -42,6 +43,8 @@
 #include "Statistics.h"
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
+#include "SmtLibWriter.h"
+#include "UnsatCertificateNode.h"
 
 #include <context/context.h>
 #include <atomic>
@@ -229,6 +232,56 @@ public:
 
     void setRandomSeed( unsigned seed );
 
+    /*
+      Returns true iff the engine is in proof production mode
+    */
+    bool shouldProduceProofs() const;
+
+    /*
+      Update the ground bounds
+    */
+    void updateGroundUpperBound( unsigned var, double value );
+    void updateGroundLowerBound( unsigned var, double value );
+
+    /*
+	  Return all ground bounds as a vector
+    */
+    double getGroundBound( unsigned var, bool isUpper ) const;
+
+    /*
+      Get the current pointer of the UNSAT certificate
+    */
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const;
+
+    /*
+     Set the current pointer of the UNSAT certificate
+    */
+	void setUNSATCertificateCurrentPointer( UnsatCertificateNode *node );
+
+    /*
+      Get the pointer to the root of the UNSAT certificate
+    */
+    const UnsatCertificateNode *getUNSATCertificateRoot() const;
+
+    /*
+	  Certify the UNSAT certificate
+	*/
+    bool certifyUNSATCertificate();
+
+    /*
+      Get the boundExplainer
+    */
+    const BoundExplainer *getBoundExplainer() const;
+
+    /*
+      Set the boundExplainer
+    */
+    void setBoundExplainerContent( BoundExplainer *boundExplainer );
+
+    /*
+      Propagate bound tightenings stored in the BoundManager
+    */
+    void propagateBoundManagerTightenings();
 private:
 
     enum BasisRestorationRequired {
@@ -740,6 +793,78 @@ private:
       Check that the variable bounds in Gurobi is up-to-date.
     */
     void checkGurobiBoundConsistency() const;
+
+    /*
+      Proof Production data structes
+     */
+
+    bool _produceUNSATProofs;
+    BoundManager _groundBoundManager;
+    UnsatCertificateNode *_UNSATCertificate;
+    CVC4::context::CDO<UnsatCertificateNode*> *_UNSATCertificateCurrentPointer;
+
+    /*
+      Returns true iff there is a variable with bounds that can explain infeasibility of the tableau
+    */
+    bool certifyInfeasibility( unsigned var ) const;
+
+    /*
+      Returns the value of a variable bound, as explained by the BoundExplainer
+    */
+    double explainBound( unsigned var,  bool isUpper ) const;
+
+    /*
+     Returns true iff both bounds are epsilon close to their explained bounds
+    */
+    bool validateBounds( unsigned var, double epsilon, bool isUpper ) const;
+
+    /*
+     Returns true iff all bounds are epsilon-close to their explained bounds
+    */
+    bool validateAllBounds( double epsilon ) const;
+
+    /*
+      Finds the variable causing failure and updates its bounds explanations
+    */
+    void explainSimplexFailure();
+
+    /*
+      Sanity check for ground bounds, returns true iff all bounds are at least as tight as their ground bounds
+    */
+    bool checkGroundBounds() const;
+
+    /*
+      Updates bounds after deducing Simplex infeasibility, according to a tableau row
+    */
+    unsigned explainFailureWithTableau();
+
+    /*
+      Updates bounds after deducing Simplex infeasibility, according to the cost function
+    */
+    unsigned explainFailureWithCostFunction();
+
+    /*
+      Updates an explanation of a bound according to a row, and checks for an explained contradiction.
+      If a contradiction can be deduced, return true. Else, revert and return false
+    */
+    bool explainAndCheckContradiction( unsigned var, bool isUpper, const TableauRow *row );
+    bool explainAndCheckContradiction( unsigned var, bool isUpper, const SparseUnsortedList *row );
+
+    /*
+      Delegates leaves with certification error to SMTLIB format
+    */
+    void markLeafToDelegate();
+
+    /*
+      Return the vector given by upper bound explanation - lower bound explanation
+      Assuming infeasibleVar is indeed infeasible, then the result is a contradiction vector
+     */
+    const Vector<double> computeContradiction( unsigned infeasibleVar ) const;
+
+    /*
+      Writes the details of a contradiction to the UNSAT certificate node
+    */
+    void writeContradictionToCertificate( unsigned infeasibleVar ) const;
 };
 
 #endif // __Engine_h__

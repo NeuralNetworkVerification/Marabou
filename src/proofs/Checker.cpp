@@ -134,7 +134,7 @@ bool Checker::checkContradiction( const UnsatCertificateNode *node ) const
 
     if ( contradiction == NULL )
     {
-        double infeasibleVar = node->getContradiction()->getVar();
+        unsigned infeasibleVar = node->getContradiction()->getVar();
         return FloatUtils::isNegative( _groundUpperBounds[infeasibleVar] - _groundLowerBounds[infeasibleVar] );
     }
 

@@ -81,6 +81,18 @@ macro(marabou_add_input_query_test level ipq_file result arguments
     ${result} ${test_properties}")
 endmacro()
 
+macro(marabou_add_acasxu_proof_test level net_file prop_num result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+            "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--prove-unsat" "acasxu")
+endmacro()
+
+macro(marabou_add_coav_proof_test level net_file result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/coav/${net_file}"
+            "${CMAKE_SOURCE_DIR}/resources/properties/builtin_property.txt" "${result}" "--prove-unsat" "coav")
+endmacro()
+
 add_subdirectory(regress0)
 add_subdirectory(regress1)
 add_subdirectory(regress2)

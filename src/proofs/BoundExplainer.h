@@ -54,7 +54,7 @@ public:
     /*
       Given a row, updates the values of the bound explanations of a var according to the row
     */
-    void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned varIndex );
+    void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned var );
 
     /*
       Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row

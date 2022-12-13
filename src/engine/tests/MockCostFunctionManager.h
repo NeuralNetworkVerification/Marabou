@@ -138,6 +138,11 @@ public:
     void invalidateCostFunction()
     {
     }
+
+	SparseUnsortedList* createRowOfCostFunction() const
+	{
+    	return NULL;
+	}
 };
 
 #endif // __MockCostFunctionManager_h__

@@ -24,7 +24,7 @@ public:
     /*
       Tests a simple tree construction
     */
-    void test_tree_telations()
+    void test_tree_relations()
     {
         Vector<double> groundUpperBounds( 6, 1 );
         Vector<double> groundLowerBounds( 6, 0 );
