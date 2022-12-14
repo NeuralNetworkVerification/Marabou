@@ -1349,15 +1349,21 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( _produceUNSATProofs )
         {
+            bool containsNonReLUs = false;
             for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
             {
                 if ( plConstraint->getType() != RELU )
                 {
-                    ENGINE_LOG( "Turning off proof production since activations not yet supported\n" );
-                    printf( "Turning off proof production since activations not yet supported\n" );
+                    containsNonReLUs = true;
                     _produceUNSATProofs = false;
                     Options::get()->setBool( Options::PRODUCE_PROOFS, false );
                 }
+            }
+
+            if ( containsNonReLUs )
+            {
+                ENGINE_LOG( "Turning off proof production since activations are not yet supported\n" );
+                printf( "Turning off proof production since activations not are yet supported\n" );
             }
         }
 
