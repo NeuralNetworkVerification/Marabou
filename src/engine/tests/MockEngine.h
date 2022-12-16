@@ -210,42 +210,42 @@ public:
 
     bool consistentBounds() const { return true; }
 
-	double explainBound( unsigned /* var */,  bool /* isUpper */ ) const
-	{
-		return 0.0;
-	}
+    double explainBound( unsigned /* var */,  bool /* isUpper */ ) const
+    {
+        return 0.0;
+    }
 
-	void updateGroundUpperBound(unsigned /* var */, double /* value */ )
-	{
-	}
+    void updateGroundUpperBound(unsigned /* var */, double /* value */ )
+    {
+    }
 
-	void updateGroundLowerBound(unsigned /*var*/, double /*value*/ )
-	{
-	}
+    void updateGroundLowerBound(unsigned /*var*/, double /*value*/ )
+    {
+    }
 
     double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
     {
-		return 0;
-	}
+        return 0;
+    }
 
     UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
-	{
-		return NULL;
-	}
+    {
+        return NULL;
+    }
 
-	void setUNSATCertificateCurrentPointer( UnsatCertificateNode */* node*/ )
-	{
-	}
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode */* node*/ )
+    {
+    }
 
     const UnsatCertificateNode *getUNSATCertificateRoot() const
-	{
-		return NULL;
-	}
+    {
+        return NULL;
+    }
 
-	bool certifyUNSATCertificate()
-	{
-		return true;
-	}
+    bool certifyUNSATCertificate()
+    {
+        return true;
+    }
 
     void explainSimplexFailure()
     {
@@ -253,7 +253,7 @@ public:
 
     const BoundExplainer *getBoundExplainer() const
     {
-	    return NULL;
+        return NULL;
     }
 
     void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )

@@ -176,11 +176,11 @@ void SmtCore::performSplit()
     UnsatCertificateNode* certificateNode = NULL;
     if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateRoot() )
     {
-    certificateNode = _engine->getUNSATCertificateCurrentPointer();
-    // Create children for UNSATCertificate current node, and assign a split to each of them
-    ASSERT( certificateNode );
-    for ( PiecewiseLinearCaseSplit& childSplit : splits )
-        new UnsatCertificateNode( certificateNode, childSplit );
+        certificateNode = _engine->getUNSATCertificateCurrentPointer();
+        // Create children for UNSATCertificate current node, and assign a split to each of them
+        ASSERT( certificateNode );
+        for ( PiecewiseLinearCaseSplit& childSplit : splits )
+            new UnsatCertificateNode( certificateNode, childSplit );
     }
 
     SmtStackEntry *stackEntry = new SmtStackEntry;

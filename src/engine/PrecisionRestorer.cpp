@@ -76,7 +76,6 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
         }
     }
 
-
     // Store the case splits performed so far
     List<PiecewiseLinearCaseSplit> targetSplits;
     smtCore.allSplitsSoFar( targetSplits );

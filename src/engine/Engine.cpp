@@ -88,7 +88,10 @@ Engine::Engine()
         GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY :
         GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
 
-    _produceUNSATProofs ? _UNSATCertificateCurrentPointer = new ( true ) CVC4::context::CDO<UnsatCertificateNode*>( &_context, NULL ) : NULL;
+    if ( _produceUNSATProofs )
+        _UNSATCertificateCurrentPointer = new ( true ) CVC4::context::CDO<UnsatCertificateNode*>( &_context, NULL );
+    else
+        _UNSATCertificateCurrentPointer = NULL;
 }
 
 Engine::~Engine()
@@ -100,10 +103,10 @@ Engine::~Engine()
     }
 
     if ( _UNSATCertificate )
-	{
-		delete _UNSATCertificate;
-		_UNSATCertificate = NULL;
-	}
+    {
+        delete _UNSATCertificate;
+        _UNSATCertificate = NULL;
+    }
 
     if ( _produceUNSATProofs && _UNSATCertificateCurrentPointer )
         _UNSATCertificateCurrentPointer->deleteSelf();
@@ -310,10 +313,10 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
                     // Allows checking proofs produced for UNSAT leaves of satisfiable query search tree
                     if ( _produceUNSATProofs )
-					{
-                    	ASSERT( _UNSATCertificateCurrentPointer );
+                    {
+                        ASSERT( _UNSATCertificateCurrentPointer );
                         ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
-					}
+                    }
 					_exitCode = Engine::SAT;
                     return true;
                 }
@@ -1404,8 +1407,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
                 for ( unsigned i = 0; i < n; ++i )
                 {
-                   _groundBoundManager.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
-                   _groundBoundManager.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+                    _groundBoundManager.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+                    _groundBoundManager.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
                 }
             }
         }
@@ -1982,7 +1985,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
     if ( _produceUNSATProofs && _UNSATCertificateCurrentPointer )
         ( **_UNSATCertificateCurrentPointer ).setVisited();
 
-	DEBUG( _tableau->verifyInvariants() );
+    DEBUG( _tableau->verifyInvariants() );
     ENGINE_LOG( "Done with split\n" );
 }
 
@@ -3266,7 +3269,7 @@ void Engine::explainSimplexFailure()
 
 bool Engine::certifyInfeasibility( unsigned var ) const
 {
-   ASSERT( _produceUNSATProofs );
+    ASSERT( _produceUNSATProofs );
 
     Vector<double> contradiction = computeContradiction( var );
 
@@ -3305,7 +3308,7 @@ bool Engine::validateBounds( unsigned var, double epsilon, bool isUpper ) const
         real = _boundManager.getUpperBound( var );
         if ( explained - real > epsilon )
         {
-            printf( "Var %d. Computed Upper %.5lf, real %.5lf. Difference is %.10lf\n", var, explained, real, abs( explained - real ) );
+            ENGINE_LOG( "Var %d. Computed Upper %.5lf, real %.5lf. Difference is %.10lf\n", var, explained, real, abs( explained - real ) );
             return false;
         }
     }
@@ -3314,7 +3317,7 @@ bool Engine::validateBounds( unsigned var, double epsilon, bool isUpper ) const
         real = _boundManager.getLowerBound( var );
         if ( explained - real  < -epsilon )
         {
-            printf( "Var %d. Computed Lower  %.5lf, real %.5lf. Difference is %.10lf\n", var, explained, real, abs( explained - real ) );
+            ENGINE_LOG( "Var %d. Computed Lower  %.5lf, real %.5lf. Difference is %.10lf\n", var, explained, real, abs( explained - real ) );
             return false;
         }
     }
@@ -3456,17 +3459,17 @@ bool Engine::explainAndCheckContradiction( unsigned var, bool isUpper, const Spa
     return false;
 }
 
- UnsatCertificateNode* Engine::getUNSATCertificateCurrentPointer() const
+UnsatCertificateNode *Engine::getUNSATCertificateCurrentPointer() const
 {
     return _UNSATCertificateCurrentPointer->get();
 }
 
-void Engine::setUNSATCertificateCurrentPointer( UnsatCertificateNode* node )
+void Engine::setUNSATCertificateCurrentPointer( UnsatCertificateNode *node )
 {
     _UNSATCertificateCurrentPointer->set( node );
 }
 
-const UnsatCertificateNode* Engine::getUNSATCertificateRoot() const
+const UnsatCertificateNode *Engine::getUNSATCertificateRoot() const
 {
     return _UNSATCertificate;
 }
@@ -3479,7 +3482,7 @@ bool Engine::certifyUNSATCertificate()
     {
         if ( constraint->getType() != RELU )
         {
-            printf("Certification Error! Marabou doesn't support certification for none ReLU constraints.\n");
+            printf( "Certification Error! Marabou doesn't support certification for none ReLU constraints.\n" );
             return false;
         }
     }
@@ -3508,10 +3511,10 @@ bool Engine::certifyUNSATCertificate()
     {
         printf("Certified\n");
         if ( _statistics.getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) )
-            printf("Some leaves were delegated and need to be certified separately by an SMT solver\n");
+            printf( "Some leaves were delegated and need to be certified separately by an SMT solver\n" );
     }
     else
-        printf("Error certifying UNSAT certificate\n");
+        printf( "Error certifying UNSAT certificate\n" );
 
     DEBUG({
         ASSERT( certificationSucceeded );
@@ -3527,7 +3530,7 @@ bool Engine::certifyUNSATCertificate()
 
 void Engine::markLeafToDelegate()
 {
-   ASSERT( _produceUNSATProofs );
+    ASSERT( _produceUNSATProofs );
 
     // Mark leaf with toDelegate Flag
     UnsatCertificateNode *currentUnsatCertificateNode = _UNSATCertificateCurrentPointer->get();

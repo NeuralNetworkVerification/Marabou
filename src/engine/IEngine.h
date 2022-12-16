@@ -114,10 +114,10 @@ public:
     */
     virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
                                                                  strategy ) = 0;
-	/*
- 	  Return the value of a variable bound, as expressed by the bounds explainer and the initial bounds
-	*/
-	virtual double explainBound( unsigned var,  bool isUpper ) const = 0;
+    /*
+      Return the value of a variable bound, as expressed by the bounds explainer and the initial bounds
+    */
+    virtual double explainBound( unsigned var,  bool isUpper ) const = 0;
 
 	/*
 	 * Update the ground bounds
