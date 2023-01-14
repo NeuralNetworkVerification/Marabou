@@ -28,10 +28,10 @@ void toSatClause(const typename Solver::TClause& minisat_cl,
 
 namespace prop {
 
-class MinisatSatSolver : public CDCLTSatSolverInterface, protected EnvObj
+class MinisatSatSolver
 {
  public:
-  MinisatSatSolver(Env& env, StatisticsRegistry& registry);
+  MinisatSatSolver();
   ~MinisatSatSolver() override;
 
   static SatVariable     toSatVariable(Minisat::Var var);
@@ -43,9 +43,9 @@ class MinisatSatSolver : public CDCLTSatSolverInterface, protected EnvObj
 
   static void  toMinisatClause(SatClause& clause, Minisat::vec<Minisat::Lit>& minisat_clause);
   static void  toSatClause    (const Minisat::Clause& clause, SatClause& sat_clause);
-  void initialize(context::Context* context,
+  void initialize(CVC4::context::Context* context,
                   TheoryProxy* theoryProxy,
-                  context::UserContext* userContext,
+                  CVC4::context::UserContext* userContext,
                   ProofNodeManager* pnm) override;
 
   ClauseId addClause(SatClause& clause, bool removable) override;
@@ -147,7 +147,7 @@ class MinisatSatSolver : public CDCLTSatSolverInterface, protected EnvObj
    ReferenceStat<int64_t> d_statTotLiterals;
 
   public:
-   Statistics(StatisticsRegistry& registry);
+   Statistics();
    void init(Minisat::SimpSolver* d_minisat);
    void deinit();
   };/* class MinisatSatSolver::Statistics */

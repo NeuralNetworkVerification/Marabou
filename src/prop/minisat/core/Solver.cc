@@ -18,6 +18,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
+#include "Debug.h"
+
 #include "minisat/core/Solver.h"
 
 #include <math.h>
@@ -25,7 +27,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <iostream>
 #include <unordered_set>
 
-#include "base/check.h"
 #include "base/output.h"
 #include "options/base_options.h"
 #include "options/main_options.h"
@@ -128,17 +129,13 @@ class ScopedBool
 //=================================================================================================
 // Constructor/Destructor:
 
-Solver::Solver(Env& env,
-               prop::TheoryProxy* proxy,
+Solver::Solver(prop::TheoryProxy* proxy,
                context::Context* context,
                context::UserContext* userContext,
-               ProofNodeManager* pnm,
                bool enableIncremental)
-    : EnvObj(env),
-      d_proxy(proxy),
+    : d_proxy(proxy),
       d_context(context),
       assertionLevel(0),
-      d_pfManager(nullptr),
       d_enable_incremental(enableIncremental),
       minisat_busy(false)
       // Parameters (user settable):
@@ -265,9 +262,9 @@ Var Solver::newVar(bool sign, bool dvar, bool isTheoryAtom, bool preRegister, bo
 }
 
 void Solver::resizeVars(int newSize) {
-  Assert(d_enable_incremental);
-  Assert(decisionLevel() == 0);
-  Assert(newSize >= 2) << "always keep true/false";
+  ASSERT(d_enable_incremental);
+  ASSERT(decisionLevel() == 0);
+  ASSERT(newSize >= 2) << "always keep true/false";
   if (newSize < nVars()) {
     int shrinkSize = nVars() - newSize;
 
@@ -286,7 +283,7 @@ void Solver::resizeVars(int newSize) {
 
   if (TraceIsOn("minisat::pop")) {
     for (int i = 0; i < trail.size(); ++ i) {
-      Assert(var(trail[i]) < nVars());
+      ASSERT(var(trail[i]) < nVars());
     }
   }
 }
@@ -333,7 +330,7 @@ CRef Solver::reason(Var x) {
   // Sort the literals by trail index level
   lemma_lt lt(*this);
   sort(explanation, lt);
-  Assert(explanation[0] == l);
+  ASSERT(explanation[0] == l);
 
   // Compute the assertion level for this clause
   int explLevel = 0;
@@ -351,8 +348,8 @@ CRef Solver::reason(Var x) {
       // the top literal
       explLevel = std::max(explLevel, intro_level(var(explanation[i])));
 
-      Assert(value(explanation[i]) != l_Undef);
-      Assert(i == 0
+      ASSERT(value(explanation[i]) != l_Undef);
+      ASSERT(i == 0
              || trail_index(var(explanation[0]))
                     > trail_index(var(explanation[i])));
 
@@ -391,7 +388,7 @@ CRef Solver::reason(Var x) {
   if (needProof() && explLevel < assertionLevel)
   {
     Trace("pf::sat") << "..user level is " << userContext()->getLevel() << "\n";
-    Assert(userContext()->getLevel() == (assertionLevel + 1));
+    ASSERT(userContext()->getLevel() == (assertionLevel + 1));
     d_proxy->notifyCurrPropagationInsertedAtLevel(explLevel);
   }
   // Construct the reason
@@ -474,7 +471,7 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
       ps.copyTo(lemmas.last());
       lemmas_removable.push(removable);
     } else {
-      Assert(decisionLevel() == 0);
+      ASSERT(decisionLevel() == 0);
 
       // If all false, we're in conflict
       if (ps.size() == falseLiteralsCount) {
@@ -540,7 +537,7 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
       // Check if it propagates
       if (ps.size() == falseLiteralsCount + 1 && assigns[var(ps[0])] == l_Undef)
       {
-        Assert(assigns[var(ps[0])] != l_False);
+        ASSERT(assigns[var(ps[0])] != l_False);
         uncheckedEnqueue(ps[0], cr);
         Trace("pf::sat") << "Registering a unit clause " << ps[0]
                          << ", maybe input, with assigned var value "
@@ -595,7 +592,7 @@ void Solver::attachClause(CRef cr) {
       }
       Trace("minisat") << ", level " << c.level() << "\n";
     }
-    Assert(c.size() > 1);
+    ASSERT(c.size() > 1);
     watches[~c[0]].push(Watcher(cr, c[1]));
     watches[~c[1]].push(Watcher(cr, c[0]));
     if (c.removable()) learnts_literals += c.size();
@@ -617,7 +614,7 @@ void Solver::detachClause(CRef cr, bool strict) {
 
       Trace("minisat") << "\n";
     }
-    Assert(c.size() > 1);
+    ASSERT(c.size() > 1);
 
     if (strict){
         remove(watches[~c[0]], Watcher(cr, c[1]));
@@ -776,7 +773,7 @@ Lit Solver::pickBranchLit()
       return lit_Undef;
     }
     if(nextLit != lit_Undef) {
-      Assert(value(var(nextLit)) == l_Undef)
+      ASSERT(value(var(nextLit)) == l_Undef)
           << "literal to decide already has value";
       decisions++;
       Var next = var(nextLit);
@@ -838,7 +835,7 @@ Lit Solver::pickBranchLit()
           d_proxy->getDecisionPolarity(MinisatSatSolver::toSatVariable(next)));
       Lit decisionLit;
       if(dec_pol != l_Undef) {
-        Assert(dec_pol == l_True || dec_pol == l_False);
+        ASSERT(dec_pol == l_True || dec_pol == l_False);
         decisionLit = mkLit(next, (dec_pol == l_True));
       }
       else
@@ -907,7 +904,7 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
       d_pfManager->startResChain(ca[confl]);
     }
     do{
-      Assert(confl != CRef_Undef);  // (otherwise should be UIP)
+      ASSERT(confl != CRef_Undef);  // (otherwise should be UIP)
 
       {
         // ! IMPORTANT !
@@ -1079,7 +1076,7 @@ bool Solver::litRedundant(Lit p, uint32_t abstract_levels)
     int top = analyze_toclear.size();
     while (analyze_stack.size() > 0){
         CRef c_reason = reason(var(analyze_stack.last()));
-        Assert(c_reason != CRef_Undef);
+        ASSERT(c_reason != CRef_Undef);
         Clause& c = ca[c_reason];
         int c_size = c.size();
         analyze_stack.pop();
@@ -1135,7 +1132,7 @@ void Solver::analyzeFinal(Lit p, vec<Lit>& out_conflict)
         Var x = var(trail[i]);
         if (seen[x]){
             if (reason(x) == CRef_Undef){
-              Assert(level(x) > 0);
+              ASSERT(level(x) > 0);
               out_conflict.push(~trail[i]);
             }else{
                 Clause& c = ca[reason(x)];
@@ -1176,8 +1173,8 @@ void Solver::uncheckedEnqueue(Lit p, CRef from)
     }
     Trace("minisat") << "\n";
   }
-  Assert(value(p) == l_Undef);
-  Assert(var(p) < nVars());
+  ASSERT(value(p) == l_Undef);
+  ASSERT(var(p) < nVars());
   assigns[var(p)] = lbool(!sign(p));
   vardata[var(p)] = VarData(
       from, decisionLevel(), assertionLevel, intro_level(var(p)), trail.size());
@@ -1209,7 +1206,7 @@ CRef Solver::propagate(TheoryCheckType type)
     // theory propagation
     if (type == CHECK_FINAL) {
       // Do the theory check
-      theoryCheck(theory::Theory::EFFORT_FULL);
+      theoryCheck(Theory::EFFORT_FULL);
       // Pick up the theory propagated literals (there could be some,
       // if new lemmas are added)
       propagateTheory();
@@ -1233,9 +1230,9 @@ CRef Solver::propagate(TheoryCheckType type)
         if (confl == CRef_Undef && type != CHECK_WITHOUT_THEORY) {
             // Do the theory check
             if (type == CHECK_FINAL_FAKE) {
-              theoryCheck(theory::Theory::EFFORT_FULL);
+              theoryCheck(Theory::EFFORT_FULL);
             } else {
-              theoryCheck(theory::Theory::EFFORT_STANDARD);
+              theoryCheck(Theory::EFFORT_STANDARD);
             }
             // Pick up the theory propagated literals
             propagateTheory();
@@ -1319,7 +1316,7 @@ void Solver::propagateTheory() {
 |
 |    Note: the propagation queue might be NOT empty
 |________________________________________________________________________________________________@*/
-void Solver::theoryCheck(theory::Theory::Effort effort)
+void Solver::theoryCheck(Theory::Effort effort)
 {
   d_proxy->theoryCheck(effort);
 }
@@ -1366,7 +1363,7 @@ CRef Solver::propagateBool()
             Lit      false_lit = ~p;
             if (c[0] == false_lit)
                 c[0] = c[1], c[1] = false_lit;
-            Assert(c[1] == false_lit);
+            ASSERT(c[1] == false_lit);
             i++;
 
             // If 0th watch is true, then clause is already satisfied.
@@ -1376,7 +1373,7 @@ CRef Solver::propagateBool()
                 *j++ = w; continue; }
 
             // Look for new watch:
-            Assert(c.size() >= 2);
+            ASSERT(c.size() >= 2);
             for (int k = 2; k < c.size(); k++)
                 if (value(c[k]) != l_False){
                     c[1] = c[k]; c[k] = false_lit;
@@ -1465,7 +1462,7 @@ void Solver::removeClausesAboveLevel(vec<CRef>& cs, int level)
           vec<Lit> clauseLits;
           MinisatSatSolver::toSatClause(c, satClause);
           MinisatSatSolver::toMinisatClause(satClause, clauseLits);
-          Assert(!locked(c)) << "Locked " << clauseLits;
+          ASSERT(!locked(c)) << "Locked " << clauseLits;
           removeClause(cs[i]);
         } else {
             cs[j++] = cs[i];
@@ -1494,7 +1491,7 @@ void Solver::rebuildOrderHeap()
 |________________________________________________________________________________________________@*/
 bool Solver::simplify()
 {
-  Assert(decisionLevel() == 0);
+  ASSERT(decisionLevel() == 0);
 
   if (!ok || propagate(CHECK_WITHOUT_THEORY) != CRef_Undef) return ok = false;
 
@@ -1531,7 +1528,7 @@ bool Solver::simplify()
 |________________________________________________________________________________________________@*/
 lbool Solver::search(int nof_conflicts)
 {
-  Assert(ok);
+  ASSERT(ok);
   int backtrack_level;
   int conflictC = 0;
   vec<Lit> learnt_clause;
@@ -1542,7 +1539,7 @@ lbool Solver::search(int nof_conflicts)
   {
     // Propagate and call the theory solvers
     CRef confl = propagate(check_type);
-    Assert(lemmas.size() == 0);
+    ASSERT(lemmas.size() == 0);
 
     if (confl != CRef_Undef)
     {
@@ -1570,7 +1567,7 @@ lbool Solver::search(int nof_conflicts)
       int max_level = analyze(confl, learnt_clause, backtrack_level);
       cancelUntil(backtrack_level);
 
-      // Assert the conflict clause and the asserting literal
+      // ASSERT the conflict clause and the asserting literal
       if (learnt_clause.size() == 1)
       {
         uncheckedEnqueue(learnt_clause[0]);
@@ -1658,7 +1655,7 @@ lbool Solver::search(int nof_conflicts)
       }
 
       if ((nof_conflicts >= 0 && conflictC >= nof_conflicts)
-          || !withinBudget(Resource::SatConflictStep))
+          || !withinBudget())
       {
         // Reached bound on number of conflicts:
         progress_estimate = progressEstimate();
@@ -1775,7 +1772,7 @@ lbool Solver::solve_()
 
     ScopedBool scoped_bool(minisat_busy, true);
 
-    Assert(decisionLevel() == 0);
+    ASSERT(decisionLevel() == 0);
 
     model.clear();
     d_conflict.clear();
@@ -1803,13 +1800,10 @@ lbool Solver::solve_()
     while (status == l_Undef){
         double rest_base = luby_restart ? luby(restart_inc, curr_restarts) : pow(restart_inc, curr_restarts);
         status = search(rest_base * restart_first);
-        if (!withinBudget(Resource::SatConflictStep))
+        if (!withinBudget())
           break;  // FIXME add restart option?
         curr_restarts++;
     }
-
-    if (!withinBudget(Resource::SatConflictStep))
-      status = l_Undef;
 
     if (verbosity >= 1)
         printf("===============================================================================\n");
@@ -1895,7 +1889,7 @@ void Solver::toDimacs(FILE* f, const vec<Lit>& assumps)
     fprintf(f, "p cnf %d %d\n", max, cnt);
 
     for (int i = 0; i < assumptions.size(); i++){
-      Assert(value(assumptions[i]) != l_False);
+      ASSERT(value(assumptions[i]) != l_False);
       fprintf(f,
               "%s%d 0\n",
               sign(assumptions[i]) ? "-" : "",
@@ -1971,8 +1965,8 @@ void Solver::garbageCollect()
 
 void Solver::push()
 {
-  Assert(d_enable_incremental);
-  Assert(decisionLevel() == 0);
+  ASSERT(d_enable_incremental);
+  ASSERT(decisionLevel() == 0);
 
   ++assertionLevel;
   Trace("minisat") << "in user push, increasing assertion level to " << assertionLevel << std::endl;
@@ -1986,9 +1980,9 @@ void Solver::push()
 
 void Solver::pop()
 {
-  Assert(d_enable_incremental);
+  ASSERT(d_enable_incremental);
 
-  Assert(decisionLevel() == 0);
+  ASSERT(decisionLevel() == 0);
   // Notify sat proof manager that we have popped and now potentially we need to
   // retrieve the proofs for the clauses inserted into optimized levels
   if (needProof())
@@ -2069,7 +2063,7 @@ CRef Solver::updateLemmas() {
 
       // If it's an empty lemma, we have a conflict at zero level
       if (lemma.size() == 0) {
-        Assert(!options().smt.produceUnsatCores && !needProof());
+        ASSERT(!options().smt.produceUnsatCores && !needProof());
         conflict = CRef_Lazy;
         backtrackLevel = 0;
         Trace("minisat::lemmas") << "Solver::updateLemmas(): found empty clause" << std::endl;
@@ -2205,16 +2199,10 @@ void ClauseAllocator::reloc(CRef& cr, ClauseAllocator& to)
   else if (to[cr].has_extra()) to[cr].calcAbstraction();
 }
 
-inline bool Solver::withinBudget(Resource r) const
+inline bool Solver::withinBudget() const
 {
-  Assert(d_proxy);
-  // spendResource may interrupt the solver via a callback.
-  d_proxy->spendResource(r);
-
-  bool within_budget =
-      !asynch_interrupt && (conflict_budget < 0 || conflicts < conflict_budget)
-      && (propagation_budget < 0 || propagations < propagation_budget);
-  return within_budget;
+  return !asynch_interrupt && (conflict_budget < 0 || conflicts < conflict_budget)
+          && (propagation_budget < 0 || propagations < propagation_budget);
 }
 
 SatProofManager* Solver::getProofManager()

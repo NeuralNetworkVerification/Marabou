@@ -1,16 +1,15 @@
+//=================================================================================================
+// A heap implementation with support for decrease/increase key.
 /******************************************************************************************[Heap.h]
 Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
 Copyright (c) 2007-2010, Niklas Sorensson
-
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute,
 sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
-
 The above copyright notice and this permission notice shall be included in all copies or
 substantial portions of the Software.
-
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -22,7 +21,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #define Minisat_Heap_h
 
 #include "minisat/mtl/Vec.h"
-#include "minisat/mtl/IntMap.h"
 
 namespace Minisat {
 
@@ -30,11 +28,11 @@ namespace Minisat {
 // A heap implementation with support for decrease/increase key.
 
 
-template<class K, class Comp, class MkIndex = MkIndexDefault<K> >
+template<class Comp>
 class Heap {
-    vec<K>                heap;     // Heap of Keys
-    IntMap<K,int,MkIndex> indices;  // Each Key's position (index) in the Heap
-    Comp                  lt;       // The heap is a minimum-heap with respect to this comparator
+    Comp     lt;       // The heap is a minimum-heap with respect to this comparator
+    vec<int> heap;     // Heap of integers
+    vec<int> indices;  // Each integers position (index) in the Heap
 
     // Index "traversal" functions
     static inline int left  (int i) { return i*2+1; }
@@ -44,9 +42,9 @@ class Heap {
 
     void percolateUp(int i)
     {
-        K   x  = heap[i];
+        int x  = heap[i];
         int p  = parent(i);
-        
+
         while (i != 0 && lt(x, heap[p])){
             heap[i]          = heap[p];
             indices[heap[p]] = i;
@@ -60,7 +58,7 @@ class Heap {
 
     void percolateDown(int i)
     {
-        K x = heap[i];
+        int x = heap[i];
         while (left(i) < heap.size()){
             int child = right(i) < heap.size() && lt(heap[right(i)], heap[left(i)]) ? right(i) : left(i);
             if (!lt(heap[child], x)) break;
@@ -74,77 +72,59 @@ class Heap {
 
 
   public:
-    Heap(const Comp& c, MkIndex _index = MkIndex()) : indices(_index), lt(c) {}
+    Heap(const Comp& c) : lt(c) { }
 
     int  size      ()          const { return heap.size(); }
     bool empty     ()          const { return heap.size() == 0; }
-    bool inHeap    (K k)       const { return indices.has(k) && indices[k] >= 0; }
+    bool inHeap    (int n)     const { return n < indices.size() && indices[n] >= 0; }
     int  operator[](int index) const { assert(index < heap.size()); return heap[index]; }
 
-    void decrease  (K k) { assert(inHeap(k)); percolateUp  (indices[k]); }
-    void increase  (K k) { assert(inHeap(k)); percolateDown(indices[k]); }
+
+    void decrease  (int n) { assert(inHeap(n)); percolateUp  (indices[n]); }
+    void increase  (int n) { assert(inHeap(n)); percolateDown(indices[n]); }
 
 
     // Safe variant of insert/decrease/increase:
-    void update(K k)
+    void update(int n)
     {
-        if (!inHeap(k))
-            insert(k);
+        if (!inHeap(n))
+            insert(n);
         else {
-            percolateUp(indices[k]);
-            percolateDown(indices[k]); }
+            percolateUp(indices[n]);
+            percolateDown(indices[n]); }
     }
 
 
-    void insert(K k)
+    void insert(int n)
     {
-        indices.reserve(k, -1);
-        assert(!inHeap(k));
+        indices.growTo(n+1, -1);
+        assert(!inHeap(n));
 
-        indices[k] = heap.size();
-        heap.push(k);
-        percolateUp(indices[k]);
+        indices[n] = heap.size();
+        heap.push(n);
+        percolateUp(indices[n]);
     }
 
 
-    void remove(K k)
+    int  removeMin()
     {
-        assert(inHeap(k));
-
-        int k_pos  = indices[k];
-        indices[k] = -1;
-
-        if (k_pos < heap.size()-1){
-            heap[k_pos]          = heap.last();
-            indices[heap[k_pos]] = k_pos;
-            heap.pop();
-            percolateDown(k_pos);
-        }else
-            heap.pop();
-    }
-
-
-    K removeMin()
-    {
-        K x              = heap[0];
+        int x            = heap[0];
         heap[0]          = heap.last();
         indices[heap[0]] = 0;
         indices[x]       = -1;
         heap.pop();
         if (heap.size() > 1) percolateDown(0);
-        return x; 
+        return x;
     }
 
 
     // Rebuild the heap from scratch, using the elements in 'ns':
-    void build(const vec<K>& ns) {
+    void build(vec<int>& ns) {
         for (int i = 0; i < heap.size(); i++)
             indices[heap[i]] = -1;
         heap.clear();
 
         for (int i = 0; i < ns.size(); i++){
-            // TODO: this should probably call reserve instead of relying on it being reserved already.
-            assert(indices.has(ns[i]));
             indices[ns[i]] = i;
             heap.push(ns[i]); }
 
@@ -152,12 +132,11 @@ class Heap {
             percolateDown(i);
     }
 
-    void clear(bool dispose = false) 
-    { 
-        // TODO: shouldn't the 'indices' map also be dispose-cleared?
+    void clear(bool dealloc = false)
+    {
         for (int i = 0; i < heap.size(); i++)
             indices[heap[i]] = -1;
-        heap.clear(dispose); 
+        heap.clear(dealloc);
     }
 };
 

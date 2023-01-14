@@ -39,7 +39,7 @@ TheoryProxy::~TheoryProxy() {
   //  d_theoryEngine->preRegister(getNode(SatLiteral(var)));
 }
 
-  void TheoryProxy::theoryCheck(theory::Theory::Effort /*effort*/) {
+  void TheoryProxy::theoryCheck(Theory::Effort /*effort*/) {
   // while (!d_queue.empty()) {
   //   TNode assertion = d_queue.front();
   //   d_queue.pop();

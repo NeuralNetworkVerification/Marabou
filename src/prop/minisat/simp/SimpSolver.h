@@ -21,7 +21,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef Minisat_SimpSolver_h
 #define Minisat_SimpSolver_h
 
-#include "base/check.h"
+#include "Debug.h"
+
 #include "minisat/core/Solver.h"
 #include "minisat/mtl/Queue.h"
 
@@ -37,11 +38,9 @@ class SimpSolver : public Solver {
  public:
     // Constructor/Destructor:
     //
-  SimpSolver(Env& env,
-             prop::TheoryProxy* proxy,
-             context::Context* context,
-             context::UserContext* userContext,
-             ProofNodeManager* pnm,
+  SimpSolver(prop::TheoryProxy* proxy,
+             CVC4::context::Context* context,
+             CVC4::context::UserContext* userContext,
              bool enableIncremental = false);
   ~SimpSolver();
 
@@ -52,21 +51,18 @@ class SimpSolver : public Solver {
              bool isTheoryAtom = false,
              bool preRegister = false,
              bool canErase = true);
-  bool addClause(const vec<Lit>& ps, bool removable, ClauseId& id);
+  bool addClause(const vec<Lit>& ps, bool removable);
   bool addEmptyClause(bool removable);  // Add the empty clause to the solver.
   bool addClause(Lit p,
-                 bool removable,
-                 ClauseId& id);  // Add a unit clause to the solver.
+                 bool removable);  // Add a unit clause to the solver.
   bool addClause(Lit p,
                  Lit q,
-                 bool removable,
-                 ClauseId& id);  // Add a binary clause to the solver.
+                 bool removable);  // Add a binary clause to the solver.
   bool addClause(Lit p,
                  Lit q,
                  Lit r,
-                 bool removable,
-                 ClauseId& id);  // Add a ternary clause to the solver.
-  bool addClause_(vec<Lit>& ps, bool removable, ClauseId& id);
+                 bool removable);  // Add a ternary clause to the solver.
+  bool addClause_(vec<Lit>& ps, bool removable);
   bool substitute(Var v, Lit x);  // Replace all occurrences of v with x (may
                                   // cause a contradiction).
 
@@ -90,7 +86,6 @@ class SimpSolver : public Solver {
   lbool solve(
       Lit p, Lit q, Lit r, bool do_simp = true, bool turn_off_simp = false);
   bool eliminate(bool turn_off_elim = false);  // Perform variable elimination
-                                               // based simplification.
 
   // Memory managment:
   //
@@ -198,22 +193,26 @@ class SimpSolver : public Solver {
 
 inline bool SimpSolver::isEliminated (Var v) const { return eliminated[v]; }
 inline void SimpSolver::updateElimHeap(Var v) {
-  Assert(use_simplification);
+  ASSERT(use_simplification);
   // if (!frozen[v] && !isEliminated(v) && value(v) == l_Undef)
   if (elim_heap.inHeap(v)
       || (!frozen[v] && !isEliminated(v) && value(v) == l_Undef))
     elim_heap.update(v);
 }
 
-inline bool SimpSolver::addClause(const vec<Lit>& ps, bool removable, ClauseId& id)
-{ ps.copyTo(add_tmp); return addClause_(add_tmp, removable, id); }
-inline bool SimpSolver::addEmptyClause(bool removable)    { add_tmp.clear(); ClauseId id=-1; return addClause_(add_tmp, removable, id); }
-inline bool SimpSolver::addClause    (Lit p, bool removable, ClauseId& id)
-                                                                             { add_tmp.clear(); add_tmp.push(p); return addClause_(add_tmp, removable, id); }
-inline bool SimpSolver::addClause    (Lit p, Lit q, bool removable, ClauseId& id)
-                                                                             { add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); return addClause_(add_tmp, removable, id); }
-inline bool SimpSolver::addClause    (Lit p, Lit q, Lit r, bool removable, ClauseId& id)
-                                                                             { add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); add_tmp.push(r); return addClause_(add_tmp, removable, id); }
+inline bool SimpSolver::addClause(const vec<Lit>& ps, bool removable)
+{ ps.copyTo(add_tmp); return addClause_(add_tmp, removable); }
+
+inline bool SimpSolver::addEmptyClause(bool removable)    { add_tmp.clear(); return addClause_(add_tmp, removable); }
+
+inline bool SimpSolver::addClause    (Lit p, bool removable)
+{ add_tmp.clear(); add_tmp.push(p); return addClause_(add_tmp, removable); }
+
+inline bool SimpSolver::addClause    (Lit p, Lit q, bool removable)
+{ add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); return addClause_(add_tmp, removable); }
+
+inline bool SimpSolver::addClause    (Lit p, Lit q, Lit r, bool removable)
+{ add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); add_tmp.push(r); return addClause_(add_tmp, removable); }
 inline void SimpSolver::setFrozen    (Var v, bool b) { frozen[v] = (char)b; if (use_simplification && !b) { updateElimHeap(v); } }
 
 // the solver can always return unknown due to resource limiting

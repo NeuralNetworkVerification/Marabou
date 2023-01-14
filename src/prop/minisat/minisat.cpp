@@ -17,21 +17,14 @@
 
 #include "minisat/minisat.h"
 
-#include "options/base_options.h"
-#include "options/decision_options.h"
-#include "options/prop_options.h"
-#include "options/smt_options.h"
-#include "proof/clause_id.h"
 #include "minisat/simp/SimpSolver.h"
-#include "util/statistics_stats.h"
 
 namespace prop {
 
 //// DPllMinisatSatSolver
 
-MinisatSatSolver::MinisatSatSolver(Env& env, StatisticsRegistry& registry)
-    : EnvObj(env),
-      d_minisat(NULL),
+MinisatSatSolver::MinisatSatSolver()
+    : d_minisat(NULL),
       d_context(NULL),
       d_assumptions(),
       d_statistics(registry)
@@ -155,20 +148,17 @@ void MinisatSatSolver::setupOptions() {
   d_minisat->restart_inc = options().prop.satRestartInc;
 }
 
-ClauseId MinisatSatSolver::addClause(SatClause& clause, bool removable) {
-  Minisat::vec<Minisat::Lit> minisat_clause;
+void MinisatSatSolver::addClause(SatClause& clause, bool removable) {
+  Minisat::vecMinisat::Lit minisat_clause;
   toMinisatClause(clause, minisat_clause);
-  ClauseId clause_id = ClauseIdError;
   // FIXME: This relies on the invariant that when ok() is false
   // the SAT solver does not add the clause (which is what Minisat currently does)
   if (!ok()) {
-    return ClauseIdUndef;
+    return;
   }
-  d_minisat->addClause(minisat_clause, removable, clause_id);
+  d_minisat->addClause(minisat_clause, removable);
   // FIXME: to be deleted when we kill old proof code for unsat cores
-  Assert(!options().smt.produceUnsatCores || options().smt.produceProofs
-         || clause_id != ClauseIdError);
-  return clause_id;
+  Assert(!options().smt.produceUnsatCores || options().smt.produceProofs);
 }
 
 SatVariable MinisatSatSolver::newVar(bool isTheoryAtom, bool preRegister, bool canErase) {

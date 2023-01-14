@@ -22,8 +22,6 @@
 #include "context/cdo.h"
 #include "sat_solver_types.h"
 
-namespace cvc5::theory
-{
   class Theory {
   public:
   /**
@@ -51,7 +49,6 @@ namespace cvc5::theory
     EFFORT_LAST_CALL = 200
   }; /* enum Effort */
   };
-}
 
 using namespace CVC4::context;
 
@@ -71,7 +68,7 @@ class TheoryProxy
   TheoryProxy(TheoryEngine* theoryEngine);
 
   ~TheoryProxy();
-  void theoryCheck(cvc5::theory::Theory::Effort effort);
+  void theoryCheck(Theory::Effort effort);
 
   /** Get an explanation for literal `l` and save it on clause `explanation`. */
   void explainPropagation(SatLiteral l, SatClause& explanation);

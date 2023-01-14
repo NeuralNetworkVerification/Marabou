@@ -20,10 +20,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "minisat/simp/SimpSolver.h"
 
-#include "base/check.h"
 #include "options/prop_options.h"
 #include "options/smt_options.h"
-#include "proof/clause_id.h"
 #include "minisat/mtl/Sort.h"
 #include "minisat/utils/System.h"
 
@@ -46,13 +44,11 @@ static DoubleOption opt_simp_garbage_frac(_cat, "simp-gc-frac", "The fraction of
 //=================================================================================================
 // Constructor/Destructor:
 
-SimpSolver::SimpSolver(Env& env,
-                       cvc5::internal::prop::TheoryProxy* proxy,
-                       context::Context* context,
-                       context::UserContext* userContext,
-                       ProofNodeManager* pnm,
+SimpSolver::SimpSolver(prop::TheoryProxy* proxy,
+                       CVC4::context::Context* context,
+                       CVC4::context::UserContext* userContext,
                        bool enableIncremental)
-    : Solver(env, proxy, context, userContext, pnm, enableIncremental),
+    : Solver(proxy, context, userContext, enableIncremental),
       grow(opt_grow),
       clause_lim(opt_clause_lim),
       subsumption_lim(opt_subsumption_lim),

@@ -57,7 +57,7 @@ struct Lit {
 };
 
 
-inline  Lit  mkLit     (Var var, bool sign) { Lit p; p.x = var + var + (int)sign; return p; }
+inline  Lit  mkLit     (Var var, bool sign = false) { Lit p; p.x = var + var + (int)sign; return p; }
 inline  Lit  operator ~(Lit p)              { Lit q; q.x = p.x ^ 1; return q; }
 inline  Lit  operator ^(Lit p, bool b)      { Lit q; q.x = p.x ^ (unsigned int)b; return q; }
 inline  bool sign      (Lit p)              { return p.x & 1; }
@@ -220,6 +220,7 @@ public:
 // ClauseAllocator -- a simple class for allocating memory for clauses:
 
 const CRef CRef_Undef = RegionAllocator<uint32_t>::Ref_Undef;
+const CRef CRef_Lazy  = RegionAllocator<uint32_t>::Ref_Undef - 1;
 class ClauseAllocator
 {
     RegionAllocator<uint32_t> ra;
@@ -357,7 +358,6 @@ template<class K, class Vec, class Deleted, class MkIndex>
 void OccLists<K,Vec,Deleted,MkIndex>::cleanAll()
 {
     for (int i = 0; i < dirties.size(); i++)
-        // Dirties may contain duplicates so check here if a variable is already cleaned:
         if (dirty[dirties[i]])
             clean(dirties[i]);
     dirties.clear();

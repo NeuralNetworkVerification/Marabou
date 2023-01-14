@@ -23,7 +23,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <iosfwd>
 
-#include "base/check.h"
+#include "Debug.h"
+
 #include "base/output.h"
 #include "context/context.h"
 #include "minisat/core/SolverTypes.h"
@@ -42,7 +43,7 @@ namespace Minisat {
 //=================================================================================================
 // Solver -- the main class:
 
-class Solver : protected EnvObj
+class Solver
 {
   /** The only two cvc5 entry points to the private solver data */
   friend class prop::TheoryProxy;
@@ -62,7 +63,7 @@ class Solver : protected EnvObj
   prop::TheoryProxy* d_proxy;
 
   /** The contexts from the SMT solver */
-  context::Context* d_context;
+  CVC4::context::Context* d_context;
 
   /** The current assertion level (user) */
   int assertionLevel;
@@ -73,12 +74,9 @@ class Solver : protected EnvObj
   /** Variable representing false */
   Var varFalse;
 
-  /** The resolution proof manager */
-  std::unique_ptr<prop::SatProofManager> d_pfManager;
-
  public:
   /** Returns the current user assertion level */
-  int getAssertionLevel() const { return assertionLevel; }
+  int getASSERTionLevel() const { return assertionLevel; }
 
  protected:
   /** Do we allow incremental solving */
@@ -117,11 +115,9 @@ public:
 
     // Constructor/Destructor:
     //
- Solver(Env& env,
-        prop::TheoryProxy* proxy,
-        context::Context* context,
-        context::UserContext* userContext,
-        ProofNodeManager* pnm,
+ Solver(prop::TheoryProxy* proxy,
+        CVC4::context::Context* context,
+        CVC4::context::UserContext* userContext,
         bool enableIncremental = false);
  virtual ~Solver();
 
@@ -135,19 +131,6 @@ public:
                                     // specifying variable mode.
  Var trueVar() const { return varTrue; }
  Var falseVar() const { return varFalse; }
-
- /** Retrive the refutation proof */
- std::shared_ptr<ProofNode> getProof();
-
- /** Is proof enabled? */
- bool isProofEnabled() const;
-
- /**
-  * Checks whether we need a proof.
-  *
-  * SAT proofs are not required for assumption-based unsat cores.
-  */
- bool needProof() const;
 
  /*
   * Returns true if the solver should add all clauses at the current assertion
@@ -208,26 +191,21 @@ public:
  // addClause returns the ClauseId corresponding to the clause added in the
  // reference parameter id.
  bool addClause(const vec<Lit>& ps,
-                bool removable,
-                ClauseId& id);  // Add a clause to the solver.
+                bool removable);  // Add a clause to the solver.
  bool addEmptyClause(
      bool removable);  // Add the empty clause, making the solver contradictory.
  bool addClause(Lit p,
-                bool removable,
-                ClauseId& id);  // Add a unit clause to the solver.
+                bool removable);  // Add a unit clause to the solver.
  bool addClause(Lit p,
                 Lit q,
-                bool removable,
-                ClauseId& id);  // Add a binary clause to the solver.
+                bool removable);  // Add a binary clause to the solver.
  bool addClause(Lit p,
                 Lit q,
                 Lit r,
-                bool removable,
-                ClauseId& id);  // Add a ternary clause to the solver.
+                bool removable);  // Add a ternary clause to the solver.
  bool addClause_(
      vec<Lit>& ps,
-     bool removable,
-     ClauseId& id);  // Add a clause to the solver without making superflous
+     bool removable);  // Add a clause to the solver without making superflous
                      // internal copy. Will change the passed vector 'ps'.
 
  // Solving:
@@ -278,8 +256,6 @@ public:
  // Return the order_heap, which is a priority queue of variables ordered with
  // respect to the variable activity. The order heap is made available here
  // in order to make partitions based on the literals contained in the heap.
-
- const std::vector<Node> getMiniSatOrderHeap();
 
  // Read state:
  //
@@ -492,7 +468,7 @@ protected:
     CRef     propagateBool    ();                                                      // Perform Boolean propagation. Returns possibly conflicting clause.
     void     propagateTheory  ();                                                      // Perform Theory propagation.
     void theoryCheck(
-            theory::Theory::Effort
+            Theory::Effort
             effort);  // Perform a theory satisfiability check. Adds lemmas.
     CRef     updateLemmas     ();                                                      // Add the lemmas, backtraking if necessary and return a conflict if there is one
     void     cancelUntil      (int level);                                             // Backtrack until a certain level.
@@ -538,8 +514,7 @@ public:
     int      level            (Var x) const;
     int      user_level       (Var x) const; // User level at which this variable was asserted
     int      intro_level      (Var x) const; // User level at which this variable was created
-    bool     withinBudget     (uint64_t amount)      const;
-    bool withinBudget(Resource r) const;
+    bool withinBudget() const;
 
    protected:
     // Static helpers:
@@ -586,30 +561,30 @@ inline bool Solver::isDecision(Var x) const
 
 inline int Solver::level(Var x) const
 {
-  Assert(x < vardata.size());
+  ASSERT(x < vardata.size());
   return vardata[x].d_level;
 }
 
 inline int Solver::user_level(Var x) const
 {
-  Assert(x < vardata.size());
+  ASSERT(x < vardata.size());
   return vardata[x].d_user_level;
 }
 
 inline int Solver::intro_level(Var x) const
 {
-  Assert(x < vardata.size());
+  ASSERT(x < vardata.size());
   return vardata[x].d_intro_level;
 }
 
 inline int Solver::trail_index(Var x) const
 {
-  Assert(x < vardata.size());
+  ASSERT(x < vardata.size());
   return vardata[x].d_trail_index;
 }
 
 inline void Solver::insertVarOrder(Var x) {
-  Assert(x < vardata.size());
+  ASSERT(x < vardata.size());
   if (!order_heap.inHeap(x) && decision[x]) order_heap.insert(x);
 }
 
@@ -641,15 +616,15 @@ inline void Solver::checkGarbage(double gf){
 
 // NOTE: enqueue does not set the ok flag! (only public methods do)
 inline bool     Solver::enqueue         (Lit p, CRef from)      { return value(p) != l_Undef ? value(p) != l_False : (uncheckedEnqueue(p, from), true); }
-inline bool     Solver::addClause       (const vec<Lit>& ps, bool removable, ClauseId& id)
-                                                                { ps.copyTo(add_tmp); return addClause_(add_tmp, removable, id); }
-inline bool     Solver::addEmptyClause  (bool removable)        { add_tmp.clear(); ClauseId tmp; return addClause_(add_tmp, removable, tmp); }
-inline bool     Solver::addClause       (Lit p, bool removable, ClauseId& id)
-                                                                { add_tmp.clear(); add_tmp.push(p); return addClause_(add_tmp, removable, id); }
-inline bool     Solver::addClause       (Lit p, Lit q, bool removable, ClauseId& id)
-                                                                { add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); return addClause_(add_tmp, removable, id); }
-inline bool     Solver::addClause       (Lit p, Lit q, Lit r, bool removable, ClauseId& id)
-                                                                { add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); add_tmp.push(r); return addClause_(add_tmp, removable, id); }
+inline bool     Solver::addClause       (const vec<Lit>& ps, bool removable)
+                                                                { ps.copyTo(add_tmp); return addClause_(add_tmp, removable); }
+inline bool     Solver::addEmptyClause  (bool removable)        { add_tmp.clear(); return addClause_(add_tmp, removable); }
+inline bool     Solver::addClause       (Lit p, bool removable)
+                                                                { add_tmp.clear(); add_tmp.push(p); return addClause_(add_tmp, removable); }
+inline bool     Solver::addClause       (Lit p, Lit q, bool removable)
+                                                                { add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); return addClause_(add_tmp, removable); }
+inline bool     Solver::addClause       (Lit p, Lit q, Lit r, bool removable)
+                                                                { add_tmp.clear(); add_tmp.push(p); add_tmp.push(q); add_tmp.push(r); return addClause_(add_tmp, removable); }
 inline bool     Solver::locked          (const Clause& c) const { return value(c[0]) == l_True && isPropagatedBy(var(c[0]), c); }
 inline void Solver::newDecisionLevel()
 {
@@ -662,12 +637,12 @@ inline int      Solver::decisionLevel ()      const   { return trail_lim.size();
 inline uint32_t Solver::abstractLevel (Var x) const   { return 1 << (level(x) & 31); }
 inline lbool Solver::value(Var x) const
 {
-  Assert(x < nVars());
+  ASSERT(x < nVars());
   return assigns[x];
 }
 inline lbool Solver::value(Lit p) const
 {
-  Assert(var(p) < nVars());
+  ASSERT(var(p) < nVars());
   return assigns[var(p)] ^ sign(p);
 }
 inline lbool    Solver::modelValue    (Var x) const   { return model[x]; }
