@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.16)
 project(Marabou)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -37,7 +37,7 @@ set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
 set(ENGINE_DIR "${SRC_DIR}/engine")
 set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
-set(BOOST_DIR "${TOOLS_DIR}/boost_1_68_0")
+set(BOOST_DIR "${TOOLS_DIR}/boost_1_80_0")
 set(ONNX_DIR "${TOOLS_DIR}/onnx-1.10.2")
 set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
 if (NOT OPENBLAS_DIR)
@@ -57,6 +57,35 @@ set(CVC4_BASE_DIR "${CVC4_DIR}/base")
 file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
 file(GLOB DEPS_CVC4_BASE "${CVC4_BASE_DIR}/*.cpp")
 include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
+
+# Boost
+if (MSVC)
+  set(BOOST_ROOT "${BOOST_DIR}/win_installed")
+elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
+  set(BOOST_ROOT "${BOOST_DIR}/installed32")
+else()
+  set(BOOST_ROOT "${BOOST_DIR}/installed")
+endif()
+
+if (MSVC)
+  set(SCRIPT_EXTENSION bat)
+  set(Boost_NAMESPACE libboost)
+else()
+  set(SCRIPT_EXTENSION sh)
+endif()
+
+
+set(Boost_USE_DEBUG_RUNTIME FALSE)
+find_package(Boost COMPONENTS program_options timer chrono thread)
+# Find boost
+if (NOT ${Boost_FOUND})
+  # bash file that downloads and install boost 1_80_0, the name need to match
+  # BOOST_DIR variable
+  execute_process(COMMAND ${TOOLS_DIR}/download_boost.${SCRIPT_EXTENSION})
+  find_package(Boost REQUIRED COMPONENTS program_options timer chrono thread)
+endif()
+set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
+list(APPEND LIBS ${Boost_LIBRARIES})
 
 # Protobuf (needed to compile Onnx file below)
 if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
@@ -191,33 +220,6 @@ endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
-
-# Boost
-if (MSVC)
-    set(BOOST_ROOT "${BOOST_DIR}/win_installed")
-elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
-    set(BOOST_ROOT "${BOOST_DIR}/installed32")
-else()
-    set(BOOST_ROOT "${BOOST_DIR}/installed")
-endif()
-
-if (MSVC)
-    set(SCRIPT_EXTENSION bat)
-    set(Boost_NAMESPACE libboost)
-else()
-    set(SCRIPT_EXTENSION sh)
-endif()
-
-find_package(Boost COMPONENTS program_options timer chrono thread)
-# Find boost
-if (NOT ${Boost_FOUND})
-    # bash file that downloads and install boost 1_68_0, the name need to match
-    # BOOST_DIR variable
-    execute_process(COMMAND ${TOOLS_DIR}/download_boost.${SCRIPT_EXTENSION})
-    find_package(Boost REQUIRED COMPONENTS program_options timer chrono thread)
-endif()
-set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
-list(APPEND LIBS ${Boost_LIBRARIES})
 
 # Gurobi
 if (${ENABLE_GUROBI})
