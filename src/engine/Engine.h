@@ -43,14 +43,8 @@
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 
-#include "theory_proxy.h"
-#include "minisat/minisat.h"
-
 #include <context/context.h>
 #include <atomic>
-
-#include "minisat/minisat.h"
-#include "theory_proxy.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -62,6 +56,11 @@ class EngineState;
 class InputQuery;
 class PiecewiseLinearConstraint;
 class String;
+
+namespace prop {
+  class TheoryProxy;
+  class MinisatSatSolver;
+}
 
 
 using CVC4::context::Context;
@@ -276,8 +275,8 @@ private:
     /*
       Sat Solver
     */
-  prop::MinisatSatSolver _satSolver;
-  prop::TheoryProxy _theoryProxy;
+    prop::MinisatSatSolver *_satSolver;
+    prop::TheoryProxy *_theoryProxy;
 
     /*
       The tableau object maintains the equations, assignments and bounds.

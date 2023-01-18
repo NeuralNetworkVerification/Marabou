@@ -33,15 +33,17 @@
 #include "Vector.h"
 
 #include "theory_proxy.h"
-#include "minisat/minisat.h"
+#include "minisat.h"
 
 #include <random>
+
+using namespace prop;
 
 Engine::Engine()
     : _context()
     , _boundManager( _context )
-    , _satSolver(&_statistics)
-    , _theoryProxy(this)
+    , _satSolver(NULL)
+    , _theoryProxy(NULL)
     , _tableau( _boundManager )
     , _preprocessedQuery( nullptr )
     , _rowBoundTightener( *_tableau )
@@ -73,6 +75,9 @@ Engine::Engine()
     , _sncMode( false )
     , _queryId( "" )
 {
+    _satSolver = new MinisatSatSolver(&_statistics);
+    _theoryProxy = new TheoryProxy(this);
+
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
     _rowBoundTightener->setStatistics( &_statistics );

@@ -15,7 +15,9 @@
  * Implementation of the minisat interface for cvc5.
  */
 
-#include "minisat/minisat.h"
+#include "Debug.h"
+
+#include "minisat.h"
 
 #include "minisat/simp/SimpSolver.h"
 
@@ -36,7 +38,7 @@ MinisatSatSolver::~MinisatSatSolver()
 }
 
 SatVariable MinisatSatSolver::toSatVariable(Minisat::Var var) {
-  if (var == var_Undef) {
+  if (var == Minisat::var_Undef) {
     return undefSatVariable;
   }
   return SatVariable(var);
@@ -61,7 +63,7 @@ SatLiteral MinisatSatSolver::toSatLiteral(Minisat::Lit lit) {
 SatValue MinisatSatSolver::toSatLiteralValue(Minisat::lbool res) {
   if(res == (Minisat::lbool((uint8_t)0))) return SAT_VALUE_TRUE;
   if(res == (Minisat::lbool((uint8_t)2))) return SAT_VALUE_UNKNOWN;
-  Assert(res == (Minisat::lbool((uint8_t)1)));
+  ASSERT(res == (Minisat::lbool((uint8_t)1)));
   return SAT_VALUE_FALSE;
 }
 
@@ -69,14 +71,14 @@ Minisat::lbool MinisatSatSolver::toMinisatlbool(SatValue val)
 {
   if(val == SAT_VALUE_TRUE) return Minisat::lbool((uint8_t)0);
   if(val == SAT_VALUE_UNKNOWN) return Minisat::lbool((uint8_t)2);
-  Assert(val == SAT_VALUE_FALSE);
+  ASSERT(val == SAT_VALUE_FALSE);
   return Minisat::lbool((uint8_t)1);
 }
 
 /*bool MinisatSatSolver::tobool(SatValue val)
 {
   if(val == SAT_VALUE_TRUE) return true;
-  Assert(val == SAT_VALUE_FALSE);
+  ASSERT(val == SAT_VALUE_FALSE);
   return false;
   }*/
 
@@ -85,7 +87,7 @@ void MinisatSatSolver::toMinisatClause(SatClause& clause,
   for (unsigned i = 0; i < clause.size(); ++i) {
     minisat_clause.push(toMinisatLit(clause[i]));
   }
-  Assert(clause.size() == (unsigned)minisat_clause.size());
+  ASSERT(clause.size() == (unsigned)minisat_clause.size());
 }
 
 void MinisatSatSolver::toSatClause(const Minisat::Clause& clause,
@@ -93,33 +95,33 @@ void MinisatSatSolver::toSatClause(const Minisat::Clause& clause,
   for (int i = 0; i < clause.size(); ++i) {
     sat_clause.push_back(toSatLiteral(clause[i]));
   }
-  Assert((unsigned)clause.size() == sat_clause.size());
+  ASSERT((unsigned)clause.size() == sat_clause.size());
 }
 
-void MinisatSatSolver::initialize(context::Context* context,
+void MinisatSatSolver::initialize(CVC4::context::Context* context,
                                   TheoryProxy* theoryProxy,
-                                  context::UserContext* userContext,
-                                  ProofNodeManager* pnm)
+                                  CVC4::context::UserContext* userContext)
 {
   d_context = context;
 
+  /*
   if (options().decision.decisionMode != options::DecisionMode::INTERNAL)
   {
     verbose(1) << "minisat: Incremental solving is forced on (to avoid "
                   "variable elimination)"
                << " unless using internal decision strategy." << std::endl;
   }
+  */
 
   // Create the solver
   d_minisat =
-      new Minisat::SimpSolver(d_env,
-                              theoryProxy,
+      new Minisat::SimpSolver(theoryProxy,
                               d_context,
                               userContext,
-                              pnm,
-                              options().base.incrementalSolving
-                                  || options().decision.decisionMode
-                                         != options::DecisionMode::INTERNAL);
+                              true);
+  //options().base.incrementalSolving
+  //  || options().decision.decisionMode
+  //  != options::DecisionMode::INTERNAL);
 }
 
 // Like initialize() above, but called just before each search when in
@@ -128,25 +130,25 @@ void MinisatSatSolver::setupOptions() {
   // Copy options from cvc5 options structure into minisat, as appropriate
 
   // Set up the verbosity
-  d_minisat->verbosity = (options().base.verbosity > 0) ? 1 : -1;
+  d_minisat->verbosity = 1; // (options().base.verbosity > 0) ? 1 : -1;
 
   // Set up the random decision parameters
-  d_minisat->random_var_freq = options().prop.satRandomFreq;
+  d_minisat->random_var_freq = 0; //options().prop.satRandomFreq;
   // If 0, we use whatever we like (here, the Minisat default seed)
-  if (options().prop.satRandomSeed != 0)
-  {
-    d_minisat->random_seed = double(options().prop.satRandomSeed);
-  }
+  //if (options().prop.satRandomSeed != 0)
+  //{
+  d_minisat->random_seed = 0; //double(options().prop.satRandomSeed);
+  //}
 
   // Give access to all possible options in the sat solver
-  d_minisat->var_decay = options().prop.satVarDecay;
-  d_minisat->clause_decay = options().prop.satClauseDecay;
-  d_minisat->restart_first = options().prop.satRestartFirst;
-  d_minisat->restart_inc = options().prop.satRestartInc;
+  d_minisat->var_decay = 0.95;//options().prop.satVarDecay;
+  d_minisat->clause_decay = 0.999; //options().prop.satClauseDecay;
+  d_minisat->restart_first = 25; //options().prop.satRestartFirst;
+  d_minisat->restart_inc = 3; //options().prop.satRestartInc;
 }
 
 void MinisatSatSolver::addClause(SatClause& clause, bool removable) {
-  Minisat::vecMinisat::Lit minisat_clause;
+  Minisat::vec<Minisat::Lit> minisat_clause;
   toMinisatClause(clause, minisat_clause);
   // FIXME: This relies on the invariant that when ok() is false
   // the SAT solver does not add the clause (which is what Minisat currently does)
@@ -155,7 +157,7 @@ void MinisatSatSolver::addClause(SatClause& clause, bool removable) {
   }
   d_minisat->addClause(minisat_clause, removable);
   // FIXME: to be deleted when we kill old proof code for unsat cores
-  Assert(!options().smt.produceUnsatCores || options().smt.produceProofs);
+  //ASSERT(!options().smt.produceUnsatCores || options().smt.produceProofs);
 }
 
 SatVariable MinisatSatSolver::newVar(bool isTheoryAtom, bool preRegister, bool canErase) {
@@ -163,7 +165,7 @@ SatVariable MinisatSatSolver::newVar(bool isTheoryAtom, bool preRegister, bool c
 }
 
 SatValue MinisatSatSolver::solve(unsigned long& resource) {
-  Trace("limit") << "SatSolver::solve(): have limit of " << resource << " conflicts" << std::endl;
+  //Trace("limit") << "SatSolver::solve(): have limit of " << resource << " conflicts" << std::endl;
   setupOptions();
   if(resource == 0) {
     d_minisat->budgetOff();
@@ -175,7 +177,7 @@ SatValue MinisatSatSolver::solve(unsigned long& resource) {
   SatValue result = toSatLiteralValue(d_minisat->solveLimited(empty));
   d_minisat->clearInterrupt();
   resource = d_minisat->conflicts + d_minisat->resources_consumed - conflictsBefore;
-  Trace("limit") << "SatSolver::solve(): it took " << resource << " conflicts" << std::endl;
+  //Trace("limit") << "SatSolver::solve(): it took " << resource << " conflicts" << std::endl;
   return result;
 }
 
@@ -237,13 +239,13 @@ SatValue MinisatSatSolver::modelValue(SatLiteral l){
   return toSatLiteralValue(d_minisat->modelValue(toMinisatLit(l)));
 }
 
-bool MinisatSatSolver::properExplanation(SatLiteral lit, SatLiteral expl) const {
+bool MinisatSatSolver::properExplanation(SatLiteral /*lit*/, SatLiteral /*expl*/) const {
   return true;
 }
 
 void MinisatSatSolver::requirePhase(SatLiteral lit) {
-  Assert(!d_minisat->rnd_pol);
-  Trace("minisat") << "requirePhase(" << lit << ")" << " " <<  lit.getSatVariable() << " " << lit.isNegated() << std::endl;
+  ASSERT(!d_minisat->rnd_pol);
+  //std::cout << "minisat: " << "requirePhase(" << lit << ")" << " " <<  lit.getSatVariable() << " " << lit.isNegated() << std::endl;
   SatVariable v = lit.getSatVariable();
   d_minisat->freezePolarity(v, lit.isNegated());
 }
@@ -264,10 +266,12 @@ std::vector<SatLiteral> MinisatSatSolver::getDecisions() const
   return decisions;
 }
 
+  /*
 std::vector<Node> MinisatSatSolver::getOrderHeap() const
 {
   return d_minisat->getMiniSatOrderHeap();
 }
+  */
 
 int32_t MinisatSatSolver::getDecisionLevel(SatVariable v) const
 {
@@ -277,16 +281,6 @@ int32_t MinisatSatSolver::getDecisionLevel(SatVariable v) const
 int32_t MinisatSatSolver::getIntroLevel(SatVariable v) const
 {
   return d_minisat->intro_level(v);
-}
-
-SatProofManager* MinisatSatSolver::getProofManager()
-{
-  return d_minisat->getProofManager();
-}
-
-std::shared_ptr<ProofNode> MinisatSatSolver::getProof()
-{
-  return d_minisat->getProof();
 }
 
 /** Incremental interface */
@@ -305,55 +299,10 @@ void MinisatSatSolver::pop() {
 
 void MinisatSatSolver::resetTrail() { d_minisat->resetTrail(); }
 
-/// Statistics for MinisatSatSolver
-
-MinisatSatSolver::Statistics::Statistics(StatisticsRegistry& registry)
-    : d_statStarts(registry.registerReference<int64_t>("sat::starts")),
-      d_statDecisions(registry.registerReference<int64_t>("sat::decisions")),
-      d_statRndDecisions(
-          registry.registerReference<int64_t>("sat::rnd_decisions")),
-      d_statPropagations(
-          registry.registerReference<int64_t>("sat::propagations")),
-      d_statConflicts(registry.registerReference<int64_t>("sat::conflicts")),
-      d_statClausesLiterals(
-          registry.registerReference<int64_t>("sat::clauses_literals")),
-      d_statLearntsLiterals(
-          registry.registerReference<int64_t>("sat::learnts_literals")),
-      d_statMaxLiterals(
-          registry.registerReference<int64_t>("sat::max_literals")),
-      d_statTotLiterals(
-          registry.registerReference<int64_t>("sat::tot_literals"))
-{
-}
-
-void MinisatSatSolver::Statistics::init(Minisat::SimpSolver* minisat){
-  d_statStarts.set(minisat->starts);
-  d_statDecisions.set(minisat->decisions);
-  d_statRndDecisions.set(minisat->rnd_decisions);
-  d_statPropagations.set(minisat->propagations);
-  d_statConflicts.set(minisat->conflicts);
-  d_statClausesLiterals.set(minisat->clauses_literals);
-  d_statLearntsLiterals.set(minisat->learnts_literals);
-  d_statMaxLiterals.set(minisat->max_literals);
-  d_statTotLiterals.set(minisat->tot_literals);
-}
-void MinisatSatSolver::Statistics::deinit()
-{
-  d_statStarts.reset();
-  d_statDecisions.reset();
-  d_statRndDecisions.reset();
-  d_statPropagations.reset();
-  d_statConflicts.reset();
-  d_statClausesLiterals.reset();
-  d_statLearntsLiterals.reset();
-  d_statMaxLiterals.reset();
-  d_statTotLiterals.reset();
-}
-
 }  // namespace prop
 
 template <>
-prop::SatLiteral toSatLiteral<cvc5::internal::Minisat::Solver>(Minisat::Solver::TLit lit)
+prop::SatLiteral toSatLiteral<Minisat::Solver>(Minisat::Solver::TLit lit)
 {
   return prop::MinisatSatSolver::toSatLiteral(lit);
 }

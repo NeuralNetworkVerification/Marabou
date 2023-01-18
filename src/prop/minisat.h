@@ -18,6 +18,7 @@
 #pragma once
 
 #include "minisat/simp/SimpSolver.h"
+#include "sat_solver_types.h"
 
 #include "Statistics.h"
 
@@ -96,8 +97,8 @@ class MinisatSatSolver
   std::vector<SatLiteral> getDecisions() const ;
 
   /** Return the order heap.
-   */
   std::vector<Node> getOrderHeap() const ;
+  */
 
   /** Return decision level at which `lit` was decided on. */
   int32_t getDecisionLevel(SatVariable v) const ;

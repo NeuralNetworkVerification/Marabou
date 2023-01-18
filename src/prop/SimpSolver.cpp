@@ -18,14 +18,14 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
+#include "Debug.h"
+
 #include "minisat/simp/SimpSolver.h"
 
-#include "options/prop_options.h"
-#include "options/smt_options.h"
 #include "minisat/mtl/Sort.h"
 #include "minisat/utils/System.h"
 
-using Minisat;
+using namespace Minisat;
 
 //=================================================================================================
 // Options:
@@ -55,14 +55,14 @@ SimpSolver::SimpSolver(prop::TheoryProxy* proxy,
       simp_garbage_frac(opt_simp_garbage_frac),
       use_asymm(opt_use_asymm),
       // make sure this is not enabled if unsat cores or proofs are on
-      use_rcheck(opt_use_rcheck && !options().smt.produceUnsatCores && !pnm),
+      use_rcheck(opt_use_rcheck),// && !options().smt.produceUnsatCores && !pnm),
       merges(0),
       asymm_lits(0),
       eliminated_vars(0),
       elimorder(1),
-      use_simplification(
-          options().prop.minisatSimpMode != options::MinisatSimpMode::NONE
-          && !enableIncremental && !options().smt.produceUnsatCores && !pnm),
+      use_simplification(true),
+                         //options().prop.minisatSimpMode != options::MinisatSimpMode::NONE
+                         //&& !enableIncremental && !options().smt.produceUnsatCores && !pnm),
       occurs(ClauseDeleted(ca)),
       elim_heap(ElimLt(n_occ)),
       bwdsub_assigns(0),
@@ -111,12 +111,12 @@ Var SimpSolver::newVar(bool sign, bool dvar, bool isTheoryAtom, bool preRegister
 
 lbool SimpSolver::solve_(bool do_simp, bool turn_off_simp)
 {
-  if (options().prop.minisatDumpDimacs)
+  if (false)//options().prop.minisatDumpDimacs)
   {
     toDimacs();
     return l_Undef;
   }
-    Assert(decisionLevel() == 0);
+    ASSERT(decisionLevel() == 0);
 
     vec<Var> extra_frozen;
     lbool    result = l_True;
@@ -129,7 +129,7 @@ lbool SimpSolver::solve_(bool do_simp, bool turn_off_simp)
             Var v = var(assumptions[i]);
 
             // If an assumption has been eliminated, remember it.
-            Assert(!isEliminated(v));
+            ASSERT(!isEliminated(v));
 
             if (!frozen[v]){
                 // Freeze and store.
@@ -158,12 +158,12 @@ lbool SimpSolver::solve_(bool do_simp, bool turn_off_simp)
 
 
 
-bool SimpSolver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
+bool SimpSolver::addClause_(vec<Lit>& ps, bool removable)
 {
 #ifdef CVC5_ASSERTIONS
   if (use_simplification)
   {
-    for (int i = 0; i < ps.size(); i++) Assert(!isEliminated(var(ps[i])));
+    for (int i = 0; i < ps.size(); i++) ASSERT(!isEliminated(var(ps[i])));
   }
 #endif
 
@@ -172,7 +172,7 @@ bool SimpSolver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
     if (use_rcheck && implied(ps))
         return true;
 
-    if (!Solver::addClause_(ps, removable, id))
+    if (!Solver::addClause_(ps, removable))
         return false;
 
     if (use_simplification && clauses_persistent.size() == nclauses + 1){
@@ -219,8 +219,8 @@ void SimpSolver::removeClause(CRef cr)
 bool SimpSolver::strengthenClause(CRef cr, Lit l)
 {
     Clause& c = ca[cr];
-    Assert(decisionLevel() == 0);
-    Assert(use_simplification);
+    ASSERT(decisionLevel() == 0);
+    ASSERT(use_simplification);
 
     // FIX: this is too inefficient but would be nice to have (properly implemented)
     // if (!find(subsumption_queue, &c))
@@ -345,7 +345,7 @@ void SimpSolver::gatherTouchedClauses()
 
 bool SimpSolver::implied(const vec<Lit>& c)
 {
-  Assert(decisionLevel() == 0);
+  ASSERT(decisionLevel() == 0);
 
   trail_lim.push(trail.size());
   for (int i = 0; i < c.size(); i++)
@@ -357,7 +357,7 @@ bool SimpSolver::implied(const vec<Lit>& c)
     }
     else if (value(c[i]) != l_False)
     {
-      Assert(value(c[i]) == l_Undef);
+      ASSERT(value(c[i]) == l_Undef);
       uncheckedEnqueue(~c[i]);
     }
   }
@@ -374,7 +374,7 @@ bool SimpSolver::backwardSubsumptionCheck(bool verbose)
     int cnt = 0;
     int subsumed = 0;
     int deleted_literals = 0;
-    Assert(decisionLevel() == 0);
+    ASSERT(decisionLevel() == 0);
 
     while (subsumption_queue.size() > 0 || bwdsub_assigns < trail.size()){
 
@@ -399,7 +399,7 @@ bool SimpSolver::backwardSubsumptionCheck(bool verbose)
         if (verbose && verbosity >= 2 && cnt++ % 1000 == 0)
             printf("subsumption left: %10d (%10d subsumed, %10d deleted literals)\r", subsumption_queue.size(), subsumed, deleted_literals);
 
-        Assert(c.size() > 1
+        ASSERT(c.size() > 1
                || value(c[0]) == l_True);  // Unit-clauses should have been
                                            // propagated before this point.
 
@@ -441,7 +441,7 @@ bool SimpSolver::backwardSubsumptionCheck(bool verbose)
 bool SimpSolver::asymm(Var v, CRef cr)
 {
     Clause& c = ca[cr];
-    Assert(decisionLevel() == 0);
+    ASSERT(decisionLevel() == 0);
 
     if (c.mark() || satisfied(c)) return true;
 
@@ -467,7 +467,7 @@ bool SimpSolver::asymm(Var v, CRef cr)
 
 bool SimpSolver::asymmVar(Var v)
 {
-  Assert(use_simplification);
+  ASSERT(use_simplification);
 
   const vec<CRef>& cls = occurs.lookup(v);
 
@@ -499,7 +499,7 @@ static void mkElimClause(vec<uint32_t>& elimclauses, Var v, Clause& c)
         if (var(c[i]) == v)
             v_pos = i + first;
     }
-    Assert(v_pos != -1);
+    ASSERT(v_pos != -1);
 
     // Swap the first literal with the 'v' literal, so that the literal
     // containing 'v' will occur first in the clause:
@@ -515,9 +515,9 @@ static void mkElimClause(vec<uint32_t>& elimclauses, Var v, Clause& c)
 
 bool SimpSolver::eliminateVar(Var v)
 {
-  Assert(!frozen[v]);
-  Assert(!isEliminated(v));
-  Assert(value(v) == l_Undef);
+  ASSERT(!frozen[v]);
+  ASSERT(!isEliminated(v));
+  ASSERT(value(v) == l_Undef);
 
   // Split the occurrences into positive and negative:
   //
@@ -560,14 +560,13 @@ bool SimpSolver::eliminateVar(Var v)
 
     for (int i = 0; i < cls.size(); i++) removeClause(cls[i]);
 
-    ClauseId id = ClauseIdUndef;
     // Produce clauses in cross product:
     vec<Lit>& resolvent = add_tmp;
     for (int i = 0; i < pos.size(); i++)
         for (int j = 0; j < neg.size(); j++) {
             bool removable = ca[pos[i]].removable() && ca[pos[neg[j]]].removable();
             if (merge(ca[pos[i]], ca[neg[j]], v, resolvent) &&
-                !addClause_(resolvent, removable, id)) {
+                !addClause_(resolvent, removable)) {
                 return false;
             }
         }
@@ -585,9 +584,9 @@ bool SimpSolver::eliminateVar(Var v)
 
 bool SimpSolver::substitute(Var v, Lit x)
 {
-  Assert(!frozen[v]);
-  Assert(!isEliminated(v));
-  Assert(value(v) == l_Undef);
+  ASSERT(!frozen[v]);
+  ASSERT(!isEliminated(v));
+  ASSERT(value(v) == l_Undef);
 
   if (!ok) return false;
 
@@ -608,8 +607,7 @@ bool SimpSolver::substitute(Var v, Lit x)
     }
 
     removeClause(cls[i]);
-    ClauseId id = ClauseIdUndef;
-    if (!addClause_(subst_clause, c.removable(), id))
+    if (!addClause_(subst_clause, c.removable()))
     {
       return ok = false;
     }
@@ -658,9 +656,9 @@ bool SimpSolver::eliminate(bool turn_off_elim)
 
         // Empty elim_heap and return immediately on user-interrupt:
         if (asynch_interrupt){
-          Assert(bwdsub_assigns == trail.size());
-          Assert(subsumption_queue.size() == 0);
-          Assert(n_touched == 0);
+          ASSERT(bwdsub_assigns == trail.size());
+          ASSERT(subsumption_queue.size() == 0);
+          ASSERT(n_touched == 0);
           elim_heap.clear();
           goto cleanup;
         }
@@ -686,8 +684,9 @@ bool SimpSolver::eliminate(bool turn_off_elim)
 
             // At this point, the variable may have been set by assymetric branching, so check it
             // again. Also, don't eliminate frozen variables:
-            if (options().prop.minisatSimpMode
-                    != options::MinisatSimpMode::CLAUSE_ELIM
+            if (true
+                //options().prop.minisatSimpMode
+                //    != options::MinisatSimpMode::CLAUSE_ELIM
                 && value(elim) == l_Undef && !frozen[elim]
                 && !eliminateVar(elim))
             {
@@ -698,7 +697,7 @@ bool SimpSolver::eliminate(bool turn_off_elim)
             checkGarbage(simp_garbage_frac);
         }
 
-        Assert(subsumption_queue.size() == 0);
+        ASSERT(subsumption_queue.size() == 0);
     }
  cleanup:
 

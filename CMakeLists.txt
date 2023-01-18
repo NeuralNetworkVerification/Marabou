@@ -163,9 +163,9 @@ endif()
 
 if (NOT MSVC)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-       set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD -Qunused-arguments ) #-Wno-deprecated 
+       set(COMPILE_FLAGS  -Wall -Wextra -MMD -Qunused-arguments ) #-Wno-deprecated
      else()
-       set(COMPILE_FLAGS  -Wall -Wextra  -Werror -MMD ) #-Wno-deprecated 
+       set(COMPILE_FLAGS  -Wall -Wextra -MMD ) #-Wno-deprecated
     endif()
     set(RELEASE_FLAGS ${COMPILE_FLAGS} -O3) #-Wno-deprecated
 endif()

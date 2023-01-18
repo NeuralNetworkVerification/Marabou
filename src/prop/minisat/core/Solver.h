@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "minisat/mtl/Heap.h"
 #include "minisat/mtl/Vec.h"
 #include "minisat/utils/Options.h"
+#include "effort.h"
 
 namespace prop {
 class PropEngine;
@@ -76,7 +77,7 @@ class Solver
 
  public:
   /** Returns the current user assertion level */
-  int getASSERTionLevel() const { return assertionLevel; }
+  int getAssertionLevel() const { return assertionLevel; }
 
  protected:
   /** Do we allow incremental solving */
@@ -468,8 +469,7 @@ protected:
     CRef     propagateBool    ();                                                      // Perform Boolean propagation. Returns possibly conflicting clause.
     void     propagateTheory  ();                                                      // Perform Theory propagation.
     void theoryCheck(
-            Theory::Effort
-            effort);  // Perform a theory satisfiability check. Adds lemmas.
+                     prop::Effort effort);  // Perform a theory satisfiability check. Adds lemmas.
     CRef     updateLemmas     ();                                                      // Add the lemmas, backtraking if necessary and return a conflict if there is one
     void     cancelUntil      (int level);                                             // Backtrack until a certain level.
     int      analyze          (CRef confl, vec<Lit>& out_learnt, int& out_btlevel);    // (bt = backtrack)

@@ -1,13 +1,16 @@
 /***********************************************************************************[SolverTypes.h]
 Copyright (c) 2003-2006, Niklas Een, Niklas Sorensson
 Copyright (c) 2007-2010, Niklas Sorensson
+
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
 including without limitation the rights to use, copy, modify, merge, publish, distribute,
 sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all copies or
 substantial portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
@@ -15,20 +18,20 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
-#include "Debug.h"
+#include "cvc5_private.h"
 
 #ifndef Minisat_SolverTypes_h
 #define Minisat_SolverTypes_h
 
-#include <assert.h>
+#include "base/check.h"
+#include "base/output.h"
+#include "prop/minisat/mtl/Alg.h"
+#include "prop/minisat/mtl/Alloc.h"
+#include "prop/minisat/mtl/IntTypes.h"
+#include "prop/minisat/mtl/Map.h"
+#include "prop/minisat/mtl/Vec.h"
 
-#include "minisat/mtl/IntTypes.h"
-#include "minisat/mtl/Alg.h"
-#include "minisat/mtl/Vec.h"
-#include "minisat/mtl/IntMap.h"
-#include "minisat/mtl/Map.h"
-#include "minisat/mtl/Alloc.h"
-
+namespace cvc5::internal {
 namespace Minisat {
 
 class Solver;
@@ -174,7 +177,9 @@ inline std::ostream& operator <<(std::ostream& out, Minisat::lbool val) {
 }
 
 }  // namespace Minisat
+}  // namespace cvc5::internal
 
+namespace cvc5::internal {
 namespace Minisat{
 
 //=================================================================================================
@@ -214,7 +219,7 @@ class Clause {
 
 public:
     void calcAbstraction() {
-      ASSERT(header.has_extra);
+      Assert(header.has_extra);
       uint32_t abstraction = 0;
       for (int i = 0; i < size(); i++)
         abstraction |= 1 << (var(data[i].lit) & 31);
@@ -225,7 +230,7 @@ public:
     int          size        ()      const   { return header.size; }
     void shrink(int i)
     {
-      ASSERT(i <= size());
+      Assert(i <= size());
       if (header.has_extra) data[header.size - i] = data[header.size];
       header.size -= i;
     }
@@ -248,12 +253,12 @@ public:
 
     float& activity()
     {
-      ASSERT(header.has_extra);
+      Assert(header.has_extra);
       return data[header.size].act;
     }
     uint32_t abstraction() const
     {
-      ASSERT(header.has_extra);
+      Assert(header.has_extra);
       return data[header.size].abs;
     }
 
@@ -285,8 +290,8 @@ class ClauseAllocator : public RegionAllocator<uint32_t>
     template<class Lits>
     CRef alloc(int level, const Lits& ps, bool removable = false)
     {
-      ASSERT(sizeof(Lit) == sizeof(uint32_t));
-      ASSERT(sizeof(float) == sizeof(uint32_t));
+      Assert(sizeof(Lit) == sizeof(uint32_t));
+      Assert(sizeof(float) == sizeof(uint32_t));
       bool use_extra = removable | extra_clause_field;
 
       CRef cid = RegionAllocator<uint32_t>::alloc(
@@ -450,10 +455,10 @@ inline Lit Clause::subsumes(const Clause& other) const
 
     //if (other.size() < size() || (extra.abst & ~other.extra.abst) != 0)
     //if (other.size() < size() || (!learnt() && !other.learnt() && (extra.abst & ~other.extra.abst) != 0))
-    ASSERT(!header.removable);
-    ASSERT(!other.header.removable);
-    ASSERT(header.has_extra);
-    ASSERT(other.header.has_extra);
+    Assert(!header.removable);
+    Assert(!other.header.removable);
+    Assert(header.has_extra);
+    Assert(other.header.has_extra);
     if (other.header.size < header.size || (data[header.size].abs & ~other.data[other.header.size].abs) != 0)
         return lit_Error;
 
@@ -487,5 +492,6 @@ inline void Clause::strengthen(Lit p)
 
 //=================================================================================================
 }
+}  // namespace cvc5::internal
 
 #endif
