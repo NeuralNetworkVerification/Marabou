@@ -46,10 +46,11 @@
 #include "theory_proxy.h"
 #include "minisat/minisat.h"
 
-
 #include <context/context.h>
 #include <atomic>
 
+#include "minisat/minisat.h"
+#include "theory_proxy.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -271,6 +272,12 @@ private:
       Collect and print various statistics.
     */
     Statistics _statistics;
+
+    /*
+      Sat Solver
+    */
+  prop::MinisatSatSolver _satSolver;
+  prop::TheoryProxy _theoryProxy;
 
     /*
       The tableau object maintains the equations, assignments and bounds.

@@ -19,12 +19,11 @@
 
 #include "context/context.h"
 
-namespace cvc5::internal {
+#include "Engine.h"
+
 namespace prop {
 
-class TheoryEngine;
-
-TheoryProxy::TheoryProxy( TheoryEngine* theoryEngine )
+TheoryProxy::TheoryProxy( Engine* theoryEngine )
   : d_theoryEngine(theoryEngine)//,
     //d_queue(CVC4::context::Context()),
     //d_stopSearch(false, CVC4::context::UserContext())
@@ -128,4 +127,3 @@ void TheoryProxy::notifyRestart() {
 }
 
 }  // namespace prop
-}  // namespace cvc5::internal

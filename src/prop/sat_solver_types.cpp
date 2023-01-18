@@ -18,11 +18,9 @@
 
 #include <algorithm>
 
-namespace cvc5::internal {
 namespace prop {
 bool SatClauseLessThan::operator()(const SatClause& l, const SatClause& r) const
 {
   return std::lexicographical_compare(l.begin(), l.end(), r.begin(), r.end());
 }
 }  // namespace prop
-}  // namespace cvc5::internal

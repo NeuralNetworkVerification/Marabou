@@ -19,6 +19,8 @@
 
 #include "minisat/simp/SimpSolver.h"
 
+#include "Statistics.h"
+
 template <class Solver>
 prop::SatLiteral toSatLiteral(typename Solver::TLit lit);
 
@@ -31,8 +33,8 @@ namespace prop {
 class MinisatSatSolver
 {
  public:
-  MinisatSatSolver();
-  ~MinisatSatSolver() override;
+  MinisatSatSolver(Statistics *statistics);
+  ~MinisatSatSolver() ;
 
   static SatVariable     toSatVariable(Minisat::Var var);
   static Minisat::Lit    toMinisatLit(SatLiteral lit);
@@ -45,61 +47,60 @@ class MinisatSatSolver
   static void  toSatClause    (const Minisat::Clause& clause, SatClause& sat_clause);
   void initialize(CVC4::context::Context* context,
                   TheoryProxy* theoryProxy,
-                  CVC4::context::UserContext* userContext,
-                  ProofNodeManager* pnm) override;
+                  CVC4::context::UserContext* userContext) ;
 
-  ClauseId addClause(SatClause& clause, bool removable) override;
-  ClauseId addXorClause(SatClause& clause, bool rhs, bool removable) override
+  void addClause(SatClause& clause, bool removable) ;
+  void addXorClause(SatClause& /*clause*/, bool /*rhs*/, bool /*removable*/)
   {
-    Unreachable() << "Minisat does not support native XOR reasoning";
+    CVC4::Unreachable() << "Minisat does not support native XOR reasoning";
   }
 
   SatVariable newVar(bool isTheoryAtom,
                      bool preRegister,
-                     bool canErase) override;
-  SatVariable trueVar() override { return d_minisat->trueVar(); }
-  SatVariable falseVar() override { return d_minisat->falseVar(); }
+                     bool canErase) ;
+  SatVariable trueVar()  { return d_minisat->trueVar(); }
+  SatVariable falseVar()  { return d_minisat->falseVar(); }
 
-  SatValue solve() override;
-  SatValue solve(long unsigned int&) override;
-  SatValue solve(const std::vector<SatLiteral>& assumptions) override;
-  void getUnsatAssumptions(std::vector<SatLiteral>& unsat_assumptions) override;
+  SatValue solve() ;
+  SatValue solve(long unsigned int&) ;
+  SatValue solve(const std::vector<SatLiteral>& assumptions) ;
+  void getUnsatAssumptions(std::vector<SatLiteral>& unsat_assumptions) ;
 
-  bool ok() const override;
+  bool ok() const ;
 
-  void interrupt() override;
+  void interrupt() ;
 
-  SatValue value(SatLiteral l) override;
+  SatValue value(SatLiteral l) ;
 
-  SatValue modelValue(SatLiteral l) override;
+  SatValue modelValue(SatLiteral l) ;
 
-  bool properExplanation(SatLiteral lit, SatLiteral expl) const override;
+  bool properExplanation(SatLiteral lit, SatLiteral expl) const ;
 
   /** Incremental interface */
 
-  unsigned getAssertionLevel() const override;
+  unsigned getAssertionLevel() const ;
 
-  void push() override;
+  void push() ;
 
-  void pop() override;
+  void pop() ;
 
-  void resetTrail() override;
+  void resetTrail() ;
 
-  void requirePhase(SatLiteral lit) override;
+  void requirePhase(SatLiteral lit) ;
 
-  bool isDecision(SatVariable decn) const override;
+  bool isDecision(SatVariable decn) const ;
 
   /** Return the list of current list of decisions that have been made by the
    * solver at the point when this function is called.
    */
-  std::vector<SatLiteral> getDecisions() const override;
+  std::vector<SatLiteral> getDecisions() const ;
 
   /** Return the order heap.
    */
-  std::vector<Node> getOrderHeap() const override;
+  std::vector<Node> getOrderHeap() const ;
 
   /** Return decision level at which `lit` was decided on. */
-  int32_t getDecisionLevel(SatVariable v) const override;
+  int32_t getDecisionLevel(SatVariable v) const ;
 
   /**
    * Return user level at which `lit` was introduced.
@@ -109,16 +110,10 @@ class MinisatSatSolver
    * solver starts at level 0 and does not include the global push/pop in
    * the SMT engine.
    */
-  int32_t getIntroLevel(SatVariable v) const override;
+  int32_t getIntroLevel(SatVariable v) const ;
 
   /** Retrieve a pointer to the underlying solver. */
   Minisat::SimpSolver* getSolver() { return d_minisat; }
-
-  /** Retrieve the proof manager of this SAT solver. */
-  SatProofManager* getProofManager();
-
-  /** Retrieve the refutation proof of this SAT solver. */
-  std::shared_ptr<ProofNode> getProof() override;
 
  private:
 
@@ -126,7 +121,7 @@ class MinisatSatSolver
   Minisat::SimpSolver* d_minisat;
 
   /** Context we will be using to synchronize the sat solver */
-  context::Context* d_context;
+  CVC4::context::Context* d_context;
 
   /**
    * Stores assumptions passed via last solve() call.
@@ -136,22 +131,9 @@ class MinisatSatSolver
    */
   std::unordered_set<SatLiteral, SatLiteralHashFunction> d_assumptions;
 
+  Statistics *d_statistics;
+
   void setupOptions();
-
-  class Statistics {
-  private:
-   ReferenceStat<int64_t> d_statStarts, d_statDecisions;
-   ReferenceStat<int64_t> d_statRndDecisions, d_statPropagations;
-   ReferenceStat<int64_t> d_statConflicts, d_statClausesLiterals;
-   ReferenceStat<int64_t> d_statLearntsLiterals, d_statMaxLiterals;
-   ReferenceStat<int64_t> d_statTotLiterals;
-
-  public:
-   Statistics();
-   void init(Minisat::SimpSolver* d_minisat);
-   void deinit();
-  };/* class MinisatSatSolver::Statistics */
-  Statistics d_statistics;
 
 }; /* class MinisatSatSolver */
 

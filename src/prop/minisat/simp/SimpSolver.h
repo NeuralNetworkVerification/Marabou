@@ -23,6 +23,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "Debug.h"
 
+#include "base/check.h"
 #include "minisat/core/Solver.h"
 #include "minisat/mtl/Queue.h"
 

@@ -22,6 +22,8 @@
 #include "context/cdo.h"
 #include "sat_solver_types.h"
 
+class Engine;
+
   class Theory {
   public:
   /**
@@ -65,7 +67,7 @@ class TheoryProxy
   //using NodeSet = CDHashSet<Node>;
 
  public:
-  TheoryProxy(TheoryEngine* theoryEngine);
+  TheoryProxy(Engine* theoryEngine);
 
   ~TheoryProxy();
   void theoryCheck(Theory::Effort effort);
@@ -115,7 +117,7 @@ class TheoryProxy
 
    private:
   /** The theory engine we are using. */
-  TheoryEngine* d_theoryEngine;
+  Engine* d_theoryEngine;
 
   /** Queue of asserted facts */
   //CDQueue<TNode> d_queue;

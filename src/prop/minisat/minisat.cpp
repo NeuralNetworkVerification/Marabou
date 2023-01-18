@@ -23,16 +23,15 @@ namespace prop {
 
 //// DPllMinisatSatSolver
 
-MinisatSatSolver::MinisatSatSolver()
+MinisatSatSolver::MinisatSatSolver(Statistics *statistics)
     : d_minisat(NULL),
       d_context(NULL),
       d_assumptions(),
-      d_statistics(registry)
+      d_statistics(statistics)
 {}
 
 MinisatSatSolver::~MinisatSatSolver()
 {
-  d_statistics.deinit();
   delete d_minisat;
 }
 
@@ -121,8 +120,6 @@ void MinisatSatSolver::initialize(context::Context* context,
                               options().base.incrementalSolving
                                   || options().decision.decisionMode
                                          != options::DecisionMode::INTERNAL);
-
-  d_statistics.init(d_minisat);
 }
 
 // Like initialize() above, but called just before each search when in
