@@ -126,4 +126,8 @@ void TheoryProxy::notifyRestart() {
   //d_theoryEngine->notifyRestart();
 }
 
+prop::SatValue TheoryProxy::getDecisionPolarity(SatVariable var) {
+  return prop::SAT_VALUE_UNKNOWN;
+}
+
 }  // namespace prop

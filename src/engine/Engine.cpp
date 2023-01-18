@@ -98,6 +98,16 @@ Engine::Engine()
 
 Engine::~Engine()
 {
+  if ( _satSolver ) {
+    delete _satSolver;
+    _satSolver = NULL;
+  }
+
+  if ( _theoryProxy ) {
+    delete _theoryProxy;
+    _theoryProxy = NULL;
+  }
+
     if ( _work )
     {
         delete[] _work;

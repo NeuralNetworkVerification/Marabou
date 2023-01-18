@@ -41,7 +41,7 @@ class Solver;
 // so that they can be used as array indices.
 
 typedef int Var;
-#define var_Undef (-1)
+const Var var_Undef = -1;
 
 
 

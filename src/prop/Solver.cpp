@@ -32,6 +32,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "minisat/mtl/Sort.h"
 #include "theory_proxy.h"
 
+#include "effort.h"
+
 namespace Minisat {
 
   /*
@@ -314,12 +316,12 @@ CRef Solver::reason(Var x) {
   Lit l = mkLit(x, value(x) != l_True);
 
   // Get the explanation from the theory
-  SatClause explanation_cl;
+  prop::SatClause explanation_cl;
   // FIXME: at some point return a tag with the theory that spawned you
-  d_proxy->explainPropagation(MinisatSatSolver::toSatLiteral(l),
+  d_proxy->explainPropagation(prop::MinisatSatSolver::toSatLiteral(l),
                               explanation_cl);
   vec<Lit> explanation;
-  MinisatSatSolver::toMinisatClause(explanation_cl, explanation);
+  prop::MinisatSatSolver::toMinisatClause(explanation_cl, explanation);
 
   //Trace("pf::sat") << "Solver::reason: explanation_cl = " << explanation_cl
   //                 << std::endl;
@@ -382,12 +384,15 @@ CRef Solver::reason(Var x) {
 
   //Trace("pf::sat") << "..adding in lvl " << explLevel
   //                 << " (assertion lvl: " << assertionLevel << ")\n";
-  if (needProof() && explLevel < assertionLevel)
+  /*
+    if (needProof() && explLevel < assertionLevel)
   {
     //Trace("pf::sat") << "..user level is " << userContext()->getLevel() << "\n";
     ASSERT(userContext()->getLevel() == (assertionLevel + 1));
     d_proxy->notifyCurrPropagationInsertedAtLevel(explLevel);
   }
+  */
+
   // Construct the reason
   CRef real_reason = ca.alloc(explLevel, explanation, true);
   vardata[x] = VarData(
@@ -398,7 +403,7 @@ CRef Solver::reason(Var x) {
   return real_reason;
 }
 
-bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
+bool Solver::addClause_(vec<Lit>& ps, bool removable)
 {
     if (!ok) return false;
 
@@ -418,13 +423,11 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
                         : std::max(clauseLevel, intro_level(var(ps[i])));
       // Tautologies are ignored
       if (ps[i] == ~p) {
-        id = ClauseIdUndef;
         // Clause can be ignored
         return true;
       }
       // Clauses with 0-level true literals are also ignored
       if (value(ps[i]) == l_True && level(var(ps[i])) == 0 && user_level(var(ps[i])) == 0) {
-        id = ClauseIdUndef;
         return true;
       }
       // Ignore repeated literals
@@ -434,8 +437,8 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
       // If a literal is false at 0 level (both sat and user level) we also
       // ignore it, unless we are tracking the SAT solver's reasoning
       if (value(ps[i]) == l_False) {
-        if (!options().smt.produceUnsatCores)// && !needProof()
-            && level(var(ps[i])) == 0 && user_level(var(ps[i])) == 0)
+        if (true)// && !needProof()
+          //&& level(var(ps[i])) == 0 && user_level(var(ps[i])) == 0)
         {
           continue;
         }
@@ -474,7 +477,7 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
 
       // If all false, we're in conflict
       if (ps.size() == falseLiteralsCount) {
-        if (options().smt.produceUnsatCores)// || needProof())
+        if (false)//options().smt.produceUnsatCores)// || needProof())
         {
           // Take care of false units here; otherwise, we need to
           // construct the clause below to give to the proof manager
@@ -518,7 +521,7 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
           d_proxy->notifyClauseInsertedAtLevel(satClause, clauseLevel);
         }
         */
-        if (options().smt.produceUnsatCores)// || needProof())
+        if (false)//options().smt.produceUnsatCores)// || needProof())
         {
           if (ps.size() == falseLiteralsCount)
           {
@@ -543,6 +546,7 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
                          << std::endl;
         */
         CRef confl = propagate(CHECK_WITHOUT_THEORY);
+        ok = (confl == CRef_Undef);
         return ok;
       }
     }
@@ -552,6 +556,7 @@ bool Solver::addClause_(vec<Lit>& ps, bool removable, ClauseId& id)
 
 void Solver::attachClause(CRef cr) {
     const Clause& c = ca[cr];
+    /*
     if (//TraceIsOn("minisat"))
     {
       //Trace("minisat") << "Solver::attachClause(" << c << "): ";
@@ -561,6 +566,7 @@ void Solver::attachClause(CRef cr) {
       }
       //Trace("minisat") << ", level " << c.level() << "\n";
     }
+    */
     ASSERT(c.size() > 1);
     watches[~c[0]].push(Watcher(cr, c[1]));
     watches[~c[1]].push(Watcher(cr, c[0]));
@@ -572,10 +578,11 @@ void Solver::attachClause(CRef cr) {
 void Solver::detachClause(CRef cr, bool strict) {
     const Clause& c = ca[cr];
     //Trace("minisat") << "Solver::detachClause(" << c << ")" << std::endl;
-    if (//TraceIsOn("minisat"))
-    {
+    /*
+      if (//TraceIsOn("minisat"))
+    //{
       //Trace("minisat") << "Solver::detachClause(" << c << "), CRef " << cr
-                       << ", clause ";
+      //<< ", clause ";
       for (unsigned i = 0, size = c.size(); i < size; ++i)
       {
         //Trace("minisat") << c[i] << " ";
@@ -583,6 +590,7 @@ void Solver::detachClause(CRef cr, bool strict) {
 
       //Trace("minisat") << "\n";
     }
+    */
     ASSERT(c.size() > 1);
 
     if (strict){
@@ -600,6 +608,7 @@ void Solver::detachClause(CRef cr, bool strict) {
 
 void Solver::removeClause(CRef cr) {
     Clause& c = ca[cr];
+    /*
     if (//TraceIsOn("minisat"))
     {
       //Trace("minisat") << "Solver::removeClause(" << c << "), CRef " << cr
@@ -610,6 +619,7 @@ void Solver::removeClause(CRef cr) {
       }
       //Trace("minisat") << "\n";
     }
+    */
     detachClause(cr);
     // Don't leave pointers to free'd memory!
     if (locked(c))
@@ -662,7 +672,7 @@ void Solver::cancelUntil(int level) {
         {
           variables_to_register[i].d_level = currentLevel;
           d_proxy->variableNotify(
-              MinisatSatSolver::toSatVariable(variables_to_register[i].d_var));
+                                  prop::MinisatSatSolver::toSatVariable(variables_to_register[i].d_var));
         }
     }
 }
@@ -679,7 +689,7 @@ Lit Solver::pickBranchLit()
 
     // Theory requests
     nextLit =
-        MinisatSatSolver::toMinisatLit(d_proxy->getNextTheoryDecisionRequest());
+      prop::MinisatSatSolver::toMinisatLit(d_proxy->getNextTheoryDecisionRequest());
     while (nextLit != lit_Undef) {
       if(value(var(nextLit)) == l_Undef) {
         //Trace("theoryDecision")
@@ -688,11 +698,12 @@ Lit Solver::pickBranchLit()
         decisions++;
 
         // org-mode tracing -- theory decision
+        /*
         if (//TraceIsOn("dtview"))
         {
           dtviewDecisionHelper(
               d_context->getLevel(),
-              d_proxy->getNode(MinisatSatSolver::toSatLiteral(nextLit)),
+              d_proxy->getNode(prop::MinisatSatSolver::toSatLiteral(nextLit)),
               "THEORY",
               options().base.incrementalSolving);
         }
@@ -702,23 +713,24 @@ Lit Solver::pickBranchLit()
           dtviewPropagationHeaderHelper(d_context->getLevel(),
                                         options().base.incrementalSolving);
         }
-
+        */
         return nextLit;
       } else {
         //Trace("theoryDecision")
             //<< "getNextTheoryDecisionRequest(): would decide on " << nextLit
             //<< " but it already has an assignment" << std::endl;
       }
-      nextLit = MinisatSatSolver::toMinisatLit(
+      nextLit = prop::MinisatSatSolver::toMinisatLit(
           d_proxy->getNextTheoryDecisionRequest());
     }
     //Trace("theoryDecision")
         //<< "getNextTheoryDecisionRequest(): decide on another literal"
         //<< std::endl;
 
+    /*
     // DE requests
     bool stopSearch = false;
-    nextLit = MinisatSatSolver::toMinisatLit(
+    nextLit = prop::MinisatSatSolver::toMinisatLit(
         d_proxy->getNextDecisionEngineRequest(stopSearch));
     if(stopSearch) {
       return lit_Undef;
@@ -750,6 +762,7 @@ Lit Solver::pickBranchLit()
 
       return nextLit;
     }
+    */
 
     Var next = var_Undef;
 
@@ -770,11 +783,13 @@ Lit Solver::pickBranchLit()
 
         if(!decision[next]) continue;
         // Check with decision engine about relevancy
-        if (d_proxy->isDecisionRelevant(MinisatSatSolver::toSatVariable(next))
-            == false)
-        {
-          next = var_Undef;
-        }
+        /*
+          if (d_proxy->isDecisionRelevant(prop::MinisatSatSolver::toSatVariable(next))
+              == false)
+          {
+            next = var_Undef;
+          }
+        */
     }
 
     if(next == var_Undef) {
@@ -782,8 +797,8 @@ Lit Solver::pickBranchLit()
     } else {
       decisions++;
       // Check with decision engine if it can tell polarity
-      lbool dec_pol = MinisatSatSolver::toMinisatlbool(
-          d_proxy->getDecisionPolarity(MinisatSatSolver::toSatVariable(next)));
+      lbool dec_pol = prop::MinisatSatSolver::toMinisatlbool(
+          d_proxy->getDecisionPolarity(prop::MinisatSatSolver::toSatVariable(next)));
       Lit decisionLit;
       if(dec_pol != l_Undef) {
         ASSERT(dec_pol == l_True || dec_pol == l_False);
@@ -796,12 +811,13 @@ Lit Solver::pickBranchLit()
             next, rnd_pol ? drand(random_seed) < 0.5 : (polarity[next] & 0x1));
       }
 
+      /*
       // org-mode tracing -- decision engine decision
       if (//TraceIsOn("dtview"))
       {
         dtviewDecisionHelper(
             d_context->getLevel(),
-            d_proxy->getNode(MinisatSatSolver::toSatLiteral(decisionLit)),
+            d_proxy->getNode(prop::MinisatSatSolver::toSatLiteral(decisionLit)),
             "DE",
             options().base.incrementalSolving);
       }
@@ -811,6 +827,7 @@ Lit Solver::pickBranchLit()
         dtviewPropagationHeaderHelper(d_context->getLevel(),
                                       options().base.incrementalSolving);
       }
+      */
 
       return decisionLit;
     }
@@ -864,6 +881,7 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
         if (c.removable()) claBumpActivity(c);
       }
 
+      /*
         if (//TraceIsOn("pf::sat"))
         {
           //Trace("pf::sat") << "Solver::analyze: conflict clause ";
@@ -873,7 +891,7 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
           }
           //Trace("pf::sat") << "\n";
         }
-
+      */
         //Trace("pf::sat") << push;
         for (int j = (p == lit_Undef) ? 0 : 1, size = ca[confl].size();
              j < size;
@@ -916,6 +934,7 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
 
     } while (pathC > 0);
     out_learnt[0] = ~p;
+    /*
     if (//TraceIsOn("newproof::sat"))
     {
       //Trace("newproof::sat") << "finished with learnt clause ";
@@ -926,7 +945,7 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
       }
       //Trace("newproof::sat") << "\n";
     }
-
+    */
     // Simplify conflict clause:
     int i, j;
     out_learnt.copyTo(analyze_toclear);
@@ -952,7 +971,7 @@ int Solver::analyze(CRef confl, vec<Lit>& out_learnt, int& out_btlevel)
         }
 
     }else if (ccmin_mode == 1){
-        Unreachable();
+      CVC4::Unreachable();
         for (i = j = 1; i < out_learnt.size(); i++){
             Var x = var(out_learnt[i]);
 
@@ -1079,32 +1098,6 @@ void Solver::analyzeFinal(Lit p, vec<Lit>& out_conflict)
 
 void Solver::uncheckedEnqueue(Lit p, CRef from)
 {
-  if (//TraceIsOn("minisat"))
-  {
-    /*
-    //Trace("minisat") << "unchecked enqueue of " << p << " ("
-                     << trail_index(var(p)) << ") trail size is "
-                     << trail.size() << " cap is " << trail.capacity()
-                     << ", assertion level is " << assertionLevel
-                     << ", reason is " << from << ", ";
-    */
-    if (from == CRef_Lazy)
-    {
-      //Trace("minisat") << "CRef_Lazy";
-    }
-    else if (from == CRef_Undef)
-    {
-      //Trace("minisat") << "CRef_Undef";
-    }
-    else
-    {
-      for (unsigned i = 0, size = ca[from].size(); i < size; ++i)
-      {
-        //Trace("minisat") << ca[from][i] << " ";
-      }
-    }
-    //Trace("minisat") << "\n";
-  }
   ASSERT(value(p) == l_Undef);
   ASSERT(var(p) < nVars());
   assigns[var(p)] = lbool(!sign(p));
@@ -1114,7 +1107,7 @@ void Solver::uncheckedEnqueue(Lit p, CRef from)
   if (theory[var(p)])
   {
     // Enqueue to the theory
-    d_proxy->enqueueTheoryLiteral(MinisatSatSolver::toSatLiteral(p));
+    d_proxy->enqueueTheoryLiteral(prop::MinisatSatSolver::toSatLiteral(p));
   }
 }
 
@@ -1138,7 +1131,7 @@ CRef Solver::propagate(TheoryCheckType type)
     // theory propagation
     if (type == CHECK_FINAL) {
       // Do the theory check
-      theoryCheck(Theory::EFFORT_FULL);
+      theoryCheck(prop::EFFORT_FULL);
       // Pick up the theory propagated literals (there could be some,
       // if new lemmas are added)
       propagateTheory();
@@ -1162,9 +1155,9 @@ CRef Solver::propagate(TheoryCheckType type)
         if (confl == CRef_Undef && type != CHECK_WITHOUT_THEORY) {
             // Do the theory check
             if (type == CHECK_FINAL_FAKE) {
-              theoryCheck(Theory::EFFORT_FULL);
+              theoryCheck(prop::EFFORT_FULL);
             } else {
-              theoryCheck(Theory::EFFORT_STANDARD);
+              theoryCheck(prop::EFFORT_STANDARD);
             }
             // Pick up the theory propagated literals
             propagateTheory();
@@ -1173,6 +1166,7 @@ CRef Solver::propagate(TheoryCheckType type)
               confl = updateLemmas();
             }
         } else {
+          /*
           // if dumping decision tree, print the conflict
           if (//TraceIsOn("dtview::conflict"))
           {
@@ -1184,6 +1178,7 @@ CRef Solver::propagate(TheoryCheckType type)
                                        options().base.incrementalSolving);
             }
           }
+          */
           // Even though in conflict, we still need to discharge the lemmas
           if (lemmas.size() > 0) {
             // Remember the trail size
@@ -1207,15 +1202,15 @@ CRef Solver::propagate(TheoryCheckType type)
 }
 
 void Solver::propagateTheory() {
-  SatClause propagatedLiteralsClause;
+  prop::SatClause propagatedLiteralsClause;
   // Doesn't actually call propagate(); that's done in theoryCheck() now that combination
   // is online.  This just incorporates those propagations previously discovered.
   d_proxy->theoryPropagate(propagatedLiteralsClause);
 
   vec<Lit> propagatedLiterals;
-  MinisatSatSolver::toMinisatClause(propagatedLiteralsClause, propagatedLiterals);
+  prop::MinisatSatSolver::toMinisatClause(propagatedLiteralsClause, propagatedLiterals);
 
-  int oldTrailSize = trail.size();
+  //int oldTrailSize = trail.size();
   //Trace("minisat") << "old trail size is " << oldTrailSize << ", propagating " << propagatedLiterals.size() << " lits..." << std::endl;
   for (unsigned i = 0, i_end = propagatedLiterals.size(); i < i_end; ++ i) {
     //Trace("minisat") << "Theory propagated: " << propagatedLiterals[i] << std::endl;
@@ -1226,13 +1221,12 @@ void Solver::propagateTheory() {
     } else {
       if (value(p) == l_False) {
         //Trace("minisat") << "Conflict in theory propagation" << std::endl;
-        SatClause explanation_cl;
-        d_proxy->explainPropagation(MinisatSatSolver::toSatLiteral(p),
+        prop::SatClause explanation_cl;
+        d_proxy->explainPropagation(prop::MinisatSatSolver::toSatLiteral(p),
                                     explanation_cl);
         vec<Lit> explanation;
-        MinisatSatSolver::toMinisatClause(explanation_cl, explanation);
-        ClauseId id; // FIXME: mark it as explanation here somehow?
-        addClause(explanation, true, id);
+        prop::MinisatSatSolver::toMinisatClause(explanation_cl, explanation);
+        addClause(explanation, true);
       }
     }
   }
@@ -1248,7 +1242,7 @@ void Solver::propagateTheory() {
 |
 |    Note: the propagation queue might be NOT empty
 |________________________________________________________________________________________________@*/
-void Solver::theoryCheck(Theory::Effort effort)
+void Solver::theoryCheck(prop::Effort effort)
 {
   d_proxy->theoryCheck(effort);
 }
@@ -1276,12 +1270,14 @@ CRef Solver::propagateBool()
         Watcher        *i, *j, *end;
         num_props++;
 
+        /*
         // if propagation tracing enabled, print boolean propagation
         if (//TraceIsOn("dtview::prop"))
         {
           dtviewBoolPropagationHelper(
               decisionLevel(), p, d_proxy, options().base.incrementalSolving);
         }
+        */
 
         for (i = j = (Watcher*)ws, end = i + ws.size();  i != end;){
             // Try to avoid inspecting the clause:
@@ -1390,10 +1386,10 @@ void Solver::removeClausesAboveLevel(vec<CRef>& cs, int level)
     for (i = j = 0; i < cs.size(); i++){
         Clause& c = ca[cs[i]];
         if (c.level() > level) {
-          SatClause satClause;
+          prop::SatClause satClause;
           vec<Lit> clauseLits;
-          MinisatSatSolver::toSatClause(c, satClause);
-          MinisatSatSolver::toMinisatClause(satClause, clauseLits);
+          prop::MinisatSatSolver::toSatClause(c, satClause);
+          prop::MinisatSatSolver::toMinisatClause(satClause, clauseLits);
           //ASSERT(!locked(c)) << "Locked " << clauseLits;
           removeClause(cs[i]);
         } else {
@@ -1535,8 +1531,9 @@ lbool Solver::search(int nof_conflicts)
       {
         // Note that we are done making decisions when there are no pending decisions
         // on assumptions, and the decision engine indicates it is done.
-        bool decisionEngineDone = (decisionLevel() >= assumptions.size())
-                                  && d_proxy->isDecisionEngineDone();
+        bool decisionEngineDone = (decisionLevel() >= assumptions.size());
+        //&& d_proxy->isDecisionEngineDone();
+
         // Unless a lemma has added more stuff to the queues
         if (!decisionEngineDone
             && (!order_heap.empty() || qhead < trail.size()))
@@ -1766,7 +1763,7 @@ void Solver::toDimacs(const char *file, const vec<Lit>& assumps)
 }
 
 
-void Solver::toDimacs(FILE* f, const vec<Lit>& assumps)
+void Solver::toDimacs(FILE* f, const vec<Lit>& /*assumps*/)
 {
     // Handle case when solver is in contradictory state:
     if (!ok){
@@ -1893,8 +1890,8 @@ void Solver::pop()
   // Pop the trail below the user level
   --assertionLevel;
   //Trace("minisat") << "in user pop, decreasing assertion level to "
-                   << assertionLevel << "\n"
-                   << push;
+  //                   << assertionLevel << "\n"
+  //               << push;
   while (true) {
     //Trace("minisat") << "== unassigning " << trail.last() << std::endl;
     Var      x  = var(trail.last());
@@ -1921,7 +1918,7 @@ void Solver::pop()
   d_context->pop();  // SAT context for cvc5
 
   //Trace("minisat") << "MINISAT POP assertionLevel is " << assertionLevel
-                   << ", trail.size is " << trail.size() << "\n";
+  //                   << ", trail.size is " << trail.size() << "\n";
   // Pop the created variables
   resizeVars(assigns_lim.last());
   assigns_lim.pop();
@@ -1937,7 +1934,7 @@ CRef Solver::updateLemmas() {
   //Trace("minisat::lemmas") << "Solver::updateLemmas() begin" << std::endl;
 
   // Avoid adding lemmas indefinitely without resource-out
-  d_proxy->spendResource(Resource::LemmaStep);
+  //d_proxy->spendResource(Resource::LemmaStep);
 
   CRef conflict = CRef_Undef;
 
@@ -1964,7 +1961,7 @@ CRef Solver::updateLemmas() {
 
       // If it's an empty lemma, we have a conflict at zero level
       if (lemma.size() == 0) {
-        ASSERT(!options().smt.produceUnsatCores);// && !needProof());
+        //ASSERT(!options().smt.produceUnsatCores);// && !needProof());
         conflict = CRef_Lazy;
         backtrackLevel = 0;
         //Trace("minisat::lemmas") << "Solver::updateLemmas(): found empty clause" << std::endl;
@@ -2016,24 +2013,7 @@ CRef Solver::updateLemmas() {
       }
 
       lemma_ref = ca.alloc(clauseLevel, lemma, removable);
-      // notify cnf stream that this clause's proof must be saved to resist
-      // context-popping
-      if (needProof() && clauseLevel < assertionLevel)
-      {
-        if (//TraceIsOn("pf::sat"))
-        {
-          //Trace("pf::sat") << "updateLemmas: ";
-          for (int k = 0, size = lemma.size(); k < size; ++k)
-          {
-            //Trace("pf::sat") << lemma[k] << " ";
-          }
-          //Trace("pf::sat") << " clause/assert levels " << clauseLevel << " / "
-                           << assertionLevel << "\n";
-        }
-        SatClause satClause;
-        MinisatSatSolver::toSatClause(ca[lemma_ref], satClause);
-        d_proxy->notifyClauseInsertedAtLevel(satClause, clauseLevel);
-      }
+
       if (removable) {
         clauses_removable.push(lemma_ref);
       } else {
@@ -2046,7 +2026,7 @@ CRef Solver::updateLemmas() {
     if (conflict == CRef_Undef && value(lemma[0]) != l_True) {
       if (lemma.size() == 1 || (value(lemma[1]) == l_False && trail_index(var(lemma[1])) < backtrack_index)) {
         //Trace("pf::sat") << "Solver::updateLemmas: unit theory lemma: "
-                         << lemma[0] << std::endl;
+        //                         << lemma[0] << std::endl;
         if (value(lemma[0]) == l_False) {
           // We have a conflict
           if (lemma.size() > 1) {
@@ -2104,10 +2084,13 @@ inline bool Solver::withinBudget() const
 
 bool Solver::assertionLevelOnly() const
 {
-  return options().smt.produceUnsatCores// && !needProof()
-         && options().base.incrementalSolving;
+  return false;
+
+  //return options().smt.produceUnsatCores// && !needProof()
+  //       && options().base.incrementalSolving;
 }
 
+/*
 const std::vector<Node> Solver::getMiniSatOrderHeap()
 {
   std::vector<Node> heapList;
@@ -2118,5 +2101,6 @@ const std::vector<Node> Solver::getMiniSatOrderHeap()
   }
   return heapList;
 }
+*/
 
 }  // namespace Minisat

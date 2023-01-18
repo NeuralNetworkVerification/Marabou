@@ -82,9 +82,9 @@ class TheoryProxy
 
   void notifyRestart();
 
-  bool isDecisionEngineDone();
+  //bool isDecisionEngineDone();
 
-  bool isDecisionRelevant(SatVariable var);
+  //bool isDecisionRelevant(SatVariable var);
 
   SatValue getDecisionPolarity(SatVariable var);
 
