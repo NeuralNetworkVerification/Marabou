@@ -6,6 +6,7 @@ comment: false
 ignore:
   - "**/__init__.py"
   - "maraboupy/test"
+  - "maraboupy/test_requirements.txt"
 
 coverage:
   status:
