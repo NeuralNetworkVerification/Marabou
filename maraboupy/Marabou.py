@@ -28,7 +28,7 @@ except ImportError:
 try:
     from maraboupy.MarabouNetworkONNX import *
 except ImportError:
-    warnings.warn("ONNX parser is unavailable likely because torch, onnx or onnxruntime packages are not installed")
+    warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
 
 def read_nnet(filename, normalize=False):
     """Constructs a MarabouNetworkNnet object from a .nnet file
