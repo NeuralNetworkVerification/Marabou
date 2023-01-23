@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         compiler: [g++, clang++]
-        build_type: [Debug, Release]
+        build_type: [Debug, Production]
 
     runs-on: ubuntu-latest #TODO: macos-latest
     name: Debug build 
