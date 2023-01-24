@@ -239,6 +239,7 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
+
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
@@ -261,6 +262,14 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    std::shared_ptr<TableauRow> _tighteningRow;
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint
+     Stored in _tighteningRow
+    */
+    void createTighteningRow();
 };
 
 #endif // __ReluConstraint_h__

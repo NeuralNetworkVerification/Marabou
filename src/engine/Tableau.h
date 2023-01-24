@@ -470,6 +470,11 @@ public:
      */
     void postContextPopHook();
 
+    /*
+      Tighten bounds without notifying watchers
+    */
+    void tightenUpperBoundNaively( unsigned variable, double value );
+    void tightenLowerBoundNaively( unsigned variable, double value );
 private:
     /*
       Variable watchers

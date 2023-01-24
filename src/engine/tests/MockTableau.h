@@ -666,6 +666,14 @@ public:
     void updateVariableToComplyWithUpperBoundUpdate( unsigned /*variable*/, double /*value*/ )
     {
     }
+
+    void tightenUpperBoundNaively( unsigned /*variable*/, double /*value*/ )
+    {
+    }
+
+    void tightenLowerBoundNaively( unsigned /*variable*/, double /*value*/ )
+    {
+    }
 };
 
 #endif // __MockTableau_h__

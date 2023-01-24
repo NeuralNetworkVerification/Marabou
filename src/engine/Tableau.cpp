@@ -1621,7 +1621,8 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
 {
     if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
          _lpSolverType != LPSolverType::NATIVE )
-    {}
+    {
+    }
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         // Set the dimensions
@@ -1687,7 +1688,8 @@ void Tableau::restoreState( const TableauState &state,
 {
     if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
          _lpSolverType != LPSolverType::NATIVE )
-    {}
+    {
+    }
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
         freeMemoryIfNeeded();
@@ -1721,7 +1723,7 @@ void Tableau::restoreState( const TableauState &state,
         // Restore the basis factorization
         _basisFactorization->restoreFactorization( state._basisFactorization );
 
-        // Restore the merged varaibles
+        // Restore the merged variables
         _mergedVariables = state._mergedVariables;
 
         computeAssignment();
@@ -2612,4 +2614,30 @@ void Tableau::setBoundsPointers( const double *lower, const double *upper )
 {
     _lowerBounds = lower;
     _upperBounds = upper;
+}
+
+void Tableau::tightenUpperBoundNaively( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+
+    if ( _statistics )
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENED_BOUNDS );
+
+    _boundManager.setUpperBound( variable, value );
+
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        updateVariableToComplyWithUpperBoundUpdate( variable, value );
+}
+
+void Tableau::tightenLowerBoundNaively( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+
+    if ( _statistics )
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENED_BOUNDS );
+
+    _boundManager.setLowerBound( variable, value );
+
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        updateVariableToComplyWithLowerBoundUpdate( variable, value );
 }

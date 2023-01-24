@@ -296,8 +296,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
     }
 
-    result += registerTighterLowerBound( y, lowerBound );
-    result += registerTighterUpperBound( y, upperBound );
+    result += registerTighterLowerBound( y, lowerBound, row );
+    result += registerTighterUpperBound( y, upperBound, row );
 
     if ( FloatUtils::gt( getLowerBound( y ), getUpperBound( y ) ) )
     {
@@ -342,7 +342,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     for ( unsigned i = 0; i < n - m; ++i )
     {
         // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO )
+        if ( _ciSign[i] == ZERO || FloatUtils::lt( abs( row[i] ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
             continue;
 
         lowerBound = auxLb;
@@ -374,8 +374,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         // If a tighter bound is found, store it
         xi = row._row[i]._var;
-        result += registerTighterLowerBound( xi, lowerBound );
-        result += registerTighterUpperBound( xi, upperBound );
+        result += registerTighterLowerBound( xi, lowerBound, row );
+        result += registerTighterUpperBound( xi, upperBound, row );
         if ( FloatUtils::gt( getLowerBound( xi ), getUpperBound( xi ) ) )
         {
             ASSERT( FloatUtils::gt( _boundManager.getLowerBound( xi ), _boundManager.getUpperBound( xi ) ) );
@@ -479,7 +479,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
               b - sum ci xi
 
       Then, when we consider xi we adjust the computed lower and upper
-      boudns accordingly.
+      bounds accordingly.
     */
 
     double auxLb = b[row];
@@ -525,6 +525,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
         // Now divide everything by ci, switching signs if needed.
         ci = entry._value;
+        if ( FloatUtils::lt( abs( ci ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
+            continue;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
@@ -537,8 +539,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // If a tighter bound is found, store it
-        result += registerTighterLowerBound( index, lowerBound );
-        result += registerTighterUpperBound( index, upperBound );
+        result += registerTighterLowerBound( index, lowerBound, *sparseRow );
+        result += registerTighterUpperBound( index, upperBound, *sparseRow );
 
         if ( FloatUtils::gt( getLowerBound( index ), getUpperBound( index ) ) )
             throw InfeasibleQueryException();

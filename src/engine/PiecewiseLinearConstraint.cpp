@@ -29,6 +29,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _score( FloatUtils::negativeInfinity() )
     , _statistics( NULL )
     , _gurobi( NULL )
+    , _tableauAuxVar( 0 )
 {
 }
 
@@ -196,6 +197,7 @@ bool PiecewiseLinearConstraint::isCaseInfeasible( PhaseStatus phase ) const
     ASSERT( _cdInfeasibleCases );
     return std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), phase ) != _cdInfeasibleCases->end();
 }
+
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
