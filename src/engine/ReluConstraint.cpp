@@ -19,8 +19,9 @@
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "ITableau.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
+#include "ITableau.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -38,11 +39,13 @@ ReluConstraint::ReluConstraint( unsigned b, unsigned f )
     , _auxVarInUse( false )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
+    , _tighteningRow( NULL )
 {
 }
 
 ReluConstraint::ReluConstraint( const String &serializedRelu )
     : _haveEliminatedVariables( false )
+    , _tighteningRow( NULL )
 {
     String constraintType = serializedRelu.substring( 0, 4 );
     ASSERT( constraintType == String( "relu" ) );
@@ -137,6 +140,7 @@ void ReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, doubl
     if ( _auxVarInUse && variable == _aux && FloatUtils::isZero( bound ) )
         setPhaseStatus( RELU_PHASE_ACTIVE );
 }
+
 void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
 {
     if ( _statistics )
@@ -156,45 +160,72 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
 
         double bound = getLowerBound( variable );
         checkIfLowerBoundUpdateFixesPhase( variable, bound );
-
         if ( isActive() )
         {
+            bool proofs = _boundManager->shouldProduceProofs();
+
+            if ( proofs )
+                createTighteningRow();
+
             // A positive lower bound is always propagated between f and b
             if ( ( variable == _f || variable == _b ) && bound > 0 )
             {
-                unsigned partner = ( variable == _f ) ? _b : _f;
-                _boundManager->tightenLowerBound( partner, bound );
-
                 // If we're in the active phase, aux should be 0
-                if ( _auxVarInUse )
+                if ( proofs && _auxVarInUse )
+                    _boundManager->addLemmaExplanation( _aux, 0, UPPER, variable, LOWER, getType() );
+                else if ( !proofs && _auxVarInUse )
                     _boundManager->tightenUpperBound( _aux, 0 );
+
+			// After updating to active phase
+			unsigned partner = ( variable == _f ) ? _b : _f;
+                _boundManager->tightenLowerBound( partner, bound, *_tighteningRow );
             }
 
             // If b is non-negative, we're in the active phase
             else if ( _auxVarInUse && variable == _b && FloatUtils::isZero( bound ) )
             {
-                _boundManager->tightenUpperBound( _aux, 0 );
+                if ( proofs && _auxVarInUse )
+                    _boundManager->addLemmaExplanation( _aux, 0, UPPER, variable, LOWER, getType() );
+			    else if ( !proofs && _auxVarInUse )
+                    _boundManager->tightenUpperBound( _aux, 0 );
             }
 
             // A positive lower bound for aux means we're inactive: f is 0, b is
             // non-positive When inactive, b = -aux
             else if ( _auxVarInUse && variable == _aux && bound > 0 )
             {
-                _boundManager->tightenUpperBound( _b, -bound );
-                _boundManager->tightenUpperBound( _f, 0 );
+                if ( proofs )
+                    _boundManager->addLemmaExplanation( _f, 0, UPPER, variable, LOWER, getType() );
+                else
+                    _boundManager->tightenUpperBound( _f, 0 );
+
+			    // After updating to inactive phase
+                _boundManager->tightenUpperBound( _b, -bound, *_tighteningRow );
             }
 
             // A negative lower bound for b could tighten aux's upper bound
             else if ( _auxVarInUse && variable == _b && bound < 0 )
             {
-                _boundManager->tightenUpperBound( _aux, -bound );
+                if ( proofs )
+                {
+                    // If already inactive, tightening is linear
+                    if ( _phaseStatus == RELU_PHASE_INACTIVE )
+                        _boundManager->tightenUpperBound( _aux, -bound, *_tighteningRow );
+                    else if ( _phaseStatus == PHASE_NOT_FIXED )
+                        _boundManager->addLemmaExplanation( _aux, -bound, UPPER, variable, LOWER, getType() );
+                }
+                else
+                    _boundManager->tightenUpperBound( _aux, -bound );
             }
 
             // Also, if for some reason we only know a negative lower bound for
             // f, we attempt to tighten it to 0
             else if ( bound < 0 && variable == _f )
             {
-                _boundManager->tightenLowerBound( _f, 0 );
+                if ( proofs )
+                    _boundManager->addLemmaExplanation( _f, 0, LOWER, variable, LOWER, getType() );
+                else
+                    _boundManager->tightenLowerBound( _f, 0 );
             }
         }
     }
@@ -222,33 +253,77 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
 
         if ( isActive() )
         {
+            bool proofs = _boundManager->shouldProduceProofs();
+
+            if ( proofs )
+                createTighteningRow();
+
             if ( variable == _f )
             {
-                // Any bound that we learned of f should be propagated to b
-                _boundManager->tightenUpperBound( _b, bound );
+                if ( proofs )
+                {
+                    if ( _phaseStatus != RELU_PHASE_INACTIVE )
+                        _boundManager->tightenUpperBound( _b, bound, *_tighteningRow );
+                    else
+                    {
+                        if ( FloatUtils::isZero( bound ) )
+                            _boundManager->addLemmaExplanation( _b, 0, UPPER, variable, UPPER, getType() );
+                        // Bound cannot be negative if ReLU is inactive
+                        else if ( FloatUtils::isNegative( bound ) )
+                            throw InfeasibleQueryException();
+                    }
+                }
+                else
+                    _boundManager->tightenUpperBound( _b, bound );
+
             }
             else if ( variable == _b )
             {
                 if ( !FloatUtils::isPositive( bound ) )
                 {
                     // If b has a non-positive upper bound, f's upper bound is 0
-                    _boundManager->tightenUpperBound( _f, 0 );
+                    if ( proofs )
+                        _boundManager->addLemmaExplanation( _f, 0, UPPER, variable, UPPER, getType() );
+                    else
+                        _boundManager->tightenUpperBound( _f, 0 );
 
+                    // Aux's range is minus the range of b
+                    // After updating to inactive phase
                     if ( _auxVarInUse )
-                    {
-                        // Aux's range is minus the range of b
-                        _boundManager->tightenLowerBound( _aux, -bound );
-                    }
+                        _boundManager->tightenLowerBound( _aux, -bound, *_tighteningRow );
                 }
                 else
                 {
                     // b has a positive upper bound, propagate to f
-                    _boundManager->tightenUpperBound( _f, bound );
+                    if ( proofs )
+                    {
+                        // If already inactive, tightening is linear
+                        if ( _phaseStatus == RELU_PHASE_ACTIVE )
+                            _boundManager->tightenUpperBound( _f, bound, *_tighteningRow );
+                        else if ( _phaseStatus == PHASE_NOT_FIXED )
+                            _boundManager->addLemmaExplanation( _f, bound, UPPER, variable, UPPER, getType() );
+                    }
+                    else
+                        _boundManager->tightenUpperBound( _f, bound );
                 }
             }
             else if ( _auxVarInUse && variable == _aux )
             {
-                _boundManager->tightenLowerBound( _b, -bound );
+               if ( proofs )
+               {
+                    if ( _phaseStatus != RELU_PHASE_ACTIVE )
+                        _boundManager->tightenLowerBound( _b, -bound, *_tighteningRow );
+                    else
+                    {
+                        if ( FloatUtils::isZero( bound ) )
+                            _boundManager->addLemmaExplanation( _b, 0, LOWER, variable, UPPER, getType() );
+                        // Bound cannot be negative if ReLU is active
+                        else if ( FloatUtils::isNegative( bound ) )
+                            throw InfeasibleQueryException();
+                    }
+               }
+               else
+                    _boundManager->tightenLowerBound( _b, -bound );
             }
         }
     }
@@ -965,3 +1040,26 @@ void ReluConstraint::updateScoreBasedOnPolarity()
 {
     _score = std::abs( computePolarity() );
 }
+
+void ReluConstraint::createTighteningRow()
+{
+    // Create the row only when needed and when not already created
+    if ( !_boundManager->getBoundExplainer() || _tighteningRow || !_auxVarInUse || !_tableauAuxVar )
+        return;
+
+    _tighteningRow = std::unique_ptr<TableauRow>( new TableauRow ( 3 ) );
+
+    // f = b + aux + counterpart (an additional aux variable of tableau)
+    _tighteningRow->_lhs =  _f;
+    _tighteningRow->_row[0] = TableauRow::Entry( _b, 1 );
+    _tighteningRow->_row[1] = TableauRow::Entry( _aux, 1 );
+    _tighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVar, 1 );
+}
+
+//
+// Local Variables:
+// compile-command: "make -C ../.. "
+// tags-file-name: "../../TAGS"
+// c-basic-offset: 4
+// End:
+//

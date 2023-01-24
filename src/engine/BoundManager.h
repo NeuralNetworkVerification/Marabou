@@ -39,16 +39,20 @@
 #ifndef __BoundManager_h__
 #define __BoundManager_h__
 
+#include "context/cdo.h"
+#include "context/context.h"
 #include "IBoundManager.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
+#include "IEngine.h"
 #include "List.h"
+#include "PlcExplanation.h"
 #include "Tightening.h"
+#include "UnsatCertificateNode.h"
 #include "Vector.h"
-#include "context/cdo.h"
-#include "context/context.h"
 
 class ITableau;
+class IEngine;
 class BoundManager : public IBoundManager
 {
 public:
@@ -129,6 +133,7 @@ public:
       detect a conflict state.
     */
     bool consistentBounds( unsigned variable ) const;
+
     /*
        Register Tableau pointer for callbacks from tighten*Bound methods.
      */
@@ -139,12 +144,83 @@ public:
      */
     void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener );
 
+    /*
+      Return the content of the object containing all explanations for variable bounds in the tableau.
+    */
+    const BoundExplainer *getBoundExplainer() const;
+
+    /*
+      Deep-copy the BoundExplainer object content
+     */
+    void copyBoundExplainerContent( const BoundExplainer *boundsExplainer );
+
+    /*
+      Initialize the boundExplainer
+     */
+    void initializeBoundExplainer( unsigned numberOfVariables, unsigned numberOfRows );
+
+    /*
+      Given a row, updates the values of the bound explanations of a var according to the row
+    */
+    void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned var );
+
+    /*
+      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row
+    */
+    void updateBoundExplanationSparse( const SparseUnsortedList &row, bool isUpper, unsigned var );
+
+    /*
+      Reset a bound explanation
+    */
+    void resetExplanation( unsigned var, bool isUpper ) const;
+
+    /*
+      Insert the bounds explanation of a variable in the tableau to the argument vector
+    */
+    void getExplanation( unsigned variable, bool isUpper, Vector<double> &explanation ) const;
+
+    /*
+      Artificially update an explanation, without using the recursive rule
+    */
+    void setExplanation( const Vector<double> &explanation, unsigned var,  bool isUpper ) const;
+
+    /*
+      Register Engine pointer for callbacks
+    */
+    void registerEngine( IEngine *engine);
+
+    /*
+      Get the index of a variable with inconsistent bounds, if exists, or -1 otherwise
+    */
+    unsigned getInconsistentVariable() const;
+
+    /*
+      Computes the bound imposed by a row's rhs on its lhs
+    */
+    double computeRowBound( const TableauRow &row, bool isUpper ) const;
+
+    /*
+      Computes the bound imposed by a row on a variable
+    */
+    double computeSparseRowBound( const SparseUnsortedList &row, bool isUpper, unsigned var ) const;
+
+    /*
+      Return true iff an explanation is trivial (i.e. the zero vector)
+    */
+    bool isExplanationTrivial( unsigned var, bool isUpper ) const;
+
+    /*
+      Return true iff boundManager should produce proofs
+    */
+    bool shouldProduceProofs() const;
+
 private:
     CVC4::context::Context &_context;
     unsigned _size;
     unsigned _allocated;
     ITableau *_tableau; // Used only by callbacks
     IRowBoundTightener *_rowBoundTightener; // Used only by callbacks
+    IEngine *_engine;
 
     CVC4::context::CDO<bool> _consistentBounds;
     Tightening _firstInconsistentTightening;
@@ -164,6 +240,27 @@ private:
     void recordInconsistentBound( unsigned variable, double value, Tightening::BoundType type );
 
     void allocateLocalBounds( unsigned size );
+
+    /*
+      Tighten bounds and update their explanations according to some object representing the row
+     */
+    bool tightenLowerBound( unsigned variable, double value, const TableauRow &row );
+    bool tightenUpperBound( unsigned variable, double value, const TableauRow &row );
+
+    bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList &row );
+    bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList &row );
+
+    /*
+      Adds a lemma to the UNSATCertificateNode object
+     */
+    bool addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
+                              unsigned causingVar, BoundType causingVarBound,
+                              PiecewiseLinearFunctionType constraintType );
+
+    /*
+      Explainer of all bounds
+    */
+    BoundExplainer *_boundExplainer;
 };
 
 #endif // __BoundManager_h__

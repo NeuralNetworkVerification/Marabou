@@ -26,20 +26,27 @@
 #ifndef __IBoundManager_h__
 #define __IBoundManager_h__
 
+#include <cstdint>
 #include "List.h"
+#include "Vector.h"
+#include "PiecewiseLinearFunctionType.h"
 
 enum BoundType : unsigned
 {
     LOWER = 0,
     UPPER = 1,
 };
-
+class BoundExplainer;
+class SparseUnsortedList;
+class TableauRow;
 class Tightening;
 class ITableau;
 class IRowBoundTightener;
 class IBoundManager
 {
 public:
+    const static constexpr unsigned NO_VARIABLE_FOUND = UINT32_MAX -1;
+
     virtual ~IBoundManager() {};
 
     /*
@@ -109,7 +116,57 @@ public:
      */
     virtual void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener ) = 0;
 
+    /*
+       Tighten bounds and update their explanations according to some object representing the row
+    */
+    virtual bool tightenLowerBound( unsigned variable, double value, const TableauRow &row ) = 0;
+    virtual bool tightenUpperBound( unsigned variable, double value, const TableauRow &row ) = 0;
 
+    virtual bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList &row ) = 0;
+    virtual bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList &row ) = 0;
+
+    /*
+      Add a lemma to the UNSATCertificateNode object
+      Return true iff adding the lemma has succeeded
+    */
+    virtual bool addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
+                                      unsigned causingVar, BoundType causingVarBound,
+                                      PiecewiseLinearFunctionType constraintType ) = 0;
+
+    /*
+      Return the content of the object containing all explanations for variable bounds in the tableau
+    */
+    virtual const BoundExplainer *getBoundExplainer() const = 0;
+
+    /*
+      Deep-copy the BoundExplainer object content
+     */
+    virtual void copyBoundExplainerContent( const BoundExplainer* boundExplainer ) = 0;
+
+    /*
+      Initialize the boundExplainer
+     */
+    virtual void initializeBoundExplainer( unsigned numberOfVariables, unsigned numberOfRows ) = 0;
+
+    /*
+      Given a row, updates the values of the bound explanations of a var according to the row
+    */
+    virtual void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned var ) = 0;
+
+    /*
+      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row
+    */
+    virtual void updateBoundExplanationSparse( const SparseUnsortedList &row, bool isUpper, unsigned var ) = 0;
+
+    /*
+      Get the index of a variable with inconsistent bounds, if exists, or -1 otherwise
+    */
+    virtual unsigned getInconsistentVariable() const = 0;
+
+    /*
+      Return true iff boundManager should produce proofs
+    */
+    virtual bool shouldProduceProofs() const = 0;
 };
 
 #endif // __IBoundManager_h__

@@ -25,6 +25,7 @@
 #include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
 #include "SmtCore.h"
+#include "UnsatCertificateNode.h"
 
 SmtCore::SmtCore( IEngine *engine )
     : _statistics( NULL )
@@ -171,10 +172,31 @@ void SmtCore::performSplit()
                          TableauStateStorageLevel::STORE_BOUNDS_ONLY );
     _engine->preContextPushHook();
     pushContext();
+
+    UnsatCertificateNode* certificateNode = NULL;
+    if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateRoot() )
+    {
+        certificateNode = _engine->getUNSATCertificateCurrentPointer();
+        // Create children for UNSATCertificate current node, and assign a split to each of them
+        ASSERT( certificateNode );
+        for ( PiecewiseLinearCaseSplit& childSplit : splits )
+            new UnsatCertificateNode( certificateNode, childSplit );
+    }
+
     SmtStackEntry *stackEntry = new SmtStackEntry;
     // Perform the first split: add bounds and equations
     List<PiecewiseLinearCaseSplit>::iterator split = splits.begin();
     ASSERT( split->getEquations().size() == 0 );
+
+    if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateRoot() )
+    {
+        //Set the current node of the UNSAT certificate to be the child corresponding to the first split
+        UnsatCertificateNode *firstSplitChild = certificateNode->getChildBySplit( *split );
+        ASSERT( firstSplitChild );
+        _engine->setUNSATCertificateCurrentPointer( firstSplitChild );
+        ASSERT( _engine->getUNSATCertificateCurrentPointer()->getSplit() == *split );
+    }
+
     _engine->applySplit( *split );
     stackEntry->_activeSplit = *split;
 
@@ -301,6 +323,17 @@ bool SmtCore::popSplit()
         // popped
         stackEntry->_impliedValidSplits.clear();
 
+        // Set the current node of the UNSAT certificate to be the child corresponding to the chosen split
+        if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateCurrentPointer() )
+        {
+            UnsatCertificateNode *certificateNode = _engine->getUNSATCertificateCurrentPointer();
+            ASSERT( certificateNode );
+            UnsatCertificateNode *splitChild = certificateNode->getChildBySplit( *split );
+            ASSERT( splitChild );
+            _engine->setUNSATCertificateCurrentPointer( splitChild );
+            ASSERT( _engine->getUNSATCertificateCurrentPointer()->getSplit() == *split );
+        }
+
         SMT_LOG( "\tApplying new split..." );
         ASSERT( split->getEquations().size() == 0 );
         _engine->preContextPushHook();
@@ -312,6 +345,9 @@ bool SmtCore::popSplit()
         stackEntry->_alternativeSplits.erase( split );
 
         inconsistent = !_engine->consistentBounds();
+
+        if ( _engine->shouldProduceProofs() && inconsistent )
+            _engine->explainSimplexFailure();
     }
 
     if ( _statistics )

@@ -17,6 +17,7 @@
 #define __ICostFunctionManager_h__
 
 #include "Map.h"
+#include "SparseUnsortedList.h"
 
 class TableauRow;
 
@@ -51,6 +52,8 @@ public:
     virtual bool costFunctionInvalid() const = 0;
     virtual bool costFunctionJustComputed() const = 0;
     virtual void invalidateCostFunction() = 0;
+
+    virtual const SparseUnsortedList *createRowOfCostFunction() const = 0;
 };
 
 #endif // __ICostFunctionManager_h__
