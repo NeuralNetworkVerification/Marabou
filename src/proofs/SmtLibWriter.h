@@ -69,7 +69,7 @@ public:
     static String signedValue( double val );
 
 private:
-    static const unsigned _accuracy = 8;
+    static const unsigned _precision = 8;
 };
 
 #endif //__SmtLibWriter_h__

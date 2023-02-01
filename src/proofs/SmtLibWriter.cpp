@@ -93,6 +93,6 @@ void SmtLibWriter::writeInstanceToFile( IFile &file, const List<String> &instanc
 String SmtLibWriter::signedValue( double val )
 {
     std::stringstream s;
-    s << std::fixed << std::setprecision( SmtLibWriter::_accuracy ) << abs( val );
+    s << std::fixed << std::setprecision( SmtLibWriter::_precision ) << abs( val );
     return val > 0 ? s.str() : "( - " + s.str() + " )";
 }
