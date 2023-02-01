@@ -38,6 +38,7 @@
 #include "Options.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
+#include "sat_solver_types.h"
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "SmtLibWriter.h"
@@ -905,6 +906,30 @@ private:
       Writes the details of a contradiction to the UNSAT certificate node
     */
     void writeContradictionToCertificate( unsigned infeasibleVar ) const;
+
+    /*
+      Map piecewise-linear constraints to SatLiterals
+    */
+    typedef std::tuple<PiecewiseLinearConstraint*, PhaseStatus> constraintPhase;
+    Map<constraintPhase, cvc5::internal::prop::SatLiteral> _constraintPhasesToSatLiterals;
+    Map<cvc5::internal::prop::SatLiteral, constraintPhase> _satLiteralsToConstraintPhases;
+
+
+    /*
+      Map variables to the constraints they participate in
+    */
+    Map<unsigned, PiecewiseLinearConstraint*> _variablesToConstraints;
+
+    /*
+     For each constraint in the list, map its phases to SatLiterals
+     Currently supports piecewise-linear constraints with two linear pieces
+    */
+    void mapConstraintsToSatLiterals( List<PiecewiseLinearConstraint *> constraints );
+
+    /*
+      For each constraint in the list, map variables to the constraints they participate in
+    */
+    void mapVariablesToConstraints( List<PiecewiseLinearConstraint *> constraints );
 };
 
 #endif // __Engine_h__

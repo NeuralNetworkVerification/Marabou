@@ -79,6 +79,9 @@ Engine::Engine()
     , _produceUNSATProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     , _groundBoundManager( _context )
     , _UNSATCertificate( NULL )
+    , _constraintPhasesToSatLiterals()
+    , _satLiteralsToConstraintPhases()
+    , _variablesToConstraints()
 {
     _satSolver = new MinisatSatSolver(&_statistics);
     _theoryProxy = new TheoryProxy(this);
@@ -3829,4 +3832,45 @@ void Engine::extractBounds( InputQuery &inputQuery )
             inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
         }
     }
+}
+=======
+void Engine::mapConstraintsToSatLiterals( List<PiecewiseLinearConstraint *> constraints )
+{
+    unsigned counter = _constraintPhasesToSatLiterals.keys().size();
+    for ( auto &plConstraint : constraints )
+    {
+        cvc5::internal::prop::SatLiteral positiveLiteral( counter );
+        cvc5::internal::prop::SatLiteral negativeLiteral( counter, true );
+
+        if ( plConstraint->getType() == RELU )
+        {
+            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, RELU_PHASE_ACTIVE ), positiveLiteral );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, RELU_PHASE_INACTIVE ), negativeLiteral );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist( positiveLiteral, constraintPhase( plConstraint, RELU_PHASE_ACTIVE ) );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist( negativeLiteral, constraintPhase( plConstraint, RELU_PHASE_INACTIVE ) );
+        }
+        else if ( plConstraint->getType() == ABSOLUTE_VALUE )
+        {
+            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, ABS_PHASE_POSITIVE ), positiveLiteral );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, ABS_PHASE_NEGATIVE ), negativeLiteral );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist( positiveLiteral, constraintPhase( plConstraint, ABS_PHASE_POSITIVE ) );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist( negativeLiteral, constraintPhase( plConstraint, ABS_PHASE_NEGATIVE ) );
+        }
+        else if ( plConstraint->getType() == SIGN )
+        {
+            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, SIGN_PHASE_POSITIVE ), positiveLiteral );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, SIGN_PHASE_NEGATIVE ), negativeLiteral );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist( positiveLiteral, constraintPhase( plConstraint, SIGN_PHASE_POSITIVE ) );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist( negativeLiteral, constraintPhase( plConstraint, SIGN_PHASE_NEGATIVE ) );
+        }
+
+        ++counter;
+    }
+}
+
+void Engine::mapVariablesToConstraints( List<PiecewiseLinearConstraint *> constraints )
+{
+    for ( auto &plConstraint : constraints )
+        for ( unsigned var : plConstraint->getParticipatingVariables() )
+            _variablesToConstraints.insert( var, plConstraint );
 }
