@@ -25,7 +25,7 @@
 #include "QueryLoader.h"
 #include "AcasParser.h"
 
-DnCMarabou::DnCMarabou( InputQuery& inputQuery )
+DnCMarabou::DnCMarabou( InputQuery &inputQuery )
     : _inputQuery( inputQuery )
     , _dncManager( nullptr )
 {

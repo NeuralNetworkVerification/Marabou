@@ -31,7 +31,7 @@ public:
     void run();
 
 private:
-    InputQuery& _inputQuery;
+    InputQuery &_inputQuery;
     std::unique_ptr<DnCManager> _dncManager;
     /*
       Display the results

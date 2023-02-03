@@ -83,6 +83,8 @@ InputQuery prepareInputQueryFromQueryFile( String inputQueryFilePath )
 */
 InputQuery prepareInputQueryFromNetworkAndPropertyFile()
 {
+    // TODO it would be good to time this and report the time (e.g. as in Marabou::run())
+
     InputQuery inputQuery = InputQuery();
 
     /*
@@ -178,6 +180,8 @@ int main( int argc, char **argv )
             printf( "Proof production is not yet supported with MILP solvers, turning SOLVE_WITH_MILP off.\n" );
         }
 
+        // TODO it would be good to pass a reference to the InputQuery object directly, rather
+        // than returning it here and incurring the overhead of the copy constructor.
         InputQuery inputQuery = prepareInputQuery();
         String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
         if ( queryDumpFilePath.length() > 0 )
