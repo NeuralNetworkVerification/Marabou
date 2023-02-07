@@ -67,9 +67,6 @@ public:
       Returns a string representing the value of a double
      */
     static String signedValue( double val );
-
-private:
-    static const unsigned NUMERICAL_PRECISION = 8;
 };
 
 #endif //__SmtLibWriter_h__
