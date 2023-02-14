@@ -48,9 +48,11 @@ void DeepPolySoftmaxElement::execute
 
     // Update the symbolic and concrete upper- and lower- bounds
     // of each neuron
+    Set<unsigned> coveredSources;
     for ( unsigned i = 0; i < _size; ++i )
     {
         log( Stringf( "Handling Neuron %u_%u...", _layerIndex, i ) );
+
         List<NeuronIndex> sources = _layer->getActivationSources( i );
 
         Vector<double> sourceLbs;
@@ -61,10 +63,14 @@ void DeepPolySoftmaxElement::execute
         Vector<double> sourceMids;
         unsigned outputIndex = 0;
         unsigned index = 0;
+	bool found = false;
         for ( const auto &sourceIndex : sources )
         {
-          if ( sourceIndex._neuron == i )
+          if (!found && !coveredSources.exists(sourceIndex._neuron)){
             outputIndex = index;
+	    coveredSources.insert(sourceIndex._neuron);
+	    found = true;
+	  }
           DeepPolyElement *predecessor =
             deepPolyElementsBefore[sourceIndex._layer];
           double sourceLb = predecessor->getLowerBound
@@ -353,11 +359,10 @@ void DeepPolySoftmaxElement::execute
           }
         }
         else
-          {
-            std::cout << "Wrong bounds" << std::endl;
-            exit(0);
-          }
-
+	{
+	  std::cout << "Wrong bounds" << std::endl;
+	  exit(0);
+	}
     }
 
     // Compute bounds with back-substitution
@@ -401,7 +406,7 @@ void DeepPolySoftmaxElement::computeBoundWithBackSubstitution
     log( Stringf( "Computing symbolic bounds with respect to layer %u - done",
                   predecessorIndex ) );
 
-    while ( currentElement->hasPredecessor() )
+    while ( currentElement->hasPredecessor())
     {
         // We have the symbolic bounds in terms of the current abstract
         // element--currentElement, stored in _work1SymbolicLb,

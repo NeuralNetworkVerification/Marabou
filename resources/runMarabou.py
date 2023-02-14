@@ -63,7 +63,8 @@ def createQuery(args):
         if "sst" in networkPath:
             network = Marabou.read_onnx(networkPath)
         else:
-            network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
+            #network = Marabou.read_onnx(networkPath, outputNames=["biased_tensor_name"])
+            network = Marabou.read_onnx(networkPath, outputNames=["model/dense_1/BiasAdd:0"])
         network2 = Marabou.read_onnx(networkPath)
     else:
         print("The network must be in .pb, .nnet, or .onnx format!")
@@ -93,9 +94,9 @@ def createQuery(args):
 
 def encode_sst_linf(network, index, epsilon, target_label):
     import pickle
-    VAL_SEQ = "/home/haozewu/Projects/softmax/bounding-softmax/transformer_experiment/training/validation_sequences.pickle"
-    VAL_LAB = "/home/haozewu/Projects/softmax/bounding-softmax/transformer_experiment/training/validation_labels.pickle"
-    EMBED = "/home/haozewu/Projects/softmax/bounding-softmax/transformer_experiment/training/self-attention-sst-sim-embedding.onnx"
+    VAL_SEQ = "/barrett/scratch/haozewu/softmax/bounding-softmax/transformer_experiment/training/validation_sequences.pickle"
+    VAL_LAB = "/barrett/scratch/haozewu/softmax/bounding-softmax/transformer_experiment/training/validation_labels.pickle"
+    EMBED = "/barrett/scratch/haozewu/softmax/bounding-softmax/transformer_experiment/training/self-attention-sst-sim-embedding.onnx"
     with open(VAL_SEQ, 'rb') as fp:
         sequences = pickle.load(fp)
 

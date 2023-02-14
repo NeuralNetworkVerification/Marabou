@@ -24,6 +24,8 @@ from maraboupy import MarabouNetwork
 from onnx import TensorProto
 import itertools
 
+from copy import copy
+
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkONNX object from an ONNX file
 
@@ -203,6 +205,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.flatten(node)
         elif node.op_type == "Transpose":
             self.transpose(node)
+        elif node.op_type == 'Unsqueeze':
+            self.unsqueeze(node)
+        elif node.op_type == 'Squeeze':
+            self.squeeze(node)
+        elif node.op_type == 'Einsum':
+            self.einsum(node, makeEquations)
         elif node.op_type == "BatchNormalization":
             self.batchNorm(node, makeEquations)
         elif node.op_type == "MaxPool":
@@ -385,11 +393,13 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         reshapeVals = self.constantMap[inputName2]
         if reshapeVals[0] == 0:
             reshapeVals[0] = 1
+
         self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(reshapeVals).shape)
         if inputName1 in self.varMap:
-            self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
+            self.varMap[nodeName] = copy(self.varMap[inputName1]).reshape(self.shapeMap[nodeName])
         elif inputName1 in self.constantMap:
-            self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
+            self.constantMap[nodeName] = self.constantMap[inputName1].reshape(self.shapeMap[nodeName])
+      
 
     def flatten(self, node):
         """Function representing flatten
@@ -448,6 +458,98 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
 
+    def unsqueeze(self, node):
+        """Function representing unsqueeze
+
+        Args:
+            node (node): ONNX node representing unsqueeze operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName, axisName = node.input
+
+        axis = self.constantMap[axisName]
+        if inputName in self.varMap:
+            vars = copy(self.varMap[inputName])
+            for a in axis:
+                vars = np.expand_dims(vars, axis=a)
+            self.varMap[nodeName] = vars
+            self.shapeMap[nodeName] = vars.shape
+        elif inputName in self.constantMap:
+            c = copy(self.constantMap[inputName])
+            for a in axis:
+                c = np.expand_dims(c, axis=a)
+            self.constantMap[nodeName] = c
+            self.shapeMap[nodeName] = c.shape
+        return
+
+    def squeeze(self, node):
+        """Function representing squeeze
+
+        Args:
+            node (node): ONNX node representing squeeze operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName, axisName = node.input
+
+        axis = self.constantMap[axisName]
+
+        axis_ = copy(axis)
+        if inputName in self.varMap:
+            vars = copy(self.varMap[inputName])
+            for i in range(len(axis)):
+                vars = np.squeeze(vars, axis_[i])
+                for j in range(len(axis))[i+1:]:
+                    axis_[j] -= 1
+            self.varMap[nodeName] = vars
+            self.shapeMap[nodeName] = vars.shape
+        return
+
+    def einsum(self, node, makeEquations):
+        """Function to generate equations for a BatchNormalization
+
+        Args:
+            node (node): ONNX node representing the BatchNormalization operation
+
+        :meta private
+        """
+
+        nodeName = node.output[0]
+        inputName1, inputName2 = node.input
+
+        s1 = self.shapeMap[inputName1]
+        s2 = self.shapeMap[inputName2]
+
+        assert(s1 == [1,2,2,4] and s2 == [2,4,8])
+        self.shapeMap[nodeName] = [s1[0], s1[1], s2[2]]
+
+        inputVars = self.varMap[inputName1]
+        scalars = self.constantMap[inputName2]
+        
+        outputVars = self.makeNewVariables(nodeName)
+        
+        # Get attributes
+        exp = None
+        for attr in node.attribute:
+            if attr.name == "equation":
+                exp = get_attribute_value(attr)
+        assert(exp == b'abcd,cde->abe')
+
+        for i in range(2):
+            for j in range(8):
+                e = MarabouUtils.Equation()
+                for k in range(2):
+                    for l in range(4):
+                        e.addAddend(scalars[k][l][j], inputVars[0][i][k][l])
+                e.addAddend(-1, outputVars[0][i][j])
+                e.setScalar(0)
+                self.addEquation(e)
+        return
+                                
+    
     def batchNorm(self, node, makeEquations):
         """Function to generate equations for a BatchNormalization
 
@@ -670,7 +772,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         nodeName = node.output[0]
         
         # Get inputs
-        inputName1, inputName2, inputName3 = node.input
+        if len(node.input) == 3:
+            inputName1, inputName2, inputName3 = node.input
+        else:
+            inputName1, inputName2 = node.input
+            inputName3 = None
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
         
@@ -702,14 +808,16 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Assume that first input is variables, second is Matrix for MatMul, and third is bias addition
         input1 = self.varMap[inputName1]
         input2 = self.constantMap[inputName2]
-        input3 = self.constantMap[inputName3]
+        if inputName3:
+            input3 = self.constantMap[inputName3]
         
         # Transpose inputs
         if transA:
             input1 = np.transpose(input1)
         if transB:
             input2 = np.transpose(input2)
-        input3 = np.broadcast_to(input3, outShape)
+        if inputName3:
+            input3 = np.broadcast_to(input3, outShape)
         
         assert shape1[-1] == shape2[0]
         assert shape1[0] == outShape[0]
@@ -726,7 +834,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
                 # Put output variable as the last addend last
                 e.addAddend(-1, outputVariables[i][j])
-                e.setScalar(-input3[i][j]*beta)
+                if inputName3:
+                    e.setScalar(-input3[i][j]*beta)
+                else:
+                    e.setScalar(0)
                 self.addEquation(e)
     
     def matMulEquations(self, node, makeEquations):
@@ -751,10 +862,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         a = np.zeros(shape1)
         b = np.zeros(shape2)
         c = np.matmul(a, b)
-        self.shapeMap[nodeName] = c.shape
+        outshape = c.shape
+        self.shapeMap[nodeName] = outshape
         if not makeEquations:
             return
-            
+
         firstInputConstant = False; secondInputConstant = False
         if inputName1 in self.constantMap:
             input1 = self.constantMap[inputName1]
@@ -781,12 +893,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         # Create new variables
         outputVariables = self.makeNewVariables(nodeName)
-
+        
         if not firstInputConstant and not secondInputConstant:
             # bi-linear constraints
             # Generate equations
-            for i in range(shape1[0]):
-                if len(shape2)>1:
+            if len(shape2) == 2:
+                for i in range(shape1[0]):
                     for j in range(shape2[1]):
                         e = MarabouUtils.Equation()
                         for k in range(shape1[1]):
@@ -798,8 +910,24 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                         e.addAddend(-1, outputVariables[i][j])
                         e.setScalar(0.0)
                         self.addEquation(e)
-                else:
-                    assert(False)
+            elif len(shape2) == 3:
+                assert(shape1[0] == shape2[0])
+                print(shape1, shape2, outshape)
+                for l in range(shape1[0]):
+                    for i in range(shape1[1]):
+                        for j in range(shape2[2]):
+                            e = MarabouUtils.Equation()
+                            for k in range(shape1[2]):
+                                v = self.getNewVariable()
+                                self.addQuadratic(input1[l][i][k], input2[l][k][j], v)
+                                e.addAddend(1, v)
+
+                            # Put output variable as the last addend last
+                            e.addAddend(-1, outputVariables[l][i][j])
+                            e.setScalar(0.0)
+                            self.addEquation(e)
+            else:
+                assert(False)
         else:
             # Generate equations
             for i in range(shape1[0]):
@@ -951,6 +1079,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 e.addAddend(-1, outputVariables[i])
                 e.setScalar(0.0)
                 self.addEquation(e)
+            
+            self.varMap[outputName] = outputVariables.reshape(outShape)
             return
         
         # Otherwise, we are adding constants to variables.
@@ -982,7 +1112,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # If we changed one equation for every input variable, then
         # we don't need any new equations
         if numEquationsChanged == len(varInput):
-            self.varMap[nodeName] = varInput
+            self.varMap[nodeName] = copy(varInput).reshape(outShape)
         else:
             # Otherwise, assert no equations were changed, and we need to create new equations
             assert numEquationsChanged == 0
@@ -993,7 +1123,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 e.addAddend(-1, outputVariables[i])
                 e.setScalar(-constInput[i])
                 self.addEquation(e)
-    
+            self.varMap[nodeName] = copy(outputVariables).reshape(outShape)
+                
     def reluEquations(self, node, makeEquations):
         """Function to generate equations corresponding to pointwise Relu
 
