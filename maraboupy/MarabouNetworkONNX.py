@@ -912,7 +912,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                         self.addEquation(e)
             elif len(shape2) == 3:
                 assert(shape1[0] == shape2[0])
-                print(shape1, shape2, outshape)
                 for l in range(shape1[0]):
                     for i in range(shape1[1]):
                         for j in range(shape2[2]):
