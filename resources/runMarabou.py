@@ -120,6 +120,7 @@ def encode_sst_linf(network, index, epsilon, target_label):
         print("misclassify!")
         exit(0)
 
+    print(embedding)
     for x in np.array(network.inputVars).flatten():
         network.setLowerBound(x, embedding[x] - epsilon)
         network.setUpperBound(x, embedding[x] + epsilon)
