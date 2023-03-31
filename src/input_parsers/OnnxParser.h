@@ -23,6 +23,7 @@
 #include "MString.h"
 #include "InputQuery.h"
 #include "NetworkParser.h"
+#include "TensorUtils.h"
 
 #define ONNX_LOG(x, ...) LOG(GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x)
 
