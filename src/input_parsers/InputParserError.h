@@ -28,6 +28,8 @@ public:
         UNSUPPORTED_BOUND_TYPE = 3,
         NETWORK_LEVEL_REASONING_DISABLED = 4,
         HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR = 5,
+        INVALID_VARIABLE_NAME = 6,
+        INVALID_HIDDEN_VARIABLE_INDICES = 7,
     };
 
     InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )

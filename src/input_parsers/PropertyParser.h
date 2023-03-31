@@ -32,8 +32,9 @@ public:
     void parse( const String &propertyFilePath, InputQuery &inputQuery );
 
 private:
-    void processSingleLine( const String &line, InputQuery &inputQuery );
-    Equation::EquationType extractRelationSymbol( const String &token );
+    void parseEquation( const String &line, InputQuery &inputQuery );
+    Pair<double, unsigned> parseAddend ( const String &token , InputQuery &inputQuery );
+
 };
 
 #endif // __PropertyParser_h__

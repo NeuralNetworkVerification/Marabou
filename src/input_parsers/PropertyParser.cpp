@@ -18,17 +18,47 @@
 #include "InputParserError.h"
 #include "MStringf.h"
 #include "PropertyParser.h"
+#include "Pair.h"
 
-static double extractScalar( const String &token )
+
+enum VariableType {
+    Input = 0,
+    Output = 1,
+    Hidden = 2
+};
+
+static Equation::EquationType parseEquationType( const String &token )
+{
+    if ( token == ">=" )
+        return Equation::GE;
+    if ( token == "<=" )
+        return Equation::LE;
+    if ( token == "=" )
+        return Equation::EQ;
+
+    throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+}
+
+static double parseScalar( const String &token )
 {
     std::string::size_type end;
     double value = std::stod( token.ascii(), &end );
     if ( end != token.length() )
     {
-	throw InputParserError( InputParserError::UNEXPECTED_INPUT, Stringf( "%s not a scalar",
-									     token.ascii() ).ascii() );
+        String errorMessage = Stringf( "%s not a scalar", token.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, errorMessage.ascii() );
     }
     return value;
+}
+
+static double parseCoefficient ( const String &token )
+{
+    if ( token == "+" )
+        return 1;
+    else if ( token == "-" )
+        return -1;
+    else
+        return atof( token.ascii() );
 }
 
 void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQuery )
@@ -47,9 +77,11 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
         while ( true )
         {
             String line = propertyFile.readLine().trim();
-            if ( line.substring(0,2) != "//" )
+            bool isEmpty = line.length() == 0;
+            bool isComment = line.substring(0,2) == "//";
+            if ( !isEmpty && !isComment )
             {
-                processSingleLine( line, inputQuery );
+                parseEquation( line, inputQuery );
             }
         }
     }
@@ -61,17 +93,20 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
     }
 }
 
-void PropertyParser::processSingleLine( const String &line, InputQuery &inputQuery )
+void PropertyParser::parseEquation( const String &line, InputQuery &inputQuery )
 {
     List<String> tokens = line.tokenize( " " );
 
-    if ( tokens.size() < 3 )
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+    // Malformed, each line must have at least one variable, a relation and a coefficient.
+    if ( tokens.size() < 3 ) {
+        String errorMessage = Stringf( "Invalid equation '%s'", line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, errorMessage.ascii() );
+    }
 
     auto it = tokens.rbegin();
-    double scalar = extractScalar( *it );
+    double scalar = parseScalar( *it );
     ++it;
-    Equation::EquationType type = extractRelationSymbol( *it );
+    Equation::EquationType equationType = parseEquationType( *it );
     ++it;
 
     // Now extract the addends. In the special case where we only have
@@ -79,93 +114,34 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     // as an equation.
     if ( tokens.size() == 3 )
     {
-        // Special case: add as a bound
+        // Special case: add as a bound on the variable
         String token = (*it).trim();
+        Pair<double, unsigned> addend = parseAddend ( token, inputQuery );
 
-        bool inputVariable = token.contains( "x" );
-        bool outputVariable = token.contains( "y" );
-        bool hiddenVariable = token.contains( "h" );
-
-        // Make sure that we have identified precisely one kind of variable
-        unsigned variableKindSanity = 0;
-        if ( inputVariable ) ++variableKindSanity;
-        if ( outputVariable ) ++variableKindSanity;
-        if ( hiddenVariable ) ++variableKindSanity;
-
-        if ( variableKindSanity != 1 )
-            throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-        // Determine the index (in input query terms) of the variable whose
-        // bound is being set.
-
-        unsigned variable = 0;
-        List<String> subTokens;
-
-        if ( inputVariable )
+        double coefficient = addend.first();
+        // Currently don't support coefficients on bounds
+        // (see https://github.com/NeuralNetworkVerification/Marabou/issues/625)
+        if ( coefficient != 1 )
         {
-            subTokens = token.tokenize( "x" );
-
-            if ( subTokens.size() != 1 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
-
-            ASSERT( justIndex < inputQuery.getNumInputVariables() );
-            variable = inputQuery.inputVariableByIndex( justIndex );
-        }
-        else if ( outputVariable )
-        {
-            subTokens = token.tokenize( "y" );
-
-            if ( subTokens.size() != 1 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
-
-            ASSERT( justIndex < inputQuery.getNumOutputVariables() );
-            variable = inputQuery.outputVariableByIndex( justIndex );
-        }
-        else if ( hiddenVariable )
-        {
-            // These variables are of the form h_2_5
-            subTokens = token.tokenize( "_" );
-
-            if ( subTokens.size() != 3 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            auto subToken = subTokens.begin();
-            ++subToken;
-            unsigned layerIndex = atoi( subToken->ascii() );
-            ++subToken;
-            unsigned nodeIndex = atoi( subToken->ascii() );
-
-            NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
-            if ( !nlr )
-                throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED );
-
-            if ( nlr->getNumberOfLayers() < layerIndex )
-                throw InputParserError( InputParserError::HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR );
-
-            const NLR::Layer *layer = nlr->getLayer( layerIndex );
-            if ( layer->getSize() < nodeIndex || !layer->neuronHasVariable( nodeIndex ) )
-                throw InputParserError( InputParserError::HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR );
-
-            variable = layer->neuronToVariable( nodeIndex );
+            String errorMessage = Stringf( "'%s' - coefficients for bounds not supported", line.ascii() );
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT, errorMessage.ascii() );
         }
 
-        if ( type == Equation::GE )
+        unsigned variable = addend.second();
+
+        if ( equationType == Equation::GE )
         {
             if ( inputQuery.getLowerBound( variable ) < scalar )
                 inputQuery.setLowerBound( variable, scalar );
         }
-        else if ( type == Equation::LE )
+        else if ( equationType == Equation::LE )
         {
             if ( inputQuery.getUpperBound( variable ) > scalar )
                 inputQuery.setUpperBound( variable, scalar );
         }
         else
         {
-            ASSERT( type == Equation::EQ );
+            ASSERT( equationType == Equation::EQ );
 
             if ( inputQuery.getLowerBound( variable ) < scalar )
                 inputQuery.setLowerBound( variable, scalar );
@@ -175,52 +151,16 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     }
     else
     {
-        // Normal case: add as an equation
-        Equation equation( type );
+        // Normal case: add as a new equation over multiple variables
+        Equation equation( equationType );
         equation.setScalar( scalar );
 
         while ( it != tokens.rend() )
         {
             String token = (*it).trim();
-
-            bool inputVariable = token.contains( "x" );
-            bool outputVariable = token.contains( "y" );
-
-            if ( !( inputVariable ^ outputVariable ) )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            List<String> subTokens;
-            if ( inputVariable )
-                subTokens = token.tokenize( "x" );
-            else
-                subTokens = token.tokenize( "y" );
-
-            if ( subTokens.size() != 2 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
-
-            unsigned justIndex = atoi( subTokens.rbegin()->ascii() );
-            unsigned variable;
-
-            if ( inputVariable )
-            {
-                ASSERT( justIndex < inputQuery.getNumInputVariables() );
-                variable = inputQuery.inputVariableByIndex( justIndex );
-            }
-            else
-            {
-                ASSERT( justIndex < inputQuery.getNumOutputVariables() );
-                variable = inputQuery.outputVariableByIndex( justIndex );
-            }
-
-            String coefficientString = *subTokens.begin();
-            double coefficient;
-            if ( coefficientString == "+" )
-                coefficient = 1;
-            else if ( coefficientString == "-" )
-                coefficient = -1;
-            else
-                coefficient = atof( coefficientString.ascii() );
-
+            Pair<double, unsigned> addend = parseAddend ( token, inputQuery );
+            double coefficient = addend.first();
+            unsigned variable = addend.second();
             equation.addAddend( coefficient, variable );
             ++it;
         }
@@ -229,16 +169,118 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     }
 }
 
-Equation::EquationType PropertyParser::extractRelationSymbol( const String &token )
+// Returns (coefficient, variableNumber)
+Pair<double, unsigned> PropertyParser::parseAddend ( const String &token , InputQuery &inputQuery )
 {
-    if ( token == ">=" )
-        return Equation::GE;
-    if ( token == "<=" )
-        return Equation::LE;
-    if ( token == "=" )
-        return Equation::EQ;
+    String symbol;
+    VariableType variableType;
+    unsigned variableTypeCount = 0;
 
-    throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
+    if ( token.contains ("x") )
+    {
+        variableType = VariableType::Input;
+        symbol = "x";
+        ++variableTypeCount;
+    }
+
+    if ( token.contains ("y") )
+    {
+        variableType = VariableType::Output;
+        symbol = "y";
+        ++variableTypeCount;
+    }
+
+    if ( token.contains("h") )
+    {
+        variableType = VariableType::Hidden;
+        symbol = "h";
+        ++variableTypeCount;
+    }
+
+    // Make sure that we have identified precisely one kind of variable
+    if ( variableTypeCount != 1 )
+    {
+        String errorMessage = Stringf( "'%s' does not contain a valid variable name", token.ascii() );
+        throw InputParserError( InputParserError::INVALID_VARIABLE_NAME, errorMessage.ascii() );
+    }
+
+    // Extract variable and coefficient strings
+    List<String> subTokens = token.tokenize( symbol );
+    String coefficientString;
+    String variableIDString;
+    if ( subTokens.size() == 1)
+    {
+        coefficientString = "+";
+        variableIDString = *subTokens.begin();
+    }
+    else if ( subTokens.size() == 2 )
+    {
+        coefficientString = *subTokens.begin();
+        variableIDString = *subTokens.rbegin();
+    }
+    else
+    {
+        String errorMessage = Stringf( "'%s' is not a valid addend", token.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, errorMessage.ascii() );
+    }
+
+    // Parse coefficient
+    double coefficient = parseCoefficient ( coefficientString );
+
+    // Parse variable
+    unsigned variable;
+    if ( variableType == VariableType::Input )
+    {
+        unsigned justIndex = atoi( variableIDString.ascii() );
+        ASSERT( justIndex < inputQuery.getNumOutputVariables() );
+        variable = inputQuery.inputVariableByIndex( justIndex );
+    }
+    else if ( variableType == VariableType::Output )
+    {
+        unsigned justIndex = atoi( variableIDString.ascii() );
+        ASSERT( justIndex < inputQuery.getNumOutputVariables() );
+        variable = inputQuery.outputVariableByIndex( justIndex );
+    }
+    else
+    {
+        // These variables are of the form h_2_5
+        subTokens = variableIDString.tokenize( "_" );
+
+        if ( subTokens.size() != 2 )
+        {
+            String errorMessage = Stringf( "'%s' does not contain valid hidden variable indices", token.ascii() );
+            throw InputParserError( InputParserError::INVALID_HIDDEN_VARIABLE_INDICES, errorMessage.ascii() );
+        }
+
+        auto subToken = subTokens.begin();
+        unsigned layerIndex = atoi( subToken->ascii() );
+        ++subToken;
+        unsigned nodeIndex = atoi( subToken->ascii() );
+
+        NLR::NetworkLevelReasoner *nlr = inputQuery.getNetworkLevelReasoner();
+        if ( !nlr )
+        {
+            String errorMessage = Stringf( "Cannot refer to hidden variable '%s' when network level reasoning is disabled", token.ascii() );
+            throw InputParserError( InputParserError::NETWORK_LEVEL_REASONING_DISABLED, errorMessage.ascii() );
+        }
+
+        if ( nlr->getNumberOfLayers() < layerIndex )
+        {
+            String errorMessage = Stringf( "Layer index '%d' for hidden variable '%s' is invalid", layerIndex, token.ascii() );
+            throw InputParserError( InputParserError::HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR );
+        }
+
+        const NLR::Layer *layer = nlr->getLayer( layerIndex );
+        if ( layer->getSize() < nodeIndex || !layer->neuronHasVariable( nodeIndex ) )
+        {
+            String errorMessage = Stringf( "Node index '%d' for hidden variable '%s' is invalid", nodeIndex, token.ascii() );
+            throw InputParserError( InputParserError::HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR );
+        }
+
+        variable = layer->neuronToVariable( nodeIndex );
+    }
+
+    return Pair<double,unsigned>(coefficient, variable);
 }
 
 //
