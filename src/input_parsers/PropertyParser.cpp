@@ -18,7 +18,6 @@
 #include "InputParserError.h"
 #include "MStringf.h"
 #include "PropertyParser.h"
-#include "Pair.h"
 
 
 enum VariableType {
@@ -116,9 +115,9 @@ void PropertyParser::parseEquation( const String &line, InputQuery &inputQuery )
     {
         // Special case: add as a bound on the variable
         String token = (*it).trim();
-        Pair<double, unsigned> addend = parseAddend ( token, inputQuery );
+        Equation::Addend addend = parseAddend ( token, inputQuery );
 
-        double coefficient = addend.first();
+        double coefficient = addend._coefficient;
         // Currently don't support coefficients on bounds
         // (see https://github.com/NeuralNetworkVerification/Marabou/issues/625)
         if ( coefficient != 1 )
@@ -127,7 +126,7 @@ void PropertyParser::parseEquation( const String &line, InputQuery &inputQuery )
             throw InputParserError( InputParserError::UNEXPECTED_INPUT, errorMessage.ascii() );
         }
 
-        unsigned variable = addend.second();
+        unsigned variable = addend._variable;
 
         if ( equationType == Equation::GE )
         {
@@ -158,10 +157,8 @@ void PropertyParser::parseEquation( const String &line, InputQuery &inputQuery )
         while ( it != tokens.rend() )
         {
             String token = (*it).trim();
-            Pair<double, unsigned> addend = parseAddend ( token, inputQuery );
-            double coefficient = addend.first();
-            unsigned variable = addend.second();
-            equation.addAddend( coefficient, variable );
+            Equation::Addend addend = parseAddend ( token, inputQuery );
+            equation.addAddend( addend._coefficient, addend._variable );
             ++it;
         }
 
@@ -169,8 +166,7 @@ void PropertyParser::parseEquation( const String &line, InputQuery &inputQuery )
     }
 }
 
-// Returns (coefficient, variableNumber)
-Pair<double, unsigned> PropertyParser::parseAddend ( const String &token , InputQuery &inputQuery )
+Equation::Addend PropertyParser::parseAddend ( const String &token , InputQuery &inputQuery )
 {
     String symbol;
     VariableType variableType;
@@ -280,7 +276,7 @@ Pair<double, unsigned> PropertyParser::parseAddend ( const String &token , Input
         variable = layer->neuronToVariable( nodeIndex );
     }
 
-    return Pair<double,unsigned>(coefficient, variable);
+    return Equation::Addend(coefficient, variable);
 }
 
 //

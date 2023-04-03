@@ -33,7 +33,7 @@ public:
 
 private:
     void parseEquation( const String &line, InputQuery &inputQuery );
-    Pair<double, unsigned> parseAddend ( const String &token , InputQuery &inputQuery );
+    Equation::Addend parseAddend ( const String &token , InputQuery &inputQuery );
 
 };
 
