@@ -113,7 +113,7 @@ void unimplementedError( onnx::NodeProto &node )
 
 void unimplementedAttributeError ( onnx::NodeProto &node, String attributeName )
 {
-    String errorMessage = Stringf( "Onnx '%s' operation with non-default value for attribute '%s' not yet supported.", node.op_type().c_str(), attributeName ) ;
+    String errorMessage = Stringf( "Onnx '%s' operation with non-default value for attribute '%s' not yet supported.", node.op_type().c_str(), attributeName.ascii() ) ;
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() ) ;
 }
 
