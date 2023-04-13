@@ -25,6 +25,7 @@
 #include "MaxConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
+#include "RoundConstraint.h"
 #include "SignConstraint.h"
 
 InputQuery QueryLoader::loadQuery( const String &fileName )
@@ -205,6 +206,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         if ( coType == "relu" )
         {
             inputQuery.addPiecewiseLinearConstraint( new ReluConstraint( serializeConstraint ) );
+        }
+        else if ( coType == "round" )
+        {
+            inputQuery.addPiecewiseLinearConstraint( new RoundConstraint( serializeConstraint ) );
         }
         else if ( coType == "max" )
         {

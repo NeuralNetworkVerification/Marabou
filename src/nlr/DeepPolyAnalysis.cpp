@@ -20,6 +20,7 @@
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
+#include "DeepPolyRoundElement.h"
 #include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
 #include "FloatUtils.h"
@@ -205,6 +206,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
     }
     else if ( type ==  Layer::RELU )
         deepPolyElement = new DeepPolyReLUElement( layer );
+    else if ( type ==  Layer::ROUND )
+      deepPolyElement = new DeepPolyRoundElement( layer );
     else if ( type ==  Layer::SIGN )
         deepPolyElement = new DeepPolySignElement( layer );
     else if ( type ==  Layer::ABSOLUTE_VALUE )

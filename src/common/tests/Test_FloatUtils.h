@@ -93,6 +93,18 @@ public:
         float zero = 0.0;
         TS_ASSERT( FloatUtils::isInf( 5.0 / zero ) );
     }
+
+    void test_round()
+    {
+        TS_ASSERT_EQUALS( FloatUtils::round(0.5), 0 );
+        TS_ASSERT_EQUALS( FloatUtils::round(1.5), 1 );
+        TS_ASSERT_EQUALS( FloatUtils::round(1.51), 2 );
+        TS_ASSERT_EQUALS( FloatUtils::round(1.49), 1 );
+        TS_ASSERT_EQUALS( FloatUtils::round(-0.5), -1 );
+        TS_ASSERT_EQUALS( FloatUtils::round(-1.5), -2 );
+        TS_ASSERT_EQUALS( FloatUtils::round(-1.51), -2 );
+        TS_ASSERT_EQUALS( FloatUtils::round(-1.49), -1 );
+    }
 };
 
 //

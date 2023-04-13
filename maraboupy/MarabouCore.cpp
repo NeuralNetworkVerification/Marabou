@@ -40,6 +40,7 @@
 #include "PropertyParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
+#include "RoundConstraint.h"
 #include "Set.h"
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
@@ -94,6 +95,11 @@ void restoreOutputStream(int outputStream)
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addRoundConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+  PiecewiseLinearConstraint* r = new RoundConstraint(var1, var2);
+  ipq.addPiecewiseLinearConstraint(r);
 }
 
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -504,6 +510,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addRoundConstraint", &addRoundConstraint, R"pbdoc(
+        Add a Round constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to round constraint
+            var2 (int): Output variable to round constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
     m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
         Add a Sigmoid constraint to the InputQuery
 
