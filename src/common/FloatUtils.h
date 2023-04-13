@@ -108,8 +108,8 @@ public:
 
     static double round( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
-        // Assume 0.5 is round to 0
-        return gt(x - floor( x ) - 0.5, epsilon) ?  ceil(x) : floor(x);
+        // Assume 0.5 is round to 1
+        return gte(x - floor( x ), 0.5, epsilon) ?  ceil(x) : floor(x);
     }
 
     static double infinity()
