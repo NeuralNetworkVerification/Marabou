@@ -79,8 +79,12 @@ jobs:
           python -m pip install --user --upgrade pip
           python -m pip install --user --upgrade setuptools
           python -m pip install --user wheel
+          python -m pip install --user bumpver
           python -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache
           echo "/usr/lib/ccache" >> $GITHUB_PATH
+
+      - name: Test BumpVer Configuration
+        run: python -m bumpver update --dry
 
       - name: Create Build Environment
         run: cmake -E make_directory build
