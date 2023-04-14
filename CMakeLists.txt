@@ -32,6 +32,9 @@ set(DEPS_DIR "${PROJECT_SOURCE_DIR}/deps")
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
+if (NOT PYTHON_LIBRARY_OUTPUT_DIRECTORY)
+    set(PYTHON_LIBRARY_OUTPUT_DIRECTORY "${PYTHON_API_DIR}")
+endif()
 set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
@@ -140,7 +143,7 @@ ProcessorCount(CTEST_NTHREADS)
 if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
 endif()
- 
+
 # --------------- set build type ----------------------------
 set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
 
@@ -324,7 +327,7 @@ if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PRIVATE ${LIBS_INCLUDES})
 
     set_target_properties(${MARABOU_PY} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${PYTHON_API_DIR})
+        LIBRARY_OUTPUT_DIRECTORY ${PYTHON_LIBRARY_OUTPUT_DIRECTORY})
     if(NOT MSVC)
         target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS})
     endif()
