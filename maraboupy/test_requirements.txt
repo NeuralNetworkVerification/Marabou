@@ -1,6 +1,5 @@
 pytest>=7.2.1
 pytest-cov>=4.0.0
-codecov==2.1.0
 numpy==1.21.0
 tensorflow==2.10.0
 onnx==1.12.0
