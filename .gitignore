@@ -26,7 +26,7 @@ tools/boost_1_68_0
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
 
-/* CMAKE */
+# CMAKE
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -42,3 +42,10 @@ _deps
 build
 /.idea/
 cmake-build-debug/
+
+# Python
+*.egg-info/
+/dist/
+/build/
+/wheelhouse/
+.mypy_cache/
