@@ -45,8 +45,6 @@ build-frontend = "build"
 skip = [
   # 2023-04-16: pybind11 does not support PyPy
   "pp*",
-  # 2023-04-16: pybind11 2.3.0 is too old to build Python 3.11 bindings without warnings
-  "cp311-*",
   # 2023-04-16: skip building musllinux wheels
   "*musllinux*"
 ]

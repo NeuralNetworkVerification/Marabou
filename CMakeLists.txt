@@ -39,7 +39,7 @@ set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
 set(ENGINE_DIR "${SRC_DIR}/engine")
-set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
+set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.10.4")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_80_0")
 set(ONNX_DIR "${TOOLS_DIR}/onnx-1.10.2")
 set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
