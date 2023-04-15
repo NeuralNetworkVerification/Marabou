@@ -3,9 +3,8 @@ import warnings
 warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
-import pytest
-from .. import Marabou
-from .. import MarabouCore
+from maraboupy import Marabou
+from maraboupy import MarabouCore
 import numpy as np
 import os
 

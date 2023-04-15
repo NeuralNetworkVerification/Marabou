@@ -4,17 +4,17 @@ warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 import pytest
-from .. import Marabou
+from maraboupy import Marabou
 import os
 
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
 TOL = 1e-6                                 # Set tolerance for checking Marabou evaluations
 NETWORK_FOLDER = "../../resources/nnet/"   # Folder for test networks
-    
+
 def test_acas_1_1():
     """
-    Test the 1,1 experimental ACAS Xu network. 
+    Test the 1,1 experimental ACAS Xu network.
     Properties are defined in the normalized input/output spaces, which is the default behavior for Marabou.
     """
     filename =  "acasxu/ACASXU_experimental_v2a_1_1.nnet"
@@ -29,7 +29,7 @@ def test_acas_1_1():
         [0.05990158, 0.05273383, 0.10029709, 0.01883183, 0.10521622]
     ]
     network = evaluateFile(filename, testInputs, testOutputs)
-    
+
     # Make sure input bounds are defined in the normalized space
     assert abs(network.getInputMaximum(0) - 0.6798577687061284) < TOL
     assert abs(network.getInputMinimum(1) + 0.5000000551328638) < TOL
@@ -52,7 +52,7 @@ def test_acas_1_1_normInput():
         [-0.02158248, -0.01885345, -0.01892334, -0.01892597, -0.01893113],
         [0.05990158, 0.05273383, 0.10029709, 0.01883183, 0.10521622]
     ]
-    evaluateFile(filename, testInputs, testOutputs, normInput = True)     
+    evaluateFile(filename, testInputs, testOutputs, normInput = True)
 
 def test_acas_1_1_manualNorm():
     """
@@ -73,13 +73,13 @@ def test_acas_1_1_manualNorm():
         [-0.55188079, 0.46863711, 0.44250383, 0.44151988, 0.43959133],
         [29.9190734, 27.2386958, 45.02497222, 14.5610455, 46.86448056]
     ]
-    evaluateFile(filename, testInputs, testOutputs, normInput = True, denormOutput = True) 
+    evaluateFile(filename, testInputs, testOutputs, normInput = True, denormOutput = True)
 
 def test_acas_1_1_normalize():
     """
     Test the 1,1 experimental ACAS Xu network.
     By passing "normalize=true" to read_nnet, Marabou adjusts the parameters of the first and last layers of the
-      network to incorporate the normalization. 
+      network to incorporate the normalization.
     As a result, properties can be defined in the original input/output spaces without any manual normalization.
     """
     filename =  "acasxu/ACASXU_experimental_v2a_1_1.nnet"
@@ -94,7 +94,7 @@ def test_acas_1_1_normalize():
         [29.9190734, 27.2386958, 45.02497222, 14.5610455, 46.86448056]
     ]
     network = evaluateFile(filename, testInputs, testOutputs, normalize = True)
-    
+
     # Make sure input bounds are defined in original space
     assert abs(network.getInputMaximum(0) - 60760.0) < TOL
     assert abs(network.getInputMinimum(1) + 3.141593) < TOL
@@ -140,21 +140,21 @@ def evaluateFile(filename, testInputs, testOutputs, normalize = False, normInput
     Load network and evaluate testInputs with and without Marabou
     Args:
         filename (str): name of network file without path
-        
+
     """
     # Load network relative to this file's location
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
     network = Marabou.read_nnet(filename, normalize=normalize)
-    
+
     # Evaluate test points using Marabou and compare to known output
     for testInput, testOutput in zip(testInputs, testOutputs):
-        
+
         # Manually normalize input point using network's stored inputMeans and inputRanges
         if normInput:
             for i in range(len(testInput)):
                 testInput[i] = (testInput[i] - network.inputMeans[i]) / network.inputRanges[i]
         marabouEval = network.evaluateWithMarabou([testInput], options = OPT, filename = "")[0].flatten()
-        
+
         # Manually de-normalize network output using network's stored outputMean and outputRange
         if denormOutput:
             marabouEval = marabouEval*network.outputRange + network.outputMean
