@@ -197,7 +197,7 @@ if (NOT MSVC)
     if (CMAKE_BUILD_TYPE MATCHES "Release")
         set(COMPILE_FLAGS  -Wall )
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments ) #-Wno-deprecated
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations )
     else()
         set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD ) #-Wno-deprecated
     endif()

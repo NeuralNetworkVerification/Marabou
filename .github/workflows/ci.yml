@@ -9,9 +9,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest] #TODO: macos-latest
+        os: [ubuntu-latest]
         compiler: [g++, clang++]
-        build_type: [Debug, Production]
+        build_type: [Debug, Release]
+        include:
+          - os: macos-latest
+            compiler: clang++
+            build_type: Release
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.build_type }} build with ${{ matrix.compiler }} on ${{ matrix.os }}
@@ -34,6 +38,15 @@ jobs:
             cxxtest \
             protobuf-compiler \
             libprotoc-dev
+
+      - name: Install system packages
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            ccache \
+            cmake \
+            cxxtest \
+            protobuf-c
 
       - name: Install Python packages
         run: |
@@ -96,6 +109,7 @@ jobs:
         working-directory: build
 
       - name: Run regression tests
+        if: runner.os == 'Linux'
         run: ctest -L regress[0-1] -j 2
         working-directory: build
 
