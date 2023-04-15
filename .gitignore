@@ -15,14 +15,6 @@ TAGS
 *.so
 *.pyc
 /src/engine/marabou.elf
-tools/boost_1_68_0
-/tools/boost.unzipped
-/tools/boost_1_68_0.tar.gz
-/tools/pybind11-2.3.0
-/tools/protobuf*
-/tools/OpenBLAS-*/
-/tools/OpenBLASv*.tar.gz
-/tools/onnx-1.10.2
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
 
@@ -39,7 +31,18 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+/tools/boost_1_68_0
+/tools/boost.unzipped
+/tools/boost_1_68_0.tar.gz
+/tools/pybind11-2.3.0
 /tools/pybind11_2_3_0.tar.gz
+/tools/pybind11-2.10.4
+/tools/pybind11-2_10_4.tar.gz
+/tools/protobuf*
+/tools/OpenBLAS-*/
+/tools/OpenBLASv*.tar.gz
+/tools/onnx-1.10.2
+
 build
 /.idea/
 cmake-build-debug/
