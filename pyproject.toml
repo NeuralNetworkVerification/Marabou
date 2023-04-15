@@ -29,9 +29,9 @@ packages = ["maraboupy"]
 current_version = "v2023.1001"
 version_pattern = "vYYYY.BUILD[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
-commit = false
-tag = false
-push = false
+commit = true
+tag = true
+push = true
 
 [tool.bumpver.file_patterns]
 "pyproject.toml" = [
