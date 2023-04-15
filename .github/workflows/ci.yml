@@ -1,5 +1,31 @@
-on: [push, pull_request]
 name: CI
+
+on:
+  # Run CI when changes are pushed to master
+  push:
+    branches:
+      - master
+
+  # Run CI when a PR is openend or changes are pushed to the PR
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+  # Run CI every Monday at 7AM to catch bugs due to changes in the ecosystem
+  schedule:
+    #        ┌───────────── minute (0 - 59)
+    #        │ ┌───────────── hour (0 - 23)
+    #        │ │ ┌───────────── day of the month (1 - 31)
+    #        │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+    #        │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    - cron: "0 7 * * 1"
+
+  # Run CI whenever someone with the appropriate privileges requests it
+  workflow_dispatch:
 
 defaults:
   run:
