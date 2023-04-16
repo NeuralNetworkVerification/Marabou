@@ -11,6 +11,9 @@ readme = "README.md"
 license = { file = "COPYING" }
 requires-python = ">=3.7,<3.12"
 
+[project.scripts]
+Marabou = "maraboupy.MarabouMain:main"
+
 [project.optional-dependencies]
 test = [
   "pytest>=7.2.1,<8",
@@ -60,7 +63,8 @@ test-skip = [
 before-all = "yum install -y wget"
 
 [tool.cibuildwheel.macos]
-archs = ["x86_64", "universal2", "arm64"]
+# 2023-04-17: cross-compilation with cibuildwheel does not work with our CMake configuration
+archs = ["x86_64"]
 test-skip = [
   # 2023-04-15: onnxruntime does not support Python 3.11
   "cp311-*",

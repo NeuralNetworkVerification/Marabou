@@ -103,6 +103,7 @@ endif()
 
 set(PROTOBUF_LIB protobuf)
 add_library(${PROTOBUF_LIB} SHARED IMPORTED)
+set_property(TARGET ${PROTOBUF_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
 target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
 list(APPEND LIBS ${PROTOBUF_LIB})

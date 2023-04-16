@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "MarabouMain.h"
 #include "AcasParser.h"
 #include "CommonError.h"
 #include "DnCManager.h"
@@ -53,6 +54,15 @@
 #endif
 
 namespace py = pybind11;
+
+int maraboupyMain(std::vector<std::string> args){
+    int argc = args.size();
+    char ** argv = new char*[args.size()];
+    for (int index = 0; index < args.size(); ++index){
+        argv[index] = (char *) args[index].c_str();
+    }
+    return marabouMain(argc, argv);
+}
 
 int redirectOutputToFile(std::string outputFilePath){
     // Redirect standard output to a file
@@ -447,6 +457,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
         .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit)
         .def_readwrite("_produceProofs", &MarabouOptions::_produceProofs);
+    m.def("maraboupyMain", &maraboupyMain, "Run the Marabou command-line interface");
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
