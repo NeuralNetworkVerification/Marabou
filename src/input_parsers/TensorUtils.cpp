@@ -13,15 +13,14 @@
 **/
 
 #include "TensorUtils.h"
-#include "Debug.h"
 #include <math.h>
 
-TensorIndices packIndex( TensorShape shape, int flatIndex )
+TensorIndices unpackIndex( TensorShape shape, PackedTensorIndices packedIndex )
 {
-    ASSERT ( flatIndex < tensorSize( shape ) );
+    ASSERT ( packedIndex < tensorSize( shape ) );
 
     TensorIndices indices;
-    int currentIndex = flatIndex;
+    int currentIndex = packedIndex;
     for ( int i = shape.size() - 1; i >= 0; i-- )
     {
         int dimension = shape[i];
@@ -32,12 +31,12 @@ TensorIndices packIndex( TensorShape shape, int flatIndex )
     return indices;
 }
 
-int unpackIndex ( TensorShape shape, TensorIndices indices )
+PackedTensorIndices packIndex ( TensorShape shape, TensorIndices indices )
 {
     ASSERT( shape.size() == indices.size() );
 
-    int sizeSoFar = 1;
-    int index = 0;
+    uint sizeSoFar = 1;
+    uint index = 0;
     for ( size_t i = 0; i < shape.size(); i++ )
     {
         ASSERT ( indices[i] <= shape[i] );
@@ -48,10 +47,10 @@ int unpackIndex ( TensorShape shape, TensorIndices indices )
     return index;
 }
 
-int tensorSize( TensorShape shape )
+uint tensorSize( TensorShape shape )
 {
-    int size = 1;
-    for ( int dimSize : shape )
+    uint size = 1;
+    for ( uint dimSize : shape )
     {
         size *= dimSize;
     }
@@ -86,7 +85,11 @@ TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape s
     return output;
 }
 
-TensorIndices broadcastIndex ( TensorShape currentShape, TensorIndices broadcastIndices, TensorShape broadcastShape )
+/**
+ * @brief Broadcasts the provided indices into the current tensor shape to indices into
+ * the desired broadcast shape.
+ */
+TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastShape, TensorIndices broadcastIndices )
 {
     ASSERT ( broadcastIndices.size() == broadcastShape.size() );
 
@@ -148,4 +151,14 @@ Padding calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool 
             return Padding ( smallerPad, biggerPad );
         }
     }
+}
+
+Permutation reversePermutation( uint size )
+{
+    Permutation result;
+    for ( uint i = size - 1; i-- > 0; )
+    {
+        result.append(i);
+    }
+    return result;
 }
