@@ -19,6 +19,7 @@
  **   rather than passing references to onnx::NodeProto as one might expect.
  **   Likewise, this is why we store the shape data in a separate data structure
  **   rather than simply retrieving it when needed.
+ **   - Node names are not unique, and do not necessarily even exist.
 **/
 
 #include "OnnxParser.h"
@@ -54,7 +55,7 @@ OnnxParser::OnnxParser( const String &path )
     model.ParseFromArray( buffer.data(), size );
     _network = model.graph();
 
-    initializeMaps();
+    initializeConstantMap();
 }
 /**
  * @brief Generates the variables for a query over the whole network.
@@ -146,15 +147,24 @@ TensorShape shapeOfInput( onnx::ValueInfoProto &input )
     for ( auto dim : input.type().tensor_type().shape().dim() )
     {
         int size = dim.dim_value();
-        if ( size <= 0 )
+        if ( size < 0 )
         {
             String errorMessage = Stringf( "Found input tensor in ONNX file with invalid size '%d'", size );
             throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
         }
-        // This is copied from the Python code, but it feels like an
-        // error should be thrown if the size is non-positive.
-        int adjustedSize = size > 0 ? size : 1;
-        result.append( adjustedSize );
+        else if ( size == 0 )
+        {
+            // A size of `0` represents an unknown size. The most likely case is
+            // that this is the batch size which is unspecified in most models.
+            // Under this assumption the correct thing to do is to pretend the
+            // batch size is 1 as verification properties refer to single values
+            // rather than batches.
+            result.append( 1 );
+        }
+        else
+        {
+            result.append( size );
+        }
     }
     return result;
 }
@@ -327,49 +337,51 @@ Vector<int> getIntsAttribute( onnx::NodeProto& node, String name, Vector<int>& d
  *******************/
 
 /**
- * @brief Initialises the mapping from node names to nodes and
+ * @brief Initialises the mapping from initializer names to values and
  * checks the invariant that there are no duplicate names.
  */
-void OnnxParser::initializeMaps()
+void OnnxParser::initializeConstantMap()
 {
-    Set<std::string> names;
-    for ( const onnx::NodeProto& node : _network.node() )
-    {
-        const std::string name = node.name();
-        if ( names.exists( name) )
-        {
-            String errorMessage = "Nodes in Onnx network must have a unique name";
-            throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
-        }
-        else
-        {
-            _nodeMap.insert( name, &node );
-            names.insert( name );
-        }
-    }
-
     for ( const onnx::TensorProto& initializer : _network.initializer() )
     {
         const std::string name = initializer.name();
-        if ( names.exists( name ) )
+        if ( _constantMap.exists( name ) )
         {
-            String errorMessage = "Nodes in Onnx network must have a unique name";
+            String errorMessage = Stringf( "Initializers in Onnx network must have a unique name but found duplicate name '%s'", name.c_str() );
             throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
         }
         else
         {
             _constantMap.insert( name, &initializer );
-            names.insert( name );
         }
     }
 }
 
 void OnnxParser::validateUserInputNames( Set<String>& inputNames )
 {
+    // Collate all input nodes
+    Set<String> allInputNames;
+    for ( const onnx::ValueInfoProto& node : _network.input() )
+    {
+        const std::string name = node.name();
+        if ( _constantMap.exists( name ))
+            continue;
+
+        if ( allInputNames.exists( name ) )
+        {
+            String errorMessage = Stringf( "Input nodes in Onnx network must have a unique name but found duplicate name '%s'", name.c_str() );
+            throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+        }
+        else
+        {
+            allInputNames.insert( name );
+        }
+    }
+
     // Validate the provided inputs
     for ( String inputName : inputNames )
     {
-        if ( !_nodeMap.exists( inputName ) )
+        if ( !allInputNames.exists( inputName ) )
         {
             String errorMessage = Stringf( "Input %s not found in graph!", inputName.ascii() );
             throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
