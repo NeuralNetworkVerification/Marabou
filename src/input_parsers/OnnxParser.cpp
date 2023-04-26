@@ -147,15 +147,24 @@ TensorShape shapeOfInput( onnx::ValueInfoProto &input )
     for ( auto dim : input.type().tensor_type().shape().dim() )
     {
         int size = dim.dim_value();
-        if ( size <= 0 )
+        if ( size < 0 )
         {
             String errorMessage = Stringf( "Found input tensor in ONNX file with invalid size '%d'", size );
             throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
         }
-        // This is copied from the Python code, but it feels like an
-        // error should be thrown if the size is non-positive.
-        int adjustedSize = size > 0 ? size : 1;
-        result.append( adjustedSize );
+        else if ( size == 0 )
+        {
+            // A size of `0` represents an unknown size. The most likely case is
+            // that this is the batch size which is unspecified in most models.
+            // Under this assumption the correct thing to do is to pretend the
+            // batch size is 1 as verification properties refer to single values
+            // rather than batches.
+            result.append( 1 );
+        }
+        else
+        {
+            result.append( size );
+        }
     }
     return result;
 }
