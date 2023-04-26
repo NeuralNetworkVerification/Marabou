@@ -23,7 +23,7 @@
 class DnCMarabou
 {
 public:
-    DnCMarabou();
+    DnCMarabou( InputQuery& inputQuery );
 
     /*
       Entry point of this class
@@ -31,8 +31,8 @@ public:
     void run();
 
 private:
+    InputQuery &_inputQuery;
     std::unique_ptr<DnCManager> _dncManager;
-    InputQuery _inputQuery;
     /*
       Display the results
     */

@@ -17,6 +17,9 @@
 #include "Error.h"
 #include "Marabou.h"
 #include "Options.h"
+#include "File.h"
+#include "QueryLoader.h"
+#include "PropertyParser.h"
 
 #ifdef ENABLE_OPENBLAS
 #include "cblas.h"
@@ -57,6 +60,88 @@ void printHelpMessage()
     Options::get()->printHelpMessage();
 }
 
+InputQuery prepareInputQueryFromQueryFile( String inputQueryFilePath )
+{
+    /*
+        Step 1: extract the query
+    */
+    if ( !File::exists( inputQueryFilePath ) )
+    {
+        printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
+        throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
+    }
+
+    printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
+    InputQuery inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
+    inputQuery.constructNetworkLevelReasoner();
+    return inputQuery;
+}
+
+/*
+    Extract the options and input files (network and property), and
+    use them to generate the input query
+*/
+InputQuery prepareInputQueryFromNetworkAndPropertyFile()
+{
+    // TODO it would be good to time this and report the time (e.g. as in Marabou::run())
+
+    InputQuery inputQuery = InputQuery();
+
+    /*
+        Step 1: extract the network
+    */
+    String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
+
+    if ( !File::exists( networkFilePath ) )
+    {
+        printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
+        throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
+    }
+    printf( "Network: %s\n", networkFilePath.ascii() );
+
+    if ( ((String) networkFilePath).endsWith( ".onnx" ) )
+    {
+        OnnxParser* onnxParser = new OnnxParser( networkFilePath );
+        onnxParser->generateQuery( inputQuery );
+        delete onnxParser;
+        onnxParser = NULL;
+    }
+    else
+    {
+        AcasParser* acasParser = new AcasParser( networkFilePath );
+        acasParser->generateQuery( inputQuery );
+        delete acasParser;
+        acasParser = NULL;
+    }
+
+    inputQuery.constructNetworkLevelReasoner();
+
+    /*
+        Step 2: extract the property in question
+    */
+    String propertyFilePath = Options::get()->getString( Options::PROPERTY_FILE_PATH );
+    if ( propertyFilePath != "" )
+    {
+        printf( "Property: %s\n", propertyFilePath.ascii() );
+        PropertyParser().parse( propertyFilePath, inputQuery );
+    }
+    else
+        printf( "Property: None\n" );
+
+    printf( "\n" );
+
+    return inputQuery;
+}
+
+InputQuery prepareInputQuery()
+{
+    String inputQueryFilePath = Options::get()->getString( Options::INPUT_QUERY_FILE_PATH );
+    if ( inputQueryFilePath.length() > 0 )
+        return prepareInputQueryFromQueryFile( inputQueryFilePath );
+
+    return prepareInputQueryFromNetworkAndPropertyFile();
+}
+
 int main( int argc, char **argv )
 {
     try
@@ -95,18 +180,29 @@ int main( int argc, char **argv )
             printf( "Proof production is not yet supported with MILP solvers, turning SOLVE_WITH_MILP off.\n" );
         }
 
+        // TODO it would be good to pass a reference to the InputQuery object directly, rather
+        // than returning it here and incurring the overhead of the copy constructor.
+        InputQuery inputQuery = prepareInputQuery();
+        String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
+        if ( queryDumpFilePath.length() > 0 )
+        {
+            inputQuery.saveQuery( queryDumpFilePath );
+            printf( "\nInput query successfully dumped to file\n" );
+            exit( 0 );
+        }
+
         if ( options->getBool( Options::DNC_MODE ) ||
              ( !options->getBool( Options::NO_PARALLEL_DEEPSOI ) &&
                !options->getBool( Options::SOLVE_WITH_MILP ) &&
                options->getInt( Options::NUM_WORKERS ) > 1 ) )
-            DnCMarabou().run();
+            DnCMarabou( inputQuery ).run();
         else
-	{
-#ifdef ENABLE_OPENBLAS
-	    openblas_set_num_threads( options->getInt( Options::NUM_BLAS_THREADS ) );
-#endif
-            Marabou().run();
-	}
+	    {
+            #ifdef ENABLE_OPENBLAS
+                    openblas_set_num_threads( options->getInt( Options::NUM_BLAS_THREADS ) );
+            #endif
+            Marabou( inputQuery ).run();
+	    }
     }
     catch ( const Error &e )
     {

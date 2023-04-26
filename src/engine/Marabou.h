@@ -24,7 +24,7 @@
 class Marabou
 {
 public:
-    Marabou();
+    Marabou( InputQuery& inputQuery );
     ~Marabou();
 
     /*
@@ -35,11 +35,6 @@ public:
 private:
     InputQuery _inputQuery;
 
-    /*
-      Extract the options and input files (network and property), and
-      use them to generate the input query
-    */
-    void prepareInputQuery();
     void extractSplittingThreshold();
 
     /*
@@ -61,16 +56,6 @@ private:
       Import assignment for debugging as per Options
      */
     void importDebuggingSolution();
-
-    /*
-      ACAS network parser
-    */
-    AcasParser *_acasParser;
-
-    /*
-      ONNX network parser
-    */
-    OnnxParser *_onnxParser;
 
     /*
       The solver
