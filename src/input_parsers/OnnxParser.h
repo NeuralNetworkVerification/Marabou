@@ -42,7 +42,6 @@ private:
     Set<String> _processedNodes;
     unsigned _numberOfFoundInputs;
 
-    Map<String, const onnx::NodeProto*> _nodeMap;
     Map<String, const onnx::TensorProto*> _constantMap;
 
     Map<String, TensorShape> _shapeMap;
@@ -51,7 +50,7 @@ private:
     void readNetwork( const String& path );
     Set<String> readInputNames();
     String readOutputName();
-    void initializeMaps();
+    void initializeConstantMap();
     void initializeShapeMap();
     void validateUserInputNames( Set<String>& inputNames) ;
     void validateUserOutputNames( String& outputName );
