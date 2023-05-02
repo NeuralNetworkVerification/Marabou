@@ -410,21 +410,16 @@ std::tuple<std::string, std::map<int, double>, Statistics>
     return std::make_tuple(resultString, ret, retStats);
 }
 
-// New func here
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
-std::tuple<std::string, std::map<int, double>, Statistics>
+std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
     calcOutputBounds(InputQuery &inputQuery, MarabouOptions &options,
           std::string redirect="")
-    {
-// std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
-//     calcOutputBounds(InputQuery &inputQuery, MarabouOptions &options,
-//           std::string redirect="")
-// {
+{
     // Arguments: InputQuery object, filename to redirect output
     // Returns: map from variable number to value
     std::string resultString = "";
-    std::map<int, double> ret;
+    std::map<int, std::tuple<double, double>> ret;
     Statistics retStats;
     int output=-1;
     if(redirect.length()>0)
@@ -436,62 +431,19 @@ std::tuple<std::string, std::map<int, double>, Statistics>
 
         Engine engine;
 
-        printf("TG: before calcOutputBounds\n");
         if(!engine.calcOutputBounds(inputQuery)) {
-            printf("TG: calcOutputBounds done\n");
             std::string exitCode = exitCodeToString(engine.getExitCode());
-            printf("TG: exitCode: %s \n", exitCode.c_str());
             return std::make_tuple(exitCode, ret, *(engine.getStatistics()));
         }
 
         // Extract outputbounds
-        printf("TG before extractBounds\n");
         engine.extractBounds(inputQuery);
-        printf("TG after extractOutputBounds\n");
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i) {
-            // ret[i] = inputQuery.getUpperBounds()[i];
-            printf("TG: i = %d: lb = %f, ub = %f \n", i, inputQuery.getLowerBounds()[i], inputQuery.getUpperBounds()[i]);
+            // set lower bound and upper bound in tuple
+            ret[i] = std::make_tuple(inputQuery.getLowerBounds()[i], inputQuery.getUpperBounds()[i]);
+            ret[i] = inputQuery.getUpperBounds()[i];
         }
 
-        // if ( dnc )
-        // {
-        //     auto dncManager = std::unique_ptr<DnCManager>( new DnCManager( &inputQuery ) );
-
-        //     dncManager->solve();
-        //     resultString = dncManager->getResultString().ascii();
-        //     switch ( dncManager->getExitCode() )
-        //     {
-        //     case DnCManager::SAT:
-        //     {
-        //         retStats = Statistics();
-        //         dncManager->getSolution( ret, inputQuery );
-        //         break;
-        //     }
-        //     case DnCManager::TIMEOUT:
-        //     {
-        //         retStats = Statistics();
-        //         retStats.timeout();
-        //         return std::make_tuple( resultString, ret, retStats );
-        //     }
-        //     default:
-        //         return std::make_tuple( resultString, ret, Statistics() ); // TODO: meaningful DnCStatistics
-        //     }
-        // } else
-        // {
-        //     unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
-        //     engine.solve(timeoutInSeconds);
-
-        //     resultString = exitCodeToString(engine.getExitCode());
-
-        //     if (engine.getExitCode() == Engine::SAT)
-        //     {
-        //         engine.extractSolution(inputQuery);
-        //         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i)
-        //             ret[i] = inputQuery.getSolutionValue(i);
-        //     }
-
-        //     retStats = *(engine.getStatistics());
-        // }
     }
     catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
