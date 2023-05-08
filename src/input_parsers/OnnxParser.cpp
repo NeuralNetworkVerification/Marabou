@@ -130,7 +130,7 @@ void unsupportedError( onnx::NodeProto &node )
 
 void unexpectedNegativeValue (int value, String location)
 {
-    String errorMessage = Stringf( "Found unexpected negative value '%d' for '%s'", value, location );
+    String errorMessage = Stringf( "Found unexpected negative value '%d' for '%s'", value, location.ascii() );
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
