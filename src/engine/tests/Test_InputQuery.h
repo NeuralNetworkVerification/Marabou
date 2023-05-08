@@ -50,6 +50,18 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
+    void test_add_addend()
+    {
+        Equation eq;
+        eq.addAddend(1.5, 1);
+        eq.addAddend(1.5, 1);
+        eq.addAddend(-1, 2);
+
+        TS_ASSERT_EQUALS(eq.getCoefficient(1), 3);
+        TS_ASSERT_EQUALS(eq.getCoefficient(2), -1);
+    }
+
+
     void test_lower_bounds()
     {
         InputQuery inputQuery;
