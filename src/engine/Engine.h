@@ -102,6 +102,16 @@ public:
     void exportInputQueryWithError( String errorMessage );
 
     /*
+      Methods for calculating output bounds.
+    */
+    bool calcOutputBounds( InputQuery &inputQuery );
+
+    /*
+      Method for extracting the bounds.
+     */
+    void extractBounds( InputQuery &inputQuery );
+
+    /*
       If the query is feasiable and has been successfully solved, this
       method can be used to extract the solution.
      */

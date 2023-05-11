@@ -441,7 +441,6 @@ std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i) {
             // set lower bound and upper bound in tuple
             ret[i] = std::make_tuple(inputQuery.getLowerBounds()[i], inputQuery.getUpperBounds()[i]);
-            ret[i] = inputQuery.getUpperBounds()[i];
         }
 
     }

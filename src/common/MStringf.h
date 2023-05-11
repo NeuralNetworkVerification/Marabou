@@ -35,7 +35,7 @@ public:
 
         char buffer[MAX_STRING_LENGTH];
 
-        vsprintf( buffer, format, argList );
+        vsnprintf( buffer, MAX_STRING_LENGTH, format, argList );
 
         va_end( argList );
 

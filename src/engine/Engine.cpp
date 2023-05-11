@@ -884,6 +884,71 @@ bool Engine::processInputQuery( InputQuery &inputQuery )
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
+bool Engine::calcOutputBounds( InputQuery &inputQuery )
+{
+    ENGINE_LOG( "calcOutputBounds starting\n" );
+    struct timespec start = TimeUtils::sampleMicro();
+
+    try
+    {
+        informConstraintsOfInitialBounds( inputQuery );
+        invokePreprocessor( inputQuery, true );
+        
+        if ( _verbosity > 0 )
+            printInputBounds( inputQuery );
+
+        if( _verbosity > 1 ) {
+          printInputBounds( inputQuery );
+        }
+
+        initializeNetworkLevelReasoning();
+
+        performSymbolicBoundTightening( &(*_preprocessedQuery) );
+        performSimulation();
+        performMILPSolverBoundedTightening( &(*_preprocessedQuery) );
+
+        unsigned n = _preprocessedQuery->getNumberOfVariables();
+        unsigned m = _preprocessedQuery->getEquations().size();
+        // Only use BoundManager to store the bounds.
+        _boundManager.initialize( n );
+        _tableau->setDimensions( m, n );
+        initializeBoundsAndConstraintWatchersInTableau( n );
+
+        for ( const auto &constraint : _plConstraints )
+        {
+            constraint->registerTableau( _tableau );
+        }
+
+        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+            _networkLevelReasoner->dumpBounds();
+
+
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.setLongAttribute( Statistics::CALCULATE_OUTPUT_BOUNDS_TIME_MICRO,
+                                      TimeUtils::timePassed( start, end ) );
+        if ( !_tableau->allBoundsValid() )
+        {
+            // Some variable bounds are invalid, so the query is unsat
+            throw InfeasibleQueryException();
+        }
+    }
+    catch ( const InfeasibleQueryException & )
+    {
+        ENGINE_LOG( "calcOutputBounds done\n" );
+
+        struct timespec end = TimeUtils::sampleMicro();
+        _statistics.setLongAttribute( Statistics::CALCULATE_OUTPUT_BOUNDS_TIME_MICRO,
+                                      TimeUtils::timePassed( start, end ) );
+
+        _exitCode = Engine::UNSAT;
+        return false;
+    }
+
+    ENGINE_LOG( "calcOutputBounds done\n" );
+
+    return true;
+}
+
 void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
 {
     for ( const auto &plConstraint : inputQuery.getPiecewiseLinearConstraints() )
@@ -3589,4 +3654,38 @@ void Engine::setBoundExplainerContent( BoundExplainer *boundExplainer )
 void Engine::propagateBoundManagerTightenings()
 {
     _boundManager.propagateTightenings();
+}
+
+void Engine::extractBounds( InputQuery &inputQuery ) // TG: also add consisntency check between lb and ub, then throw InfeasbileError
+{
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+    {
+        if ( _preprocessingEnabled )
+        {
+            // Has the variable been merged into another?
+            unsigned variable = i;
+            while ( _preprocessor.variableIsMerged( variable ) )
+                variable = _preprocessor.getMergedIndex( variable );
+
+            // Fixed variables are easy: return the value they've been fixed to.
+            if ( _preprocessor.variableIsFixed( variable ) )
+            {
+                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                continue;
+            }
+
+            // We know which variable to look for, but it may have been assigned
+            // a new index, due to variable elimination
+            variable = _preprocessor.getNewIndex( variable );
+
+            inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
+            inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
+        }
+        else
+        {
+            inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
+            inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
+        }
+    }
 }
