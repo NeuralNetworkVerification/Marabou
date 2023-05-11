@@ -3656,7 +3656,7 @@ void Engine::propagateBoundManagerTightenings()
     _boundManager.propagateTightenings();
 }
 
-void Engine::extractBounds( InputQuery &inputQuery ) // TG: also add consisntency check between lb and ub, then throw InfeasbileError
+void Engine::extractBounds( InputQuery &inputQuery )
 {
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {

@@ -526,14 +526,14 @@ PYBIND11_MODULE(MarabouCore, m) {
         Takes in a description of the InputQuery and returns the solution
 
         Args:
-            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query which output bounds are calculated
             options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
             redirect (str, optional): Filepath to direct standard output, defaults to ""
 
         Returns:
             (tuple): tuple containing:
-                - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
-                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - exitCode (str): A string representing the exit code. Only unsat can be returned
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for output variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
