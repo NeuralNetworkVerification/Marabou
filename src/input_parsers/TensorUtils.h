@@ -67,7 +67,7 @@ Vector<T> transposeVector ( Vector<T> values, Permutation permutation )
 }
 
 template <typename T>
-Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation permutation )
+Vector<T> __attribute__((optimize("O0"))) transposeTensor( Vector<T> tensor, TensorShape shape, Permutation permutation )
 {
     // NOTE this implementation is *very* inefficient. Eventually we might want to
     // switch to a similar implementation as NumPy arrays with internal strides etc.
@@ -78,8 +78,8 @@ Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation perm
     {
         TensorIndices outputIndex = unpackIndex( transposedShape, rawOutputIndex );
         TensorIndices inputIndex = transposeVector( outputIndex, permutation );
-        PackedTensorIndices rawInputIndex = packIndex( shape, inputIndex );
-        result.append( tensor[rawInputIndex] );
+        T value = tensorLookup( tensor, shape, inputIndex );
+        result.append( value );
     }
     return result;
 }

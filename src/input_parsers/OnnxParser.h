@@ -32,8 +32,10 @@ class OnnxParser : public NetworkParser
 {
 public:
     OnnxParser( const String& path );
+
     void generateQuery( InputQuery &inputQuery );
     void generatePartialQuery( InputQuery &inputQuery , Set<String> &inputNames, String &outputName );
+
 
 private:
 

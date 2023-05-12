@@ -56,6 +56,7 @@ OnnxParser::OnnxParser( const String &path )
     model.ParseFromArray( buffer.data(), size );
     _network = model.graph();
 }
+
 /**
  * @brief Generates the variables for a query over the whole network.
  *
@@ -615,6 +616,7 @@ void OnnxParser::processGraph( Set<String> &inputNames, String &outputName, Inpu
 {
     _inputNames = inputNames;
     _outputName = outputName;
+    _numberOfFoundInputs = 0;
 
     initializeShapeAndConstantMaps();
     processNode( outputName, true );
@@ -955,7 +957,18 @@ void OnnxParser::batchNormEquations( onnx::NodeProto& node, bool makeEquations )
 {
     String outputNodeName = node.output()[0];
     String inputNodeName = node.input()[0];
-    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+
+    TensorShape inputShape = _shapeMap[inputNodeName];
+    ASSERT( inputShape.size() >= 2 );
+
+    uint batchSize = inputShape.get(0);
+    uint batchLength = tensorSize( inputShape ) / batchSize;
+    uint numberOfChannels = inputShape.get(1);
+    uint channelLength = batchLength / numberOfChannels;
+
+
+    TensorShape outputShape = inputShape;
+    _shapeMap[outputNodeName] = outputShape;
 
     if ( !makeEquations )
         return;
@@ -971,17 +984,29 @@ void OnnxParser::batchNormEquations( onnx::NodeProto& node, bool makeEquations )
     Vector<double> inputMeans = _constantFloatTensors[inputMeansName];
     Vector<double> inputVariances = _constantFloatTensors[inputVariancesName];
 
+    ASSERT ( scales.size() == numberOfChannels );
+    ASSERT ( biases.size() == numberOfChannels );
+    ASSERT ( inputMeans.size() == numberOfChannels );
+    ASSERT ( inputVariances.size() == numberOfChannels );
+
     // Get variables
     Vector<Variable> inputVars = _varMap[inputNodeName];
     Vector<Variable> outputVars = makeNodeVariables( outputNodeName, false );
-    ASSERT ( inputVars.size() == outputVars.size() );
+    ASSERT ( inputVars.size() == tensorSize(inputShape) );
+    ASSERT ( outputVars.size() == tensorSize(outputShape) );
 
-    for ( uint i = 0; inputVars.size(); i++ )
+    for ( uint i = 0; i < inputVars.size(); i++ )
     {
+        uint channel = (i % batchLength) / channelLength;
+        double scale = scales[channel];
+        double bias = biases[channel];
+        double inputMean = inputMeans[channel];
+        double inputVariance = inputVariances[channel];
+
         Equation e = Equation();
         e.addAddend( -1, outputVars[i] );
-        e.addAddend( 1 / sqrt( inputVariances[i] + epsilon ) * scales[i], inputVars[i] );
-        e.setScalar( inputMeans[i] / sqrt( inputVariances[i] + epsilon ) * scales[i] - biases[i] );
+        e.addAddend( 1 / sqrt( inputVariance + epsilon ) * scale, inputVars[i] );
+        e.setScalar( inputMean / sqrt( inputVariance + epsilon ) * scale - bias );
         addEquation( e );
     }
 }
@@ -1302,11 +1327,11 @@ void OnnxParser::gemmEquations( onnx::NodeProto& node, bool makeEquations )
     // Get inputs
     String input1NodeName = node.input()[0];
     String input2NodeName = node.input()[1];
-    String input3NodeName = node.input()[2];
+    String biasNodeName = node.input()[2];
 
     TensorShape input1Shape = _shapeMap[input1NodeName];
     TensorShape input2Shape = _shapeMap[input2NodeName];
-    TensorShape input3Shape = _shapeMap[input3NodeName];
+    TensorShape biasShape = _shapeMap[biasNodeName];
 
     ASSERT ( input1Shape.size() == 2 );
     ASSERT ( input2Shape.size() == 2 );
@@ -1320,7 +1345,7 @@ void OnnxParser::gemmEquations( onnx::NodeProto& node, bool makeEquations )
     TensorShape finalInput1Shape = transA != 0 ? transposeVector( input1Shape, reversePerm ) : input1Shape;
     TensorShape finalInput2Shape = transB != 0 ? transposeVector( input2Shape, reversePerm ) : input2Shape;
 
-    ASSERT( finalInput1Shape.last() == finalInput2Shape.first() );
+    ASSERT( finalInput1Shape[1] == finalInput2Shape[0] );
     TensorShape outputShape = {finalInput1Shape[0], finalInput2Shape[1]};
     _shapeMap[outputNodeName] = outputShape;
 
@@ -1333,7 +1358,7 @@ void OnnxParser::gemmEquations( onnx::NodeProto& node, bool makeEquations )
     // Assume that first input is variables, second is Matrix for MatMul, and third is bias addition
     Vector<Variable> inputVariables = _varMap[input1NodeName];
     Vector<double> matrix = _constantFloatTensors[input2NodeName];
-    Vector<double> biases = _constantFloatTensors[input3NodeName];
+    Vector<double> biases = _constantFloatTensors[biasNodeName];
 
     // Transpose inputs
     if ( transA != 0 )
@@ -1361,13 +1386,13 @@ void OnnxParser::gemmEquations( onnx::NodeProto& node, bool makeEquations )
                 e.addAddend(coefficient, inputVariable);
             }
             // Set the bias
-            TensorIndices biasIndices = broadcastIndex( input3Shape, outputShape, {i, j});
-            double bias = beta * tensorLookup( biases, outputShape, biasIndices);
+            TensorIndices biasIndices = broadcastIndex( biasShape, outputShape, {i, j});
+            double bias = beta * tensorLookup( biases, biasShape, biasIndices);
             e.setScalar(-bias);
 
             // Put output variable as the last addend
             Variable outputVariable = tensorLookup( outputVariables, outputShape, {i, j} );
-            e.addAddend( 1, outputVariable );
+            e.addAddend( -1, outputVariable );
             addEquation( e );
         }
     }
@@ -1690,11 +1715,10 @@ void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
     // Generate equations
     for ( uint i = 0; i < inputVars.size(); i++ )
     {
-        addSigmoid( inputVars[i], outputVars[i] );
-    }
-    for ( Variable v : outputVars )
-    {
-        setLowerBound( v, 0.0 );
-        setUpperBound( v, 1.0 );
+        Variable inputVar = inputVars[i];
+        Variable outputVar = outputVars[i];
+        addSigmoid( inputVar, outputVar );
+        //setLowerBound( outputVar, 0.0 );
+        setUpperBound( outputVar, 1.0 );
     }
 }

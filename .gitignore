@@ -22,7 +22,7 @@ tools/boost_1_68_0
 /tools/protobuf*
 /tools/OpenBLAS-*/
 /tools/OpenBLASv*.tar.gz
-/tools/onnx-1.10.2
+/tools/onnx-*/
 /cpp_interface_example/example.elf
 /src/input_parsers/mps_example/mps.elf
 

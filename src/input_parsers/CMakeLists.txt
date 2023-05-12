@@ -24,17 +24,18 @@ endif()
 set (PARSER_TESTS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 
 macro(add_parser_unit_test name)
-    set(USE_MOCK_COMMON FALSE)
-    set(USE_MOCK_ENGINE FALSE)
+    set(USE_REAL_COMMON TRUE)
+    set(USE_REAL_ENGINE TRUE)
     marabou_add_test(
         ${PARSER_TESTS_DIR}/Test_${name}
         parser
-        USE_MOCK_COMMON
-        USE_MOCK_ENGINE "unit"
+        USE_REAL_COMMON
+        USE_REAL_ENGINE
+        "unit"
     )
 endmacro()
 
-#add_parser_unit_test(OnnxParser)
+add_parser_unit_test(OnnxParser)
 
 ########################
 ## Parser executables ##

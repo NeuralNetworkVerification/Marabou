@@ -37,7 +37,7 @@ PackedTensorIndices packIndex ( TensorShape shape, TensorIndices indices )
 
     uint sizeSoFar = 1;
     uint index = 0;
-    for ( size_t i = 0; i < shape.size(); i++ )
+    for ( uint i = shape.size(); i-- > 0; )
     {
         ASSERT ( indices[i] <= shape[i] );
         index += sizeSoFar*indices[i];
@@ -86,8 +86,8 @@ TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape s
 }
 
 /**
- * @brief Broadcasts the provided indices into the current tensor shape to indices into
- * the desired broadcast shape.
+ * @brief Broadcasts the provided indices into those into the current tensor shape
+ * from indices in the desired broadcast shape.
  */
 TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastShape, TensorIndices broadcastIndices )
 {
