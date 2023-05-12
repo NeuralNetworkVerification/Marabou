@@ -67,7 +67,7 @@ Vector<T> transposeVector ( Vector<T> values, Permutation permutation )
 }
 
 template <typename T>
-Vector<T> __attribute__((optimize("O0"))) transposeTensor( Vector<T> tensor, TensorShape shape, Permutation permutation )
+Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation permutation )
 {
     // NOTE this implementation is *very* inefficient. Eventually we might want to
     // switch to a similar implementation as NumPy arrays with internal strides etc.
