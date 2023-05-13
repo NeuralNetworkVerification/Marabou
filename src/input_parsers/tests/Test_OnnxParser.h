@@ -30,7 +30,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             // Extract an input query from the network
             InputQuery inputQuery;
 
-            String networkPath = Stringf("%s/%s.onnx", "/home/matthew/Code/AISEC/Marabou/resources/onnx/layer-zoo", name.ascii());
+            String networkPath = Stringf("%s/%s.onnx", RESOURCES_DIR "/onnx/layer-zoo", name.ascii());
             OnnxParser onnxParser ( networkPath );
             TS_ASSERT_THROWS_NOTHING( onnxParser.generateQuery( inputQuery ) );
 
