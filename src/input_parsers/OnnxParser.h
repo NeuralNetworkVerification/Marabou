@@ -23,6 +23,7 @@
 #include "MString.h"
 #include "InputQuery.h"
 #include "NetworkParser.h"
+#include "TensorUtils.h"
 
 #define ONNX_LOG(x, ...) LOG(GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x)
 
@@ -31,27 +32,34 @@ class OnnxParser : public NetworkParser
 {
 public:
     OnnxParser( const String& path );
+
     void generateQuery( InputQuery &inputQuery );
     void generatePartialQuery( InputQuery &inputQuery , Set<String> &inputNames, String &outputName );
 
+
 private:
+
+    // Settings //
 
     onnx::GraphProto _network;
     Set<String> _inputNames;
     String _outputName;
-    Set<String> _processedNodes;
-    unsigned _numberOfFoundInputs;
 
-    Map<String, const onnx::TensorProto*> _constantMap;
+    // State //
 
     Map<String, TensorShape> _shapeMap;
     Map<String, Vector<Variable>> _varMap;
+    Map<String, const Vector<uint>> _constantIntTensors;
+    Map<String, const Vector<double>> _constantFloatTensors;
+    Set<String> _processedNodes;
+    unsigned _numberOfFoundInputs;
+
+    // Methods //
 
     void readNetwork( const String& path );
     Set<String> readInputNames();
     String readOutputName();
-    void initializeConstantMap();
-    void initializeShapeMap();
+    void initializeShapeAndConstantMaps();
     void validateUserInputNames( Set<String>& inputNames) ;
     void validateUserOutputNames( String& outputName );
     void validateAllInputsAndOutputsFound();
@@ -63,8 +71,9 @@ private:
     List<onnx::NodeProto> getNodesWithOutput( String& nodeName );
     Vector<Variable> makeNodeVariables ( String& nodeName, bool isInput );
 
-    Vector<double> getTensorFloatValues( const onnx::TensorProto& tensor );
-    Vector<int> getTensorIntValues( const onnx::TensorProto& tensor );
+    bool isConstantNode( String name );
+    void transferValues ( String oldName, String newName );
+    void insertConstant( String name, const onnx::TensorProto& tensor, TensorShape shape );
 
     void constant( onnx::NodeProto& node );
     void identity( onnx::NodeProto& node );
@@ -80,8 +89,6 @@ private:
     void matMulEquations( onnx::NodeProto& node, bool makeEquations );
     void reluEquations( onnx::NodeProto& node, bool makeEquations );
     void sigmoidEquations( onnx::NodeProto& node, bool makeEquations );
-
-    void missingNodeError( String& missingNodeName );
 };
 
 #endif // __OnnxParser_h__
