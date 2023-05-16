@@ -427,7 +427,7 @@ execute_process(
 )
 
 # Marabou Version
-set(MARABOU_VERSION 1.0.+)
+set(MARABOU_VERSION 1.0.0)
 add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")

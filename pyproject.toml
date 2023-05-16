@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "maraboupy"
-version = "2023.1001"
+version = "1.0.0"
 authors = [{ name = "Wen Kokke", email = "wenkokke@users.noreply.github.com" }]
 description = "A package wrapping Marabou for Vehicle."
 readme = "README.md"
@@ -29,8 +29,8 @@ test = [
 packages = ["maraboupy"]
 
 [tool.bumpver]
-current_version = "v2023.1001"
-version_pattern = "vYYYY.BUILD[-TAG]"
+current_version = "v1.0.0"
+version_pattern = "vMAJOR.MINOR.PATCH[-TAG]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
 tag = true
@@ -39,8 +39,9 @@ push = true
 [tool.bumpver.file_patterns]
 "pyproject.toml" = [
   '^version = "{pep440_version}"$',
-  '^current_version = "{version}"$'
+  '^current_version = "{version}"$',
 ]
+"CMakeLists.txt" = ['^set(MARABOU_VERSION {pep440_version})$']
 
 [tool.cibuildwheel]
 archs = ["auto64"]
