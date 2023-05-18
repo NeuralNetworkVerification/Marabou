@@ -177,7 +177,7 @@ String String::trim() const
 
 String String::trimZerosFromRight() const
 {
-    if ( !find( "." ) )
+    if ( !contains( "." ) )
         return _super;
 
     int lastNonZero = length() - 1;
