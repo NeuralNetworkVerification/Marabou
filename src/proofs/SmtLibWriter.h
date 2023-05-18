@@ -63,7 +63,6 @@ public:
      */
     static void writeInstanceToFile( IFile &file, const List<String> &instance );
 
-private:
     /*
       Returns a string representing the value of a double
      */

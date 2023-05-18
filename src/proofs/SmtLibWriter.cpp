@@ -12,6 +12,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include <iomanip>
 #include "SmtLibWriter.h"
 
 void SmtLibWriter::addHeader( unsigned numberOfVariables, List<String> &instance )
@@ -91,5 +92,8 @@ void SmtLibWriter::writeInstanceToFile( IFile &file, const List<String> &instanc
 
 String SmtLibWriter::signedValue( double val )
 {
-    return val > 0 ? std::to_string( val ) : "( - " + std::to_string( abs( val ) ) + " )";
+    unsigned precision = ( unsigned ) std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+    std::stringstream s;
+    s << std::fixed << std::setprecision( precision ) << abs( val );
+    return val >= 0 ? String( s.str() ).trimZerosFromRight() : String( "( - " + s.str() ).trimZerosFromRight() + " )";
 }
