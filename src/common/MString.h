@@ -53,6 +53,7 @@ public:
     bool endsWith( const String &suffix );
     void replace( const String &toReplace, const String &replaceWith );
     String trim() const;
+    String trimZerosFromRight() const;
     void replaceAll( const String &toReplace, const String &replaceWith );
 
 protected:

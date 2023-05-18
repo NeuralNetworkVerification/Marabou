@@ -60,23 +60,23 @@ public:
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( <= x0 1.000000 ) )";
+        expectedLine = String("( assert ( <= x0 ") + SmtLibWriter::signedValue( 1 )  + " ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( <= x1 1.000000 ) )";
+        expectedLine = String("( assert ( <= x1 ") + SmtLibWriter::signedValue( 1 )  + " ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( >= x0 1.000000 ) )";
+        expectedLine = String("( assert ( >= x0 ") + SmtLibWriter::signedValue( 1 )  + " ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( >= x1 ( - 1.000000 ) ) )";
+        expectedLine = String("( assert ( >= x1 ") + SmtLibWriter::signedValue( -1 )  + " ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( = 0 ( + ( * 1.000000 x0 ) ( * 1.000000 x1 ) ) ) )";
+        expectedLine = String("( assert ( = 0 ( + ( * ") + SmtLibWriter::signedValue( 1 )  + " x0 ) ( * " + SmtLibWriter::signedValue( 1 ) + " x1 ) ) ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         line = file->readLine( '\n' );
