@@ -95,5 +95,5 @@ String SmtLibWriter::signedValue( double val )
     unsigned precision = ( unsigned ) std::log10 ( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
     std::stringstream s;
     s << std::fixed << std::setprecision( precision ) << abs( val );
-    return val >= 0 ? String ( s.str() ).trimZerosFromRight() : String("( - " + s.str()).trimZerosFromRight() + " )";
+    return val >= 0 ? String ( s.str() ).trimZerosFromRight() : String( "( - " + s.str() ).trimZerosFromRight() + " )";
 }
