@@ -177,16 +177,22 @@ String String::trim() const
 
 String String::trimZerosFromRight() const
 {
-    unsigned lastNonZero = 0;
+    if ( !find( "." ) )
+        return _super;
 
-    for ( unsigned i = 0; i < length(); ++i )
+    int lastNonZero = length() - 1;
+
+    for ( int i = length() - 1; i >= 0; --i )
         if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) && ( _super[i] != '0' ) )
+        {
             lastNonZero = i;
+            break;
+        }
 
     if ( _super[lastNonZero] == '.' )
         --lastNonZero;
 
-    if ( substring( 0, lastNonZero + 1 ) == "" )
+    if ( lastNonZero < 0 )
         return "0";
 
     return substring( 0, lastNonZero + 1 );
