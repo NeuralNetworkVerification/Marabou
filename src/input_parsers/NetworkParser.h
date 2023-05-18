@@ -34,7 +34,6 @@
 #include <utility>
 
 typedef unsigned int Variable;
-typedef Vector<int> TensorShape;
 
 class NetworkParser {
 private:
