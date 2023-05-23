@@ -15,11 +15,11 @@ if [[ $OSTYPE == 'darwin'* ]]; then
 fi
 
 cd $mydir
-echo "downloading protobuf"
+echo "downloading protobuf-3.19.2"
 wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.19.2/protobuf-cpp-3.19.2.tar.gz -O protobuf-cpp-3.19.2.tar.gz
-echo "unzipping protobuf"
+echo "unzipping protobuf-3.19.2"
 tar -xzf protobuf-cpp-3.19.2.tar.gz # >> /dev/null
-echo "installing protobuf"
+echo "installing protobuf-3.19.2"
 cd protobuf-3.19.2
 mkdir -p $installdir
 ./configure CXXFLAGS=-fPIC --disable-shared --prefix=$installdir --enable-fast-install

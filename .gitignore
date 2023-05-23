@@ -40,7 +40,7 @@ _deps
 /tools/protobuf*
 /tools/OpenBLAS-*/
 /tools/OpenBLASv*.tar.gz
-/tools/onnx-1.10.2
+/tools/onnx-*/
 
 build
 /.idea/
