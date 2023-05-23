@@ -5,8 +5,27 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "maraboupy"
 version = "1.0.0"
-authors = [{ name = "Wen Kokke", email = "wenkokke@users.noreply.github.com" }]
-description = "A package wrapping Marabou for Vehicle."
+authors = [
+  { name = "Guy Amir" },
+  { name = "Clark Barrett" },
+  { name = "Guy Katz" },
+  { name = "Teruhiro Tagamori" },
+  { name = "Haoze Andrew Wu" },
+  { name = "Aleksandar Zeljic" },
+  { name = "Ben Goldberg" },
+  { name = "Derek A. Huang" },
+  { name = "Duligur Ibeling" },
+  { name = "Ahmed Irfan" },
+  { name = "Yuval Jacoby" },
+  { name = "Kyle Julian" },
+  { name = "Mykel Kochenderfer" },
+  { name = "Christopher Lazarus" },
+  { name = "Rachel Lim" },
+  { name = "Parth Shah" },
+  { name = "Shantanu Thakoor" },
+  { name = "Alex Usvyatsov" },
+]
+description = "A package wrapping the Marabou Neural Network Verification tool."
 readme = "README.md"
 license = { file = "COPYING" }
 requires-python = ">=3.7,<3.12"
