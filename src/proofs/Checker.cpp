@@ -205,7 +205,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
         else if ( causingVar == f && causingVarBound == LOWER && affectedVar == aux && affectedVarBound == UPPER && FloatUtils::isZero( bound ) && FloatUtils::isPositive( explainedBound + epsilon ) )
             tighteningMatched = true;
 
-            // If lb of b is positive x, then lb of aux is -x
+            // If lb of b is positive x, then ub of aux is -x
         else if ( causingVar == b && causingVarBound == LOWER && affectedVar == aux &&affectedVarBound == UPPER && FloatUtils::gte(explainedBound, - bound - epsilon ) && bound > 0 )
             tighteningMatched = true;
 

@@ -175,6 +175,29 @@ String String::trim() const
     return substring( firstNonSpace, lastNonSpace - firstNonSpace + 1 );
 }
 
+String String::trimZerosFromRight() const
+{
+    if ( !contains( "." ) )
+        return _super;
+
+    int lastNonZero = length() - 1;
+
+    for ( int i = length() - 1; i >= 0; --i )
+        if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) && ( _super[i] != '0' ) )
+        {
+            lastNonZero = i;
+            break;
+        }
+
+    if ( _super[lastNonZero] == '.' )
+        --lastNonZero;
+
+    if ( lastNonZero < 0 )
+        return "0";
+
+    return substring( 0, lastNonZero + 1 );
+}
+
 void String::replaceAll( const String &toReplace, const String &replaceWith )
 {
     while ( find( toReplace ) != Super::npos )
