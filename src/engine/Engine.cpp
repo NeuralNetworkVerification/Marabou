@@ -884,22 +884,17 @@ bool Engine::processInputQuery( InputQuery &inputQuery )
     return processInputQuery( inputQuery, GlobalConfiguration::PREPROCESS_INPUT_QUERY );
 }
 
-bool Engine::calcOutputBounds( InputQuery &inputQuery )
+bool Engine::calculateBounds( InputQuery &inputQuery )
 {
-    ENGINE_LOG( "calcOutputBounds starting\n" );
+    ENGINE_LOG( "calculateBounds starting\n" );
     struct timespec start = TimeUtils::sampleMicro();
 
     try
     {
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, true );
-        
         if ( _verbosity > 0 )
             printInputBounds( inputQuery );
-
-        if( _verbosity > 1 ) {
-          printInputBounds( inputQuery );
-        }
 
         initializeNetworkLevelReasoning();
 
@@ -909,15 +904,12 @@ bool Engine::calcOutputBounds( InputQuery &inputQuery )
 
         unsigned n = _preprocessedQuery->getNumberOfVariables();
         unsigned m = _preprocessedQuery->getEquations().size();
+
         // Only use BoundManager to store the bounds.
         _boundManager.initialize( n );
         _tableau->setDimensions( m, n );
         initializeBoundsAndConstraintWatchersInTableau( n );
 
-        for ( const auto &constraint : _plConstraints )
-        {
-            constraint->registerTableau( _tableau );
-        }
 
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
@@ -934,17 +926,19 @@ bool Engine::calcOutputBounds( InputQuery &inputQuery )
     }
     catch ( const InfeasibleQueryException & )
     {
-        ENGINE_LOG( "calcOutputBounds done\n" );
+        ENGINE_LOG( "calculateBounds done\n" );
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setLongAttribute( Statistics::CALCULATE_OUTPUT_BOUNDS_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
         _exitCode = Engine::UNSAT;
+        printf( "unsat\n" );
+
         return false;
     }
 
-    ENGINE_LOG( "calcOutputBounds done\n" );
+    ENGINE_LOG( "calculateBounds done\n" );
 
     return true;
 }
@@ -3658,6 +3652,12 @@ void Engine::propagateBoundManagerTightenings()
 
 void Engine::extractBounds( InputQuery &inputQuery )
 {
+    // print std err
+    fprintf( stderr, "TG: Extracting bounds...\n" );
+
+    // print err
+    ASSERT( _preprocessedQuery != nullptr );
+    
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )
@@ -3679,13 +3679,17 @@ void Engine::extractBounds( InputQuery &inputQuery )
             // a new index, due to variable elimination
             variable = _preprocessor.getNewIndex( variable );
 
-            inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
-            inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
+            // inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
+            inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( variable ) );
+            // inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
+            inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( variable ) );
         }
         else
         {
-            inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
-            inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
+            inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
+            inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+            // inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
+            // inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
         }
     }
 }

@@ -327,22 +327,22 @@ class MarabouNetwork:
         Returns:
             (tuple): tuple containing:
                 - exitCode (str): A string representing the exit code. Only unsat can be return.
-                - outputBounds (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for output variables
+                - bounds (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for output variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
         ipq = self.getMarabouQuery()
         if options == None:
             options = MarabouCore.Options()
-        exitCode, outputBounds, stats = MarabouCore.calcOutputBounds(ipq, options, str(filename))
+        exitCode, bounds, stats = MarabouCore.calculateBounds(ipq, options, str(filename))
         
         if verbose:
             print(exitCode)
             if exitCode == "":
                 for j in range(len(self.outputVars)):
                     for i in range(self.outputVars[j].size):
-                        print("output bounds {} = {}".format(i, outputBounds[self.outputVars[j].item(i)]))
+                        print("output bounds {} = {}".format(i, bounds[self.outputVars[j].item(i)]))
 
-        return [exitCode, outputBounds, stats]
+        return [exitCode, bounds, stats]
 
     def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
         """Function evaluating a specific input is a local robustness within the scope of epslion

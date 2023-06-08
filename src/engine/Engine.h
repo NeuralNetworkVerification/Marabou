@@ -102,9 +102,9 @@ public:
     void exportInputQueryWithError( String errorMessage );
 
     /*
-      Methods for calculating output bounds.
+      Methods for calculating bounds.
     */
-    bool calcOutputBounds( InputQuery &inputQuery );
+    bool calculateBounds( InputQuery &inputQuery );
 
     /*
       Method for extracting the bounds.

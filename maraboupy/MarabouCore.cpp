@@ -413,7 +413,7 @@ std::tuple<std::string, std::map<int, double>, Statistics>
 /* The default parameters here are just for readability, you should specify
  * them in the to make them work*/
 std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
-    calcOutputBounds(InputQuery &inputQuery, MarabouOptions &options,
+    calculateBounds(InputQuery &inputQuery, MarabouOptions &options,
           std::string redirect="")
 {
     // Arguments: InputQuery object, filename to redirect output
@@ -431,12 +431,12 @@ std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
 
         Engine engine;
 
-        if(!engine.calcOutputBounds(inputQuery)) {
+        if(!engine.calculateBounds(inputQuery)) {
             std::string exitCode = exitCodeToString(engine.getExitCode());
             return std::make_tuple(exitCode, ret, *(engine.getStatistics()));
         }
 
-        // Extract outputbounds
+        // Extract bounds
         engine.extractBounds(inputQuery);
         for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i) {
             // set lower bound and upper bound in tuple
@@ -522,7 +522,7 @@ PYBIND11_MODULE(MarabouCore, m) {
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
-    m.def("calcOutputBounds", &calcOutputBounds, R"pbdoc(
+    m.def("calculateBounds", &calculateBounds, R"pbdoc(
         Takes in a description of the InputQuery and returns the solution
 
         Args:
