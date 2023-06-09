@@ -528,6 +528,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         Args:
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query which bounds are calculated
             options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+            redirect (str, optional): Filepath to direct standard output, defaults to ""
 
         Returns:
             (tuple): tuple containing:
@@ -535,7 +536,7 @@ PYBIND11_MODULE(MarabouCore, m) {
                 - vals (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
-        py::arg("inputQuery"), py::arg("options"));
+        py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
     m.def("saveQuery", &saveQuery, R"pbdoc(
         Serializes the inputQuery in the given filename
 
