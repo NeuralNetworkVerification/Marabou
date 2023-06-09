@@ -35,9 +35,9 @@ PackedTensorIndices packIndex ( TensorShape shape, TensorIndices indices )
 {
     ASSERT( shape.size() == indices.size() );
 
-    unsigned int sizeSoFar = 1;
-    unsigned int index = 0;
-    for ( unsigned int i = shape.size(); i-- > 0; )
+    uint sizeSoFar = 1;
+    uint index = 0;
+    for ( uint i = shape.size(); i-- > 0; )
     {
         ASSERT ( indices[i] <= shape[i] );
         index += sizeSoFar*indices[i];
@@ -47,10 +47,10 @@ PackedTensorIndices packIndex ( TensorShape shape, TensorIndices indices )
     return index;
 }
 
-unsigned int tensorSize( TensorShape shape )
+uint tensorSize( TensorShape shape )
 {
-    unsigned int size = 1;
-    for ( unsigned int dimSize : shape )
+    uint size = 1;
+    for ( uint dimSize : shape )
     {
         size *= dimSize;
     }
@@ -153,10 +153,10 @@ Padding calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool 
     }
 }
 
-Permutation reversePermutation( unsigned int size )
+Permutation reversePermutation( uint size )
 {
     Permutation result;
-    for ( unsigned int i = size - 1; i-- > 0; )
+    for ( uint i = size - 1; i-- > 0; )
     {
         result.append(i);
     }

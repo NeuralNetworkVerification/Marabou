@@ -22,12 +22,12 @@
 /**
  * @brief Represents the dimensions of a tensor, e.g. [10,3,2] is a 3D tensor of dimensions 10 x 3 x 2.
  */
-typedef Vector<unsigned int> TensorShape;
+typedef Vector<uint> TensorShape;
 
 /**
  * @brief An single index into one-dimension of a tensor.
  */
-typedef unsigned int TensorIndex;
+typedef uint TensorIndex;
 
 /**
  * @brief A n-dimensional index into an n-dimensional tensor,
@@ -42,7 +42,7 @@ typedef Vector<TensorIndex> TensorIndices;
  */
 typedef TensorIndex PackedTensorIndices;
 
-typedef Vector<unsigned int> Permutation;
+typedef Vector<uint> Permutation;
 
 TensorIndices unpackIndex( TensorShape shape, PackedTensorIndices packedIndex );
 
@@ -58,7 +58,7 @@ template <typename T>
 Vector<T> transposeVector ( Vector<T> values, Permutation permutation )
 {
     Vector<T> result;
-    for ( unsigned int i : permutation )
+    for ( uint i : permutation )
     {
         ASSERT( i < values.size() );
         result.append(values[i]);
@@ -84,14 +84,14 @@ Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation perm
     return result;
 }
 
-unsigned int tensorSize( TensorShape shape );
+uint tensorSize( TensorShape shape );
 
 // See https://github.com/onnx/onnx/blob/main/docs/Broadcasting.md#multidirectional-broadcasting
 TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape shape2 );
 
 TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastShape, TensorIndices broadcastIndices );
 
-Permutation reversePermutation( unsigned int size );
+Permutation reversePermutation( uint size );
 
 struct Padding
 {
