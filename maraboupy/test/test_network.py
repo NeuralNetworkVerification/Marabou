@@ -659,9 +659,9 @@ def test_local_robustness_sat_of_onnx_3D():
     # should be not local robustness
     assert(len(vals) > 0)
 
-def test_calc_output_bounds():
+def test_calculate_bounds():
     """
-    Tests calc output bounds of an onnx network
+    Tests calculate bounds of an onnx network
     """
     filename = "fc_2-2-3.onnx"
     options = Marabou.createOptions(verbosity = 0)
@@ -674,8 +674,8 @@ def test_calc_output_bounds():
     network.setLowerBound(inputVars[1], -2)
     network.setUpperBound(inputVars[1], -1)
 
-    # calc output bounds
-    exitCode, vals, _ = network.calcOutputBounds(options = options)
+    # calculate bounds
+    exitCode, vals, _ = network.calculateBounds(options = options)
 
     # exitCode should be empty 
     assert(exitCode == '')
@@ -684,7 +684,6 @@ def test_calc_output_bounds():
     assert(vals[network.outputVars[0][0][0]] == (2.0, 6.0))
     assert(vals[network.outputVars[0][0][1]] == (-3.0, -1.0))
     assert(vals[network.outputVars[0][0][2]] == (1.0, 3.0))
-
 
     # UNSAT case
     network = loadNetworkInONNX(filename)
@@ -696,8 +695,8 @@ def test_calc_output_bounds():
     network.setUpperBound(inputVars[1], -1)
     network.setUpperBound(outputVars[0][0], 1)
 
-    # calc output bounds
-    exitCode, vals, _ = network.calcOutputBounds(options = options)
+    # calculate bounds
+    exitCode, vals, _ = network.calculateBounds(options = options)
 
     # exitCode should be unsat 
     assert(exitCode == 'unsat')

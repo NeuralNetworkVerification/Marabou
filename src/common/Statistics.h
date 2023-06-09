@@ -79,7 +79,7 @@ public:
      PREPROCESSING_TIME_MICRO,
 
      // Calculate output bounds time
-     CALCULATE_OUTPUT_BOUNDS_TIME_MICRO,
+     CALCULATE_BOUNDS_TIME_MICRO,
 
      // Number of iterations of the main loop
      NUM_MAIN_LOOP_ITERATIONS,

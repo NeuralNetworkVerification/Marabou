@@ -916,7 +916,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
 
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics.setLongAttribute( Statistics::CALCULATE_OUTPUT_BOUNDS_TIME_MICRO,
+        _statistics.setLongAttribute( Statistics::CALCULATE_BOUNDS_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
         if ( !_tableau->allBoundsValid() )
         {
@@ -3651,13 +3651,7 @@ void Engine::propagateBoundManagerTightenings()
 }
 
 void Engine::extractBounds( InputQuery &inputQuery )
-{
-    // print std err
-    fprintf( stderr, "TG: Extracting bounds...\n" );
-
-    // print err
-    ASSERT( _preprocessedQuery != nullptr );
-    
+{    
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )
@@ -3679,17 +3673,13 @@ void Engine::extractBounds( InputQuery &inputQuery )
             // a new index, due to variable elimination
             variable = _preprocessor.getNewIndex( variable );
 
-            // inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
             inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( variable ) );
-            // inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
             inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( variable ) );
         }
         else
         {
             inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
             inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
-            // inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
-            // inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
         }
     }
 }

@@ -316,8 +316,8 @@ class MarabouNetwork:
         return [exitCode, vals, stats]
 
 
-    def calcOutputBounds(self, filename="", verbose=True, options=None):
-        """Function to calculate output bounds represented by this network
+    def calculateBounds(self, filename="", verbose=True, options=None):
+        """Function to calculate bounds represented by this network
 
         Args:
             filename (string): Path for redirecting output
