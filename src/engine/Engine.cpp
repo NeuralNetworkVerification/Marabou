@@ -929,7 +929,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         ENGINE_LOG( "calculateBounds done\n" );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics.setLongAttribute( Statistics::CALCULATE_OUTPUT_BOUNDS_TIME_MICRO,
+        _statistics.setLongAttribute( Statistics::CALCULATE_BOUNDS_TIME_MICRO,
                                       TimeUtils::timePassed( start, end ) );
 
         _exitCode = Engine::UNSAT;
