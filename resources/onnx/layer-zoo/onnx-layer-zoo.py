@@ -86,6 +86,15 @@ def reshape_node():
     )
     return ("reshape", node, [2,2], [1,4], [shape_node])
 
+def reshape_node_with_dimension_inference():
+    shape_node = make_constant_int_node("shape", [-1,4])
+    node = onnx.helper.make_node(
+        "Reshape",
+        inputs=[input_name, "shape"],
+        outputs=[output_name],
+    )
+    return ("reshape_with_dimension_inference", node, [2,2], [1,4], [shape_node])
+
 def flatten_node():
     node = onnx.helper.make_node(
         "Flatten",
@@ -224,6 +233,7 @@ if __name__ == "__main__":
     make_network(*constant_node())
     make_network(*identity_node())
     make_network(*reshape_node())
+    make_network(*reshape_node_with_dimension_inference())
     make_network(*flatten_node())
     make_network(*transpose_node())
     make_network(*batch_normalization_node())
