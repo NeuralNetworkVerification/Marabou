@@ -50,8 +50,6 @@ build-frontend = "build"
 skip = [
   # 2023-04-16: pybind11 does not support PyPy
   "pp*",
-  # 2023-04-16: skip building musllinux wheels
-  "*musllinux*"
 ]
 before-test = ["python {package}/setup.py build_ext --inplace"]
 test-command = "pytest {package}/maraboupy/test"
