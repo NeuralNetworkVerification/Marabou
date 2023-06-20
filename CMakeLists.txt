@@ -195,10 +195,10 @@ if(${BUILD_PYTHON})
 endif()
 
 if (NOT MSVC)
-    if (CMAKE_BUILD_TYPE MATCHES "Release")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Qdeprecated-declarations )
+    elseif (CMAKE_BUILD_TYPE MATCHES "Release")
         set(COMPILE_FLAGS  -Wall )
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations )
     else()
         set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD ) #-Wno-deprecated
     endif()
