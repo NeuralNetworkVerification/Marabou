@@ -103,6 +103,21 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
         run_test("reshape", input, output);
     }
 
+    void test_reshape_with_dimension_inference()
+    {
+        Vector<double> input = {
+            0, 0.5,
+            1, 1.5
+        };
+        Vector<double> output = {
+            0,
+            0.5,
+            1,
+            1.5
+        };
+        run_test("reshape_with_dimension_inference", input, output);
+    }
+
     void test_flatten()
     {
         Vector<double> input = {
@@ -263,6 +278,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
     }
 
     // Disabled as there appears to be a bug in Marabou main.
+    // https://github.com/NeuralNetworkVerification/Marabou/issues/638
     //
     // void test_sigmoid()
     // {
