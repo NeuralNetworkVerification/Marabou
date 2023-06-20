@@ -196,7 +196,7 @@ endif()
 
 if (NOT MSVC)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Qdeprecated-declarations )
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations )
     elseif (CMAKE_BUILD_TYPE MATCHES "Release")
         set(COMPILE_FLAGS  -Wall )
     else()
