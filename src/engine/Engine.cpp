@@ -905,8 +905,6 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         unsigned n = _preprocessedQuery->getNumberOfVariables();
         unsigned m = _preprocessedQuery->getEquations().size();
 
-        initializeBoundsAndConstraintWatchersInTableau( n );
-
 
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
