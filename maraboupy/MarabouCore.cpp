@@ -410,8 +410,6 @@ std::tuple<std::string, std::map<int, double>, Statistics>
     return std::make_tuple(resultString, ret, retStats);
 }
 
-/* The default parameters here are just for readability, you should specify
- * them in the to make them work*/
 std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
     calculateBounds(InputQuery &inputQuery, MarabouOptions &options,
           std::string redirect="")

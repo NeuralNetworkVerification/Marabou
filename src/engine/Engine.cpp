@@ -905,9 +905,6 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         unsigned n = _preprocessedQuery->getNumberOfVariables();
         unsigned m = _preprocessedQuery->getEquations().size();
 
-        // Only use BoundManager to store the bounds.
-        _boundManager.initialize( n );
-        _tableau->setDimensions( m, n );
         initializeBoundsAndConstraintWatchersInTableau( n );
 
 
