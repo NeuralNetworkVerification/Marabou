@@ -902,10 +902,6 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         performSimulation();
         performMILPSolverBoundedTightening( &(*_preprocessedQuery) );
 
-        unsigned n = _preprocessedQuery->getNumberOfVariables();
-        unsigned m = _preprocessedQuery->getEquations().size();
-
-
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
 
