@@ -37,9 +37,9 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             TS_ASSERT ( inputValues.size() == inputQuery.getNumInputVariables() );
             TS_ASSERT ( expectedOutputValues.size() == inputQuery.getNumOutputVariables() );
 
-            for ( uint i = 0; i < inputValues.size(); i++ )
+            for ( unsigned int i = 0; i < inputValues.size(); i++ )
             {
-                uint inputVariable = inputQuery.inputVariableByIndex(i);
+                unsigned int inputVariable = inputQuery.inputVariableByIndex(i);
                 inputQuery.setLowerBound(inputVariable, inputValues[i]);
                 inputQuery.setUpperBound(inputVariable, inputValues[i]);
             }
@@ -49,9 +49,9 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             TS_ASSERT_THROWS_NOTHING( engine.solve() );
             engine.extractSolution( inputQuery );
 
-            for ( uint i = 0; i < expectedOutputValues.size(); ++i )
+            for ( unsigned int i = 0; i < expectedOutputValues.size(); ++i )
             {
-                uint outputVariable = inputQuery.outputVariableByIndex( i );
+                unsigned int outputVariable = inputQuery.outputVariableByIndex( i );
                 double actualOutputValue = inputQuery.getSolutionValue( outputVariable );
                 double expectedOutputValue = expectedOutputValues[i];
 
@@ -101,6 +101,21 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             1.5
         };
         run_test("reshape", input, output);
+    }
+
+    void test_reshape_with_dimension_inference()
+    {
+        Vector<double> input = {
+            0, 0.5,
+            1, 1.5
+        };
+        Vector<double> output = {
+            0,
+            0.5,
+            1,
+            1.5
+        };
+        run_test("reshape_with_dimension_inference", input, output);
     }
 
     void test_flatten()
@@ -263,6 +278,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
     }
 
     // Disabled as there appears to be a bug in Marabou main.
+    // https://github.com/NeuralNetworkVerification/Marabou/issues/638
     //
     // void test_sigmoid()
     // {

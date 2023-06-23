@@ -206,18 +206,19 @@ TensorShape shapeOfConstant( const onnx::TensorProto &constant )
  * description of the variables.
  *
  * @param oldShape the previous shape of the tensor
- * @param newShapeTemplate the template for the new shape of the tensor
+ * @param newShapeTemplate the template for the new shape of the tensor, may
+ * contain -1 values representing dimensions to be inferred.
  * @param allowZero whether or not zero-valued dimensions are allowed. If they
  * are not then all zeroes are replaced with the corresponding value in the
  * old shape.
  * @return
  */
-TensorShape instantiateReshapeTemplate( TensorShape oldShape, TensorShape newShapeTemplate, bool allowZero )
+TensorShape instantiateReshapeTemplate( TensorShape oldShape, Vector<int> newShapeTemplate, bool allowZero )
 {
     TensorShape newShape;
     int inferredIndex = -1;
 
-    for ( uint i = 0; i < newShapeTemplate.size(); i++ )
+    for ( unsigned int i = 0; i < newShapeTemplate.size(); i++ )
     {
         int dimSize = newShapeTemplate[i];
         if ( dimSize == -1 )
@@ -316,7 +317,7 @@ const onnx::TensorProto& getTensorAttribute( onnx::NodeProto& node, String name 
     return attr->t();
 }
 
-Vector<uint> getIntsAttribute( onnx::NodeProto& node, String name, Vector<uint>& defaultValue )
+Vector<int> getIntsAttribute( onnx::NodeProto& node, String name, Vector<int>& defaultValue )
 {
     const onnx::AttributeProto* attr = findAttribute( node, name, onnx::AttributeProto_AttributeType_INTS );
     if ( attr == nullptr )
@@ -324,19 +325,36 @@ Vector<uint> getIntsAttribute( onnx::NodeProto& node, String name, Vector<uint>&
         return defaultValue;
     }
 
-    Vector<uint> result;
+    Vector<int> result;
+    for ( int i = 0; i < attr->ints_size(); i++ )
+    {
+        result.append( attr->ints( i ) );
+    }
+    return result;
+}
+
+Vector<unsigned int> getNonNegativeIntsAttribute( onnx::NodeProto& node, String name, Vector<uint>& defaultValue )
+{
+    const onnx::AttributeProto* attr = findAttribute( node, name, onnx::AttributeProto_AttributeType_INTS );
+    if ( attr == nullptr )
+    {
+        return defaultValue;
+    }
+
+    Vector<unsigned int> result;
     for ( int i = 0; i < attr->ints_size(); i++ )
     {
         int value = attr->ints( i );
-        if ( i >= 0 )
+        if ( value >= 0 )
         {
-            result.append( value );
+            result.append( (uint) value );
         }
         else
         {
             String location = Stringf("attribute '%s' on node '%s'", name.ascii(), node.name().c_str());
             unexpectedNegativeValue( value, location );
         }
+
     }
     return result;
 }
@@ -368,11 +386,11 @@ Vector<double> getTensorFloatValues( const onnx::TensorProto& tensor, const Tens
     return result;
 }
 
-Vector<uint> getTensorIntValues( const onnx::TensorProto& tensor, const TensorShape shape, const String name )
+Vector<int> getTensorIntValues( const onnx::TensorProto& tensor, const TensorShape shape )
 {
     int size = tensorSize( shape );
     std::string raw_data = tensor.raw_data();
-    Vector<uint> result;
+    Vector<int> result;
     if ( raw_data.size() != 0 )
     {
         checkEndianness();
@@ -381,14 +399,7 @@ Vector<uint> getTensorIntValues( const onnx::TensorProto& tensor, const TensorSh
         for ( int i = 0; i < size; i++ )
         {
             int value = *(ints + i);
-            if ( value >= 0)
-            {
-                result.append( (uint) value );
-            }
-            else
-            {
-                unexpectedNegativeValue( value, Stringf("constant '%s'", name.ascii()) );
-            }
+            result.append( value );
         }
     }
     else
@@ -396,14 +407,7 @@ Vector<uint> getTensorIntValues( const onnx::TensorProto& tensor, const TensorSh
         for ( int i = 0; i < size; i++ )
         {
             int value = tensor.int64_data( i );
-            if ( value >= 0)
-            {
-                result.append( (uint) value );
-            }
-            else
-            {
-                unexpectedNegativeValue( value, Stringf("constant '%s'", name.ascii()) );
-            }
+            result.append( value );
         }
     }
     return result;
@@ -422,7 +426,7 @@ void OnnxParser::insertConstant( String name, const onnx::TensorProto& tensor, c
     onnx::TensorProto_DataType dataType = static_cast<onnx::TensorProto_DataType>( tensor.data_type() );
     if( dataType == onnx::TensorProto_DataType_INT64 )
     {
-        _constantIntTensors.insert( name, getTensorIntValues( tensor, shape, name ) );
+        _constantIntTensors.insert( name, getTensorIntValues( tensor, shape ) );
     }
     else if( dataType == onnx::TensorProto_DataType_FLOAT)
     {
@@ -862,7 +866,7 @@ void OnnxParser::reshape( onnx::NodeProto& node )
     bool allowZeroes = getIntAttribute( node, "allowzero", 0 ) != 0;
 
     TensorShape oldShape = _shapeMap[inputNodeName];
-    TensorShape newShapeTemplate = _constantIntTensors[shapeNodeName];
+    Vector<int> newShapeTemplate = _constantIntTensors[shapeNodeName];
     TensorShape newShape = instantiateReshapeTemplate( oldShape, newShapeTemplate, allowZeroes );
     _shapeMap[outputNodeName] = newShape;
 
@@ -882,17 +886,17 @@ void OnnxParser::flatten( onnx::NodeProto& node )
     String inputNodeName = node.input()[0];
 
     // Get parameters
-    uint axis = getIntAttribute( node, "axis", 1 );
+    unsigned int axis = getIntAttribute( node, "axis", 1 );
 
     // Calculate output shape
     TensorShape inputShape = _shapeMap[inputNodeName];
     int dim1 = 1;
-    for ( uint i = 0; i < axis; i++ )
+    for ( unsigned int i = 0; i < axis; i++ )
     {
         dim1 *= inputShape[i];
     }
     int dim2 = 1;
-    for ( uint i = axis; i < inputShape.size(); i++ )
+    for ( unsigned int i = axis; i < inputShape.size(); i++ )
     {
         dim2 *= inputShape[i];
     }
@@ -920,7 +924,7 @@ void OnnxParser::transpose( onnx::NodeProto& node )
 
     // Get permutation (default is the reverse permutation)
     Permutation defaultPerm = reversePermutation( inputShape.size() );
-    Permutation perm = getIntsAttribute( node, "perm", defaultPerm );
+    Permutation perm = getNonNegativeIntsAttribute( node, "perm", defaultPerm );
 
     // Calculate the output shape
     TensorShape outputShape = transposeVector( inputShape, perm );
@@ -934,7 +938,7 @@ void OnnxParser::transpose( onnx::NodeProto& node )
     }
     else if ( _constantIntTensors.exists( inputNodeName ) )
     {
-        Vector<uint> inputConstant = _constantIntTensors[inputNodeName];
+        Vector<int> inputConstant = _constantIntTensors[inputNodeName];
         _constantIntTensors.insert( outputNodeName, transposeTensor(inputConstant, inputShape, perm) );
     }
     else if ( _constantFloatTensors.exists( inputNodeName ))
@@ -961,10 +965,10 @@ void OnnxParser::batchNormEquations( onnx::NodeProto& node, bool makeEquations )
     TensorShape inputShape = _shapeMap[inputNodeName];
     ASSERT( inputShape.size() >= 2 );
 
-    uint batchSize = inputShape.get(0);
-    uint batchLength = tensorSize( inputShape ) / batchSize;
-    uint numberOfChannels = inputShape.get(1);
-    uint channelLength = batchLength / numberOfChannels;
+    unsigned int batchSize = inputShape.get(0);
+    unsigned int batchLength = tensorSize( inputShape ) / batchSize;
+    unsigned int numberOfChannels = inputShape.get(1);
+    unsigned int channelLength = batchLength / numberOfChannels;
 
 
     TensorShape outputShape = inputShape;
@@ -995,9 +999,9 @@ void OnnxParser::batchNormEquations( onnx::NodeProto& node, bool makeEquations )
     ASSERT ( inputVars.size() == tensorSize(inputShape) );
     ASSERT ( outputVars.size() == tensorSize(outputShape) );
 
-    for ( uint i = 0; i < inputVars.size(); i++ )
+    for ( unsigned int i = 0; i < inputVars.size(); i++ )
     {
-        uint channel = (i % batchLength) / channelLength;
+        unsigned int channel = (i % batchLength) / channelLength;
         double scale = scales[channel];
         double bias = biases[channel];
         double inputMean = inputMeans[channel];
@@ -1032,8 +1036,8 @@ void OnnxParser::maxPoolEquations( onnx::NodeProto& node, [[maybe_unused]] bool 
     }
     int widthIndex = inputShape.size() - 2;
     int heightIndex = inputShape.size() - 1;
-    uint inputWidth = inputShape[widthIndex];
-    uint inputHeight = inputShape[heightIndex];
+    unsigned int inputWidth = inputShape[widthIndex];
+    unsigned int inputHeight = inputShape[heightIndex];
 
     // Get auto_pad (deprecated)
     String defaultAutoPad = "NOTSET";
@@ -1048,8 +1052,8 @@ void OnnxParser::maxPoolEquations( onnx::NodeProto& node, [[maybe_unused]] bool 
     int ceilMode = getIntAttribute(node, "ceil_mode", defaultCeilMode);
 
     // Get dilations
-    Vector<uint> defaultDilations = {1,1};
-    Vector<uint> dilations = getIntsAttribute( node, "dilations", defaultDilations );
+    Vector<unsigned int> defaultDilations = {1,1};
+    Vector<unsigned int> dilations = getNonNegativeIntsAttribute( node, "dilations", defaultDilations );
     for ( auto d : dilations )
     {
         if ( d != 1 )
@@ -1060,11 +1064,11 @@ void OnnxParser::maxPoolEquations( onnx::NodeProto& node, [[maybe_unused]] bool 
 
     // Get the kernel shape (required)
     TensorShape defaultKernelShape = { 1, 1 };
-    TensorShape kernelShape = getIntsAttribute(node, "kernel_shape", defaultKernelShape);
+    TensorShape kernelShape = getNonNegativeIntsAttribute(node, "kernel_shape", defaultKernelShape);
 
     // Get the pads
-    Vector<uint> defaultPads = { 0, 0, 0, 0 };
-    Vector<uint> pads = getIntsAttribute(node, "pads", defaultPads);
+    Vector<unsigned int> defaultPads = { 0, 0, 0, 0 };
+    Vector<unsigned int> pads = getNonNegativeIntsAttribute(node, "pads", defaultPads);
     if ( pads.size() == 0 )
     {
         String errorMessage = Stringf( "Unexpected padding length '%d' for the Onnx '%s' operation.", node.op_type().c_str(), pads.size() ) ;
@@ -1082,11 +1086,11 @@ void OnnxParser::maxPoolEquations( onnx::NodeProto& node, [[maybe_unused]] bool 
     }
 
     // Get strides
-    Vector<uint> defaultStrides = { 1, 1 };
-    Vector<uint> strides = getIntsAttribute(node, "strides", defaultStrides);
+    Vector<unsigned int> defaultStrides = { 1, 1 };
+    Vector<unsigned int> strides = getNonNegativeIntsAttribute(node, "strides", defaultStrides);
 
     // Calculate the outputs shape
-    TensorShape outputShape = Vector<uint>( inputShape );
+    TensorShape outputShape = Vector<unsigned int>( inputShape );
 
     float unroundedOutputWidth = (((float) (inputWidth + padWidth - ((kernelShape[0] - 1) * dilations[0] + 1))) / ((float) strides[0])) + 1;
     float unroundedOutputHeight = (((float) (inputHeight + padHeight - ((kernelShape[1] - 1) * dilations[1] + 1))) / ((float) strides[1])) + 1;
@@ -1155,35 +1159,35 @@ void OnnxParser::convEquations( onnx::NodeProto& node, [[maybe_unused]] bool mak
     // First input should be variable tensor
     String inputNodeName = node.input()[0];
     TensorShape inputShape = _shapeMap[inputNodeName];
-    [[maybe_unused]] uint inputChannels = inputShape[1];
-    uint inputWidth = inputShape[2];
-    uint inputHeight = inputShape[3];
+    [[maybe_unused]] unsigned int inputChannels = inputShape[1];
+    unsigned int inputWidth = inputShape[2];
+    unsigned int inputHeight = inputShape[3];
 
     // Second input should be a weight matrix defining filters
     String filterNodeName = node.input()[1];
     TensorShape filterShape = _shapeMap[filterNodeName];
-    uint numberOfFilters = filterShape[0];
-    uint filterChannels = filterShape[1];
-    uint filterWidth = filterShape[2];
-    uint filterHeight = filterShape[3];
+    unsigned int numberOfFilters = filterShape[0];
+    unsigned int filterChannels = filterShape[1];
+    unsigned int filterWidth = filterShape[2];
+    unsigned int filterHeight = filterShape[3];
 
     // The number of channels should match between input variable and filters
     ASSERT ( inputChannels == filterChannels );
 
     // Extract convolution stride information
-    Vector<uint> defaultStrides = {1, 1};
-    Vector<uint> strides = getIntsAttribute(node, "strides", defaultStrides);
-    uint strideWidth = strides[0];
-    uint strideHeight = strides[1];
+    Vector<unsigned int> defaultStrides = {1, 1};
+    Vector<unsigned int> strides = getNonNegativeIntsAttribute(node, "strides", defaultStrides);
+    unsigned int strideWidth = strides[0];
+    unsigned int strideHeight = strides[1];
 
     // Extract the padding information
     String defaultAutoPad = "NOTSET";
     String autoPad = getStringAttribute( node, "auto_pad" ,defaultAutoPad );
-    uint padLeft, padBottom, padRight, padTop;
+    unsigned int padLeft, padBottom, padRight, padTop;
     if ( autoPad == "NOTSET" )
     {
-        Vector<uint> defaultPads = {0, 0, 0, 0};
-        Vector<uint> pads = getIntsAttribute(node, "pads", defaultPads);
+        Vector<unsigned int> defaultPads = {0, 0, 0, 0};
+        Vector<unsigned int> pads = getNonNegativeIntsAttribute(node, "pads", defaultPads);
         padLeft = pads[0];
         padBottom = pads[1];
         padRight = pads[2];
@@ -1227,8 +1231,8 @@ void OnnxParser::convEquations( onnx::NodeProto& node, [[maybe_unused]] bool mak
     }
 
     // Extract the dilations information (not supported/used)
-    Vector<uint> defaultDilations = {1,1};
-    Vector<uint> dilations = getIntsAttribute( node, "dilations", defaultDilations );
+    Vector<unsigned int> defaultDilations = {1,1};
+    Vector<unsigned int> dilations = getNonNegativeIntsAttribute( node, "dilations", defaultDilations );
     for ( auto d : dilations )
     {
         if ( d != 1 )
@@ -1238,9 +1242,9 @@ void OnnxParser::convEquations( onnx::NodeProto& node, [[maybe_unused]] bool mak
     }
 
     // Compute output shape
-    uint outWidth = (inputWidth - filterWidth + padLeft + padRight) / strideWidth + 1;
-    uint outHeight = (inputHeight - filterHeight + padBottom + padTop) / strideHeight + 1;
-    uint outChannels = numberOfFilters;
+    unsigned int outWidth = (inputWidth - filterWidth + padLeft + padRight) / strideWidth + 1;
+    unsigned int outHeight = (inputHeight - filterHeight + padBottom + padTop) / strideHeight + 1;
+    unsigned int outChannels = numberOfFilters;
     TensorShape outputShape = {inputShape[0], outChannels, outWidth, outHeight};
     _shapeMap[outputNodeName] = outputShape;
 
@@ -1263,7 +1267,7 @@ void OnnxParser::convEquations( onnx::NodeProto& node, [[maybe_unused]] bool mak
     }
     else
     {
-        for ( uint i = 0; i < numberOfFilters; i++ )
+        for ( unsigned int i = 0; i < numberOfFilters; i++ )
         {
             biases.append(0);
         }
@@ -1288,7 +1292,7 @@ void OnnxParser::convEquations( onnx::NodeProto& node, [[maybe_unused]] bool mak
                         {
                             TensorIndex wIndex = strideWidth*i + di - padLeft;
                             TensorIndex hIndex = strideHeight*j + dj - padBottom;
-                            // No need for checking greater than 0 because uints wrap around.
+                            // No need for checking greater than 0 because unsigned ints wrap around.
                             if ( hIndex < inputHeight && wIndex < inputWidth )
                             {
                                 TensorIndices inputVarIndices = {0, dk, wIndex, hIndex};
@@ -1506,8 +1510,8 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto& node, bool makeEquations
     double variableCoefficient = input1IsConstant ? coefficient2 : coefficient1;
 
     // Adjust equations to incorporate the constant addition
-    uint numberOfEquationsChanged = 0;
-    uint numberOfOutputVariables = tensorSize( outputShape );
+    unsigned int numberOfEquationsChanged = 0;
+    unsigned int numberOfOutputVariables = tensorSize( outputShape );
     for ( PackedTensorIndices i = 0; i < numberOfOutputVariables; i++)
     {
         TensorIndices outputIndices = unpackIndex( outputShape, i );
@@ -1577,11 +1581,11 @@ void OnnxParser::matMulEquations( onnx::NodeProto &node, bool makeEquations )
 
     // Calculate the output shape
     TensorShape outputShape;
-    for ( uint i = 0; i < input1Shape.size() - 1; i++)
+    for ( unsigned int i = 0; i < input1Shape.size() - 1; i++)
     {
         outputShape.append( input1Shape[i] );
     }
-    for ( uint i = 1; i < input2Shape.size(); i++)
+    for ( unsigned int i = 1; i < input2Shape.size(); i++)
     {
         outputShape.append( input2Shape[i] );
     }
@@ -1624,9 +1628,9 @@ void OnnxParser::matMulEquations( onnx::NodeProto &node, bool makeEquations )
         outputShape.insertHead( 1 );
     }
 
-    uint d1 = input1Shape.size() == 1 ? 1 : input1Shape.first();
-    uint d2 = input1Shape.last();
-    uint d3 = input2Shape.last();
+    unsigned int d1 = input1Shape.size() == 1 ? 1 : input1Shape.first();
+    unsigned int d2 = input1Shape.last();
+    unsigned int d3 = input2Shape.last();
 
     // Generate equations
     for ( TensorIndex i = 0; i < d1; i++ )
@@ -1713,7 +1717,7 @@ void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
     ASSERT( inputVars.size() == outputVars.size() );
 
     // Generate equations
-    for ( uint i = 0; i < inputVars.size(); i++ )
+    for ( unsigned int i = 0; i < inputVars.size(); i++ )
     {
         Variable inputVar = inputVars[i];
         Variable outputVar = outputVars[i];
