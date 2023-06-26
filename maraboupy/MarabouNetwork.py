@@ -315,6 +315,35 @@ class MarabouNetwork:
 
         return [exitCode, vals, stats]
 
+
+    def calculateBounds(self, filename="", verbose=True, options=None):
+        """Function to calculate bounds represented by this network
+
+        Args:
+            filename (string): Path for redirecting output
+            verbose (bool): If true, print out output bounds after calculation finishes
+            options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+
+        Returns:
+            (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code. Only unsat can be return.
+                - bounds (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for output variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        """
+        ipq = self.getMarabouQuery()
+        if options == None:
+            options = MarabouCore.Options()
+        exitCode, bounds, stats = MarabouCore.calculateBounds(ipq, options, str(filename))
+        
+        if verbose:
+            print(exitCode)
+            if exitCode == "":
+                for j in range(len(self.outputVars)):
+                    for i in range(self.outputVars[j].size):
+                        print("output bounds {} = {}".format(i, bounds[self.outputVars[j].item(i)]))
+
+        return [exitCode, bounds, stats]
+
     def evaluateLocalRobustness(self, input, epsilon, originalClass, verbose=True, options=None, targetClass=None):
         """Function evaluating a specific input is a local robustness within the scope of epslion
 
