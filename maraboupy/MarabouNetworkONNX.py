@@ -261,7 +261,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         assert nodeName not in self.varMap
         shape = self.shapeMap[nodeName]
-        size = np.prod(shape)
+        size = np.prod(shape).astype(np.int64)
         v = np.array([self.getNewVariable() for _ in range(size)]).reshape(shape)
         self.varMap[nodeName] = v
         assert all([np.equal(np.mod(i, 1), 0) for i in v.reshape(-1)]) # check if integers
@@ -455,7 +455,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         :meta private
         """
-
         nodeName = node.output[0]
         inputName = node.input[0]
         self.shapeMap[nodeName] = self.shapeMap[inputName]
@@ -917,8 +916,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Get the inputs
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
-        # shape2 = self.shapeMap[inputName2] # comment out since this is never used.
-
+        shape2 = self.shapeMap[inputName2]
 
         # Get the broadcasted shape
         outShape = shape1
@@ -932,9 +930,18 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         input1 = input1.reshape(-1)
         outputVariables = outputVariables.reshape(-1)
 
+        # if input2 is not a scalar
+        if (len(shape2) > 0):
+            multiple = multiple.reshape(-1)
+            if (len(multiple) != len(input1)):
+                raise ValueError("The length of the input2 array must be the same as the length of the input1 array or input2 must be a scalar")
+        else:
+            # else make it a numpy array with the same length as input1
+            multiple = np.array([multiple]*len(input1))
+
         for i in range(len(input1)):
             e = MarabouUtils.Equation()
-            e.addAddend(multiple, input1[i])
+            e.addAddend(multiple[i], input1[i])
             e.addAddend(-1, outputVariables[i])
             e.setScalar(0.0)
             self.addEquation(e)
@@ -1180,7 +1187,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         outVars = np.concatenate([self.varMap[outputName].reshape(-1) for outputName in self.outputNames])
         numInVars = np.sum([np.prod(self.shapeMap[inputName]) for inputName in self.inputNames])
         numOutVars = len(outVars)
-        newOutVars = np.array(range(numInVars, numInVars+numOutVars))
+        newOutVars = np.array(range(numInVars.astype(np.int64), numInVars.astype(np.int64)+numOutVars))
         
         # Adjust equation variables
         for eq in self.equList:
