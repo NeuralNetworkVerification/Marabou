@@ -1,7 +1,6 @@
 # Tests MarabouNetwork features not tested by it's subclasses
-import pytest
-from .. import Marabou
-from .. import MarabouCore
+from maraboupy import Marabou
+from maraboupy import MarabouCore
 import os
 import numpy as np
 
@@ -485,7 +484,7 @@ def test_split():
         network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
         network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
     exitCode, vals, _ = network.solve(options = options)
-    
+
     for i in range(81):
         assert abs(vals[outputVars[0][0][0][0][i]] - (i + 5) * 3) < TOL
         assert abs(vals[outputVars[0][0][0][0][i]] - (i + 5) * 3) < TOL
@@ -640,7 +639,7 @@ def test_local_robustness_sat_with_target_class():
 
     # should be not local robustness
     assert(len(vals) > 0)
-    
+
     # maxClass should be equal to targetClass
     assert(maxClass == targetClass)
 
