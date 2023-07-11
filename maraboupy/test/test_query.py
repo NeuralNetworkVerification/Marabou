@@ -5,8 +5,8 @@ warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 import pytest
 from subprocess import call
-from .. import Marabou
-from .. import MarabouCore
+from maraboupy import Marabou
+from maraboupy import MarabouCore
 import numpy as np
 import os
 
@@ -20,26 +20,26 @@ def test_sat_query(tmpdir):
     Test that a query generated from Maraboupy can be saved and loaded correctly and return sat
     """
     network = load_onnx_network()
-    
+
     # Set output constraint
     outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[1]
     minOutputValue = 70.0
     network.setLowerBound(outputVar, minOutputValue)
-    
+
     # Save this query to a temporary file, and reload the query
     queryFile = tmpdir.mkdir("query").join("query.txt").strpath
     network.saveQuery(queryFile)
     ipq = Marabou.load_query(queryFile)
-    
+
     # Solve the query loaded from the file and compare to the solution of the original query
     # The result should be the same regardless of verbosity options used, or if a file redirect is used
     tempFile = tmpdir.mkdir("redirect").join("marabouRedirect.log").strpath
     opt = Marabou.createOptions(verbosity = 0)
     exitCode_net, vals_net, _ = network.solve(filename = tempFile)
     exitCode_ipq, vals_ipq, _ = Marabou.solve_query(ipq, filename = tempFile)
-    
-    # The two value dictionaries should have the same number of variables, 
+
+    # The two value dictionaries should have the same number of variables,
     # and the same keys
     assert len(vals_net) == len(vals_ipq)
     for k in vals_net:
@@ -50,23 +50,23 @@ def test_unsat_query(tmpdir):
     Test that a query generated from Maraboupy can be saved and loaded correctly and return unsat
     """
     network = load_onnx_network()
-    
+
     # Set output constraint
     outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[0]
     minOutputValue = 2000.0
     network.setLowerBound(outputVar, minOutputValue)
-    
+
     # Save this query to a temporary file, and reload the query):
     queryFile = tmpdir.mkdir("query").join("query.txt").strpath
     network.saveQuery(queryFile)
     ipq = Marabou.load_query(queryFile)
-    
+
     # Solve the query loaded from the file and compare to the solution of the original query
     opt = Marabou.createOptions(verbosity = 0)
     exitCode_net, vals_net, stats_net = network.solve(options = opt)
     exitCode_ipq, vals_ipq, stats_ipq = Marabou.solve_query(ipq, options = opt)
-    
+
     # Assert the value dictionaries are both empty, and both queries have not timed out (unsat)
     assert len(vals_net) == 0
     assert len(vals_ipq) == 0
@@ -81,23 +81,23 @@ def test_to_query(tmpdir):
     If future improvements allow the query to be solved within a second, then this test will need to be updated.
     """
     network = load_acas_network()
-    
+
     # Set output constraint
     outputVars = network.outputVars[0].flatten()
     outputVar = outputVars[0]
     minOutputValue = 1500.0
     network.setLowerBound(outputVar, minOutputValue)
-    
+
     # Save this query to a temporary file, and reload the query):
     queryFile = tmpdir.mkdir("query").join("query.txt").strpath
     network.saveQuery(queryFile)
     ipq = Marabou.load_query(queryFile)
-    
+
     # Solve the query loaded from the file and compare to the solution of the original query
     opt = Marabou.createOptions(verbosity = 0, timeoutInSeconds = 1)
     exitCode_net, vals_net, stats_net = network.solve(options = opt)
     exitCode_ipq, vals_ipq, stats_ipq = Marabou.solve_query(ipq, options = opt)
-    
+
     # Assert timeout
     assert stats_net.hasTimedOut()
     assert stats_ipq.hasTimedOut()
@@ -133,7 +133,7 @@ def load_onnx_network():
     """
     filename = os.path.join(os.path.dirname(__file__), ONNX_FILE)
     network = Marabou.read_onnx(filename)
-    
+
     # Get the input and output variable numbers; [0] since first dimension is batch size
     inputVars = network.inputVars[0][0]
 

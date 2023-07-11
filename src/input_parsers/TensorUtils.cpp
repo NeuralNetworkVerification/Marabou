@@ -131,25 +131,15 @@ Padding calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool 
     {
         paddingNeeded = std::max( filterSize - overrun, 0 );
     }
-
-    if ( paddingNeeded % 2 == 0 )
+    const int halfPaddingQuot = paddingNeeded / 2;
+    const int halfPaddingRem = paddingNeeded % 2;
+    if ( padFrontPreferentially )
     {
-        int halfPadding = paddingNeeded/2;
-        return Padding( halfPadding, halfPadding );
+        return Padding ( halfPaddingQuot + halfPaddingRem, halfPaddingQuot );
     }
     else
     {
-        float halfPadding = paddingNeeded/2.0;
-        int biggerPad = (int) std::ceil(halfPadding);
-        int smallerPad = (int) std::floor(halfPadding);
-        if ( padFrontPreferentially )
-        {
-            return Padding ( biggerPad, smallerPad );
-        }
-        else
-        {
-            return Padding ( smallerPad, biggerPad );
-        }
+        return Padding ( halfPaddingQuot, halfPaddingQuot + halfPaddingRem );
     }
 }
 

@@ -4,7 +4,7 @@ warnings.filterwarnings('ignore', category = DeprecationWarning)
 warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
 
 import pytest
-from .. import Marabou
+from maraboupy import Marabou
 import numpy as np
 import os
 
@@ -38,7 +38,7 @@ def test_fc2():
 def test_KJ_TinyTaxiNet():
     """
     Test a convolutional network without max-pooling
-    Uses Const, Identity, Placeholder, Conv2D, BiasAdd, Reshape, 
+    Uses Const, Identity, Placeholder, Conv2D, BiasAdd, Reshape,
     MatMul, Add, and Relu layers
     """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "KJ_TinyTaxiNet.pb")
@@ -99,7 +99,7 @@ def test_conv_NCHW():
 
 def test_sm1_fc1():
     """
-    Test a fully-connected neural network, written in the 
+    Test a fully-connected neural network, written in the
     SavedModel format created by tensorflow version 1.X
     """
     filename = os.path.join(os.path.dirname(__file__), SM1_FOLDER, "fc1")
@@ -108,7 +108,7 @@ def test_sm1_fc1():
 
 def test_sm2_fc1():
     """
-    Test a fully-connected neural network, written in the 
+    Test a fully-connected neural network, written in the
     SavedModel format created by tensorflow version 2.X
     """
     filename = os.path.join(os.path.dirname(__file__), SM2_FOLDER, "fc1")
@@ -131,7 +131,7 @@ def test_sub_concat():
     together (concat). The inputs are used again via addition and subtraction to create the output, Y.
     This function tests different configurations of input and output variables, as well as a network where
     the first dimension is an integer rather than None.
-    """    
+    """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "sub_concat.pb")
 
     # Test default, which should find both X0 and X1 for inputs
@@ -141,7 +141,7 @@ def test_sub_concat():
     assert len(network.outputVars) == 1
     assert network.outputVars[0].shape == (5,2)
 
-    # If an intermediate layer is used as the output, which depends on only one input variable, 
+    # If an intermediate layer is used as the output, which depends on only one input variable,
     # then only that input variable is used
     network = Marabou.read_tf(filename, outputNames = ["Relu_2"])
     assert len(network.inputVars) == 1
@@ -173,7 +173,7 @@ def test_sub_matmul():
     """
     Test a fully-connected neural network
     This network tests a variety of ways that matmul and subtraction can be used
-    """    
+    """
     filename = os.path.join(os.path.dirname(__file__), FG_FOLDER, "sub_matmul.pb")
     network = Marabou.read_tf(filename)
     evaluateNetwork(network)
@@ -225,7 +225,7 @@ def evaluateNetwork(network, testInputs = None, numPoints = NUM_RAND):
     Evaluate a network at random testInputs with and without Marabou
     Args:
         network (MarabouNetwork): network loaded into Marabou to be evaluated
-    """    
+    """
     # Create test points if none provided. This creates a list of test points.
     # Each test point is itself a list, representing the values for each input array.
     if not testInputs:

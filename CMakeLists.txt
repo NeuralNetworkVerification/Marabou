@@ -32,11 +32,14 @@ set(DEPS_DIR "${PROJECT_SOURCE_DIR}/deps")
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
 set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
+if (NOT PYTHON_LIBRARY_OUTPUT_DIRECTORY)
+    set(PYTHON_LIBRARY_OUTPUT_DIRECTORY "${PYTHON_API_DIR}")
+endif()
 set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
 
 set(ENGINE_DIR "${SRC_DIR}/engine")
-set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.3.0")
+set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.10.4")
 set(BOOST_DIR "${TOOLS_DIR}/boost_1_80_0")
 set(ONNX_DIR "${TOOLS_DIR}/onnx-1.12.0")
 set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
@@ -100,6 +103,7 @@ endif()
 
 set(PROTOBUF_LIB protobuf)
 add_library(${PROTOBUF_LIB} SHARED IMPORTED)
+set_property(TARGET ${PROTOBUF_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DIR}/installed/lib/libprotobuf.a)
 target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
 list(APPEND LIBS ${PROTOBUF_LIB})
@@ -140,7 +144,7 @@ ProcessorCount(CTEST_NTHREADS)
 if(CTEST_NTHREADS EQUAL 0)
   set(CTEST_NTHREADS 1)
 endif()
- 
+
 # --------------- set build type ----------------------------
 set(BUILD_TYPES Release Debug MinSizeRel RelWithDebInfo)
 
@@ -191,10 +195,10 @@ if(${BUILD_PYTHON})
 endif()
 
 if (NOT MSVC)
-    if (CMAKE_BUILD_TYPE MATCHES "Release")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments -Wno-deprecated-declarations -Wno-unused-but-set-variable )
+    elseif (CMAKE_BUILD_TYPE MATCHES "Release")
         set(COMPILE_FLAGS  -Wall )
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD -Qunused-arguments ) #-Wno-deprecated
     else()
         set(COMPILE_FLAGS  -Wall -Wextra -Werror -MMD ) #-Wno-deprecated
     endif()
@@ -324,7 +328,7 @@ if (${BUILD_PYTHON})
     target_include_directories(${MARABOU_PY} PRIVATE ${LIBS_INCLUDES})
 
     set_target_properties(${MARABOU_PY} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${PYTHON_API_DIR})
+        LIBRARY_OUTPUT_DIRECTORY ${PYTHON_LIBRARY_OUTPUT_DIRECTORY})
     if(NOT MSVC)
         target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS})
     endif()
@@ -423,7 +427,7 @@ execute_process(
 )
 
 # Marabou Version
-set(MARABOU_VERSION 1.0.+)
+set(MARABOU_VERSION 1.0.0)
 add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
