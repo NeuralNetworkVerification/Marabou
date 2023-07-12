@@ -14,17 +14,6 @@ requires-python = ">=3.7,<3.12"
 [project.scripts]
 Marabou = "maraboupy.MarabouMain:main"
 
-[project.optional-dependencies]
-test = [
-  "pytest>=7.2.1,<8",
-  "pytest-cov>=4.0.0,<5",
-  "numpy>=1.21.0,<2",
-  "tensorflow>=2.10.0,<3",
-  "onnx>=1.12.0,<2",
-  "onnxruntime>=1.12.0,<2",
-  "torch>=1.11.0,<2",
-]
-
 [tool.setuptools]
 packages = ["maraboupy"]
 
@@ -55,7 +44,7 @@ skip = [
 ]
 before-test = ["python {package}/setup.py build_ext --inplace"]
 test-command = "pytest {package}/maraboupy/test"
-test-extras = ["test"]
+test-requires = ["-r{package}/maraboupy/test/test_requires.txt"]
 test-skip = [
   # 2023-04-15: onnxruntime does not support Python 3.11
   "cp311-*"
