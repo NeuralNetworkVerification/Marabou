@@ -58,7 +58,7 @@ skip = [
 ]
 before-test = ["python {package}/setup.py build_ext --inplace"]
 test-command = "pytest {package}/maraboupy/test"
-test-requires = ["-r{package}/maraboupy/test/test_requires.txt"]
+test-extras = ["test"]
 test-skip = [
   # 2023-04-15: onnxruntime does not support Python 3.11
   "cp311-*"
