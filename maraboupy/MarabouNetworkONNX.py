@@ -251,9 +251,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.mulEquations(node, makeEquations)
         elif node.op_type == 'Add':
             self.addEquations(node, makeEquations)
-        elif node.op_type == 'Sub':
-            self.subEquations(node, makeEquations)
-        elif node.op_type == 'Relu': 
+        elif node.op_type == 'Relu':
             self.reluEquations(node, makeEquations)
         elif node.op_type == 'Sigmoid':
             self.sigmoidEquations(node, makeEquations)
@@ -1042,112 +1040,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # We don't need new equations or new variables if the input variable is the output of a linear equation.
         # Instead, we can just edit the scalar term of the existing linear equation.
         # However, if the input variables are not outputs of linear equations (input variables or outputs of 
-        # activation functions) then we will need new equations.
-        if firstInputConstant:
-            constInput = input1
-            varInput = input2
-        else:
-            constInput = input2
-            varInput = input1
-        constInput = constInput.reshape(-1)
-        varInput = varInput.reshape(-1)
-
-        # Adjust equations to incorporate the constant addition
-        numEquationsChanged = 0
-        for equ in self.equList:
-            (c,var) = equ.addendList[-1]
-            assert c == -1
-            if var in varInput:
-                ind = np.where(var == varInput)[0][0]
-
-                # Adjust the equation
-                equ.setScalar(equ.scalar-constInput[ind])
-                numEquationsChanged += 1
-
-        # If we changed one equation for every input variable, then
-        # we don't need any new equations
-        if numEquationsChanged == len(varInput):
-            self.varMap[nodeName] = varInput
-        else:
-            # Otherwise, assert no equations were changed, and we need to create new equations
-            assert numEquationsChanged == 0
-            outputVariables = self.makeNewVariables(nodeName).reshape(-1)
-            for i in range(len(outputVariables)):
-                e = MarabouUtils.Equation()
-                e.addAddend(1, varInput[i])
-                e.addAddend(-1, outputVariables[i])
-                e.setScalar(-constInput[i])
-                self.addEquation(e)
-
-    def subEquations(self, node, makeEquations):
-        """Function to generate equations corresponding to substraction
-
-        Args:
-            node (node): ONNX node representing the Sub operation
-            makeEquations (bool): True if we need to create new variables and write Marabou equations
-
-        :meta private:
-        """
-        nodeName = node.output[0]
-
-        # Get the inputs
-        inputName1, inputName2 = node.input
-        shape1 = self.shapeMap[inputName1]
-        shape2 = self.shapeMap[inputName2]
-
-        # Get the broadcasted shape
-        outShape = getBroadcastShape(shape1, shape2)
-        self.shapeMap[nodeName] = outShape
-        if not makeEquations:
-            return
-
-        # Decide which inputs are variables and which are constants
-        firstInputConstant = False; secondInputConstant = False
-        if inputName1 in self.constantMap:
-            firstInputConstant = True
-            input1 = self.constantMap[inputName1]
-        else:
-            input1 = self.varMap[inputName1]
-
-        if inputName2 in self.constantMap:
-            secondInputConstant = True
-            input2 = self.constantMap[inputName2]
-        else:
-            input2 = self.varMap[inputName2]
-
-        # Broadcast inputs to ensure the shapes match
-        input1 = np.broadcast_to(input1, outShape)
-        input2 = np.broadcast_to(input2, outShape)
-
-        # The shape after broadcasting must match
-        assert input1.shape == input2.shape
-
-        # If both inputs to add are constant, then the output is constant too
-        # No new variables are needed, we just need to store the output in constantMap
-        if firstInputConstant and secondInputConstant:
-            self.constantMap[nodeName] = input1 + input2
-            return
-
-        # If both inputs are variables, then we need a new variable to represent
-        # the sum of the two variables
-        elif not firstInputConstant and not secondInputConstant:
-            outputVariables = self.makeNewVariables(nodeName)
-            input1 = input1.reshape(-1)
-            input2 = input2.reshape(-1)
-            outputVariables = outputVariables.reshape(-1)
-            for i in range(len(input1)):
-                e = MarabouUtils.Equation()
-                e.addAddend(1, input1[i])
-                e.addAddend(1, input2[i])
-                e.addAddend(-1, outputVariables[i])
-                e.setScalar(0.0)
-                self.addEquation(e)
-            return
-
-        # Otherwise, we are adding constants to variables.
-        # We don't need new equations or new variables if the input variable is the output of a linear equation.
-        # Instead, we can just edit the scalar term of the existing linear equation.
-        # However, if the input variables are not outputs of linear equations (input variables or outputs of
         # activation functions) then we will need new equations.
         if firstInputConstant:
             constInput = input1
