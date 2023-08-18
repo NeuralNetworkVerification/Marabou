@@ -126,6 +126,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         The output of the first network is the output of the given node.
         The second network expects its input to be the output of the first network.
 
+        Return True if the split is successful.
+
         Args:
             nodeName (str): Name of node at which we want to cut the network
             networkNamePreSplit(str): If given, store the pre-split network at the given path.
@@ -133,7 +135,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         :meta private:
         """
-        if True:
+        try:
             outputName = self.getNode(nodeName).output[0]
             if networkNamePreSplit is not None:
                 onnx.utils.extract_model(self.filename, networkNamePreSplit,
@@ -145,8 +147,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                                          output_names=self.outputNames)
                 self.outputNames = [outputName]
             return True
-        #except:
-        #    return False
+        except:
+            return False
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations

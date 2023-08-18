@@ -21,7 +21,8 @@ def test_split_onnx():
     presplit_filename = "test_presplit.onnx"
     postsplit_filename = "test_postsplit.onnx"
     split_point = "Gemm__7:0"
-    network.splitNetworkAtNode(split_point, presplit_filename, postsplit_filename)
+    split_successful = network.splitNetworkAtNode(split_point, presplit_filename, postsplit_filename)
+    assert(split_successful)
     assert(os.path.isfile(presplit_filename))
     assert(os.path.isfile(postsplit_filename))
 
