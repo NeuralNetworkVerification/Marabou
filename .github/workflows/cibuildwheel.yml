@@ -47,6 +47,7 @@ jobs:
       
       - # Workaround for out-of-memory error
         # See: https://github.com/pypa/cibuildwheel/issues/1586
+        if: runner.os == 'Linux'
         run: docker system prune -a -f
 
       - name: Build wheel
