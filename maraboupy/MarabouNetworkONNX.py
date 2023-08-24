@@ -24,6 +24,7 @@ from maraboupy import MarabouNetwork
 from onnx import TensorProto
 import itertools
 import torch
+import os
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkONNX object from an ONNX file
@@ -135,20 +136,30 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         :meta private:
         """
-        try:
-            outputName = self.getNode(nodeName).output[0]
-            if networkNamePreSplit is not None:
+        outputName = self.getNode(nodeName).output[0]
+        if networkNamePreSplit is not None:
+            try:
                 onnx.utils.extract_model(self.filename, networkNamePreSplit,
                                          input_names=self.inputNames,
                                          output_names=[outputName])
-            if networkNamePostSplit is not None:
+            except Exception as error:
+                print("Error when trying to create pre-split network: ", error)
+                if os.path.isfile(networkNamePreSplit):
+                    os.remove(networkNamePreSplit)
+                return False
+        if networkNamePostSplit is not None:
+            try:
                 onnx.utils.extract_model(self.filename, networkNamePostSplit,
                                          input_names=[outputName],
                                          output_names=self.outputNames)
-                self.outputNames = [outputName]
-            return True
-        except:
-            return False
+            except Exception as error:
+                print("Error when trying to create post-split network: ", error)
+                if os.path.isfile(networkNamePostSplit):
+                    os.remove(networkNamePostSplit)
+                return False
+
+        self.outputNames = [outputName]
+        return True
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
