@@ -16,7 +16,7 @@ np.random.seed(123)                        # Seed random numbers for repeatabili
 NUM_RAND = 10                              # Default number of random test points per example
 
 def test_split_onnx():
-    filename = NETWORK_FOLDER + "fc1.onnx"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "fc1.onnx")
     network = Marabou.read_onnx(filename)
     presplit_filename = "test_presplit.onnx"
     postsplit_filename = "test_postsplit.onnx"
@@ -40,7 +40,7 @@ def test_split_onnx():
     os.remove(postsplit_filename)
 
 def test_split_onnx_error():
-    filename = NETWORK_FOLDER + "oneInput_twoBranches.onnx"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "oneInput_twoBranches.onnx")
     network = Marabou.read_onnx(filename)
     presplit_filename = "test_presplit.onnx"
     postsplit_filename = "test_postsplit.onnx"
