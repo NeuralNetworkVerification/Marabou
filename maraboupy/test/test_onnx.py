@@ -15,6 +15,43 @@ NETWORK_FOLDER = "../../resources/onnx/"   # Folder for test networks
 np.random.seed(123)                        # Seed random numbers for repeatability
 NUM_RAND = 10                              # Default number of random test points per example
 
+def test_split_onnx():
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "fc1.onnx")
+    network = Marabou.read_onnx(filename)
+    presplit_filename = "test_presplit.onnx"
+    postsplit_filename = "test_postsplit.onnx"
+    split_point = "Gemm__7:0"
+    split_successful = network.splitNetworkAtNode(split_point, presplit_filename, postsplit_filename)
+    assert(split_successful)
+    assert(os.path.isfile(presplit_filename))
+    assert(os.path.isfile(postsplit_filename))
+
+    network1 = Marabou.read_onnx(presplit_filename)
+    assert(len(network1.reluList) == 25)
+    assert(len(network1.inputVars[0].flatten()) == 2)
+    assert(len(network1.outputVars[0].flatten()) == 25)
+
+    network2 = Marabou.read_onnx(postsplit_filename)
+    assert(len(network2.reluList) == 50)
+    assert(len(network2.inputVars[0].flatten()) == 25)
+    assert(len(network2.outputVars[0].flatten()) == 2)
+
+    os.remove(presplit_filename)
+    os.remove(postsplit_filename)
+
+def test_split_onnx_error():
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "oneInput_twoBranches.onnx")
+    network = Marabou.read_onnx(filename)
+    presplit_filename = "test_presplit.onnx"
+    postsplit_filename = "test_postsplit.onnx"
+    split_point = "cast1"
+    split_successful = network.splitNetworkAtNode(split_point, presplit_filename, postsplit_filename)
+    assert(not split_successful)
+    assert(os.path.isfile(presplit_filename))
+    assert(not os.path.isfile(postsplit_filename))
+
+    os.remove(presplit_filename)
+
 def test_gtsrb():
     """
     Test a convolutional network, exported from tensorflow
