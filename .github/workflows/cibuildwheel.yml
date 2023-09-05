@@ -43,7 +43,7 @@ jobs:
           - macos-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - # Workaround for out-of-memory error
         # See: https://github.com/pypa/cibuildwheel/issues/1586
