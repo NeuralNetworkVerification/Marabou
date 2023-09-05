@@ -19,7 +19,7 @@ def make_network(name, node, input_shape, output_shape, aux_nodes):
     output = [onnx.helper.make_tensor_value_info(output_name, onnx.TensorProto.FLOAT, output_shape)]
     graph = onnx.helper.make_graph([node] + aux_nodes, name, input, output)
     model = onnx.helper.make_model(graph, producer_name=producer_name)
-
+    print(f"Generated {name}.onnx")
     onnx.save(model, f"{name}.onnx")
 
 def make_constant_float_node(name, values):
@@ -225,6 +225,14 @@ def sigmoid_node():
 
     return ("sigmoid", node, [2,2], [2,2], [])
 
+def tanh_node():
+    node = onnx.helper.make_node(
+        "Tanh",
+        inputs=[input_name],
+        outputs=[output_name],
+    )
+    return ("tanh", node, [2,2], [2,2], [])
+
 ##########
 ## Main ##
 ##########
@@ -245,3 +253,4 @@ if __name__ == "__main__":
     make_network(*sub_node())
     make_network(*matmul_node())
     make_network(*sigmoid_node())
+    make_network(*tanh_node())

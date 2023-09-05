@@ -798,6 +798,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         sigmoidEquations( node, makeEquations );
     }
+    else if ( strcmp( nodeType, "Tanh" ) == 0 )
+    {
+        tanhEquations( node, makeEquations );
+    }
     else
     {
         unsupportedError( node );
@@ -1699,7 +1703,7 @@ void OnnxParser::matMulEquations( onnx::NodeProto &node, bool makeEquations )
  * @brief Function to generate equations corresponding to a sigmoid node.
  * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Sigmoid
  *
- * @param node ONNX node representing the MatMul operation
+ * @param node ONNX node representing the Sigmoid operation
  * @param makeEquations True if we need to create new variables and write Marabou equations
  */
 void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
@@ -1722,7 +1726,57 @@ void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
         Variable inputVar = inputVars[i];
         Variable outputVar = outputVars[i];
         addSigmoid( inputVar, outputVar );
-        //setLowerBound( outputVar, 0.0 );
+        setLowerBound( outputVar, 0.0 );
+        setUpperBound( outputVar, 1.0 );
+    }
+}
+
+/**
+ * @brief Function to generate equations corresponding to a tanh node.
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Tanh
+ *
+ * @param node ONNX node representing the Tanh operation
+ * @param makeEquations True if we need to create new variables and write Marabou equations
+ */
+void OnnxParser::tanhEquations( onnx::NodeProto &node, bool makeEquations )
+{
+    String outputName = node.output()[0];
+    String inputName = node.input()[0];
+    TensorShape inputShape = _shapeMap[inputName];
+
+    _shapeMap[outputName] = _shapeMap[inputName];
+    if ( !makeEquations )
+        return;
+
+    // Get variables
+    Vector<Variable> inputVars  = _varMap[inputName];
+    Vector<Variable> outputVars = makeNodeVariables( outputName, false );
+    ASSERT( inputVars.size() == outputVars.size() );
+
+    // Generate equations
+    for( uint i = 0; i < outputVars.size(); i++ )
+    {
+        // tanh(x) = 2 * sigmoid(2x) - 1
+        Variable inputVar = inputVars[i];
+        Variable firstAffine = getNewVariable();
+        Variable sigmoidOutput = getNewVariable();
+        Variable outputVar = outputVars[i];
+
+        Equation e1;
+        e1.addAddend( 2.0, inputVar );
+        e1.addAddend( -1.0, firstAffine );
+        e1.setScalar( 0.0 );
+        addEquation( e1 );
+
+        addSigmoid(firstAffine, sigmoidOutput);
+
+        Equation e2;
+        e2.addAddend( 2.0, sigmoidOutput );
+        e2.addAddend( -1.0, outputVar );
+        e2.setScalar( 1.0 );
+        addEquation( e2 );
+
+        setLowerBound( outputVar, -1.0 );
         setUpperBound( outputVar, 1.0 );
     }
 }
