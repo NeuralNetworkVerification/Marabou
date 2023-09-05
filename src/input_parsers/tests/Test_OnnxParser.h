@@ -292,4 +292,25 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
     //     };
     //     run_test("sigmoid", input, output);
     // }
+
+    double tanh_fn( double value )
+    {
+        return (exp( 2 * value ) - 1) / (exp( 2 * value ) - 1);
+    }
+
+    // Disabled as there appears to be a bug in Marabou main.
+    // https://github.com/NeuralNetworkVerification/Marabou/issues/638
+    //
+    // void test_tanh()
+    // {
+    //     Vector<double> input = {
+    //         -2, 0,
+    //         1, 3.5
+    //     };
+    //     Vector<double> output = {
+    //         tanh_fn(-2), tanh_fn(0),
+    //         tanh_fn(1), tanh_fn(3.5)
+    //     };
+    //     run_test("tanh", input, output);
+    // }
 };
