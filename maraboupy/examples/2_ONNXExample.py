@@ -3,8 +3,8 @@ ONNX Example
 ====================
 
 Top contributors (to current version):
-  - Kyle Julian
-  
+  - Kyle Julian, Haoze Wu
+
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
 in the top-level source directory) and their institutional affiliations.
@@ -34,12 +34,12 @@ network = Marabou.read_onnx(filename)
 # The default chooses the placeholder operations as inputs and the last operation as output
 inputName = 'Placeholder:0'
 outputName = 'y_out:0'
-network = Marabou.read_onnx(filename=filename, inputNames=[inputName], outputName = outputName)
+network = Marabou.read_onnx(filename=filename, inputNames=[inputName], outputNames = [outputName])
 
 # %%
 # Get the input and output variable numbers; [0] since first dimension is batch size
 inputVars = network.inputVars[0][0]
-outputVars = network.outputVars[0]
+outputVars = network.outputVars[0][0]
 
 # %%
 # Set input bounds
@@ -70,7 +70,7 @@ network = Marabou.read_onnx(filename)
 # %%
 # Get the input and output variable numbers; [0] since first dimension is batch size
 inputVars = network.inputVars[0][0]
-outputVars = network.outputVars[0]
+outputVars = network.outputVars[0][0]
 
 # %%
 # Setup a local robustness query
@@ -113,13 +113,13 @@ network = Marabou.read_onnx(filename)
 # %%
 # Get the input and output variable numbers; [0] since first dimension is batch size
 inputVars = network.inputVars[0]
-outputVars = network.outputVars
+outputVars = network.outputVars[0]
 
 # %% 
 # Test Marabou equations against onnxruntime at an example input point
 inputPoint = np.ones(inputVars.shape)
-marabouEval = network.evaluateWithMarabou([inputPoint], options = options)
-onnxEval = network.evaluateWithoutMarabou([inputPoint])
+marabouEval = network.evaluateWithMarabou([inputPoint], options = options)[0]
+onnxEval = network.evaluateWithoutMarabou([inputPoint])[0]
 
 # %%
 # The two evaluations should produce the same result
