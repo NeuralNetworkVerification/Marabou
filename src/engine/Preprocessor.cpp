@@ -131,9 +131,9 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
 
       Then, eliminate fixed variables.
     */
-
+    unsigned tighteningRound = 0;
     bool continueTightening = true;
-    while ( continueTightening )
+    while ( continueTightening && tighteningRound++ < GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND )
     {
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
