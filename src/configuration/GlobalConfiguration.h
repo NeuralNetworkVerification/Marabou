@@ -101,6 +101,9 @@ public:
     // weighted sum layer, to reduce the number of variables
     static const bool PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS;
 
+    // Maximal rounds of tightening to perform in the preprocessor to avoid non-termination.
+    static const unsigned PREPROCESSSING_MAX_TIGHTEING_ROUND;
+
     // Try to set the initial tableau assignment to an assignment that is legal with
     // respect to the input network.
     static const bool WARM_START;

@@ -75,6 +75,8 @@ const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCES
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = false;
 
+const unsigned GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND = 1000;
+
 const bool GlobalConfiguration::WARM_START = false;
 
 const unsigned GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS = 10000;
