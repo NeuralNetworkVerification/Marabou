@@ -190,6 +190,12 @@ public:
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
 
     /*
+      Tolerance for numerical imprecision of bounds computed as part
+      of explicit basis tightening
+    */
+    static const double EXPLICIT_BASIS_BOUND_TOLERANCE;
+
+    /*
       Symbolic bound tightening options
     */
 
