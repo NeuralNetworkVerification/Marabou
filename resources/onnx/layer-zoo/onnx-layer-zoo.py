@@ -19,7 +19,7 @@ def make_network(name, node, input_shape, output_shape, aux_nodes):
     output = [onnx.helper.make_tensor_value_info(output_name, onnx.TensorProto.FLOAT, output_shape)]
     graph = onnx.helper.make_graph([node] + aux_nodes, name, input, output)
     model = onnx.helper.make_model(graph, producer_name=producer_name)
-
+    print(f"Generated {name}.onnx")
     onnx.save(model, f"{name}.onnx")
 
 def make_constant_float_node(name, values):
@@ -85,6 +85,15 @@ def reshape_node():
         outputs=[output_name],
     )
     return ("reshape", node, [2,2], [1,4], [shape_node])
+
+def reshape_node_with_dimension_inference():
+    shape_node = make_constant_int_node("shape", [-1,4])
+    node = onnx.helper.make_node(
+        "Reshape",
+        inputs=[input_name, "shape"],
+        outputs=[output_name],
+    )
+    return ("reshape_with_dimension_inference", node, [2,2], [1,4], [shape_node])
 
 def flatten_node():
     node = onnx.helper.make_node(
@@ -216,6 +225,14 @@ def sigmoid_node():
 
     return ("sigmoid", node, [2,2], [2,2], [])
 
+def tanh_node():
+    node = onnx.helper.make_node(
+        "Tanh",
+        inputs=[input_name],
+        outputs=[output_name],
+    )
+    return ("tanh", node, [2,2], [2,2], [])
+
 ##########
 ## Main ##
 ##########
@@ -224,6 +241,7 @@ if __name__ == "__main__":
     make_network(*constant_node())
     make_network(*identity_node())
     make_network(*reshape_node())
+    make_network(*reshape_node_with_dimension_inference())
     make_network(*flatten_node())
     make_network(*transpose_node())
     make_network(*batch_normalization_node())
@@ -235,3 +253,4 @@ if __name__ == "__main__":
     make_network(*sub_node())
     make_network(*matmul_node())
     make_network(*sigmoid_node())
+    make_network(*tanh_node())

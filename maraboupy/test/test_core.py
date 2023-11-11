@@ -1,19 +1,30 @@
 # Supress warnings caused by tensorflow
 import warnings
-warnings.filterwarnings('ignore', category = DeprecationWarning)
-warnings.filterwarnings('ignore', category = PendingDeprecationWarning)
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import pytest
 from maraboupy import MarabouCore
 from maraboupy.Marabou import createOptions
 
 # Global settings
-OPT = createOptions(verbosity = 0) # Turn off printing
-LARGE = 100.0                      # Large value for defining bounds
+OPT = createOptions(verbosity=0)  # Turn off printing
+LARGE = 100.0  # Large value for defining bounds
+
+
+def test_main():
+    """
+    This function tests that MarabouCore.main can be called,
+    and checks `Marabou --version` exits successfully.
+    """
+    exitCode = MarabouCore.maraboupyMain(["Marabou", "--version"])
+    assert exitCode == 0
+
 
 def test_solve_partial_arguments():
     """
-    This function tests that MarabouCore.solve can be called with partial arguments, 
+    This function tests that MarabouCore.solve can be called with partial arguments,
     and checks that an UNSAT query is solved correctly.
     """
     ipq = define_ipq(-2.0)
@@ -22,7 +33,8 @@ def test_solve_partial_arguments():
     # Assert that Marabou returned UNSAT
     assert not stats.hasTimedOut()
     assert len(vals) == 0
-    assert(exitCode == "unsat")
+    assert exitCode == "unsat"
+
 
 def test_dump_query():
     """
@@ -49,13 +61,14 @@ def test_dump_query():
     for var in vals:
         assert vals[var] >= ipq.getLowerBound(var)
         assert vals[var] <= ipq.getUpperBound(var)
-    assert(exitCode == "sat")
+    assert exitCode == "sat"
 
     # Marabou should find tighter bounds than LARGE after bound propagation, including
     # for variable 2, where no upper bound was explicitly given
     assert ipq.getUpperBound(1) < LARGE
     assert ipq.getLowerBound(2) > -LARGE
     assert ipq.getUpperBound(2) < LARGE
+
 
 def define_ipq(property_bound):
     """

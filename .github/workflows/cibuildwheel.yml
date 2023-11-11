@@ -1,0 +1,125 @@
+name: Build wheels
+
+on:
+  # Run CI when changes are pushed to master
+  push:
+    branches:
+      - master
+
+  # Run CI when a PR is openend or changes are pushed to the PR
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  # Run CI every Monday at 7AM to catch bugs due to changes in the ecosystem
+  schedule:
+    #        ┌───────────── minute (0 - 59)
+    #        │ ┌───────────── hour (0 - 23)
+    #        │ │ ┌───────────── day of the month (1 - 31)
+    #        │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+    #        │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    - cron: "0 7 * * 1"
+
+  # Run CI whenever someone with the appropriate privileges requests it
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: sh
+
+jobs:
+  ################################################################################
+  # Build and test binary release for Python package
+  ################################################################################
+
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - # Workaround for out-of-memory error
+        # See: https://github.com/pypa/cibuildwheel/issues/1586
+        if: runner.os == 'Linux'
+        run: docker system prune -a -f
+
+      - name: Build wheel
+        uses: pypa/cibuildwheel@v2.15.0
+        with:
+          output-dir: "./wheelhouse"
+          config-file: "{package}/pyproject.toml"
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "10.9"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheelhouse
+          path: ./wheelhouse/*.whl
+
+  ################################################################################
+  # Publish package to GitHub Releases
+  ################################################################################
+
+  publish_package_to_github_releases:
+    name: Publish package to GitHub Releases
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build_wheels
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download wheelhouse
+        uses: actions/download-artifact@v3
+        with:
+          name: wheelhouse
+          path: wheelhouse
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v1
+        with:
+          files: wheelhouse/*.whl
+          fail_on_unmatched_files: true
+
+  ################################################################################
+  # Publish package to PyPI
+  ################################################################################
+
+  publish_package_to_pypi:
+    name: Publish package to PyPI
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - build_wheels
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/vehicle-lang
+
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
+
+    steps:
+      - name: Download wheelhouse
+        uses: actions/download-artifact@v3
+        with:
+          name: wheelhouse
+          path: wheelhouse
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheelhouse

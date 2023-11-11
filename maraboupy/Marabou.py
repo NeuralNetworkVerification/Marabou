@@ -68,6 +68,7 @@ def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=Tru
         filename (str): Path to the ONNX file
         inputNames (list of str, optional): List of node names corresponding to inputs
         outputNames (list of str, optional): List of node names corresponding to outputs
+        reindexOutputVars (bool): Reindex the variables so that the output variables are immediate after input variables
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`

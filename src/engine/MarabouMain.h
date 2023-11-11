@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file main.cpp
+/*! \file MarabouMain.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Haoze Wu
@@ -13,12 +13,19 @@
 
  **/
 
-#include "MarabouMain.h"
 
-int main( int argc, char **argv )
-{
-    return marabouMain(argc, argv);
-}
+#ifndef __MarabouMain_h__
+#define __MarabouMain_h__
+
+#include <string>
+
+void printVersion();
+
+void printHelpMessage();
+
+int marabouMain( int argc, char **argv );
+
+#endif // __MarabouError_h__
 
 //
 // Local Variables:

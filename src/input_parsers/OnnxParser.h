@@ -49,7 +49,7 @@ private:
 
     Map<String, TensorShape> _shapeMap;
     Map<String, Vector<Variable>> _varMap;
-    Map<String, const Vector<uint>> _constantIntTensors;
+    Map<String, const Vector<int>> _constantIntTensors;
     Map<String, const Vector<double>> _constantFloatTensors;
     Set<String> _processedNodes;
     unsigned _numberOfFoundInputs;
@@ -89,6 +89,7 @@ private:
     void matMulEquations( onnx::NodeProto& node, bool makeEquations );
     void reluEquations( onnx::NodeProto& node, bool makeEquations );
     void sigmoidEquations( onnx::NodeProto& node, bool makeEquations );
+    void tanhEquations( onnx::NodeProto& node, bool makeEquations );
 };
 
 #endif // __OnnxParser_h__

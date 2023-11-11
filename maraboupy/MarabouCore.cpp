@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "MarabouMain.h"
 #include "AcasParser.h"
 #include "CommonError.h"
 #include "DnCManager.h"
@@ -53,6 +54,15 @@
 #endif
 
 namespace py = pybind11;
+
+int maraboupyMain(std::vector<std::string> args){
+    int argc = args.size();
+    char ** argv = new char*[args.size()];
+    for (int index = 0; index < args.size(); ++index){
+        argv[index] = (char *) args[index].c_str();
+    }
+    return marabouMain(argc, argv);
+}
 
 int redirectOutputToFile(std::string outputFilePath){
     // Redirect standard output to a file
@@ -410,6 +420,49 @@ std::tuple<std::string, std::map<int, double>, Statistics>
     return std::make_tuple(resultString, ret, retStats);
 }
 
+std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
+    calculateBounds(InputQuery &inputQuery, MarabouOptions &options,
+          std::string redirect="")
+{
+    // Arguments: InputQuery object, filename to redirect output
+    // Returns: map from variable number to value
+    std::string resultString = "";
+    std::map<int, std::tuple<double, double>> ret;
+    Statistics retStats;
+    int output=-1;
+    if(redirect.length()>0)
+        output=redirectOutputToFile(redirect);
+    try{
+        options.setOptions();
+
+        bool dnc = Options::get()->getBool( Options::DNC_MODE );
+
+        Engine engine;
+
+        if(!engine.calculateBounds(inputQuery)) {
+            std::string exitCode = exitCodeToString(engine.getExitCode());
+            return std::make_tuple(exitCode, ret, *(engine.getStatistics()));
+        }
+
+        // Extract bounds
+        engine.extractBounds(inputQuery);
+        for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i) {
+            // set lower bound and upper bound in tuple
+            ret[i] = std::make_tuple(inputQuery.getLowerBounds()[i], inputQuery.getUpperBounds()[i]);
+        }
+
+    }
+    catch(const MarabouError &e){
+        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        return std::make_tuple
+            ("ERROR",
+             ret, retStats);
+    }
+    if(output != -1)
+        restoreOutputStream(output);
+    return std::make_tuple(resultString, ret, retStats);
+}
+
 void saveQuery(InputQuery& inputQuery, std::string filename){
     inputQuery.saveQuery(String(filename));
 }
@@ -447,6 +500,7 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
         .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit)
         .def_readwrite("_produceProofs", &MarabouOptions::_produceProofs);
+    m.def("maraboupyMain", &maraboupyMain, "Run the Marabou command-line interface");
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
@@ -474,6 +528,21 @@ PYBIND11_MODULE(MarabouCore, m) {
             (tuple): tuple containing:
                 - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+    m.def("calculateBounds", &calculateBounds, R"pbdoc(
+        Takes in a description of the InputQuery and returns the bounds
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query which bounds are calculated
+            options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+            redirect (str, optional): Filepath to direct standard output, defaults to ""
+
+        Returns:
+            (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code. Only unsat can be returned
+                - vals (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");

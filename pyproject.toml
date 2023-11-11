@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=67", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "maraboupy"
+version = "1.0.0"
+authors = [{ name = "The Marabou Development Team" }]
+description = "A package wrapping the Marabou Neural Network Verification tool."
+readme = "README.md"
+license = { file = "COPYING" }
+requires-python = ">=3.7,<3.12"
+
+[project.optional-dependencies]
+test = [
+  # NOTE: These dependencies must be kept in-sync with the legacy requirements file 'maraboupy/test_requirements.txt'
+  "numpy>=1.21.0,<2",
+  "onnx>=1.12.0,<2",
+  "onnxruntime>=1.12.0,<2",
+  "pytest>=7.2.1,<8",
+  "pytest-cov>=4.0.0,<5",
+  # 2023-07-12:
+  # Cannot use tensorflow 2.13 because it removes 'tensorflow.python.framework.graph_util.convert_variables_to_constants'
+  "tensorflow>=2.10,<2.13",
+  "torch>=1.11.0,<3",
+]
+
+[project.scripts]
+Marabou = "maraboupy.MarabouMain:main"
+
+[tool.setuptools]
+packages = ["maraboupy"]
+
+[tool.bumpver]
+current_version = "v1.0.0"
+version_pattern = "vMAJOR.MINOR.PATCH[-TAG]"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+  '^version = "{pep440_version}"$',
+  '^current_version = "{version}"$',
+]
+"CMakeLists.txt" = ['^set(MARABOU_VERSION {pep440_version})$']
+
+[tool.cibuildwheel]
+# 2023-04-17: cross-compilation with cibuildwheel does not work with our CMake configuration
+archs = ["native"]
+build-frontend = "build"
+skip = [
+  # 2023-04-16: pybind11 does not support PyPy
+  "pp*",
+  # 2023-04-16: skip building musllinux wheels
+  "*musllinux*"
+]
+before-test = ["python {package}/setup.py build_ext --inplace"]
+test-command = "pytest {package}/maraboupy/test"
+test-extras = ["test"]
+test-skip = [
+  # 2023-04-15: onnxruntime does not support Python 3.11
+  "cp311-*"
+]
+
+[tool.cibuildwheel.linux]
+before-all = "yum install -y wget"
+
+[tool.cibuildwheel.macos]
+test-skip = [
+  # 2023-04-15: onnxruntime does not support Python 3.11
+  "cp311-*",
+  # 2023-04-15: Skip trying to test arm64 builds on Intel Macs
+  "*-macosx_arm64",
+  "*-macosx_universal2:arm64"
+]

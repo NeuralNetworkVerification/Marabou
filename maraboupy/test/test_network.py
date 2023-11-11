@@ -1,7 +1,6 @@
 # Tests MarabouNetwork features not tested by it's subclasses
-import pytest
-from .. import Marabou
-from .. import MarabouCore
+from maraboupy import Marabou
+from maraboupy import MarabouCore
 import os
 import numpy as np
 
@@ -485,7 +484,7 @@ def test_split():
         network.setLowerBound(inputVars[0][0][0][0][i], i + 1)
         network.setUpperBound(inputVars[0][0][0][0][i], i + 1)
     exitCode, vals, _ = network.solve(options = options)
-    
+
     for i in range(81):
         assert abs(vals[outputVars[0][0][0][0][i]] - (i + 5) * 3) < TOL
         assert abs(vals[outputVars[0][0][0][0][i]] - (i + 5) * 3) < TOL
@@ -640,7 +639,7 @@ def test_local_robustness_sat_with_target_class():
 
     # should be not local robustness
     assert(len(vals) > 0)
-    
+
     # maxClass should be equal to targetClass
     assert(maxClass == targetClass)
 
@@ -658,6 +657,48 @@ def test_local_robustness_sat_of_onnx_3D():
 
     # should be not local robustness
     assert(len(vals) > 0)
+
+def test_calculate_bounds():
+    """
+    Tests calculate bounds of an onnx network
+    """
+    filename = "fc_2-2-3.onnx"
+    options = Marabou.createOptions(verbosity = 0)
+
+    # Not UNSAT case
+    network = loadNetworkInONNX(filename)
+    inputVars = network.inputVars[0][0]
+    network.setLowerBound(inputVars[0], 3)
+    network.setUpperBound(inputVars[0], 4)
+    network.setLowerBound(inputVars[1], -2)
+    network.setUpperBound(inputVars[1], -1)
+
+    # calculate bounds
+    exitCode, vals, _ = network.calculateBounds(options = options)
+
+    # exitCode should be empty 
+    assert(exitCode == '')
+
+    # output bounds should be correct
+    assert(vals[network.outputVars[0][0][0]] == (2.0, 6.0))
+    assert(vals[network.outputVars[0][0][1]] == (-3.0, -1.0))
+    assert(vals[network.outputVars[0][0][2]] == (1.0, 3.0))
+
+    # UNSAT case
+    network = loadNetworkInONNX(filename)
+    inputVars = network.inputVars[0][0]
+    outputVars = network.outputVars[0]
+    network.setLowerBound(inputVars[0], 3)
+    network.setUpperBound(inputVars[0], 4)
+    network.setLowerBound(inputVars[1], -2)
+    network.setUpperBound(inputVars[1], -1)
+    network.setUpperBound(outputVars[0][0], 1)
+
+    # calculate bounds
+    exitCode, vals, _ = network.calculateBounds(options = options)
+
+    # exitCode should be unsat 
+    assert(exitCode == 'unsat')
 
 def loadNetwork(filename):
     # Load network relative to this file's location
