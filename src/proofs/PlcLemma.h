@@ -35,7 +35,6 @@ public:
 
     ~PLCLemma();
 
-
     /*
      Getters for all fields
     */

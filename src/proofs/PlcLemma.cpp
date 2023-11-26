@@ -53,14 +53,10 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
             ASSERT( numOfExplanations == causingVars.size() && proofSize );
 
             if ( _constraintType == RELU || _constraintType == SIGN )
-            {
                 ASSERT( numOfExplanations == 1 );
-            }
 
             if ( _constraintType == ABSOLUTE_VALUE )
-            {
                 ASSERT( numOfExplanations == 2 || numOfExplanations == 1 );
-            }
 
             _explanations = new double[numOfExplanations * proofSize];
 

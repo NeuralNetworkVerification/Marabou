@@ -87,12 +87,12 @@ public:
 
         TS_ASSERT(root.getPLCLemmas().empty() );
 
-        root.addPLCLemma(explanation1);
-        root.addPLCLemma(explanation2);
-        root.addPLCLemma(explanation3);
-        TS_ASSERT_EQUALS(root.getPLCLemmas().size(), 3U );
+        root.addPLCLemma( explanation1 );
+        root.addPLCLemma( explanation2 );
+        root.addPLCLemma( explanation3 );
+        TS_ASSERT_EQUALS( root.getPLCLemmas().size(), 3U );
 
         root.deletePLCExplanations();
-        TS_ASSERT(root.getPLCLemmas().empty() );
+        TS_ASSERT( root.getPLCLemmas().empty() );
     }
 };

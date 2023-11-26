@@ -80,7 +80,7 @@ const List<std::shared_ptr<PLCLemma>> &UnsatCertificateNode::getPLCLemmas() cons
     return _PLCExplanations;
 }
 
-void UnsatCertificateNode::addPLCLemma(std::shared_ptr<PLCLemma> &explanation )
+void UnsatCertificateNode::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
 {
     _PLCExplanations.append( explanation );
 }

@@ -92,48 +92,10 @@ bool Checker::checkNode( const UnsatCertificateNode *node )
     if ( !checkSingleVarSplits( childrenSplits ) && !childrenSplitConstraint )
         return false;
 
+    // Fix the constraints phase according to the child, and check each child
     for ( const auto &child : node->getChildren() )
     {
-        // Fix the phase of the constraint corresponding to the children
-        if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::RELU )
-        {
-            List<Tightening> tightenings = child->getSplit().getBoundTightenings();
-            if ( tightenings.front()._type == Tightening::LB || tightenings.back()._type == Tightening::LB  )
-                childrenSplitConstraint->setPhaseStatus( RELU_PHASE_ACTIVE );
-            else
-                childrenSplitConstraint->setPhaseStatus( RELU_PHASE_INACTIVE );
-        }
-
-        else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::SIGN )
-        {
-            List<Tightening> tightenings = child->getSplit().getBoundTightenings();
-            if ( tightenings.front()._type == Tightening::LB  )
-                childrenSplitConstraint->setPhaseStatus( SIGN_PHASE_POSITIVE );
-            else
-                childrenSplitConstraint->setPhaseStatus( SIGN_PHASE_NEGATIVE );
-        }
-        else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
-        {
-            List<Tightening> tightenings = child->getSplit().getBoundTightenings();
-            if ( tightenings.front()._type == Tightening::LB )
-                childrenSplitConstraint->setPhaseStatus( ABS_PHASE_POSITIVE );
-            else
-                childrenSplitConstraint->setPhaseStatus( ABS_PHASE_NEGATIVE );
-        }
-        else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::MAX )
-        {
-            List<Tightening> tightenings = child->getSplit().getBoundTightenings();
-            if ( tightenings.size() == 2 )
-                childrenSplitConstraint->setPhaseStatus( MAX_PHASE_ELIMINATED );
-            else
-            {
-                PhaseStatus phase = ( ( MaxConstraint * )childrenSplitConstraint )->variableToPhase( tightenings.back()._variable );
-                childrenSplitConstraint->setPhaseStatus( phase );
-            }
-        }
-        else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::DISJUNCTION )
-            ( ( DisjunctionConstraint * )childrenSplitConstraint )->removeFeasibleDisjunct( child->getSplit() );
-
+        fixChildSplitPhase( child, childrenSplitConstraint );
         if ( !checkNode( child ) )
             answer = false;
     }
@@ -159,6 +121,47 @@ bool Checker::checkNode( const UnsatCertificateNode *node )
     _lowerBoundChanges.pop();
 
     return answer;
+}
+
+void Checker::fixChildSplitPhase( UnsatCertificateNode *child,  PiecewiseLinearConstraint *childrenSplitConstraint )
+{
+    if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::RELU )
+    {
+        List<Tightening> tightenings = child->getSplit().getBoundTightenings();
+        if ( tightenings.front()._type == Tightening::LB || tightenings.back()._type == Tightening::LB  )
+            childrenSplitConstraint->setPhaseStatus( RELU_PHASE_ACTIVE );
+        else
+            childrenSplitConstraint->setPhaseStatus( RELU_PHASE_INACTIVE );
+    }
+    else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::SIGN )
+    {
+        List<Tightening> tightenings = child->getSplit().getBoundTightenings();
+        if ( tightenings.front()._type == Tightening::LB  )
+            childrenSplitConstraint->setPhaseStatus( SIGN_PHASE_POSITIVE );
+        else
+            childrenSplitConstraint->setPhaseStatus( SIGN_PHASE_NEGATIVE );
+    }
+    else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::ABSOLUTE_VALUE )
+    {
+        List<Tightening> tightenings = child->getSplit().getBoundTightenings();
+        if ( tightenings.front()._type == Tightening::LB )
+            childrenSplitConstraint->setPhaseStatus( ABS_PHASE_POSITIVE );
+        else
+            childrenSplitConstraint->setPhaseStatus( ABS_PHASE_NEGATIVE );
+    }
+    else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::MAX )
+    {
+        List<Tightening> tightenings = child->getSplit().getBoundTightenings();
+        if ( tightenings.size() == 2 )
+            childrenSplitConstraint->setPhaseStatus( MAX_PHASE_ELIMINATED );
+        else
+        {
+            PhaseStatus phase = ( ( MaxConstraint * )childrenSplitConstraint )->variableToPhase( tightenings.back()._variable );
+            childrenSplitConstraint->setPhaseStatus( phase );
+        }
+    }
+    else if ( childrenSplitConstraint && childrenSplitConstraint->getType() == PiecewiseLinearFunctionType::DISJUNCTION )
+        ( ( DisjunctionConstraint * )childrenSplitConstraint )->removeFeasibleDisjunct( child->getSplit() );
 }
 
 bool Checker::checkContradiction( const UnsatCertificateNode *node ) const
@@ -198,6 +201,8 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
                 continue;
 
             participatingVars = constraint->getParticipatingVariables();
+
+            // If the constraint is max, then lemma variables might have been eliminated
             if ( constraint->getType() == MAX )
             {
                 MaxConstraint *maxConstraint = ( MaxConstraint * ) constraint;
@@ -460,7 +465,7 @@ PiecewiseLinearConstraint *Checker::getCorrespondingAbsConstraint( const List<Pi
     if ( positiveSplit.size() != 2 || negativeSplit.size() != 2 || positiveSplit.back()._type != Tightening::UB || positiveSplit.front()._type != Tightening::LB || negativeSplit.back()._type != Tightening::UB || negativeSplit.front()._type != Tightening::UB )
         return NULL;
 
-    if ( FloatUtils::areDisequal( negativeSplit.back()._value, 0.0 ) || FloatUtils::areDisequal( negativeSplit.front()._value, 0.0 ) ||  FloatUtils::areDisequal(positiveSplit.back()._value, 0.0 ) || FloatUtils::areDisequal( positiveSplit.front()._value, 0.0 ))
+    if ( FloatUtils::areDisequal( negativeSplit.back()._value, 0.0 ) || FloatUtils::areDisequal( negativeSplit.front()._value, 0.0 ) || FloatUtils::areDisequal(positiveSplit.back()._value, 0.0 ) || FloatUtils::areDisequal( positiveSplit.front()._value, 0.0 ) )
         return NULL;
 
     // Check that f=sign(b) corresponds to a problem constraints
@@ -500,7 +505,10 @@ PiecewiseLinearConstraint *Checker::getCorrespondingMaxConstraint( const List<Pi
                 constraintMatched = false;
 
         // Case corresponding to MAX_PHASE_ELIMINATED
-        if ( splits.size() == 2 && splits.back().getBoundTightenings().size() == 1 && splits.front().getBoundTightenings().size() == 1 && splits.back().getBoundTightenings().back()._variable == splits.front().getBoundTightenings().back()._variable && splits.back().getBoundTightenings().back()._variable == maxConstraint->getF() && splits.back().getBoundTightenings().back()._type != splits.front().getBoundTightenings().back()._type )
+        if ( splits.size() == 2 && splits.back().getBoundTightenings().size() == 1 && splits.front().getBoundTightenings().size() == 1 &&
+            splits.back().getBoundTightenings().back()._variable == splits.front().getBoundTightenings().back()._variable &&
+            splits.back().getBoundTightenings().back()._variable == maxConstraint->getF() &&
+            splits.back().getBoundTightenings().back()._type != splits.front().getBoundTightenings().back()._type )
             return constraint;
 
         if ( constraintMatched )
@@ -691,7 +699,7 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
         const double *firstExplanation = expl.getExplanations();
         const double *secondExplanation = expl.getExplanations() + _proofSize;
 
-        // Case of a non-phase fixing lemma
+        // Case of a non phase-fixing lemma
         if ( firstCausingVar == secondCausingVar )
         {
             double explainedUpperBound = UNSATCertificateUtils::computeBound( firstCausingVar, UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );

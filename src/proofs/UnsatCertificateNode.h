@@ -17,10 +17,10 @@
 
 #include "BoundExplainer.h"
 #include "Contradiction.h"
-#include "SmtLibWriter.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "PlcLemma.h"
 #include "ReluConstraint.h"
+#include "SmtLibWriter.h"
 #include "UnsatCertificateUtils.h"
 
 enum DelegationStatus : unsigned
@@ -72,7 +72,7 @@ public:
     /*
       Adds an PLC explanation to the list
     */
-    void addPLCLemma(std::shared_ptr<PLCLemma> &explanation );
+    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation );
 
     /*
       Returns a pointer to a child by a head split, or NULL if not found

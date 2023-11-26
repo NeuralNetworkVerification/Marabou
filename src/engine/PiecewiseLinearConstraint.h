@@ -457,8 +457,9 @@ public:
       Add a variable to the list of aux vars designated in the Tableau
       second argument is used for MaxConstraints
     */
-    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned /*constraintAuxVar*/ )
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar )
     {
+        ASSERT ( constraintAuxVar < tableauAuxVar );
         _tableauAuxVars.append( tableauAuxVar );
     }
 
@@ -469,6 +470,7 @@ public:
     {
         return {};
     }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )

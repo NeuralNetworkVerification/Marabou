@@ -61,7 +61,7 @@ public:
     /*
      Adds a line representing a max constraint, in SMTLIB format, to the SMTLIB instance
     */
-    static void addMaxConstraint( unsigned f, const Set<unsigned> &elements, const PhaseStatus status, double info, List<String> &instance );
+    static void addMaxConstraint( unsigned f, const Set<unsigned> &elements, const PhaseStatus status, double maxVal, List<String> &instance );
 
     /*
      Adds a line representing a disjunction constraint, in SMTLIB format, to the SMTLIB instance

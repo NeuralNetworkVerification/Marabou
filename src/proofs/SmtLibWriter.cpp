@@ -60,19 +60,19 @@ void SmtLibWriter::addAbsConstraint( unsigned b, unsigned f, const PhaseStatus s
         instance.append(  "( assert ( = x" + std::to_string( f ) + " ( - x"  + std::to_string( b ) + " ) ) )\n" );
 }
 
-void SmtLibWriter::addMaxConstraint( unsigned f, const Set<unsigned> &elements, const PhaseStatus status, double info ,List<String> &instance )
+void SmtLibWriter::addMaxConstraint( unsigned f, const Set<unsigned> &elements, const PhaseStatus status, double maxVal ,List<String> &instance )
 {
     String assertRowLine;
     unsigned counter;
     unsigned size = elements.size();
 
-    // f equals to some value (the value of info)
+    // f equals to some value (the value of maxVal)
     if ( status == MAX_PHASE_ELIMINATED  )
-        instance.append( String ( "( assert ( = x" + std::to_string( f ) + " " ) + signedValue( info ) + " ) )\n" );
+        instance.append( String ( "( assert ( = x" + std::to_string( f ) + " " ) + signedValue( maxVal ) + " ) )\n" );
 
-    // f equals to some element (info should be an index)
+    // f equals to some element (maxVal is an index)
     else if ( status != PHASE_NOT_FIXED )
-        instance.append(  "( assert ( = x" + std::to_string( f ) + " x" + std::to_string( ( unsigned ) info ) + " ) )\n" );
+        instance.append(  "( assert ( = x" + std::to_string( f ) + " x" + std::to_string( ( unsigned ) maxVal ) + " ) )\n" );
 
     else
     {
@@ -94,11 +94,11 @@ void SmtLibWriter::addMaxConstraint( unsigned f, const Set<unsigned> &elements, 
 
                 assertRowLine += " ( >= x" + std::to_string( element ) + " x" + std::to_string( otherElement ) + " )";
             }
+
             for ( unsigned i = 0; i < size - 2 ; ++i )
                 assertRowLine += String( " )" );
 
             assertRowLine += " ( = x" + std::to_string( f ) + " x" + std::to_string( element ) + " )";
-
 
             instance.append( assertRowLine + " ) )\n" );
         }
@@ -119,12 +119,14 @@ void SmtLibWriter::addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit
 
         size = disjunct.getEquations().size() + disjunct.getBoundTightenings().size();
         ASSERT( size )
+        // If disjucnt is a single equation or a single tightening, simply add them
         if ( size == 1 && disjunct.getEquations().size() == 1 )
             SmtLibWriter::addEquation( disjunct.getEquations().back(), instance );
         else if ( size == 1 && disjunct.getBoundTightenings().size() == 1 )
             SmtLibWriter::addTightening( disjunct.getBoundTightenings().back(), instance );
         else
         {
+            // Otherwise, add the conjunction of the equations and\or tightenings
             unsigned counter = 0;
 
             for ( const auto &eq : disjunct.getEquations() )
@@ -184,7 +186,7 @@ void SmtLibWriter::addTableauRow( const SparseUnsortedList &row, List<String> &i
             assertRowLine += String( " " );
 
 
-        // Coefficients +-1 can be neglected
+        // Coefficients +-1 can be dropped
         if ( entry->_value == 1 )
             assertRowLine += String( "x" ) + std::to_string( entry->_index );
         else if (entry->_value == -1 )
@@ -265,7 +267,7 @@ void SmtLibWriter::addEquation( const Equation &eq, List<String> &instance )
             assertRowLine += String( " " );
 
 
-        // Coefficients +-1 can be neglected
+        // Coefficients +-1 can be dropped
         if ( addend._coefficient == 1 )
             assertRowLine += String( "x" ) + std::to_string( addend._variable );
         else if (addend._coefficient == -1 )
