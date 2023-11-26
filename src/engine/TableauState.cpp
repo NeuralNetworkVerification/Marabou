@@ -205,7 +205,17 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m, oracle );
     if ( !_basisFactorization )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
+}
 
+void TableauState::initializeBounds( unsigned n )
+{
+    _lowerBounds = new double[n];
+    if ( !_lowerBounds )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::lowerBounds" );
+
+    _upperBounds = new double[n];
+    if ( !_upperBounds )
+        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::upperBounds" );
 }
 
 //
