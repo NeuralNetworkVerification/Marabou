@@ -127,10 +127,10 @@ public:
 
     /*
       Add a lemma to the UNSATCertificateNode object
-      Return true iff adding the lemma has succeeded
+      Return true iff adding the lemma was successful
     */
     virtual bool addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
-                                      unsigned causingVar, BoundType causingVarBound,
+                                      const List<unsigned> &causingVars, BoundType causingVarBound,
                                       PiecewiseLinearFunctionType constraintType ) = 0;
 
     /*

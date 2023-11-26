@@ -211,8 +211,6 @@ bool String::endsWith( const String &suffix )
     return l1 >= l2 && _super.compare(l1 - l2, l2, suffix._super) == 0;
 }
 
-std::ostream &operator<<( std::ostream &stream, const String &string );
-
 //
 // Local Variables:
 // compile-command: "make -C ../.. "

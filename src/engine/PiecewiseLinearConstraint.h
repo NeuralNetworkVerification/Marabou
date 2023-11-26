@@ -453,11 +453,22 @@ public:
         return _cdInfeasibleCases;
     }
 
-    void setTableauAuxVar( unsigned var )
+    /*
+      Add a variable to the list of aux vars designated in the Tableau
+      second argument is used for MaxConstraints
+    */
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned /*constraintAuxVar*/ )
     {
-        _tableauAuxVar = var;
+        _tableauAuxVars.append( tableauAuxVar );
     }
 
+    /*
+      Get the native auxiliary vars
+    */
+    virtual const List<unsigned> getNativeAuxVars() const
+    {
+        return {};
+    }
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -603,7 +614,7 @@ protected:
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
 
-    unsigned _tableauAuxVar;
+    List<unsigned> _tableauAuxVars;
 
 };
 

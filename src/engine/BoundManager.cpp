@@ -407,24 +407,61 @@ void BoundManager::updateBoundExplanationSparse( const SparseUnsortedList &row, 
 }
 
 bool BoundManager::addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
-                                        unsigned causingVar, BoundType causingVarBound,
+                                        const List<unsigned> &causingVars, BoundType causingVarBound,
                                         PiecewiseLinearFunctionType constraintType )
 {
     if ( !shouldProduceProofs() )
         return false;
 
-    ASSERT( causingVar < _tableau->getN() && var < _tableau->getN() );
+    ASSERT( var < _tableau->getN() );
 
     // Register new ground bound, update certificate, and reset explanation
     Vector<double> explanation( 0 );
-    getExplanation( causingVar, causingVarBound, explanation );
+    Vector<Vector<double>> allExplanations( 0 );
 
     bool tightened = affectedVarBound == UPPER ? tightenUpperBound( var, value ) : tightenLowerBound( var, value );
 
     if ( tightened )
     {
-        std::shared_ptr<PLCExplanation> PLCExpl = std::make_shared<PLCExplanation>( causingVar, var, value, causingVarBound, affectedVarBound, explanation, constraintType );
-        _engine->getUNSATCertificateCurrentPointer()->addPLCExplanation( PLCExpl );
+        if ( constraintType == RELU || constraintType == SIGN )
+        {
+            ASSERT( causingVars.size() == 1 );
+            getExplanation( causingVars.front(), causingVarBound, explanation );
+            allExplanations.append( explanation );
+        }
+        else if ( constraintType == ABSOLUTE_VALUE )
+        {
+            if ( causingVars.size() == 1 )
+            {
+                getExplanation( causingVars.front(), causingVarBound, explanation );
+                allExplanations.append( explanation );
+            }
+            else
+            {
+                // Add zero vectors to maintain consistency of explanations size
+                getExplanation( causingVars.front(), causingVarBound == UPPER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0  ) : explanation );
+                explanation.clear();
+
+                getExplanation( causingVars.back(), LOWER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0 ) : explanation );
+            }
+        }
+        else if ( constraintType == MAX )
+        {
+            for ( const auto &element : causingVars )
+            {
+                // Add zero vectors to maintain consistency of explanations size
+                getExplanation( element, UPPER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0 ) : explanation );
+                explanation.clear();
+            }
+        }
+        else
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+
+        std::shared_ptr<PLCLemma> PLCExpl = std::make_shared<PLCLemma>( causingVars, var, value, causingVarBound, affectedVarBound, allExplanations, constraintType );
+        _engine->getUNSATCertificateCurrentPointer()->addPLCLemma(PLCExpl );
         affectedVarBound == UPPER ? _engine->updateGroundUpperBound( var, value ) : _engine->updateGroundLowerBound( var, value );
         resetExplanation( var, affectedVarBound );
     }

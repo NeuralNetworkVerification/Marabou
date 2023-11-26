@@ -172,6 +172,23 @@ public:
     */
     String serializeToString() const override;
 
+    /*
+      Returns the list of feasible disjuncts
+    */
+    List<PiecewiseLinearCaseSplit> getFeasibleDisjuncts() const;
+
+    /*
+      Removes a disjunct from the list of feasible disjuncts
+      Returns true iff disjunct was found.
+    */
+    bool removeFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
+
+    /*
+      Adds a disjunct from the list of feasible disjuncts
+      Returns true iff disjunct was found.
+    */
+    bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
+
 private:
     /*
       The disjuncts that form this PL constraint

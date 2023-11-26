@@ -169,6 +169,10 @@ public:
         {
             return "";
         }
+
+		 void initTighteningRow( const unsigned /*counterpart*/ )
+		 {
+		 }
     };
 
     void setUp()

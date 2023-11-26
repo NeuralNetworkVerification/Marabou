@@ -266,7 +266,7 @@ private:
     }
 
     bool addLemmaExplanation( unsigned /* var */, double /* value */, BoundType /* affectedVarBound */,
-                              unsigned /* causingVar */, BoundType /* causingVarBound */,
+                              const List<unsigned> &/* causingVar */, BoundType /* causingVarBound */,
                               PiecewiseLinearFunctionType /* constraintType */ )
     {
         return true;
@@ -283,7 +283,7 @@ private:
 
     bool shouldProduceProofs() const
     {
-        return true;
+        return false;
     }
 };
 

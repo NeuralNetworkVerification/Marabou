@@ -16,6 +16,7 @@
 #define __UnsatCertificateUtils_h__
 
 #include "FloatUtils.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "SparseMatrix.h"
 #include "SparseUnsortedList.h"
 #include "Vector.h"
@@ -52,6 +53,8 @@ public:
                                                 const double *groundLowerBounds,
                                                 unsigned numberOfRows,
                                                 unsigned numberOfVariables );
+
+    static const Set<PiecewiseLinearFunctionType> getSupportedActivations();
 };
 
 #endif //__UnsatCertificateUtils_h__

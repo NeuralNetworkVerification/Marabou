@@ -15,6 +15,9 @@
 #ifndef __Checker_h__
 #define __Checker_h__
 
+#include "AbsoluteValueConstraint.h"
+#include "DisjunctionConstraint.h"
+#include "MaxConstraint.h"
 #include "Set.h"
 #include "Stack.h"
 #include "UnsatCertificateNode.h"
@@ -53,7 +56,7 @@ private:
 
     unsigned _delegationCounter;
 
-    // Keeps track of bounds changes, so only stored bounds will be reverted when traveling the tree
+    // Keeps track of bounds changes, so only stored bounds will be reverted when traversing the tree
     Stack<Set<unsigned>> _upperBoundChanges;
     Stack<Set<unsigned>> _lowerBoundChanges;
 
@@ -64,9 +67,29 @@ private:
     bool checkNode( const UnsatCertificateNode *node );
 
     /*
-      Return true iff the changes in the ground bounds are certified, with tolerance to errors with at most size epsilon
+      Return true iff all changes in the ground bounds are certified, with tolerance to errors with at most size epsilon
     */
     bool checkAllPLCExplanations( const UnsatCertificateNode *node, double epsilon );
+
+    /*
+     Return a change in the ground bounds caused by a ReLU constraint.
+    */
+    double checkReluLemma(const PLCLemma &expl, PiecewiseLinearConstraint &constraint, double epsilon );
+
+    /*
+     Return a change in the ground bounds caused by a Sign constraint.
+    */
+    double checkSignLemma(const PLCLemma &expl, PiecewiseLinearConstraint &constraint, double epsilon );
+
+    /*
+     Return a change in the ground bounds caused by a Absolute Value constraint.
+    */
+    double checkAbsLemma(const PLCLemma &expl, PiecewiseLinearConstraint &constraint, double epsilon );
+
+    /*
+     Return a change in the ground bounds caused by a Max constraint.
+    */
+    double checkMaxLemma(const PLCLemma &expl, PiecewiseLinearConstraint &constraint );
 
     /*
       Checks a contradiction
@@ -86,7 +109,32 @@ private:
     /*
       Return a pointer to the problem constraint representing the split
     */
-    PiecewiseLinearConstraint *getCorrespondingReLUConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+    PiecewiseLinearConstraint *getCorrespondingConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+
+    /*
+     Return a pointer to a ReLU problem constraint representing the split
+    */
+    PiecewiseLinearConstraint *getCorrespondingReluConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+
+    /*
+     Return a pointer to a sign problem constraint representing the split
+    */
+    PiecewiseLinearConstraint *getCorrespondingSignConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+
+    /*
+     Return a pointer to a absolute value problem constraint representing the split
+    */
+    PiecewiseLinearConstraint *getCorrespondingAbsConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+
+    /*
+     Return a pointer to a max problem constraint representing the split
+    */
+    PiecewiseLinearConstraint *getCorrespondingMaxConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+
+    /*
+     Return a pointer to a disjunction problem constraint representing the split
+    */
+    PiecewiseLinearConstraint *getCorrespondingDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &splits );
 
     /*
       Return true iff a list of splits represents a splits over a single variable

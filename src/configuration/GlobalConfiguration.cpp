@@ -91,7 +91,7 @@ const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
 const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
-const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
+const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = true;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
@@ -102,7 +102,7 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 const double GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING = 0.01;
-const double GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE = 0.0000001;
+const double GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE = 0.000001;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;

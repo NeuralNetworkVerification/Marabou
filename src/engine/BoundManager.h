@@ -46,7 +46,7 @@
 #include "ITableau.h"
 #include "IEngine.h"
 #include "List.h"
-#include "PlcExplanation.h"
+#include "PlcLemma.h"
 #include "Tightening.h"
 #include "UnsatCertificateNode.h"
 #include "Vector.h"
@@ -254,7 +254,7 @@ private:
       Adds a lemma to the UNSATCertificateNode object
      */
     bool addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
-                              unsigned causingVar, BoundType causingVarBound,
+                              const List<unsigned> &causingVars, BoundType causingVarBound,
                               PiecewiseLinearFunctionType constraintType );
 
     /*

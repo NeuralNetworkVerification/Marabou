@@ -1343,8 +1343,10 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         constraint->setStatistics( &_statistics );
 
         // Assuming aux var is use, add the constraint's auxiliary variable assigned to it in the tableau, to the constraint
-        if ( _produceUNSATProofs && _preprocessedQuery->_lastAddendToAux.exists( constraint->getParticipatingVariables().back() ) )
-             constraint->setTableauAuxVar( _preprocessedQuery->_lastAddendToAux.at( constraint->getParticipatingVariables().back() ) );
+        if ( _produceUNSATProofs  )
+            for ( unsigned var : constraint->getNativeAuxVars() )
+                if ( _preprocessedQuery->_lastAddendToAux.exists( var ) )
+                    constraint->addTableauAuxVar( _preprocessedQuery->_lastAddendToAux.at( var ), var );
     }
 
     _tsConstraints = _preprocessedQuery->getTranscendentalConstraints();
@@ -1399,22 +1401,20 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( _produceUNSATProofs )
         {
-            bool containsNonReLUs = false;
+            bool containsUnsupportedConstraints = false;
             for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
             {
-                if ( plConstraint->getType() != RELU )
+                if ( !UNSATCertificateUtils::getSupportedActivations().exists( plConstraint->getType() ) )
                 {
-                    containsNonReLUs = true;
+                    containsUnsupportedConstraints = true;
                     _produceUNSATProofs = false;
                     Options::get()->setBool( Options::PRODUCE_PROOFS, false );
                 }
             }
 
-            if ( containsNonReLUs )
-            {
+            if ( containsUnsupportedConstraints )
                 ENGINE_LOG( "Turning off proof production since activations are not yet supported\n" );
-                printf( "Turning off proof production since activations not are yet supported\n" );
-            }
+
         }
 
         if ( _lpSolverType == LPSolverType::NATIVE )
@@ -3527,9 +3527,9 @@ bool Engine::certifyUNSATCertificate()
 
     for ( auto &constraint : _plConstraints )
     {
-        if ( constraint->getType() != RELU )
+        if ( !UNSATCertificateUtils::getSupportedActivations().exists( constraint->getType() ) )
         {
-            printf( "Certification Error! Marabou doesn't support certification for none ReLU constraints.\n" );
+            printf( "Certification Error! Network contains activation function that is not yet supported by Marabou certification.\n" );
             return false;
         }
     }
@@ -3568,7 +3568,7 @@ bool Engine::certifyUNSATCertificate()
         if ( _statistics.getUnsignedAttribute( Statistics::NUM_POPS ) )
         {
             double delegationRatio = _statistics.getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) / _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
-            ASSERT( FloatUtils::lt( delegationRatio, 0.01 ));
+            ASSERT( FloatUtils::lt( delegationRatio, 0.01 ) );
         }
     });
 

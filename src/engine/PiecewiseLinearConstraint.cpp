@@ -29,7 +29,7 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _score( FloatUtils::negativeInfinity() )
     , _statistics( NULL )
     , _gurobi( NULL )
-    , _tableauAuxVar( 0 )
+    , _tableauAuxVars()
 {
 }
 

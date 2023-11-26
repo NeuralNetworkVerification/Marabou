@@ -201,6 +201,7 @@ public:
     inline unsigned getPosAux() const { return _posAux; };
     inline unsigned getNegAux() const { return _negAux; };
 
+    const List<unsigned> getNativeAuxVars() const override;
 private:
     /*
       The variables that make up this constraint; _f = | _b |.
@@ -230,6 +231,22 @@ private:
       Return true iff _b and _f are not both within bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    std::shared_ptr<TableauRow> _posTighteningRow;
+    std::shared_ptr<TableauRow> _negTighteningRow;
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint
+     Stored in _posTighteningRow
+    */
+    void createPosTighteningRow();
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint
+     Stored in _negTighteningRow
+    */
+    void createNegTighteningRow();
+
 };
 
 #endif // __AbsoluteValueConstraint_h__

@@ -239,7 +239,7 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
-
+    const List<unsigned> getNativeAuxVars() const override;
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
