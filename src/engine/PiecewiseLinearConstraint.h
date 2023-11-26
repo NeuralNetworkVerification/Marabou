@@ -457,9 +457,8 @@ public:
       Add a variable to the list of aux vars designated in the Tableau
       second argument is used for MaxConstraints
     */
-    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar )
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned /* constraintAuxVar */ )
     {
-        ASSERT ( constraintAuxVar < tableauAuxVar );
         _tableauAuxVars.append( tableauAuxVar );
     }
 
