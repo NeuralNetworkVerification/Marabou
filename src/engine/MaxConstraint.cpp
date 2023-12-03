@@ -274,7 +274,6 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
 void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-
     // Lower and upper bounds for the f variable
     double fLB = existsLowerBound( _f ) ? getLowerBound( _f ) : FloatUtils::negativeInfinity();
     double fUB = existsUpperBound( _f ) ? getUpperBound( _f ) : FloatUtils::infinity();
