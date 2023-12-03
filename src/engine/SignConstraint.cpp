@@ -403,9 +403,9 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                 if ( FloatUtils::gt( bound, 1 ) )
                     throw InfeasibleQueryException();
 
-                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, {variable},
+                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, { variable },
                                                                    BoundType::LOWER, getType() );
-                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::LOWER, {variable},
+                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::LOWER, { variable },
                                                                    BoundType::LOWER, getType() );
             }
             else
@@ -421,7 +421,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
         if ( _boundManager != nullptr )
         {
             if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, {variable},
+                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, { variable },
                                                                    BoundType::LOWER, getType() );
             else
                 _boundManager->tightenLowerBound( _f, 1 );
@@ -455,9 +455,9 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
                 if ( FloatUtils::lt( bound, -1 )  )
                     throw InfeasibleQueryException();
 
-                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, {variable},
+                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, { variable },
                                                                   BoundType::UPPER, getType() );
-                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::UPPER, {variable},
+                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::UPPER, { variable },
                                                                    BoundType::UPPER, getType() );
             }
             else
@@ -473,7 +473,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         if ( _boundManager != nullptr )
         {
             if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, {variable},
+                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, { variable },
                                                                   BoundType::UPPER, getType() );
             else
                 _boundManager->tightenUpperBound( _f, -1 );
