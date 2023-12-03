@@ -91,7 +91,7 @@ const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
 const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
-const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = true;
+const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =

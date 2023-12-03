@@ -237,7 +237,7 @@ private:
 
     /*
      Create a the tableau row used for explaining bound tightening caused by the constraint
-     Stored in _posTighteningRow
+     stored in _posTighteningRow
     */
     void createPosTighteningRow();
 
@@ -247,6 +247,10 @@ private:
     */
     void createNegTighteningRow();
 
+    /*
+      Assign a variable as an aux variable by the tableau, related to some existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __AbsoluteValueConstraint_h__

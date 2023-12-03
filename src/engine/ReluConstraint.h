@@ -270,6 +270,11 @@ private:
      Stored in _tighteningRow
     */
     void createTighteningRow();
+
+    /*
+     Assign a variable as an aux variable by the tableau, related to some existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __ReluConstraint_h__

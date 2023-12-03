@@ -142,11 +142,18 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
 
         if ( variable == _b )
         {
-            if ( FloatUtils::lt( bound, 0 ) && ( !proofs || !phaseFixed() ) )
+            if ( FloatUtils::lt( bound, 0 ) )
             {
                 double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) ) ;
-                if ( proofs )
-                    _boundManager->addLemmaExplanation( _f, fUpperBound, UPPER, { variable, variable }, UPPER, getType() );
+                // If phase is not fixed, both bonds are stored and checker should check the max of the two
+                if ( proofs && !phaseFixed() )
+                    _boundManager->addLemmaExplanationAndTightenBound( _f, fUpperBound, BoundType::UPPER,
+                                                                       { variable, variable }, BoundType::UPPER, getType() );
+                else if ( proofs && phaseFixed() )
+                {
+                    std::shared_ptr<TableauRow> tighteningRow = _phaseStatus == ABS_PHASE_POSITIVE ? _posTighteningRow : _negTighteningRow;
+                    _boundManager->tightenUpperBound( _f, fUpperBound, *tighteningRow );
+                }
                 else
                     _boundManager->tightenUpperBound( _f, fUpperBound );
 
@@ -209,11 +216,18 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
 
         if ( variable == _b )
         {
-            if ( FloatUtils::gt( bound, 0 ) && ( !proofs || !phaseFixed() ) )
+            if ( FloatUtils::gt( bound, 0 ) )
             {
                 double fUpperBound = FloatUtils::max( bound, -getLowerBound( _b ) ) ;
-                if ( proofs )
-                    _boundManager->addLemmaExplanation( _f, fUpperBound, UPPER, { variable, variable }, UPPER, getType() );
+                // If phase is not fixed, both bonds are stored and checker should check the max of the two
+                if ( proofs && !phaseFixed() )
+                    _boundManager->addLemmaExplanationAndTightenBound( _f, fUpperBound, BoundType::UPPER,
+                                                                      { variable, variable }, BoundType::UPPER, getType() );
+                else if ( proofs && phaseFixed() )
+                {
+                    std::shared_ptr<TableauRow> tighteningRow = _phaseStatus == ABS_PHASE_POSITIVE ? _posTighteningRow : _negTighteningRow;
+                    _boundManager->tightenUpperBound( _f, fUpperBound, *tighteningRow );
+                }
                 else
                     _boundManager->tightenUpperBound( _f, fUpperBound );
 
@@ -777,7 +791,6 @@ String AbsoluteValueConstraint::serializeToString() const
 
 void AbsoluteValueConstraint::fixPhaseIfNeeded()
 {
-
     if ( phaseFixed() )
         return;
 
@@ -794,7 +807,8 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanation( _posAux, 0, UPPER, { _b },  LOWER, getType() );
+            _boundManager->addLemmaExplanationAndTightenBound( _posAux, 0, BoundType::UPPER, { _b },
+                                                               BoundType::LOWER, getType() );
         return;
     }
 
@@ -803,7 +817,8 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanation( _negAux, 0, UPPER, { _b },  UPPER, getType() );
+            _boundManager->addLemmaExplanationAndTightenBound( _negAux, 0, BoundType::UPPER, { _b },
+                                                               BoundType::UPPER, getType());
         return;
     }
 
@@ -816,7 +831,8 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanation( _negAux, 0, UPPER, { _b, _f },  UPPER, getType() );
+            _boundManager->addLemmaExplanationAndTightenBound( _negAux, 0, BoundType::UPPER, { _b, _f },
+                                                               BoundType::UPPER, getType() );
         return;
     }
 
@@ -826,7 +842,8 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
         if ( proofs )
-            _boundManager->addLemmaExplanation( _posAux, 0, UPPER, { _b, _f },  LOWER, getType() );
+            _boundManager->addLemmaExplanationAndTightenBound(  _posAux, 0, BoundType::UPPER, { _b, _f },
+                                                                BoundType::LOWER, getType() );
         return;
     }
 
@@ -844,7 +861,8 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         {
             setPhaseStatus( ABS_PHASE_NEGATIVE );
             if ( proofs )
-                _boundManager->addLemmaExplanation( _negAux, 0, UPPER, { _posAux },  LOWER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound( _negAux, 0, BoundType::UPPER, { _posAux },
+                                                                   BoundType::LOWER, getType() );
             return;
         }
 
@@ -860,7 +878,8 @@ void AbsoluteValueConstraint::fixPhaseIfNeeded()
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
             if ( proofs )
-                _boundManager->addLemmaExplanation( _posAux, 0, UPPER, { _negAux },  LOWER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound( _posAux, 0, BoundType::UPPER, { _negAux },
+                                                                  BoundType::LOWER, getType() );
             return;
         }
     }
@@ -918,4 +937,22 @@ const List<unsigned> AbsoluteValueConstraint::getNativeAuxVars() const
     if ( _auxVarsInUse )
         return { _posAux, _negAux };
     return {};
+}
+
+void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar )
+{
+    ASSERT( constraintAuxVar == _negAux || constraintAuxVar == _posAux );
+    if ( _tableauAuxVars.size() == 2 )
+        return;
+
+    if ( constraintAuxVar == _negAux )
+    {
+        _tableauAuxVars.append( tableauAuxVar );
+        ASSERT( _tableauAuxVars.back() == tableauAuxVar );
+    }
+    else
+    {
+        _tableauAuxVars.appendHead( tableauAuxVar );
+        ASSERT( _tableauAuxVars.front() == tableauAuxVar );
+    }
 }

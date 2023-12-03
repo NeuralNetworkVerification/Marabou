@@ -189,7 +189,7 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
     {
         PiecewiseLinearConstraint *matchedConstraint = NULL;
         BoundType affectedVarBound = plcLemma->getAffectedVarBound();
-        double explainedBound = affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+        double explainedBound = affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
         const List<unsigned> causingVars = plcLemma->getCausingVars();
         unsigned affectedVar = plcLemma->getAffectedVar();
         List<unsigned> participatingVars;
@@ -235,13 +235,13 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
 
         // If so, update the ground bounds and continue
 
-        auto &temp = affectedVarBound == UPPER ? _groundUpperBounds : _groundLowerBounds;
-        bool isTighter = affectedVarBound == UPPER ? FloatUtils::lt( explainedBound, temp[affectedVar] ) : FloatUtils::gt( explainedBound, temp[affectedVar] );
+        auto &temp = affectedVarBound == BoundType::UPPER ? _groundUpperBounds : _groundLowerBounds;
+        bool isTighter = affectedVarBound == BoundType::UPPER ? FloatUtils::lt( explainedBound, temp[affectedVar] ) : FloatUtils::gt( explainedBound, temp[affectedVar] );
         if ( isTighter )
         {
             temp[affectedVar] = explainedBound;
             ASSERT( !_upperBoundChanges.empty() && !_lowerBoundChanges.empty() );
-            affectedVarBound == UPPER ? _upperBoundChanges.top().insert( affectedVar ) : _lowerBoundChanges.top().insert( affectedVar );
+            affectedVarBound == BoundType::UPPER ? _upperBoundChanges.top().insert( affectedVar ) : _lowerBoundChanges.top().insert( affectedVar );
         }
     }
     return true;
@@ -553,7 +553,7 @@ double Checker::checkReluLemma( const PLCLemma &expl, PiecewiseLinearConstraint 
     BoundType causingVarBound = expl.getCausingVarBound();
     BoundType affectedVarBound = expl.getAffectedVarBound();
 
-    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
 
     List<unsigned> constraintVars = constraint.getParticipatingVariables();
     ASSERT(constraintVars.size() == 3 );
@@ -564,55 +564,55 @@ double Checker::checkReluLemma( const PLCLemma &expl, PiecewiseLinearConstraint 
     unsigned aux = conVec[2];
 
     // If explanation is phase fixing, mark it
-    if ( ( affectedVarBound == LOWER && affectedVar == f && FloatUtils::isPositive( bound ) ) || ( affectedVarBound == UPPER && affectedVar == aux && FloatUtils::isZero( bound ) ) )
+    if ( ( affectedVarBound == BoundType::LOWER && affectedVar == f && FloatUtils::isPositive( bound ) ) || ( affectedVarBound == BoundType::UPPER && affectedVar == aux && FloatUtils::isZero( bound ) ) )
         constraint.setPhaseStatus( RELU_PHASE_ACTIVE );
-    else if ( ( affectedVarBound == LOWER && affectedVar == aux && FloatUtils::isPositive( bound ) ) || ( affectedVarBound == UPPER && affectedVar == f && FloatUtils::isZero( bound ) ) )
+    else if ( ( affectedVarBound == BoundType::LOWER && affectedVar == aux && FloatUtils::isPositive( bound ) ) || ( affectedVarBound == BoundType::UPPER && affectedVar == f && FloatUtils::isZero( bound ) ) )
         constraint.setPhaseStatus( RELU_PHASE_INACTIVE );
 
     // Make sure the explanation is explained using a ReLU bound tightening. Cases are matching each rule in ReluConstraint.cpp
     // We allow explained bound to be tighter than the ones recorded (since an explanation can explain tighter bounds), and an epsilon sized error is tolerated.
 
     // If lb of b is non negative, then ub of aux is 0
-    if ( causingVar == b && causingVarBound == LOWER && affectedVar == aux && affectedVarBound == UPPER && !FloatUtils::isNegative( explainedBound + epsilon ) )
+    if ( causingVar == b && causingVarBound == BoundType::LOWER && affectedVar == aux && affectedVarBound == BoundType::UPPER && !FloatUtils::isNegative( explainedBound + epsilon ) )
         return 0;
 
     // If lb of f is positive, then ub if aux is 0
-    else if ( causingVar == f && causingVarBound == LOWER && affectedVar == aux && affectedVarBound == UPPER && FloatUtils::isPositive( explainedBound + epsilon ) )
+    else if ( causingVar == f && causingVarBound == BoundType::LOWER && affectedVar == aux && affectedVarBound == BoundType::UPPER && FloatUtils::isPositive( explainedBound + epsilon ) )
         return 0;
 
     // If lb of b is negative x, then ub of aux is -x
-    else if ( causingVar == b && causingVarBound == LOWER && affectedVar == aux && affectedVarBound == UPPER && FloatUtils::isNegative( explainedBound - epsilon ) )
+    else if ( causingVar == b && causingVarBound == BoundType::LOWER && affectedVar == aux && affectedVarBound == BoundType::UPPER && FloatUtils::isNegative( explainedBound - epsilon ) )
         return -explainedBound;
 
     // If lb of aux is positive, then ub of f is 0
-    else if ( causingVar == aux && causingVarBound == LOWER && affectedVar == f && affectedVarBound == UPPER && FloatUtils::isPositive( explainedBound + epsilon ) )
+    else if ( causingVar == aux && causingVarBound == BoundType::LOWER && affectedVar == f && affectedVarBound == BoundType::UPPER && FloatUtils::isPositive( explainedBound + epsilon ) )
         return 0;
 
     // If lb of f is negative, then it is 0
-    else if ( causingVar == f && causingVarBound == LOWER && affectedVar == f && affectedVarBound == LOWER  && FloatUtils::isNegative( explainedBound - epsilon ) )
+    else if ( causingVar == f && causingVarBound == BoundType::LOWER && affectedVar == f && affectedVarBound == BoundType::LOWER  && FloatUtils::isNegative( explainedBound - epsilon ) )
         return 0;
 
     // Propagate ub from f to b
-    else if ( causingVar == f && causingVarBound == UPPER && affectedVar == b && affectedVarBound == UPPER )
+    else if ( causingVar == f && causingVarBound == BoundType::UPPER && affectedVar == b && affectedVarBound ==BoundType::UPPER )
         return explainedBound;
 
     // If ub of b is non positive, then ub of f is 0
-    else if ( causingVar == b && causingVarBound == UPPER && affectedVar == f && affectedVarBound == UPPER && !FloatUtils::isPositive( explainedBound - epsilon ) )
+    else if ( causingVar == b && causingVarBound == BoundType::UPPER && affectedVar == f && affectedVarBound == BoundType::UPPER && !FloatUtils::isPositive( explainedBound - epsilon ) )
         return 0;
 
     // If ub of b is non positive x, then lb of aux is -x
-    else if ( causingVar == b && causingVarBound == UPPER && affectedVar == aux && affectedVarBound == LOWER  && !FloatUtils::isPositive( explainedBound - epsilon ) )
+    else if ( causingVar == b && causingVarBound == BoundType::UPPER && affectedVar == aux && affectedVarBound == BoundType::LOWER  && !FloatUtils::isPositive( explainedBound - epsilon ) )
         return -explainedBound;
 
     // If ub of b is positive, then propagate to f ( positivity of explained bound is not checked since negative explained ub can always explain positive bound )
-    else if ( causingVar == b && causingVarBound == UPPER && affectedVar == f && affectedVarBound == UPPER && FloatUtils::isPositive( explainedBound + epsilon ) )
+    else if ( causingVar == b && causingVarBound == BoundType::UPPER && affectedVar == f && affectedVarBound == BoundType::UPPER && FloatUtils::isPositive( explainedBound + epsilon ) )
         return explainedBound;
 
     // If ub of aux is x, then lb of b is -x
-    else if ( causingVar == aux && causingVarBound == UPPER && affectedVar == b && affectedVarBound == LOWER )
+    else if ( causingVar == aux && causingVarBound == BoundType::UPPER && affectedVar == b && affectedVarBound == BoundType::LOWER )
         return -explainedBound;
 
-    return affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+    return affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
 }
 
 double Checker::checkSignLemma( const PLCLemma &expl, PiecewiseLinearConstraint &constraint, double epsilon )
@@ -627,7 +627,7 @@ double Checker::checkSignLemma( const PLCLemma &expl, PiecewiseLinearConstraint 
     BoundType causingVarBound = expl.getCausingVarBound();
     BoundType affectedVarBound = expl.getAffectedVarBound();
 
-    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
     List<unsigned> constraintVars = constraint.getParticipatingVariables();
     ASSERT(constraintVars.size() == 2 );
 
@@ -635,39 +635,39 @@ double Checker::checkSignLemma( const PLCLemma &expl, PiecewiseLinearConstraint 
     unsigned f = constraintVars.back();
 
     // Any explanation is phase fixing
-    if ( ( affectedVarBound == LOWER && affectedVar == f && FloatUtils::gt( bound, -1 ) ) || ( affectedVarBound == LOWER && affectedVar == b && !FloatUtils::isNegative( bound ) ) )
+    if ( ( affectedVarBound == BoundType::LOWER && affectedVar == f && FloatUtils::gt( bound, -1 ) ) || ( affectedVarBound == BoundType::LOWER && affectedVar == b && !FloatUtils::isNegative( bound ) ) )
         constraint.setPhaseStatus( SIGN_PHASE_POSITIVE );
-    else if ( ( affectedVarBound == UPPER && affectedVar == f && FloatUtils::gt( bound, 1 ) ) || ( affectedVarBound == UPPER && affectedVar == b && FloatUtils::isNegative( bound ) ) )
+    else if ( ( affectedVarBound == BoundType::UPPER && affectedVar == f && FloatUtils::gt( bound, 1 ) ) || ( affectedVarBound == BoundType::UPPER && affectedVar == b && FloatUtils::isNegative( bound ) ) )
         constraint.setPhaseStatus( SIGN_PHASE_NEGATIVE );
 
     // Make sure the explanation is explained using a sign bound tightening. Cases are matching each rule in SignConstraint.cpp
     // We allow explained bound to be tighter than the ones recorded (since an explanation can explain tighter bounds), and an epsilon sized error is tolerated.
 
     // If lb of f is > -1, then lb of f is 1
-    if ( causingVar == f && causingVarBound == LOWER && affectedVar == f && affectedVarBound == LOWER && FloatUtils::areEqual( bound, 1 ) && FloatUtils::gte( explainedBound + epsilon, -1 ) )
+    if ( causingVar == f && causingVarBound == BoundType::LOWER && affectedVar == f && affectedVarBound == BoundType::LOWER && FloatUtils::areEqual( bound, 1 ) && FloatUtils::gte( explainedBound + epsilon, -1 ) )
         return 1;
 
     // If lb of f is > -1, then lb of b is 0
-    else if ( causingVar == f && causingVarBound == LOWER && affectedVar == b && affectedVarBound == LOWER && FloatUtils::isZero( bound ) && FloatUtils::gte( explainedBound + epsilon, -1 ) )
+    else if ( causingVar == f && causingVarBound == BoundType::LOWER && affectedVar == b && affectedVarBound == BoundType::LOWER && FloatUtils::isZero( bound ) && FloatUtils::gte( explainedBound + epsilon, -1 ) )
         return 0;
 
     // If lb of b is non negative, then lb of f is 1
-    else if ( causingVar == b && causingVarBound == LOWER && affectedVar == f && affectedVarBound == LOWER && FloatUtils::areEqual( bound, 1 ) && !FloatUtils::isNegative( explainedBound + epsilon ) )
+    else if ( causingVar == b && causingVarBound == BoundType::LOWER && affectedVar == f && affectedVarBound == BoundType::LOWER && FloatUtils::areEqual( bound, 1 ) && !FloatUtils::isNegative( explainedBound + epsilon ) )
         return 1;
 
     // If ub of f is < 1, then ub of f is -1
-    else if ( causingVar == f && causingVarBound == UPPER && affectedVar == f && affectedVarBound == UPPER && FloatUtils::areEqual( bound, -1 ) && FloatUtils::lte( explainedBound - epsilon, 1 ) )
+    else if ( causingVar == f && causingVarBound == BoundType::UPPER && affectedVar == f && affectedVarBound == BoundType::UPPER && FloatUtils::areEqual( bound, -1 ) && FloatUtils::lte( explainedBound - epsilon, 1 ) )
         return -1;
 
     // If ub of f is < 1, then ub of b is 0
-    else if ( causingVar == f && causingVarBound == UPPER && affectedVar == b && affectedVarBound == UPPER && FloatUtils::isZero( bound ) && FloatUtils::lte( explainedBound - epsilon, 1 ) )
+    else if ( causingVar == f && causingVarBound == BoundType::UPPER && affectedVar == b && affectedVarBound == BoundType::UPPER && FloatUtils::isZero( bound ) && FloatUtils::lte( explainedBound - epsilon, 1 ) )
         return 0;
 
     // If ub of b is negative, then ub of f is -1
-    else if ( causingVar == b && causingVarBound == UPPER && affectedVar == f && affectedVarBound == UPPER && FloatUtils::areEqual( bound, -1 ) && FloatUtils::isNegative( explainedBound - epsilon ) )
+    else if ( causingVar == b && causingVarBound == BoundType::UPPER && affectedVar == f && affectedVarBound == BoundType::UPPER && FloatUtils::areEqual( bound, -1 ) && FloatUtils::isNegative( explainedBound - epsilon ) )
         return -1;
 
-    return affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+    return affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
 }
 
 double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &constraint, double epsilon )
@@ -702,34 +702,34 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
         // Case of a non phase-fixing lemma
         if ( firstCausingVar == secondCausingVar )
         {
-            double explainedUpperBound = UNSATCertificateUtils::computeBound( firstCausingVar, UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
-            double explainedLowerBound = UNSATCertificateUtils::computeBound( secondCausingVar, LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+            double explainedUpperBound = UNSATCertificateUtils::computeBound( firstCausingVar, BoundType::UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+            double explainedLowerBound = UNSATCertificateUtils::computeBound( secondCausingVar, BoundType::LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
 
             // b is always the causing var, affecting the ub of f
-            if ( affectedVar == f && firstCausingVar == b && affectedVarBound == UPPER && bound > 0 )
+            if ( affectedVar == f && firstCausingVar == b && affectedVarBound == BoundType::UPPER && bound > 0 )
                 return FloatUtils::max( explainedUpperBound, -explainedLowerBound );
 
-            return affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+            return affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
         }
         // Cases of a phase-fixing lemma
         else
         {
             ASSERT( firstCausingVar == b && secondCausingVar == f );
-            double explainedBBound = UNSATCertificateUtils::computeBound( firstCausingVar, causingVarBound == UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
-            double explainedFBound = UNSATCertificateUtils::computeBound( secondCausingVar, LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+            double explainedBBound = UNSATCertificateUtils::computeBound( firstCausingVar, causingVarBound == BoundType::UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+            double explainedFBound = UNSATCertificateUtils::computeBound( secondCausingVar, BoundType::LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
 
-            if ( affectedVar == neg && causingVarBound == UPPER && explainedFBound > explainedBBound - epsilon && bound == 0 )
+            if ( affectedVar == neg && causingVarBound == BoundType::UPPER && explainedFBound > explainedBBound - epsilon && bound == 0 )
             {
                 constraint.setPhaseStatus( ABS_PHASE_NEGATIVE );
                 return 0;
             }
-            else if ( affectedVar == pos && causingVarBound == LOWER && explainedFBound > -explainedBBound  - epsilon && bound == 0 )
+            else if ( affectedVar == pos && causingVarBound == BoundType::LOWER && explainedFBound > -explainedBBound - epsilon && bound == 0 )
             {
                 constraint.setPhaseStatus( ABS_PHASE_POSITIVE );
                 return 0;
             }
 
-            return affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+            return affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
         }
     }
 
@@ -737,30 +737,30 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
     const double *explanation = expl.getExplanations();
     unsigned causingVar = expl.getCausingVars().front();
 
-    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
 
-    if ( affectedVar == pos && causingVar == b && causingVarBound == LOWER && !FloatUtils::isNegative( explainedBound + epsilon ) && bound == 0 )
+    if ( affectedVar == pos && causingVar == b && causingVarBound == BoundType::LOWER && !FloatUtils::isNegative( explainedBound + epsilon ) && bound == 0 )
     {
         constraint.setPhaseStatus( ABS_PHASE_POSITIVE );
         return 0;
     }
-    else if ( affectedVar == neg && causingVar == b && causingVarBound == UPPER && !FloatUtils::isPositive( explainedBound - epsilon ) && bound == 0 )
+    else if ( affectedVar == neg && causingVar == b && causingVarBound == BoundType::UPPER && !FloatUtils::isPositive( explainedBound - epsilon ) && bound == 0 )
     {
         constraint.setPhaseStatus( ABS_PHASE_NEGATIVE );
         return 0;
     }
-    else if ( affectedVar == neg && causingVar == pos && causingVarBound == LOWER && FloatUtils::isPositive( explainedBound + epsilon ) && bound == 0 )
+    else if ( affectedVar == neg && causingVar == pos && causingVarBound == BoundType::LOWER && FloatUtils::isPositive( explainedBound + epsilon ) && bound == 0 )
     {
         constraint.setPhaseStatus( ABS_PHASE_NEGATIVE );
         return 0;
     }
-    else if ( affectedVar == pos && causingVar == neg && causingVarBound == LOWER && FloatUtils::isPositive( explainedBound + epsilon ) && bound == 0 )
+    else if ( affectedVar == pos && causingVar == neg && causingVarBound == BoundType::LOWER && FloatUtils::isPositive( explainedBound + epsilon ) && bound == 0 )
     {
         constraint.setPhaseStatus( ABS_PHASE_POSITIVE );
         return 0;
     }
 
-    return affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+    return affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
 }
 
 double Checker::checkMaxLemma( const PLCLemma &expl, PiecewiseLinearConstraint &constraint )
@@ -774,7 +774,7 @@ double Checker::checkMaxLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
     const double *allExplanations = expl.getExplanations();
     BoundType causingVarBound = expl.getCausingVarBound();
     BoundType affectedVarBound = expl.getAffectedVarBound();
-    double explainedBound = affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+    double explainedBound = affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
 
     unsigned f = maxConstraint->getF();
 
@@ -791,12 +791,12 @@ double Checker::checkMaxLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
         const double *explanation = allExplanations + ( counter * _proofSize );
         ++counter;
 
-        explainedBound = UNSATCertificateUtils::computeBound( var, UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+        explainedBound = UNSATCertificateUtils::computeBound( var, BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
         maxBound = FloatUtils::max( maxBound, explainedBound );
     }
 
-    if ( causingVarBound == UPPER && affectedVar == f && affectedVarBound == UPPER )
+    if ( causingVarBound == BoundType::UPPER && affectedVar == f && affectedVarBound == BoundType::UPPER )
         return maxBound;
 
-    return affectedVarBound == UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
+    return affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
 }

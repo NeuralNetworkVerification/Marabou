@@ -81,9 +81,9 @@ public:
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
         Vector<Vector<double>> emptyVec;
 
-        auto explanation1 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, 0, UPPER, UPPER, emptyVec, RELU ) );
-        auto explanation2 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -1, UPPER, UPPER, emptyVec, RELU ) );
-        auto explanation3 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -4, UPPER, UPPER, emptyVec, RELU ) );
+        auto explanation1 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, 0, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+        auto explanation2 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -1, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+        auto explanation3 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -4, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
 
         TS_ASSERT(root.getPLCLemmas().empty() );
 

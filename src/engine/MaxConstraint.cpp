@@ -335,7 +335,8 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
         if ( FloatUtils::gt( fUB, maxElementUB ) )
         {
             if ( proofs )
-                _boundManager->addLemmaExplanation( _f, maxElementUB, UPPER, getElements(), UPPER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound( _f, maxElementUB, BoundType::UPPER, getElements(),
+                                                                  BoundType::UPPER, getType() );
             else
                 tightenings.append( Tightening( _f, maxElementUB, Tightening::UB ) );
         }
@@ -725,7 +726,10 @@ String MaxConstraint::serializeToString() const
 
 void MaxConstraint::eliminateCase( unsigned variable )
 {
-    if ( _boundManager && _boundManager->shouldProduceProofs() )
+    bool proofs = _boundManager && _boundManager->shouldProduceProofs();
+
+    // Function is not yet supported for proof production
+    if ( proofs )
         return;
 
     if ( _cdInfeasibleCases )
@@ -743,15 +747,17 @@ void MaxConstraint::eliminateCase( unsigned variable )
             _elementToAux.erase( variable );
             _auxToElement.erase( aux );
         }
-
-        if ( _elementToTighteningRow.exists( variable ) && _elementToTighteningRow[variable] != NULL )
+        if ( proofs )
         {
-            _elementToTighteningRow[variable] = NULL;
-            _elementToTighteningRow.erase( variable );
-        }
+            if ( _elementToTighteningRow.exists( variable ) && _elementToTighteningRow[variable] != NULL )
+            {
+                _elementToTighteningRow[variable] = NULL;
+                _elementToTighteningRow.erase( variable );
+            }
 
-        if ( _elementToTableauAux.exists( variable ) )
-            _elementToTableauAux.erase( variable );
+            if ( _elementToTableauAux.exists( variable ) )
+                _elementToTableauAux.erase( variable );
+        }
     }
 }
 
@@ -780,8 +786,7 @@ bool MaxConstraint::haveOutOfBoundVariables() const
 
 void MaxConstraint::createElementTighteningRow( unsigned element )
 {
-
-    // Create the row only when needed and when not already create
+    // Create the row only when needed and when not already created
     if ( !_boundManager->getBoundExplainer() || _elementToTighteningRow[element] != NULL )
         return;
 

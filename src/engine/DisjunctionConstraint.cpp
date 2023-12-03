@@ -518,7 +518,7 @@ List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getFeasibleDisjuncts() con
 {
     List<PiecewiseLinearCaseSplit> validDisjuncts = List<PiecewiseLinearCaseSplit>();
 
-    for ( const auto feasibleDisjunct : _feasibleDisjuncts )
+    for ( const auto &feasibleDisjunct : _feasibleDisjuncts )
         validDisjuncts.append( _disjuncts.get( feasibleDisjunct ) );
 
     return validDisjuncts;
@@ -548,10 +548,7 @@ bool DisjunctionConstraint::addFeasibleDisjunct( const PiecewiseLinearCaseSplit 
     return false;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+// No aux vars in disjunction constraint, so the function is suppressed
+void DisjunctionConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */, unsigned /* constraintAuxVar */ )
+{
+}

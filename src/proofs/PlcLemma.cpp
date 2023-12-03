@@ -28,7 +28,6 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
     , _affectedVarBound( affectedVarBound )
     , _constraintType( constraintType )
 {
-
     if ( explanations.empty() )
         _explanations = NULL;
     else
@@ -63,7 +62,6 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
             for ( unsigned i = 0; i < numOfExplanations; ++i )
                 for ( unsigned j = 0; j < proofSize; ++j )
                     _explanations[i * proofSize + j] = explanations[i][j];
-
         }
     }
 }

@@ -185,7 +185,6 @@ void SmtLibWriter::addTableauRow( const SparseUnsortedList &row, List<String> &i
         else
             assertRowLine += String( " " );
 
-
         // Coefficients +-1 can be dropped
         if ( entry->_value == 1 )
             assertRowLine += String( "x" ) + std::to_string( entry->_index );

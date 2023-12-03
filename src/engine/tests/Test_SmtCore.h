@@ -170,7 +170,11 @@ public:
             return "";
         }
 
-        void initTighteningRow( const unsigned /*counterpart*/ )
+		 void initTighteningRow( const unsigned /*counterpart*/ )
+		 {
+		 }
+
+        void addTableauAuxVar( unsigned /*tableauAuxVar*/, unsigned /*constraintAuxVar*/ )
         {
         }
     };

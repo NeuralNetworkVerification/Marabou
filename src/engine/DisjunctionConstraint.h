@@ -236,6 +236,8 @@ private:
         //ASSERT( phase != PHASE_NOT_FIXED );
         return static_cast<unsigned>( phase ) - 1;
     }
+
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __DisjunctionConstraint_h__
