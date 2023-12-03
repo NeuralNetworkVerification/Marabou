@@ -297,6 +297,11 @@ public:
     void createElementTighteningRow( unsigned element );
     const List<unsigned> getNativeAuxVars() const override;
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
+
+    /*
+      Apply tightenings in the list, discovered by getEntailedTightenings
+    */
+    void applyTightenings( const List<Tightening> &tightenings ) const;
 };
 
 #endif // __MaxConstraint_h__
