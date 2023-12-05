@@ -3321,10 +3321,10 @@ bool Engine::certifyInfeasibility( unsigned var ) const
 
     if ( contradiction.empty() )
         return FloatUtils::isNegative( _groundBoundManager.getUpperBound( var ) - _groundBoundManager.getLowerBound( var ) );
-
-    double derivedBound = UNSATCertificateUtils::computeCombinationUpperBound( contradiction.data(), _tableau->getSparseA(),
-                                                                               _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(),
-                                                                               _tableau->getM(), _tableau->getN() );
+    SparseUnsortedList sparseContradiction = SparseUnsortedList();
+    contradiction.empty() ? sparseContradiction.initializeToEmpty() : sparseContradiction.initialize( contradiction.data(), contradiction.size() );
+    double derivedBound = UNSATCertificateUtils::computeCombinationUpperBound( sparseContradiction, _tableau->getSparseA(),
+                                                                               _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(), _tableau->getN() );
     return FloatUtils::isNegative( derivedBound );
 }
 
@@ -3337,10 +3337,11 @@ double Engine::explainBound( unsigned var, bool isUpper ) const
     if  ( !_boundManager.isExplanationTrivial( var, isUpper ) )
         _boundManager.getExplanation( var, isUpper, explanationVec );
 
-    const double *explanation = explanationVec.empty() ? NULL : explanationVec.data();
+    SparseUnsortedList explanation = SparseUnsortedList( explanationVec.size() );
+    explanationVec.empty() ? explanation.initializeToEmpty() : explanation.initialize( explanationVec.data(), explanationVec.size() );
     return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _tableau->getSparseA(),
                                                 _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(),
-                                                _tableau->getM(), _tableau->getN() );
+                                                _tableau->getN() );
 }
 
 bool Engine::validateBounds( unsigned var, double epsilon, bool isUpper ) const

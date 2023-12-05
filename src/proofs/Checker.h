@@ -98,7 +98,7 @@ private:
     /*
       Computes a bound according to an explanation
     */
-    double explainBound( unsigned var, bool isUpper, const double *explanation ) const;
+    double explainBound( unsigned var, bool isUpper, const SparseUnsortedList &explanation ) const;
 
     /*
       Write the data marked to delegate to a smtlib file format

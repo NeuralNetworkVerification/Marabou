@@ -17,6 +17,7 @@
 
 #include "PiecewiseLinearConstraint.h"
 #include "PiecewiseLinearFunctionType.h"
+#include "SparseUnsortedList.h"
 #include "Vector.h"
 
 /*
@@ -43,7 +44,7 @@ public:
     double getBound() const;
     BoundType getCausingVarBound() const;
     BoundType getAffectedVarBound() const;
-    const double *getExplanations() const;
+    const List<SparseUnsortedList> &getExplanations() const;
     PiecewiseLinearFunctionType getConstraintType() const;
 
 private:
@@ -52,7 +53,7 @@ private:
     double _bound;
     BoundType _causingVarBound;
     BoundType _affectedVarBound;
-    double *_explanations;
+    List<SparseUnsortedList> _explanations;
     PiecewiseLinearFunctionType _constraintType;
 };
 

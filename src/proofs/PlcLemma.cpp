@@ -29,9 +29,11 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
     , _constraintType( constraintType )
 {
     if ( explanations.empty() )
-        _explanations = NULL;
+        _explanations = List<SparseUnsortedList>();
     else
     {
+        ASSERT( causingVars.size() ==  explanations.size() );
+
         bool allEmpty = true;
         unsigned proofSize = 0;
 
@@ -44,7 +46,7 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
             }
 
         if ( allEmpty )
-            _explanations = NULL;
+            _explanations = List<SparseUnsortedList>();
         else
         {
             unsigned numOfExplanations = explanations.size();
@@ -57,22 +59,23 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
             if ( _constraintType == ABSOLUTE_VALUE )
                 ASSERT( numOfExplanations == 2 || numOfExplanations == 1 );
 
-            _explanations = new double[numOfExplanations * proofSize];
+            _explanations = List<SparseUnsortedList>();
 
             for ( unsigned i = 0; i < numOfExplanations; ++i )
-                for ( unsigned j = 0; j < proofSize; ++j )
-                    _explanations[i * proofSize + j] = explanations[i][j];
+            {
+                SparseUnsortedList expl = SparseUnsortedList();
+                expl.initialize( explanations[i].data(), proofSize );
+                _explanations.append( expl );
+            }
         }
     }
 }
 
 PLCLemma::~PLCLemma()
 {
-    if ( _explanations )
-    {
-        delete [] _explanations;
-        _explanations = NULL;
-    }
+    if ( !_explanations.empty() )
+        for (  auto &expl : _explanations )
+            expl.clear();
 }
 
 const List<unsigned> &PLCLemma::getCausingVars() const
@@ -100,7 +103,7 @@ BoundType PLCLemma::getAffectedVarBound() const
     return _affectedVarBound;
 }
 
-const double *PLCLemma::getExplanations() const
+const List<SparseUnsortedList> &PLCLemma::getExplanations() const
 {
     return _explanations;
 }

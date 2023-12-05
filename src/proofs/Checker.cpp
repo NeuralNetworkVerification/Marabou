@@ -167,15 +167,15 @@ void Checker::fixChildSplitPhase( UnsatCertificateNode *child,  PiecewiseLinearC
 bool Checker::checkContradiction( const UnsatCertificateNode *node ) const
 {
     ASSERT( node->isValidLeaf() && !node->getSATSolutionFlag() );
-    const double *contradiction = node->getContradiction()->getContradiction();
+    const SparseUnsortedList contradiction = node->getContradiction()->getContradiction();
 
-    if ( contradiction == NULL )
+    if ( contradiction.empty() )
     {
         unsigned infeasibleVar = node->getContradiction()->getVar();
         return FloatUtils::isNegative( _groundUpperBounds[infeasibleVar] - _groundLowerBounds[infeasibleVar] );
     }
 
-    double contradictionUpperBound = UNSATCertificateUtils::computeCombinationUpperBound( contradiction, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double contradictionUpperBound = UNSATCertificateUtils::computeCombinationUpperBound( contradiction, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
 
     return FloatUtils::isNegative( contradictionUpperBound );
 }
@@ -247,9 +247,9 @@ bool Checker::checkAllPLCExplanations( const UnsatCertificateNode *node, double 
     return true;
 }
 
-double Checker::explainBound( unsigned var, bool isUpper, const double *explanation ) const
+double Checker::explainBound( unsigned var, bool isUpper, const SparseUnsortedList &explanation ) const
 {
-    return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
 }
 
 PiecewiseLinearConstraint *Checker::getCorrespondingConstraint( const List<PiecewiseLinearCaseSplit> &splits )
@@ -549,14 +549,15 @@ double Checker::checkReluLemma( const PLCLemma &expl, PiecewiseLinearConstraint 
     unsigned causingVar = expl.getCausingVars().front();
     unsigned affectedVar = expl.getAffectedVar();
     double bound = expl.getBound();
-    const double *explanation = expl.getExplanations();
+    const List<SparseUnsortedList> &explanations = expl.getExplanations();
     BoundType causingVarBound = expl.getCausingVarBound();
     BoundType affectedVarBound = expl.getAffectedVarBound();
+    ASSERT( explanations.size() == 1 );
 
-    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanations.back(), _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
 
     List<unsigned> constraintVars = constraint.getParticipatingVariables();
-    ASSERT(constraintVars.size() == 3 );
+    ASSERT( constraintVars.size() == 3 );
 
     Vector<unsigned> conVec( constraintVars.begin(), constraintVars.end() );
     unsigned b = conVec[0];
@@ -623,11 +624,12 @@ double Checker::checkSignLemma( const PLCLemma &expl, PiecewiseLinearConstraint 
     unsigned causingVar = expl.getCausingVars().front();
     unsigned affectedVar = expl.getAffectedVar();
     double bound = expl.getBound();
-    const double *explanation = expl.getExplanations();
+    const List<SparseUnsortedList> &explanations = expl.getExplanations();
     BoundType causingVarBound = expl.getCausingVarBound();
     BoundType affectedVarBound = expl.getAffectedVarBound();
+    ASSERT( explanations.size() == 1 );
 
-    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanations.front(), _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
     List<unsigned> constraintVars = constraint.getParticipatingVariables();
     ASSERT(constraintVars.size() == 2 );
 
@@ -696,14 +698,14 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
         unsigned firstCausingVar = expl.getCausingVars().front();
         unsigned secondCausingVar = expl.getCausingVars().back();
 
-        const double *firstExplanation = expl.getExplanations();
-        const double *secondExplanation = expl.getExplanations() + _proofSize;
+        const SparseUnsortedList firstExplanation = expl.getExplanations().front();
+        const SparseUnsortedList secondExplanation = expl.getExplanations().back();
 
         // Case of a non phase-fixing lemma
         if ( firstCausingVar == secondCausingVar )
         {
-            double explainedUpperBound = UNSATCertificateUtils::computeBound( firstCausingVar, BoundType::UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
-            double explainedLowerBound = UNSATCertificateUtils::computeBound( secondCausingVar, BoundType::LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+            double explainedUpperBound = UNSATCertificateUtils::computeBound( firstCausingVar, BoundType::UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
+            double explainedLowerBound = UNSATCertificateUtils::computeBound( secondCausingVar, BoundType::LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
 
             // b is always the causing var, affecting the ub of f
             if ( affectedVar == f && firstCausingVar == b && affectedVarBound == BoundType::UPPER && bound > 0 )
@@ -715,8 +717,8 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
         else
         {
             ASSERT( firstCausingVar == b && secondCausingVar == f );
-            double explainedBBound = UNSATCertificateUtils::computeBound( firstCausingVar, causingVarBound == BoundType::UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
-            double explainedFBound = UNSATCertificateUtils::computeBound( secondCausingVar, BoundType::LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+            double explainedBBound = UNSATCertificateUtils::computeBound( firstCausingVar, causingVarBound == BoundType::UPPER, firstExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
+            double explainedFBound = UNSATCertificateUtils::computeBound( secondCausingVar, BoundType::LOWER, secondExplanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
 
             if ( affectedVar == neg && causingVarBound == BoundType::UPPER && explainedFBound > explainedBBound - epsilon && bound == 0 )
             {
@@ -734,10 +736,10 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
     }
 
     // Cases of a phase-fixing lemma
-    const double *explanation = expl.getExplanations();
+    const List<SparseUnsortedList> &explanation = expl.getExplanations();
     unsigned causingVar = expl.getCausingVars().front();
 
-    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    double explainedBound = UNSATCertificateUtils::computeBound( causingVar, causingVarBound == BoundType::UPPER, explanation.front(), _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
 
     if ( affectedVar == pos && causingVar == b && causingVarBound == BoundType::LOWER && !FloatUtils::isNegative( explainedBound + epsilon ) && bound == 0 )
     {
@@ -771,7 +773,7 @@ double Checker::checkMaxLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
     double maxBound = maxConstraint->getMaxValueOfEliminatedPhases();
     const List<unsigned> causingVars = expl.getCausingVars();
     unsigned affectedVar = expl.getAffectedVar();
-    const double *allExplanations = expl.getExplanations();
+    const List<SparseUnsortedList> &allExplanations = expl.getExplanations();
     BoundType causingVarBound = expl.getCausingVarBound();
     BoundType affectedVarBound = expl.getAffectedVarBound();
     double explainedBound = affectedVarBound == BoundType::UPPER ? FloatUtils::infinity() : FloatUtils::negativeInfinity();
@@ -786,13 +788,16 @@ double Checker::checkMaxLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
 
     // Only tightening type is of the form f = element, for some element with the maximal upper bound
     unsigned counter = 0;
-    for( const auto &var : causingVars )
-    {
-        const double *explanation = allExplanations + ( counter * _proofSize );
-        ++counter;
 
-        explainedBound = UNSATCertificateUtils::computeBound( var, BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _proofSize, _groundUpperBounds.size() );
+    Vector<unsigned> causingVarsVec = Vector<unsigned>( 0 );
+    for( const auto &var : causingVars )
+        causingVarsVec.append( var );
+
+    for( const auto &explanation : allExplanations )
+    {
+        explainedBound = UNSATCertificateUtils::computeBound( causingVarsVec[counter], BoundType::UPPER, explanation, _initialTableau, _groundUpperBounds.data(), _groundLowerBounds.data(), _groundUpperBounds.size() );
         maxBound = FloatUtils::max( maxBound, explainedBound );
+        ++counter;
     }
 
     if ( causingVarBound == BoundType::UPPER && affectedVar == f && affectedVarBound == BoundType::UPPER )
