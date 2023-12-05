@@ -167,7 +167,7 @@ void Checker::fixChildSplitPhase( UnsatCertificateNode *child,  PiecewiseLinearC
 bool Checker::checkContradiction( const UnsatCertificateNode *node ) const
 {
     ASSERT( node->isValidLeaf() && !node->getSATSolutionFlag() );
-    const SparseUnsortedList contradiction = node->getContradiction()->getContradiction();
+    const SparseUnsortedList &contradiction = node->getContradiction()->getContradiction();
 
     if ( contradiction.empty() )
     {
@@ -698,8 +698,8 @@ double Checker::checkAbsLemma( const PLCLemma &expl, PiecewiseLinearConstraint &
         unsigned firstCausingVar = expl.getCausingVars().front();
         unsigned secondCausingVar = expl.getCausingVars().back();
 
-        const SparseUnsortedList firstExplanation = expl.getExplanations().front();
-        const SparseUnsortedList secondExplanation = expl.getExplanations().back();
+        const SparseUnsortedList &firstExplanation = expl.getExplanations().front();
+        const SparseUnsortedList &secondExplanation = expl.getExplanations().back();
 
         // Case of a non phase-fixing lemma
         if ( firstCausingVar == secondCausingVar )
