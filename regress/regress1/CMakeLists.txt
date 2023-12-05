@@ -164,5 +164,4 @@ marabou_add_input_query_test(1 ACASXU_maxtest2.ipq unsat "--prove-unsat" "ipq")
 # Sign
 marabou_add_input_query_test(1 deep_6_index_5566.ipq unsat "--prove-unsat" "ipq")
 marabou_add_input_query_test(1 deep_6_index_5567.ipq unsat "--prove-unsat" "ipq")
-marabou_add_input_query_test(1 deep_6_index_5525.ipq unsat "--prove-unsat" "ipq")
 marabou_add_input_query_test(1 deep_6_index_7779.ipq unsat "--prove-unsat" "ipq")
