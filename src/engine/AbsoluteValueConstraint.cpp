@@ -145,7 +145,7 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
             if ( bound < 0 )
             {
                 double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) ) ;
-                // If phase is not fixed, both bonds are stored and checker should check the max of the two
+                // If phase is not fixed, both bounds are stored and checker should check the max of the two
                 if ( proofs && !phaseFixed() )
                     _boundManager->addLemmaExplanationAndTightenBound( _f, fUpperBound, BoundType::UPPER,
                                                                       { variable, variable }, BoundType::UPPER, getType() );
