@@ -126,7 +126,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
                   tighteningStrategy="deeppoly", milpTightening="none", milpSolverTimeout=0,
                   numSimulations=10, numBlasThreads=1, performLpTighteningAfterSplit=False,
-                  lpSolver=""):
+                  lpSolver="", produceProofs=False):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -179,4 +179,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
     options._numBlasThreads = numBlasThreads
     options._performLpTighteningAfterSplit = performLpTighteningAfterSplit
     options._lpSolver = lpSolver
+    options._produceProofs = produceProofs
     return options

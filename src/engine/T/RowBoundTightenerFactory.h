@@ -21,6 +21,7 @@
 class IRowBoundTightener;
 class ITableau;
 
+
 namespace T
 {
 	IRowBoundTightener *createRowBoundTightener( const ITableau &tableau );

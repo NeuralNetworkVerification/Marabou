@@ -320,7 +320,7 @@ public:
 
     /*
       Print a long attribute in time format
-     */
+    */
     void printLongAttributeAsTime( unsigned long long longAsNumber ) const;
 
 private:

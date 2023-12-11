@@ -16,11 +16,10 @@
 #ifndef __T__TableauFactory_h__
 #define __T__TableauFactory_h__
 
-#include "IBoundManager.h"
-
 #include "cxxtest/Mock.h"
 
 class ITableau;
+class IBoundManager;
 class ISelector;
 
 namespace T

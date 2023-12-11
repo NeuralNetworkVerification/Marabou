@@ -17,6 +17,7 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "ITableau.h"
 #include "MStringf.h"
@@ -393,17 +394,38 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
     if ( variable == _f && FloatUtils::gt( bound, -1 ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
+
         if ( _boundManager != nullptr )
         {
-            _boundManager->tightenLowerBound( _f, 1 );
-            _boundManager->tightenLowerBound( _b, 0 );
+            if ( _boundManager->shouldProduceProofs() )
+            {
+                // If lb of f is > 1, we have a contradiction
+                if ( FloatUtils::gt( bound, 1 ) )
+                    throw InfeasibleQueryException();
+
+                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, { variable },
+                                                                   BoundType::LOWER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::LOWER, { variable },
+                                                                   BoundType::LOWER, getType() );
+            }
+            else
+            {
+                _boundManager->tightenLowerBound( _f, 1 );
+                _boundManager->tightenLowerBound( _b, 0 );
+            }
         }
     }
     else if ( variable == _b && !FloatUtils::isNegative( bound ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
         if ( _boundManager != nullptr )
-            _boundManager->tightenLowerBound( _f, 1 );
+        {
+            if ( _boundManager->shouldProduceProofs() )
+                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, { variable },
+                                                                   BoundType::LOWER, getType() );
+            else
+                _boundManager->tightenLowerBound( _f, 1 );
+        }
     }
 }
 
@@ -422,11 +444,27 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( variable == _f && FloatUtils::lt( bound, 1 ) )
     {
+
+
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
         if ( _boundManager != nullptr )
         {
-            _boundManager->tightenUpperBound( _f, -1 );
-            _boundManager->tightenUpperBound( _b, 0 );
+            if ( _boundManager->shouldProduceProofs() )
+            {
+                // If ub of f is < -1, we have a contradiction
+                if ( FloatUtils::lt( bound, -1 )  )
+                    throw InfeasibleQueryException();
+
+                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, { variable },
+                                                                  BoundType::UPPER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::UPPER, { variable },
+                                                                   BoundType::UPPER, getType() );
+            }
+            else
+            {
+                _boundManager->tightenUpperBound( _f, -1 );
+                _boundManager->tightenUpperBound( _b, 0 );
+            }
         }
     }
     else if ( variable == _b && FloatUtils::isNegative( bound ) )
@@ -434,7 +472,11 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
         if ( _boundManager != nullptr )
         {
-            _boundManager->tightenUpperBound( _f, -1 );
+            if ( _boundManager->shouldProduceProofs() )
+                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, { variable },
+                                                                  BoundType::UPPER, getType() );
+            else
+                _boundManager->tightenUpperBound( _f, -1 );
         }
     }
 }
@@ -617,4 +659,9 @@ void SignConstraint::updateScoreBasedOnPolarity()
 bool SignConstraint::supportPolarity() const
 {
     return true;
+}
+
+// No aux vars in Sign constraint, so the function is suppressed
+void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */, unsigned /* constraintAuxVar */ )
+{
 }

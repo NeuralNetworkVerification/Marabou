@@ -15,6 +15,7 @@
 #ifndef __Contradiction_h__
 #define __Contradiction_h__
 
+#include "SparseUnsortedList.h"
 #include "Vector.h"
 
 /*
@@ -32,11 +33,11 @@ public:
       Getters for all fields
      */
     unsigned getVar() const;
-    const double *getContradiction() const;
+    const SparseUnsortedList &getContradiction() const;
 
 private:
     unsigned _var;
-    double *_contradiction;
+    SparseUnsortedList _contradiction;
 };
 
 #endif //__Contradiction_h__

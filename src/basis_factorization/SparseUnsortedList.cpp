@@ -52,6 +52,12 @@ void SparseUnsortedList::initialize( const double *V, unsigned size )
     }
 }
 
+void SparseUnsortedList::initializeToEmpty()
+{
+    _size = 0;
+    _list.clear();
+}
+
 void SparseUnsortedList::clear()
 {
     _list.clear();

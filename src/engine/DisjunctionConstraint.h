@@ -172,6 +172,23 @@ public:
     */
     String serializeToString() const override;
 
+    /*
+      Returns the list of feasible disjuncts
+    */
+    List<PiecewiseLinearCaseSplit> getFeasibleDisjuncts() const;
+
+    /*
+      Removes a disjunct from the list of feasible disjuncts
+      Returns true iff disjunct was found.
+    */
+    bool removeFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
+
+    /*
+      Adds a disjunct from the list of feasible disjuncts
+      Returns true iff disjunct was found.
+    */
+    bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
+
 private:
     /*
       The disjuncts that form this PL constraint
@@ -219,6 +236,8 @@ private:
         //ASSERT( phase != PHASE_NOT_FIXED );
         return static_cast<unsigned>( phase ) - 1;
     }
+
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __DisjunctionConstraint_h__

@@ -205,13 +205,62 @@ public:
 
     bool isImplication() const override;
 
-private:
+    inline Set<unsigned> getEliminatedElements() const
+    {
+        return _eliminatedElements;
+    }
+
+    inline Set<unsigned> getParticipatingElements() const
+    {
+        Set<unsigned> participatingElements = {};
+        for ( const auto &element : _elements )
+            participatingElements.insert( element );
+
+        for ( const auto &element : _eliminatedElements )
+            participatingElements.insert( element );
+
+        return participatingElements;
+    }
+
+    inline double getMaxValueOfEliminatedPhases() const
+    {
+        return _maxValueOfEliminatedPhases;
+    }
+
+    inline unsigned getAuxToElement( unsigned element )
+    {
+        return _auxToElement[element];
+    }
+
+    /*
+       Conversion functions between variables and PhaseStatus.
+    */
+    inline PhaseStatus variableToPhase( unsigned variable ) const
+    {
+        return ( variable == MAX_PHASE_ELIMINATED )
+               ? MAX_PHASE_ELIMINATED
+               : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
+    }
+
+    inline unsigned phaseToVariable( PhaseStatus phase ) const
+    {
+        return ( phase == MAX_PHASE_ELIMINATED )
+               ? MAX_PHASE_ELIMINATED
+               : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+    }
+
+ private:
     unsigned _f;
     Set<unsigned> _elements;
     Set<unsigned> _initialElements;
 
     Map<unsigned, unsigned> _auxToElement;
     Map<unsigned, unsigned> _elementToAux;
+
+    Map<unsigned, unsigned> _elementToTableauAux;
+    Map<unsigned, std::shared_ptr<TableauRow>> _elementToTighteningRow;
+    Set<unsigned> _eliminatedElements;
+    Set<unsigned> _proofEliminatedElements;
 
     bool _obsolete;
 
@@ -234,22 +283,6 @@ private:
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
 
-    /*
-       Conversion functions between variables and PhaseStatus.
-    */
-    inline PhaseStatus variableToPhase( unsigned variable ) const
-    {
-        return ( variable == MAX_PHASE_ELIMINATED )
-                 ? MAX_PHASE_ELIMINATED
-                 : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
-    }
-
-    inline unsigned phaseToVariable( PhaseStatus phase ) const
-    {
-        return ( phase == MAX_PHASE_ELIMINATED )
-                 ? MAX_PHASE_ELIMINATED
-                 : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
-    }
 
     /*
       Eliminate the case corresponding to the given input variable to Max.
@@ -260,6 +293,15 @@ private:
       Return true iff f or the elements are not all within bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    void createElementTighteningRow( unsigned element );
+    const List<unsigned> getNativeAuxVars() const override;
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
+
+    /*
+      Apply tightenings in the list, discovered by getEntailedTightenings
+    */
+    void applyTightenings( const List<Tightening> &tightenings ) const;
 };
 
 #endif // __MaxConstraint_h__

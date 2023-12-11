@@ -231,7 +231,7 @@ struct MarabouOptions {
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
-        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ))
+        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     {};
 
   void setOptions()
