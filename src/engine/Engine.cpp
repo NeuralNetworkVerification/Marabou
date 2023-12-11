@@ -3346,6 +3346,10 @@ double Engine::explainBound( unsigned var, bool isUpper ) const
 
     SparseUnsortedList explanation = SparseUnsortedList( explanationVec.size() );
     explanationVec.empty() ? explanation.initializeToEmpty() : explanation.initialize( explanationVec.data(), explanationVec.size() );
+
+    if ( explanation.empty() )
+        return isUpper ? _groundBoundManager.getUpperBound( var ) : _groundBoundManager.getLowerBound( var );
+
     return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _tableau->getSparseA(),
                                                 _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(),
                                                 _tableau->getN() );
