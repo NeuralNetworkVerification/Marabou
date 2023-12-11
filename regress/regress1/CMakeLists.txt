@@ -140,6 +140,8 @@ foreach(file ${unsat_ipqs})
 endforeach()
 
 # Proof production tests
+
+# ReLU
 marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_5_9" "3" unsat)
 marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_5_7" "3" unsat)
 marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_3_7" "3" unsat)
@@ -150,3 +152,17 @@ marabou_add_coav_proof_test(1 "reluBenchmark0.453322172165s_UNSAT.nnet" unsat)
 marabou_add_coav_proof_test(1 "reluBenchmark0.30711388588s_UNSAT.nnet" unsat)
 marabou_add_coav_proof_test(1 "reluBenchmark0.725997209549s_UNSAT.nnet" unsat)
 marabou_add_coav_proof_test(1 "reluBenchmark1.81178617477s_UNSAT.nnet" unsat)
+
+# Absolute value
+marabou_add_input_query_test(1 ACASXU_abstest1.ipq unsat "--prove-unsat" "ipq")
+marabou_add_input_query_test(1 ACASXU_abstest2.ipq unsat "--prove-unsat" "ipq")
+
+# ReLU ad Max
+marabou_add_input_query_test(1 ACASXU_maxtest1.ipq unsat "--prove-unsat" "ipq")
+marabou_add_input_query_test(1 ACASXU_maxtest2.ipq unsat "--prove-unsat" "ipq")
+
+# Sign
+marabou_add_input_query_test(1 deep_6_index_5566.ipq unsat "--prove-unsat" "ipq")
+marabou_add_input_query_test(1 deep_6_index_5567.ipq unsat "--prove-unsat" "ipq")
+marabou_add_input_query_test(1 deep_6_index_5525.ipq unsat "--prove-unsat" "ipq")
+marabou_add_input_query_test(1 deep_6_index_7779.ipq unsat "--prove-unsat" "ipq")

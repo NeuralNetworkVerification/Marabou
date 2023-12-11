@@ -321,7 +321,7 @@ bool BoundManager::tightenLowerBound( unsigned variable, double value, const Tab
     if ( tightened )
     {
         if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanation( row, LOWER, variable );
+            _boundExplainer->updateBoundExplanation( row, BoundType::LOWER, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithLowerBoundUpdate( variable, value );
@@ -336,7 +336,7 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value, const Tab
     if ( tightened )
     {
         if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanation( row, UPPER, variable );
+            _boundExplainer->updateBoundExplanation( row, BoundType::UPPER, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithUpperBoundUpdate( variable, value );
@@ -351,7 +351,7 @@ bool BoundManager::tightenLowerBound( unsigned variable, double value, const Spa
     if ( tightened )
     {
         if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanationSparse( row, LOWER, variable );
+            _boundExplainer->updateBoundExplanationSparse( row, BoundType::LOWER, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithLowerBoundUpdate( variable, value );
@@ -366,7 +366,7 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value, const Spa
     if ( tightened )
     {
         if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanationSparse( row, UPPER, variable );
+            _boundExplainer->updateBoundExplanationSparse( row, BoundType::UPPER, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithUpperBoundUpdate( variable, value );
@@ -406,26 +406,68 @@ void BoundManager::updateBoundExplanationSparse( const SparseUnsortedList &row, 
     _boundExplainer->updateBoundExplanationSparse( row, isUpper, var );
 }
 
-bool BoundManager::addLemmaExplanation( unsigned var, double value, BoundType affectedVarBound,
-                                        unsigned causingVar, BoundType causingVarBound,
-                                        PiecewiseLinearFunctionType constraintType )
+bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var, double value, BoundType affectedVarBound,
+                                                      const List<unsigned> &causingVars, BoundType causingVarBound,
+                                                      PiecewiseLinearFunctionType constraintType )
 {
     if ( !shouldProduceProofs() )
         return false;
 
-    ASSERT( causingVar < _tableau->getN() && var < _tableau->getN() );
+    ASSERT( var < _tableau->getN() );
 
     // Register new ground bound, update certificate, and reset explanation
     Vector<double> explanation( 0 );
-    getExplanation( causingVar, causingVarBound, explanation );
+    Vector<Vector<double>> allExplanations( 0 );
 
-    bool tightened = affectedVarBound == UPPER ? tightenUpperBound( var, value ) : tightenLowerBound( var, value );
+    bool tightened = affectedVarBound == BoundType::UPPER ? tightenUpperBound( var, value ) : tightenLowerBound( var, value );
 
     if ( tightened )
     {
-        std::shared_ptr<PLCExplanation> PLCExpl = std::make_shared<PLCExplanation>( causingVar, var, value, causingVarBound, affectedVarBound, explanation, constraintType );
-        _engine->getUNSATCertificateCurrentPointer()->addPLCExplanation( PLCExpl );
-        affectedVarBound == UPPER ? _engine->updateGroundUpperBound( var, value ) : _engine->updateGroundLowerBound( var, value );
+        if ( constraintType == RELU || constraintType == SIGN )
+        {
+            ASSERT( causingVars.size() == 1 );
+            getExplanation( causingVars.front(), causingVarBound, explanation );
+            allExplanations.append( explanation );
+        }
+        else if ( constraintType == ABSOLUTE_VALUE )
+        {
+            if ( causingVars.size() == 1 )
+            {
+                getExplanation( causingVars.front(), causingVarBound, explanation );
+                allExplanations.append( explanation );
+            }
+            else
+            {
+                // Used for two cases:
+                // 1. Lemma of the type _f = max(upperBound(b), -lowerBound(b)).
+                //    Two explanations are stored so the checker could check that f has the maximal value of the two.
+                // 2. Lemmas of the type lowerBound(f) > -lowerBound(b) or upperBound(b).
+                //    Again, two explanations are involved in the proof.
+                // Add zero vectors to maintain consistency of explanations size
+                getExplanation( causingVars.front(), causingVarBound == BoundType::UPPER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0  ) : explanation );
+                explanation.clear();
+
+                getExplanation( causingVars.back(), BoundType::LOWER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0 ) : explanation );
+            }
+        }
+        else if ( constraintType == MAX )
+        {
+            for ( const auto &element : causingVars )
+            {
+                // Add zero vectors to maintain consistency of explanations size
+                getExplanation( element, BoundType::UPPER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0 ) : explanation );
+                explanation.clear();
+            }
+        }
+        else
+            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
+
+        std::shared_ptr<PLCLemma> PLCExpl = std::make_shared<PLCLemma>( causingVars, var, value, causingVarBound, affectedVarBound, allExplanations, constraintType );
+        _engine->getUNSATCertificateCurrentPointer()->addPLCLemma(PLCExpl );
+        affectedVarBound == BoundType::UPPER ? _engine->updateGroundUpperBound( var, value ) : _engine->updateGroundLowerBound( var, value );
         resetExplanation( var, affectedVarBound );
     }
     return true;

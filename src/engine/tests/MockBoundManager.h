@@ -265,9 +265,9 @@ private:
         return tightenUpperBound( variable, value );
     }
 
-    bool addLemmaExplanation( unsigned /* var */, double /* value */, BoundType /* affectedVarBound */,
-                              unsigned /* causingVar */, BoundType /* causingVarBound */,
-                              PiecewiseLinearFunctionType /* constraintType */ )
+    bool addLemmaExplanationAndTightenBound(unsigned /* var */, double /* value */, BoundType /* affectedVarBound */,
+                                            const List<unsigned> &/* causingVar */, BoundType /* causingVarBound */,
+                                            PiecewiseLinearFunctionType /* constraintType */ )
     {
         return true;
     }
@@ -283,7 +283,7 @@ private:
 
     bool shouldProduceProofs() const
     {
-        return true;
+        return false;
     }
 };
 

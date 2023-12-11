@@ -17,27 +17,21 @@
 Contradiction::Contradiction( const Vector<double> &contradiction )
 {
     if ( contradiction.empty() )
-        _contradiction = NULL;
+        _contradiction.initializeToEmpty();
     else
-    {
-        _contradiction = new double[contradiction.size()];
-        std::copy( contradiction.begin(), contradiction.end(), _contradiction );
-    }
+        _contradiction.initialize( contradiction.data(), contradiction.size() );
 }
 
 Contradiction::Contradiction( unsigned var )
     : _var( var )
-    , _contradiction( NULL )
+    , _contradiction( )
 {
 }
 
 Contradiction::~Contradiction()
 {
-    if ( _contradiction )
-    {
-        delete [] _contradiction;
-        _contradiction = NULL;
-    }
+    if ( !_contradiction.empty() )
+        _contradiction.clear();
 }
 
 unsigned Contradiction::getVar() const
@@ -45,7 +39,7 @@ unsigned Contradiction::getVar() const
     return _var;
 }
 
-const double *Contradiction::getContradiction() const
+const SparseUnsortedList &Contradiction::getContradiction() const
 {
     return _contradiction;
 }

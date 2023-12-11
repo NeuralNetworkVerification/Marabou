@@ -513,3 +513,42 @@ bool DisjunctionConstraint::caseSplitIsFeasible( const PiecewiseLinearCaseSplit 
 
     return true;
 }
+
+List<PiecewiseLinearCaseSplit> DisjunctionConstraint::getFeasibleDisjuncts() const
+{
+    List<PiecewiseLinearCaseSplit> validDisjuncts = List<PiecewiseLinearCaseSplit>();
+
+    for ( const auto &feasibleDisjunct : _feasibleDisjuncts )
+        validDisjuncts.append( _disjuncts.get( feasibleDisjunct ) );
+
+    return validDisjuncts;
+}
+
+bool DisjunctionConstraint::removeFeasibleDisjunct(const PiecewiseLinearCaseSplit &disjunct )
+{
+    for ( unsigned i = 0; i < _disjuncts.size(); ++i )
+        if ( _disjuncts[i] == disjunct )
+        {
+            _feasibleDisjuncts.erase( i );
+            return true;
+        }
+
+    return false;
+}
+
+bool DisjunctionConstraint::addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct )
+{
+    for ( unsigned i = 0; i < _disjuncts.size(); ++i )
+        if ( _disjuncts[i] == disjunct )
+        {
+            _feasibleDisjuncts.append( i );
+            return true;
+        }
+
+    return false;
+}
+
+// No aux vars in disjunction constraint, so the function is suppressed
+void DisjunctionConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */, unsigned /* constraintAuxVar */ )
+{
+}

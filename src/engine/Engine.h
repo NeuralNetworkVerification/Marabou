@@ -40,6 +40,7 @@
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "SnCDivideStrategy.h"
+#include "SparseUnsortedList.h"
 #include "Statistics.h"
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
