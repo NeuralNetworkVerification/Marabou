@@ -68,8 +68,10 @@ public:
         TS_ASSERT_THROWS_NOTHING( be.setExplanation( Vector<double>( numberOfVariables, value ), 0, true ) );
         auto explanation = be.getExplanation( 0, true );
 
-        for ( auto num : explanation )
-            TS_ASSERT_EQUALS( num->get(), value );
+        for ( const auto &entry : explanation )
+            TS_ASSERT_EQUALS( entry._value, value );
+
+        TS_ASSERT_EQUALS( explanation.getSize(), numberOfVariables );
     }
 
     /*
@@ -90,8 +92,9 @@ public:
 
         for ( unsigned i = 0; i < numberOfVariables; ++ i )
         {
-            TS_ASSERT( be.isExplanationTrivial( i, true ) || ( be.getExplanation( i, true ).last()->get() == 0 && be.getExplanation( i, true ).size() == numberOfVariables + 1 ) );
-            TS_ASSERT( be.isExplanationTrivial( i, false ) || ( be.getExplanation( i, false ).last()->get() == 0 && be.getExplanation( i, false ).size() == numberOfVariables + 1 ) );
+            // the sizes of explanations should not change
+            TS_ASSERT( be.isExplanationTrivial( i, true ) || be.getExplanation( i, true ).getSize() == numberOfVariables );
+            TS_ASSERT( be.isExplanationTrivial( i, false ) || be.getExplanation( i, false ).getSize() == numberOfVariables );
         }
 
         TS_ASSERT( be.isExplanationTrivial( numberOfVariables, true ) );
@@ -149,20 +152,20 @@ public:
         Vector<double> res1 { 2, -3, 0 };
 
         for ( unsigned i = 0; i < 3; ++i )
-            TS_ASSERT_EQUALS( be.getExplanation( 2, true )[i]->get(), res1[i] );
+            TS_ASSERT_EQUALS( be.getExplanation( 2, true ).get( i ), res1[i] );
 
         be.updateBoundExplanation( updateTableauRow, false, 3 );
         // Result is 2 * { 0, 0, 2.5 } + { -1, 1, 0 }
         Vector<double> res2 { -1, 2, 5 };
         for ( unsigned i = 0; i < 3; ++i )
-            TS_ASSERT_EQUALS( be.getExplanation( 3, false )[i]->get(), res2[i] );
+            TS_ASSERT_EQUALS( be.getExplanation( 3, false ).get( i ), res2[i] );
 
         be.updateBoundExplanation( updateTableauRow, false, 1 );
         // Result is -0.5 * { 1, 0, 0 } + 0.5 * { -1, 2, 5 } - 0.5 * { 1, -1, 0 }
         Vector<double> res3 { -1.5, 1.5, 2.5 };
 
         for ( unsigned i = 0; i < 3; ++i )
-            TS_ASSERT_EQUALS( be.getExplanation( 1, false )[i]->get(), res3[i] );
+            TS_ASSERT_EQUALS( be.getExplanation( 1, false ).get( i ), res3[i] );
 
         // row3:= x1 = x5
         // Row coefficients are { 0, 0, 2.5 }
@@ -174,6 +177,6 @@ public:
         // Result is  ( 1 / 2.5 ) * ( -2.5 ) * { -1.5, 1.5, 2.5 } + ( 1 / 2.5 ) * { 0, 0, 2.5 }
         Vector<double> res4 { 1.5, -1.5, -1.5 };
         for ( unsigned i = 0; i < 3; ++i)
-            TS_ASSERT_EQUALS( be.getExplanation( 5, true )[i]->get(), res4[i] );
+            TS_ASSERT_EQUALS( be.getExplanation( 5, true ).get( i ), res4[i] );
     }
 };

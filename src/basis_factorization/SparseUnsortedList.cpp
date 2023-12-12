@@ -28,6 +28,11 @@ SparseUnsortedList::SparseUnsortedList( unsigned size )
 {
 }
 
+SparseUnsortedList::SparseUnsortedList( const SparseUnsortedList &other )
+{
+    *this = other;
+}
+
 SparseUnsortedList::SparseUnsortedList( const double *V, unsigned size )
 {
     initialize( V, size );

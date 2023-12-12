@@ -175,14 +175,14 @@ public:
     void resetExplanation( unsigned var, bool isUpper ) const;
 
     /*
-      Insert the bounds explanation of a variable in the tableau to the argument vector
+      Return the bounds explanation of a variable in the tableau to the argument vector
     */
-    void getExplanation( unsigned variable, bool isUpper, Vector<double> &explanation ) const;
+    const SparseUnsortedList &getExplanation( unsigned variable, bool isUpper ) const;
 
     /*
       Artificially update an explanation, without using the recursive rule
     */
-    void setExplanation( const Vector<double> &explanation, unsigned var,  bool isUpper ) const;
+    void setExplanation( const SparseUnsortedList &explanation, unsigned var,  bool isUpper ) const;
 
     /*
       Register Engine pointer for callbacks

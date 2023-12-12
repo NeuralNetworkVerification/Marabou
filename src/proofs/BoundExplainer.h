@@ -44,7 +44,7 @@ public:
     /*
       Returns a bound explanation
     */
-    const Vector<CVC4::context::CDO<double> *> &getExplanation( unsigned var, bool isUpper );
+    const SparseUnsortedList &getExplanation( unsigned var, bool isUpper );
 
     /*
       Given a row, updates the values of the bound explanations of its lhs according to the row
@@ -76,6 +76,8 @@ public:
      */
     void setExplanation( const Vector<double> &explanation, unsigned var, bool isUpper );
 
+    void setExplanation( const SparseUnsortedList &explanation, unsigned var, bool isUpper );
+
     /*
      * Returns true iff an explanation is the zero vector
      */
@@ -87,8 +89,8 @@ private:
     unsigned _numberOfVariables;
     unsigned _numberOfRows;
 
-    Vector<Vector<CVC4::context::CDO<double> *>> _upperBoundExplanations;
-    Vector<Vector<CVC4::context::CDO<double> *>> _lowerBoundExplanations;
+    Vector<CVC4::context::CDO<SparseUnsortedList> *> _upperBoundExplanations;
+    Vector<CVC4::context::CDO<SparseUnsortedList> *> _lowerBoundExplanations;
 
     Vector<CVC4::context::CDO<bool> *> _trivialUpperBoundExplanation;
     Vector<CVC4::context::CDO<bool> *> _trivialLowerBoundExplanation;
@@ -96,7 +98,7 @@ private:
     /*
       Adds a multiplication of an array by scalar to another array
     */
-    void addVecTimesScalar( Vector<double> &sum, const Vector<CVC4::context::CDO<double> *> &input, double scalar ) const;
+    void addVecTimesScalar( Vector<double> &sum, const SparseUnsortedList &input, double scalar ) const;
 
     void addVecTimesScalar( Vector<double> &sum, const Vector<double> &input, double scalar ) const;
 
