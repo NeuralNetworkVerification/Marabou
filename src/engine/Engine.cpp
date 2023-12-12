@@ -3342,7 +3342,7 @@ double Engine::explainBound( unsigned var, bool isUpper ) const
     SparseUnsortedList explanation( 0 );
 
     if ( !_boundManager.isExplanationTrivial( var, isUpper ) )
-        explanation = _boundManager.getExplanation( var, isUpper);
+        explanation = _boundManager.getExplanation( var, isUpper );
 
     if ( explanation.empty() )
         return isUpper ? _groundBoundManager.getUpperBound( var ) : _groundBoundManager.getLowerBound( var );
