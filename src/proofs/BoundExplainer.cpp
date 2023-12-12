@@ -230,7 +230,7 @@ void BoundExplainer::addVecTimesScalar( Vector<double> &sum, const SparseUnsorte
     ASSERT( sum.size() == _numberOfRows );
 
     for ( const auto &entry : input )
-        sum[entry._index] += scalar * entry._value;
+        sum[entry._index] += scalar * ( entry._value );
 }
 
 void BoundExplainer::addVecTimesScalar( Vector<double> &sum, const Vector<double> &input,  double scalar ) const
