@@ -3611,7 +3611,7 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
         upperBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::UPPER );
 
     if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
-        lowerBoundExplanation= _boundManager.getExplanation( infeasibleVar, BoundType::LOWER );
+        lowerBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::LOWER );
 
     if ( upperBoundExplanation.empty() && lowerBoundExplanation.empty() )
         return Vector<double>( 0 );

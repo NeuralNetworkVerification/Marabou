@@ -94,7 +94,7 @@ public:
         {
             // the sizes of explanations should not change
             TS_ASSERT( be.isExplanationTrivial( i, true ) || be.getExplanation( i, true ).getSize() == numberOfVariables );
-            TS_ASSERT( be.isExplanationTrivial( i, false ) ||  be.getExplanation( i, false ).getSize() == numberOfVariables );
+            TS_ASSERT( be.isExplanationTrivial( i, false ) || be.getExplanation( i, false ).getSize() == numberOfVariables );
         }
 
         TS_ASSERT( be.isExplanationTrivial( numberOfVariables, true ) );

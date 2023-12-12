@@ -120,7 +120,7 @@ void BoundExplainer::updateBoundExplanation( const TableauRow &row, bool isUpper
     ASSERT( !FloatUtils::isZero( ci ) );
     Vector<double> rowCoefficients = Vector<double>( _numberOfRows, 0 );
     Vector<double> sum = Vector<double>( _numberOfRows, 0 );
-    SparseUnsortedList tempBound;
+    SparseUnsortedList *tempBound;
 
     for ( unsigned i = 0; i < row._size; ++i )
     {
@@ -142,8 +142,8 @@ void BoundExplainer::updateBoundExplanation( const TableauRow &row, bool isUpper
         if ( ( tempUpper && *_trivialUpperBoundExplanation[curVar] ) || ( !tempUpper && *_trivialLowerBoundExplanation[curVar] ) )
             continue;
 
-        tempBound = tempUpper ? *_upperBoundExplanations[curVar] : *_lowerBoundExplanations[curVar];
-        addVecTimesScalar( sum, tempBound, realCoefficient );
+        tempBound = tempUpper ? _upperBoundExplanations[curVar] : _lowerBoundExplanations[curVar];
+        addVecTimesScalar( sum, *tempBound, realCoefficient );
     }
 
     // Include lhs as well, if needed
@@ -155,8 +155,8 @@ void BoundExplainer::updateBoundExplanation( const TableauRow &row, bool isUpper
             tempUpper = ( isUpper && realCoefficient > 0 ) || ( !isUpper && realCoefficient < 0 );
             if ( !( tempUpper && *_trivialUpperBoundExplanation[row._lhs] ) && !( !tempUpper && *_trivialLowerBoundExplanation[row._lhs] ) )
             {
-                tempBound = tempUpper ? *_upperBoundExplanations[row._lhs] : *_lowerBoundExplanations[row._lhs];
-                addVecTimesScalar( sum, tempBound, realCoefficient );
+                tempBound = tempUpper ? _upperBoundExplanations[row._lhs] : _lowerBoundExplanations[row._lhs];
+                addVecTimesScalar( sum, *tempBound, realCoefficient );
             }
         }
     }
@@ -191,7 +191,7 @@ void BoundExplainer::updateBoundExplanationSparse( const SparseUnsortedList &row
     ASSERT( !FloatUtils::isZero( ci ) );
     Vector<double> rowCoefficients = Vector<double>( _numberOfRows, 0 );
     Vector<double> sum = Vector<double>( _numberOfRows, 0 );
-    SparseUnsortedList tempBound;
+    SparseUnsortedList *tempBound;
 
     for ( const auto &entry : row )
     {
@@ -211,8 +211,8 @@ void BoundExplainer::updateBoundExplanationSparse( const SparseUnsortedList &row
         if ( ( tempUpper && *_trivialUpperBoundExplanation[entry._index] ) || ( !tempUpper && *_trivialLowerBoundExplanation[entry._index] ) )
             continue;
 
-        tempBound = tempUpper ? *_upperBoundExplanations[entry._index] : *_lowerBoundExplanations[entry._index];
-        addVecTimesScalar( sum, tempBound, realCoefficient );
+        tempBound = tempUpper ? _upperBoundExplanations[entry._index] : _lowerBoundExplanations[entry._index];
+        addVecTimesScalar( sum, *tempBound, realCoefficient );
     }
 
     // Update according to row coefficients
