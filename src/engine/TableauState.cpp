@@ -205,7 +205,6 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     _basisFactorization = BasisFactorizationFactory::createBasisFactorization( m, oracle );
     if ( !_basisFactorization )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basisFactorization" );
-
 }
 
 void TableauState::initializeBounds( unsigned n )
