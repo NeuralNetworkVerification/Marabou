@@ -3608,10 +3608,10 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
     SparseUnsortedList lowerBoundExplanation( 0 );
 
     if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::UPPER ) )
-        upperBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::UPPER );
+        _boundManager.getExplanation( infeasibleVar, BoundType::UPPER, upperBoundExplanation );
 
-    if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
-        lowerBoundExplanation= _boundManager.getExplanation( infeasibleVar, BoundType::LOWER );
+    if( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
+        _boundManager.getExplanation( infeasibleVar, BoundType::LOWER, lowerBoundExplanation );
 
     if ( upperBoundExplanation.empty() && lowerBoundExplanation.empty() )
         return Vector<double>( 0 );
@@ -3655,7 +3655,7 @@ void Engine::propagateBoundManagerTightenings()
 }
 
 void Engine::extractBounds( InputQuery &inputQuery )
-{    
+{
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )

@@ -79,7 +79,7 @@ public:
     void test_plc_explanation_changes()
     {
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
-        Vector<SparseUnsortedList> emptyVec;
+        Vector<Vector<double>> emptyVec;
 
         auto explanation1 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, 0, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
         auto explanation2 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -1, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );

@@ -31,7 +31,7 @@ public:
               double bound,
               BoundType causingVarBound,
               BoundType affectedVarBound,
-              const Vector<SparseUnsortedList> &explanation,
+              const Vector<Vector<double>> &explanation,
               PiecewiseLinearFunctionType constraintType );
 
     ~PLCLemma();

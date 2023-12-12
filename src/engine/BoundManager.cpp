@@ -412,7 +412,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var, double valu
     ASSERT( var < _tableau->getN() );
 
     // Register new ground bound, update certificate, and reset explanation
-    Vector<SparseUnsortedList> allExplanations( 0 );
+    Vector<double> explanation( 0 );
+    Vector<Vector<double>> allExplanations( 0 );
 
     bool tightened = affectedVarBound == BoundType::UPPER ? tightenUpperBound( var, value ) : tightenLowerBound( var, value );
 
@@ -421,12 +422,16 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var, double valu
         if ( constraintType == RELU || constraintType == SIGN )
         {
             ASSERT( causingVars.size() == 1 );
-            allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
+            getExplanation( causingVars.front(), causingVarBound, explanation );
+            allExplanations.append( explanation );
         }
         else if ( constraintType == ABSOLUTE_VALUE )
         {
             if ( causingVars.size() == 1 )
-                allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
+            {
+                getExplanation( causingVars.front(), causingVarBound, explanation );
+                allExplanations.append( explanation );
+            }
             else
             {
                 // Used for two cases:
@@ -435,14 +440,24 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var, double valu
                 // 2. Lemmas of the type lowerBound(f) > -lowerBound(b) or upperBound(b).
                 //    Again, two explanations are involved in the proof.
                 // Add zero vectors to maintain consistency of explanations size
-                allExplanations.append( getExplanation( causingVars.front(), causingVarBound == BoundType::UPPER ) );
+                getExplanation( causingVars.front(), causingVarBound == BoundType::UPPER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0  ) : explanation );
+                explanation.clear();
 
-                allExplanations.append( getExplanation( causingVars.back(), BoundType::LOWER ) );
+                getExplanation( causingVars.back(), BoundType::LOWER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0 ) : explanation );
             }
         }
         else if ( constraintType == MAX )
+        {
             for ( const auto &element : causingVars )
-                allExplanations.append( getExplanation( element, BoundType::UPPER ) );
+            {
+                // Add zero vectors to maintain consistency of explanations size
+                getExplanation( element, BoundType::UPPER, explanation );
+                allExplanations.append( explanation.empty() ? Vector<double>( _tableau->getM(), 0 ) : explanation );
+                explanation.clear();
+            }
+        }
         else
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 
