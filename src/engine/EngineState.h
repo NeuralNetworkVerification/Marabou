@@ -10,7 +10,6 @@
  ** directory for licensing information.\endverbatim
  **
  ** [[ Add lengthier description here ]]
-
  **/
 
 #ifndef __EngineState_h__
@@ -25,8 +24,8 @@
 class EngineState
 {
 public:
-    EngineState();
-    ~EngineState();
+	EngineState();
+	~EngineState();
 
     /*
       The state of the tableau
@@ -40,11 +39,11 @@ public:
     Map<PiecewiseLinearConstraint *, PiecewiseLinearConstraint *> _plConstraintToState;
     unsigned _numPlConstraintsDisabledByValidSplits;
 
-    /*
-      A unique ID allocated to every state that is stored, for
-      debugging purposes. These are assigned by the SMT core.
-    */
-    unsigned _stateId;
+	/*
+	  A unique ID allocated to every state that is stored, for
+	  debugging purposes. These are assigned by the SMT core.
+	*/
+	unsigned _stateId;
 };
 
 #endif // __EngineState_h__

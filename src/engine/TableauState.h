@@ -44,11 +44,6 @@ public:
     void setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle );
 
     /*
-      Just create the bounds array.
-    */
-    void initializeBounds( unsigned n );
-
-    /*
       The dimensions of matrix A
     */
     unsigned _m;
@@ -124,6 +119,7 @@ public:
       extracting a solution for x, we should read the value of y.
      */
     Map<unsigned, unsigned> _mergedVariables;
+
 };
 
 #endif // __TableauState_h__
