@@ -3359,13 +3359,10 @@ double Engine::explainBound( unsigned var, bool isUpper ) const
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> explanationVec( 0 );
+    SparseUnsortedList explanation( 0 );
 
-    if  ( !_boundManager.isExplanationTrivial( var, isUpper ) )
-        _boundManager.getExplanation( var, isUpper, explanationVec );
-
-    SparseUnsortedList explanation = SparseUnsortedList( explanationVec.size() );
-    explanationVec.empty() ? explanation.initializeToEmpty() : explanation.initialize( explanationVec.data(), explanationVec.size() );
+    if ( !_boundManager.isExplanationTrivial( var, isUpper ) )
+        explanation = _boundManager.getExplanation( var, isUpper );
 
     if ( explanation.empty() )
         return isUpper ? _groundBoundManager.getUpperBound( var ) : _groundBoundManager.getLowerBound( var );
@@ -3503,8 +3500,8 @@ bool Engine::explainAndCheckContradiction( unsigned var, bool isUpper, const Tab
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> backup( 0 );
-    _boundManager.getExplanation( var, isUpper, backup );
+    SparseUnsortedList backup( 0 );
+    backup = _boundManager.getExplanation( var, isUpper );
 
     _boundManager.updateBoundExplanation( *row, isUpper, var );
 
@@ -3522,8 +3519,8 @@ bool Engine::explainAndCheckContradiction( unsigned var, bool isUpper, const Spa
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> backup( 0 );
-    _boundManager.getExplanation( var, isUpper, backup );
+    SparseUnsortedList backup( 0 );
+    backup = _boundManager.getExplanation( var, isUpper );
 
     _boundManager.updateBoundExplanationSparse( *row, isUpper, var );
 
@@ -3627,23 +3624,27 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
     ASSERT( _produceUNSATProofs );
 
     unsigned m = _tableau->getM();
-    Vector<double> upperBoundExplanation( 0 );
-    Vector<double> lowerBoundExplanation( 0 );
+    SparseUnsortedList upperBoundExplanation( 0 );
+    SparseUnsortedList lowerBoundExplanation( 0 );
 
     if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::UPPER ) )
-        _boundManager.getExplanation( infeasibleVar, BoundType::UPPER, upperBoundExplanation );
+        upperBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::UPPER );
 
-    if( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
-        _boundManager.getExplanation( infeasibleVar, BoundType::LOWER, lowerBoundExplanation );
+    if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
+        lowerBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::LOWER );
 
     if ( upperBoundExplanation.empty() && lowerBoundExplanation.empty() )
         return Vector<double>( 0 );
 
-    Vector<double> contradiction = upperBoundExplanation.empty() ? Vector<double>( m, 0 ) : Vector<double>( upperBoundExplanation );
+    Vector<double> contradiction = Vector<double>( m, 0 );
+
+    if ( !upperBoundExplanation.empty() )
+        for ( const auto &entry : upperBoundExplanation )
+            contradiction[entry._index] = entry._value;
 
     if ( !lowerBoundExplanation.empty() )
-        for ( unsigned i = 0; i < m; ++i )
-            contradiction[i] -= lowerBoundExplanation[i];
+        for ( const auto &entry : lowerBoundExplanation )
+            contradiction[entry._index] -= entry._value;
 
     return contradiction;
 }

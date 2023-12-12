@@ -280,15 +280,19 @@ public:
         }
 
         // Test explanation getting and setting
-        Vector<double> expl ( numberOfRows, 1 );
-        Vector<double> explained ( 0 );
+        Vector<double> explVec ( numberOfRows, 1 );
+        SparseUnsortedList expl = SparseUnsortedList( explVec.data(), explVec.size() );
+        SparseUnsortedList explained = SparseUnsortedList();
 
         boundManager.setExplanation( expl, 0, true );
         TS_ASSERT( !boundManager.isExplanationTrivial( 0, true ) );
         boundManager.setExplanation( expl, 1, false );
 
-        boundManager.getExplanation( 1, false, explained );
-        TS_ASSERT(  explained == expl );
+        explained = boundManager.getExplanation( 1, false );
+        TS_ASSERT( explained.getSize() == expl.getSize() );
+
+        for ( const auto &entry : expl )
+            TS_ASSERT( explained.get( entry._index) == entry._value );
 
         // Test explanation resetting
         boundManager.resetExplanation( 0, true );

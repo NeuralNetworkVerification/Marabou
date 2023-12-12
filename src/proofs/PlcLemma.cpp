@@ -19,7 +19,7 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     double bound,
                     BoundType causingVarBound,
                     BoundType affectedVarBound,
-                    const Vector<Vector<double>> &explanations,
+                    const Vector<SparseUnsortedList> &explanations,
                     PiecewiseLinearFunctionType constraintType )
     : _causingVars( causingVars )
     , _affectedVar( affectedVar )
@@ -34,39 +34,23 @@ PLCLemma::PLCLemma( const List<unsigned> &causingVars,
     {
         ASSERT( causingVars.size() ==  explanations.size() );
 
-        bool allEmpty = true;
-        unsigned proofSize = 0;
+        unsigned numOfExplanations = explanations.size();
 
-        for ( const auto &expl : explanations )
-            if ( !expl.empty() )
-            {
-                proofSize = expl.size();
-                allEmpty = false;
-                break;
-            }
+        ASSERT( numOfExplanations == causingVars.size() );
 
-        if ( allEmpty )
-            _explanations = List<SparseUnsortedList>();
-        else
+        if ( _constraintType == RELU || _constraintType == SIGN )
+            ASSERT( numOfExplanations == 1 );
+
+        if ( _constraintType == ABSOLUTE_VALUE )
+            ASSERT( numOfExplanations == 2 || numOfExplanations == 1 );
+
+        _explanations = List<SparseUnsortedList>();
+
+        for ( unsigned i = 0; i < numOfExplanations; ++i )
         {
-            unsigned numOfExplanations = explanations.size();
-
-            ASSERT( numOfExplanations == causingVars.size() && proofSize );
-
-            if ( _constraintType == RELU || _constraintType == SIGN )
-                ASSERT( numOfExplanations == 1 );
-
-            if ( _constraintType == ABSOLUTE_VALUE )
-                ASSERT( numOfExplanations == 2 || numOfExplanations == 1 );
-
-            _explanations = List<SparseUnsortedList>();
-
-            for ( unsigned i = 0; i < numOfExplanations; ++i )
-            {
-                SparseUnsortedList expl = SparseUnsortedList();
-                expl.initialize( explanations[i].data(), proofSize );
-                _explanations.append( expl );
-            }
+            SparseUnsortedList expl = SparseUnsortedList();
+            expl = explanations[i];
+            _explanations.append( expl );
         }
     }
 }
