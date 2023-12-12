@@ -421,16 +421,12 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var, double valu
         if ( constraintType == RELU || constraintType == SIGN )
         {
             ASSERT( causingVars.size() == 1 );
-            SparseUnsortedList expl = getExplanation( causingVars.front(), causingVarBound );
-            allExplanations.append( expl );
+            allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
         }
         else if ( constraintType == ABSOLUTE_VALUE )
         {
             if ( causingVars.size() == 1 )
-            {
-                SparseUnsortedList expl = getExplanation( causingVars.front(), causingVarBound );
-                allExplanations.append( expl );
-            }
+                allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
             else
             {
                 // Used for two cases:
@@ -439,21 +435,14 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var, double valu
                 // 2. Lemmas of the type lowerBound(f) > -lowerBound(b) or upperBound(b).
                 //    Again, two explanations are involved in the proof.
                 // Add zero vectors to maintain consistency of explanations size
-                SparseUnsortedList expl = getExplanation( causingVars.front(), causingVarBound == BoundType::UPPER );
-                allExplanations.append( expl );
+                allExplanations.append( getExplanation( causingVars.front(), causingVarBound == BoundType::UPPER ) );
 
-                expl = getExplanation( causingVars.back(), BoundType::LOWER );
-                allExplanations.append( expl );
+                allExplanations.append( getExplanation( causingVars.back(), BoundType::LOWER ) );
             }
         }
         else if ( constraintType == MAX )
-        {
             for ( const auto &element : causingVars )
-            {
-                SparseUnsortedList expl = getExplanation( element, BoundType::UPPER );
-                allExplanations.append( expl );
-            }
-        }
+                allExplanations.append( getExplanation( element, BoundType::UPPER ) );
         else
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 
