@@ -42,7 +42,7 @@ const char JsonWriter::VARIABLES[] = "\"vars\" : ";
 
 const bool JsonWriter::PROVE_LEMMAS = true;
 const unsigned JsonWriter::JSONWRITER_PRECISION = ( unsigned ) std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-const char PROOF_FILENAME[] = "proof.json"
+const char JsonWriter::PROOF_FILENAME[] = "proof.json";
 
 void JsonWriter::writeProofToJson(  const UnsatCertificateNode *root,
                                     unsigned explanationSize,
