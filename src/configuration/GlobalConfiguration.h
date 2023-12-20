@@ -243,6 +243,10 @@ public:
     */
     static const double LEMMA_CERTIFICATION_TOLERANCE;
 
+    /* Denote whether proofs should be written as a JSON file
+    */
+    static const bool WRITE_JSON_PROOF;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns

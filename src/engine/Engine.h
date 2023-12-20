@@ -30,6 +30,7 @@
 #include "GurobiWrapper.h"
 #include "IEngine.h"
 #include "InputQuery.h"
+#include "JsonWriter.h"
 #include "LinearExpression.h"
 #include "LPSolverType.h"
 #include "Map.h"
