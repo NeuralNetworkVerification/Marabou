@@ -466,6 +466,14 @@ public:
         return {};
     }
 
+    /*
+      Get the tableau auxiliary vars
+    */
+    virtual const List<unsigned> &getTableauAuxVars() const
+    {
+        return _tableauAuxVars;
+    }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )

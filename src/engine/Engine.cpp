@@ -3555,7 +3555,14 @@ bool Engine::certifyUNSATCertificate()
         groundLowerBounds[i] = _groundBoundManager.getLowerBound( i );
     }
 
-    Checker unsatCertificateChecker( _UNSATCertificate, _tableau->getM(),  _tableau->getSparseA(),
+    if ( GlobalConfiguration::WRITE_JSON_PROOF )
+    {
+        File file( JsonWriter::PROOF_FILENAME );
+        JsonWriter::writeProofToJson( _UNSATCertificate, _tableau->getM(), _tableau->getSparseA(),
+                                      groundUpperBounds, groundLowerBounds, _plConstraints, file );
+    }
+
+    Checker unsatCertificateChecker( _UNSATCertificate, _tableau->getM(), _tableau->getSparseA(),
                                      groundUpperBounds, groundLowerBounds, _plConstraints );
     bool certificationSucceeded = unsatCertificateChecker.check();
 
