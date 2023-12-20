@@ -42,6 +42,7 @@ const char JsonWriter::VARIABLES[] = "\"vars\" : ";
 
 const bool JsonWriter::PROVE_LEMMAS = true;
 const unsigned JsonWriter::JSONWRITER_PRECISION = ( unsigned ) std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+const char PROOF_FILENAME[] = "proof.json"
 
 void JsonWriter::writeProofToJson(  const UnsatCertificateNode *root,
                                     unsigned explanationSize,
@@ -120,7 +121,6 @@ void JsonWriter::writePiecewiseLinearConstraints( const List<PiecewiseLinearCons
     unsigned size = problemConstraints.size();
     for ( auto constraint : problemConstraints )
     {
-
         type = std::to_string( constraint->getType() );
 
         // Vars are written in the same order as in the get method
@@ -153,7 +153,6 @@ void JsonWriter::writePiecewiseLinearConstraints( const List<PiecewiseLinearCons
 
 void JsonWriter::writeUnsatCertificateNode( const UnsatCertificateNode *node, unsigned explanationSize ,List<String> &instance )
 {
-
     // For SAT examples only (used for debugging)
     if ( !node->getVisited() || node->getSATSolutionFlag() )
         return;

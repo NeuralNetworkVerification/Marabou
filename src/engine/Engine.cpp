@@ -3557,7 +3557,7 @@ bool Engine::certifyUNSATCertificate()
 
     if ( GlobalConfiguration::WRITE_JSON_PROOF )
     {
-        File file ( "proof.json" );
+        File file( JsonWriter::PROOF_FILENAME );
         JsonWriter::writeProofToJson( _UNSATCertificate, _tableau->getM(), _tableau->getSparseA(),
                                       groundUpperBounds, groundLowerBounds, _plConstraints, file );
     }

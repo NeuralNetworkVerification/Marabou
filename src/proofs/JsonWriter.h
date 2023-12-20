@@ -53,6 +53,10 @@ public:
     */
     static const unsigned JSONWRITER_PRECISION;
 
+    /*
+      Configure proof file name
+    */
+    static const char PROOF_FILENAME[];
 
     /*
        JSON property names
@@ -81,7 +85,6 @@ public:
     static const char VALUE[];
     static const char VARIABLE[];
     static const char VARIABLES[];
-
 
 private:
     /*
