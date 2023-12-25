@@ -115,10 +115,10 @@ bool SignConstraint::satisfied() const
 
     // if bValue is negative, f should be -1
     if ( FloatUtils::isNegative( bValue ) )
-        return FloatUtils::areEqual( fValue, -1 );
+        return FloatUtils::areEqual( fValue, -1, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 
     // bValue is non-negative, f should be 1
-    return FloatUtils::areEqual( fValue, 1 );
+    return FloatUtils::areEqual( fValue, 1, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 List<PiecewiseLinearCaseSplit> SignConstraint::getCaseSplits() const
@@ -391,7 +391,7 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
     // Otherwise - update bound
     setLowerBound( variable, bound );
 
-    if ( variable == _f && FloatUtils::gt( bound, -1 ) )
+    if ( variable == _f && FloatUtils::gt( bound, -1, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
     {
         setPhaseStatus( PhaseStatus::SIGN_PHASE_POSITIVE );
 
@@ -442,7 +442,7 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
     // Otherwise - update bound
     setUpperBound( variable, bound );
 
-    if ( variable == _f && FloatUtils::lt( bound, 1 ) )
+    if ( variable == _f && FloatUtils::lt( bound, 1, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
     {
 
 
@@ -520,14 +520,14 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
 
     // Additional bounds can only be propagated if we are in the POSITIVE or NEGATIVE phases
     if ( !FloatUtils::isNegative( bLowerBound ) ||
-         FloatUtils::gt( fLowerBound, -1 ) )
+         FloatUtils::gt( fLowerBound, -1, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
     {
         // Positive case
         tightenings.append( Tightening( _b, 0, Tightening::LB ) );
         tightenings.append( Tightening( _f, 1, Tightening::LB ) );
     }
     else if ( FloatUtils::isNegative( bUpperBound ) ||
-              FloatUtils::lt( fUpperBound, 1 ) )
+              FloatUtils::lt( fUpperBound, 1, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
     {
         // Negative case
         tightenings.append( Tightening( _b, 0, Tightening::UB ) );

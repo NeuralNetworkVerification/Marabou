@@ -296,6 +296,36 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
     }
 
+    // Attempt to reduce numerical imprecision
+    double storedLowerBound = _boundManager.getLowerBound( y );
+    double storedUpperBound = _boundManager.getUpperBound( y );
+
+    // If the lower bound is almost equal to the stored upper bound,
+    // make it exactly equal - the variable becomes fixed to a
+    // constant value
+    if ( FloatUtils::areEqual( lowerBound,
+                               storedUpperBound,
+                               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TOLERANCE ) )
+        lowerBound = storedUpperBound;
+
+    // If the upperbound is almost equal to the stored lower bound,
+    // make it exactly equal - the variable becomes fixed to a
+    // constant value
+    if ( FloatUtils::areEqual( upperBound,
+                               storedLowerBound,
+                               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TOLERANCE ) )
+        upperBound = storedLowerBound;
+
+    // If the compued lower and upper bounds are nearly equal, make
+    // them exactly equal, to their average
+    if ( FloatUtils::areEqual( upperBound,
+                               lowerBound,
+                               GlobalConfiguration::EXPLICIT_BASIS_BOUND_TOLERANCE ) )
+    {
+        lowerBound = ( lowerBound + upperBound ) / 2;
+        upperBound = lowerBound;
+    }
+
     result += registerTighterLowerBound( y, lowerBound, row );
     result += registerTighterUpperBound( y, upperBound, row );
 
@@ -372,8 +402,39 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
             lowerBound = temp;
         }
 
-        // If a tighter bound is found, store it
         xi = row._row[i]._var;
+
+        // Attempt to reduce numerical imprecision
+        storedLowerBound = _boundManager.getLowerBound( xi );
+        storedUpperBound = _boundManager.getUpperBound( xi );
+
+        // If the lower bound is almost equal to the stored upper bound,
+        // make it exactly equal - the variable becomes fixed to a
+        // constant value
+        if ( FloatUtils::areEqual( lowerBound,
+                                   storedUpperBound,
+                                   GlobalConfiguration::EXPLICIT_BASIS_BOUND_TOLERANCE ) )
+            lowerBound = storedUpperBound;
+
+        // If the upperbound is almost equal to the stored lower bound,
+        // make it exactly equal - the variable becomes fixed to a
+        // constant value
+        if ( FloatUtils::areEqual( upperBound,
+                                   storedLowerBound,
+                                   GlobalConfiguration::EXPLICIT_BASIS_BOUND_TOLERANCE ) )
+            upperBound = storedLowerBound;
+
+        // If the compued lower and upper bounds are nearly equal, make
+        // them exactly equal, to their average
+        if ( FloatUtils::areEqual( upperBound,
+                                   lowerBound,
+                                   GlobalConfiguration::EXPLICIT_BASIS_BOUND_TOLERANCE ) )
+        {
+            lowerBound = ( lowerBound + upperBound ) / 2.0;
+            upperBound = lowerBound;
+        }
+
+        // If a tighter bound is found, store it
         result += registerTighterLowerBound( xi, lowerBound, row );
         result += registerTighterUpperBound( xi, upperBound, row );
         if ( FloatUtils::gt( getLowerBound( xi ), getUpperBound( xi ) ) )
