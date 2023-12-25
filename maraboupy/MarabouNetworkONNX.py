@@ -37,9 +37,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True, threshold=None):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
+        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, threshold=threshold)
 
     def clear(self):
         """Reset values to represent empty network
@@ -67,7 +67,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputNames = None
         self.graph = None
 
-    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True):
+    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True, threshold=None):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
@@ -80,6 +80,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         self.filename = filename
         self.graph = onnx.load(filename).graph
+        self.threshold = threshold
+        self.thresholdReached = False
+
+        if os.path.exists('post_split.onnx'):
+            os.remove('post_split.onnx')
 
         # Get default inputs/outputs if no names are provided
         if not inputNames:
@@ -185,6 +190,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Recursively create remaining shapes and equations as needed
         for outputName in self.outputNames:
             self.makeGraphEquations(outputName, True)
+            # if self.thresholdReached:
+            #     return
 
     def makeGraphEquations(self, nodeName, makeEquations):
         """Recursively populates self.shapeMap, self.varMap, and self.constantMap while adding equations and constraints
@@ -217,7 +224,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             raise RuntimeError(err_msg)
 
         # Compute node's shape and create Marabou equations as needed
+        if self.thresholdReached:
+            return
         self.makeMarabouEquations(nodeName, makeEquations)
+
+        if self.threshold is not None:
+            if not self.thresholdReached and len(self.equList) > self.threshold:
+                if self.splitNetworkAtNode(nodeName, networkNamePostSplit='post_split.onnx'):
+                    self.thresholdReached = True
 
         # Create new variables when we find one of the inputs
         if nodeName in self.inputNames:

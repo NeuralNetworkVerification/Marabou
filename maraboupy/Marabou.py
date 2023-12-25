@@ -3,6 +3,7 @@ Top contributors (to current version):
     - Christopher Lazarus
     - Kyle Julian
     - Andrew Wu
+    - Teruhiro Tagomori
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -29,6 +30,7 @@ try:
     from maraboupy.MarabouNetworkONNX import *
 except ImportError:
     warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
+from maraboupy.MarabouNetworkComposition import MarabouNetworkComposition
 
 def read_nnet(filename, normalize=False):
     """Constructs a MarabouNetworkNnet object from a .nnet file
@@ -73,6 +75,20 @@ def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=Tru
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
     return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
+
+def read_onnx_with_threshould(filename, inputNames=None, outputNames=None, reindexOutputVars=True, threshold=None):
+    """Constructs a MarabouNetworkComposition object from an ONNX file
+
+    Args:
+        filename (str): Path to the ONNX file
+        inputNames (list of str, optional): List of node names corresponding to inputs
+        outputNames (list of str, optional): List of node names corresponding to outputs
+        threshold (int, optional): Threshold for the number of linear equations
+
+    Returns:
+        :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
+    """
+    return MarabouNetworkComposition(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, threshold=threshold)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
