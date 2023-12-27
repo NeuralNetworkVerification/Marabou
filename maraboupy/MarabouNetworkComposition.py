@@ -64,13 +64,26 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
             self.ipqToOutVars[f'q{index}.ipq'] = network.outputVars
             index += 1
 
-    def solve(self):
+    def solve(self, filename="", verbose=True, options=None):
+        """Function to solve query represented by this network
+
+        Args:
+            filename (string): Path for redirecting output
+            verbose (bool): If true, print out solution after solve finishes
+            options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+
+        Returns:
+            (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
+                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        """
         # https://github.com/wu-haoze/Marabou/blob/1a3ca6010b51bba792ef8ddd5e1ccf9119121bd8/resources/runVerify.py#L200-L225
-        options = Marabou.createOptions(verbosity = 1) # TG: Option を引数でとる
+        if options == None:
+            options = MarabouCore.Options()        
         for i, ipqFile in enumerate(self.ipqs):
             # load input query
             ipq = Marabou.loadQuery(ipqFile)
-
             if i == 0:
                 self.encodeInput(ipq)
 
