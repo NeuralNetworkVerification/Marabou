@@ -68,7 +68,7 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         """Function to solve query represented by this network
 
         Args:
-            filename (string): Path for redirecting output
+            filename (string): Path for redirecting output (Only for the last subnet)
             verbose (bool): If true, print out solution after solve finishes
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
 
@@ -76,9 +76,8 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
             (tuple): tuple containing:
                 - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
-                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed (Only for the last subnet)
         """
-        # https://github.com/wu-haoze/Marabou/blob/1a3ca6010b51bba792ef8ddd5e1ccf9119121bd8/resources/runVerify.py#L200-L225
         if options == None:
             options = MarabouCore.Options()        
         for i, ipqFile in enumerate(self.ipqs):
@@ -92,19 +91,14 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
             
             if i == len(self.ipqs) - 1:
                 self.encodeOutput(ipq, i)
-                # exitCode, vals, _ = MarabouCore.solve(ipq, options)
-                # print(f'TG: exit code: {exitCode}')
-                # if exitCode == "sat":
-                #     for j in range(len(self.inputVars)):
-                #         for i in range(self.inputVars[j].size):
-                #             print("input {} = {}".format(i, vals[self.inputVars[j].item(i)]))
-
-                #     for j in range(len(self.outputVars)): #TG: Original のものを表示してしまっているので修正
-                #         for i in range(self.outputVars[j].size):
-                #             print("output {} = {}".format(i, vals[self.outputVars[j].item(i)]))
-                ret, bounds, stats = MarabouCore.calculateBounds(ipq, options)
+                exitCode, bounds, stats = MarabouCore.calculateBounds(ipq, options, str(filename))
+                if exitCode == "":
+                    exitCode = "UNKNOWN"
+                if verbose:
+                    print(exitCode)
+                return [exitCode, {}, stats]
             else:
-                ret, bounds, stats = MarabouCore.calculateBounds(ipq, options)
+                _, bounds, _ = MarabouCore.calculateBounds(ipq, options)
 
     def encodeCalculateInputBounds(self, ipq, i, bounds):
         previousOutputVars = self.ipqToOutVars[f'q{i}.ipq']
