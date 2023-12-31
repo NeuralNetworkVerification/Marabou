@@ -13,8 +13,6 @@ directory for licensing information.
 
 MarabouNetworkONNX represents neural networks with piecewise linear constraints derived from the ONNX format
 '''
-import ast
-
 import numpy as np
 import onnx
 import onnxruntime
@@ -1482,7 +1480,7 @@ def make_tree(content):
 
     :meta private:
     """
-    items = re.findall(r"\(|\)|[\w-]+|<=|>=", content)
+    items = re.findall(r"\(|\)|[\w\-\\.]+|<=|>=", content)
 
     def req(index):
         result = []
