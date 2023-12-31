@@ -20,6 +20,7 @@ from onnx import numpy_helper
 from onnx.helper import get_attribute_value
 from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
+from maraboupy import MarabouCore
 from onnx import TensorProto
 import itertools
 import torch
@@ -1399,23 +1400,23 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
             elif statement_type == "assert":
                 operator = statement[1][0]
+                if operator in {"<=", ">="}:
+                    if operator == "<=":
+                        e = MarabouUtils.Equation(MarabouCore.Equation.LE)
+                    else:  # operator == ">=":
+                        e = MarabouUtils.Equation(MarabouCore.Equation.GE)
 
-                if operator == "<=":
                     var_name = statement[1][1]
                     second_argument = statement[1][2]
 
+                    e.addAddend(1, self.vnnlibMap[var_name])
                     if second_argument in self.vnnlibMap:
-                        self.addInequality([self.vnnlibMap[var_name], self.vnnlibMap[second_argument]], [1, -1], 0)
+                        e.addAddend(-1, self.vnnlibMap[second_argument])
+                        e.setScalar(0)
                     else:
-                        self.setUpperBound(self.vnnlibMap[var_name], float(second_argument))
-                elif operator == ">=":
-                    var_name = statement[1][1]
-                    second_argument = statement[1][2]
+                        e.setScalar(float(second_argument))
 
-                    if second_argument in self.vnnlibMap:
-                        self.addInequality([self.vnnlibMap[var_name], self.vnnlibMap[second_argument]], [-1, 1], 0)
-                    else:
-                        self.setLowerBound(self.vnnlibMap[var_name], float(second_argument))
+                    self.equList.append(e)
 
                 elif operator == "or":
                     disjuncts = []
@@ -1429,30 +1430,31 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                             var_name = conjunct_terms[1]
                             second_argument = conjunct_terms[2]
 
-                            e = MarabouUtils.Equation()
                             if operator == "<=":
-                                e.addAddend(1, self.vnnlibMap[var_name])
-                                if second_argument in self.vnnlibMap:
-                                    e.addAddend(-1, self.vnnlibMap[second_argument])
-                                    e.setScalar(0)
-                                else:
-                                    e.setScalar(float(second_argument))
+                                e = MarabouCore.Equation(MarabouCore.Equation.LE)
                             elif operator == ">=":
-                                e.addAddend(-1, self.vnnlibMap[var_name])
-                                if second_argument in self.vnnlibMap:
-                                    e.addAddend(1, self.vnnlibMap[second_argument])
-                                    e.setScalar(0)
-                                else:
-                                    e.setScalar(-float(second_argument))
+                                e = MarabouCore.Equation(MarabouCore.Equation.GE)
                             else:
                                 raise NotImplementedError("'or' operator specified in vnnlib file supports only disjuncts "
                                                           "with one of the following operators: '>=', '<='")
+
+                            e.addAddend(1, self.vnnlibMap[var_name])
+                            if second_argument in self.vnnlibMap:
+                                e.addAddend(-1, self.vnnlibMap[second_argument])
+                                e.setScalar(0)
+                            else:
+                                e.setScalar(float(second_argument))
 
                             conjuncts.append(e)
 
                         disjuncts.append(conjuncts)
 
                     self.addDisjunctionConstraint(disjuncts)
+
+                else:
+                    raise NotImplementedError(f"VNN-LIB operator '{operator}' not implemented")
+            else:
+                raise NotImplementedError(f"VNN-LIB statement type '{statement_type} not implemented")
 
 def getBroadcastShape(shape1, shape2):
     """Helper function to get the shape that results from broadcasting these shapes together

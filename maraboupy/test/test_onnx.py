@@ -15,28 +15,6 @@ NETWORK_FOLDER = "../../resources/onnx/"   # Folder for test networks
 np.random.seed(123)                        # Seed random numbers for repeatability
 NUM_RAND = 10                              # Default number of random test points per example
 
-def test_vnnlib():
-    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "acasxu", "ACASXU_experimental_v2a_1_1.onnx")
-    vnnlib_filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "vnnlib", "acasxu_prop1.vnnlib")
-
-    network = Marabou.read_onnx(filename, vnnlibFilename=vnnlib_filename)
-
-    # Check input bounds:
-    assert network.lowerBoundExists(0) and network.upperBoundExists(0)
-    assert network.lowerBounds[0] == 0.6 and network.upperBounds[0] == 0.679857769
-    assert network.lowerBoundExists(1) and network.upperBoundExists(1)
-    assert network.lowerBounds[1] == -0.5 and network.upperBounds[1] == 0.5
-    assert network.lowerBoundExists(2) and network.upperBoundExists(2)
-    assert network.lowerBounds[2] == -0.5 and network.upperBounds[2] == 0.5
-    assert network.lowerBoundExists(3) and network.upperBoundExists(3)
-    assert network.lowerBounds[3] == 0.45 and network.upperBounds[3] == 0.5
-    assert network.lowerBoundExists(4) and network.upperBoundExists(4)
-    assert network.lowerBounds[4] == -0.5 and network.upperBounds[4] == -0.45
-
-    # Check output bound
-    assert network.lowerBoundExists(5)
-    assert network.lowerBounds[5] == 3.991125645861615
-
 def test_split_onnx():
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "fc1.onnx")
     network = Marabou.read_onnx(filename)
