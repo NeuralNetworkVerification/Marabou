@@ -37,9 +37,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True, threshold=None):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True, maxNumberOfLinearEquations=None):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, threshold=threshold)
+        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
     def clear(self):
         """Reset values to represent empty network
@@ -67,7 +67,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputNames = None
         self.graph = None
 
-    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True, threshold=None):
+    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True, maxNumberOfLinearEquations=None):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
@@ -75,12 +75,15 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             inputNames: (list of str): List of node names corresponding to inputs
             outputNames: (list of str): List of node names corresponding to outputs
             reindexOutputVars: (bool): Reindex the variables so that the output variables are immediate after input variables.
+            maxNumberOfLinearEquations (int, optional): Threshold for the number of linear equations.
+                                                        If the number of linear equations is greater than this threshold,
+                                                        the network will be split into two networks. Defaults to None.
 
         :meta private:
         """
         self.filename = filename
         self.graph = onnx.load(filename).graph
-        self.threshold = threshold
+        self.maxNumberOfLinearEquations = maxNumberOfLinearEquations
         self.thresholdReached = False
 
         if os.path.exists('post_split.onnx'):
@@ -190,8 +193,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Recursively create remaining shapes and equations as needed
         for outputName in self.outputNames:
             self.makeGraphEquations(outputName, True)
-            # if self.thresholdReached:
-            #     return
 
     def makeGraphEquations(self, nodeName, makeEquations):
         """Recursively populates self.shapeMap, self.varMap, and self.constantMap while adding equations and constraints
@@ -228,8 +229,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             return
         self.makeMarabouEquations(nodeName, makeEquations)
 
-        if self.threshold is not None:
-            if not self.thresholdReached and len(self.equList) > self.threshold:
+        if self.maxNumberOfLinearEquations is not None:
+            if not self.thresholdReached and len(self.equList) > self.maxNumberOfLinearEquations:
                 if self.splitNetworkAtNode(nodeName, networkNamePostSplit='post_split.onnx'):
                     self.thresholdReached = True
 

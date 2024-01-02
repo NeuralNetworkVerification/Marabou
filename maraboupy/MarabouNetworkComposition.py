@@ -30,13 +30,14 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         filename (str): Path to the ONNX file
         inputNames: (list of str, optional): List of node names corresponding to inputs
         outputNames: (list of str, optional): List of node names corresponding to outputs
-        reindexOutputVars: (bool, optional): Reindex the variables so that the output variables are immediate after input variables.
-        threshold: (float, optional): Threshold for equation functions. If the absolute value of the lower bound of a variable is less than this value, the variable is considered to be 0.
+        maxNumberOfLinearEquations (int, optional): Threshold for the number of linear equations.
+                                                    If the number of linear equations is greater than this threshold,
+                                                    the network will be split into two networks. Defaults to None.
 
     Returns:
         :class:`~maraboupy.Marabou.MarabouNetworkComposition.MarabouNetworkComposition`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True, threshold=None):
+    def __init__(self, filename, inputNames=None, outputNames=None, maxNumberOfLinearEquations=None):
         super().__init__()
         self.shapeMap = {}
         self.madeGraphEquations = []
@@ -45,7 +46,7 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         self.ipqToOutVars = {}
         self.inputVars, self.outputVars = self.getInputOutputVars(filename, inputNames, outputNames)
 
-        network = MarabouNetworkONNX.MarabouNetworkONNX(filename, reindexOutputVars=reindexOutputVars, threshold=threshold)
+        network = MarabouNetworkONNX.MarabouNetworkONNX(filename, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
         network.saveQuery('q1.ipq')
         self.ipqs.append('q1.ipq')
@@ -57,7 +58,7 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         while os.path.exists('post_split.onnx'):
             # delete network
             del network
-            network = MarabouNetworkONNX.MarabouNetworkONNX('post_split.onnx', reindexOutputVars=reindexOutputVars, threshold=threshold)
+            network = MarabouNetworkONNX.MarabouNetworkONNX('post_split.onnx', maxNumberOfLinearEquations=maxNumberOfLinearEquations)
             network.saveQuery(f'q{index}.ipq')
             self.ipqs.append(f'q{index}.ipq')
             self.ipqToInVars[f'q{index}.ipq'] = network.inputVars

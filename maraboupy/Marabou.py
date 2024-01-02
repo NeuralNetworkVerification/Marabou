@@ -76,19 +76,22 @@ def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=Tru
     """
     return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
-def read_onnx_with_threshould(filename, inputNames=None, outputNames=None, reindexOutputVars=True, threshold=None):
+def read_onnx_with_threshold(filename, inputNames=None, outputNames=None, maxNumberOfLinearEquations=None):
     """Constructs a MarabouNetworkComposition object from an ONNX file
 
     Args:
         filename (str): Path to the ONNX file
         inputNames (list of str, optional): List of node names corresponding to inputs
         outputNames (list of str, optional): List of node names corresponding to outputs
-        threshold (int, optional): Threshold for the number of linear equations
+        maxNumberOfLinearEquations (int, optional): Threshold for the number of linear equations.
+                                                    If the number of linear equations is greater than this threshold,
+                                                    the network will be split into two networks. Defaults to None.
 
     Returns:
-        :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
+        :class:`~maraboupy.MarabouNetworkComposition.MarabouNetworkComposition`
     """
-    return MarabouNetworkComposition(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, threshold=threshold)
+    return MarabouNetworkComposition(filename, inputNames, outputNames,
+                                        maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
