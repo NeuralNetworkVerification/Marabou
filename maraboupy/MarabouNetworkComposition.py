@@ -25,6 +25,8 @@ from maraboupy import MarabouNetworkONNX
 
 class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkComposition object from an ONNX file
+        This class splits into subnets every time the number of linear equations reaches maxNumberOfLinearEquations.
+        It provides the function to propagate bounds for each subnet.
 
     Args:
         filename (str): Path to the ONNX file
