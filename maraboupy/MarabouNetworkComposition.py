@@ -48,23 +48,39 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         self.ipqToOutVars = {}
         self.inputVars, self.outputVars = self.getInputOutputVars(filename, inputNames, outputNames)
 
+        # Instantiate the first subnet
         network = MarabouNetworkONNX.MarabouNetworkONNX(filename, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
-        network.saveQuery('q1.ipq')
-        self.ipqs.append('q1.ipq')
-        self.ipqToInVars['q1.ipq'] = network.inputVars
-        self.ipqToOutVars['q1.ipq'] = network.outputVars
+        savedInputQueryName = 'q1.ipq'
+        network.saveQuery(savedInputQueryName)
+        self.ipqs.append(savedInputQueryName)
+        self.ipqToInVars[savedInputQueryName] = network.inputVars
+        self.ipqToOutVars[savedInputQueryName] = network.outputVars
 
+        # index of ipq file
         index = 2
 
         while os.path.exists('post_split.onnx'):
             # delete network
             del network
-            network = MarabouNetworkONNX.MarabouNetworkONNX('post_split.onnx', maxNumberOfLinearEquations=maxNumberOfLinearEquations)
-            network.saveQuery(f'q{index}.ipq')
-            self.ipqs.append(f'q{index}.ipq')
-            self.ipqToInVars[f'q{index}.ipq'] = network.inputVars
-            self.ipqToOutVars[f'q{index}.ipq'] = network.outputVars
+
+            # Instantiate the next subnet
+            network = MarabouNetworkONNX.MarabouNetworkONNX('post_split.onnx',
+                                                            maxNumberOfLinearEquations=maxNumberOfLinearEquations)
+            # name of the input query file
+            savedInputQueryName = f'q{index}.ipq'
+
+            # save input query
+            network.saveQuery(savedInputQueryName)
+
+            # append input query to the lsit
+            self.ipqs.append(savedInputQueryName)
+
+            # save input and output variables so that this can map them to the next input query
+            self.ipqToInVars[savedInputQueryName] = network.inputVars
+            self.ipqToOutVars[savedInputQueryName] = network.outputVars
+            
+            # increment index
             index += 1
 
     def solve(self, filename="", verbose=True, options=None):
@@ -77,7 +93,7 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
 
         Returns:
             (tuple): tuple containing:
-                - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
+                - exitCode (str): A string representing the exit code (unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed (Only for the last subnet)
         """
@@ -86,14 +102,20 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         for i, ipqFile in enumerate(self.ipqs):
             # load input query
             ipq = Marabou.loadQuery(ipqFile)
+
+            # If the first subnet, encode input variables with the input bounds of the original network
             if i == 0:
                 self.encodeInput(ipq)
 
+            # If not the first subnet, encode input variables with the output bounds of the previous subwork
             if i > 0:
                 self.encodeCalculateInputBounds(ipq, i, bounds)
             
             if i == len(self.ipqs) - 1:
+                # If the last subnet, encode output variables with the output bounds of the original network
                 self.encodeOutput(ipq, i)
+
+                # If the last subnet, propagate bounds and return the exit code, values, and statistics
                 exitCode, bounds, stats = MarabouCore.calculateBounds(ipq, options, str(filename))
                 if exitCode == "":
                     exitCode = "UNKNOWN"
@@ -101,28 +123,70 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
                     print(exitCode)
                 return [exitCode, {}, stats]
             else:
+                # If not the last subnet, propagate bounds
                 _, bounds, _ = MarabouCore.calculateBounds(ipq, options)
 
     def encodeCalculateInputBounds(self, ipq, i, bounds):
+        """Function to encode input variables and calculate bounds for the next subnet
+        
+        Args:
+            ipq (:class:`~maraboupy.MarabouCore.InputQuery`): InputQuery object to encode input variables
+            i (int): Index of the subnet
+            bounds (dict): Dictionary containing bounds for variables
+
+        Returns:
+            None
+
+        :meta private:
+        """
+        # Output variables of the previous subnet
         previousOutputVars = self.ipqToOutVars[f'q{i}.ipq']
+
+        # Input variables of the current subnet
         currentInputVars = self.ipqToInVars[f'q{i+1}.ipq']    
         
+        # Set bounds for the current subnet
         for previousOutputVar, currentInputVar in zip(previousOutputVars, currentInputVars):
             for previousOutputVarElement, currentInputVarElement in zip(previousOutputVar.flatten(), currentInputVar.flatten()):
                 ipq.setLowerBound(currentInputVarElement, bounds[previousOutputVarElement][0])
                 ipq.setUpperBound(currentInputVarElement, bounds[previousOutputVarElement][1])
 
     def encodeInput(self, ipq):
+        """Function to encode input variables
+        
+        Args:
+            ipq (:class:`~maraboupy.MarabouCore.InputQuery`): InputQuery object to encode input variables
+        Returns:
+            None
+
+        :meta private:
+        """
         inputVars = self.ipqToInVars['q1.ipq']
+
+        # Set bounds for the first subnet
         for array in inputVars:
             for var in array.flatten():
                 ipq.setLowerBound(var, self.lowerBounds[var])
                 ipq.setUpperBound(var, self.upperBounds[var])
 
     def encodeOutput(self, ipq, i):
+        """Function to encode output variables
+        Args:
+            ipq:    (:class:`~maraboupy.MarabouCore.InputQuery`): InputQuery object to encode output variables
+            i:      (int): Index of the subnet
+        
+        Returns:
+            None
+
+        :meta private:
+        """
+        # Output variables of the current subnet
         outputVars = self.ipqToOutVars[f'q{i+1}.ipq']
+
+        # Set bounds for the current subnet
         originalOutputVars = self.outputVars
         
+        # Set bounds for the last subnet
         for originalOutputVar, outputVar in zip(originalOutputVars, outputVars):
             for originalOutputVarElement, outputVarElement in zip(originalOutputVar.flatten(), outputVar.flatten()):                
                 if originalOutputVarElement in self.lowerBounds:
