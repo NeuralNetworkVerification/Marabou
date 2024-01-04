@@ -85,6 +85,15 @@ public:
     {
     }
 
+    void computeGivenCostFunction( const Map<unsigned, double> &/* heuristicCost */ )
+    {
+    }
+
+    double computeGivenCostFunctionDirectly( const Map<unsigned, double> &/* heuristicCost */ )
+    {
+        return 0;
+    }
+
     double *nextCostFunction;
     const double *getCostFunction() const
     {
@@ -129,6 +138,11 @@ public:
     void invalidateCostFunction()
     {
     }
+
+	const SparseUnsortedList* createRowOfCostFunction() const
+	{
+    	return NULL;
+	}
 };
 
 #endif // __MockCostFunctionManager_h__

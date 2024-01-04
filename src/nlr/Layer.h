@@ -25,6 +25,7 @@
 #include "MaxConstraint.h"
 #include "NeuronIndex.h"
 #include "ReluConstraint.h"
+#include "SigmoidConstraint.h"
 #include "SignConstraint.h"
 #include "Vector.h"
 
@@ -44,6 +45,7 @@ public:
         MAX,
         SIGN,
         LEAKY_RELU,
+        SIGMOID,
     };
 
     /*
@@ -127,6 +129,9 @@ public:
     void setAlpha( double alpha ) { _alpha = alpha; }
     double getAlpha() const { return _alpha; }
 
+=======
+    void obtainCurrentBounds( const InputQuery &inputQuery );
+>>>>>>> master
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();

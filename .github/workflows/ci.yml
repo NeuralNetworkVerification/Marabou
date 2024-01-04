@@ -1,36 +1,91 @@
-on: [push, pull_request]
 name: CI
 
-env:
-  BUILD_TYPE: Debug
+on:
+  # Run CI when changes are pushed to master
+  push:
+    branches:
+      - master
+
+  # Run CI when a PR is openend or changes are pushed to the PR
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  # Run CI every Monday at 7AM to catch bugs due to changes in the ecosystem
+  schedule:
+    #        ┌───────────── minute (0 - 59)
+    #        │ ┌───────────── hour (0 - 23)
+    #        │ │ ┌───────────── day of the month (1 - 31)
+    #        │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+    #        │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    - cron: "0 7 * * 1"
+
+  # Run CI whenever someone with the appropriate privileges requests it
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: sh
 
 jobs:
   build:
     strategy:
       matrix:
+        os: [ubuntu-latest]
         compiler: [g++, clang++]
+        build_type: [Debug, Release]
+        include:
+          - os: macos-latest
+            compiler: clang++
+            build_type: Release
 
-    runs-on: ubuntu-latest #TODO: macos-latest
-    name: Debug build 
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.build_type }} build with ${{ matrix.compiler }} on ${{ matrix.os }}
 
     steps:
+      - uses: actions/checkout@v4
 
-      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
 
-      - name: Install Packages
-        if: 
+      - name: Install system packages
+        if: runner.os == 'Linux'
         run: |
-           sudo apt-get update
-           sudo apt-get install -y \
-             ccache \
-             cxxtest \
-             protobuf-compiler \
-             libprotoc-dev
-           python3 -m pip install --user --upgrade pip
-           python3 -m pip install --user --upgrade setuptools
-           python3 -m pip install --user wheel
-           python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
-           echo "/usr/lib/ccache" >> $GITHUB_PATH
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            build-essential \
+            ccache \
+            cmake \
+            cxxtest \
+            protobuf-compiler \
+            libprotoc-dev
+
+      - name: Install system packages
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            ccache \
+            cmake \
+            cxxtest \
+            protobuf-c
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --user --upgrade pip
+          python -m pip install --user --upgrade setuptools
+          python -m pip install --user wheel
+          python -m pip install --user bumpver
+          python -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache
+          echo "/usr/lib/ccache" >> $GITHUB_PATH
+
+      - name: Test BumpVer Configuration
+        run: python -m bumpver update --patch --no-fetch --dry
 
       - name: Create Build Environment
         run: cmake -E make_directory build
@@ -46,13 +101,13 @@ jobs:
       # Add ${{ matrix.cache-key }}- to the key pattern if matrix grows
       - name: Restore ccache
         id: ccache
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         env:
           cache-name: ccache-
         with:
           path: ccache-dir
-          key: ${{ env.cache-name }}-${{ matrix.compiler }}-${{ github.sha }} 
-          restore-keys: ${{ env.cache-name }}-${{ matrix.compiler }}-         
+          key: ${{ env.cache-name }}-${{ matrix.compiler }}-${{ github.sha }}
+          restore-keys: ${{ env.cache-name }}-${{ matrix.compiler }}-
       # ---------------------------- END CACHE RESTORE -------------------------
 
       - name: Configure ccache
@@ -68,10 +123,10 @@ jobs:
         # access regardless of the host operating system
         shell: bash
         working-directory: build
-        # Note the current convention is to use the -S and -B options here to specify source 
-        # and build directories, but this is only available with CMake 3.13 and higher.  
+        # Note the current convention is to use the -S and -B options here to specify source
+        # and build directories, but this is only available with CMake 3.13 and higher.
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
 
       - name: Build
         run: make -j2
@@ -79,27 +134,27 @@ jobs:
 
       - name: ccache statistics
         run: ccache -s
-        
+
       - name: Run system tests
-        run: ctest -L system -j 2 
-        working-directory: build
- 
-      - name: Run regression tests
-        run: ctest -L regress[0-1] -j 2 
+        run: ctest -L system -j 2
         working-directory: build
 
+      - name: Run regression tests
+        if: runner.os == 'Linux'
+        run: ctest -L regress[0-1] -j 2
+        working-directory: build
 
       - name: Python Bindings Install Check
         run: |
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
-          python3 -c "import maraboupy"
+          python -c "import maraboupy"
 
       - name: Generate Python Code Coverage
-        if: ${{ matrix.compiler == 'g++' }} 
-        run: python3 -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
+        if: ${{ ( matrix.compiler == 'g++' ) && ( matrix.build_type == 'Debug' ) }}
+        run: python -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
 
       - name: Upload coverage to Codecov
-        if: ${{ matrix.compiler == 'g++' }} 
-        uses: codecov/codecov-action@v1
+        if: ${{ ( matrix.compiler == 'g++' ) && ( matrix.build_type == 'Debug' ) }}
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml

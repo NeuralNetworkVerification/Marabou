@@ -75,6 +75,12 @@ public:
     void evaluate( double *input , double *output );
 
     /*
+      Perform an evaluation of the network for the current input variable
+      assignment and store the resulting variable assignment in the assignment.
+    */
+    void concretizeInputAssignment( Map<unsigned, double> &assignment );
+
+    /*
       Perform a simulation of the network for a specific input
     */
    void simulate( Vector<Vector<double>> *input );
@@ -112,16 +118,20 @@ public:
     void setTableau( const ITableau *tableau );
     const ITableau *getTableau() const;
 
+    void obtainCurrentBounds( const InputQuery &inputQuery );
     void obtainCurrentBounds();
     void intervalArithmeticBoundPropagation();
     void symbolicBoundPropagation();
     void deepPolyPropagation();
     void lpRelaxationPropagation();
+    void LPTighteningForOneLayer( unsigned targetIndex );
     void MILPPropagation();
+    void MILPTighteningForOneLayer( unsigned targetIndex );
     void iterativePropagation();
 
     void receiveTighterBound( Tightening tightening );
     void getConstraintTightenings( List<Tightening> &tightenings );
+    void clearConstraintTightenings();
 
     /*
       For debugging purposes: dump the network topology
@@ -193,6 +203,7 @@ private:
     void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );

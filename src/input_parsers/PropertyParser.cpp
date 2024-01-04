@@ -47,7 +47,10 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
         while ( true )
         {
             String line = propertyFile.readLine().trim();
-            processSingleLine( line, inputQuery );
+            if ( line.substring(0,2) != "//" )
+            {
+                processSingleLine( line, inputQuery );
+            }
         }
     }
     catch ( const CommonError &e )

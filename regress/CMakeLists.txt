@@ -31,14 +31,17 @@ macro(marabou_add_coav_test level net_file result)
 endmacro()
 
 macro(marabou_add_acasxu_test level net_file prop_num result)
-    marabou_add_regress_test(${level} 
-        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}"
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "" "acasxu")
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/onnx/acasxu/${net_file}.onnx"
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "" "acasxu")
 endmacro()
 
 macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
     marabou_add_regress_test(${level} 
-        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}"
+        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--snc" "acasxu")
 endmacro()
 
@@ -64,6 +67,32 @@ macro(marabou_add_regress_mps_test level net_file result arguments
     ${result} ${test_properties}")
 endmacro()
 
+macro(marabou_add_input_query_test level ipq_file result arguments
+    test_properties)
+  get_filename_component(net_name ${ipq_file} NAME)
+  set(test_name "${ipq_file}%${arguments}")
+  add_test(${test_name}
+    ${PYTHON_EXECUTABLE} ${run_regress_script}
+    ${MARABOU_EXE_PATH}
+    "${CMAKE_SOURCE_DIR}/regress/regress${level}/input_queries/${ipq_file}"
+    ${result}
+    ${arguments})
+  set_tests_properties(${test_name} PROPERTIES LABELS "regress${level}
+    ${result} ${test_properties}")
+endmacro()
+
+macro(marabou_add_acasxu_proof_test level net_file prop_num result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+            "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--prove-unsat" "acasxu")
+endmacro()
+
+macro(marabou_add_coav_proof_test level net_file result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/coav/${net_file}"
+            "${CMAKE_SOURCE_DIR}/resources/properties/builtin_property.txt" "${result}" "--prove-unsat" "coav")
+endmacro()
+
 add_subdirectory(regress0)
 add_subdirectory(regress1)
 add_subdirectory(regress2)
@@ -77,4 +106,3 @@ add_custom_target(regress
   COMMAND
     ctest --output-on-failure -L "regress0" -j${CTEST_NTHREADS} $$ARGS
   DEPENDS build-regress)
- 

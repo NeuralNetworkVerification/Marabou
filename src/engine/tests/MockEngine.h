@@ -20,6 +20,9 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "context/context.h"
+
+class String;
 
 class MockEngine : public IEngine
 {
@@ -31,7 +34,7 @@ public:
 
         lastStoredState = NULL;
     }
-    
+
     ~MockEngine()
     {
     }
@@ -89,8 +92,11 @@ public:
         }
     }
 
+    void postContextPopHook() {};
+    void preContextPushHook() {};
+
     mutable EngineState *lastStoredState;
-    void storeState( EngineState &state, bool /* storeAlsoTableauState */ ) const
+    void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
     {
         lastStoredState = &state;
     }
@@ -167,7 +173,7 @@ public:
         _constraintsToSplit.append( constraint );
     }
 
-    PiecewiseLinearConstraint *pickSplitPLConstraint()
+    PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy /**/ )
     {
         if ( !_constraintsToSplit.empty() )
         {
@@ -189,6 +195,78 @@ public:
             }
         else
             return NULL;
+    }
+
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
+    {
+    }
+
+    void applyAllBoundTightenings() {};
+
+    bool applyAllValidConstraintCaseSplits() { return false; };
+
+    CVC4::context::Context _dontCare;
+    CVC4::context::Context &getContext() { return _dontCare; }
+
+    bool consistentBounds() const { return true; }
+
+    double explainBound( unsigned /* var */,  bool /* isUpper */ ) const
+    {
+        return 0.0;
+    }
+
+    void updateGroundUpperBound(unsigned /* var */, double /* value */ )
+    {
+    }
+
+    void updateGroundLowerBound(unsigned /*var*/, double /*value*/ )
+    {
+    }
+
+    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
+    {
+        return 0;
+    }
+
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
+    {
+        return NULL;
+    }
+
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode */* node*/ )
+    {
+    }
+
+    const UnsatCertificateNode *getUNSATCertificateRoot() const
+    {
+        return NULL;
+    }
+
+    bool certifyUNSATCertificate()
+    {
+        return true;
+    }
+
+    void explainSimplexFailure()
+    {
+    }
+
+    const BoundExplainer *getBoundExplainer() const
+    {
+        return NULL;
+    }
+
+    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )
+    {
+    }
+
+    void propagateBoundManagerTightenings()
+    {
+    }
+
+    bool shouldProduceProofs() const
+    {
+        return true;
     }
 };
 

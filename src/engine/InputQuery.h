@@ -22,6 +22,7 @@
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "PiecewiseLinearConstraint.h"
+#include "TranscendentalConstraint.h"
 
 class InputQuery
 {
@@ -43,6 +44,7 @@ public:
     double getUpperBound( unsigned variable ) const;
     const Map<unsigned, double> &getLowerBounds() const;
     const Map<unsigned, double> &getUpperBounds() const;
+    void clearBounds();
 
     const List<Equation> &getEquations() const;
     List<Equation> &getEquations();
@@ -51,6 +53,10 @@ public:
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
+  
+    void addTranscendentalConstraint( TranscendentalConstraint *constraint );
+    const List<TranscendentalConstraint *> &getTranscendentalConstraints() const;
+    List<TranscendentalConstraint *> &getTranscendentalConstraints();
 
     /*
       Methods for handling input and output variables
@@ -134,12 +140,16 @@ public:
     void setNetworkLevelReasoner( NLR::NetworkLevelReasoner *nlr );
     NLR::NetworkLevelReasoner *getNetworkLevelReasoner() const;
 
+    // A map for storing the tableau aux variable assigned to each PLC
+    Map<unsigned, unsigned> _lastAddendToAux;
+
 private:
     unsigned _numberOfVariables;
     List<Equation> _equations;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
     List<PiecewiseLinearConstraint *> _plConstraints;
+    List<TranscendentalConstraint *> _tsConstraints;
 
     Map<unsigned, double> _solution;
 
@@ -158,8 +168,11 @@ private:
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
     bool constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
-                             Map<unsigned, unsigned> &handledVariableToLayer,
-                             unsigned newLayerIndex );
+                                  Map<unsigned, unsigned> &handledVariableToLayer,
+                                  unsigned newLayerIndex );
+    bool constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
+                                Map<unsigned, unsigned> &handledVariableToLayer,
+                                unsigned newLayerIndex );
     bool constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                       Map<unsigned, unsigned> &handledVariableToLayer,
                                       unsigned newLayerIndex );

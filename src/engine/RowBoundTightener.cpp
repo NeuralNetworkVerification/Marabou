@@ -22,10 +22,9 @@
 
 RowBoundTightener::RowBoundTightener( const ITableau &tableau )
     : _tableau( tableau )
-    , _lowerBounds( NULL )
-    , _upperBounds( NULL )
-    , _tightenedLower( NULL )
-    , _tightenedUpper( NULL )
+    , _boundManager( tableau.getBoundManager() )
+    , _lowerBounds( nullptr )
+    , _upperBounds( nullptr )
     , _rows( NULL )
     , _z( NULL )
     , _ciTimesLb( NULL )
@@ -41,24 +40,6 @@ void RowBoundTightener::setDimensions()
 
     _n = _tableau.getN();
     _m = _tableau.getM();
-
-    _lowerBounds = new double[_n];
-    if ( !_lowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::lowerBounds" );
-
-    _upperBounds = new double[_n];
-    if ( !_upperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::upperBounds" );
-
-    _tightenedLower = new bool[_n];
-    if ( !_tightenedLower )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedLower" );
-
-    _tightenedUpper = new bool[_n];
-    if ( !_tightenedUpper )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "RowBoundTightener::tightenedUpper" );
-
-    resetBounds();
 
     if ( GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE ==
          GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX )
@@ -82,30 +63,6 @@ void RowBoundTightener::setDimensions()
     _ciSign = new char[_n];
 }
 
-void RowBoundTightener::resetBounds()
-{
-    std::fill( _tightenedLower, _tightenedLower + _n, false );
-    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
-
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        _lowerBounds[i] = _tableau.getLowerBound( i );
-        _upperBounds[i] = _tableau.getUpperBound( i );
-    }
-}
-
-void RowBoundTightener::clear()
-{
-    std::fill( _tightenedLower, _tightenedLower + _n, false );
-    std::fill( _tightenedUpper, _tightenedUpper + _n, false );
-
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        _lowerBounds[i] = _tableau.getLowerBound( i );
-        _upperBounds[i] = _tableau.getUpperBound( i );
-    }
-}
-
 RowBoundTightener::~RowBoundTightener()
 {
     freeMemoryIfNeeded();
@@ -113,30 +70,6 @@ RowBoundTightener::~RowBoundTightener()
 
 void RowBoundTightener::freeMemoryIfNeeded()
 {
-    if ( _lowerBounds )
-    {
-        delete[] _lowerBounds;
-        _lowerBounds = NULL;
-    }
-
-    if ( _upperBounds )
-    {
-        delete[] _upperBounds;
-        _upperBounds = NULL;
-    }
-
-    if ( _tightenedLower )
-    {
-        delete[] _tightenedLower;
-        _tightenedLower = NULL;
-    }
-
-    if ( _tightenedUpper )
-    {
-        delete[] _tightenedUpper;
-        _tightenedUpper = NULL;
-    }
-
     if ( _rows )
     {
         for ( unsigned i = 0; i < _m; ++i )
@@ -212,7 +145,8 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
         newBoundsLearned = onePassOverInvertedBasisRows();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+            _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+                                           newBoundsLearned );
 
         --maxNumberOfIterations;
     }
@@ -273,7 +207,9 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
             newBoundsLearned = onePassOverInvertedBasisRows();
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
-                _statistics->incNumTighteningsFromExplicitBasis( newBoundsLearned );
+                _statistics->
+                    incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+                                      newBoundsLearned );
 
             --maxNumberOfIterations;
         }
@@ -334,8 +270,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         _ciSign[i] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
 
         unsigned xi = row._row[i]._var;
-        _ciTimesLb[i] = ci * _lowerBounds[xi];
-        _ciTimesUb[i] = ci * _upperBounds[xi];
+        _ciTimesLb[i] = ci * getLowerBound( xi );
+        _ciTimesUb[i] = ci * getUpperBound( xi );
     }
 
     // Start with a pass for y
@@ -360,22 +296,14 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
     }
 
-    if ( FloatUtils::lt( _lowerBounds[y], lowerBound ) )
-    {
-        _lowerBounds[y] = lowerBound;
-        _tightenedLower[y] = true;
-        ++result;
-    }
+    result += registerTighterLowerBound( y, lowerBound, row );
+    result += registerTighterUpperBound( y, upperBound, row );
 
-    if ( FloatUtils::gt( _upperBounds[y], upperBound ) )
+    if ( FloatUtils::gt( getLowerBound( y ), getUpperBound( y ) ) )
     {
-        _upperBounds[y] = upperBound;
-        _tightenedUpper[y] = true;
-        ++result;
-    }
-
-    if ( FloatUtils::gt( _lowerBounds[y], _upperBounds[y] ) )
+        ASSERT( FloatUtils::gt( _boundManager.getLowerBound( y ), _boundManager.getUpperBound( y ) ) );
         throw InfeasibleQueryException();
+    }
 
     // Next, do a pass for each of the rhs variables.
     // For this, we wish to logically transform the equation into:
@@ -392,8 +320,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     // Then, when we consider xi we adjust the computed lower and upper
     // boudns accordingly.
 
-    double auxLb = _lowerBounds[y] - row._scalar;
-    double auxUb = _upperBounds[y] - row._scalar;
+    double auxLb = getLowerBound( y ) - row._scalar;
+    double auxUb = getUpperBound( y ) - row._scalar;
 
     // Now add ALL xi's
     for ( unsigned i = 0; i < n - m; ++i )
@@ -414,7 +342,7 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     for ( unsigned i = 0; i < n - m; ++i )
     {
         // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO )
+        if ( _ciSign[i] == ZERO || FloatUtils::lt( abs( row[i] ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
             continue;
 
         lowerBound = auxLb;
@@ -446,22 +374,13 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         // If a tighter bound is found, store it
         xi = row._row[i]._var;
-        if ( FloatUtils::lt( _lowerBounds[xi], lowerBound ) )
+        result += registerTighterLowerBound( xi, lowerBound, row );
+        result += registerTighterUpperBound( xi, upperBound, row );
+        if ( FloatUtils::gt( getLowerBound( xi ), getUpperBound( xi ) ) )
         {
-            _lowerBounds[xi] = lowerBound;
-            _tightenedLower[xi] = true;
-            ++result;
-        }
-
-        if ( FloatUtils::gt( _upperBounds[xi], upperBound ) )
-        {
-            _upperBounds[xi] = upperBound;
-            _tightenedUpper[xi] = true;
-            ++result;
-        }
-
-        if ( FloatUtils::gt( _lowerBounds[xi], _upperBounds[xi] ) )
+            ASSERT( FloatUtils::gt( _boundManager.getLowerBound( xi ), _boundManager.getUpperBound( xi ) ) );
             throw InfeasibleQueryException();
+        }
     }
 
     return result;
@@ -482,7 +401,9 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
         newBoundsLearned = onePassOverConstraintMatrix();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->incNumTighteningsFromConstraintMatrix( newBoundsLearned );
+            _statistics->
+                incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX,
+                                  newBoundsLearned );
 
         --maxNumberOfIterations;
     }
@@ -512,7 +433,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
       We first compute the lower and upper bounds for the expression
 
           sum ci xi - b
-    */
+   */
     unsigned n = _tableau.getN();
 
     unsigned result = 0;
@@ -540,8 +461,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         ci = entry._value;
 
         _ciSign[index] = FloatUtils::isPositive( ci ) ? POSITIVE : NEGATIVE;
-        _ciTimesLb[index] = ci * _lowerBounds[index];
-        _ciTimesUb[index] = ci * _upperBounds[index];
+        _ciTimesLb[index] = ci * getLowerBound( index );
+        _ciTimesUb[index] = ci * getUpperBound( index );
     }
 
     /*
@@ -558,7 +479,7 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
               b - sum ci xi
 
       Then, when we consider xi we adjust the computed lower and upper
-      boudns accordingly.
+      bounds accordingly.
     */
 
     double auxLb = b[row];
@@ -604,6 +525,8 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
         // Now divide everything by ci, switching signs if needed.
         ci = entry._value;
+        if ( FloatUtils::lt( abs( ci ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
+            continue;
 
         lowerBound = lowerBound / ci;
         upperBound = upperBound / ci;
@@ -616,21 +539,10 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
         }
 
         // If a tighter bound is found, store it
-        if ( FloatUtils::lt( _lowerBounds[index], lowerBound ) )
-        {
-            _lowerBounds[index] = lowerBound;
-            _tightenedLower[index] = true;
-            ++result;
-        }
+        result += registerTighterLowerBound( index, lowerBound, *sparseRow );
+        result += registerTighterUpperBound( index, upperBound, *sparseRow );
 
-        if ( FloatUtils::gt( _upperBounds[index], upperBound ) )
-        {
-            _upperBounds[index] = upperBound;
-            _tightenedUpper[index] = true;
-            ++result;
-        }
-
-        if ( FloatUtils::gt( _lowerBounds[index], _upperBounds[index] ) )
+        if ( FloatUtils::gt( getLowerBound( index ), getUpperBound( index ) ) )
             throw InfeasibleQueryException();
     }
 
@@ -640,31 +552,19 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 void RowBoundTightener::examinePivotRow()
 {
 	if ( _statistics )
-        _statistics->incNumRowsExaminedByRowTightener();
+        _statistics->incLongAttribute( Statistics::NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER );
 
     const TableauRow &row( *_tableau.getPivotRow() );
     unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )
-        _statistics->incNumTighteningsFromRows( newBoundsLearned );
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_ROWS,
+                                       newBoundsLearned );
 }
 
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const
 {
-    for ( unsigned i = 0; i < _n; ++i )
-    {
-        if ( _tightenedLower[i] )
-        {
-            tightenings.append( Tightening( i, _lowerBounds[i], Tightening::LB ) );
-            _tightenedLower[i] = false;
-        }
-
-        if ( _tightenedUpper[i] )
-        {
-            tightenings.append( Tightening( i, _upperBounds[i], Tightening::UB ) );
-            _tightenedUpper[i] = false;
-        }
-    }
+    _boundManager.getTightenings( tightenings );
 }
 
 void RowBoundTightener::setStatistics( Statistics *statistics )
@@ -672,27 +572,10 @@ void RowBoundTightener::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
-void RowBoundTightener::notifyLowerBound( unsigned variable, double bound )
+void RowBoundTightener::setBoundsPointers( const double *lower, const double *upper )
 {
-    if ( FloatUtils::gt( bound, _lowerBounds[variable] ) )
-    {
-        _lowerBounds[variable] = bound;
-        _tightenedLower[variable] = false;
-    }
-}
-
-void RowBoundTightener::notifyUpperBound( unsigned variable, double bound )
-{
-    if ( FloatUtils::lt( bound, _upperBounds[variable] ) )
-    {
-        _upperBounds[variable] = bound;
-        _tightenedUpper[variable] = false;
-    }
-}
-
-void RowBoundTightener::notifyDimensionChange( unsigned /* m */ , unsigned /* n */ )
-{
-    setDimensions();
+    _lowerBounds = lower;
+    _upperBounds = upper;
 }
 
 //

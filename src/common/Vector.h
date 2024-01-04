@@ -30,6 +30,8 @@ public:
     typedef typename Super::iterator iterator;
     typedef typename Super::const_iterator const_iterator;
 
+    typedef typename Super::const_reverse_iterator const_reverse_iterator;
+
     Vector<T>()
     {
     }
@@ -77,12 +79,22 @@ public:
         return _container.data();
     }
 
+    const T *data() const
+    {
+        return _container.data();
+    }
+
     T get( int index ) const
     {
         return _container.at( index );
     }
 
     T &operator[]( int index )
+    {
+        return _container[index];
+    }
+
+    const T &operator[]( int index ) const
     {
         return _container[index];
     }
@@ -154,6 +166,16 @@ public:
     const_iterator end() const
     {
         return _container.cend();
+    }
+
+    const_reverse_iterator rbegin() const
+    {
+        return _container.rbegin();
+    }
+
+    const_reverse_iterator rend() const
+    {
+        return _container.rend();
     }
 
     void erase( iterator &it )

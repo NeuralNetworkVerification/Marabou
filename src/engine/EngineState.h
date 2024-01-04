@@ -20,6 +20,7 @@
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
 #include "TableauState.h"
+#include "TableauStateStorageLevel.h"
 
 class EngineState
 {
@@ -30,7 +31,7 @@ public:
     /*
       The state of the tableau
     */
-    bool _tableauStateIsStored;
+    TableauStateStorageLevel _tableauStateStorageLevel;
     TableauState _tableauState;
 
     /*

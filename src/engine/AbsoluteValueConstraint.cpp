@@ -2,19 +2,18 @@
 /*! \file AbsoluteValueConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Shiran Aziz, Guy Katz, Aleksandar Zeljic
+ **   Shiran Aziz, Guy Katz, Haoze Wu, Aleksandar Zeljic
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** See the description of the class in AbsoluteValueConstraint.h.
  **/
 
 #include "AbsoluteValueConstraint.h"
 
-#include "ConstraintBoundTightener.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -25,7 +24,7 @@
 #include "Statistics.h"
 
 AbsoluteValueConstraint::AbsoluteValueConstraint( unsigned b, unsigned f )
-    : ContextDependentPiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
     , _b( b )
     , _f( f )
     , _auxVarsInUse( false )
@@ -73,7 +72,7 @@ PiecewiseLinearFunctionType AbsoluteValueConstraint::getType() const
     return PiecewiseLinearFunctionType::ABSOLUTE_VALUE;
 }
 
-ContextDependentPiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
+PiecewiseLinearConstraint *AbsoluteValueConstraint::duplicateConstraint() const
 {
     AbsoluteValueConstraint *clone = new AbsoluteValueConstraint( _b, _f );
     *clone = *this;
@@ -118,39 +117,52 @@ void AbsoluteValueConstraint::unregisterAsWatcher( ITableau *tableau )
     }
 }
 
-void AbsoluteValueConstraint::notifyVariableValue( unsigned variable, double value )
-{
-    _assignment[variable] = value;
-}
-
 void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incNumBoundNotificationsPlConstraints();
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( _lowerBounds.exists( variable ) &&
-         !FloatUtils::gt( bound, _lowerBounds[variable] ) )
-        return;
+    if ( _boundManager == nullptr && existsLowerBound( variable ) &&
+         !FloatUtils::gt( bound, getLowerBound( variable ) ) )
+      return;
 
-    _lowerBounds[variable] = bound;
+    setLowerBound( variable, bound );
 
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
 
     // Update partner's bound
-    if ( isActive() && _constraintBoundTightener )
+    if ( isActive() && _boundManager )
     {
+        bool proofs = _boundManager->shouldProduceProofs();
+
+        if ( proofs )
+            createPosTighteningRow();
+
         if ( variable == _b )
         {
             if ( bound < 0 )
             {
-                double fUpperBound = FloatUtils::max( -bound, _upperBounds[_b] );
-                _constraintBoundTightener->registerTighterUpperBound( _f, fUpperBound );
+                double fUpperBound = FloatUtils::max( -bound, getUpperBound( _b ) ) ;
+                // If phase is not fixed, both bounds are stored and checker should check the max of the two
+                if ( proofs && !phaseFixed() )
+                    _boundManager->addLemmaExplanationAndTightenBound( _f, fUpperBound, BoundType::UPPER,
+                                                                      { variable, variable }, BoundType::UPPER, getType() );
+                else if ( proofs && phaseFixed() )
+                {
+                    std::shared_ptr<TableauRow> tighteningRow = fUpperBound == getUpperBound( _b ) ? _posTighteningRow : _negTighteningRow;
+                    _boundManager->tightenUpperBound( _f, fUpperBound, *tighteningRow );
+                }
+                else
+                    _boundManager->tightenUpperBound( _f, fUpperBound );
 
                 if ( _auxVarsInUse )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _posAux, fUpperBound - bound );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _posAux, fUpperBound - bound , *_posTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _posAux, fUpperBound - bound );
                 }
             }
             else
@@ -165,7 +177,10 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
             // bother. The only exception is if the lower bound is,
             // for some reason, negative
             if ( bound < 0 )
-                _constraintBoundTightener->registerTighterLowerBound( _f, 0 );
+            {
+                if ( !proofs )
+                    _boundManager->tightenLowerBound( _f, 0 );
+            }
         }
 
         // Any lower bound tightening on the aux variables, if they
@@ -177,30 +192,51 @@ void AbsoluteValueConstraint::notifyLowerBound( unsigned variable, double bound 
 void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound )
 {
     if ( _statistics )
-        _statistics->incNumBoundNotificationsPlConstraints();
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
-    if ( _upperBounds.exists( variable ) && !FloatUtils::lt( bound, _upperBounds[variable] ) )
+    if ( _boundManager == nullptr && existsUpperBound( variable ) &&
+         !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
-    _upperBounds[variable] = bound;
-
+    setUpperBound( variable, bound );
     // Check whether the phase has become fixed
     fixPhaseIfNeeded();
 
     // Update partner's bound
-    if ( isActive() && _constraintBoundTightener )
+    if ( isActive() && _boundManager )
     {
+
+        bool proofs = _boundManager->shouldProduceProofs();
+
+        if ( proofs )
+        {
+            createPosTighteningRow();
+            createNegTighteningRow();
+        }
+
         if ( variable == _b )
         {
-            if ( bound > 0 )
+            if ( bound > 0  )
             {
-                double fUpperBound = FloatUtils::max( bound, -_lowerBounds[_b] );
-                _constraintBoundTightener->registerTighterUpperBound( _f, fUpperBound );
+                double fUpperBound = FloatUtils::max( bound, -getLowerBound( _b ) ) ;
+                // If phase is not fixed, both bonds are stored and checker should check the max of the two
+                if ( proofs && !phaseFixed() )
+                    _boundManager->addLemmaExplanationAndTightenBound( _f, fUpperBound, BoundType::UPPER,
+                                                                      { variable, variable }, BoundType::UPPER, getType() );
+                else if ( proofs && phaseFixed() )
+                {
+                    std::shared_ptr<TableauRow> tighteningRow = fUpperBound == bound ? _posTighteningRow : _negTighteningRow;
+                    _boundManager->tightenUpperBound( _f, fUpperBound, *tighteningRow );
+                }
+                else
+                    _boundManager->tightenUpperBound( _f, fUpperBound );
 
                 if ( _auxVarsInUse )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _negAux, fUpperBound + bound );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _negAux, fUpperBound + bound, *_negTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _negAux, fUpperBound + bound );
                 }
             }
             else
@@ -211,24 +247,38 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
         else if ( variable == _f )
         {
             // F's upper bound can restrict both bounds of B
-            if ( bound < _upperBounds[_b] )
-                _constraintBoundTightener->registerTighterUpperBound( _b, bound );
+            if ( FloatUtils::lt( bound, getUpperBound( _b ) ) )
+            {
+                if ( proofs )
+                    _boundManager->tightenUpperBound( _b, bound, *_posTighteningRow );
+                else
+                    _boundManager->tightenUpperBound( _b, bound );
+            }
 
-            if ( -bound > _lowerBounds[_b] )
-                _constraintBoundTightener->registerTighterLowerBound( _b, -bound );
+            if ( FloatUtils::gt( -bound, getLowerBound( _b ) ) )
+            {
+                if ( proofs )
+                    _boundManager->tightenLowerBound( _b, -bound, *_negTighteningRow );
+                else
+                    _boundManager->tightenLowerBound( _b, -bound );
+            }
 
             if ( _auxVarsInUse )
             {
-                if ( _lowerBounds.exists( _b ) )
+                if ( existsLowerBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _posAux, bound - _lowerBounds[_b] );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _posAux, bound - getLowerBound( _b ), *_posTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _posAux, bound - getLowerBound( _b ) );
                 }
 
-                if ( _upperBounds.exists( _b ) )
+                if ( existsUpperBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _negAux, bound + _upperBounds[_b] );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _negAux, bound + getUpperBound( _b ), *_negTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _negAux, bound + getUpperBound( _b ) );
                 }
             }
         }
@@ -236,33 +286,41 @@ void AbsoluteValueConstraint::notifyUpperBound( unsigned variable, double bound 
         {
             if ( variable == _posAux )
             {
-                if ( _upperBounds.exists( _b ) )
+                if ( existsUpperBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _f, _upperBounds[_b] + bound );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _f, getUpperBound( _b ) + bound, *_posTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _f, getUpperBound( _b ) + bound );
                 }
 
-                if ( _lowerBounds.exists( _f ) )
+                if ( existsLowerBound( _f ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterLowerBound( _b, _lowerBounds[_f] - bound );
+                    if ( proofs )
+                        _boundManager->tightenLowerBound( _b, getLowerBound( _f ) - bound, *_posTighteningRow );
+                    else
+                        _boundManager->tightenLowerBound( _b, getLowerBound( _f ) - bound );
                 }
             }
             else if ( variable == _negAux )
             {
-                if ( _lowerBounds.exists( _b ) )
+                if ( existsLowerBound( _b ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _f, bound - _lowerBounds[_b] );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _f, bound - getLowerBound( _b ), *_negTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _f, bound - getLowerBound( _b ) );
                 }
 
-                if ( _lowerBounds.exists( _f ) )
+                if ( existsLowerBound( _f ) )
                 {
-                    _constraintBoundTightener->
-                        registerTighterUpperBound( _b, bound - _lowerBounds[_f] );
+                    if ( proofs )
+                        _boundManager->tightenUpperBound( _b, bound - getLowerBound( _f ), *_negTighteningRow );
+                    else
+                        _boundManager->tightenUpperBound( _b, bound - getLowerBound( _f ) );
                 }
             }
-        }
+       }
     }
 }
 
@@ -281,11 +339,11 @@ List<unsigned> AbsoluteValueConstraint::getParticipatingVariables() const
 
 bool AbsoluteValueConstraint::satisfied() const
 {
-    if ( !( _assignment.exists( _b ) && _assignment.exists( _f ) ) )
-        throw MarabouError( MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     // Possible violations:
     //   1. f is negative
@@ -296,17 +354,18 @@ bool AbsoluteValueConstraint::satisfied() const
 
     return FloatUtils::areEqual( FloatUtils::abs( bValue ),
                                  fValue,
-                                 GlobalConfiguration::ABS_CONSTRAINT_COMPARISON_TOLERANCE );
+                                 GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 List<PiecewiseLinearConstraint::Fix> AbsoluteValueConstraint::getPossibleFixes() const
 {
-    ASSERT( !satisfied() );
-    ASSERT( _assignment.exists( _b ) );
-    ASSERT( _assignment.exists( _f ) );
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
 
-    double bValue = _assignment.get( _b );
-    double fValue = _assignment.get( _f );
+    ASSERT( !satisfied() );
+
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
     ASSERT( !FloatUtils::isNegative( fValue ) );
 
@@ -341,7 +400,7 @@ List<PiecewiseLinearCaseSplit> AbsoluteValueConstraint::getCaseSplits() const
 
 List<PhaseStatus> AbsoluteValueConstraint::getAllCases() const
 {
-    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE};
+    return { ABS_PHASE_NEGATIVE, ABS_PHASE_POSITIVE };
 }
 
 PiecewiseLinearCaseSplit AbsoluteValueConstraint::getCaseSplit( PhaseStatus phase ) const
@@ -438,50 +497,47 @@ void AbsoluteValueConstraint::dump( String &output ) const
                       );
 
     output += Stringf( "b in [%s, %s], ",
-                       _lowerBounds.exists( _b ) ? Stringf( "%lf", _lowerBounds[_b] ).ascii() : "-inf",
-                       _upperBounds.exists( _b ) ? Stringf( "%lf", _upperBounds[_b] ).ascii() : "inf" );
+                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
+                       existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
     output += Stringf( "f in [%s, %s]",
-                       _lowerBounds.exists( _f ) ? Stringf( "%lf", _lowerBounds[_f] ).ascii() : "-inf",
-                       _upperBounds.exists( _f ) ? Stringf( "%lf", _upperBounds[_f] ).ascii() : "inf" );
+                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
+                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
 
     if ( _auxVarsInUse )
     {
         output += Stringf( ". PosAux: %u. Range: [%s, %s]",
                            _posAux,
-                           _lowerBounds.exists( _posAux ) ? Stringf( "%lf", _lowerBounds[_posAux] ).ascii() : "-inf",
-                           _upperBounds.exists( _posAux ) ? Stringf( "%lf", _upperBounds[_posAux] ).ascii() : "inf" );
+                           existsLowerBound( _posAux ) ? Stringf( "%lf", getLowerBound( _posAux ) ).ascii() : "-inf",
+                           existsUpperBound( _posAux ) ? Stringf( "%lf", getUpperBound( _posAux ) ).ascii() : "inf" );
 
         output += Stringf( ". NegAux: %u. Range: [%s, %s]",
                            _negAux,
-                           _lowerBounds.exists( _negAux ) ? Stringf( "%lf", _lowerBounds[_negAux] ).ascii() : "-inf",
-                           _upperBounds.exists( _negAux ) ? Stringf( "%lf", _upperBounds[_negAux] ).ascii() : "inf" );
+                           existsLowerBound( _negAux ) ? Stringf( "%lf", getLowerBound( _negAux ) ).ascii() : "-inf",
+                           existsUpperBound( _negAux ) ? Stringf( "%lf", getUpperBound( _negAux ) ).ascii() : "inf" );
     }
 }
 
 void AbsoluteValueConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
+    // Variable reindexing can only occur in preprocessing before Gurobi is
+    // registered.
+    ASSERT( _gurobi == NULL );
+
     ASSERT( oldIndex == _b || oldIndex == _f ||
             ( _auxVarsInUse && ( oldIndex == _posAux || oldIndex == _negAux ) ) );
 
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
-            !_upperBounds.exists( newIndex ) &&
+    ASSERT( !existsLowerBound( newIndex ) &&
+            !existsUpperBound( newIndex ) &&
             newIndex != _b && newIndex != _f && ( !_auxVarsInUse || ( newIndex != _posAux && newIndex != _negAux ) ) );
 
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
-
-    if ( _lowerBounds.exists( oldIndex ) )
+    if ( existsLowerBound( oldIndex ) )
     {
         _lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
         _lowerBounds.erase( oldIndex );
     }
 
-    if ( _upperBounds.exists( oldIndex ) )
+    if ( existsUpperBound( oldIndex ) )
     {
         _upperBounds[newIndex] = _upperBounds.get( oldIndex );
         _upperBounds.erase( oldIndex );
@@ -504,15 +560,15 @@ bool AbsoluteValueConstraint::constraintObsolete() const
 
 void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    ASSERT( _lowerBounds.exists( _b ) && _lowerBounds.exists( _f ) &&
-            _upperBounds.exists( _b ) && _upperBounds.exists( _f ) );
+    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
+            existsUpperBound( _b ) && existsUpperBound( _f ) );
 
     // Upper bounds
-    double bUpperBound = _upperBounds[_b];
-    double fUpperBound = _upperBounds[_f];
+    double bUpperBound = getUpperBound( _b );
+    double fUpperBound = getUpperBound( _f );
     // Lower bounds
-    double bLowerBound = _lowerBounds[_b];
-    double fLowerBound = _lowerBounds[_f];
+    double bLowerBound = getLowerBound( _b );
+    double fLowerBound = getLowerBound( _f );
 
     // F's lower bound should always be non-negative
     if ( fLowerBound < 0 )
@@ -557,9 +613,9 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     else if ( bLowerBound < 0 && bUpperBound >= 0 && FloatUtils::isZero( fLowerBound ) )
     {
         // Phase undetermined, b can be either positive or negative, f can be 0
-        tightenings.append( Tightening( _b, -fUpperBound , Tightening::LB ) );
+        tightenings.append( Tightening( _b, -fUpperBound, Tightening::LB ) );
         tightenings.append( Tightening( _b, fUpperBound, Tightening::UB ) );
-        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound , bUpperBound ), Tightening::UB ) );
+        tightenings.append( Tightening( _f, FloatUtils::max( -bLowerBound, bUpperBound ), Tightening::UB ) );
 
         if ( _auxVarsInUse )
         {
@@ -608,7 +664,8 @@ void AbsoluteValueConstraint::getEntailedTightenings( List<Tightening> &tighteni
     }
 }
 
-void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
+void AbsoluteValueConstraint::transformToUseAuxVariables( InputQuery
+                                                                  &inputQuery )
 {
     /*
       We want to add the two equations
@@ -627,6 +684,8 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
       negAux is also non-negative, and 0 if in the negative phase
       its upper bound is (f.ub + b.ub)
     */
+    if ( _auxVarsInUse )
+        return;
 
     _posAux = inputQuery.getNumberOfVariables();
     _negAux = _posAux + 1;
@@ -652,13 +711,74 @@ void AbsoluteValueConstraint::addAuxiliaryEquations( InputQuery &inputQuery )
     inputQuery.setLowerBound( _posAux, 0 );
     inputQuery.setLowerBound( _negAux, 0 );
 
-    _lowerBounds[_posAux] = 0;
-    _lowerBounds[_negAux] = 0;
-    _upperBounds[_posAux] = FloatUtils::infinity();
-    _upperBounds[_negAux] = FloatUtils::infinity();
+    setLowerBound( _posAux, 0 );
+    setLowerBound( _negAux, 0 );
+    setUpperBound( _posAux, FloatUtils::infinity() );
+    setUpperBound( _negAux, FloatUtils::infinity() );
 
     // Mark that the aux vars are in use
     _auxVarsInUse = true;
+}
+
+void AbsoluteValueConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                                        PhaseStatus phase ) const
+{
+    // If the constraint is not active or is fixed, it contributes nothing
+    if( !isActive() || phaseFixed() )
+        return;
+
+    ASSERT( phase == ABS_PHASE_NEGATIVE || phase == ABS_PHASE_POSITIVE );
+
+    if ( phase == ABS_PHASE_NEGATIVE )
+    {
+        // The cost term corresponding to the negative phase is f + b,
+        // since the Abs is negative and satisfied iff f + b is 0
+        // and minimal. This is true when we added the constraint
+        // that f >= b and f >= -b.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] += 1;
+        cost._addends[_b] += 1;
+    }
+    else
+    {
+        // The cost term corresponding to the positive phase is f - b,
+        // since the Abs is non-negative and satisfied iff f - b is 0 and
+        // minimal. This is true when we added the constraint
+        // that f >= b and f >= -b.
+        if ( !cost._addends.exists( _f ) )
+            cost._addends[_f] = 0;
+        if ( !cost._addends.exists( _b ) )
+            cost._addends[_b] = 0;
+        cost._addends[_f] += 1;
+        cost._addends[_b] -= 1;
+    }
+}
+
+PhaseStatus AbsoluteValueConstraint::getPhaseStatusInAssignment
+( const Map<unsigned, double> &assignment ) const
+{
+    ASSERT( assignment.exists( _b ) );
+    return FloatUtils::isNegative( assignment[_b] ) ?
+        ABS_PHASE_NEGATIVE : ABS_PHASE_POSITIVE;
+}
+
+bool AbsoluteValueConstraint::haveOutOfBoundVariables() const
+{
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
+
+    if ( FloatUtils::gt( getLowerBound( _b ), bValue ) ||
+         FloatUtils::lt( getUpperBound( _b ), bValue ) )
+        return true;
+
+    if ( FloatUtils::gt( getLowerBound( _f ), fValue ) ||
+         FloatUtils::lt( getUpperBound( _f ), fValue ) )
+        return true;
+
+    return false;
 }
 
 String AbsoluteValueConstraint::serializeToString() const
@@ -671,66 +791,95 @@ String AbsoluteValueConstraint::serializeToString() const
 
 void AbsoluteValueConstraint::fixPhaseIfNeeded()
 {
+    if ( phaseFixed() )
+        return;
+
+    bool proofs = _boundManager && _boundManager->shouldProduceProofs();
+
+    if ( proofs )
+    {
+        createPosTighteningRow();
+        createNegTighteningRow();
+    }
+
     // Option 1: b's range is strictly positive
-    if ( _lowerBounds.exists( _b ) && _lowerBounds[_b] >= 0 )
+    if ( existsLowerBound( _b ) && getLowerBound( _b ) >= 0 )
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
+        if ( proofs )
+            _boundManager->addLemmaExplanationAndTightenBound( _posAux, 0, BoundType::UPPER, { _b },
+                                                               BoundType::LOWER, getType() );
         return;
     }
 
     // Option 2: b's range is strictly negative:
-    if ( _upperBounds.exists( _b ) && _upperBounds[_b] <= 0 )
+    if ( existsUpperBound( _b ) && getUpperBound( _b ) <= 0 )
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
+        if ( proofs )
+            _boundManager->addLemmaExplanationAndTightenBound( _negAux, 0, BoundType::UPPER, { _b },
+                                                               BoundType::UPPER, getType() );
         return;
     }
 
-    if ( !_lowerBounds.exists( _f ) )
+    if ( !existsLowerBound( _f ) )
         return;
 
     // Option 3: f's range is strictly disjoint from b's positive
     // range
-    if ( _upperBounds.exists( _b ) && _lowerBounds[_f] > _upperBounds[_b] )
+    if ( existsUpperBound( _b ) && getLowerBound( _f ) > getUpperBound( _b ) )
     {
         setPhaseStatus( ABS_PHASE_NEGATIVE );
+        if ( proofs )
+            _boundManager->addLemmaExplanationAndTightenBound( _negAux, 0, BoundType::UPPER, { _b, _f },
+                                                               BoundType::UPPER, getType() );
         return;
     }
 
     // Option 4: f's range is strictly disjoint from b's negative
     // range, in absolute value
-    if ( _lowerBounds.exists( _b ) && _lowerBounds[_f] > -_lowerBounds[_b] )
+    if ( existsLowerBound( _b ) && getLowerBound( _f ) > -getLowerBound( _b ) )
     {
         setPhaseStatus( ABS_PHASE_POSITIVE );
+        if ( proofs )
+            _boundManager->addLemmaExplanationAndTightenBound(  _posAux, 0, BoundType::UPPER, { _b, _f },
+                                                                BoundType::LOWER, getType() );
         return;
     }
 
     if ( _auxVarsInUse )
     {
         // Option 5: posAux has become zero, phase is positive
-        if ( _upperBounds.exists( _posAux ) && FloatUtils::isZero( _upperBounds[_posAux] ) )
+        if ( existsUpperBound( _posAux ) && FloatUtils::isZero( getUpperBound( _posAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
             return;
         }
 
         // Option 6: posAux can never be zero, phase is negative
-        if ( _lowerBounds.exists( _posAux ) && FloatUtils::isPositive( _lowerBounds[_posAux] ) )
+        if ( existsLowerBound( _posAux ) && FloatUtils::isPositive( getLowerBound( _posAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_NEGATIVE );
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound( _negAux, 0, BoundType::UPPER, { _posAux },
+                                                                   BoundType::LOWER, getType() );
             return;
         }
 
         // Option 7: negAux has become zero, phase is negative
-        if ( _upperBounds.exists( _negAux ) && FloatUtils::isZero( _upperBounds[_negAux] ) )
+        if ( existsUpperBound( _negAux ) && FloatUtils::isZero( getUpperBound( _negAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_NEGATIVE );
             return;
         }
 
         // Option 8: negAux can never be zero, phase is positive
-        if ( _lowerBounds.exists( _negAux ) && FloatUtils::isPositive( _lowerBounds[_negAux] ) )
+        if ( existsLowerBound( _negAux ) && FloatUtils::isPositive( getLowerBound( _negAux ) ) )
         {
             setPhaseStatus( ABS_PHASE_POSITIVE );
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound( _posAux, 0, BoundType::UPPER, { _negAux },
+                                                                  BoundType::LOWER, getType() );
             return;
         }
     }
@@ -754,3 +903,56 @@ String AbsoluteValueConstraint::phaseToString( PhaseStatus phase )
     }
 };
 
+void AbsoluteValueConstraint::createPosTighteningRow()
+{
+    // Create the row only when needed and when not already created
+    if ( !_boundManager->getBoundExplainer() || _posTighteningRow || !_auxVarsInUse || _tableauAuxVars.empty() )
+        return;
+    _posTighteningRow = std::unique_ptr<TableauRow>( new TableauRow ( 3 ) );
+
+    // f = b + aux + counterpart (an additional aux variable of tableau)
+    _posTighteningRow->_lhs =  _f;
+    _posTighteningRow->_row[0] = TableauRow::Entry( _b, 1 );
+    _posTighteningRow->_row[1] = TableauRow::Entry( _posAux, 1 );
+    _posTighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVars.front(), 1 );
+}
+
+void AbsoluteValueConstraint::createNegTighteningRow()
+{
+    // Create the row only when needed and when not already created
+    if ( !_boundManager->getBoundExplainer() || _negTighteningRow || !_auxVarsInUse || _tableauAuxVars.empty() )
+        return;
+
+    _negTighteningRow = std::unique_ptr<TableauRow>( new TableauRow ( 3 ) );
+
+    // f = b + aux + counterpart (an additional aux variable of tableau)
+    _negTighteningRow->_lhs =  _f;
+    _negTighteningRow->_row[0] = TableauRow::Entry( _b, -1 );
+    _negTighteningRow->_row[1] = TableauRow::Entry( _negAux, 1 );
+    _negTighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVars.back(), 1 );
+}
+
+const List<unsigned> AbsoluteValueConstraint::getNativeAuxVars() const
+{
+    if ( _auxVarsInUse )
+        return { _posAux, _negAux };
+    return {};
+}
+
+void AbsoluteValueConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar )
+{
+    ASSERT( constraintAuxVar == _negAux || constraintAuxVar == _posAux );
+    if ( _tableauAuxVars.size() == 2 )
+        return;
+
+    if ( constraintAuxVar == _negAux )
+    {
+        _tableauAuxVars.append( tableauAuxVar );
+        ASSERT( _tableauAuxVars.back() == tableauAuxVar );
+    }
+    else
+    {
+        _tableauAuxVars.appendHead( tableauAuxVar );
+        ASSERT( _tableauAuxVars.front() == tableauAuxVar );
+    }
+}

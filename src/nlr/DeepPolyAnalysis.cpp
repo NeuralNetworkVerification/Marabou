@@ -21,6 +21,7 @@
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
+#include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
@@ -213,6 +214,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolyAbsoluteValueElement( layer );
     else if ( type ==  Layer::MAX )
         deepPolyElement = new DeepPolyMaxPoolElement( layer );
+    else if ( type == Layer::SIGMOID )
+        deepPolyElement = new DeepPolySigmoidElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",

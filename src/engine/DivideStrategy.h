@@ -23,7 +23,8 @@ enum class DivideStrategy
     EarliestReLU,  // Pick a ReLU that appears in the earliest layer
     ReLUViolation, // Pick the ReLU that has been violated for the most times
     LargestInterval, // Pick the largest interval every K split steps, use ReLUViolation in other steps
-    Auto,
+    PseudoImpact, // The pseudo-impact heuristic associated with SoI.
+    Auto, // See decideBranchingHeursitics() in Engine.h
 };
 
 #endif // __DivideStrategy_h__

@@ -2,7 +2,7 @@
 /*! \file MaxConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang, Guy Katz, Duligur Ibeling
+ **   Haoze Wu, Derek Huang, Guy Katz, Duligur Ibeling
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -12,28 +12,47 @@
  ** MaxConstraint implements the following constraint:
  ** _f = Max( e1, e2, ..., eM), where _elements = { e1, e2, ..., eM}
  **
- ** The constraint will refer to elements as its phases, by wrapping the
- ** variable identifiers as PhaseStatus enumeration. Additionally, during
- ** preprocessing one or more phases may be eliminated from the constraint. A
- ** maximum of such constraints is stored locally, and to denote this phase a
- ** special value PhaseStatus::MAX_PHASE_ELIMINATED is used.
+ ** MaxConstraint refers to elements as its phases, by wrapping the variable
+ ** identifiers as PhaseStatus enumeration. It allows elimination of elements
+ ** during preprocessing. Eliminated elements are abstracted in an aggregate
+ ** local member _maxValueOfEliminated, and its phase is a reserved value
+ ** PhaseStatus::MAX_PHASE_ELIMINATED.
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as PiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** MaxConstraint object synchronizes its state automatically with the central
+ ** Context object.
+ **
+ ** Invariants to maintain in this class:
+ ** 1. All methods called after transformToUseAuxVariablesIfNeeded
+ **    are operating under the assumption that f >= element for each
+ **    element in _element, and f >= _maxValueofEliminatedVariables
+ ** 2. _maxLowerBound keeps track of the maximal lower bound of the output of
+ **    the MaxConstraint, it can be updated by notifyLowerBound(),
+ **    notifyUpperBound(), eliminateVariable()
+ ** 3. _phaseStatus is updated by notifyLowerBound(), notifyUpperBound(),
+       eliminateVariable().
+ ** 4. elements in _elements are feasible (wrt. current variable bounds) and
+ **    _haveFeasibleEliminatedVariables are up-to-date. They are updated by
+ **     notifyLowerBound(), notifyUpperBound(), eliminateVariable().
+ ** 5. The constraint is _obsolete only when 1) all elements are eliminated
+ **     (handled by eliminateVariable()); 2) _f is eliminated.
  **/
 
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
+#include "PiecewiseLinearConstraint.h"
+#include "LinearExpression.h"
 #include "Map.h"
-#include "ContextDependentPiecewiseLinearConstraint.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
 
-class MaxConstraint : public ContextDependentPiecewiseLinearConstraint
+class MaxConstraint : public PiecewiseLinearConstraint
 {
 public:
     ~MaxConstraint();
@@ -53,7 +72,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -70,7 +89,6 @@ public:
       This callback is invoked when a watched variable's value
       changes.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double value ) override;
     void notifyUpperBound( unsigned variable, double value ) override;
 
@@ -156,10 +174,28 @@ public:
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
 
     /*
-      For preprocessing: get any auxiliary equations that this constraint would
-      like to add to the equation pool.
+      Represent the Max constraint using the aux variables.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
+
+    /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Max is:
+      _f - element_i for each element
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
 
     /*
       Returns string with shape:
@@ -167,78 +203,105 @@ public:
     */
     String serializeToString() const override;
 
-    /*
-     * Returns a boolean value indicating if at least one input variable was eliminated (True)
-     * or not (False)
-     */
-    bool wereVariablesEliminated() const;
-
-
-
     bool isImplication() const override;
 
-private:
+    inline Set<unsigned> getEliminatedElements() const
+    {
+        return _eliminatedElements;
+    }
+
+    inline Set<unsigned> getParticipatingElements() const
+    {
+        Set<unsigned> participatingElements = {};
+        for ( const auto &element : _elements )
+            participatingElements.insert( element );
+
+        for ( const auto &element : _eliminatedElements )
+            participatingElements.insert( element );
+
+        return participatingElements;
+    }
+
+    inline double getMaxValueOfEliminatedPhases() const
+    {
+        return _maxValueOfEliminatedPhases;
+    }
+
+    inline unsigned getAuxToElement( unsigned element )
+    {
+        return _auxToElement[element];
+    }
+
+    /*
+       Conversion functions between variables and PhaseStatus.
+    */
+    inline PhaseStatus variableToPhase( unsigned variable ) const
+    {
+        return ( variable == MAX_PHASE_ELIMINATED )
+               ? MAX_PHASE_ELIMINATED
+               : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
+    }
+
+    inline unsigned phaseToVariable( PhaseStatus phase ) const
+    {
+        return ( phase == MAX_PHASE_ELIMINATED )
+               ? MAX_PHASE_ELIMINATED
+               : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+    }
+
+ private:
     unsigned _f;
     Set<unsigned> _elements;
     Set<unsigned> _initialElements;
 
-    double _maxLowerBound;
+    Map<unsigned, unsigned> _auxToElement;
+    Map<unsigned, unsigned> _elementToAux;
+
+    Map<unsigned, unsigned> _elementToTableauAux;
+    Map<unsigned, std::shared_ptr<TableauRow>> _elementToTighteningRow;
+    Set<unsigned> _eliminatedElements;
+    Set<unsigned> _proofEliminatedElements;
+
     bool _obsolete;
-    bool _eliminatedVariables;
-    double _maxValueOfEliminated;
 
     /*
-       Functions that abstract away _maxIndex and _maxIndexSet, and use the
-       refactored PhaseStatus to store this information.
+      We eagerly keep track of the max lower bound of the inputs.
+    */
+    double _maxLowerBound;
 
-       Assumes that the total number of variables does not reach the value of
-       MAX_PHASE_ELIMINATED.
-     */
-    inline bool maxIndexSet() const
-    {
-        return getPhaseStatus() != PHASE_NOT_FIXED;
-    }
-
-    inline void setMaxIndex( unsigned variable )
-    {
-        setPhaseStatus( variableToPhase( variable ) );
-    }
-
-    inline unsigned getMaxIndex() const
-    {
-        ASSERT( maxIndexSet() );
-        return phaseToVariable( getPhaseStatus() );
-    }
-
-    inline void clearMaxIndex()
-    {
-        setPhaseStatus( PHASE_NOT_FIXED );
-    }
-
-    void resetMaxIndex();
+    /*
+      We keep track of eliminated variables and the maximal value. The flag is
+      true iff some input variables of the max constraint have been eliminated
+      (fixed to a constant) and the case split corresponding to one of them is
+      feasible (wrt. variable bounds).
+    */
+    bool _haveFeasibleEliminatedPhases;
+    double _maxValueOfEliminatedPhases;
 
     /*
       Returns the phase where variable argMax has maximum value.
     */
     PiecewiseLinearCaseSplit getSplit( unsigned argMax ) const;
 
+
     /*
-       Conversion functions between variables and PhaseStatus.
-     */
+      Eliminate the case corresponding to the given input variable to Max.
+    */
+    void eliminateCase( unsigned variable );
 
-    inline PhaseStatus variableToPhase( unsigned variable ) const
-    {
-        return ( variable == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET  );
-    }
+    /*
+      Return true iff f or the elements are not all within bounds.
+    */
+    bool haveOutOfBoundVariables() const;
 
-    inline unsigned phaseToVariable( PhaseStatus phase ) const
-    {
-        return ( phase == MAX_PHASE_ELIMINATED ) ? MAX_PHASE_ELIMINATED :
-               static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
-    }
+    void createElementTighteningRow( unsigned element );
+    const List<unsigned> getNativeAuxVars() const override;
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 
-
+    /*
+      Apply tightenings in the list, discovered by getEntailedTightenings
+    */
+    void applyTightenings( const List<Tightening> &tightenings ) const;
 };
 
 #endif // __MaxConstraint_h__

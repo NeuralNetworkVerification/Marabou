@@ -18,6 +18,8 @@
 #include "DisjunctionConstraint.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
+#include "MockTableau.h"
+#include "InputQuery.h"
 
 class MockForDisjunctionConstraint
     : public MockErrno
@@ -31,7 +33,7 @@ public:
 class TestDisjunctionConstraint : public DisjunctionConstraint
 {
 public:
-    TestDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> elements  )
+    TestDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> elements )
         : DisjunctionConstraint( elements )
     {}
 
@@ -145,40 +147,42 @@ public:
           1 <= x0 <= 5  -->   x1 = x0
           5 <= x0       -->   x1 = 2x2 + 5
         */
+        MockTableau tableau;
+        dc.registerTableau( &tableau );
 
-        dc.notifyVariableValue( 0, -5 );
-        dc.notifyVariableValue( 1, 2 );
+        tableau.setValue( 0, -5 );
+        tableau.setValue( 1, 2 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 0, -3 );
+        tableau.setValue( 0, -3 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 12, 4 );
+        tableau.setValue( 12, 4 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 0, 3 );
+        tableau.setValue( 0, 3 );
         TS_ASSERT( !dc.satisfied() );
 
-        dc.notifyVariableValue( 1, 3 );
+        tableau.setValue( 1, 3 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 2, 4 );
+        tableau.setValue( 2, 4 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 1, 2 );
+        tableau.setValue( 1, 2 );
         TS_ASSERT( !dc.satisfied() );
 
-        dc.notifyVariableValue( 0, 7 );
-        dc.notifyVariableValue( 1, 7 );
+        tableau.setValue( 0, 7 );
+        tableau.setValue( 1, 7 );
         TS_ASSERT( !dc.satisfied() );
 
-        dc.notifyVariableValue( 2, 1 );
+        tableau.setValue( 2, 1 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 0, 15 );
+        tableau.setValue( 0, 15 );
         TS_ASSERT( dc.satisfied() );
 
-        dc.notifyVariableValue( 1, 8 );
+        tableau.setValue( 1, 8 );
         TS_ASSERT( !dc.satisfied() );
     }
 
@@ -218,6 +222,74 @@ public:
 
         {
             DisjunctionConstraint dc( caseSplits );
+
+            dc.notifyLowerBound( 0, -10 );
+            dc.notifyUpperBound( 0, 10 );
+            dc.notifyLowerBound( 1, -10 );
+            dc.notifyUpperBound( 1, 10 );
+            dc.notifyLowerBound( 2, -10 );
+            dc.notifyUpperBound( 2, 10 );
+
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyUpperBound( 0, 7 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyUpperBound( 0, 2 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyUpperBound( 0, -2 );
+            TS_ASSERT( dc.phaseFixed() );
+
+            PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
+            TS_ASSERT_EQUALS( validSplit, *cs1 );
+        }
+    }
+
+    void test_phase_fixed_with_bound_manager()
+    {
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        /*
+          x0 <= 1       -->   x1 = 2
+          1 <= x0 <= 5  -->   x1 = x0
+          5 <= x0       -->   x1 = 2x2 + 5
+        */
+
+        {
+            DisjunctionConstraint dc( caseSplits );
+            Context context;
+            BoundManager boundManager( context );
+            boundManager.initialize( 11 );
+            dc.registerBoundManager( &boundManager );
+
+            dc.notifyLowerBound( 0, -10 );
+            dc.notifyUpperBound( 0, 10 );
+            dc.notifyLowerBound( 1, -10 );
+            dc.notifyUpperBound( 1, 10 );
+            dc.notifyLowerBound( 2, -10 );
+            dc.notifyUpperBound( 2, 10 );
+
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyLowerBound( 0, -1 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyLowerBound( 0, 2 );
+            TS_ASSERT( !dc.phaseFixed() );
+
+            dc.notifyLowerBound( 0, 6 );
+            TS_ASSERT( dc.phaseFixed() );
+
+            PiecewiseLinearCaseSplit validSplit = dc.getValidCaseSplit();
+            TS_ASSERT_EQUALS( validSplit, *cs3 );
+        }
+
+        {
+            DisjunctionConstraint dc( caseSplits );
+            Context context;
+            BoundManager boundManager( context );
+            boundManager.initialize( 11 );
+            dc.registerBoundManager( &boundManager );
 
             dc.notifyLowerBound( 0, -10 );
             dc.notifyUpperBound( 0, 10 );
@@ -380,8 +452,173 @@ public:
         dc.markInfeasible( dc.getPhaseStatus() );
         TS_ASSERT( !dc.isFeasible() );
         TS_ASSERT_EQUALS( dc.nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
-
     }
 
-};
+    void test_disjunction_make_all_disjuncts_bounds()
+    {
+        InputQuery inputQuery;
 
+        PiecewiseLinearCaseSplit cs4;
+
+        // x1 - x0 <= 1, x1 + x2 >= 2
+        Equation eq1;
+        eq1._type = Equation::LE;
+        eq1.addAddend( 1, 1 );
+        eq1.addAddend( -1, 0 );
+        eq1.setScalar( 1 );
+        cs4.addEquation( eq1 );
+        Equation eq2;
+        eq2._type = Equation::GE;
+        eq2.addAddend( 1, 1 );
+        eq2.addAddend( 1, 2 );
+        eq2.setScalar( 2 );
+        cs4.addEquation( eq2 );
+
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs2, *cs3, cs4 };
+        DisjunctionConstraint *disj = new DisjunctionConstraint( caseSplits );
+
+        inputQuery.setNumberOfVariables( 3 );
+        inputQuery.addPiecewiseLinearConstraint( disj );
+
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
+        TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 0u );
+
+        List<PhaseStatus> casesBefore = disj->getAllCases();
+        List<PiecewiseLinearCaseSplit> splitsBefore = disj->getCaseSplits();
+        TS_ASSERT_THROWS_NOTHING( disj->transformToUseAuxVariables
+                                  ( inputQuery ) );
+        List<PhaseStatus> casesAfter = disj->getAllCases();
+        List<PiecewiseLinearCaseSplit> splitsAfter = disj->getCaseSplits();
+
+        TS_ASSERT_EQUALS( casesBefore.size(), casesAfter.size() );
+        TS_ASSERT_EQUALS( splitsBefore.size(), splitsAfter.size() );
+
+        // The disjuncts are:
+        // 1 <= x0 <= 5, x1 = x0
+        // 5 <= x0 , x1 = 2x2 + 5
+        // x1 - x0 <= 1, x1 + x2 >= 2
+
+        // In total there are 4 (in)equalities in all the disjuncts. The two
+        // equations are each split into 2 inequialities. So there are 6 new
+        // equations and 6 new variables.
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 9u );
+        TS_ASSERT_EQUALS( inputQuery.getEquations().size(), 6u );
+
+        // Check the disjuncts
+        auto split = splitsAfter.begin();
+        {
+            split->dump();
+            TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 4u );
+            TS_ASSERT( split->getEquations().empty() );
+            Tightening t1( 0, 1, Tightening::LB );
+            Tightening t2( 0, 5, Tightening::UB );
+            Tightening t3( 3, 0, Tightening::UB ); // First aux introduced here.
+            Tightening t4( 4, 0, Tightening::LB ); // Second aux introduced here.
+            for ( const auto &t : {t1, t2, t3, t4} )
+                TS_ASSERT( split->getBoundTightenings().exists( t ) );
+        }
+        ++split;
+        {
+            split->dump();
+            TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 3u );
+            TS_ASSERT( split->getEquations().empty() );
+            Tightening t1( 0, 5, Tightening::LB );
+            Tightening t2( 5, 0, Tightening::UB ); // Third aux introduced here.
+            Tightening t3( 6, 0, Tightening::LB ); // Fourth aux
+            for ( const auto &t : {t1, t2, t3} )
+                TS_ASSERT( split->getBoundTightenings().exists( t ) );
+        }
+        ++split;
+        {
+            split->dump();
+            TS_ASSERT_EQUALS( split->getBoundTightenings().size(), 2u );
+            TS_ASSERT( split->getEquations().empty() );
+            Tightening t1( 7, 0, Tightening::LB ); // 5th aux
+            Tightening t2( 8, 0, Tightening::UB ); // 6th aux
+            for ( const auto &t : {t1, t2} )
+                TS_ASSERT( split->getBoundTightenings().exists( t ) );
+        }
+
+        // Check the linear constraints added.
+        // 1 <= x0 <= 5, x1 = x0
+        // 5 <= x0 , x1 = 2x2 + 5
+        // x1 - x0 <= 1, x1 + x2 >= 2
+
+        auto equation = inputQuery.getEquations().begin();
+        {
+            Equation eq;
+            eq.addAddend( 1, 0 );
+            eq.addAddend( -1, 1 );
+            eq.addAddend( 1, 3 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 0 );
+            eq.addAddend( -1, 1 );
+            eq.addAddend( 1, 4 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -2, 2 );
+            eq.addAddend( 1, 5 );
+            eq.setScalar( 5 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -2, 2 );
+            eq.addAddend( 1, 6 );
+            eq.setScalar( 5 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -1, 0 );
+            eq.addAddend( 1, 7 );
+            eq.setScalar( 1 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+        ++equation;
+        {
+            Equation eq;
+            eq.addAddend( 1, 1 );
+            eq.addAddend( 1, 2 );
+            eq.addAddend( 1, 8 );
+            eq.setScalar( 2 );
+            TS_ASSERT_EQUALS( eq, *equation );
+        }
+    }
+
+    void test_serialize_and_unserialize()
+    {
+        // Disjuncts are:
+        // x0 <= 1, x1 = 2
+        // 1 <= x0 <= 5, x1 = x0
+        // 5 <= x0 , x1 = 2x2 + 5
+
+        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+        DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
+
+        String originalSerialized = disj.serializeToString();
+        DisjunctionConstraint recoveredDisj( originalSerialized );
+
+        TS_ASSERT_EQUALS( disj.serializeToString(),
+                          recoveredDisj.serializeToString() );
+
+        List<PiecewiseLinearCaseSplit> recoveredCaseSplits =
+            recoveredDisj.getCaseSplits();
+        auto split = recoveredCaseSplits.begin();
+        TS_ASSERT_EQUALS( *split++, *cs1);
+        TS_ASSERT_EQUALS( *split++, *cs2);
+        TS_ASSERT_EQUALS( *split, *cs3);
+    }
+};

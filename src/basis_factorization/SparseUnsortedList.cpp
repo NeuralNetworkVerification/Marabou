@@ -28,6 +28,11 @@ SparseUnsortedList::SparseUnsortedList( unsigned size )
 {
 }
 
+SparseUnsortedList::SparseUnsortedList( const SparseUnsortedList &other )
+{
+    *this = other;
+}
+
 SparseUnsortedList::SparseUnsortedList( const double *V, unsigned size )
 {
     initialize( V, size );
@@ -50,6 +55,12 @@ void SparseUnsortedList::initialize( const double *V, unsigned size )
 
         _list.append( Entry( i, V[i] ) );
     }
+}
+
+void SparseUnsortedList::initializeToEmpty()
+{
+    _size = 0;
+    _list.clear();
 }
 
 void SparseUnsortedList::clear()

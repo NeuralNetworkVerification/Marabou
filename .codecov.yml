@@ -5,7 +5,9 @@ comment: false
 
 ignore:
   - "**/__init__.py"
+  - "maraboupy/__main__.py"
   - "maraboupy/test"
+  - "maraboupy/test_requirements.txt"
 
 coverage:
   status:
@@ -16,16 +18,14 @@ coverage:
         threshold: 1%
         base: auto
         paths:
-          - "src"
           - "maraboupy"
-    # Make sure the new added code is at least 80% covered 
-    patch: 
+    # Make sure the new added code is at least 80% covered
+    patch:
       default:
         target: 80%
         base: auto
         paths:
-          - "src"
           - "maraboupy"
 
-   
+
 

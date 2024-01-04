@@ -206,7 +206,9 @@ class AssertArgumentException : public Exception
 
 #define Unimplemented() CVC4_FATAL() << "Unimplemented code encountered"
 
-#define InternalError() CVC4_FATAL() << "Internal error detected"
+// This line is (manually) excluded because it clashes with the function
+// of the same name found in `onnx.proto3.pb.h`.
+//#define InternalError() CVC4_FATAL() << "Internal error detected"
 
 #define IllegalArgument(arg, msg, ...)    \
   throw ::CVC4::IllegalArgumentException( \

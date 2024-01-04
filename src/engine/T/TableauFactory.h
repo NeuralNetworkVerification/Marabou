@@ -19,26 +19,27 @@
 #include "cxxtest/Mock.h"
 
 class ITableau;
+class IBoundManager;
 class ISelector;
 
 namespace T
 {
-	ITableau *createTableau();
-	void discardTableau( ITableau *tableau );
+    ITableau *createTableau( IBoundManager &BoundManager );
+    void discardTableau( ITableau *tableau );
 }
 
 CXXTEST_SUPPLY( createTableau,
-				ITableau *,
-				createTableau,
-				(),
-				T::createTableau,
-				() );
+                ITableau *,
+                createTableau,
+                ( IBoundManager &boundManager ),
+                T::createTableau,
+                ( boundManager ) );
 
 CXXTEST_SUPPLY_VOID( discardTableau,
-					 discardTableau,
-					 ( ITableau *tableau ),
-					 T::discardTableau,
-					 ( tableau ) );
+                     discardTableau,
+                     ( ITableau *tableau ),
+                     T::discardTableau,
+                     ( tableau ) );
 
 #endif // __T__TableauFactory_h__
 

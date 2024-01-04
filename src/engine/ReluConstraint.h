@@ -10,29 +10,34 @@
  ** directory for licensing information.\endverbatim
  **
  ** ReluConstraint implements the following constraint:
- ** f = Max( 0, b )
+ ** f = Max( 0, b ) =    ( b > 0 -> f > 0 )
+ **                   /\ ( b <=0 -> f = 0 )
  **
  ** It distinguishes two relevant phases for search:
  ** RELU_PHASE_ACTIVE   : b > 0 and f > 0
  ** RELU_PHASE_INACTIVE : b <=0 and f = 0
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as PiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** ReluConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __ReluConstraint_h__
 #define __ReluConstraint_h__
 
-#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+
 #include <cmath>
 
-class ReluConstraint : public ContextDependentPiecewiseLinearConstraint
+class ReluConstraint : public PiecewiseLinearConstraint
 {
 public:
     /*
@@ -50,7 +55,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -67,9 +72,14 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
+
+    /*
+       Check conditions that fix Phase and met update phase status
+     */
+    void checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound );
+    void checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -157,17 +167,34 @@ public:
       For preprocessing: get any auxiliary equations that this
       constraint would like to add to the equation pool. In the ReLU
       case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
+      non-negative. This way, case splits will be bound
+      update of the aux variables.
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
+      Whether the constraint can contribute the SoI cost function.
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const override;
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for ReLU is:
+        _f - _b for the active phase
+        _f      for the inactive phase
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
+      Return the phase status corresponding to the values of the *input*
+      variables in the given assignment.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
 
     /*
       Returns string with shape: relu, _f, _b
@@ -212,6 +239,7 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
+    const List<unsigned> getNativeAuxVars() const override;
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
@@ -234,7 +262,19 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    std::shared_ptr<TableauRow> _tighteningRow;
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint
+     Stored in _tighteningRow
+    */
+    void createTighteningRow();
+
+    /*
+     Assign a variable as an aux variable by the tableau, related to some existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __ReluConstraint_h__
-

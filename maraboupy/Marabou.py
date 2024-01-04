@@ -44,13 +44,13 @@ def read_nnet(filename, normalize=False):
     return MarabouNetworkNNet(filename, normalize=normalize)
 
 
-def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
+def read_tf(filename, inputNames=None, outputNames=None, modelType="frozen", savedModelTags=[]):
     """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
     Args:
         filename (str): Path to tensorflow network
         inputNames (list of str, optional): List of operation names corresponding to inputs
-        outputName (str, optional): Name of operation corresponding to output
+        outputNames (list of str, optional): List of operation names corresponding to outputs
         modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                             Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                             created from either tensorflow versions 1.X or 2.X respectively.
@@ -59,20 +59,21 @@ def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", save
     Returns:
         :class:`~maraboupy.MarabouNetworkTF.MarabouNetworkTF`
     """
-    return MarabouNetworkTF(filename, inputNames, outputName, modelType, savedModelTags)
+    return MarabouNetworkTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
-def read_onnx(filename, inputNames=None, outputName=None):
+def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=True):
     """Constructs a MarabouNetworkONNX object from an ONNX file
 
     Args:
         filename (str): Path to the ONNX file
         inputNames (list of str, optional): List of node names corresponding to inputs
-        outputName (str, optional): Name of node corresponding to output
+        outputNames (list of str, optional): List of node names corresponding to outputs
+        reindexOutputVars (bool): Reindex the variables so that the output variables are immediate after input variables
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
-    return MarabouNetworkONNX(filename, inputNames, outputName)
+    return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
@@ -97,12 +98,13 @@ def solve_query(ipq, filename="", verbose=True, options=None):
 
     Returns:
         (tuple): tuple containing:
+            - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
             - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
             - stats (:class:`~maraboupy.MarabouCore.Statistics`, optional): A Statistics object to how Marabou performed
     """
     if options is None:
         options = createOptions()
-    vals, stats = MarabouCore.solve(ipq, options, filename)
+    exitCode, vals, stats = MarabouCore.solve(ipq, options, filename)
     if verbose:
         if stats.hasTimedOut():
             print ("TO")
@@ -115,15 +117,16 @@ def solve_query(ipq, filename="", verbose=True, options=None):
             for i in range(ipq.getNumOutputVariables()):
                 print("output {} = {}".format(i, vals[ipq.outputVariableByIndex(i)]))
 
-    return [vals, stats]
+    return [exitCode, vals, stats]
 
 def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=2,
                   timeoutInSeconds=0, timeoutFactor=1.5, verbosity=2, snc=False,
                   splittingStrategy="auto", sncSplittingStrategy="auto",
                   restoreTreeStates=False, splitThreshold=20, solveWithMILP=False,
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
-                  tighteningStrategy="deeppoly", milpTightening="lp", milpSolverTimeout=0,
-                  numSimulations=10):
+                  tighteningStrategy="deeppoly", milpTightening="none", milpSolverTimeout=0,
+                  numSimulations=10, numBlasThreads=1, performLpTighteningAfterSplit=False,
+                  lpSolver="", produceProofs=False):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -140,13 +143,16 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
         splittingStrategy (string, optional): Specifies which partitioning strategy to use (auto/largest-interval/relu-violation/polarity/earliest-relu)
         sncSplittingStrategy (string, optional): Specifies which partitioning strategy to use in the SnC mode (auto/largest-interval/polarity).
         restoreTreeStates (bool, optional): Whether to restore tree states in dnc mode, defaults to False
-        solveWithMILP ( bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
+        solveWithMILP (bool, optional): Whther to solve the input query with a MILP encoding. Currently only works when Gurobi is installed. Defaults to False.
         preprocessorBoundTolerance ( float, optional): epsilon value for preprocess bound tightening . Defaults to 10^-10.
         dumpBounds (bool, optional): Print out the bounds of each neuron after preprocessing. defaults to False
         tighteningStrategy (string, optional): The abstract-interpretation-based bound tightening techniques used during the search (deeppoly/sbt/none). default to deeppoly.
         milpTightening (string, optional): The (mi)lp-based bound tightening techniques used to preprocess the query (milp-inc/lp-inc/milp/lp/none). default to lp.
         milpSolverTimeout (float, optional): Timeout duration for MILP
         numSimulations (int, optional): Number of simulations generated per neuron, defaults to 10
+        numBlasThreads (int, optional): Number of threads to use when using OpenBLAS matrix multiplication (e.g., for DeepPoly analysis), defaults to 1
+        performLpTighteningAfterSplit (bool, optional): Whether to perform a LP tightening after a case split, defaults to False
+        lpSolver (string, optional): the engine for solving LP (native/gurobi).
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -170,4 +176,8 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
     options._milpTightening = milpTightening
     options._milpSolverTimeout = milpSolverTimeout
     options._numSimulations = numSimulations
+    options._numBlasThreads = numBlasThreads
+    options._performLpTighteningAfterSplit = performLpTighteningAfterSplit
+    options._lpSolver = lpSolver
+    options._produceProofs = produceProofs
     return options

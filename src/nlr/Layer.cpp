@@ -13,7 +13,7 @@
 
  **/
 
-#include "GlobalConfiguration.h"
+#include "InputQuery.h"
 #include "Layer.h"
 #include "Options.h"
 #include "SymbolicBoundTighteningType.h"
@@ -207,6 +207,17 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == SIGMOID )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = 1 / ( 1 + std::exp( -inputValue ) );
+        }
+    }
+
     else
     {
         printf( "Error! Neuron type %u unsupported\n", _type );
@@ -305,6 +316,16 @@ void Layer::computeSimulations()
             const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
             for ( unsigned j = 0; j < simulationSize; ++j )
                 _simulations[i][j] = FloatUtils::isNegative( simulations.get( j ) ) ? -1 : 1;
+        }
+    }
+    else if ( _type == SIGMOID )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( i );
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = 1 / ( 1 + std::exp( -simulations.get( j ) ) );
         }
     }
     else
@@ -426,7 +447,8 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN );
+  ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE ||
+          _type == MAX || _type == SIGN || _type == SIGMOID );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -460,6 +482,25 @@ void Layer::setNeuronVariable( unsigned neuron, unsigned variable )
 
     _neuronToVariable[neuron] = variable;
     _variableToNeuron[variable] = neuron;
+}
+
+void Layer::obtainCurrentBounds( const InputQuery &inputQuery )
+{
+    for ( unsigned i = 0; i < _size; ++i )
+    {
+        if ( _neuronToVariable.exists( i ) )
+        {
+            unsigned variable = _neuronToVariable[i];
+            _lb[i] = inputQuery.getLowerBound( variable );
+            _ub[i] = inputQuery.getUpperBound( variable );
+        }
+        else
+        {
+            ASSERT( _eliminatedNeurons.exists( i ) );
+            _lb[i] = _eliminatedNeurons[i];
+            _ub[i] = _eliminatedNeurons[i];
+        }
+    }
 }
 
 void Layer::obtainCurrentBounds()
@@ -1727,6 +1768,10 @@ String Layer::typeToString( Type type )
         return "LEAKY_RELU";
         break;
 
+    case SIGMOID:
+        return "SIGMOID";
+        break;
+
     case ABSOLUTE_VALUE:
         return "ABSOLUTE_VALUE";
         break;
@@ -1797,6 +1842,7 @@ void Layer::dump() const
     case ABSOLUTE_VALUE:
     case MAX:
     case SIGN:
+    case SIGMOID:
 
         for ( unsigned i = 0; i < _size; ++i )
         {

@@ -16,15 +16,20 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "BoundManager.h"
+#include "context/context.h"
 #include "Equation.h"
 #include "MockCostFunctionManager.h"
 #include "MockErrno.h"
 #include "MarabouError.h"
+#include "Options.h"
 #include "Tableau.h"
 #include "TableauRow.h"
 #include "TableauState.h"
 
 #include <string.h>
+
+using namespace CVC4::context;
 
 class MockForTableau
 {
@@ -34,12 +39,6 @@ public:
 class MockVariableWatcher : public ITableau::VariableWatcher
 {
 public:
-    Map<unsigned, double> lastNotifiedValues;
-    void notifyVariableValue( unsigned variable, double value )
-    {
-        lastNotifiedValues[variable] = value;
-    }
-
     Map<unsigned, double> lastNotifiedLowerBounds;
     void notifyLowerBound( unsigned variable, double bound )
     {
@@ -61,6 +60,7 @@ public:
     void setUp()
     {
         TS_ASSERT( mock = new MockForTableau );
+        Options::get()->setString( Options::LP_SOLVER, "native" );
     }
 
     void tearDown()
@@ -111,9 +111,11 @@ public:
     void test_initialize_bounds()
     {
         Tableau *tableau = NULL;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -129,9 +131,11 @@ public:
     void test_initalize_basis_get_value()
     {
         Tableau *tableau = NULL;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         initializeTableauValues( *tableau );
 
@@ -171,69 +175,15 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
-    void test_watcher__value_changes()
-    {
-        Tableau *tableau = NULL;
-
-        TS_ASSERT( tableau = new Tableau );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
-        initializeTableauValues( *tableau );
-
-        for ( unsigned i = 0; i < 4; ++i )
-        {
-            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
-            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 2 ) );
-        }
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 218 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 228 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 400 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 402 ) );
-
-        MockVariableWatcher watcher1;
-        MockVariableWatcher watcher2;
-
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 4 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher1, 5 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher2, 5 ) );
-
-        List<unsigned> basics = { 4, 5, 6 };
-        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
-
-        // The basic values get computed, so the watchers should be called
-
-        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[4], 217.0 );
-        TS_ASSERT_EQUALS( watcher1.lastNotifiedValues[5], 113.0 );
-        TS_ASSERT_EQUALS( watcher2.lastNotifiedValues[5], 113.0 );
-
-        MockVariableWatcher watcher3;
-        TS_ASSERT_THROWS_NOTHING( tableau->registerToWatchVariable( &watcher3, 3 ) );
-
-        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 2, false ) );
-
-        TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 2.0 );
-
-        watcher3.lastNotifiedValues.clear();
-        TS_ASSERT_THROWS_NOTHING( tableau->unregisterToWatchVariable( &watcher3, 3 ) );
-        TS_ASSERT_THROWS_NOTHING( tableau->setNonBasicAssignment( 3, 1, false ) );
-        //TS_ASSERT_EQUALS( watcher3.lastNotifiedValues[3], 1.0 );
-        TS_ASSERT( watcher3.lastNotifiedValues.empty() );
-
-        TS_ASSERT_THROWS_NOTHING( delete tableau );
-    }
-
     void test_get_entering_variable__have_eligible_variables()
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -283,9 +233,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -335,8 +287,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
@@ -446,9 +401,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -508,9 +465,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -586,9 +545,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -795,9 +756,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -996,9 +959,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         // Initialization steps
 
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
@@ -1061,7 +1026,9 @@ public:
         TableauState *tableauState = NULL;
         TS_ASSERT( tableauState = new TableauState );
 
-        TS_ASSERT_THROWS_NOTHING( tableau->storeState( *tableauState ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->storeState
+                                  ( *tableauState,
+                                    TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE ) );
 
         // Do some more stuff
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
@@ -1090,7 +1057,9 @@ public:
         TS_ASSERT( !tableau->isBasic( 5u ) );
 
         // Now restore the tableau
-        TS_ASSERT_THROWS_NOTHING( tableau->restoreState( *tableauState ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->restoreState
+                                  ( *tableauState,
+                                    TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE ) );
 
         // Do some more stuff again
         TS_ASSERT_THROWS_NOTHING( tableau->computeCostFunction() );
@@ -1126,9 +1095,12 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.registerTableau( tableau ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1194,6 +1166,7 @@ public:
         equation.addAddend( 2, 1 );
         equation.addAddend( -4, 2 );
         equation.setScalar( 5 );
+
         TS_ASSERT_THROWS_NOTHING( tableau->addEquation( equation ) );
 
         TS_ASSERT( tableau->isBasic( 7u ) );
@@ -1283,9 +1256,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1353,6 +1328,16 @@ public:
         TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBound( 5, 111 ) );
         TS_ASSERT_EQUALS( tableau->getValue( 5 ), 110.0 );
 
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenUpperBoundNaively( 1, 6 ) );
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 4 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 6 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 4.0 );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->tightenLowerBoundNaively( 1, 5 ) );
+        TS_ASSERT_EQUALS( tableau->getLowerBound( 1 ), 5 );
+        TS_ASSERT_EQUALS( tableau->getUpperBound( 1 ), 6 );
+        TS_ASSERT_EQUALS( tableau->getValue( 1 ), 5.0 );
+
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }
 
@@ -1360,9 +1345,11 @@ public:
     {
         Tableau *tableau = NULL;
         MockCostFunctionManager costFunctionManager;
+        Context context;
+        BoundManager boundManager( context );
 
-        TS_ASSERT( tableau = new Tableau );
-
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( 7 ) );
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
         TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
         tableau->registerCostFunctionManager( &costFunctionManager );
         initializeTableauValues( *tableau );
@@ -1527,6 +1514,127 @@ public:
         TS_ASSERT( tableau->areLinearlyDependent( 3, 2, coefficient, inverseCoefficient ) );
         TS_ASSERT( FloatUtils::areEqual( coefficient, -1 ) );
         TS_ASSERT( FloatUtils::areEqual( inverseCoefficient, -1 ) );
+
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+    }
+
+    void test_get_get_leaving_variable_optimize()
+    {
+        Tableau *tableau = NULL;
+        MockCostFunctionManager costFunctionManager;
+
+        Context context;
+        BoundManager boundManager( context );
+        boundManager.initialize( 7 );
+
+        TS_ASSERT( tableau = new Tableau( boundManager ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setDimensions( 3, 7 ) );
+        tableau->registerCostFunctionManager( &costFunctionManager );
+        initializeTableauValues( *tableau );
+
+        for ( unsigned i = 0; i < 4; ++i )
+        {
+            TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( i, 1 ) );
+            TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( i, 10 ) );
+        }
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 4, 210 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 4, 218 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 5, 112 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 5, 114 ) );
+
+        TS_ASSERT_THROWS_NOTHING( tableau->setLowerBound( 6, 300 ) );
+        TS_ASSERT_THROWS_NOTHING( tableau->setUpperBound( 6, 408 ) );
+
+        List<unsigned> basics = { 4, 5, 6 };
+        TS_ASSERT_THROWS_NOTHING( tableau->initializeTableau( basics ) );
+
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 4 ), Tableau::BETWEEN );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 5 ), Tableau::BETWEEN );
+        TS_ASSERT_EQUALS( tableau->getBasicStatus( 6 ), Tableau::BETWEEN );
+
+        /*
+               | 3 2 1 2 1 0 0 | | x0 |   | 225 |
+          Ax = | 1 1 1 1 0 1 0 | | x1 | = | 117 | = b
+               | 4 3 3 4 0 0 1 | | x2 |   | 420 |
+                                 | x3 |
+                                 | x4 |
+                                 | x5 |
+                                 | x6 |
+
+          x4 = 225 - 3x0 - 2x1 - x2  - 2x3
+          x5 = 117 -  x0 -  x1 - x2  -  x3
+          x6 = 420 - 4x0 - 3x1 - 3x2 - 4x3
+
+        */
+
+        // Minimize x6 - x1
+        // x6 - x1 = 117 - x0 - 2x1 - x2 - x3
+
+        tableau->toggleOptimization( true );
+
+        costFunctionManager.nextCostFunction = new double[4];
+        costFunctionManager.nextCostFunction[0] = -1;
+        costFunctionManager.nextCostFunction[1] = -2;
+        costFunctionManager.nextCostFunction[2] = -1;
+        costFunctionManager.nextCostFunction[3] = -1;
+
+        costFunctionManager.nextBasicCost[0] = 0;
+        costFunctionManager.nextBasicCost[1] = 0;
+        costFunctionManager.nextBasicCost[2] = 0;
+
+        tableau->setEnteringVariableIndex( 2u );
+        TS_ASSERT( hasCandidates( *tableau ) );
+        TS_ASSERT_EQUALS( tableau->getEnteringVariable(), 2u );
+
+        // Entering variable is 2, and it needs to increase
+        // Current basic values are: 217, 113, 406
+        TS_ASSERT_EQUALS( tableau->getValue( 4 ), 217.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 5 ), 113.0 );
+        TS_ASSERT_EQUALS( tableau->getValue( 6 ), 406.0 );
+
+        double d1[] = { -1, -1, -1 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d1 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 1.0 );
+
+        double d2[] = { -0.5, -0.5, -0.5 };
+        // d1 scaled by 1/2
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d2 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 2.0 );
+
+        double d3[] = { 1, 1, 1 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d3 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 5u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 1.0 );
+
+        double d4[] = { 1, 0.1, 2 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d4 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 7.0 );
+
+        double d5[] = { 1, 0, 0.5 };
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d5 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 7.0 );
+
+        double d6[] = { -0.5, 0, 0.1 };
+        // Var 4 will hit its lower bound: constraint is 4
+        // Var 5 poses no constraint
+        // Var 6 will hit its upper bound: constraint is 40
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d6 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 2.0 );
+
+        double d7[] = { 1, 0, 0.00001 };
+        // The entering variable (2) can change by 9 at most. Here
+        // this will be the bound.
+        TS_ASSERT_THROWS_NOTHING( tableau->pickLeavingVariable( d7 ) );
+        TS_ASSERT_EQUALS( tableau->getLeavingVariable(), 4u );
+        TS_ASSERT_EQUALS( tableau->getChangeRatio(), 7.0 );
 
         TS_ASSERT_THROWS_NOTHING( delete tableau );
     }

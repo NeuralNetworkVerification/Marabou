@@ -20,7 +20,9 @@
 #include "context/context.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
+#include "MockEngine.h"
 #include "Tightening.h"
+#include "Vector.h"
 
 using CVC4::context::Context;
 
@@ -77,7 +79,6 @@ public:
                                          FloatUtils::negativeInfinity() ) );
         TS_ASSERT( FloatUtils::areEqual( boundManager.getUpperBound( 4 ),
                                          FloatUtils::infinity() ) );
-
         TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
         TS_ASSERT_THROWS_NOTHING( boundManager.registerNewVariable() );
         TS_ASSERT_EQUALS( boundManager.getNumberOfVariables(), 7u );
@@ -105,7 +106,9 @@ public:
         TS_ASSERT( boundManager.consistentBounds( 0 ) );
 
         TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 1 ) );
-        TS_ASSERT_THROWS( boundManager.setUpperBound( 0, 0 ), InfeasibleQueryException );
+        TS_ASSERT_THROWS_NOTHING( boundManager.setUpperBound( 0, 0 ) );
+        TS_ASSERT( !boundManager.consistentBounds() );
+        TS_ASSERT( boundManager.getInconsistentVariable() == 0 )
     }
 
     /*
@@ -164,7 +167,9 @@ public:
       double level2Upper[] = {  3.738962,   8.308432000,   16.79211593, 115.9003,  57.5459822 };
 
 
-      TS_ASSERT_THROWS_NOTHING( context->push() )
+      TS_ASSERT_THROWS_NOTHING( boundManager.storeLocalBounds() );
+      TS_ASSERT_THROWS_NOTHING( context->push() );
+
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -175,6 +180,7 @@ public:
         TS_ASSERT_EQUALS( boundManager.getUpperBound( v ), level0Upper[v] );
       }
 
+      TS_ASSERT_THROWS_NOTHING( boundManager.storeLocalBounds() );
       TS_ASSERT_THROWS_NOTHING( context->push() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
@@ -187,6 +193,7 @@ public:
       }
 
 
+      TS_ASSERT_THROWS_NOTHING( boundManager.storeLocalBounds() );
       TS_ASSERT_THROWS_NOTHING( context->push() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
@@ -200,6 +207,7 @@ public:
 
 
       TS_ASSERT_THROWS_NOTHING( context->pop() );
+      TS_ASSERT_THROWS_NOTHING( boundManager.restoreLocalBounds() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -209,6 +217,7 @@ public:
 
 
       TS_ASSERT_THROWS_NOTHING( context->pop() );
+      TS_ASSERT_THROWS_NOTHING( boundManager.restoreLocalBounds() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
       {
@@ -235,6 +244,7 @@ public:
         }
 
       TS_ASSERT_THROWS_NOTHING( context->pop() );
+      TS_ASSERT_THROWS_NOTHING( boundManager.restoreLocalBounds() );
 
       for ( unsigned v = 0; v < numberOfVariables; ++v )
         {
@@ -243,6 +253,73 @@ public:
         }
     }
 
+    void test_bound_manager_and_explainer()
+    {
+        BoundManager boundManager( *context );
+
+        // Test initialization of data structures
+        MockEngine engine;
+        TS_ASSERT_THROWS_NOTHING( boundManager.registerEngine( &engine ) );
+
+        unsigned numberOfVariables = 5u;
+        unsigned numberOfRows = 3u;
+
+        TS_ASSERT_THROWS_NOTHING( boundManager.initialize( numberOfVariables ) );
+        TS_ASSERT_THROWS_NOTHING( boundManager.initializeBoundExplainer( numberOfVariables, numberOfRows ) );
+
+        for ( unsigned i = 0; i < numberOfVariables; ++i )
+        {
+            boundManager.setUpperBound( i, 1 );
+            boundManager.setLowerBound( i, 0 );
+        }
+
+        for ( unsigned i = 0; i < numberOfVariables; ++i )
+        {
+            TS_ASSERT( boundManager.isExplanationTrivial( i, true ) );
+            TS_ASSERT( boundManager.isExplanationTrivial( i, false ) );
+        }
+
+        // Test explanation getting and setting
+        Vector<double> explVec ( numberOfRows, 1 );
+        SparseUnsortedList expl = SparseUnsortedList( explVec.data(), explVec.size() );
+        SparseUnsortedList explained = SparseUnsortedList();
+
+        boundManager.setExplanation( expl, 0, true );
+        TS_ASSERT( !boundManager.isExplanationTrivial( 0, true ) );
+        boundManager.setExplanation( expl, 1, false );
+
+        explained = boundManager.getExplanation( 1, false );
+        TS_ASSERT( explained.getSize() == expl.getSize() );
+
+        for ( const auto &entry : expl )
+            TS_ASSERT( explained.get( entry._index) == entry._value );
+
+        // Test explanation resetting
+        boundManager.resetExplanation( 0, true );
+        TS_ASSERT( boundManager.isExplanationTrivial( 0, true ) );
+
+        // Test boundExplainer setting and getting
+        BoundExplainer secondExplainer( numberOfVariables, numberOfRows, *context );
+        TS_ASSERT_THROWS_NOTHING( boundManager.copyBoundExplainerContent( &secondExplainer ) );
+
+        // Setting is effective if the non-trivial explanation became trivial
+        TS_ASSERT_THROWS_NOTHING( boundManager.isExplanationTrivial( 1, false ) );
+
+        // Compute sparse and tableau row bounds, according to the bounds stored in boundManager
+        double rowArr[5] = { 0, 0, 1, 2, -1 };
+        SparseUnsortedList sparseRow ( rowArr, numberOfVariables );
+        TS_ASSERT( boundManager.computeSparseRowBound( sparseRow, true, 4 ) == 3 );
+
+        TableauRow tableauRow( numberOfVariables );
+        tableauRow._scalar = 0;
+        tableauRow._lhs = 2;
+        tableauRow._row[0] = TableauRow::Entry( 0, 1 );
+        tableauRow._row[1] = TableauRow::Entry( 1, 2 );
+        tableauRow._row[2] = TableauRow::Entry( 3, -1 );
+        tableauRow._row[3] = TableauRow::Entry( 4, 1 );
+
+        TS_ASSERT( boundManager.computeRowBound( tableauRow, false ) == -1 );
+    }
 };
 
 //

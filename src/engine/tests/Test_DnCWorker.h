@@ -117,16 +117,17 @@ public:
         createPlaceHolderSubQuery();
         _engine->setTimeToSolve( 10 );
         _engine->setExitCode( IEngine::TIMEOUT );
-        std::atomic_uint numUnsolvedSubQueries( 1 );
+        std::atomic_int numUnsolvedSubQueries( 1 );
         std::atomic_bool shouldQuitSolving( false );
         unsigned threadId = 0;
         unsigned onlineDivides = 2;
         float timeoutFactor = 1;
         SnCDivideStrategy divideStrategy = SnCDivideStrategy::LargestInterval;
         unsigned verbosity = 0;
+        bool portfolio = false;
         DnCWorker dncWorker( _workload, _engine, numUnsolvedSubQueries,
                              shouldQuitSolving, threadId, onlineDivides,
-                             timeoutFactor, divideStrategy, verbosity );
+                             timeoutFactor, divideStrategy, verbosity, portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::TIMEOUT );
@@ -149,8 +150,9 @@ public:
         numUnsolvedSubQueries= 2;
         shouldQuitSolving= false;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                               shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy, verbosity );
+                                       shouldQuitSolving, threadId, onlineDivides,
+                                       timeoutFactor, divideStrategy, verbosity,
+                                       portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
@@ -176,7 +178,8 @@ public:
 
         dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
                                shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy, verbosity );
+                               timeoutFactor, divideStrategy, verbosity,
+                               portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::UNSAT );
@@ -199,8 +202,9 @@ public:
         numUnsolvedSubQueries=( 1 );
         shouldQuitSolving=( false );
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                             shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy, verbosity );
+                                       shouldQuitSolving, threadId, onlineDivides,
+                                       timeoutFactor, divideStrategy, verbosity,
+                                       portfolio);
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::SAT );
@@ -222,8 +226,9 @@ public:
         numUnsolvedSubQueries= 1;
         shouldQuitSolving =  true;
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                               shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy, verbosity );
+                                       shouldQuitSolving, threadId, onlineDivides,
+                                       timeoutFactor, divideStrategy, verbosity,
+                                       portfolio );
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::QUIT_REQUESTED );
         TS_ASSERT( numUnsolvedSubQueries.load() == 1 );
@@ -244,8 +249,9 @@ public:
         shouldQuitSolving = false;
 
 		dncWorker = DnCWorker( _workload, _engine, numUnsolvedSubQueries,
-                               shouldQuitSolving, threadId, onlineDivides,
-                               timeoutFactor, divideStrategy, verbosity );
+                                       shouldQuitSolving, threadId, onlineDivides,
+                                       timeoutFactor, divideStrategy, verbosity,
+                                       portfolio );
 
         dncWorker.popOneSubQueryAndSolve();
         TS_ASSERT( _engine->getExitCode() == IEngine::ERROR );

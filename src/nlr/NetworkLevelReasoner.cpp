@@ -16,6 +16,7 @@
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
+#include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "IterativePropagator.h"
 #include "LPFormulator.h"
@@ -114,6 +115,49 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
             sizeof(double) * outputLayer->getSize() );
 }
 
+void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
+                                                      &assignment )
+{
+    Layer *inputLayer = _layerIndexToLayer[0];
+    ASSERT( inputLayer->getLayerType() == Layer::INPUT );
+
+    unsigned inputLayerSize = inputLayer->getSize();
+    ASSERT( inputLayerSize > 0 );
+
+    double *input = new double[inputLayerSize];
+    
+    // First obtain the input assignment from the _tableau
+    for ( unsigned index = 0; index < inputLayerSize; ++index )
+    {
+        if ( !inputLayer->neuronEliminated( index ) )
+        {
+            unsigned variable = inputLayer->neuronToVariable( index );
+            double value = _tableau->getValue( variable );
+            input[index] = value;
+            assignment[variable] = value;
+        }
+        else
+            input[index] = inputLayer->getEliminatedNeuronValue( index );
+    }
+
+    _layerIndexToLayer[0]->setAssignment( input );
+    
+    // Evaluate layers iteratively and store the results in "assignment"
+    for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
+    {
+        Layer *currentLayer = _layerIndexToLayer[i];
+        currentLayer->computeAssignment();
+        for ( unsigned index = 0; index < currentLayer->getSize(); ++index )
+        {
+            if ( !currentLayer->neuronEliminated( index ) )
+                assignment[currentLayer->neuronToVariable( index )] =
+                    currentLayer->getAssignment( index );
+        }
+    }
+
+    delete[] input;
+}
+
 void NetworkLevelReasoner::simulate( Vector<Vector<double>> *input )
 {
     _layerIndexToLayer[0]->setSimulations( input );
@@ -134,6 +178,11 @@ void NetworkLevelReasoner::receiveTighterBound( Tightening tightening )
 void NetworkLevelReasoner::getConstraintTightenings( List<Tightening> &tightenings )
 {
     tightenings = _boundTightenings;
+    _boundTightenings.clear();
+}
+
+void NetworkLevelReasoner::clearConstraintTightenings()
+{
     _boundTightenings.clear();
 }
 
@@ -164,6 +213,18 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
         lpFormulator.optimizeBoundsWithIncrementalLpRelaxation( _layerIndexToLayer );
 }
 
+void NetworkLevelReasoner::LPTighteningForOneLayer( unsigned targetIndex )
+{
+    LPFormulator lpFormulator( this );
+    lpFormulator.setCutoff( 0 );
+
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::LP_RELAXATION )
+        lpFormulator.optimizeBoundsOfOneLayerWithLpRelaxation( _layerIndexToLayer, targetIndex );
+
+    // TODO: implement for LP_RELAXATION_INCREMENTAL
+}
+
 void NetworkLevelReasoner::MILPPropagation()
 {
     MILPFormulator milpFormulator( this );
@@ -175,6 +236,18 @@ void NetworkLevelReasoner::MILPPropagation()
     else if ( Options::get()->getMILPSolverBoundTighteningType() ==
               MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL )
         milpFormulator.optimizeBoundsWithIncrementalMILPEncoding( _layerIndexToLayer );
+}
+
+void NetworkLevelReasoner::MILPTighteningForOneLayer( unsigned targetIndex )
+{
+    MILPFormulator milpFormulator( this );
+    milpFormulator.setCutoff( 0 );
+
+    if ( Options::get()->getMILPSolverBoundTighteningType() ==
+         MILPSolverBoundTighteningType::MILP_ENCODING )
+        milpFormulator.optimizeBoundsOfOneLayerWithMILPEncoding( _layerIndexToLayer, targetIndex );
+
+    // TODO: implement for MILP_ENCODING_INCREMENTAL
 }
 
 void NetworkLevelReasoner::iterativePropagation()
@@ -219,6 +292,12 @@ void NetworkLevelReasoner::updateVariableIndices( const Map<unsigned, unsigned> 
 {
     for ( auto &layer : _layerIndexToLayer )
         layer.second->updateVariableIndices( oldIndexToNewIndex, mergedVariables );
+}
+
+void NetworkLevelReasoner::obtainCurrentBounds( const InputQuery &inputQuery )
+{
+    for ( const auto &layer : _layerIndexToLayer )
+        layer.second->obtainCurrentBounds( inputQuery );
 }
 
 void NetworkLevelReasoner::obtainCurrentBounds()
@@ -355,6 +434,10 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
         generateInputQueryForReluLayer( inputQuery, layer );
         break;
 
+    case Layer::SIGMOID:
+        generateInputQueryForSigmoidLayer( inputQuery, layer );
+        break;
+
     case Layer::SIGN:
         generateInputQueryForSignLayer( inputQuery, layer );
         break;
@@ -382,6 +465,17 @@ void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuer
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
         ReluConstraint *relu = new ReluConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addPiecewiseLinearConstraint( relu );
+    }
+}
+
+void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer )
+{
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
+        const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
+        SigmoidConstraint *sigmoid = new SigmoidConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        inputQuery.addTranscendentalConstraint( sigmoid );
     }
 }
 

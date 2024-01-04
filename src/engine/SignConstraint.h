@@ -10,26 +10,30 @@
  ** directory for licensing information.\endverbatim
  **
  ** SignConstraint implements the following constraint:
- ** f = Sign( b )
+ ** f = Sign( b ) =    ( b > 0 -> f =  1 )
+ **                 /\ ( b <=0 -> f = -1 )
  **
  ** It distinguishes two relevant phases for search:
- ** SIGN_PHASE_POSITIVE: b > 0 and f = 1
+ ** SIGN_PHASE_POSITIVE: b > 0 and f =  1
  ** SIGN_PHASE_NEGATIVE: b <=0 and f = -1
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as PiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** SignConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __SignConstraint_h__
 #define __SignConstraint_h__
 
 #include "Map.h"
-#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "PiecewiseLinearConstraint.h"
 
-class SignConstraint : public ContextDependentPiecewiseLinearConstraint
+class SignConstraint : public PiecewiseLinearConstraint
 {
 public:
     /*
@@ -60,7 +64,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -77,7 +81,6 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
 
@@ -129,6 +132,16 @@ public:
     bool phaseFixed() const override;
 
     /*
+      If the phase is not fixed, add _f <= -2/lb_b * _b + 1
+      and  _f >= 2/ub_b * _b - 1
+      which becomes,
+      _f + 2/lb_b * _b + aux_ub = 1, 0 <= aux_ub <= 1 - lb_f - 2 * ub_b/lb_b
+      _f - 2/ub_b * _b + aux2_lb = -1, -1 - ub_f + 2 * lb_b/ub_b  <= aux_lb <= 0
+    */
+    void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                  &inputQuery ) override;
+
+    /*
       Preprocessing related functions, to inform that a variable has
       been eliminated completely because it was fixed to some value,
       or that a variable's index has changed (e.g., x4 is now called
@@ -155,6 +168,30 @@ public:
     void dump( String &output ) const override;
 
     /*
+      Whether the constraint can contribute the SoI cost function.
+    */
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Sign is:
+      1 - _f for the positive phase
+      1 + _f for the negative phase
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
+      Return the phase status corresponding to the values of the *input*
+      variables in the given assignment.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
+
+    /*
       Returns string with shape: sign, _f, _b
     */
     String serializeToString() const override;
@@ -178,17 +215,18 @@ public:
     We divide the sum by the width of the interval so that the polarity is
     always between -1 and 1. The closer it is to 0, the more symmetric the
     bound is.
-  */
-  double computePolarity() const;
+    */
+    double computePolarity() const;
 
-  /*
-    Update the preferred direction for fixing and handling case split
-  */
-  void updateDirection() override;
+    /*
+      Update the preferred direction for fixing and handling case split
+    */
+    void updateDirection() override;
 
-  PhaseStatus getDirection() const;
+    PhaseStatus getDirection() const;
 
-  void updateScoreBasedOnPolarity() override;
+    void updateScoreBasedOnPolarity() override;
+
 
 private:
     unsigned _b, _f;
@@ -210,6 +248,11 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    /*
+      Assign a variable as an aux variable by the tableau, related to the existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __SignConstraint_h__

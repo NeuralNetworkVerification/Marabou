@@ -47,6 +47,11 @@ void Options::initializeDefaultValues()
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
+    _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
+    _boolOptions[NO_PARALLEL_DEEPSOI] = false;
+    _boolOptions[EXPORT_ASSIGNMENT] = false;
+    _boolOptions[DEBUG_ASSIGNMENT] = false;
+    _boolOptions[PRODUCE_PROOFS] = false;
 
     /*
       Int options
@@ -58,7 +63,10 @@ void Options::initializeDefaultValues()
     _intOptions[VERBOSITY] = 2;
     _intOptions[TIMEOUT] = 0;
     _intOptions[CONSTRAINT_VIOLATION_THRESHOLD] = 20;
+    _intOptions[DEEP_SOI_REJECTION_THRESHOLD] = 2;
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
+    _intOptions[SEED] = 1;
+    _intOptions[NUM_BLAS_THREADS] = 1;
 
     /*
       Float options
@@ -67,6 +75,7 @@ void Options::initializeDefaultValues()
     _floatOptions[MILP_SOLVER_TIMEOUT] = 1.0;
     _floatOptions[PREPROCESSOR_BOUND_TOLERANCE] = \
         GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    _floatOptions[PROBABILITY_DENSITY_PARAMETER] = 10;
 
     /*
       String options
@@ -75,11 +84,16 @@ void Options::initializeDefaultValues()
     _stringOptions[PROPERTY_FILE_PATH] = "";
     _stringOptions[INPUT_QUERY_FILE_PATH] = "";
     _stringOptions[SUMMARY_FILE] = "";
-    _stringOptions[SPLITTING_STRATEGY] = "";
-    _stringOptions[SNC_SPLITTING_STRATEGY] = "";
-    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "";
-    _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "";
+    _stringOptions[SPLITTING_STRATEGY] = "auto";
+    _stringOptions[SNC_SPLITTING_STRATEGY] = "auto";
+    _stringOptions[SYMBOLIC_BOUND_TIGHTENING_TYPE] = "deeppoly";
+    _stringOptions[MILP_SOLVER_BOUND_TIGHTENING_TYPE] = "none";
     _stringOptions[QUERY_DUMP_FILE] = "";
+    _stringOptions[IMPORT_ASSIGNMENT_FILE_PATH] = "assignment.txt";
+    _stringOptions[EXPORT_ASSIGNMENT_FILE_PATH] = "assignment.txt";
+    _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
+    _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
+    _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -138,12 +152,14 @@ DivideStrategy Options::getDivideStrategy() const
                                     ( Options::SPLITTING_STRATEGY ) );
     if ( strategyString == "polarity" )
         return DivideStrategy::Polarity;
-    if ( strategyString == "earliest-relu" )
+    else if ( strategyString == "earliest-relu" )
         return DivideStrategy::EarliestReLU;
-    if ( strategyString == "relu-violation" )
+    else if ( strategyString == "relu-violation" )
         return DivideStrategy::ReLUViolation;
     else if ( strategyString == "largest-interval" )
         return DivideStrategy::LargestInterval;
+    else if ( strategyString == "pseudo-impact" )
+        return DivideStrategy::PseudoImpact;
     else
         return DivideStrategy::Auto;
 }
@@ -199,10 +215,38 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
     }
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+SoISearchStrategy Options::getSoISearchStrategy() const
+{
+    String strategyString = String( _stringOptions.get
+                                    ( Options::SOI_SEARCH_STRATEGY ) );
+    if ( strategyString == "mcmc" )
+        return SoISearchStrategy::MCMC;
+    else if ( strategyString == "walksat" )
+        return SoISearchStrategy::WALKSAT;
+    else
+        return SoISearchStrategy::MCMC;
+}
+
+SoIInitializationStrategy Options::getSoIInitializationStrategy() const
+{
+    String strategyString = String( _stringOptions.get
+                                    ( Options::SOI_INITIALIZATION_STRATEGY ) );
+    if ( strategyString == "input-assignment" )
+        return SoIInitializationStrategy::INPUT_ASSIGNMENT;
+    if ( strategyString == "current-assignment" )
+        return SoIInitializationStrategy::CURRENT_ASSIGNMENT;
+    else
+        return SoIInitializationStrategy::INPUT_ASSIGNMENT;
+}
+
+LPSolverType Options::getLPSolverType() const
+{
+    String solverString = String( _stringOptions.get
+                                    ( Options::LP_SOLVER ) );
+    if ( solverString == "native" )
+        return LPSolverType::NATIVE;
+    else if ( solverString == "gurobi" )
+        return LPSolverType::GUROBI;
+    else
+        return gurobiEnabled() ? LPSolverType::GUROBI : LPSolverType::NATIVE;
+}

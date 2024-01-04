@@ -16,8 +16,11 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
+#include "IBoundManager.h"
+#include "GurobiWrapper.h"
 #include "IBasisFactorization.h"
 #include "ITableau.h"
+#include "LPSolverType.h"
 #include "MString.h"
 #include "Map.h"
 #include "Set.h"
@@ -36,7 +39,7 @@ class TableauState;
 class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
-    Tableau();
+    Tableau( IBoundManager &boundManager );
     ~Tableau();
 
     /*
@@ -110,9 +113,14 @@ public:
     unsigned getN() const;
 
     /*
+      Check if an assignment exists for the variable.
+    */
+    bool existsValue( unsigned variable ) const;
+
+    /*
       Get the assignment of a variable, either basic or non-basic
     */
-    double getValue( unsigned variable );
+    double getValue( unsigned variable ) const;
 
     /*
       Given an index of a non-basic variable in the range [0,n-m),
@@ -143,25 +151,25 @@ public:
     /*
       Get the lower/upper bounds for a variable.
     */
-    double getLowerBound( unsigned variable ) const;
-    double getUpperBound( unsigned variable ) const;
+    inline double getLowerBound( unsigned variable ) const
+    {
+        return _lowerBounds[variable];
+    }
+
+    inline double getUpperBound( unsigned variable ) const
+    {
+        return _upperBounds[variable];
+    }
 
     /*
-      Get all lower and upper bounds.
-    */
-    const double *getLowerBounds() const;
-    const double *getUpperBounds() const;
+       Update pointers to lower/upper bounds in BoundManager
+     */
+    void setBoundsPointers( const double *lower, const double *upper );
 
     /*
-      Recomputes bound valid status for all variables.
-    */
-    void checkBoundsValid();
-
-    /*
-      Sets bound valid flag to false if bounds are invalid
-      on the given variable.
-    */
-    void checkBoundsValid( unsigned variable );
+      Get BoundManager reference
+     */
+    IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*
       Returns whether any variable's bounds are invalid.
@@ -344,8 +352,8 @@ public:
       - The current indexing
       - The current basis
     */
-    void storeState( TableauState &state ) const;
-    void restoreState( const TableauState &state );
+    void storeState( TableauState &state, TableauStateStorageLevel level ) const;
+    void restoreState( const TableauState &state, TableauStateStorageLevel level );
 
     /*
       Register or unregister to watch a variable.
@@ -368,9 +376,10 @@ public:
       Notify all watchers of the given variable of a value update,
       or of changes to its bounds.
     */
-    void notifyVariableValue( unsigned variable, double value );
     void notifyLowerBound( unsigned variable, double bound );
     void notifyUpperBound( unsigned variable, double bound );
+
+    void setGurobi( GurobiWrapper *gurobi );
 
     /*
       Have the Tableau start reporting statistics.
@@ -394,6 +403,7 @@ public:
       variable or status of a basic variable after a lower/upper bound is
       updated.
     */
+    void updateVariablesToComplyWithBounds();
     void updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value );
     void updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value );
 
@@ -453,6 +463,18 @@ public:
      */
     unsigned getVariableAfterMerging( unsigned variable ) const;
 
+    /*
+       Hook that is invoked after Context pop, to update context independent
+       data. After backtracking assignments satisfy bounds, but the
+       basic/non-basic status may be out of date, so it is recomputed.
+     */
+    void postContextPopHook();
+
+    /*
+      Tighten bounds without notifying watchers
+    */
+    void tightenUpperBoundNaively( unsigned variable, double value );
+    void tightenLowerBoundNaively( unsigned variable, double value );
 private:
     /*
       Variable watchers
@@ -465,6 +487,17 @@ private:
       Resize watchers
     */
     List<ResizeWatcher *> _resizeWatchers;
+
+    /*
+       BoundManager object stores bounds of all variables.
+     */
+    IBoundManager &_boundManager;
+
+    /*
+       Direct pointers to _boundManager arrays to avoid multiple dereferencing.
+     */
+    const double * _lowerBounds;
+    const double * _upperBounds;
 
     /*
       The dimensions of matrix A
@@ -544,17 +577,6 @@ private:
     double *_nonBasicAssignment;
 
     /*
-      Upper and lower bounds for all variables
-    */
-    double *_lowerBounds;
-    double *_upperBounds;
-
-    /*
-      Whether all variables have valid bounds (l <= u).
-    */
-    bool _boundsValid;
-
-    /*
       The current assignment for the basic variables
     */
     double *_basicAssignment;
@@ -612,6 +634,14 @@ private:
       simplify some of the computations.
      */
     bool _rhsIsAllZeros;
+
+    /*
+      True if and only if we are using the native Simplex implementation for
+      LP solving.
+    */
+    LPSolverType _lpSolverType;
+
+    GurobiWrapper *_gurobi;
 
     /*
       Free all allocated memory.

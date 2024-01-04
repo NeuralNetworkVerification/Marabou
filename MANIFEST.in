@@ -1,0 +1,10 @@
+include AUTHORS
+include THANKS
+
+exclude maraboupy/build_python_x86.sh
+exclude maraboupy/README.md
+exclude maraboupy/test_requirements.txt
+
+prune maraboupy/docs/
+prune maraboupy/examples/
+prune maraboupy/test/
