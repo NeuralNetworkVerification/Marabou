@@ -129,9 +129,7 @@ public:
     void setAlpha( double alpha ) { _alpha = alpha; }
     double getAlpha() const { return _alpha; }
 
-=======
     void obtainCurrentBounds( const InputQuery &inputQuery );
->>>>>>> master
     void obtainCurrentBounds();
     void computeSymbolicBounds();
     void computeIntervalArithmeticBounds();
