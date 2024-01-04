@@ -169,6 +169,14 @@ public:
         {
             return "";
         }
+
+		 void initTighteningRow( const unsigned /*counterpart*/ )
+		 {
+		 }
+
+        void addTableauAuxVar( unsigned /*tableauAuxVar*/, unsigned /*constraintAuxVar*/ )
+        {
+        }
     };
 
     void setUp()

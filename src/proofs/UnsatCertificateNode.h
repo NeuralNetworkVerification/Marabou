@@ -17,10 +17,10 @@
 
 #include "BoundExplainer.h"
 #include "Contradiction.h"
-#include "SmtLibWriter.h"
 #include "PiecewiseLinearFunctionType.h"
-#include "PlcExplanation.h"
+#include "PlcLemma.h"
 #include "ReluConstraint.h"
+#include "SmtLibWriter.h"
 #include "UnsatCertificateUtils.h"
 
 enum DelegationStatus : unsigned
@@ -65,14 +65,14 @@ public:
     const List<UnsatCertificateNode*> &getChildren() const;
 
     /*
-      Returns the list of PLC explanations of the node
+      Returns the list of PLC lemmas of the node
     */
-    const List<std::shared_ptr<PLCExplanation>> &getPLCExplanations() const;
+    const List<std::shared_ptr<PLCLemma>> &getPLCLemmas() const;
 
     /*
       Adds an PLC explanation to the list
     */
-    void addPLCExplanation( std::shared_ptr<PLCExplanation> &explanation );
+    void addPLCLemma( std::shared_ptr<PLCLemma> &explanation );
 
     /*
       Returns a pointer to a child by a head split, or NULL if not found
@@ -132,7 +132,7 @@ public:
 private:
     List<UnsatCertificateNode*> _children;
     UnsatCertificateNode *_parent;
-    List<std::shared_ptr<PLCExplanation>> _PLCExplanations;
+    List<std::shared_ptr<PLCLemma>> _PLCExplanations;
     Contradiction *_contradiction;
     PiecewiseLinearCaseSplit _headSplit;
 

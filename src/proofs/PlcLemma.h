@@ -17,43 +17,43 @@
 
 #include "PiecewiseLinearConstraint.h"
 #include "PiecewiseLinearFunctionType.h"
+#include "SparseUnsortedList.h"
 #include "Vector.h"
 
 /*
   Contains all necessary info of a ground bound update during a run (i.e from ReLU phase-fixing)
 */
-class PLCExplanation
+class PLCLemma
 {
 public:
-    PLCExplanation( unsigned causingVar,
-                    unsigned affectedVar,
-                    double bound,
-                    BoundType causingVarBound,
-                    BoundType affectedVarBound,
-                    const Vector<double> &explanation,
-                    PiecewiseLinearFunctionType constraintType );
+    PLCLemma( const List<unsigned> &causingVars,
+              unsigned affectedVar,
+              double bound,
+              BoundType causingVarBound,
+              BoundType affectedVarBound,
+              const Vector<SparseUnsortedList> &explanation,
+              PiecewiseLinearFunctionType constraintType );
 
-    ~PLCExplanation();
-
+    ~PLCLemma();
 
     /*
      Getters for all fields
     */
-    unsigned getCausingVar() const;
+    const List<unsigned> &getCausingVars() const;
     unsigned getAffectedVar() const;
     double getBound() const;
     BoundType getCausingVarBound() const;
     BoundType getAffectedVarBound() const;
-    const double *getExplanation() const;
+    const List<SparseUnsortedList> &getExplanations() const;
     PiecewiseLinearFunctionType getConstraintType() const;
 
 private:
-    unsigned _causingVar;
+    const List<unsigned> _causingVars;
     unsigned _affectedVar;
     double _bound;
     BoundType _causingVarBound;
     BoundType _affectedVarBound;
-    double *_explanation;
+    List<SparseUnsortedList> _explanations;
     PiecewiseLinearFunctionType _constraintType;
 };
 

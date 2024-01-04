@@ -75,12 +75,12 @@ const List<UnsatCertificateNode*> &UnsatCertificateNode::getChildren() const
     return _children;
 }
 
-const List<std::shared_ptr<PLCExplanation>> &UnsatCertificateNode::getPLCExplanations() const
+const List<std::shared_ptr<PLCLemma>> &UnsatCertificateNode::getPLCLemmas() const
 {
     return _PLCExplanations;
 }
 
-void UnsatCertificateNode::addPLCExplanation( std::shared_ptr<PLCExplanation> &explanation )
+void UnsatCertificateNode::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
 {
     _PLCExplanations.append( explanation );
 }

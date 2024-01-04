@@ -239,7 +239,7 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
-
+    const List<unsigned> getNativeAuxVars() const override;
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
@@ -270,6 +270,11 @@ private:
      Stored in _tighteningRow
     */
     void createTighteningRow();
+
+    /*
+     Assign a variable as an aux variable by the tableau, related to some existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __ReluConstraint_h__

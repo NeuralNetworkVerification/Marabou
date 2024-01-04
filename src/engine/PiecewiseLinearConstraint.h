@@ -453,9 +453,25 @@ public:
         return _cdInfeasibleCases;
     }
 
-    void setTableauAuxVar( unsigned var )
+    /*
+      Add a variable to the list of aux vars designated in the Tableau, add connect it to the constraintAuxVariable
+    */
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned  constraintAuxVar ) = 0;
+
+    /*
+      Get the native auxiliary vars
+    */
+    virtual const List<unsigned> getNativeAuxVars() const
     {
-        _tableauAuxVar = var;
+        return {};
+    }
+
+    /*
+      Get the tableau auxiliary vars
+    */
+    virtual const List<unsigned> &getTableauAuxVars() const
+    {
+        return _tableauAuxVars;
     }
 
 protected:
@@ -603,7 +619,7 @@ protected:
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
 
-    unsigned _tableauAuxVar;
+    List<unsigned> _tableauAuxVars;
 
 };
 

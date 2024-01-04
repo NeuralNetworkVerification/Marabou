@@ -77,6 +77,8 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
 
 MaxConstraint::~MaxConstraint()
 {
+    _elementToTighteningRow.clear();
+    _elementToTableauAux.clear();
     _elements.clear();
 }
 
@@ -147,6 +149,8 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
         setLowerBound( variable, value );
     }
 
+    bool proofs = _boundManager && _boundManager->shouldProduceProofs();
+
     /*
       See if we can eliminate any cases.
     */
@@ -190,19 +194,15 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 
     if ( isActive() && _boundManager )
     {
+        if ( proofs )
+            for ( const auto &element : _elements )
+                createElementTighteningRow( element );
+
         // TODO: optimize this. Don't need to recompute ALL possible bounds,
         // Can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
-        for ( const auto &tightening : tightenings )
-        {
-            if ( tightening._type == Tightening::LB )
-                _boundManager->tightenLowerBound( tightening._variable,
-                                                  tightening._value );
-            else if ( tightening._type == Tightening::UB )
-                _boundManager->tightenUpperBound( tightening._variable,
-                                                  tightening._value );
-        }
+        applyTightenings( tightenings );
     }
 }
 
@@ -220,6 +220,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
         setUpperBound( variable, value );
     }
+
+    bool proofs = _boundManager && _boundManager->shouldProduceProofs();
+
     /*
       See if we can eliminate any cases.
     */
@@ -257,19 +260,15 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 
     if ( isActive() && _boundManager )
     {
+        if ( proofs )
+            for ( const auto &element : _elements )
+                createElementTighteningRow( element );
+
         // TODO: optimize this. Don't need to recompute ALL possible bounds,
         // Can focus only on the newly learned bound and possible consequences.
         List<Tightening> tightenings;
         getEntailedTightenings( tightenings );
-        for ( const auto &tightening : tightenings )
-        {
-            if ( tightening._type == Tightening::LB )
-                _boundManager->tightenLowerBound( tightening._variable,
-                                                  tightening._value );
-            else if ( tightening._type == Tightening::UB )
-                _boundManager->tightenUpperBound( tightening._variable,
-                                                  tightening._value );
-        }
+        applyTightenings( tightenings );
     }
 }
 
@@ -301,25 +300,18 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
     if ( FloatUtils::areDisequal( fUB, maxElementUB ) )
     {
         if ( FloatUtils::gt( fUB, maxElementUB ) )
-        {
             tightenings.append( Tightening( _f, maxElementUB, Tightening::UB ) );
-        }
         else
-        {
             // f_UB <= maxElementUB
             for ( const auto &element : _elements )
-            {
                 if ( !existsUpperBound( element ) ||
                      FloatUtils::gt( getUpperBound( element ), fUB ) )
-                    tightenings.append
-                        ( Tightening( element, fUB, Tightening::UB ) );
-            }
-        }
+                    tightenings.append( Tightening( element, fUB, Tightening::UB ) );
     }
 
     // fLB cannot be smaller than maxElementLB
     if ( FloatUtils::lt( fLB, maxElementLB ) )
-        tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+            tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
 
     // TODO: bound tightening for aux vars.
 }
@@ -674,6 +666,12 @@ String MaxConstraint::serializeToString() const
 
 void MaxConstraint::eliminateCase( unsigned variable )
 {
+    bool proofs = _boundManager && _boundManager->shouldProduceProofs();
+
+    // Function is not yet supported for proof production
+    if ( proofs )
+        return;
+
     if ( _cdInfeasibleCases )
     {
         markInfeasible( variableToPhase( variable ) );
@@ -681,11 +679,24 @@ void MaxConstraint::eliminateCase( unsigned variable )
     else
     {
         _elements.erase( variable );
+        _eliminatedElements.insert( variable );
+
         if ( _elementToAux.exists( variable ) )
         {
             unsigned aux = _elementToAux[variable];
             _elementToAux.erase( variable );
             _auxToElement.erase( aux );
+        }
+        if ( proofs )
+        {
+            if ( _elementToTighteningRow.exists( variable ) && _elementToTighteningRow[variable] != NULL )
+            {
+                _elementToTighteningRow[variable] = NULL;
+                _elementToTighteningRow.erase( variable );
+            }
+
+            if ( _elementToTableauAux.exists( variable ) )
+                _elementToTableauAux.erase( variable );
         }
     }
 }
@@ -711,4 +722,85 @@ bool MaxConstraint::haveOutOfBoundVariables() const
 
     }
     return false;
+}
+
+void MaxConstraint::createElementTighteningRow( unsigned element )
+{
+    // Create the row only when needed and when not already created
+    if ( !_boundManager->getBoundExplainer() || _elementToTighteningRow[element] != NULL )
+        return;
+
+    _elementToTighteningRow[element] = std::make_shared<TableauRow>( 3 );
+
+    // f = element + aux + counterpart (an additional aux variable of tableau)
+    _elementToTighteningRow[element]->_lhs =  _f;
+    _elementToTighteningRow[element]->_row[0] = TableauRow::Entry( element, 1 );
+    _elementToTighteningRow[element]->_row[1] = TableauRow::Entry( _elementToAux[element], 1 );
+    _elementToTighteningRow[element]->_row[2] = TableauRow::Entry( _elementToTableauAux[element], 1 );
+}
+
+const List<unsigned> MaxConstraint::getNativeAuxVars() const
+{
+    List<unsigned> auxVars = {};
+    for ( const auto &element : _elements )
+        auxVars.append( _elementToAux[element]);
+
+    return auxVars;
+}
+
+void MaxConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar )
+{
+    unsigned element = _auxToElement[constraintAuxVar];
+    _elementToTableauAux[element] = tableauAuxVar;
+    _elementToTighteningRow[element] = nullptr;
+}
+
+void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) const
+{
+    bool proofs = _boundManager && _boundManager->shouldProduceProofs();
+
+    for ( const auto &tightening : tightenings )
+    {
+        if ( tightening._type == Tightening::LB )
+        {
+            if ( proofs )
+            {
+                unsigned maxElementForLB = _f;
+                double maxElementLB = FloatUtils::negativeInfinity();
+
+                for ( const auto &element : _elements )
+                {
+                    if ( existsLowerBound( element ) )
+                    {
+                        maxElementLB = FloatUtils::max( getLowerBound( element ), maxElementLB );
+                        if ( maxElementLB == getLowerBound( element ) )
+                            maxElementForLB = element;
+                    }
+                }
+
+                ASSERT( _elements.exists( maxElementForLB ) && _elementToTighteningRow[maxElementForLB] != NULL );
+                ASSERT ( tightening._variable == _f );
+                _boundManager->tightenLowerBound( _f, maxElementLB, *_elementToTighteningRow[maxElementForLB] );
+            }
+            else
+                _boundManager->tightenLowerBound( tightening._variable, tightening._value );
+        }
+        else if ( tightening._type == Tightening::UB )
+        {
+            if ( proofs )
+            {
+                if ( tightening._variable == _f )
+                    _boundManager->addLemmaExplanationAndTightenBound( _f, tightening._value, BoundType::UPPER, getElements(),
+                                                                       BoundType::UPPER, getType() );
+                else
+                {
+                    ASSERT (_elements.exists( tightening._variable ) );
+                    ASSERT( _elementToTighteningRow[tightening._variable] != NULL );
+                    _boundManager->tightenUpperBound( tightening._variable, tightening._value, *_elementToTighteningRow[tightening._variable] );
+                }
+            }
+            else
+                _boundManager->tightenUpperBound( tightening._variable, tightening._value );
+        }
+    }
 }

@@ -75,6 +75,8 @@ const bool GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCES
 const double GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD = 0.00001;
 const bool GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS = false;
 
+const unsigned GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND = 1000;
+
 const bool GlobalConfiguration::WARM_START = false;
 
 const unsigned GlobalConfiguration::MAX_ITERATIONS_WITHOUT_PROGRESS = 10000;
@@ -100,7 +102,8 @@ const unsigned GlobalConfiguration::POLARITY_CANDIDATES_THRESHOLD = 5;
 const unsigned GlobalConfiguration::DNC_DEPTH_THRESHOLD = 5;
 
 const double GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING = 0.01;
-const double GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE = 0.0000001;
+const double GlobalConfiguration::LEMMA_CERTIFICATION_TOLERANCE = 0.000001;
+const bool GlobalConfiguration::WRITE_JSON_PROOF = false;
 
 #ifdef ENABLE_GUROBI
 const unsigned GlobalConfiguration::GUROBI_NUMBER_OF_THREADS = 1;

@@ -1343,8 +1343,10 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         constraint->setStatistics( &_statistics );
 
         // Assuming aux var is use, add the constraint's auxiliary variable assigned to it in the tableau, to the constraint
-        if ( _produceUNSATProofs && _preprocessedQuery->_lastAddendToAux.exists( constraint->getParticipatingVariables().back() ) )
-             constraint->setTableauAuxVar( _preprocessedQuery->_lastAddendToAux.at( constraint->getParticipatingVariables().back() ) );
+        if ( _produceUNSATProofs  )
+            for ( unsigned var : constraint->getNativeAuxVars() )
+                if ( _preprocessedQuery->_lastAddendToAux.exists( var ) )
+                    constraint->addTableauAuxVar( _preprocessedQuery->_lastAddendToAux.at( var ), var );
     }
 
     _tsConstraints = _preprocessedQuery->getTranscendentalConstraints();
@@ -1399,22 +1401,19 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
         if ( _produceUNSATProofs )
         {
-            bool containsNonReLUs = false;
             for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
             {
-                if ( plConstraint->getType() != RELU )
+                if ( !UNSATCertificateUtils::getSupportedActivations().exists( plConstraint->getType() ) )
                 {
-                    containsNonReLUs = true;
                     _produceUNSATProofs = false;
                     Options::get()->setBool( Options::PRODUCE_PROOFS, false );
+                    String activationType = plConstraint->serializeToString().tokenize(",").back();
+                    ENGINE_LOG( "Turning off proof production since activation %s is not yet supported\n", activationType.ascii() );
+                    break;
                 }
             }
 
-            if ( containsNonReLUs )
-            {
-                ENGINE_LOG( "Turning off proof production since activations are not yet supported\n" );
-                printf( "Turning off proof production since activations not are yet supported\n" );
-            }
+
         }
 
         if ( _lpSolverType == LPSolverType::NATIVE )
@@ -2008,7 +2007,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             ENGINE_LOG( Stringf( "x%u: lower bound set to %.3lf", variable, bound._value ).ascii() );
             if ( _produceUNSATProofs && FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
             {
-                _boundManager.resetExplanation( variable, LOWER );
+                _boundManager.resetExplanation( variable, BoundType::LOWER );
                 updateGroundLowerBound( variable, bound._value );
                 _boundManager.tightenLowerBound( variable, bound._value );
             }
@@ -2020,7 +2019,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             ENGINE_LOG( Stringf( "x%u: upper bound set to %.3lf", variable, bound._value ).ascii() );
             if ( _produceUNSATProofs && FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {
-                _boundManager.resetExplanation( variable, UPPER );
+                _boundManager.resetExplanation( variable, BoundType::UPPER );
                 updateGroundUpperBound( variable, bound._value );
                 _boundManager.tightenUpperBound( variable, bound._value );
             }
@@ -3323,9 +3322,16 @@ bool Engine::certifyInfeasibility( unsigned var ) const
     if ( contradiction.empty() )
         return FloatUtils::isNegative( _groundBoundManager.getUpperBound( var ) - _groundBoundManager.getLowerBound( var ) );
 
-    double derivedBound = UNSATCertificateUtils::computeCombinationUpperBound( contradiction.data(), _tableau->getSparseA(),
-                                                                               _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(),
-                                                                               _tableau->getM(), _tableau->getN() );
+    SparseUnsortedList sparseContradiction = SparseUnsortedList();
+
+    contradiction.empty() ? sparseContradiction.initializeToEmpty() : sparseContradiction.initialize( contradiction.data(), contradiction.size() );
+
+    // In case contradiction is a vector of zeros
+    if ( sparseContradiction.empty() )
+        return FloatUtils::isNegative( _groundBoundManager.getUpperBound( var ) - _groundBoundManager.getLowerBound( var ) );
+
+    double derivedBound = UNSATCertificateUtils::computeCombinationUpperBound( sparseContradiction, _tableau->getSparseA(),
+                                                                               _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(), _tableau->getN() );
     return FloatUtils::isNegative( derivedBound );
 }
 
@@ -3333,15 +3339,17 @@ double Engine::explainBound( unsigned var, bool isUpper ) const
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> explanationVec( 0 );
+    SparseUnsortedList explanation( 0 );
 
-    if  ( !_boundManager.isExplanationTrivial( var, isUpper ) )
-        _boundManager.getExplanation( var, isUpper, explanationVec );
+    if ( !_boundManager.isExplanationTrivial( var, isUpper ) )
+        explanation = _boundManager.getExplanation( var, isUpper );
 
-    const double *explanation = explanationVec.empty() ? NULL : explanationVec.data();
+    if ( explanation.empty() )
+        return isUpper ? _groundBoundManager.getUpperBound( var ) : _groundBoundManager.getLowerBound( var );
+
     return UNSATCertificateUtils::computeBound( var, isUpper, explanation, _tableau->getSparseA(),
                                                 _groundBoundManager.getUpperBounds(), _groundBoundManager.getLowerBounds(),
-                                                _tableau->getM(), _tableau->getN() );
+                                                _tableau->getN() );
 }
 
 bool Engine::validateBounds( unsigned var, double epsilon, bool isUpper ) const
@@ -3378,7 +3386,7 @@ bool Engine::validateAllBounds( double epsilon ) const
     bool res = true;
 
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
-        if ( !validateBounds( var, epsilon, UPPER ) || !validateBounds( var, epsilon, LOWER ) )
+        if ( !validateBounds( var, epsilon, BoundType::UPPER ) || !validateBounds( var, epsilon, BoundType::LOWER ) )
             res = false;
 
     return res;
@@ -3414,12 +3422,12 @@ unsigned Engine::explainFailureWithTableau()
             _tableau->getTableauRow( i, &boundUpdateRow );
             basicVar = boundUpdateRow._lhs;
 
-            if ( FloatUtils::gt( _boundManager.computeRowBound( boundUpdateRow, LOWER ), _boundManager.getUpperBound( basicVar ) )
-                 && explainAndCheckContradiction( basicVar, LOWER, &boundUpdateRow ) )
+            if ( FloatUtils::gt( _boundManager.computeRowBound( boundUpdateRow, BoundType::LOWER ), _boundManager.getUpperBound( basicVar ) )
+                 && explainAndCheckContradiction( basicVar, BoundType::LOWER, &boundUpdateRow ) )
                 return basicVar;
 
-            if ( FloatUtils::lt( _boundManager.computeRowBound( boundUpdateRow, UPPER ), _boundManager.getLowerBound( basicVar ) )
-                 && explainAndCheckContradiction( basicVar, UPPER, &boundUpdateRow ) )
+            if ( FloatUtils::lt( _boundManager.computeRowBound( boundUpdateRow, BoundType::UPPER ), _boundManager.getLowerBound( basicVar ) )
+                 && explainAndCheckContradiction( basicVar, BoundType::UPPER, &boundUpdateRow ) )
                 return basicVar;
         }
     }
@@ -3449,9 +3457,9 @@ unsigned Engine::explainFailureWithCostFunction()
         curUpper = ( curCost < 0 );
 
         // Check the basic variable has no slack
-        if ( !( !curUpper && FloatUtils::gt( _boundManager.computeSparseRowBound( *costRow, LOWER, curBasicVar ),
+        if ( !( !curUpper && FloatUtils::gt( _boundManager.computeSparseRowBound( *costRow, BoundType::LOWER, curBasicVar ),
                                          _boundManager.getUpperBound( curBasicVar ) ) ) &&
-             !( curUpper && FloatUtils::lt( _boundManager.computeSparseRowBound( *costRow, UPPER, curBasicVar ),
+             !( curUpper && FloatUtils::lt( _boundManager.computeSparseRowBound( *costRow, BoundType::UPPER, curBasicVar ),
                                          _boundManager.getLowerBound( curBasicVar ) ) ) )
 
             continue;
@@ -3472,8 +3480,8 @@ bool Engine::explainAndCheckContradiction( unsigned var, bool isUpper, const Tab
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> backup( 0 );
-    _boundManager.getExplanation( var, isUpper, backup );
+    SparseUnsortedList backup( 0 );
+    backup = _boundManager.getExplanation( var, isUpper );
 
     _boundManager.updateBoundExplanation( *row, isUpper, var );
 
@@ -3491,8 +3499,8 @@ bool Engine::explainAndCheckContradiction( unsigned var, bool isUpper, const Spa
 {
     ASSERT( _produceUNSATProofs );
 
-    Vector<double> backup( 0 );
-    _boundManager.getExplanation( var, isUpper, backup );
+    SparseUnsortedList backup( 0 );
+    backup = _boundManager.getExplanation( var, isUpper );
 
     _boundManager.updateBoundExplanationSparse( *row, isUpper, var );
 
@@ -3527,9 +3535,10 @@ bool Engine::certifyUNSATCertificate()
 
     for ( auto &constraint : _plConstraints )
     {
-        if ( constraint->getType() != RELU )
+        if ( !UNSATCertificateUtils::getSupportedActivations().exists( constraint->getType() ) )
         {
-            printf( "Certification Error! Marabou doesn't support certification for none ReLU constraints.\n" );
+            String activationType = constraint->serializeToString().tokenize(",").back();
+            printf( "Certification Error! Network contains activation function %s, that is not yet supported by Marabou certification.\n", activationType.ascii() );
             return false;
         }
     }
@@ -3546,7 +3555,14 @@ bool Engine::certifyUNSATCertificate()
         groundLowerBounds[i] = _groundBoundManager.getLowerBound( i );
     }
 
-    Checker unsatCertificateChecker( _UNSATCertificate, _tableau->getM(),  _tableau->getSparseA(),
+    if ( GlobalConfiguration::WRITE_JSON_PROOF )
+    {
+        File file( JsonWriter::PROOF_FILENAME );
+        JsonWriter::writeProofToJson( _UNSATCertificate, _tableau->getM(), _tableau->getSparseA(),
+                                      groundUpperBounds, groundLowerBounds, _plConstraints, file );
+    }
+
+    Checker unsatCertificateChecker( _UNSATCertificate, _tableau->getM(), _tableau->getSparseA(),
                                      groundUpperBounds, groundLowerBounds, _plConstraints );
     bool certificationSucceeded = unsatCertificateChecker.check();
 
@@ -3568,7 +3584,7 @@ bool Engine::certifyUNSATCertificate()
         if ( _statistics.getUnsignedAttribute( Statistics::NUM_POPS ) )
         {
             double delegationRatio = _statistics.getUnsignedAttribute( Statistics::NUM_DELEGATED_LEAVES ) / _statistics.getUnsignedAttribute( Statistics::NUM_CERTIFIED_LEAVES );
-            ASSERT( FloatUtils::lt( delegationRatio, 0.01 ));
+            ASSERT( FloatUtils::lt( delegationRatio, 0.01 ) );
         }
     });
 
@@ -3595,23 +3611,27 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
     ASSERT( _produceUNSATProofs );
 
     unsigned m = _tableau->getM();
-    Vector<double> upperBoundExplanation( 0 );
-    Vector<double> lowerBoundExplanation( 0 );
+    SparseUnsortedList upperBoundExplanation( 0 );
+    SparseUnsortedList lowerBoundExplanation( 0 );
 
-    if ( !_boundManager.isExplanationTrivial( infeasibleVar, UPPER ) )
-        _boundManager.getExplanation( infeasibleVar, UPPER, upperBoundExplanation );
+    if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::UPPER ) )
+        upperBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::UPPER );
 
-    if( !_boundManager.isExplanationTrivial( infeasibleVar, LOWER ) )
-        _boundManager.getExplanation( infeasibleVar, LOWER, lowerBoundExplanation );
+    if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
+        lowerBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::LOWER );
 
     if ( upperBoundExplanation.empty() && lowerBoundExplanation.empty() )
         return Vector<double>( 0 );
 
-    Vector<double> contradiction = upperBoundExplanation.empty() ? Vector<double>( m, 0 ) : Vector<double>( upperBoundExplanation );
+    Vector<double> contradiction = Vector<double>( m, 0 );
+
+    if ( !upperBoundExplanation.empty() )
+        for ( const auto &entry : upperBoundExplanation )
+            contradiction[entry._index] = entry._value;
 
     if ( !lowerBoundExplanation.empty() )
-        for ( unsigned i = 0; i < m; ++i )
-            contradiction[i] -= lowerBoundExplanation[i];
+        for ( const auto &entry : lowerBoundExplanation )
+            contradiction[entry._index] -= entry._value;
 
     return contradiction;
 }
