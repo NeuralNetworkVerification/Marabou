@@ -8,7 +8,7 @@ in the top-level source directory) and their institutional affiliations.
 All rights reserved. See the file COPYING in the top-level source
 directory for licensing information.
 
-MarabouNetworkComposition represents neural networks with piecewise linear constraints derived from the ONNX format
+MarabouNetworkComposition represents split subnets of a neural network with piecewise linear constraints derived from the ONNX format
 '''
 
 import numpy as np
@@ -94,11 +94,12 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         Returns:
             (tuple): tuple containing:
                 - exitCode (str): A string representing the exit code (unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
-                - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - vals (Dict[int, float]): Empty dictionary. This is for compatibility with MarabouNetwork.
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed (Only for the last subnet)
         """
         if options == None:
             options = MarabouCore.Options()        
+        
         for i, ipqFile in enumerate(self.ipqs):
             # load input query
             ipq = Marabou.loadQuery(ipqFile)
@@ -127,12 +128,12 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
                 _, bounds, _ = MarabouCore.calculateBounds(ipq, options)
 
     def encodeCalculateInputBounds(self, ipq, i, bounds):
-        """Function to encode input variables and calculate bounds for the next subnet
-        
+        """Function to encode input variables and set bounds for the current subnet
+
         Args:
             ipq (:class:`~maraboupy.MarabouCore.InputQuery`): InputQuery object to encode input variables
-            i (int): Index of the subnet
-            bounds (dict): Dictionary containing bounds for variables
+            i (int): Index of the previous subnet
+            bounds (dict): Dictionary containing bounds for variables of the previous subnet
 
         Returns:
             None
@@ -173,7 +174,7 @@ class MarabouNetworkComposition(MarabouNetwork.MarabouNetwork):
         """Function to encode output variables
         Args:
             ipq:    (:class:`~maraboupy.MarabouCore.InputQuery`): InputQuery object to encode output variables
-            i:      (int): Index of the subnet
+            i:      (int): Index of the previous subnet
         
         Returns:
             None

@@ -1,8 +1,5 @@
-# Tests MarabouNetwork features not tested by it's subclasses
 from maraboupy import Marabou
-from maraboupy import MarabouCore
 import os
-import numpy as np
 
 # Global settings
 OPT = Marabou.createOptions(verbosity = 0) # Turn off printing
