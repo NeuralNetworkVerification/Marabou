@@ -1362,12 +1362,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         Returns:
             None
         """
-        input_vars = self.inputVars[0].reshape(-1)
-        output_vars = self.outputVars[0][0].reshape(-1)
-
-        input_var_idx = input_vars[0]
-        output_var_idx = output_vars[0]
-
         with open(vnnlibFilename, 'r') as f:
             lines = f.readlines()
 
@@ -1379,82 +1373,364 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             vnnlib_content += lines[i].strip()
 
         vnnlib_content = "(" + vnnlib_content + ")"
-        vnnlib_items = make_tree(vnnlib_content)
+        vnnlib_commands = make_tree(vnnlib_content)
 
-        for statement in vnnlib_items:
-            statement_type = statement[0]
+        for command in vnnlib_commands:
+            self.parse_command(command)
 
-            if statement_type == "declare-const":
-                var_name = statement[1]
-                if var_name[0] == 'X':
-                    assert input_var_idx <= input_vars[-1]
-                    self.vnnlibMap[statement[1]] = input_var_idx
-                    input_var_idx += 1
-                elif var_name[0] == 'Y':
-                    assert output_var_idx <= output_vars[-1]
-                    self.vnnlibMap[statement[1]] = output_var_idx
-                    output_var_idx += 1
+    def parse_command(self, command):
+        """
+        Parses a single VNN-LIB command
+        Args:
+            command (lst): The command to pars
+
+        Returns:
+            None
+        """
+        assert isinstance(command, list) and len(command) >= 2
+        command_type = command[0]
+        assert isinstance(command_type, str)
+
+        if command_type == "declare-const":
+            self.parse_declare_const(command[1], command[2])
+        elif command_type == "assert":
+            self.parse_assert(command[1])
+        else:
+            raise NotImplementedError(f"VNN-LIB statement type '{command_type} not implemented")
+
+    def parse_declare_const(self, var_name, var_type):
+        """
+        Parses a single "declare-const" command
+        Args:
+            var_name (str): Declared variable name
+            var_type (str): Declared variable type
+
+        Returns:
+            None
+        """
+        assert isinstance(var_name, str) and isinstance(var_type, str)
+
+        if var_type != "Real":
+            raise NotImplementedError("Declaration of variables not of type 'Real' is not supported")
+
+        var_kind, var_index = var_name.split("_")
+        if not var_index.isnumeric():
+            raise RuntimeError("Variable index should be a non-negative integer number")
+
+        if var_kind == 'X':
+            if int(var_index) >= len(self.inputVars[0].reshape(-1)):
+                raise RuntimeError("There is an input variable declaration in the VNN-LIB specification that does not "
+                                   "exists in the ONNX network itself")
+            self.vnnlibMap[var_name] = (int(var_index), var_type)
+        elif var_kind == 'Y':
+            if int(var_index) >= len(self.outputVars[0][0].reshape(-1)):
+                raise RuntimeError("There is an output variable declaration in the VNN-LIB specification that does not "
+                                   "exists in the ONNX network itself")
+            self.vnnlibMap[var_name] = (int(var_index) + len(self.inputVars[0].reshape(-1)), var_type)
+        else:
+            raise RuntimeError("All variable name should should begin with 'X_' for input variables, "
+                               "and 'Y_' for output variables in variable declarations")
+
+
+    def parse_assert(self, assert_command):
+        """
+        Parses a single "assert" command
+        Args:
+            assert_command (list): The 'assert' command to parse
+
+        Returns:
+            None
+        """
+        assert isinstance(assert_command, list) and len(assert_command) >= 2
+        operator = assert_command[0]
+        if operator in {"<=", ">=", "=", "and"}:
+            equations = self.parse_condition(assert_command)
+            for eq in equations:
+                self.addEquation(eq)
+        elif operator == "or": # TODO: change after fixing MarabouUtils.Equation for Disjunction constraint
+            disjuncts = self.parse_condition(assert_command)
+            new_disjuncts = []
+            for disjunct in disjuncts:
+                new_disjunct = []
+                for eq in disjunct:
+                    new_eq = MarabouCore.Equation(eq.EquationType)
+                    for (c, v) in eq.addendList:
+                        new_eq.addAddend(c, v)
+                    new_eq.setScalar(eq.scalar)
+                    new_disjunct.append(new_eq)
+
+                new_disjuncts.append(new_disjunct)
+
+            self.addDisjunctionConstraint(new_disjuncts)
+        else:
+            raise NotImplementedError(f"assert operator {operator} not implemented")
+
+    def parse_condition(self, cond_command):
+        """
+        Parses a single condition
+        Args:
+            cond_command: Condition to parse
+
+        Returns:
+            list of Equations, or list of list of Equations (in case of disjunction)
+        """
+        assert isinstance(cond_command, list)
+        if len(cond_command) < 2:
+            raise RuntimeError("Each condition command should contain at least 1 argument")
+
+        operator = cond_command[0]
+        if operator == "<=":
+            if len(cond_command) != 3:
+                raise RuntimeError("Assert command of type '<=' only support 2 terms as arguments")
+
+            arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
+            return [self.parse_le(arg1, arg2)]
+        elif operator == ">=":
+            if len(cond_command) != 3:
+                raise RuntimeError("Assert command of type '>=' only support 2 terms as arguments")
+
+            arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
+            return [self.parse_le(arg2, arg1)]
+        elif operator == "=":
+            if len(cond_command) != 3:
+                raise RuntimeError("Assert command of type '=' only support 2 terms as arguments")
+
+            arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
+            eq1, eq2 = self.parse_le(arg1, arg2), self.parse_le(arg2, arg1)
+            return [eq1, eq2]
+        elif operator == "and":
+            cond_equations = []
+            for sub_cond_command in cond_command[1:]:
+                if not isinstance(sub_cond_command, list):
+                    raise RuntimeError("Sub conditions of 'and' should be between parentheses characters '(' and ')'")
+
+                cond_equations += self.parse_condition(sub_cond_command)
+
+            return cond_equations
+        elif operator == "or":
+            disjuncts = []
+            for sub_cond_command in cond_command[1:]:
+                if not isinstance(sub_cond_command, list):
+                    raise RuntimeError("Sub conditions of 'or' should be between parentheses characters '(' and ')'")
+
+                disjuncts.append(self.parse_condition(sub_cond_command))
+
+            return disjuncts
+
+    def parse_term(self, term):
+        """
+        Parses a single term
+        Args:
+            term (list): The term to parse
+
+        Returns:
+            a tuple of parsing results, depending on term's operator type
+        """
+        if isinstance(term, list):
+            assert len(term) >= 2
+            operator = term[0]
+            if operator == "+":
+                return self.parse_plus(term)
+            elif operator == "-":
+                return self.parse_minus(term)
+            elif operator == "*":
+                return self.parse_mul(term)
+        elif term in self.vnnlibMap:
+            return self.vnnlibMap[term][0], "var"
+        else:
+            try:
+                const_value = float(term)
+                return const_value, "const"
+            except ValueError:
+                raise RuntimeError(f"Term {term} is not a variable declaration, a number or a function")
+
+    def parse_le(self, arg1, arg2):
+        """
+        Parses an '<=' condition
+        Args:
+            arg1 (tuple): Left term of '<='
+            arg2 (tuple): Right term of '<='
+
+        Returns:
+            Equation representing this condition
+        """
+        assert isinstance(arg1, tuple) and isinstance(arg2, tuple)
+        assert isinstance(arg1[-1], str) and isinstance(arg2[-1], str)
+
+        eq = MarabouUtils.Equation(MarabouCore.Equation.LE)
+        scalar = 0
+
+        # First calculate the scalar (before division by coefficient of variable in mul if exists):
+        if arg1[-1] == "const":
+            assert len(arg1) == 2 and isinstance(arg1[0], float)
+            scalar -= arg1[0]
+        elif arg1[-1] == "+":
+            assert len(arg1) == 3 and isinstance(arg1[1], float)
+            scalar -= arg1[1]
+        elif arg1[-1] == "-":
+            assert len(arg1) == 3 and isinstance(arg1[0], tuple) and isinstance(arg1[1], tuple)
+            assert len(arg1[0]) == 2 and len(arg1[1]) == 2
+            if arg1[0][1] == "const":
+                scalar -= arg1[0][0]
+
+            if arg1[1][1] == "const":
+                scalar -= arg1[1][0]
+        elif arg1[-1] == "*" and arg1[0] is None:
+            assert isinstance(arg1[1], float)
+            scalar -= arg1[1]
+
+        if arg2[-1] == "const":
+            assert len(arg2) == 2 and isinstance(arg2[0], float)
+            scalar += arg2[0]
+        elif arg2[-1] == "+":
+            assert len(arg2) == 3 and isinstance(arg2[1], float)
+            scalar += arg2[1]
+        elif arg2[-1] == "-":
+            assert len(arg2) == 3 and isinstance(arg2[0], tuple) and isinstance(arg2[1], tuple)
+            assert len(arg2[0]) == 2 and len(arg2[1]) == 2
+            if arg2[0][1] == "const":
+                scalar += arg1[0][0]
+            if arg2[1][1] == "const":
+                scalar += arg1[1][0]
+            elif arg2[-1] == "*" and arg2[0] is None:
+                assert isinstance(arg2[1], float)
+                scalar += arg2[1]
+
+        # Next add the variables (and divide scalar by coefficient of variable in mul if exists):
+        if arg1[-1] == "var":
+            assert len(arg1) == 2 and isinstance(arg1[0], int)
+            eq.addAddend(1, arg1[0])
+        elif arg1[-1] == "+":
+            assert isinstance(arg1[0], list)
+            for v in arg1[0]:
+                eq.addAddend(1, v)
+        elif arg1[-1] == "-":
+            if arg1[0][1] == "var":
+                eq.addAddend(1, arg1[0][0])
+            if arg1[1][1] == "var":
+                eq.addAddend(-1, arg1[1][0])
+        elif arg1[-1] == "*" and arg1[0] is not None:
+            assert isinstance(arg1[0], int)
+            if arg1[1] == 0:
+                eq.addAddend(0, arg1[0])
+            elif arg1[1] > 0:
+                scalar /= arg1[1]
+                eq.addAddend(1, arg1[0])
+            else: # arg1[1] < 0
+                scalar /= (-arg1[1])
+                eq.addAddend(-1, arg1[0])
+
+        if arg2[-1] == "var":
+            assert len(arg2) == 2 and isinstance(arg2[0], int)
+            eq.addAddend(-1, arg2[0])
+        elif arg2[-1] == "+":
+            assert isinstance(arg2[0], list)
+            for v in arg2[0]:
+                eq.addAddend(-1, v)
+        elif arg2[-1] == "-":
+            if arg2[0][1] == "var":
+                eq.addAddend(-1, arg2[0][0])
+            if arg2[1][1] == "var":
+                eq.addAddend(1, arg2[1][0])
+        elif arg2[-2] == "*" and arg2[0] is not None:
+            assert isinstance(arg2[0], int)
+            if arg2[1] == 0:
+                eq.addAddend(0, arg1[0])
+            elif arg2[1] > 0:
+                scalar /= arg1[1]
+                eq.addAddend(-1, arg1[0])
+            else: # arg2[1] < 0
+                scalar /= (-arg1[1])
+                eq.addAddend(1, arg1[0])
+
+        eq.setScalar(scalar)
+        return eq
+
+    def parse_plus(self, plus_term):
+        """
+        Parses a single '+' term
+        Args:
+            plus_term (list): The '+' term to parse
+
+        Returns:
+            A 3-tuple of (list of variables, sum of constants, '+')
+        """
+        assert isinstance(plus_term, list)
+        assert plus_term[0] == "+"
+
+        if len(plus_term) < 3:
+            raise RuntimeError("A '+' term should contain at lease 2 arguments")
+
+        args = [self.parse_term(plus_term[i]) for i in range(1, len(plus_term))]
+        variables = []
+        const_total = 0
+        for arg in args:
+            assert isinstance(arg, tuple)
+            if len(arg) != 2 or arg[1] != "const" or arg[1] != "var":
+                raise RuntimeError("All arguments of a '+' term should be declared variable names, or constant numbers")
+
+            if arg[1] == "var":
+                variables.append(arg[0])
+            else: # arg[1] == "const"
+                const_total += arg[0]
+
+        return variables, const_total, "+"
+
+    def parse_minus(self, minus_term):
+        """
+        Parses a single '-' term
+        Args:
+            minus_term (list): The '-' term to parse
+
+        Returns:
+            A 3-tuple of (term of left argument, term of right argument, '-')
+        """
+        assert isinstance(minus_term, list)
+        assert minus_term[0] == "-"
+
+        if len(minus_term) != 3:
+            raise RuntimeError("A '-' term should contain 2 arguments")
+
+        arg1, arg2 = self.parse_term(minus_term[1]), self.parse_term(minus_term[2])
+        assert isinstance(arg1, tuple) and isinstance(arg2, tuple)
+        if len(arg1) != 2 or arg1[1] != "const" or arg1[1] != "var" or len(arg2) != 2 or arg2[2] != "const" or arg2[2] != "var":
+            raise RuntimeError("Both arguments of a '-' term should be declared variable names, or constant numbers")
+
+        return arg1, arg2, "-"
+
+    def parse_mul(self, mul_term):
+        """
+        Parses a single '*' term
+        Args:
+            mul_term (tuple): The '*' term to parse
+
+        Returns:
+            A 3-tuple of (variable or None, multiplication of constant numbers, '*')
+        """
+        assert isinstance(mul_term, list)
+        assert mul_term[0] == "*"
+
+        if len(mul_term) < 3:
+            raise RuntimeError("A '*' term should contain at lease 2 arguments")
+
+        args = [self.parse_term(mul_term[i]) for i in range(1, len(mul_term))]
+        variable = None
+        const_total = 1
+
+        for arg in args:
+            assert isinstance(arg, tuple)
+            if len(arg) != 2 or arg[1] != "const" or arg[1] != "var":
+                raise RuntimeError("All arguments of a '*' term should be declared variable names, or constant numbers")
+
+            if arg[1] == "var":
+                if variable is None:
+                    variable = arg[0]
                 else:
-                    raise RuntimeError("All variable name should should begin with 'X_' for input variables, "
-                                       "and 'Y_' for output variables in variable declarations")
+                    raise RuntimeError("In a '*' term only 1 variable argument is allowed")
+            else: # arg[1] == "const"
+                const_total *= arg[0]
 
-            elif statement_type == "assert":
-                operator = statement[1][0]
-                if operator in {"<=", ">="}:
-                    if operator == "<=":
-                        e = MarabouUtils.Equation(MarabouCore.Equation.LE)
-                    else:  # operator == ">=":
-                        e = MarabouUtils.Equation(MarabouCore.Equation.GE)
-
-                    var_name = statement[1][1]
-                    second_argument = statement[1][2]
-
-                    e.addAddend(1, self.vnnlibMap[var_name])
-                    if second_argument in self.vnnlibMap:
-                        e.addAddend(-1, self.vnnlibMap[second_argument])
-                        e.setScalar(0)
-                    else:
-                        e.setScalar(float(second_argument))
-
-                    self.equList.append(e)
-
-                elif operator == "or":
-                    disjuncts = []
-                    for disjunt_terms in statement[1][1:]:
-                        assert disjunt_terms[0] == "and"
-
-                        conjuncts = []
-
-                        for conjunct_terms in disjunt_terms[1:]:
-                            operator = conjunct_terms[0]
-                            var_name = conjunct_terms[1]
-                            second_argument = conjunct_terms[2]
-
-                            if operator == "<=":
-                                e = MarabouCore.Equation(MarabouCore.Equation.LE)
-                            elif operator == ">=":
-                                e = MarabouCore.Equation(MarabouCore.Equation.GE)
-                            else:
-                                raise NotImplementedError("'or' operator specified in vnnlib file supports only disjuncts "
-                                                          "with one of the following operators: '>=', '<='")
-
-                            e.addAddend(1, self.vnnlibMap[var_name])
-                            if second_argument in self.vnnlibMap:
-                                e.addAddend(-1, self.vnnlibMap[second_argument])
-                                e.setScalar(0)
-                            else:
-                                e.setScalar(float(second_argument))
-
-                            conjuncts.append(e)
-
-                        disjuncts.append(conjuncts)
-
-                    self.addDisjunctionConstraint(disjuncts)
-
-                else:
-                    raise NotImplementedError(f"VNN-LIB operator '{operator}' not implemented")
-            else:
-                raise NotImplementedError(f"VNN-LIB statement type '{statement_type} not implemented")
+            return variable, const_total, "*"
 
 def getBroadcastShape(shape1, shape2):
     """Helper function to get the shape that results from broadcasting these shapes together
@@ -1498,3 +1774,4 @@ def make_tree(content):
         return result, index
 
     return req(1)[0]
+
