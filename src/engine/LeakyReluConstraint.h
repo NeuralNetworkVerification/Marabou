@@ -2,7 +2,7 @@
 /*! \file LeakyReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Andrew Haoze Wu
+ **   Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -14,33 +14,36 @@
  **
  ** It distinguishes two relevant phases for search:
  ** RELU_PHASE_ACTIVE   : b > 0 and f > 0
- ** RELU_PHASE_INACTIVE : b <=0 and f <= 0
+ ** RELU_PHASE_INACTIVE : b <=0 and f = 0
  **
- ** The constraint operates in two modes: pre-processing mode, which stores
- ** bounds locally, and context dependent mode, which is used during the search.
+ ** The constraint is implemented as PiecewiseLinearConstraint
+ ** and operates in two modes:
+ **   * pre-processing mode, which stores bounds locally, and
+ **   * context dependent mode, used during the search.
+ **
  ** Invoking initializeCDOs method activates the context dependent mode, and the
- ** constraint object synchronizes its state automatically with the central context
- ** object.
+ ** LeakyReluConstraint object synchronizes its state automatically with the central
+ ** Context object.
  **/
 
 #ifndef __LeakyReluConstraint_h__
 #define __LeakyReluConstraint_h__
 
-#include "ContextDependentPiecewiseLinearConstraint.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
+
 #include <cmath>
 
-class LeakyReluConstraint : public ContextDependentPiecewiseLinearConstraint
+class LeakyReluConstraint : public PiecewiseLinearConstraint
 {
 public:
     /*
-      The f variable is the leaky relu output on the b variable:
-      f = leakyReLU_slope(b)
+      The f variable is the LeakyRelu output on the b variable:
+      f = leakyRelu( b )
     */
     LeakyReluConstraint( unsigned b, unsigned f );
-    LeakyReluConstraint( unsigned b, unsigned f, double slope );
     LeakyReluConstraint( const String &serializedLeakyRelu );
 
     /*
@@ -51,7 +54,7 @@ public:
     /*
       Return a clone of the constraint.
     */
-    ContextDependentPiecewiseLinearConstraint *duplicateConstraint() const override;
+    PiecewiseLinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
@@ -68,9 +71,14 @@ public:
       These callbacks are invoked when a watched variable's value
       changes, or when its bounds change.
     */
-    void notifyVariableValue( unsigned variable, double value ) override;
     void notifyLowerBound( unsigned variable, double bound ) override;
     void notifyUpperBound( unsigned variable, double bound ) override;
+
+    /*
+       Check conditions that fix Phase and met update phase status
+     */
+    void checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound );
+    void checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound );
 
     /*
       Returns true iff the variable participates in this piecewise
@@ -156,19 +164,36 @@ public:
 
     /*
       For preprocessing: get any auxiliary equations that this
-      constraint would like to add to the equation pool. In the ReLU
-      case, this is an equation of the form aux = f - b, where aux is
-      non-negative.
+      constraint would like to add to the equation pool. In the Leaky ReLU
+      case, there are two equations:
+          aux_active = f - b, where aux is non-negative.
+          aux_inactive = f - slope * b, where aux is non-negative
     */
-    void addAuxiliaryEquations( InputQuery &inputQuery ) override;
+    void transformToUseAuxVariables( InputQuery &inputQuery ) override;
 
     /*
-      Ask the piecewise linear constraint to contribute a component to the cost
-      function. If implemented, this component should be empty when the constraint is
-      satisfied or inactive, and should be non-empty otherwise. Minimizing the returned
-      equation should then lead to the constraint being "closer to satisfied".
+      Whether the constraint can contribute the SoI cost function.
     */
-    virtual void getCostFunctionComponent( Map<unsigned, double> &cost ) const override;
+    virtual inline bool supportSoI() const override
+    {
+        return true;
+    }
+
+    /*
+      Ask the piecewise linear constraint to add its cost term corresponding to
+      the given phase to the cost function. The cost term for Leaky ReLU is:
+        _f - _b for the active phase
+        _f - slope * b for the inactive phase
+    */
+    virtual void getCostFunctionComponent( LinearExpression &cost,
+                                           PhaseStatus phase ) const override;
+
+    /*
+      Return the phase status corresponding to the values of the *input*
+      variables in the given assignment.
+    */
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
 
     /*
       Returns string with shape: relu, _f, _b
@@ -182,11 +207,18 @@ public:
     unsigned getF() const;
     double getSlope() const;
 
+    /*
+      Check if the aux variable is in use and retrieve it
+    */
+    bool auxVariablesInUse() const;
+    unsigned getAuxActive() const;
+    unsigned getAuxInactive() const;
+
     bool supportPolarity() const override;
 
     /*
-      Return the polarity of this ReLU, which computes how symmetric
-      the bound of the input to this ReLU is with respect to 0.
+      Return the polarity of this LeakyReLU, which computes how symmetric
+      the bound of the input to this LeakyReLU is with respect to 0.
       Let LB be the lowerbound, and UB be the upperbound.
       If LB >= 0, polarity is 1.
       If UB <= 0, polarity is -1.
@@ -203,18 +235,21 @@ public:
     */
     void updateDirection() override;
 
-
     PhaseStatus getDirection() const;
 
     void updateScoreBasedOnPolarity() override;
 
+    const List<unsigned> getNativeAuxVars() const override;
+
 private:
     unsigned _b, _f;
-    double _slope;
+    bool _auxVarsInUse;
+    unsigned _auxActive;
+    unsigned _auxInactive;
 
     /*
       Denotes which case split to handle first.
-      And which phase status to repair a relu into.
+      And which phase status to repair a LeakyRelu into.
     */
     PhaseStatus _direction;
 
@@ -229,6 +264,19 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    std::shared_ptr<TableauRow> _tighteningRow;
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint
+     Stored in _tighteningRow
+    */
+    void createTighteningRow();
+
+    /*
+     Assign a variable as an aux variable by the tableau, related to some existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __LeakyReluConstraint_h__
