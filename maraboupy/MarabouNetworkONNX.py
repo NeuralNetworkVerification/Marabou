@@ -1443,7 +1443,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         assert isinstance(assert_command, list) and len(assert_command) >= 2
         operator = assert_command[0]
-        if operator in {"<=", ">=", "=", "and"}:
+        if operator in {"<=", ">=", "and"}:
             equations = self.parse_condition(assert_command)
             for eq in equations:
                 self.addEquation(eq)
@@ -1491,13 +1491,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
             arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
             return [self.parse_le(arg2, arg1)]
-        elif operator == "=":
-            if len(cond_command) != 3:
-                raise RuntimeError("Assert command of type '=' only support 2 terms as arguments")
-
-            arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
-            eq1, eq2 = self.parse_le(arg1, arg2), self.parse_le(arg2, arg1)
-            return [eq1, eq2]
         elif operator == "and":
             cond_equations = []
             for sub_cond_command in cond_command[1:]:
@@ -1530,9 +1523,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             assert len(term) >= 2
             operator = term[0]
             if operator == "+":
-                return self.parse_plus(term)
+                return self.parse_add(term)
             elif operator == "-":
-                return self.parse_minus(term)
+                return self.parse_sub(term)
             elif operator == "*":
                 return self.parse_mul(term)
         elif term in self.vnnlibMap:
@@ -1560,140 +1553,115 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         eq = MarabouUtils.Equation(MarabouCore.Equation.LE)
         scalar = 0
 
-        # First calculate the scalar (before division by coefficient of variable in mul if exists):
         if arg1[-1] == "const":
             assert len(arg1) == 2 and isinstance(arg1[0], float)
             scalar -= arg1[0]
+        elif arg1[-1] == "var":
+            assert len(arg1) == 2 and isinstance(arg1[0], int)
+            eq.addAddend(1, arg1[0])
         elif arg1[-1] == "+":
-            assert len(arg1) == 3 and isinstance(arg1[1], float)
+            assert len(arg1) == 3 and isinstance(arg1[0], list) and isinstance(arg1[1], float)
+            for v in arg1[0]:
+                eq.addAddend(1, v)
             scalar -= arg1[1]
         elif arg1[-1] == "-":
             assert len(arg1) == 3 and isinstance(arg1[0], tuple) and isinstance(arg1[1], tuple)
             assert len(arg1[0]) == 2 and len(arg1[1]) == 2
             if arg1[0][1] == "const":
                 scalar -= arg1[0][0]
-
+            else: # arg1[0][1] == "var"
+                eq.addAddend(1, arg1[0][0])
             if arg1[1][1] == "const":
                 scalar -= arg1[1][0]
-        elif arg1[-1] == "*" and arg1[0] is None:
-            assert isinstance(arg1[1], float)
-            scalar -= arg1[1]
+            else: # arg1[1][1] == "var"
+                eq.addAddend(-1, arg1[1][0])
+        elif arg1[-1] == "*":
+            assert len(arg1) == 3 and (isinstance(arg1[0], int) or arg1[0] is None) and isinstance(arg1[1], float)
+            if arg1[0] is None:
+                scalar -= arg1[1]
+            else:
+                eq.addAddend(arg1[1], arg1[0])
 
         if arg2[-1] == "const":
             assert len(arg2) == 2 and isinstance(arg2[0], float)
             scalar += arg2[0]
+        elif arg2[-1] == "var":
+            assert len(arg2) == 2 and isinstance(arg2[0], int)
+            eq.addAddend(-1, arg2[0])
         elif arg2[-1] == "+":
-            assert len(arg2) == 3 and isinstance(arg2[1], float)
+            assert len(arg2) == 3 and isinstance(arg2[0], list) and isinstance(arg2[1], float)
+            for v in arg2[0]:
+                eq.addAddend(-1, v)
             scalar += arg2[1]
         elif arg2[-1] == "-":
             assert len(arg2) == 3 and isinstance(arg2[0], tuple) and isinstance(arg2[1], tuple)
             assert len(arg2[0]) == 2 and len(arg2[1]) == 2
             if arg2[0][1] == "const":
-                scalar += arg1[0][0]
-            if arg2[1][1] == "const":
-                scalar += arg1[1][0]
-            elif arg2[-1] == "*" and arg2[0] is None:
-                assert isinstance(arg2[1], float)
-                scalar += arg2[1]
-
-        # Next add the variables (and divide scalar by coefficient of variable in mul if exists):
-        if arg1[-1] == "var":
-            assert len(arg1) == 2 and isinstance(arg1[0], int)
-            eq.addAddend(1, arg1[0])
-        elif arg1[-1] == "+":
-            assert isinstance(arg1[0], list)
-            for v in arg1[0]:
-                eq.addAddend(1, v)
-        elif arg1[-1] == "-":
-            if arg1[0][1] == "var":
-                eq.addAddend(1, arg1[0][0])
-            if arg1[1][1] == "var":
-                eq.addAddend(-1, arg1[1][0])
-        elif arg1[-1] == "*" and arg1[0] is not None:
-            assert isinstance(arg1[0], int)
-            if arg1[1] == 0:
-                eq.addAddend(0, arg1[0])
-            elif arg1[1] > 0:
-                scalar /= arg1[1]
-                eq.addAddend(1, arg1[0])
-            else: # arg1[1] < 0
-                scalar /= (-arg1[1])
-                eq.addAddend(-1, arg1[0])
-
-        if arg2[-1] == "var":
-            assert len(arg2) == 2 and isinstance(arg2[0], int)
-            eq.addAddend(-1, arg2[0])
-        elif arg2[-1] == "+":
-            assert isinstance(arg2[0], list)
-            for v in arg2[0]:
-                eq.addAddend(-1, v)
-        elif arg2[-1] == "-":
-            if arg2[0][1] == "var":
+                scalar += arg2[0][0]
+            else:  # arg2[0][1] == "var"
                 eq.addAddend(-1, arg2[0][0])
-            if arg2[1][1] == "var":
+            if arg2[1][1] == "const":
+                scalar += arg2[1][0]
+            else:  # arg2[1][1] == "var"
                 eq.addAddend(1, arg2[1][0])
-        elif arg2[-2] == "*" and arg2[0] is not None:
-            assert isinstance(arg2[0], int)
-            if arg2[1] == 0:
-                eq.addAddend(0, arg1[0])
-            elif arg2[1] > 0:
-                scalar /= arg1[1]
-                eq.addAddend(-1, arg1[0])
-            else: # arg2[1] < 0
-                scalar /= (-arg1[1])
-                eq.addAddend(1, arg1[0])
+        elif arg2[-1] == "*":
+            assert len(arg2) == 3 and (isinstance(arg2[0], int) or arg2[0] is None) and isinstance(arg2[1], float)
+            if arg2[0] is None:
+                scalar += arg2[1]
+            else:
+                eq.addAddend(-arg2[1], arg2[0])
 
         eq.setScalar(scalar)
         return eq
 
-    def parse_plus(self, plus_term):
+    def parse_add(self, add_term):
         """
         Parses a single '+' term
         Args:
-            plus_term (list): The '+' term to parse
+            add_term (list): The '+' term to parse
 
         Returns:
             A 3-tuple of (list of variables, sum of constants, '+')
         """
-        assert isinstance(plus_term, list)
-        assert plus_term[0] == "+"
+        assert isinstance(add_term, list)
+        assert add_term[0] == "+"
 
-        if len(plus_term) < 3:
+        if len(add_term) < 3:
             raise RuntimeError("A '+' term should contain at lease 2 arguments")
 
-        args = [self.parse_term(plus_term[i]) for i in range(1, len(plus_term))]
+        args = [self.parse_term(add_term[i]) for i in range(1, len(add_term))]
         variables = []
-        const_total = 0
+        const_total = 0.
         for arg in args:
             assert isinstance(arg, tuple)
-            if len(arg) != 2 or arg[1] != "const" or arg[1] != "var":
+            if len(arg) != 2 or not (arg[1] == "const" or arg[1] == "var"):
                 raise RuntimeError("All arguments of a '+' term should be declared variable names, or constant numbers")
 
-            if arg[1] == "var":
-                variables.append(arg[0])
-            else: # arg[1] == "const"
+            if arg[1] == "const":
                 const_total += arg[0]
+            elif arg[1] == "var":
+                variables.append(arg[0])
 
         return variables, const_total, "+"
 
-    def parse_minus(self, minus_term):
+    def parse_sub(self, sub_term):
         """
         Parses a single '-' term
         Args:
-            minus_term (list): The '-' term to parse
+            sub_term (list): The '-' term to parse
 
         Returns:
             A 3-tuple of (term of left argument, term of right argument, '-')
         """
-        assert isinstance(minus_term, list)
-        assert minus_term[0] == "-"
+        assert isinstance(sub_term, list)
+        assert sub_term[0] == "-"
 
-        if len(minus_term) != 3:
+        if len(sub_term) != 3:
             raise RuntimeError("A '-' term should contain 2 arguments")
 
-        arg1, arg2 = self.parse_term(minus_term[1]), self.parse_term(minus_term[2])
+        arg1, arg2 = self.parse_term(sub_term[1]), self.parse_term(sub_term[2])
         assert isinstance(arg1, tuple) and isinstance(arg2, tuple)
-        if len(arg1) != 2 or arg1[1] != "const" or arg1[1] != "var" or len(arg2) != 2 or arg2[2] != "const" or arg2[2] != "var":
+        if len(arg1) != 2 or not (arg1[1] == "const" or arg1[1] == "var") or len(arg2) != 2 or not (arg2[1] == "const" or arg2[1] == "var"):
             raise RuntimeError("Both arguments of a '-' term should be declared variable names, or constant numbers")
 
         return arg1, arg2, "-"
@@ -1715,22 +1683,22 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         args = [self.parse_term(mul_term[i]) for i in range(1, len(mul_term))]
         variable = None
-        const_total = 1
+        const_total = 1.
 
         for arg in args:
             assert isinstance(arg, tuple)
-            if len(arg) != 2 or arg[1] != "const" or arg[1] != "var":
+            if len(arg) != 2 or not (arg[1] == "const" or arg[1] == "var"):
                 raise RuntimeError("All arguments of a '*' term should be declared variable names, or constant numbers")
 
-            if arg[1] == "var":
+            if arg[1] == "const":
+                const_total *= arg[0]
+            elif arg[1] == "var":
                 if variable is None:
                     variable = arg[0]
                 else:
                     raise RuntimeError("In a '*' term only 1 variable argument is allowed")
-            else: # arg[1] == "const"
-                const_total *= arg[0]
 
-            return variable, const_total, "*"
+        return variable, const_total, "*"
 
 def getBroadcastShape(shape1, shape2):
     """Helper function to get the shape that results from broadcasting these shapes together
@@ -1758,7 +1726,7 @@ def make_tree(content):
 
     :meta private:
     """
-    items = re.findall(r"\(|\)|[\w\-\\.]+|<=|>=", content)
+    items = re.findall(r"\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*", content)
 
     def req(index):
         result = []
