@@ -230,11 +230,11 @@ void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluCon
               which is the upper bound in the triangular relaxation
             */
 
-            double lambda = ( sourceUb - slope * sourceLb ) / (sourceUb - sourceLb );
-            List<GurobiWrapper::Term> terms;
-            terms.append( GurobiWrapper::Term( lambda, Stringf( "x%u", sourceVariable ) ) );
-            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", targetVariable ) ) );
-            gurobi.addLeqConstraint( terms, ( lambda  - 1 ) * sourceUb );
+            //double lambda = ( sourceUb - slope * sourceLb ) / (sourceUb - sourceLb );
+            //List<GurobiWrapper::Term> terms;
+            //terms.append( GurobiWrapper::Term( lambda, Stringf( "x%u", sourceVariable ) ) );
+            //terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", targetVariable ) ) );
+            //gurobi.addLeqConstraint( terms, ( lambda  - 1 ) * sourceUb );
         } else {
             double xPoints[3];
             double yPoints[3];

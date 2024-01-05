@@ -941,7 +941,6 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
         List<unsigned> variables = plConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
         {
-            std::cout << variable << std::endl;
             plConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
             plConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
