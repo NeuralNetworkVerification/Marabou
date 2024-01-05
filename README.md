@@ -187,6 +187,16 @@ on Windows.
 Please see our [documentation](https://neuralnetworkverification.github.io/Marabou/)
 for the python interface, which contains examples, API documentation, and a developer's guide.
 
+#### Using ONNX networks with properties encoded in VNN-LIB format
+You can use Marabou to verify your own properties encoded in VNN-LIB format, when using ONNX networks.
+See the following example for providing an ONNX network and a property encoded inside a vnnlib file:
+
+```
+from maraboupy import Marabou
+
+network = Marabou.read_onnx("/path/to/network/file.onnx", vnnlibFilename="/path/to/property/file.vnnlib")
+```
+
 ### Using the run script (*Recommended*)
 For ease of use, we also provide a example python script (resources/runMarabou.py). The script can take the same arguments
 as the Marabou binary. The difference is that the python script also supports networks in onnx format.

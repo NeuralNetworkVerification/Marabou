@@ -1,0 +1,40 @@
+; test property is acas xu property 3
+
+(declare-const X_0 Real)
+(declare-const X_1 Real)
+(declare-const X_2 Real)
+(declare-const X_3 Real)
+(declare-const X_4 Real)
+
+(declare-const Y_0 Real)
+(declare-const Y_1 Real)
+(declare-const Y_2 Real)
+(declare-const Y_3 Real)
+(declare-const Y_4 Real)
+
+; input constraints
+; Unscaled Input 0: (1500, 1800)
+(assert (<= X_0 -0.29855281193475053))
+(assert (>= X_0 -0.30353115613746867))
+
+; Unscaled Input 1: (-0.06, 0.06)
+(assert (<= X_1 0.009549296585513092))
+(assert (>= X_1 -0.009549296585513092))
+
+; Unscaled Input 2: (3.1, 3.1415926535)
+(assert (<= X_2 0.49999999998567607))
+(assert (>= X_2 0.4933803235848431))
+
+; Unscaled Input 3: (980, 1200)
+(assert (<= X_3 0.5))
+(assert (>= X_3 0.3))
+
+; Unscaled Input 4: (960, 1200)
+(assert (<= X_4 0.5))
+(assert (>= X_4 0.3))
+
+; output constraints (property 3, sat if CoC is minimal)
+(assert (<= Y_0 Y_1))
+(assert (<= Y_0 Y_2))
+(assert (<= Y_0 Y_3))
+(assert (<= Y_0 Y_4))
