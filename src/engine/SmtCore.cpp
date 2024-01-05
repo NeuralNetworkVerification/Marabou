@@ -60,6 +60,8 @@ void SmtCore::freeMemory()
 
 void SmtCore::reset()
 {
+    _context.popto( 0 );
+    _engine->postContextPopHook();
     freeMemory();
     _impliedValidSplitsAtRoot.clear();
     _needToSplit = false;
@@ -229,7 +231,7 @@ void SmtCore::performSplit()
 
 unsigned SmtCore::getStackDepth() const
 {
-    ASSERT( _stack.size() == static_cast<unsigned>( _context.getLevel() ) );
+    ASSERT( ( _engine->inSnCMode() || _stack.size() == static_cast<unsigned>( _context.getLevel() ) ) );
     return _stack.size();
 }
 

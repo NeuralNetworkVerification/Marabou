@@ -132,7 +132,14 @@ void Engine::applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId )
     _sncMode = true;
     _sncSplit = sncSplit;
     _queryId = queryId;
+    preContextPushHook();
+    _smtCore.pushContext();
     applySplit( sncSplit );
+}
+
+bool Engine::inSnCMode() const
+{
+    return _sncMode;
 }
 
 void Engine::setRandomSeed( unsigned seed )
@@ -1361,6 +1368,7 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
         _tableau->setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
         _tableau->setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
     }
+    _boundManager.storeLocalBounds();
 
     _statistics.setUnsignedAttribute( Statistics::NUM_PL_CONSTRAINTS,
                                       _plConstraints.size() );
@@ -1408,7 +1416,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                     _produceUNSATProofs = false;
                     Options::get()->setBool( Options::PRODUCE_PROOFS, false );
                     String activationType = plConstraint->serializeToString().tokenize(",").back();
-                    ENGINE_LOG( "Turning off proof production since activation %s is not yet supported\n", activationType.ascii() );
+                    printf( "Turning off proof production since activation %s is not yet supported\n", activationType.ascii() );
                     break;
                 }
             }
@@ -2445,7 +2453,8 @@ void Engine::preContextPushHook()
 {
     struct timespec start = TimeUtils::sampleMicro();
     _boundManager.storeLocalBounds();
-    _groundBoundManager.storeLocalBounds();
+    if ( _produceUNSATProofs )
+        _groundBoundManager.storeLocalBounds();
     struct timespec end = TimeUtils::sampleMicro();
 
     _statistics.incLongAttribute( Statistics::TIME_CONTEXT_PUSH_HOOK, TimeUtils::timePassed( start, end ) );
@@ -2456,7 +2465,8 @@ void Engine::postContextPopHook()
     struct timespec start = TimeUtils::sampleMicro();
 
     _boundManager.restoreLocalBounds();
-    _groundBoundManager.restoreLocalBounds();
+    if ( _produceUNSATProofs )
+        _groundBoundManager.restoreLocalBounds();
     _tableau->postContextPopHook();
 
     struct timespec end = TimeUtils::sampleMicro();
@@ -2466,6 +2476,7 @@ void Engine::postContextPopHook()
 void Engine::reset()
 {
     resetStatistics();
+    _sncMode = false;
     clearViolatedPLConstraints();
     resetSmtCore();
     resetBoundTighteners();

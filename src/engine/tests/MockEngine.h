@@ -197,8 +197,14 @@ public:
             return NULL;
     }
 
+    bool _snc;
     void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
     {
+        _snc = true;
+    }
+
+    bool inSnCMode() const {
+        return _snc;
     }
 
     void applyAllBoundTightenings() {};
