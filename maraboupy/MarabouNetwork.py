@@ -489,6 +489,8 @@ class MarabouNetwork:
             ipq.setLowerBound(k, inputDict[k])
             ipq.setUpperBound(k, inputDict[k])
 
+        MarabouCore.saveQuery(ipq, "test.ipq")
+
         if options == None:
             options = MarabouCore.Options()
         exitCode, outputDict, _ = MarabouCore.solve(ipq, options, str(filename))

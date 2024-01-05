@@ -77,6 +77,8 @@ LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
 
       _auxVarsInUse = true;
     }
+    else
+        _auxVarsInUse = false;
 }
 
 PiecewiseLinearFunctionType LeakyReluConstraint::getType() const
@@ -256,7 +258,7 @@ bool LeakyReluConstraint::participatingVariable( unsigned variable ) const
 
 List<unsigned> LeakyReluConstraint::getParticipatingVariables() const
 {
-    return _auxVarsInUse?
+    return _auxVarsInUse ?
         List<unsigned>( { _b, _f, _activeAux, _inactiveAux } ) :
         List<unsigned>( { _b, _f } );
 }
@@ -763,8 +765,8 @@ String LeakyReluConstraint::serializeToString() const
   // Output format is: relu,f,b,slope,activeAux,inactiveAux
   if ( _auxVarsInUse )
     return Stringf( "leaky_relu,%u,%u,%f,%u,%u", _f, _b, _slope, _activeAux, _inactiveAux );
-
-  return Stringf( "leaky_relu,%u,%u,%f", _f, _b, _slope );
+  else
+      return Stringf( "leaky_relu,%u,%u,%f", _f, _b, _slope );
 }
 
 unsigned LeakyReluConstraint::getB() const

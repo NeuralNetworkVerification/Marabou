@@ -293,7 +293,6 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
                 _plConstraints.append( newPlc );
                 ++numberOfMaxs;
             }
-            
         }
 
         ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() +
