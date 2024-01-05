@@ -240,22 +240,16 @@ public:
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
-<<<<<<< HEAD
     void addPiecewiseLinearConstraint( String,
                                        String,
                                        unsigned,
                                        const double *, const double * ) {}
-
-    void setCost( const List<Term> & ) {}
-    void setObjective( const List<Term> & ) {}
-=======
     void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void setCost( const List<Term> &, double /* constant */=0 ) {}
     void setObjective( const List<Term> &, double /* constant */=0 ) {}
     double getOptimalCostOrObjective() { return 0; };
->>>>>>> master
     void setCutoff( double ) {};
     void solve() {}
     void extractSolution( Map<String, double> &, double & ) {}
