@@ -1651,7 +1651,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             sub_term (list): The '-' term to parse
 
         Returns:
-            A 3-tuple of (term of left argument, term of right argument, '-')
+            A 3-tuple of (term of left argument, term of right argument, '-') in case of 2 arguments,
+            or a 2-tuple of (-argument, "const") in case of 1 constant number argument
         """
         assert isinstance(sub_term, list)
         assert sub_term[0] == "-"
