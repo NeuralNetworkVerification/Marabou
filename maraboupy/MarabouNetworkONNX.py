@@ -1656,15 +1656,28 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         assert isinstance(sub_term, list)
         assert sub_term[0] == "-"
 
-        if len(sub_term) != 3:
-            raise RuntimeError("A '-' term should contain 2 arguments")
+        if len(sub_term) not in {2, 3}:
+            raise RuntimeError("A '-' term should contain 1 or 2 arguments")
 
-        arg1, arg2 = self.parse_term(sub_term[1]), self.parse_term(sub_term[2])
-        assert isinstance(arg1, tuple) and isinstance(arg2, tuple)
-        if len(arg1) != 2 or not (arg1[1] == "const" or arg1[1] == "var") or len(arg2) != 2 or not (arg2[1] == "const" or arg2[1] == "var"):
-            raise RuntimeError("Both arguments of a '-' term should be declared variable names, or constant numbers")
+        arg1 = self.parse_term(sub_term[1])
+        assert isinstance(arg1, tuple)
+        if len(arg1) != 2 or not (arg1[1] == "const" or arg1[1] == "var"):
+            raise RuntimeError("The arguments of a '-' term should be declared variable names, or constant numbers")
 
-        return arg1, arg2, "-"
+        if len(sub_term) == 3:
+            # subtraction between two terms
+            arg2 = self.parse_term(sub_term[2])
+            assert isinstance(arg2, tuple)
+            if len(arg2) != 2 or not (arg2[1] == "const" or arg2[1] == "var"):
+                raise RuntimeError("The arguments of a '-' term should be declared variable names, or constant numbers")
+
+            return arg1, arg2, "-"
+        else:
+            # negation to constant number
+            if arg1[1] == "const":
+                return -arg1[0], "const"
+            else:
+                raise NotImplementedError("Using the '-' term for one argument other than constant number is not supported")
 
     def parse_mul(self, mul_term):
         """

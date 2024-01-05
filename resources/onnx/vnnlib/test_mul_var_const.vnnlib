@@ -2,7 +2,7 @@
 (declare-const Y_0 Real)
 
 (assert (>= (* X_0 2) 0))
-(assert (>= (* -2 X_0) -2))
+(assert (>= (* (- 2) X_0) (- 2)))
 (assert (<= (* 0 X_0) 1000))
 
 (assert (>= Y_0 0))
