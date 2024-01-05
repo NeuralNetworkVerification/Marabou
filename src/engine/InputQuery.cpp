@@ -293,6 +293,7 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
                 _plConstraints.append( newPlc );
                 ++numberOfMaxs;
             }
+
         }
 
         ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() +
@@ -935,9 +936,9 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     public:
 
       NeuronInformation( unsigned variable, unsigned neuron, unsigned sourceVariable )
-        : _variable( variable )
-        , _neuron( neuron )
-        , _sourceVariable( sourceVariable )
+          : _variable( variable )
+          , _neuron( neuron )
+          , _sourceVariable( sourceVariable )
       {
       }
 
@@ -976,7 +977,7 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
         double alphaTemp = leakyRelu->getSlope();
         ASSERT( alphaTemp > 0 );
         if ( alpha != 0 && alpha != alphaTemp ) {
-          throw NLRError( NLRError::LEAKY_RELU_SLOPES_NOT_UNIFORM );
+            throw NLRError( NLRError::LEAKY_RELU_SLOPES_NOT_UNIFORM );
         }
         alpha = alphaTemp;
     }
@@ -1061,6 +1062,7 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
         if ( !handledVariableToLayer.exists( b ) )
             continue;
 
+        // If the f variable has also been handled, ignore this constraint
         unsigned f = sigmoid->getF();
         if ( handledVariableToLayer.exists( f ) )
             continue;

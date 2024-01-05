@@ -160,13 +160,12 @@ void Layer::computeAssignment()
 
     else if ( _type == LEAKY_RELU )
     {
-        double slope = _alpha;
         for ( unsigned i = 0; i < _size; ++i )
         {
             NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
             double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
-
-            _assignment[i] = FloatUtils::max( inputValue, slope * inputValue );
+            ASSERT( _alpha > 0 && _alpha < 1 );
+            _assignment[i] = FloatUtils::max( inputValue, _alpha * inputValue );
         }
     }
 
@@ -271,13 +270,13 @@ void Layer::computeSimulations()
     }
     else if ( _type == LEAKY_RELU )
     {
-        double slope = _alpha;
         for ( unsigned i = 0; i < _size; ++i )
         {
             NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
             const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            ASSERT( _alpha > 0 && _alpha < 1);
             for ( unsigned j = 0; j < simulationSize; ++j )
-                _simulations[i][j] = FloatUtils::max( simulations.get( j ), slope * simulations.get( j ) );
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), _alpha * simulations.get( j ) );
         }
     }
     else if ( _type == ABSOLUTE_VALUE )
@@ -447,8 +446,8 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-  ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE ||
-          _type == MAX || _type == SIGN || _type == SIGMOID );
+    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE ||
+            _type == MAX || _type == SIGN || _type == SIGMOID );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();

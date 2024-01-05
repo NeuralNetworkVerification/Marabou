@@ -33,16 +33,16 @@
 #endif
 
 LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f, double slope )
-  : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
-  , _b( b )
-  , _f( f )
-  , _slope( slope )
-  , _auxVarsInUse( false )
-  , _direction( PHASE_NOT_FIXED )
-  , _haveEliminatedVariables( false )
+    : PiecewiseLinearConstraint( TWO_PHASE_PIECEWISE_LINEAR_CONSTRAINT )
+    , _b( b )
+    , _f( f )
+    , _slope( slope )
+    , _auxVarsInUse( false )
+    , _direction( PHASE_NOT_FIXED )
+    , _haveEliminatedVariables( false )
 {
-  if ( _slope <= 0 )
-    throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
+    if ( _slope <= 0 )
+        throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
 }
 
 LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
@@ -63,19 +63,19 @@ LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
     _b = atoi( var->ascii() );
     ++var;
     _slope = atof( var->ascii() );
-    if ( _slope <= 0 )
-        throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE );
+    if ( _slope <= 0 || _slope > 1 )
+        throw MarabouError( MarabouError::INVALID_LEAKY_RELU_SLOPE,
+                            Stringf( "Currently supporting slope between 0 and 1" ).ascii() );
 
     _direction = PHASE_NOT_FIXED;
 
     if ( values.size() == 5 )
     {
-      ++var;
-      _activeAux = atoi( var->ascii() );
-      ++var;
-      _inactiveAux = atoi( var->ascii() );
-
-      _auxVarsInUse = true;
+        ++var;
+        _activeAux = atoi( var->ascii() );
+        ++var;
+        _inactiveAux = atoi( var->ascii() );
+        _auxVarsInUse = true;
     }
     else
         _auxVarsInUse = false;
@@ -113,8 +113,8 @@ void LeakyReluConstraint::registerAsWatcher( ITableau *tableau )
     tableau->registerToWatchVariable( this, _f );
 
     if ( _auxVarsInUse ) {
-      tableau->registerToWatchVariable( this, _activeAux );
-      tableau->registerToWatchVariable( this, _inactiveAux );
+        tableau->registerToWatchVariable( this, _activeAux );
+        tableau->registerToWatchVariable( this, _inactiveAux );
     }
 }
 
@@ -124,8 +124,8 @@ void LeakyReluConstraint::unregisterAsWatcher( ITableau *tableau )
     tableau->unregisterToWatchVariable( this, _f );
 
     if ( _auxVarsInUse ) {
-      tableau->unregisterToWatchVariable( this, _activeAux );
-      tableau->unregisterToWatchVariable( this, _inactiveAux );
+        tableau->unregisterToWatchVariable( this, _activeAux );
+        tableau->unregisterToWatchVariable( this, _inactiveAux );
     }
 }
 
@@ -162,7 +162,7 @@ void LeakyReluConstraint::checkIfUpperBoundUpdateFixesPhase( unsigned variable, 
 void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
 {
     if ( _statistics )
-      _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( _boundManager == nullptr && existsLowerBound( variable )
          && !FloatUtils::gt( bound, getLowerBound( variable ) ) )
@@ -265,16 +265,16 @@ List<unsigned> LeakyReluConstraint::getParticipatingVariables() const
 
 bool LeakyReluConstraint::satisfied() const
 {
-  if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
-    throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-  double bValue = getAssignment( _b );
-  double fValue = getAssignment( _f );
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
 
-  if ( FloatUtils::isPositive( fValue ) )
-    return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
-  else
-    return FloatUtils::areEqual( _slope * bValue, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
+    if ( FloatUtils::isPositive( fValue ) )
+        return FloatUtils::areEqual( bValue, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
+    else
+        return FloatUtils::areEqual( _slope * bValue, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 List<PiecewiseLinearConstraint::Fix> LeakyReluConstraint::getPossibleFixes() const
@@ -473,25 +473,25 @@ void LeakyReluConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIn
           !participatingVariable( newIndex ) );
 
   if ( _lowerBounds.exists( oldIndex ) )
-    {
+  {
       _lowerBounds[newIndex] = _lowerBounds.get( oldIndex );
       _lowerBounds.erase( oldIndex );
-    }
+  }
 
   if ( _upperBounds.exists( oldIndex ) )
-    {
+  {
       _upperBounds[newIndex] = _upperBounds.get( oldIndex );
       _upperBounds.erase( oldIndex );
-    }
+  }
 
   if ( oldIndex == _b )
-    _b = newIndex;
+      _b = newIndex;
   else if ( oldIndex == _f )
-    _f = newIndex;
+      _f = newIndex;
   else if ( oldIndex == _activeAux )
-    _activeAux = newIndex;
+      _activeAux = newIndex;
   else
-    _inactiveAux = newIndex;
+      _inactiveAux = newIndex;
 }
 
 void LeakyReluConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
@@ -557,12 +557,12 @@ void LeakyReluConstraint::getEntailedTightenings( List<Tightening> &tightenings 
     double inactiveAuxUpperBound = 0;
 
     if ( _auxVarsInUse )
-      {
+    {
         activeAuxLowerBound = getLowerBound( _activeAux );
         activeAuxUpperBound = getUpperBound( _activeAux );
         inactiveAuxLowerBound = getLowerBound( _inactiveAux );
         inactiveAuxUpperBound = getUpperBound( _inactiveAux );
-      }
+    }
 
 
     // Determine if we are in the active phase, inactive phase or unknown phase
@@ -716,9 +716,9 @@ void LeakyReluConstraint::getCostFunctionComponent( LinearExpression &cost,
         // since the LeakyReLU is inactive and satisfied iff f is 0 and minimal.
         // This is true only when we added the constraint that f >= slope * b.
         if ( !cost._addends.exists( _f ) )
-          cost._addends[_f] = 0;
+            cost._addends[_f] = 0;
         if ( !cost._addends.exists( _b ) )
-          cost._addends[_b] = 0;
+            cost._addends[_b] = 0;
         cost._addends[_f] = cost._addends[_f] + 1;
         cost._addends[_b] = cost._addends[_b] - _slope;
     }
@@ -764,7 +764,7 @@ String LeakyReluConstraint::serializeToString() const
 {
   // Output format is: relu,f,b,slope,activeAux,inactiveAux
   if ( _auxVarsInUse )
-    return Stringf( "leaky_relu,%u,%u,%f,%u,%u", _f, _b, _slope, _activeAux, _inactiveAux );
+      return Stringf( "leaky_relu,%u,%u,%f,%u,%u", _f, _b, _slope, _activeAux, _inactiveAux );
   else
       return Stringf( "leaky_relu,%u,%u,%f", _f, _b, _slope );
 }

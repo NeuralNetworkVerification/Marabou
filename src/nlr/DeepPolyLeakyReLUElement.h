@@ -40,7 +40,7 @@ public:
       unsigned targetLayerSize, DeepPolyElement *predecessor );
 
 private:
-    double _alpha;
+    double _slope;
 
     void allocateMemory();
     void freeMemoryIfNeeded();

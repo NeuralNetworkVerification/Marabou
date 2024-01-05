@@ -23,9 +23,9 @@ DeepPolyLeakyReLUElement::DeepPolyLeakyReLUElement( Layer *layer )
     _layer = layer;
     _size = layer->getSize();
     _layerIndex = layer->getLayerIndex();
-    _alpha = layer->getAlpha();
-    ASSERT( _alpha > 0 );
-    log( Stringf( "Slope is %f", _alpha ) );
+    _slope = layer->getAlpha();
+    ASSERT( _slope > 0 );
+    log( Stringf( "Slope is %f", _slope ) );
 }
 
 DeepPolyLeakyReLUElement::~DeepPolyLeakyReLUElement()
@@ -70,13 +70,13 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
             // Phase inactive
             // Symbolic bound: slope * x_b <= x_f <= slope * x_b
             // Concrete bound: slope * lb_b <= x_f <= slope * ub_b
-            _symbolicUb[i] = _alpha;
+            _symbolicUb[i] = _slope;
             _symbolicUpperBias[i] = 0;
-            _ub[i] = _alpha * sourceUb;
+            _ub[i] = _slope * sourceUb;
 
-            _symbolicLb[i] = _alpha;
+            _symbolicLb[i] = _slope;
             _symbolicLowerBias[i] = 0;
-            _lb[i] = _alpha * sourceLb;
+            _lb[i] = _slope * sourceLb;
         }
         else
         {
@@ -84,12 +84,12 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
             // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
             // Concrete upper bound: x_f <= ub_b
             double width = sourceUb - sourceLb;
-            double coeff = (sourceUb - _alpha * sourceLb) / width;
+            double coeff = (sourceUb - _slope * sourceLb) / width;
 
-            if ( _alpha <= 1 )
+            if ( _slope <= 1 )
             {
                 _symbolicUb[i] = coeff;
-                _symbolicUpperBias[i] = ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
+                _symbolicUpperBias[i] = ( ( _slope - 1 ) * sourceUb * sourceLb ) / width;
                 _ub[i] = sourceUb;
 
                 // For the lower bound, in general, x_f >= lambda * x_b, where
@@ -111,16 +111,16 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
                     // lambda = 1
                     // Symbolic lower bound: x_f >= 0
                     // Concrete lower bound: x_f >= 0
-                    _symbolicLb[i] = _alpha;
+                    _symbolicLb[i] = _slope;
                     _symbolicLowerBias[i] = 0;
-                    _lb[i] = _alpha * sourceLb;
+                    _lb[i] = _slope * sourceLb;
                 }
             }
             else
             {
                 _symbolicLb[i] = coeff;
-                _symbolicLowerBias[i] = ( ( _alpha - 1 ) * sourceUb * sourceLb ) / width;
-                _lb[i] = _alpha * sourceLb;
+                _symbolicLowerBias[i] = ( ( _slope - 1 ) * sourceUb * sourceLb ) / width;
+                _lb[i] = _slope * sourceLb;
 
                 if ( sourceUb > sourceLb )
                 {
@@ -130,9 +130,9 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
                 }
                 else
                 {
-                    _symbolicUb[i] = _alpha;
+                    _symbolicUb[i] = _slope;
                     _symbolicLowerBias[i] = 0;
-                    _ub[i] = _alpha * sourceUb;
+                    _ub[i] = _slope * sourceUb;
                 }
             }
         }
