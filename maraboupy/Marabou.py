@@ -61,7 +61,7 @@ def read_tf(filename, inputNames=None, outputNames=None, modelType="frozen", sav
     """
     return MarabouNetworkTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
-def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=True):
+def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=True, vnnlibFilename=None):
     """Constructs a MarabouNetworkONNX object from an ONNX file
 
     Args:
@@ -69,11 +69,12 @@ def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=Tru
         inputNames (list of str, optional): List of node names corresponding to inputs
         outputNames (list of str, optional): List of node names corresponding to outputs
         reindexOutputVars (bool): Reindex the variables so that the output variables are immediate after input variables
+        vnnlibFilename (str): Optional argument of filename to vnnlib file containing a property
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
-    return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
+    return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, vnnlibFilename=vnnlibFilename)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
