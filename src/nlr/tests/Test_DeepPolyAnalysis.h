@@ -991,6 +991,7 @@ public:
         // Very loose bounds for neurons except inputs
         double large = 1000000;
 
+        tableau.getBoundManager().initialize( 12 );
         tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
         tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
         tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );

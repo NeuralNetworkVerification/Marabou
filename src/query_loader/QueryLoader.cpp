@@ -209,7 +209,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else if ( coType == "leaky_relu" )
         {
-            constraint = new LeakyReluConstraint( serializeConstraint );
+            inputQuery.addPiecewiseLinearConstraint( new LeakyReluConstraint( serializeConstraint ) );
         }
         else if ( coType == "max" )
         {
@@ -240,12 +240,3 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     inputQuery.constructNetworkLevelReasoner();
     return inputQuery;
 }
-
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

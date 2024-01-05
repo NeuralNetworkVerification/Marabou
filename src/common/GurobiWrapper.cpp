@@ -207,8 +207,8 @@ void GurobiWrapper::addPiecewiseLinearConstraint( String sourceVariable,
         _model->addGenConstrPWL( *_nameToVariable[sourceVariable],
                                  *_nameToVariable[targetVariable],
                                  numPoints,
-                                 xPts,
-                                 yPts );
+                                 xPoints,
+                                 yPoints );
     }
     catch (GRBException e )
     {

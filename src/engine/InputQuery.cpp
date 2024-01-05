@@ -977,7 +977,7 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
         double alphaTemp = leakyRelu->getSlope();
         ASSERT( alphaTemp > 0 );
         if ( alpha != 0 && alpha != alphaTemp ) {
-          throw NLRError( NLRError::LEAKY_RELU_SLOPES_NOT_UNIFORM )
+          throw NLRError( NLRError::LEAKY_RELU_SLOPES_NOT_UNIFORM );
         }
         alpha = alphaTemp;
     }

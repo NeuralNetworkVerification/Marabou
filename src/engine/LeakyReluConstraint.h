@@ -43,7 +43,7 @@ public:
       The f variable is the LeakyRelu output on the b variable:
       f = leakyRelu( b )
     */
-    LeakyReluConstraint( unsigned b, unsigned f );
+    LeakyReluConstraint( unsigned b, unsigned f, double slope );
     LeakyReluConstraint( const String &serializedLeakyRelu );
 
     /*
@@ -211,8 +211,8 @@ public:
       Check if the aux variable is in use and retrieve it
     */
     bool auxVariablesInUse() const;
-    unsigned getAuxActive() const;
-    unsigned getAuxInactive() const;
+    unsigned getInactiveAux() const;
+    unsigned getActiveAux() const;
 
     bool supportPolarity() const override;
 
@@ -239,13 +239,12 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
-    const List<unsigned> getNativeAuxVars() const override;
-
 private:
     unsigned _b, _f;
+    double _slope;
     bool _auxVarsInUse;
-    unsigned _auxActive;
-    unsigned _auxInactive;
+    unsigned _activeAux;
+    unsigned _inactiveAux;
 
     /*
       Denotes which case split to handle first.
@@ -265,17 +264,6 @@ private:
     */
     bool haveOutOfBoundVariables() const;
 
-    std::shared_ptr<TableauRow> _tighteningRow;
-
-    /*
-     Create a the tableau row used for explaining bound tightening caused by the constraint
-     Stored in _tighteningRow
-    */
-    void createTighteningRow();
-
-    /*
-     Assign a variable as an aux variable by the tableau, related to some existing aux variable.
-    */
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 

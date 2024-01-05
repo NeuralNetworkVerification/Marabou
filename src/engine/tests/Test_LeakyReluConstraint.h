@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file Test_ReluConstraint.h
+/*! \file Test_LeakyReluConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Guy Katz, Parth Shah, Duligur Ibeling
@@ -15,14 +15,13 @@
 
 #include <cxxtest/TestSuite.h>
 
-#include "GlobalConfiguration.h"
 #include "InputQuery.h"
-#include "MockConstraintBoundTightener.h"
+#include "LeakyReluConstraint.h"
+#include "LinearExpression.h"
+#include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
-#include "LeakyReluConstraint.h"
-#include "MarabouError.h"
 #include "context/context.h"
 
 #include <string.h>
@@ -34,13 +33,13 @@ public:
 };
 
 /*
-   Exposes protected members of ReluConstraint for testing.
+   Exposes protected members of LeakyReluConstraint for testing.
  */
 class TestLeakyReluConstraint : public LeakyReluConstraint
 {
 public:
- TestLeakyReluConstraint( unsigned b, unsigned f )
-     : LeakyReluConstraint( b, f )
+    TestLeakyReluConstraint( unsigned b, unsigned f, double slope )
+        : LeakyReluConstraint( b, f, slope )
     {}
 
     using LeakyReluConstraint::getPhaseStatus;
@@ -52,10 +51,11 @@ class LeakyReluConstraintTestSuite : public CxxTest::TestSuite
 {
 public:
     MockForLeakyReluConstraint *mock;
+    const double slope = 0.2;
 
     void setUp()
     {
-        TS_ASSERT( mock = new MockForLeakyReluConstraint );;
+        TS_ASSERT( mock = new MockForLeakyReluConstraint );
     }
 
     void tearDown()
@@ -63,103 +63,104 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
-    void test_relu_constraint()
+    void test_leaky_relu_constraint()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
+        MockTableau tableau;
+        lrelu.registerTableau( &tableau );
 
         List<unsigned> participatingVariables;
-        TS_ASSERT_THROWS_NOTHING( participatingVariables = relu.getParticipatingVariables() );
+        TS_ASSERT_THROWS_NOTHING( participatingVariables = lrelu.getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
         auto it = participatingVariables.begin();
         TS_ASSERT_EQUALS( *it, b );
         ++it;
         TS_ASSERT_EQUALS( *it, f );
 
-        TS_ASSERT( relu.participatingVariable( b ) );
-        TS_ASSERT( relu.participatingVariable( f ) );
-        TS_ASSERT( !relu.participatingVariable( 2 ) );
-        TS_ASSERT( !relu.participatingVariable( 0 ) );
-        TS_ASSERT( !relu.participatingVariable( 5 ) );
+        TS_ASSERT( lrelu.participatingVariable( b ) );
+        TS_ASSERT( lrelu.participatingVariable( f ) );
+        TS_ASSERT( !lrelu.participatingVariable( 2 ) );
+        TS_ASSERT( !lrelu.participatingVariable( 0 ) );
+        TS_ASSERT( !lrelu.participatingVariable( 5 ) );
 
-        TS_ASSERT_THROWS_EQUALS( relu.satisfied(),
+        TS_ASSERT_THROWS_EQUALS( lrelu.satisfied(),
                                  const MarabouError &e,
                                  e.getCode(),
-                                 MarabouError::PARTICIPATING_VARIABLES_ABSENT );
+                                 MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
 
-        relu.notifyVariableValue( b, 1 );
-        relu.notifyVariableValue( f, 1 );
+        tableau.setValue( b, 1 );
+        tableau.setValue( f, 1 );
 
-        TS_ASSERT( relu.satisfied() );
+        TS_ASSERT( lrelu.satisfied() );
 
-        relu.notifyVariableValue( f, 2 );
+        tableau.setValue( f, 2 );
 
-        TS_ASSERT( !relu.satisfied() );
+        TS_ASSERT( !lrelu.satisfied() );
 
-        relu.notifyVariableValue( b, 2 );
+        tableau.setValue( b, 2 );
 
-        TS_ASSERT( relu.satisfied() );
+        TS_ASSERT( lrelu.satisfied() );
 
-        relu.notifyVariableValue( b, -2 );
+        tableau.setValue( b, -2 );
 
-        TS_ASSERT( !relu.satisfied() );
+        TS_ASSERT( !lrelu.satisfied() );
 
-        relu.notifyVariableValue( f, -2 * GlobalConfiguration::LEAKY_RELU_SLOPE );
+        tableau.setValue( f, -2 * slope );
 
-        TS_ASSERT( relu.satisfied() );
+        TS_ASSERT( lrelu.satisfied() );
 
-        relu.notifyVariableValue( b, -3 );
+        tableau.setValue( b, -3 );
 
-        TS_ASSERT( !relu.satisfied() );
+        TS_ASSERT( !lrelu.satisfied() );
 
-        relu.notifyVariableValue( b, 0 );
+        tableau.setValue( b, 0 );
 
-        TS_ASSERT( !relu.satisfied() );
+        TS_ASSERT( !lrelu.satisfied() );
 
-        relu.notifyVariableValue( f, 0 );
+        tableau.setValue( f, 0 );
 
-        TS_ASSERT( relu.satisfied() );
+        TS_ASSERT( lrelu.satisfied() );
 
-        relu.notifyVariableValue( f, 0 );
-        relu.notifyVariableValue( b, 11 );
+        tableau.setValue( f, 0 );
+        tableau.setValue( b, 11 );
 
-        TS_ASSERT( !relu.satisfied() );
+        TS_ASSERT( !lrelu.satisfied() );
 
         // Changing variable indices
-        relu.notifyVariableValue( b, 1 );
-        relu.notifyVariableValue( f, 1 );
-        TS_ASSERT( relu.satisfied() );
+        tableau.setValue( b, 1 );
+        tableau.setValue( f, 1 );
+        TS_ASSERT( lrelu.satisfied() );
 
         unsigned newB = 12;
         unsigned newF = 14;
 
-        TS_ASSERT_THROWS_NOTHING( relu.updateVariableIndex( b, newB ) );
-        TS_ASSERT_THROWS_NOTHING( relu.updateVariableIndex( f, newF ) );
+        TS_ASSERT_THROWS_NOTHING( lrelu.updateVariableIndex( b, newB ) );
+        TS_ASSERT_THROWS_NOTHING( lrelu.updateVariableIndex( f, newF ) );
+        tableau.setValue( newB, 1 );
+        tableau.setValue( newF, 1 );
 
-        TS_ASSERT( relu.satisfied() );
+        TS_ASSERT( lrelu.satisfied() );
 
-        relu.notifyVariableValue( newF, 2 );
+        tableau.setValue( newF, 2 );
 
-        TS_ASSERT( !relu.satisfied() );
+        TS_ASSERT( !lrelu.satisfied() );
 
-        relu.notifyVariableValue( newB, 2 );
+        tableau.setValue( newB, 2 );
 
-        TS_ASSERT( relu.satisfied() );
+        TS_ASSERT( lrelu.satisfied() );
     }
 
-    void test_relu_case_splits()
+    void test_leaky_relu_case_splits()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        List<PiecewiseLinearConstraint::Fix> fixes;
-        List<PiecewiseLinearConstraint::Fix>::iterator it;
-
-        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+        List<PiecewiseLinearCaseSplit> splits = lrelu.getCaseSplits();
 
         Equation activeEquation, inactiveEquation;
 
@@ -245,7 +246,7 @@ public:
         TS_ASSERT_EQUALS( inactiveEquation._scalar, 0.0 );
 
         auto addend = inactiveEquation._addends.begin();
-        TS_ASSERT_EQUALS( addend->_coefficient, GlobalConfiguration::LEAKY_RELU_SLOPE );
+        TS_ASSERT_EQUALS( addend->_coefficient, slope );
         TS_ASSERT_EQUALS( addend->_variable, b );
 
         ++addend;
@@ -257,6 +258,126 @@ public:
         return true;
     }
 
+    void test_leaky_relu_case_splits_with_aux_var()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        LeakyReluConstraint lrelu( b, f, slope );
+
+        lrelu.notifyLowerBound( b, -10 );
+        lrelu.notifyUpperBound( b, 5 );
+        lrelu.notifyUpperBound( f, 5 );
+
+        unsigned auxVarActive = 10;
+        unsigned auxVarInactive = 11;
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( auxVarActive );
+
+        lrelu.transformToUseAuxVariables( inputQuery );
+
+        TS_ASSERT( lrelu.auxVariablesInUse() );
+        TS_ASSERT_EQUALS( lrelu.getActiveAux(), auxVarActive );
+        TS_ASSERT_EQUALS( lrelu.getInactiveAux(), auxVarInactive );
+
+        List<PiecewiseLinearCaseSplit> splits = lrelu.getCaseSplits();
+
+        Equation activeEquation, inactiveEquation;
+
+        TS_ASSERT_EQUALS( splits.size(), 2U );
+
+        List<PiecewiseLinearCaseSplit>::iterator split1 = splits.begin();
+        List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
+        ++split2;
+
+        TS_ASSERT( isActiveSplitWithAux( b, f, auxVarActive, split1 ) ||
+                   isActiveSplitWithAux( b, f, auxVarActive, split2 ) );
+        TS_ASSERT( isInactiveSplitWithAux( b, f, auxVarInactive, split1 ) ||
+                   isInactiveSplitWithAux( b, f, auxVarInactive, split2 ) );
+    }
+
+    bool isActiveSplitWithAux( unsigned b, unsigned f,
+                               unsigned activeAux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        if ( bound1._type != Tightening::LB )
+            return false;
+
+        ++bound;
+
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
+        if ( bound2._type != Tightening::LB )
+            return false;
+
+        ++bound;
+
+        Tightening bound3 = *bound;
+
+        TS_ASSERT_EQUALS( bound3._variable, activeAux );
+        TS_ASSERT_EQUALS( bound3._value, 0.0 );
+
+        if ( bound3._type != Tightening::UB )
+            return false;
+
+        TS_ASSERT( split->getEquations().empty() );
+
+        return true;
+    }
+
+    bool isInactiveSplitWithAux( unsigned b, unsigned f,
+                               unsigned inactiveAux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    {
+        List<Tightening> bounds = split->getBoundTightenings();
+
+        TS_ASSERT_EQUALS( bounds.size(), 3U );
+
+        auto bound = bounds.begin();
+        Tightening bound1 = *bound;
+
+        TS_ASSERT_EQUALS( bound1._variable, b );
+        TS_ASSERT_EQUALS( bound1._value, 0.0 );
+
+        if ( bound1._type != Tightening::UB )
+            return false;
+
+        ++bound;
+
+        Tightening bound2 = *bound;
+
+        TS_ASSERT_EQUALS( bound2._variable, f );
+        TS_ASSERT_EQUALS( bound2._value, 0.0 );
+
+        if ( bound2._type != Tightening::UB )
+            return false;
+
+        ++bound;
+
+        Tightening bound3 = *bound;
+
+        TS_ASSERT_EQUALS( bound3._variable, inactiveAux );
+        TS_ASSERT_EQUALS( bound3._value, 0.0 );
+
+        if ( bound3._type != Tightening::UB )
+            return false;
+
+        TS_ASSERT( split->getEquations().empty() );
+
+        return true;
+    }
+
     void test_register_as_watcher()
     {
         unsigned b = 1;
@@ -264,27 +385,27 @@ public:
 
         MockTableau tableau;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        TS_ASSERT_THROWS_NOTHING( relu.registerAsWatcher( &tableau ) );
+        TS_ASSERT_THROWS_NOTHING( lrelu.registerAsWatcher( &tableau ) );
 
         TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher.size(), 2U );
         TS_ASSERT( tableau.lastUnregisteredVariableToWatcher.empty() );
         TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[b].size(), 1U );
-        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &relu ) );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[b].exists( &lrelu ) );
         TS_ASSERT_EQUALS( tableau.lastRegisteredVariableToWatcher[f].size(), 1U );
-        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &relu ) );
+        TS_ASSERT( tableau.lastRegisteredVariableToWatcher[f].exists( &lrelu ) );
 
         tableau.lastRegisteredVariableToWatcher.clear();
 
-        TS_ASSERT_THROWS_NOTHING( relu.unregisterAsWatcher( &tableau ) );
+        TS_ASSERT_THROWS_NOTHING( lrelu.unregisterAsWatcher( &tableau ) );
 
         TS_ASSERT( tableau.lastRegisteredVariableToWatcher.empty() );
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher.size(), 2U );
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[b].size(), 1U );
-        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &relu ) );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[b].exists( &lrelu ) );
         TS_ASSERT_EQUALS( tableau.lastUnregisteredVariableToWatcher[f].size(), 1U );
-        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &relu ) );
+        TS_ASSERT( tableau.lastUnregisteredVariableToWatcher[f].exists( &lrelu ) );
     }
 
     void test_valid_split_relu_phase_fixed_to_active()
@@ -292,14 +413,14 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        TS_ASSERT( !relu.phaseFixed() );
-        TS_ASSERT_THROWS_NOTHING( relu.notifyLowerBound( b, 5 ) );
-        TS_ASSERT( relu.phaseFixed() );
+        TS_ASSERT( !lrelu.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( lrelu.notifyLowerBound( b, 5 ) );
+        TS_ASSERT( lrelu.phaseFixed() );
 
         PiecewiseLinearCaseSplit split;
-        TS_ASSERT_THROWS_NOTHING( split = relu.getValidCaseSplit() );
+        TS_ASSERT_THROWS_NOTHING( split = lrelu.getValidCaseSplit() );
 
         List<PiecewiseLinearCaseSplit> dummy;
         dummy.append( split );
@@ -313,14 +434,14 @@ public:
         unsigned b = 1;
         unsigned f = 4;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        TS_ASSERT( !relu.phaseFixed() );
-        TS_ASSERT_THROWS_NOTHING( relu.notifyUpperBound( b, -2 ) );
-        TS_ASSERT( relu.phaseFixed() );
+        TS_ASSERT( !lrelu.phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( lrelu.notifyUpperBound( b, -2 ) );
+        TS_ASSERT( lrelu.phaseFixed() );
 
         PiecewiseLinearCaseSplit split;
-        TS_ASSERT_THROWS_NOTHING( split = relu.getValidCaseSplit() );
+        TS_ASSERT_THROWS_NOTHING( split = lrelu.getValidCaseSplit() );
 
         List<PiecewiseLinearCaseSplit> dummy;
         dummy.append( split );
@@ -329,22 +450,21 @@ public:
         TS_ASSERT( isInactiveSplit( b, f, split1 ) );
     }
 
-    void test_relu_entailed_tightenings()
+    void test_leaky_relu_entailed_tightenings()
     {
         unsigned b = 1;
         unsigned f = 4;
-        double slope = GlobalConfiguration::LEAKY_RELU_SLOPE;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        relu.notifyUpperBound( b, 7 );
-        relu.notifyUpperBound( f, 7 );
+        lrelu.notifyUpperBound( b, 7 );
+        lrelu.notifyUpperBound( f, 7 );
 
-        relu.notifyLowerBound( b, -1 );
-        relu.notifyLowerBound( f, slope * -1 );
+        lrelu.notifyLowerBound( b, -1 );
+        lrelu.notifyLowerBound( f, slope * -1 );
 
         List<Tightening> entailedTightenings;
-        relu.getEntailedTightenings( entailedTightenings );
+        lrelu.getEntailedTightenings( entailedTightenings );
 
         // The phase is not fixed: upper bounds propagated between b
         // and f, f  non-negative
@@ -359,10 +479,10 @@ public:
         // Positive lower bounds for b and f: active case. All bounds
         // propagated between f and b. f and b are
         // non-negative.
-        relu.notifyLowerBound( b, 1 );
-        relu.notifyLowerBound( f, 2 );
+        lrelu.notifyLowerBound( b, 1 );
+        lrelu.notifyLowerBound( f, 2 );
 
-        relu.getEntailedTightenings( entailedTightenings );
+        lrelu.getEntailedTightenings( entailedTightenings );
 
         TS_ASSERT_EQUALS( entailedTightenings.size(), 6U );
         TS_ASSERT( entailedTightenings.exists( Tightening( f, 1, Tightening::LB ) ) );
@@ -377,15 +497,15 @@ public:
 
         // Negative upper bound for b: inactive case. f is 0. B is non-positive.
 
-        LeakyReluConstraint relu2( b, f );
+        LeakyReluConstraint lrelu2( b, f, slope );
 
-        relu2.notifyLowerBound( b, -3 );
-        relu2.notifyLowerBound( f, -2 );
+        lrelu2.notifyLowerBound( b, -3 );
+        lrelu2.notifyLowerBound( f, -2 );
 
-        relu2.notifyUpperBound( b, -1 );
-        relu2.notifyUpperBound( f, 7 );
+        lrelu2.notifyUpperBound( b, -1 );
+        lrelu2.notifyUpperBound( f, 7 );
 
-        relu2.getEntailedTightenings( entailedTightenings );
+        lrelu2.getEntailedTightenings( entailedTightenings );
 
         TS_ASSERT_EQUALS( entailedTightenings.size(), 5U );
 
@@ -398,32 +518,34 @@ public:
         TS_ASSERT( entailedTightenings.exists( Tightening( f, -1 * slope, Tightening::UB ) ) );
     }
 
-    void test_relu_duplicate_and_restore()
+    void test_leaky_relu_duplicate_and_restore()
     {
-        LeakyReluConstraint *relu1 = new LeakyReluConstraint( 4, 6 );
-        relu1->setActiveConstraint( false );
-        relu1->notifyVariableValue( 4, 1.0 );
-        relu1->notifyVariableValue( 6, 1.0 );
+        LeakyReluConstraint *lrelu1 = new LeakyReluConstraint( 4, 6, slope );
+        MockTableau tableau;
+        lrelu1->registerTableau( &tableau );
+        lrelu1->setActiveConstraint( false );
+        tableau.setValue( 4, 1.0 );
+        tableau.setValue( 6, 1.0 );
 
-        relu1->notifyLowerBound( 4, -8.0 );
-        relu1->notifyUpperBound( 4, 8.0 );
+        lrelu1->notifyLowerBound( 4, -8.0 );
+        lrelu1->notifyUpperBound( 4, 8.0 );
 
-        relu1->notifyLowerBound( 6, 0.0 );
-        relu1->notifyUpperBound( 6, 8.0 );
+        lrelu1->notifyLowerBound( 6, 0.0 );
+        lrelu1->notifyUpperBound( 6, 8.0 );
 
-        PiecewiseLinearConstraint *relu2 = relu1->duplicateConstraint();
+        PiecewiseLinearConstraint *lrelu2 = lrelu1->duplicateConstraint();
+        TS_ASSERT( lrelu2->satisfied() );
+        tableau.setValue( 4, -2 );
+        TS_ASSERT( !lrelu1->satisfied() );
 
-        relu1->notifyVariableValue( 4, -2 );
-        TS_ASSERT( !relu1->satisfied() );
+        TS_ASSERT( !lrelu2->isActive() );
+        TS_ASSERT( !lrelu2->satisfied() );
 
-        TS_ASSERT( !relu2->isActive() );
-        TS_ASSERT( relu2->satisfied() );
+        lrelu2->restoreState( lrelu1 );
+        TS_ASSERT( !lrelu2->satisfied() );
 
-        relu2->restoreState( relu1 );
-        TS_ASSERT( !relu2->satisfied() );
-
-        TS_ASSERT_THROWS_NOTHING( delete relu1 );
-        TS_ASSERT_THROWS_NOTHING( delete relu2 );
+        TS_ASSERT_THROWS_NOTHING( delete lrelu1 );
+        TS_ASSERT_THROWS_NOTHING( delete lrelu2 );
     }
 
     void test_eliminate_variable_active()
@@ -433,114 +555,149 @@ public:
 
         MockTableau tableau;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        relu.registerAsWatcher( &tableau );
+        lrelu.registerAsWatcher( &tableau );
 
-        TS_ASSERT( !relu.constraintObsolete() );
-        TS_ASSERT_THROWS_NOTHING( relu.eliminateVariable( b, 5 ) );
-        TS_ASSERT( relu.constraintObsolete() );
+        TS_ASSERT( !lrelu.constraintObsolete() );
+        TS_ASSERT_THROWS_NOTHING( lrelu.eliminateVariable( b, 5 ) );
+        TS_ASSERT( lrelu.constraintObsolete() );
     }
 
     void test_serialize_and_unserialize()
     {
-        // TODO: test serialize Leaky ReLU
+        unsigned b = 42;
+        unsigned f = 7;
+
+        LeakyReluConstraint originalLRelu( b, f, slope );
+        originalLRelu.notifyLowerBound( b, -10 );
+        originalLRelu.notifyUpperBound( f, 5 );
+        originalLRelu.notifyUpperBound( f, -1 );
+        originalLRelu.notifyUpperBound( f, 5 );
+
+        String originalSerialized = originalLRelu.serializeToString();
+        LeakyReluConstraint recoveredLRelu( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalLRelu.serializeToString(),
+                          recoveredLRelu.serializeToString() );
+
+        TS_ASSERT( !originalLRelu.auxVariablesInUse() );
+        TS_ASSERT( !recoveredLRelu.auxVariablesInUse() );
+
+        InputQuery dontCare;
+        dontCare.setNumberOfVariables( 500 );
+
+        originalLRelu.transformToUseAuxVariables( dontCare );
+
+        TS_ASSERT( originalLRelu.auxVariablesInUse() );
+
+        originalSerialized = originalLRelu.serializeToString();
+        LeakyReluConstraint recoveredLRelu2( originalSerialized );
+
+        TS_ASSERT_EQUALS( originalLRelu.serializeToString(),
+                          recoveredLRelu2.serializeToString() );
+
+        TS_ASSERT( recoveredLRelu2.auxVariablesInUse() );
+        TS_ASSERT_EQUALS( originalLRelu.getActiveAux(), recoveredLRelu2.getActiveAux() );
+        TS_ASSERT_EQUALS( originalLRelu.getInactiveAux(), recoveredLRelu2.getInactiveAux() );
     }
 
-    LeakyReluConstraint prepareLeakyRelu( unsigned b, unsigned f, IConstraintBoundTightener *tightener )
+    LeakyReluConstraint prepareLeakyRelu( unsigned b, unsigned f, unsigned activeAux,
+                                          BoundManager *boundManager )
     {
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
+        boundManager->initialize( activeAux + 2 );
 
-        relu.notifyLowerBound( b, -10 );
-        relu.notifyLowerBound( f, GlobalConfiguration::LEAKY_RELU_SLOPE * -10 );
+        InputQuery dontCare;
+        dontCare.setNumberOfVariables( activeAux );
+        lrelu.registerBoundManager( boundManager );
 
-        relu.notifyUpperBound( b, 15 );
-        relu.notifyUpperBound( f, 15 );
+        lrelu.notifyLowerBound( b, -10 );
+        lrelu.notifyLowerBound( f, slope * -10 );
 
-        relu.registerConstraintBoundTightener( tightener );
+        lrelu.notifyUpperBound( b, 15 );
+        lrelu.notifyUpperBound( f, 15 );
 
-        return relu;
+        TS_ASSERT_THROWS_NOTHING( lrelu.transformToUseAuxVariables( dontCare ) );
+
+        lrelu.notifyLowerBound( activeAux, 0 );
+        lrelu.notifyUpperBound( activeAux, 10 );
+
+        unsigned inactiveAux = activeAux + 1;
+        lrelu.notifyLowerBound( inactiveAux, 0 );
+        lrelu.notifyUpperBound( inactiveAux, 15 );
+
+
+        boundManager->clearTightenings();
+        return lrelu;
     }
 
     void test_notify_bounds()
     {
-        double slope = GlobalConfiguration::LEAKY_RELU_SLOPE;
         unsigned b = 1;
         unsigned f = 4;
-        MockConstraintBoundTightener tightener;
-        List<Tightening> tightenings;
-
-        tightener.getConstraintTightenings( tightenings );
+        unsigned activeAux = 10;
+        Context context;
 
         // Initial state: b in [-10, 15], f in [slope * -10, 15]
 
         {
-            LeakyReluConstraint relu = prepareLeakyRelu( b, f, &tightener );
-
-            relu.notifyLowerBound( b, -20 );
-            tightener.getConstraintTightenings( tightenings );
+            BoundManager boundManager( context );
+            List<Tightening> tightenings;
+            LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
+            lrelu.notifyLowerBound( b, -20 );
+            boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
 
-            relu.notifyLowerBound( f, -20 * slope);
-            tightener.getConstraintTightenings( tightenings );
+            lrelu.notifyLowerBound( f, -20 * slope);
+            boundManager.getTightenings( tightenings );
+            TS_ASSERT( tightenings.empty() );
+            for ( const auto &t : tightenings )
+                t.dump();
+
+            lrelu.notifyUpperBound( b, 20 );
+            boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
 
-            relu.notifyUpperBound( b, 20 );
-            tightener.getConstraintTightenings( tightenings );
-            TS_ASSERT( tightenings.empty() );
-
-            relu.notifyUpperBound( f, 23 );
-            tightener.getConstraintTightenings( tightenings );
+            lrelu.notifyUpperBound( f, 23 );
+            boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
         }
 
         {
             // Tighter lower bound for b that is negative
-            LeakyReluConstraint relu = prepareLeakyRelu( b, f, &tightener );
-            relu.notifyLowerBound( b, -8 );
-            tightener.getConstraintTightenings( tightenings );
+            BoundManager boundManager( context );
+            List<Tightening> tightenings;
+            LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
+            lrelu.notifyLowerBound( b, -8 );
+            boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.exists( Tightening( f, -8 * slope, Tightening::LB ) ) );
         }
 
         {
             // Tighter upper bound for b/f that is positive
-            LeakyReluConstraint relu = prepareLeakyRelu( b, f, &tightener );
-            relu.notifyUpperBound( b, 13 );
-            tightener.getConstraintTightenings( tightenings );
+            BoundManager boundManager( context );
+            List<Tightening> tightenings;
+            LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
+            lrelu.notifyUpperBound( b, 13 );
+            boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.exists( Tightening( f, 13, Tightening::UB ) ) );
 
-            relu.notifyUpperBound( f, 12 );
-            tightener.getConstraintTightenings( tightenings );
+            lrelu.notifyUpperBound( f, 12 );
+            boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.exists( Tightening( b, 12, Tightening::UB ) ) );
         }
 
         {
             // Tighter upper bound 0 for f
-            LeakyReluConstraint relu = prepareLeakyRelu( b, f, &tightener );
-            relu.notifyUpperBound( f, 0 );
-            tightener.getConstraintTightenings( tightenings );
+            BoundManager boundManager( context );
+            List<Tightening> tightenings;
+            LeakyReluConstraint lrelu = prepareLeakyRelu( b, f, activeAux, &boundManager );
+            lrelu.notifyUpperBound( f, 0 );
+            boundManager.getTightenings( tightenings );
 
             TS_ASSERT( tightenings.exists( Tightening( b, 0, Tightening::UB ) ) );
         }
-
-        {
-            // Tighter negative upper bound for b
-            LeakyReluConstraint relu = prepareLeakyRelu( b, f, &tightener );
-            relu.notifyUpperBound( b, -1 );
-            tightener.getConstraintTightenings( tightenings );
-
-            TS_ASSERT( tightenings.exists( Tightening( f, -1 * slope, Tightening::UB ) ) );
-        }
-
-        {
-            // Tighter negative upper bound for f
-            LeakyReluConstraint relu = prepareLeakyRelu( b, f, &tightener );
-            relu.notifyUpperBound( f, slope * -1 );
-            tightener.getConstraintTightenings( tightenings );
-
-            TS_ASSERT( tightenings.exists( Tightening( b, -1, Tightening::UB ) ) );
-        }
-
     }
 
     void test_polarity()
@@ -561,44 +718,44 @@ public:
         inactivePhase.storeBoundTightening( Tightening( b, 0.0, Tightening::UB ) );
         inactivePhase.storeBoundTightening( Tightening( f, 0.0, Tightening::UB ) );
         Equation inactiveEquation( Equation::EQ );
-        inactiveEquation.addAddend( GlobalConfiguration::LEAKY_RELU_SLOPE, b );
+        inactiveEquation.addAddend( slope, b );
         inactiveEquation.addAddend( -1, f );
         inactiveEquation.setScalar( 0 );
         inactivePhase.addEquation( inactiveEquation );
 
         // b in [1, 2], polarity should be 1, and direction should be RELU_PHASE_ACTIVE
         {
-            LeakyReluConstraint relu( b, f );
-            relu.notifyLowerBound( b, 1 );
-            relu.notifyUpperBound( b, 2 );
-            TS_ASSERT( relu.computePolarity() == 1 );
+            LeakyReluConstraint lrelu( b, f, slope );
+            lrelu.notifyLowerBound( b, 1 );
+            lrelu.notifyUpperBound( b, 2 );
+            TS_ASSERT( lrelu.computePolarity() == 1 );
 
-            relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == RELU_PHASE_ACTIVE );
+            lrelu.updateDirection();
+            TS_ASSERT( lrelu.getDirection() == RELU_PHASE_ACTIVE );
         }
         // b in [-2, 0], polarity should be -1, and direction should be RELU_PHASE_INACTIVE
         {
-            LeakyReluConstraint relu( b, f );
-            relu.notifyLowerBound( b, -2 );
-            relu.notifyUpperBound( b, 0 );
-            TS_ASSERT( relu.computePolarity() == -1 );
+            LeakyReluConstraint lrelu( b, f, slope );
+            lrelu.notifyLowerBound( b, -2 );
+            lrelu.notifyUpperBound( b, 0 );
+            TS_ASSERT( lrelu.computePolarity() == -1 );
 
-            relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == RELU_PHASE_INACTIVE );
+            lrelu.updateDirection();
+            TS_ASSERT( lrelu.getDirection() == RELU_PHASE_INACTIVE );
         }
         // b in [-2, 2], polarity should be 0, the direction should be RELU_PHASE_INACTIVE,
         // the inactive case should be the first element of the returned list by
         // the getCaseSplits(), and getPossibleFix should return the inactive fix first
         {
-            LeakyReluConstraint relu( b, f );
-            relu.notifyLowerBound( b, -2 );
-            relu.notifyUpperBound( b, 2 );
-            TS_ASSERT( relu.computePolarity() == 0 );
+            LeakyReluConstraint lrelu( b, f, slope );
+            lrelu.notifyLowerBound( b, -2 );
+            lrelu.notifyUpperBound( b, 2 );
+            TS_ASSERT( lrelu.computePolarity() == 0 );
 
-            relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == RELU_PHASE_INACTIVE );
+            lrelu.updateDirection();
+            TS_ASSERT( lrelu.getDirection() == RELU_PHASE_INACTIVE );
 
-            auto splits = relu.getCaseSplits();
+            auto splits = lrelu.getCaseSplits();
             auto it = splits.begin();
             TS_ASSERT( *it == inactivePhase );
         }
@@ -606,15 +763,15 @@ public:
         // the active case should be the first element of the returned list by
         // the getCaseSplits(), and getPossibleFix should return the active fix first
         {
-            LeakyReluConstraint relu( b, f );
-            relu.notifyLowerBound( b, -2 );
-            relu.notifyUpperBound( b, 3 );
-            TS_ASSERT( relu.computePolarity() == 0.2 );
+            LeakyReluConstraint lrelu( b, f, slope );
+            lrelu.notifyLowerBound( b, -2 );
+            lrelu.notifyUpperBound( b, 3 );
+            TS_ASSERT( lrelu.computePolarity() == 0.2 );
 
-            relu.updateDirection();
-            TS_ASSERT( relu.getDirection() == RELU_PHASE_ACTIVE );
+            lrelu.updateDirection();
+            TS_ASSERT( lrelu.getDirection() == RELU_PHASE_ACTIVE );
 
-            auto splits = relu.getCaseSplits();
+            auto splits = lrelu.getCaseSplits();
             auto it = splits.begin();
             TS_ASSERT( *it == activePhase );
         }
@@ -625,56 +782,56 @@ public:
       1. Check that all cases are returned by LeakyReluConstraint::getAllCases()
       2. Check that LeakyReluConstraint::getCaseSplit( case ) returns the correct case
      */
-    void test_relu_get_cases()
+    void test_leaky_relu_get_cases()
     {
         unsigned b = 1;
         unsigned f = 4;
 
-        LeakyReluConstraint relu( b, f );
+        LeakyReluConstraint lrelu( b, f, slope );
 
-        List<PhaseStatus> cases = relu.getAllCases();
+        List<PhaseStatus> cases = lrelu.getAllCases();
 
         TS_ASSERT_EQUALS( cases.size(), 2u );
         TS_ASSERT_EQUALS( cases.front(), RELU_PHASE_INACTIVE );
         TS_ASSERT_EQUALS( cases.back(), RELU_PHASE_ACTIVE );
 
-        List<PiecewiseLinearCaseSplit> splits = relu.getCaseSplits();
+        List<PiecewiseLinearCaseSplit> splits = lrelu.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2u );
-        TS_ASSERT_EQUALS( splits.front(), relu.getCaseSplit( RELU_PHASE_INACTIVE ) ) ;
-        TS_ASSERT_EQUALS( splits.back(), relu.getCaseSplit( RELU_PHASE_ACTIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.front(), lrelu.getCaseSplit( RELU_PHASE_INACTIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.back(), lrelu.getCaseSplit( RELU_PHASE_ACTIVE ) ) ;
     }
 
     /*
-      Test context-dependent ReLU state behavior.
+      Test context-dependent lrelu state behavior.
      */
-    void test_relu_context_dependent_state()
+    void test_leaky_relu_context_dependent_state()
     {
         Context context;
         unsigned b = 1;
         unsigned f = 4;
 
-        TestLeakyReluConstraint relu( b, f );
+        TestLeakyReluConstraint lrelu( b, f, slope );
 
-        relu.initializeCDOs( &context );
+        lrelu.initializeCDOs( &context );
 
 
 
-        TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
-
-        context.push();
-
-        relu.notifyLowerBound( f, 1 );
-        TS_ASSERT_EQUALS( relu.getPhaseStatus(), RELU_PHASE_ACTIVE );
-
-        context.pop();
-        TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
+        TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), PHASE_NOT_FIXED );
 
         context.push();
-        relu.notifyUpperBound( b, -1 );
-        TS_ASSERT_EQUALS( relu.getPhaseStatus(), RELU_PHASE_INACTIVE );
+
+        lrelu.notifyLowerBound( f, 1 );
+        TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), RELU_PHASE_ACTIVE );
 
         context.pop();
-        TS_ASSERT_EQUALS( relu.getPhaseStatus(), PHASE_NOT_FIXED );
+        TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), PHASE_NOT_FIXED );
+
+        context.push();
+        lrelu.notifyUpperBound( b, -1 );
+        TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), RELU_PHASE_INACTIVE );
+
+        context.pop();
+        TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), PHASE_NOT_FIXED );
     }
 
     /*
@@ -683,31 +840,31 @@ public:
     void test_initialization_of_CDOs()
     {
         Context context;
-        LeakyReluConstraint *relu1 = new LeakyReluConstraint( 4, 6 );
+        LeakyReluConstraint *lrelu1 = new LeakyReluConstraint( 4, 6, slope );
 
-        TS_ASSERT_EQUALS(relu1->getContext(), static_cast<Context*>( static_cast<Context*>( nullptr ) ) );
+        TS_ASSERT_EQUALS( lrelu1->getContext(), static_cast<Context*>( static_cast<Context*>( nullptr ) ) );
 
-        TS_ASSERT_EQUALS( relu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( relu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_THROWS_NOTHING( relu1->initializeCDOs( &context ) );
-        TS_ASSERT_EQUALS( relu1->getContext(), &context );
-        TS_ASSERT_DIFFERS( relu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( relu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( lrelu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_EQUALS( lrelu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( lrelu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_THROWS_NOTHING( lrelu1->initializeCDOs( &context ) );
+        TS_ASSERT_EQUALS( lrelu1->getContext(), &context );
+        TS_ASSERT_DIFFERS( lrelu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( lrelu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( lrelu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
 
         bool active = false;
-        TS_ASSERT_THROWS_NOTHING( active = relu1->isActive() );
+        TS_ASSERT_THROWS_NOTHING( active = lrelu1->isActive() );
         TS_ASSERT_EQUALS( active, true );
 
         bool phaseFixed = true;
-        TS_ASSERT_THROWS_NOTHING( phaseFixed = relu1->phaseFixed() );
+        TS_ASSERT_THROWS_NOTHING( phaseFixed = lrelu1->phaseFixed() );
         TS_ASSERT_EQUALS( phaseFixed, PHASE_NOT_FIXED );
-        TS_ASSERT_EQUALS( relu1->numFeasibleCases(), 2u );
-        TS_ASSERT( relu1->isFeasible() );
-        TS_ASSERT( !relu1->isImplication() );
+        TS_ASSERT_EQUALS( lrelu1->numFeasibleCases(), 2u );
+        TS_ASSERT( lrelu1->isFeasible() );
+        TS_ASSERT( !lrelu1->isImplication() );
 
-        TS_ASSERT_THROWS_NOTHING( delete relu1 );
+        TS_ASSERT_THROWS_NOTHING( delete lrelu1 );
     }
 
     /*
@@ -717,57 +874,48 @@ public:
     void test_lazy_backtracking_of_CDOs()
     {
         Context context;
-        LeakyReluConstraint *relu1 = new LeakyReluConstraint( 4, 6 );
-        TS_ASSERT_THROWS_NOTHING( relu1->initializeCDOs( &context ) );
+        LeakyReluConstraint *lrelu1 = new LeakyReluConstraint( 4, 6, slope );
+        TS_ASSERT_THROWS_NOTHING( lrelu1->initializeCDOs( &context ) );
 
         // L0 - Feasible, not an implication
         PhaseStatus phase1 = PHASE_NOT_FIXED;
-        TS_ASSERT_THROWS_NOTHING( phase1 = relu1->nextFeasibleCase() );
-        TS_ASSERT_EQUALS( phase1, relu1->nextFeasibleCase() );
-        TS_ASSERT( relu1->isFeasible() );
-        TS_ASSERT( !relu1->isImplication() );
+        TS_ASSERT_THROWS_NOTHING( phase1 = lrelu1->nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase1, lrelu1->nextFeasibleCase() );
+        TS_ASSERT( lrelu1->isFeasible() );
+        TS_ASSERT( !lrelu1->isImplication() );
 
 
         // L1 - Feasible, an implication, nextFeasibleCase returns a new case
         TS_ASSERT_THROWS_NOTHING( context.push() );
-        TS_ASSERT_THROWS_NOTHING( relu1->markInfeasible( phase1 ) );
-        TS_ASSERT( relu1->isFeasible() );
-        TS_ASSERT( relu1->isImplication() );
+        TS_ASSERT_THROWS_NOTHING( lrelu1->markInfeasible( phase1 ) );
+        TS_ASSERT( lrelu1->isFeasible() );
+        TS_ASSERT( lrelu1->isImplication() );
 
         PhaseStatus phase2 = PHASE_NOT_FIXED;
-        TS_ASSERT_THROWS_NOTHING( phase2 = relu1->nextFeasibleCase() );
-        TS_ASSERT_EQUALS( phase2, relu1->nextFeasibleCase() );
+        TS_ASSERT_THROWS_NOTHING( phase2 = lrelu1->nextFeasibleCase() );
+        TS_ASSERT_EQUALS( phase2, lrelu1->nextFeasibleCase() );
         TS_ASSERT_DIFFERS( phase2, phase1 );
 
         // L2 - Infeasible, not an implication, nextCase returns CONSTRAINT_INFEASIBLE
         TS_ASSERT_THROWS_NOTHING( context.push() );
-        TS_ASSERT_THROWS_NOTHING( relu1->markInfeasible( phase2 ) );
-        TS_ASSERT( !relu1->isFeasible() );
-        TS_ASSERT( !relu1->isImplication() );
-        TS_ASSERT_EQUALS( relu1->nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
+        TS_ASSERT_THROWS_NOTHING( lrelu1->markInfeasible( phase2 ) );
+        TS_ASSERT( !lrelu1->isFeasible() );
+        TS_ASSERT( !lrelu1->isImplication() );
+        TS_ASSERT_EQUALS( lrelu1->nextFeasibleCase(), CONSTRAINT_INFEASIBLE );
 
         // L1 again - Feasible, an implication, nextFeasibleCase returns same values as phase2
         TS_ASSERT_THROWS_NOTHING( context.pop() );
-        TS_ASSERT( relu1->isFeasible() );
-        TS_ASSERT( relu1->isImplication() );
-        TS_ASSERT_EQUALS( phase2, relu1->nextFeasibleCase() );
+        TS_ASSERT( lrelu1->isFeasible() );
+        TS_ASSERT( lrelu1->isImplication() );
+        TS_ASSERT_EQUALS( phase2, lrelu1->nextFeasibleCase() );
 
         // L0 again - Feasible, not an implication, nextFeasibleCase returns same value as phase1
         TS_ASSERT_THROWS_NOTHING( context.pop() );
-        TS_ASSERT( relu1->isFeasible() );
-        TS_ASSERT( !relu1->isImplication() );
-        TS_ASSERT_EQUALS( phase1, relu1->nextFeasibleCase() );
+        TS_ASSERT( lrelu1->isFeasible() );
+        TS_ASSERT( !lrelu1->isImplication() );
+        TS_ASSERT_EQUALS( phase1, lrelu1->nextFeasibleCase() );
 
-        TS_ASSERT_THROWS_NOTHING( delete relu1 );
+        TS_ASSERT_THROWS_NOTHING( delete lrelu1 );
     }
 
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//
-

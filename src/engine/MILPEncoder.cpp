@@ -61,7 +61,8 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
                                   relax );
             break;
         case PiecewiseLinearFunctionType::LEAKY_RELU:
-            encodeLeakyReLUConstraint( gurobi, (LeakyReluConstraint *)plConstraint );
+            encodeLeakyReLUConstraint( gurobi, (LeakyReluConstraint *)plConstraint,
+                                       relax );
             break;
         case PiecewiseLinearFunctionType::MAX:
             encodeMaxConstraint( gurobi, (MaxConstraint *)plConstraint,
@@ -242,7 +243,7 @@ void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluCon
             xPoints[1] = 0;
             yPoints[1] = 0;
             xPoints[2] = sourceUb;
-            yPoints[2]  sourceUb;
+            yPoints[2] = sourceUb;
             gurobi.addPiecewiseLinearConstraint( Stringf( "x%u", sourceVariable ),
                                                  Stringf( "x%u", targetVariable ),
                                                  3, xPoints, yPoints );

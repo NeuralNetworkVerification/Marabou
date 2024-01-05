@@ -423,8 +423,9 @@ public:
         eq.addAddend(-1, 4);
         inputQuery1.addEquation( eq );
 
-        LeakyReluConstraint *relu1 = new LeakyReluConstraint( 0, 2 );
-        LeakyReluConstraint *relu2 = new LeakyReluConstraint( 1, 3 );
+        double slope = 0.2;
+        LeakyReluConstraint *relu1 = new LeakyReluConstraint( 0, 2, slope );
+        LeakyReluConstraint *relu2 = new LeakyReluConstraint( 1, 3, slope );
         inputQuery1.addPiecewiseLinearConstraint( relu1 );
         inputQuery1.addPiecewiseLinearConstraint( relu2 );
 
@@ -435,7 +436,6 @@ public:
 
         InputQuery inputQuery2 = inputQuery1;
 
-        double slope = GlobalConfiguration::LEAKY_RELU_SLOPE;
         Equation eq1;
         eq1.addAddend(1, 4);
         eq1.setScalar(slope * -1 + 1);
