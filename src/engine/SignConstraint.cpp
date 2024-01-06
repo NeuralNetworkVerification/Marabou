@@ -388,6 +388,9 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
 
+    if ( variable == 1637 )
+        std::cout << "Updating variable LB to " << bound << std::endl;
+
     // Otherwise - update bound
     setLowerBound( variable, bound );
 
@@ -439,13 +442,13 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
          !FloatUtils::lt( bound, getUpperBound( variable ) ) )
         return;
 
+    if ( variable == 1637 )
+        std::cout << "Updating variable UB to " << bound << std::endl;
     // Otherwise - update bound
     setUpperBound( variable, bound );
 
     if ( variable == _f && FloatUtils::lt( bound, 1 ) )
     {
-
-
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
         if ( _boundManager != nullptr )
         {

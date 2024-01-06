@@ -16,6 +16,7 @@
 #include "DnCMarabou.h"
 #include "ConfigurationError.h"
 #include "Error.h"
+#include "LPSolverType.h"
 #include "Marabou.h"
 #include "Options.h"
 
@@ -93,6 +94,12 @@ int marabouMain( int argc, char **argv )
         {
             options->setBool( Options::SOLVE_WITH_MILP, false );
             printf( "Proof production is not yet supported with MILP solvers, turning --milp off.\n" );
+        }
+
+        if ( options->getBool( Options::PRODUCE_PROOFS ) && ( options->getLPSolverType() == LPSolverType::GUROBI ) )
+        {
+            options->setString( Options::LP_SOLVER, "native" );
+            printf( "Proof production is not yet supported with MILP solvers, using native simplex engine.\n" );
         }
 
         if ( options->getBool( Options::DNC_MODE ) &&

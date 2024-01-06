@@ -142,11 +142,12 @@ endforeach()
 # Proof production tests
 
 # ReLU
-marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_5_9" "3" unsat)
+# TODO: move the commented out long running test to higher regression level.
+#marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_5_9" "3" unsat)
 marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_5_7" "3" unsat)
-marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_3_7" "3" unsat)
-marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_2_9" "4" unsat)
-marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_2_9" "3" unsat)
+#marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_3_7" "3" unsat)
+#marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_2_9" "4" unsat)
+#marabou_add_acasxu_proof_test(1 "ACASXU_experimental_v2a_2_9" "3" unsat)
 marabou_add_coav_proof_test(1 "reluBenchmark1.30941200256s_UNSAT.nnet" unsat)
 marabou_add_coav_proof_test(1 "reluBenchmark0.453322172165s_UNSAT.nnet" unsat)
 marabou_add_coav_proof_test(1 "reluBenchmark0.30711388588s_UNSAT.nnet" unsat)

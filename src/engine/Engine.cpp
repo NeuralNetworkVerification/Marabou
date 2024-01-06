@@ -135,6 +135,7 @@ void Engine::applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId )
     preContextPushHook();
     _smtCore.pushContext();
     applySplit( sncSplit );
+    _boundManager.propagateTightenings();
 }
 
 bool Engine::inSnCMode() const
@@ -282,9 +283,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If true, we just entered a new subproblem
             if ( splitJustPerformed )
             {
+                std::cout << "bt" << std::endl;
                 performBoundTighteningAfterCaseSplit();
                 informLPSolverOfBounds();
                 splitJustPerformed = false;
+                std::cout << "bt - done" << std::endl;
             }
 
             // Perform any SmtCore-initiated case splits
