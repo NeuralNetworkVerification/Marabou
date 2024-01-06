@@ -63,7 +63,7 @@ public:
         // If false, when multiple threads are allowed, run the DeepSoI-based procedure
         // with a different random seed on each thread. The problem is solved once
         // any of the thread finishes.
-        NO_PARALLEL_DEEPSOI,
+        PARALLEL_DEEPSOI,
 
         // Export SAT assignment into a file, use EXPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
         EXPORT_ASSIGNMENT,

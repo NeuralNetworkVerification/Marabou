@@ -296,9 +296,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
     }
 
-    result += registerTighterLowerBound( y, lowerBound, row );
-    result += registerTighterUpperBound( y, upperBound, row );
-
+    result += registerTighterLowerBound( y, lowerBound - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
+    result += registerTighterUpperBound( y, upperBound + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
     if ( FloatUtils::gt( getLowerBound( y ), getUpperBound( y ) ) )
     {
         ASSERT( FloatUtils::gt( _boundManager.getLowerBound( y ), _boundManager.getUpperBound( y ) ) );
@@ -374,8 +373,8 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         // If a tighter bound is found, store it
         xi = row._row[i]._var;
-        result += registerTighterLowerBound( xi, lowerBound, row );
-        result += registerTighterUpperBound( xi, upperBound, row );
+        result += registerTighterLowerBound( xi, lowerBound - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
+        result += registerTighterUpperBound( xi, upperBound + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
         if ( FloatUtils::gt( getLowerBound( xi ), getUpperBound( xi ) ) )
         {
             ASSERT( FloatUtils::gt( _boundManager.getLowerBound( xi ), _boundManager.getUpperBound( xi ) ) );

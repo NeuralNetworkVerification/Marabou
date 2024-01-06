@@ -185,6 +185,7 @@ public:
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
+    static const double EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT;
 
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;

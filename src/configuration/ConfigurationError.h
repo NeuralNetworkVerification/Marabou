@@ -23,6 +23,7 @@ class ConfigurationError : public Error
 public:
 	enum Code {
         OPTION_KEY_DOESNT_EXIST = 0,
+        INCOMPTATIBLE_OPTIONS = 1,
     };
 
     ConfigurationError( ConfigurationError::Code code ) : Error( "ConfigurationError", (int)code )

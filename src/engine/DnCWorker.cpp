@@ -88,8 +88,7 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         unsigned timeoutInSeconds = subQuery->_timeoutInSeconds;
 
         // Reset the engine state
-        if ( !_parallelDeepSoI )
-            _engine->restoreState( *_initialState );
+        _engine->restoreState( *_initialState );
         _engine->reset();
 
         // TODO: each worker is going to keep a map from *CaseSplit to an

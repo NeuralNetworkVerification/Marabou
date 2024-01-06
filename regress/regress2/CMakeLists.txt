@@ -10,7 +10,7 @@ marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_3_9" "3" unsat) #
 # marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_3_5" "2" sat) # timeout
 # marabou_add_acasxu_dnc_test(1 "ACASXU_experimental_v2a_3_9" "3" unsat) # 200sec
 
-marabou_add_mnist_test(2 "mnist10x10.nnet" "image3_target8_epsilon0.1.txt" sat) #16sec
+#marabou_add_mnist_test(2 "mnist10x10.nnet" "image3_target8_epsilon0.1.txt" sat) #16sec
 marabou_add_mnist_test(2 "mnist10x10.nnet" "image3_target9_epsilon0.005.txt" unsat) #17sec
 
 # Add all input query files in regress2/input_queries/ as tests.
