@@ -96,7 +96,6 @@ void DnCWorker::popOneSubQueryAndSolve( bool restoreTreeStates )
         // statistics. The maps are owned by the DnCManager.
 
         // Apply the split and solve
-        split->dump();
         _engine->applySnCSplit( *split, queryId );
 
         bool fullSolveNeeded = true; // denotes whether we need to solve the subquery

@@ -196,6 +196,11 @@ bool Engine::solve( unsigned timeoutInSeconds )
     else if ( _lpSolverType == LPSolverType::GUROBI )
     {
         ENGINE_LOG( "Encoding convex relaxation into Gurobi...");
+        _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
+        _tableau->setGurobi( &( *_gurobi ) );
+        _milpEncoder = std::unique_ptr<MILPEncoder>
+            ( new MILPEncoder( *_tableau ) );
+        _milpEncoder->setStatistics( &_statistics );
         _milpEncoder->encodeInputQuery( *_gurobi, *_preprocessedQuery, true );
         ENGINE_LOG( "Encoding convex relaxation into Gurobi - done");
     }
@@ -1474,12 +1479,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
             if ( _verbosity > 0 )
                 printf("Using Gurobi to solve LP...\n");
-
-            _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
-            _milpEncoder = std::unique_ptr<MILPEncoder>
-                ( new MILPEncoder( *_tableau ) );
-            _milpEncoder->setStatistics( &_statistics );
-            _tableau->setGurobi( &( *_gurobi ) );
 
             unsigned n = _preprocessedQuery->getNumberOfVariables();
             unsigned m = _preprocessedQuery->getEquations().size();
