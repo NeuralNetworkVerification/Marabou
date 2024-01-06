@@ -87,7 +87,8 @@ def run_marabou(marabou_binary, network_path, property_path, expected_result, ti
 
     args = [marabou_binary, network_path, property_path]
     if isinstance(arguments, list):
-        args += arguments
+        for arg in arguments:
+            args += arg.split("+")
     out, err, exit_status = run_process(args, os.curdir, timeout)
 
     return analyze_process_result(out, err, exit_status, expected_result)
@@ -138,7 +139,8 @@ def run_input_query(marabou_binary, input_query_path, expected_result, timeout=D
 
     args = [marabou_binary, "--input-query", input_query_path]
     if isinstance(arguments, list):
-        args += arguments
+        for arg in arguments:
+            args += arg.split("+")
     out, err, exit_status = run_process(args, os.curdir, timeout)
 
     return analyze_process_result(out, err, exit_status, expected_result)

@@ -225,6 +225,8 @@ public:
      */
     void applySnCSplit( PiecewiseLinearCaseSplit sncSplit, String queryId );
 
+    bool inSnCMode() const;
+
     /*
        Apply bound tightenings stored in the bound manager.
      */

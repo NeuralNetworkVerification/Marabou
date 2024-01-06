@@ -470,7 +470,7 @@ bool Tableau::existsValue( unsigned variable ) const
 {
     if ( _lpSolverType == LPSolverType::GUROBI )
     {
-        return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        return _gurobi && _gurobi->existsAssignment( Stringf( "x%u", variable ) );
     }
     else
     {

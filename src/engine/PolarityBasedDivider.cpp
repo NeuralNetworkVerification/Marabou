@@ -94,22 +94,11 @@ void PolarityBasedDivider::createSubQueries( unsigned numNewSubqueries, const
 PiecewiseLinearConstraint *PolarityBasedDivider::getPLConstraintToSplit
 ( const PiecewiseLinearCaseSplit &split )
 {
-    EngineState *engineStateBeforeSplit = new EngineState();
-    _engine->storeState( *engineStateBeforeSplit,
-                         TableauStateStorageLevel::STORE_BOUNDS_ONLY );
-    _engine->applySplit( split );
+    _engine->applySnCSplit( split, "" );
 
     PiecewiseLinearConstraint *constraintToSplit = NULL;
     constraintToSplit = _engine->pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity );
-    _engine->restoreState( *engineStateBeforeSplit );
-    delete engineStateBeforeSplit;
+    _engine->getContext().pop();
+    _engine->postContextPopHook();
     return constraintToSplit;
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

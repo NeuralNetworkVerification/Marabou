@@ -16,6 +16,7 @@
 #include <cxxtest/TestSuite.h>
 
 #include "MockTableau.h"
+#include "GlobalConfiguration.h"
 #include "RowBoundTightener.h"
 
 class MockForRowBoundTightener
@@ -105,8 +106,8 @@ public:
 
         // LB -> 1 - 10 - 4 -100
         // UB -> 1 - 5 + 6 + 100
-        TS_ASSERT_EQUALS( lower->_value, -113 );
-        TS_ASSERT_EQUALS( upper->_value, 102 );
+        TS_ASSERT_EQUALS( lower->_value, -113 - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT );
+        TS_ASSERT_EQUALS( upper->_value, 102 + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT );
     }
 
     void test_pivot_row_just_upper_tightend()
@@ -166,7 +167,7 @@ public:
         TS_ASSERT_EQUALS( upper->_type, Tightening::UB );
 
         // Lower: 1 - 10 - 4, Upper: 1 - 5 + 6
-        TS_ASSERT_EQUALS( upper->_value, 2 );
+        TS_ASSERT_EQUALS( upper->_value, 2 + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT );
     }
 
     void test_pivot_row__just_lower_tightend()
@@ -219,7 +220,7 @@ public:
         TS_ASSERT_EQUALS( lower._type, Tightening::LB );
 
         // Lower: 1 - 10 - 4, Lower: 1 - 5 + 6
-        TS_ASSERT_EQUALS( lower._value, -13 );
+        TS_ASSERT_EQUALS( lower._value, -13 - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT );
     }
 
     void test_pivot_row__nothing_tightened()
