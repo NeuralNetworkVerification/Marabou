@@ -92,7 +92,7 @@ const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
-const double GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT = 1e-6;
+const double GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT = 1e-7;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =
@@ -112,10 +112,10 @@ const bool GlobalConfiguration::GUROBI_LOGGING = false;
 #endif // ENABLE_GUROBI
 
 // Logging - note that it is enabled only in Debug mode
-const bool GlobalConfiguration::DNC_MANAGER_LOGGING = true;
-const bool GlobalConfiguration::ENGINE_LOGGING = true;
-const bool GlobalConfiguration::TABLEAU_LOGGING = true;
-const bool GlobalConfiguration::SMT_CORE_LOGGING = true;
+const bool GlobalConfiguration::DNC_MANAGER_LOGGING = false;
+const bool GlobalConfiguration::ENGINE_LOGGING = false;
+const bool GlobalConfiguration::TABLEAU_LOGGING = false;
+const bool GlobalConfiguration::SMT_CORE_LOGGING = false;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;
 const bool GlobalConfiguration::PREPROCESSOR_LOGGING = false;
