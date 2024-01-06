@@ -283,11 +283,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
             // If true, we just entered a new subproblem
             if ( splitJustPerformed )
             {
-                std::cout << "bt" << std::endl;
                 performBoundTighteningAfterCaseSplit();
                 informLPSolverOfBounds();
                 splitJustPerformed = false;
-                std::cout << "bt - done" << std::endl;
             }
 
             // Perform any SmtCore-initiated case splits
@@ -306,6 +304,13 @@ bool Engine::solve( unsigned timeoutInSeconds )
 
             if ( allVarsWithinBounds() )
             {
+                // It's possible that a disjunction constraint is fixed and additional constraints
+                // are introduced, making the linear portion unsatisfied. So we need to make sure
+                // there are no valid case splits that we do not know of.
+                applyAllBoundTightenings();
+                if ( applyAllValidConstraintCaseSplits() )
+                    continue;
+
                 // The linear portion of the problem has been solved.
                 // Check the status of the PL constraints
                 bool solutionFound =

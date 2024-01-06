@@ -114,7 +114,7 @@ const bool GlobalConfiguration::GUROBI_LOGGING = false;
 // Logging - note that it is enabled only in Debug mode
 const bool GlobalConfiguration::DNC_MANAGER_LOGGING = true;
 const bool GlobalConfiguration::ENGINE_LOGGING = true;
-const bool GlobalConfiguration::TABLEAU_LOGGING = false;
+const bool GlobalConfiguration::TABLEAU_LOGGING = true;
 const bool GlobalConfiguration::SMT_CORE_LOGGING = true;
 const bool GlobalConfiguration::DANTZIGS_RULE_LOGGING = false;
 const bool GlobalConfiguration::BASIS_FACTORIZATION_LOGGING = false;
