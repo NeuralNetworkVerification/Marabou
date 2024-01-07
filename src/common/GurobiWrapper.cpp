@@ -97,6 +97,7 @@ void GurobiWrapper::resetModel()
 
 void GurobiWrapper::reset()
 {
+    _nameToVariable.clear();
     _model->reset();
 }
 

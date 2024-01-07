@@ -444,8 +444,6 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( variable == _f && FloatUtils::lt( bound, 1 ) )
     {
-
-
         setPhaseStatus( PhaseStatus::SIGN_PHASE_NEGATIVE );
         if ( _boundManager != nullptr )
         {

@@ -14,7 +14,9 @@
  **/
 
 #include "DnCMarabou.h"
+#include "ConfigurationError.h"
 #include "Error.h"
+#include "LPSolverType.h"
 #include "Marabou.h"
 #include "Options.h"
 
@@ -76,29 +78,45 @@ int marabouMain( int argc, char **argv )
             return 0;
         };
 
-        if ( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
+        if ( options->getBool( Options::PRODUCE_PROOFS ) )
         {
             GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH = false;
-            options->setBool( Options::NO_PARALLEL_DEEPSOI, true );
             printf( "Proof production is not yet supported with DEEPSOI search, turning search off.\n" );
         }
 
-        if ( Options::get()->getBool( Options::PRODUCE_PROOFS ) && ( options->getBool( Options::DNC_MODE ) ) )
+        if ( options->getBool( Options::PRODUCE_PROOFS ) && ( options->getBool( Options::DNC_MODE ) ) )
         {
             options->setBool( Options::DNC_MODE, false );
-            printf( "Proof production is not yet supported with snc mode, turning snc off.\n" );
+            printf( "Proof production is not yet supported with snc mode, turning --snc off.\n" );
         }
 
-        if ( Options::get()->getBool( Options::PRODUCE_PROOFS ) && ( options->getBool( Options::SOLVE_WITH_MILP ) ) )
+        if ( options->getBool( Options::PRODUCE_PROOFS ) && ( options->getBool( Options::SOLVE_WITH_MILP ) ) )
         {
             options->setBool( Options::SOLVE_WITH_MILP, false );
-            printf( "Proof production is not yet supported with MILP solvers, turning SOLVE_WITH_MILP off.\n" );
+            printf( "Proof production is not yet supported with MILP solvers, turning --milp off.\n" );
+        }
+
+        if ( options->getBool( Options::PRODUCE_PROOFS ) && ( options->getLPSolverType() == LPSolverType::GUROBI ) )
+        {
+            options->setString( Options::LP_SOLVER, "native" );
+            printf( "Proof production is not yet supported with MILP solvers, using native simplex engine.\n" );
+        }
+
+        if ( options->getBool( Options::DNC_MODE ) &&
+             options->getBool( Options::PARALLEL_DEEPSOI ) )
+        {
+            throw ConfigurationError( ConfigurationError::INCOMPTATIBLE_OPTIONS,
+                                      "Cannot set both --snc and --poi to true..." );
+        }
+
+        if ( options->getBool( Options::PARALLEL_DEEPSOI ) && ( options->getBool( Options::SOLVE_WITH_MILP ) ) )
+        {
+            options->setBool( Options::SOLVE_WITH_MILP, false );
+            printf( "Cannot set both --poi and --milp to true, turning --milp off.\n" );
         }
 
         if ( options->getBool( Options::DNC_MODE ) ||
-             ( !options->getBool( Options::NO_PARALLEL_DEEPSOI ) &&
-               !options->getBool( Options::SOLVE_WITH_MILP ) &&
-               options->getInt( Options::NUM_WORKERS ) > 1 ) )
+             ( options->getBool( Options::PARALLEL_DEEPSOI ) && options->getInt( Options::NUM_WORKERS ) > 1 ) )
             DnCMarabou().run();
         else
 	{
