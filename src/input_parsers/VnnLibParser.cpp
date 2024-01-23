@@ -19,28 +19,29 @@
 #include "VnnLibParser.h"
 #include "DisjunctionConstraint.h"
 
-static double extractScalar( const String &token )
+static double extractScalar ( const String &token )
 {
     std::string::size_type end;
-    double value = std::stod( token.ascii(), &end );
-    if ( end != token.length() )
+    double value = std::stod ( token.ascii (), &end );
+    if ( end != token.length ())
     {
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, Stringf( "%s not a scalar",
-                                                                             token.ascii() ).ascii() );
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, Stringf ( "%s not a scalar",
+                                                                               token.ascii ()).ascii ());
     }
     return value;
 }
 
-static String readVnnlibFile(const String& vnnlibFilePath)
+static String readVnnlibFile ( const String &vnnlibFilePath )
 {
-    if ( !File::exists (vnnlibFilePath) )
+    if ( !File::exists ( vnnlibFilePath ))
     {
-        std::cout << "Error: the specified property file " << vnnlibFilePath.ascii() << " doesn't exist!" << std::endl;
-        throw InputParserError(InputParserError::FILE_DOESNT_EXIST, vnnlibFilePath.ascii());
+        std::cout << "Error: the specified property file "
+                  << vnnlibFilePath.ascii () << " doesn't exist!" << std::endl;
+        throw InputParserError ( InputParserError::FILE_DOESNT_EXIST, vnnlibFilePath.ascii ());
     }
 
-    File vnnlibFile(vnnlibFilePath);
-    vnnlibFile.open (File::MODE_READ);
+    File vnnlibFile ( vnnlibFilePath );
+    vnnlibFile.open ( File::MODE_READ );
 
     String vnnlibContent;
 
@@ -48,8 +49,8 @@ static String readVnnlibFile(const String& vnnlibFilePath)
     {
         while ( true )
         {
-            String line = vnnlibFile.readLine().trim();
-            if ( line == "" || line.substring(0,1) == ";" )
+            String line = vnnlibFile.readLine ().trim ();
+            if ( line == "" || line.substring ( 0, 1 ) == ";" )
             {
                 continue;
             }
@@ -59,48 +60,54 @@ static String readVnnlibFile(const String& vnnlibFilePath)
     catch ( const CommonError &e )
     {
         // A "READ_FAILED" is how we know we're out of lines
-        if ( e.getCode() != CommonError::READ_FAILED )
+        if ( e.getCode () != CommonError::READ_FAILED )
             throw e;
     }
 
     return vnnlibContent;
 }
 
-void VnnLibParser::parse (const String &vnnlibFilePath, InputQuery &inputQuery)
+void
+VnnLibParser::parse ( const String &vnnlibFilePath, InputQuery &inputQuery )
 {
-    String vnnlibContent = readVnnlibFile (vnnlibFilePath);
+    String vnnlibContent = readVnnlibFile ( vnnlibFilePath );
 
-    parseVnnlib (vnnlibContent, inputQuery);
+    parseVnnlib ( vnnlibContent, inputQuery );
 }
 
-void VnnLibParser::parseVnnlib (const String &vnnlibContent, InputQuery &inputQuery)
+void
+VnnLibParser::parseVnnlib ( const String &vnnlibContent, InputQuery &inputQuery )
 {
-    std::regex re(R"(\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*)");
+    std::regex re ( R"(\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*)" );
 
-    auto tokens_begin = std::cregex_token_iterator (vnnlibContent.ascii(), vnnlibContent.ascii() + vnnlibContent.length(), re);
+    auto tokens_begin = std::cregex_token_iterator ( vnnlibContent.ascii (),
+                                                     vnnlibContent.ascii ()
+                                                     + vnnlibContent.length (), re );
     auto tokens_end = std::cregex_token_iterator ();
 
     Vector<String> all_tokens;
 
-    for (std::cregex_token_iterator it = tokens_begin; it != tokens_end; ++it)
+    for ( std::cregex_token_iterator it = tokens_begin;
+          it != tokens_end; ++it )
     {
         auto match = *it;
-        auto match_str = String(match.str().c_str());
+        auto match_str = String ( match.str ().c_str ());
 
-        all_tokens.append (match_str);
+        all_tokens.append ( match_str );
     }
 
-    parseScript (all_tokens, inputQuery );
+    parseScript ( all_tokens, inputQuery );
 }
 
-int VnnLibParser::parseScript(const Vector<String> &tokens, InputQuery &inputQuery)
+int
+VnnLibParser::parseScript ( const Vector<String> &tokens, InputQuery &inputQuery )
 {
     int index = 0;
 
-    while ((unsigned) index < tokens.size())
+    while (( unsigned ) index < tokens.size ())
     {
         ASSERT( tokens[index] == "(" )
-        index = parseCommand( index + 1, tokens, inputQuery );
+        index = parseCommand ( index + 1, tokens, inputQuery );
         ASSERT( tokens[index] == ")" )
 
         index++;
@@ -109,182 +116,187 @@ int VnnLibParser::parseScript(const Vector<String> &tokens, InputQuery &inputQue
     return index;
 }
 
-int VnnLibParser::parseCommand (int index, const Vector<String> &tokens, InputQuery &inputQuery)
+int
+VnnLibParser::parseCommand ( int index, const Vector<String> &tokens, InputQuery &inputQuery )
 {
-    const String& command_name = tokens[index];
+    const String &command_name = tokens[index];
 
     if ( command_name == "declare-const" )
     {
-        index = parseDeclareConst (index + 1, tokens, inputQuery);
+        index = parseDeclareConst ( index + 1, tokens, inputQuery );
     }
     else if ( command_name == "assert" )
     {
-        index = parseAssert (index + 1, tokens, inputQuery);
+        index = parseAssert ( index + 1, tokens, inputQuery );
     }
     else
     {
-        throw InputParserError(InputParserError::UNEXPECTED_INPUT, command_name.ascii());
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, command_name.ascii ());
     }
 
     return index;
 }
 
-int VnnLibParser::parseDeclareConst (int index, const Vector<String> &tokens, InputQuery &inputQuery)
+int
+VnnLibParser::parseDeclareConst ( int index, const Vector<String> &tokens, InputQuery &inputQuery )
 {
     const String &varName = tokens[index++];
     const String &varType = tokens[index++];
 
-    if (varType != "Real")
+    if ( varType != "Real" )
     {
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Does not support variable types other than 'Real'");
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Does not support variable types other than 'Real'" );
     }
 
-    List<String> varTokens = varName.tokenize ("_");
-    if (varTokens.size() != 2)
+    List<String> varTokens = varName.tokenize ( "_" );
+    if ( varTokens.size () != 2 )
     {
-        throw InputParserError(InputParserError::UNEXPECTED_INPUT, varName.ascii());
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, varName.ascii ());
     }
 
-    const String varKind = varTokens.front();
-    const String varIdxStr = varTokens.back();
+    const String varKind = varTokens.front ();
+    const String varIdxStr = varTokens.back ();
 
-    for (unsigned int i = 0; i < varIdxStr.length(); i++)
+    for ( unsigned int i = 0; i < varIdxStr.length (); i++ )
     {
-        if (!std::isdigit (varIdxStr[i]))
+        if ( !std::isdigit ( varIdxStr[i] ))
         {
-            throw InputParserError(InputParserError::UNEXPECTED_INPUT, varName.ascii());
+            throw InputParserError ( InputParserError::UNEXPECTED_INPUT, varName.ascii ());
         }
     }
 
-    unsigned int varIdx = atoi (varIdxStr.ascii());
+    unsigned int varIdx = atoi ( varIdxStr.ascii ());
 
-    if (varKind == "X")
+    if ( varKind == "X" )
     {
-        if (varIdx >= inputQuery.getNumInputVariables())
+        if ( varIdx >= inputQuery.getNumInputVariables ())
         {
-            throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, varName.ascii());
+            throw InputParserError ( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, varName.ascii ());
         }
 
-        _varMap.insert (varName, inputQuery.inputVariableByIndex (varIdx));
+        _varMap.insert ( varName, inputQuery.inputVariableByIndex ( varIdx ));
     }
-    else if (varKind == "Y")
+    else if ( varKind == "Y" )
     {
-        if (varIdx >= inputQuery.getNumOutputVariables())
+        if ( varIdx >= inputQuery.getNumOutputVariables ())
         {
-            throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, varName.ascii());
+            throw InputParserError ( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, varName.ascii ());
         }
 
-        _varMap.insert (varName, inputQuery.outputVariableByIndex (varIdx));
+        _varMap.insert ( varName, inputQuery.outputVariableByIndex ( varIdx ));
     }
     else
     {
-        throw InputParserError(InputParserError::UNEXPECTED_INPUT, varName.ascii());
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, varName.ascii ());
     }
 
     return index;
 }
 
-int VnnLibParser::parseAssert (int index, const Vector<String> &tokens, InputQuery &inputQuery)
+int
+VnnLibParser::parseAssert ( int index, const Vector<String> &tokens, InputQuery &inputQuery )
 {
-    ASSERT(tokens[index] == "(");
+    ASSERT( tokens[index] == "(" );
     ++index;
 
     const String &op = tokens[index];
-    if (op == "<=" || op == ">=" || op == "and")
+    if ( op == "<=" || op == ">=" || op == "and" )
     {
         List<Equation> equations;
-        index = parseCondition(index, tokens, equations);
-        for (const auto& it : equations)
+        index = parseCondition ( index, tokens, equations );
+        for ( const auto &it: equations )
         {
-            inputQuery.addEquation (it);
+            inputQuery.addEquation ( it );
         }
     }
-    else if (op == "or")
+    else if ( op == "or" )
     {
         List<PiecewiseLinearCaseSplit> disjunctList;
         index++;
-        while (tokens[index] != ")")
+        while ( tokens[index] != ")" )
         {
             List<Equation> equations;
-            index = parseCondition (index + 1, tokens, equations);
+            index = parseCondition ( index + 1, tokens, equations );
 
             PiecewiseLinearCaseSplit split;
-            for (const auto &it : equations)
+            for ( const auto &it: equations )
             {
-                split.addEquation (it);
+                split.addEquation ( it );
             }
-            disjunctList.append (split);
+            disjunctList.append ( split );
         }
 
-        inputQuery.addPiecewiseLinearConstraint (new DisjunctionConstraint(disjunctList));
+        inputQuery.addPiecewiseLinearConstraint ( new DisjunctionConstraint ( disjunctList ));
         index++;
     }
     else
     {
-        throw InputParserError(InputParserError::UNEXPECTED_INPUT, op.ascii());
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, op.ascii ());
     }
 
     return index;
 }
 
-int VnnLibParser::parseCondition (int index, const Vector<String> &tokens, List<Equation> &equations)
+int
+VnnLibParser::parseCondition ( int index, const Vector<String> &tokens, List<Equation> &equations )
 {
     const String &op = tokens[index];
 
-    if (op == "<=")
+    if ( op == "<=" )
     {
         Term arg1, arg2;
-        index = parseTerm (index + 1, tokens, arg1);
-        index = parseTerm (index + 1, tokens, arg2);
+        index = parseTerm ( index + 1, tokens, arg1 );
+        index = parseTerm ( index + 1, tokens, arg2 );
 
-        equations.append (processLeConstraint (arg1, arg2));
+        equations.append ( processLeConstraint ( arg1, arg2 ));
     }
-    else if (op == ">=")
+    else if ( op == ">=" )
     {
         Term arg1, arg2;
-        index = parseTerm (index + 1, tokens, arg1);
-        index = parseTerm (index + 1, tokens, arg2);
+        index = parseTerm ( index + 1, tokens, arg1 );
+        index = parseTerm ( index + 1, tokens, arg2 );
 
-        equations.append (processLeConstraint (arg2, arg1));
+        equations.append ( processLeConstraint ( arg2, arg1 ));
     }
-    else if (op == "and")
+    else if ( op == "and" )
     {
         index++;
-        while (tokens[index] != ")")
+        while ( tokens[index] != ")" )
         {
-            index = parseCondition (index + 1, tokens, equations);
+            index = parseCondition ( index + 1, tokens, equations );
         }
 
         return index + 1;
     }
 
     ++index;
-    ASSERT(tokens[index] == ")")
+    ASSERT( tokens[index] == ")" )
     return index + 1;
 }
 
-int VnnLibParser::parseTerm (int index, const Vector<String> &tokens, Term &term)
+int
+VnnLibParser::parseTerm ( int index, const Vector<String> &tokens, Term &term )
 {
     String token = tokens[index];
 
-    if (token == "(")
+    if ( token == "(" )
     {
         token = tokens[++index];
-        if (token == "+")
+        if ( token == "+" )
         {
             term._type = Term::TermType::ADD;
         }
-        else if (token == "-")
+        else if ( token == "-" )
         {
             term._type = Term::TermType::SUB;
         }
-        else if (token == "*")
+        else if ( token == "*" )
         {
             term._type = Term::TermType::MUL;
         }
-        index = parseComplexTerm (index + 1, tokens, term);
+        index = parseComplexTerm ( index + 1, tokens, term );
     }
-    else if (_varMap.exists (token))
+    else if ( _varMap.exists ( token ))
     {
         term._type = Term::TermType::VARIABLE;
         term._value = token;
@@ -298,156 +310,160 @@ int VnnLibParser::parseTerm (int index, const Vector<String> &tokens, Term &term
     return index;
 }
 
-int VnnLibParser::parseComplexTerm (int index, const Vector<String> &tokens, VnnLibParser::Term &term)
+int
+VnnLibParser::parseComplexTerm ( int index, const Vector<String> &tokens, VnnLibParser::Term &term )
 {
-    while (tokens[index] != ")")
+    while ( tokens[index] != ")" )
     {
         Term arg;
-        index = parseTerm (index, tokens, arg);
-        term._args.append (arg);
-        index ++;
+        index = parseTerm ( index, tokens, arg );
+        term._args.append ( arg );
+        index++;
     }
 
     return index;
 }
 
-double VnnLibParser::processAddConstraint (const VnnLibParser::Term &term, Equation &equation, bool isRhs)
+double
+VnnLibParser::processAddConstraint ( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
 {
-    ASSERT(term._type == Term::TermType::ADD)
+    ASSERT( term._type == Term::TermType::ADD )
 
     double scalar = 0;
     double coefficient = isRhs ? -1 : 1;
 
-    for (const auto &arg : term._args)
+    for ( const auto &arg: term._args )
     {
-        if (arg._type == Term::TermType::CONST)
+        if ( arg._type == Term::TermType::CONST )
         {
-            scalar -= coefficient * extractScalar (arg._value);
+            scalar -= coefficient * extractScalar ( arg._value );
         }
-        else if (arg._type == Term::TermType::VARIABLE)
+        else if ( arg._type == Term::TermType::VARIABLE )
         {
-            equation.addAddend (coefficient, _varMap[arg._value]);
+            equation.addAddend ( coefficient, _varMap[arg._value] );
         }
-        else if (arg._type == Term::TermType::SUB)
+        else if ( arg._type == Term::TermType::SUB )
         {
-            if (arg._args.size() == 2)
+            if ( arg._args.size () == 2 )
             {
-                throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Using VNN-LIB operator '-' as a sub-term of '+' is allowed with only one argument");
+                throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Using VNN-LIB operator '-' as a sub-term of '+' is allowed with only one argument" );
             }
 
-            const Term &subArg = arg._args.first();
-            if (subArg._type == Term::TermType::CONST)
+            const Term &subArg = arg._args.first ();
+            if ( subArg._type == Term::TermType::CONST )
             {
-                scalar += coefficient * extractScalar (subArg._value);
+                scalar += coefficient * extractScalar ( subArg._value );
             }
-            else if (subArg._type == Term::TermType::VARIABLE)
+            else if ( subArg._type == Term::TermType::VARIABLE )
             {
-                equation.addAddend (-coefficient, _varMap[subArg._value]);
+                equation.addAddend ( -coefficient, _varMap[subArg._value] );
             }
             else
             {
-                throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '+'");
+                throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '+'" );
             }
         }
         else
         {
-            throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '+'");
+            throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '+'" );
         }
     }
 
     return scalar;
 }
 
-double VnnLibParser::processSubConstraint (const VnnLibParser::Term &term, Equation &equation, bool isRhs)
+double
+VnnLibParser::processSubConstraint ( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
 {
-    ASSERT(term._type == Term::TermType::SUB)
+    ASSERT( term._type == Term::TermType::SUB )
 
-    if (term._args.empty() || term._args.size() > 2)
+    if ( term._args.empty () || term._args.size () > 2 )
     {
-        throw InputParserError(InputParserError::UNEXPECTED_INPUT, "'-' VNN-LIB operation supports only one or two arguments");
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "'-' VNN-LIB operation supports only one or two arguments" );
     }
 
     double scalar = 0;
     double coefficient = isRhs ? 1 : -1;
 
-    const Term &subArg2 = term._args.last();
+    const Term &subArg2 = term._args.last ();
 
-    if (subArg2._type == Term::TermType::CONST)
+    if ( subArg2._type == Term::TermType::CONST )
     {
-        scalar -= coefficient * extractScalar (subArg2._value);
+        scalar -= coefficient * extractScalar ( subArg2._value );
     }
-    else if (subArg2._type == Term::TermType::VARIABLE)
+    else if ( subArg2._type == Term::TermType::VARIABLE )
     {
-        equation.addAddend (coefficient, _varMap[subArg2._value]);
+        equation.addAddend ( coefficient, _varMap[subArg2._value] );
     }
     else
     {
-        throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '-'");
+        throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '-'" );
     }
 
-    if (term._args.size() == 2)
+    if ( term._args.size () == 2 )
     {
-        const Term &subArg1 = term._args.first();
+        const Term &subArg1 = term._args.first ();
 
-        if (subArg1._type == Term::TermType::CONST)
+        if ( subArg1._type == Term::TermType::CONST )
         {
-            scalar += coefficient * extractScalar (subArg1._value);
+            scalar += coefficient * extractScalar ( subArg1._value );
         }
-        else if (subArg1._type == Term::TermType::VARIABLE)
+        else if ( subArg1._type == Term::TermType::VARIABLE )
         {
-            equation.addAddend (-coefficient, _varMap[subArg1._value]);
+            equation.addAddend ( -coefficient, _varMap[subArg1._value] );
         }
         else
         {
-            throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '-'");
+            throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '-'" );
         }
     }
 
     return scalar;
 }
 
-double VnnLibParser::processMulConstraint (const VnnLibParser::Term &term, Equation &equation, bool isRhs)
+double
+VnnLibParser::processMulConstraint ( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
 {
-    ASSERT(term._type == Term::TermType::MUL)
+    ASSERT( term._type == Term::TermType::MUL )
 
     double scalar = 1;
 
     bool varExists = false;
     unsigned int var;
 
-    for (const Term &arg : term._args)
+    for ( const Term &arg: term._args )
     {
-        if (arg._type == Term::TermType::CONST)
+        if ( arg._type == Term::TermType::CONST )
         {
-            scalar *= extractScalar (arg._value);
+            scalar *= extractScalar ( arg._value );
         }
-        else if (arg._type == Term::TermType::VARIABLE)
+        else if ( arg._type == Term::TermType::VARIABLE )
         {
-            if (varExists)
+            if ( varExists )
             {
-                throw InputParserError(InputParserError::UNEXPECTED_INPUT, "No support for using VNN-LIB operator '*' on more than one variable");
+                throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "No support for using VNN-LIB operator '*' on more than one variable" );
             }
 
             varExists = true;
             var = _varMap[arg._value];
         }
-        else if (arg._type == Term::TermType::SUB)
+        else if ( arg._type == Term::TermType::SUB )
         {
-            if (arg._args.size() == 2)
+            if ( arg._args.size () == 2 )
             {
-                throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Using VNN-LIB operator '-' as a sub-term of '*' is allowed with only one argument");
+                throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Using VNN-LIB operator '-' as a sub-term of '*' is allowed with only one argument" );
             }
 
-            const Term &subArg = arg._args.first();
-            if (subArg._type == Term::TermType::CONST)
+            const Term &subArg = arg._args.first ();
+            if ( subArg._type == Term::TermType::CONST )
             {
-                scalar *= (-extractScalar (subArg._value));
+                scalar *= ( -extractScalar ( subArg._value ));
             }
-            else if (subArg._type == Term::TermType::VARIABLE)
+            else if ( subArg._type == Term::TermType::VARIABLE )
             {
-                if (varExists)
+                if ( varExists )
                 {
-                    throw InputParserError(InputParserError::UNEXPECTED_INPUT, "No support for using VNN-LIB operator '*' on more than one variable");
+                    throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "No support for using VNN-LIB operator '*' on more than one variable" );
                 }
 
                 varExists = true;
@@ -456,76 +472,77 @@ double VnnLibParser::processMulConstraint (const VnnLibParser::Term &term, Equat
             }
             else
             {
-                throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '*'");
+                throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '*'" );
             }
         }
         else
         {
-            throw InputParserError(InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '*'");
+            throw InputParserError ( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '*'" );
         }
     }
 
     double coefficient = isRhs ? -1 : 1;
 
-    if (varExists)
+    if ( varExists )
     {
-        equation.addAddend (coefficient * scalar, var);
+        equation.addAddend ( coefficient * scalar, var );
         return 0;
     }
 
-    return (-coefficient) * scalar;
+    return ( -coefficient ) * scalar;
 }
 
-Equation VnnLibParser::processLeConstraint (const VnnLibParser::Term &arg1, const VnnLibParser::Term &arg2)
+Equation
+VnnLibParser::processLeConstraint ( const VnnLibParser::Term &arg1, const VnnLibParser::Term &arg2 )
 {
-    Equation equation (Equation::EquationType::LE);
+    Equation equation ( Equation::EquationType::LE );
     double scalar = 0;
 
     // Handle lhs argument:
-    if (arg1._type == Term::TermType::CONST)
+    if ( arg1._type == Term::TermType::CONST )
     {
-        scalar -= extractScalar (arg1._value);
+        scalar -= extractScalar ( arg1._value );
     }
-    else if (arg1._type == Term::TermType::VARIABLE)
+    else if ( arg1._type == Term::TermType::VARIABLE )
     {
-        equation.addAddend (1, _varMap[arg1._value]);
+        equation.addAddend ( 1, _varMap[arg1._value] );
     }
-    else if (arg1._type == Term::TermType::ADD)
+    else if ( arg1._type == Term::TermType::ADD )
     {
-        scalar += processAddConstraint (arg1, equation);
+        scalar += processAddConstraint ( arg1, equation );
     }
-    else if (arg1._type == Term::TermType::SUB)
+    else if ( arg1._type == Term::TermType::SUB )
     {
-        scalar += processSubConstraint (arg1, equation);
+        scalar += processSubConstraint ( arg1, equation );
     }
-    else if (arg1._type == Term::TermType::MUL)
+    else if ( arg1._type == Term::TermType::MUL )
     {
-        scalar += processMulConstraint (arg1, equation);
+        scalar += processMulConstraint ( arg1, equation );
     }
 
     // Handle rhs argument:
-    if (arg2._type == Term::TermType::CONST)
+    if ( arg2._type == Term::TermType::CONST )
     {
-        scalar += extractScalar (arg2._value);
+        scalar += extractScalar ( arg2._value );
     }
-    else if (arg2._type == Term::TermType::VARIABLE)
+    else if ( arg2._type == Term::TermType::VARIABLE )
     {
-        equation.addAddend (-1, _varMap[arg2._value]);
+        equation.addAddend ( -1, _varMap[arg2._value] );
     }
-    else if (arg2._type == Term::TermType::ADD)
+    else if ( arg2._type == Term::TermType::ADD )
     {
-        scalar += processAddConstraint (arg2, equation, true);
+        scalar += processAddConstraint ( arg2, equation, true );
     }
-    else if (arg2._type == Term::TermType::SUB)
+    else if ( arg2._type == Term::TermType::SUB )
     {
-        scalar += processSubConstraint (arg2, equation, true);
+        scalar += processSubConstraint ( arg2, equation, true );
     }
-    else if (arg2._type == Term::TermType::MUL)
+    else if ( arg2._type == Term::TermType::MUL )
     {
-        scalar += processMulConstraint (arg2, equation, true);
+        scalar += processMulConstraint ( arg2, equation, true );
     }
 
-    equation.setScalar (scalar);
+    equation.setScalar ( scalar );
     return equation;
 }
 

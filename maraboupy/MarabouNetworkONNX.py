@@ -4,6 +4,7 @@ Top contributors (to current version):
     - Haoze Wu
     - Teruhiro Tagomori
     - Tobey Shim
+    - Idan Refaeli
 
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS

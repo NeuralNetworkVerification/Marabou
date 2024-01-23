@@ -135,9 +135,9 @@ void loadProperty(InputQuery &inputQuery, std::string propertyFilePath)
     if ( propertyFilePath != "" )
     {
         printf( "Property: %s\n", propertyFilePathM.ascii() );
-        if (propertyFilePathM.endsWith (".vnnlib"))
+        if ( propertyFilePathM.endsWith( ".vnnlib" ))
         {
-            VnnLibParser().parse ( propertyFilePathM, inputQuery );
+            VnnLibParser().parse( propertyFilePathM, inputQuery );
         }
         else
         {
@@ -163,14 +163,14 @@ bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     if ( propertyFilePath != "" )
       {
         printf( "Property: %s\n", propertyFilePathM.ascii() );
-        if (propertyFilePathM.endsWith (".vnnlib"))
-        {
-            VnnLibParser().parse (propertyFilePathM, inputQuery);
-        }
-        else
-        {
-            PropertyParser().parse( propertyFilePathM, inputQuery );
-        }
+          if ( propertyFilePathM.endsWith( ".vnnlib" ))
+          {
+              VnnLibParser().parse( propertyFilePathM, inputQuery );
+          }
+          else
+          {
+              PropertyParser().parse( propertyFilePathM, inputQuery );
+          }
       }
     else
       printf( "Property: None\n" );

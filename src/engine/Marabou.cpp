@@ -127,9 +127,9 @@ void Marabou::prepareInputQuery()
         if ( propertyFilePath != "" )
         {
             printf( "Property: %s\n", propertyFilePath.ascii() );
-            if ( propertyFilePath.endsWith (".vnnlib") )
+            if ( propertyFilePath.endsWith( ".vnnlib" ))
             {
-                VnnLibParser().parse ( propertyFilePath, _inputQuery );
+                VnnLibParser().parse( propertyFilePath, _inputQuery );
             }
             else
             {
