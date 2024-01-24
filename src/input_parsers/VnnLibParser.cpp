@@ -101,7 +101,7 @@ int VnnLibParser::parseScript( const Vector<String> &tokens, InputQuery &inputQu
 {
     int index = 0;
 
-    while (( unsigned ) index < tokens.size() )
+    while ( (unsigned) index < tokens.size() )
     {
         ASSERT( tokens[index] == "(" )
         index = parseCommand( index + 1, tokens, inputQuery );
@@ -135,8 +135,9 @@ int VnnLibParser::parseCommand( int index, const Vector<String> &tokens, InputQu
 
 int VnnLibParser::parseDeclareConst( int index, const Vector<String> &tokens, InputQuery &inputQuery )
 {
-    const String &varName = tokens[index++];
-    const String &varType = tokens[index++];
+    const String &varName = tokens[index];
+    const String &varType = tokens[++index];
+    ++index;
 
     if ( varType != "Real" )
     {
