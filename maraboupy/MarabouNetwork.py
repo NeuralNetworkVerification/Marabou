@@ -284,13 +284,14 @@ class MarabouNetwork:
             
         return ipq
 
-    def solve(self, filename="", verbose=True, options=None):
+    def solve(self, filename="", verbose=True, options=None, propertyFilename=""):
         """Function to solve query represented by this network
 
         Args:
             filename (string): Path for redirecting output
             verbose (bool): If true, print out solution after solve finishes
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+            propertyFilename(string): Path for property file
 
         Returns:
             (tuple): tuple containing:
@@ -299,6 +300,8 @@ class MarabouNetwork:
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
         ipq = self.getMarabouQuery()
+        if propertyFilename:
+            MarabouCore.loadProperty(ipq, propertyFilename)
         if options == None:
             options = MarabouCore.Options()
         exitCode, vals, stats = MarabouCore.solve(ipq, options, str(filename))
