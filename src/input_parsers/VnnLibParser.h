@@ -17,58 +17,58 @@
 #define _VnnLibParser_h_
 
 #include "InputQuery.h"
+#include "Map.h"
 #include "MString.h"
 #include "Vector.h"
-#include "Map.h"
 
 class VnnLibParser
 {
+public:
+    void parse( const String &vnnlibFilePath, InputQuery &inputQuery );
+
+private:
+    class Term
+    {
     public:
-        void parse( const String &vnnlibFilePath, InputQuery &inputQuery );
-
-    private:
-        class Term
+        enum TermType
         {
-            public:
-                enum TermType
-                {
-                    CONST,
-                    VARIABLE,
-                    ADD,
-                    SUB,
-                    MUL
-                };
-
-                TermType _type;
-                String _value;
-                Vector<Term> _args;
+            CONST,
+            VARIABLE,
+            ADD,
+            SUB,
+            MUL
         };
 
-        Map<String, unsigned int> _varMap;
+        TermType _type;
+        String _value;
+        Vector<Term> _args;
+    };
 
-        void parseVnnlib( const String &vnnlibContent, InputQuery &inputQuery );
+    Map<String, unsigned int> _varMap;
 
-        int parseScript( const Vector<String> &tokens, InputQuery &inputQuery );
+    void parseVnnlib( const String &vnnlibContent, InputQuery &inputQuery );
 
-        int parseCommand( int index, const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseScript( const Vector<String> &tokens, InputQuery &inputQuery );
 
-        int parseDeclareConst( int index, const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseCommand( int index, const Vector<String> &tokens, InputQuery &inputQuery );
 
-        int parseAssert( int index, const Vector<String> &tokens, InputQuery &inputQuery );
+    int parseDeclareConst( int index, const Vector<String> &tokens, InputQuery &inputQuery );
 
-        int parseCondition( int index, const Vector<String> &tokens, List<Equation> &equations );
+    int parseAssert( int index, const Vector<String> &tokens, InputQuery &inputQuery );
 
-        int parseTerm( int index, const Vector<String> &tokens, Term &term );
+    int parseCondition( int index, const Vector<String> &tokens, List<Equation> &equations );
 
-        int parseComplexTerm( int index, const Vector<String> &tokens, VnnLibParser::Term &term );
+    int parseTerm( int index, const Vector<String> &tokens, Term &term );
 
-        double processAddConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+    int parseComplexTerm( int index, const Vector<String> &tokens, VnnLibParser::Term &term );
 
-        double processSubConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+    double processAddConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
 
-        double processMulConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+    double processSubConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
 
-        Equation processLeConstraint( const VnnLibParser::Term &arg1, const VnnLibParser::Term &arg2 );
+    double processMulConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+
+    Equation processLeConstraint( const VnnLibParser::Term &arg1, const VnnLibParser::Term &arg2 );
 
 };
 

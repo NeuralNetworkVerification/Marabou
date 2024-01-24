@@ -14,17 +14,17 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "AcasParser.h"
 #include "DnCManager.h"
 #include "DnCMarabou.h"
 #include "File.h"
+#include "MarabouError.h"
 #include "MStringf.h"
+#include "OnnxParser.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "VnnLibParser.h"
-#include "MarabouError.h"
-#include "OnnxParser.h"
 #include "QueryLoader.h"
-#include "AcasParser.h"
+#include "VnnLibParser.h"
 
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
