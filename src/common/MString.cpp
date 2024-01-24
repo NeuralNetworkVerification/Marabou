@@ -155,13 +155,13 @@ String String::trim() const
 
     for ( unsigned i = 0; i < length(); ++i )
     {
-        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) && ( _super[i] != '\n' ) )
+        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) && ( _super[i] != '\n' ) && ( _super[i] != '\r' ) )
         {
             firstNonSpace = i;
             firstNonSpaceFound = true;
         }
 
-        if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) )
+        if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) && ( _super[i] != '\r' ) )
         {
             lastNonSpace = i;
         }

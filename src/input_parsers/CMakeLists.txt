@@ -36,6 +36,7 @@ macro(add_parser_unit_test name)
 endmacro()
 
 add_parser_unit_test(OnnxParser)
+add_parser_unit_test(VnnLibParser)
 
 ########################
 ## Parser executables ##
