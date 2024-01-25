@@ -20,6 +20,7 @@ import numpy as np
 
 # sys.path.append('/home/USER/git/Marabou')
 from maraboupy import Marabou
+from maraboupy import MarabouUtils
 from maraboupy import MarabouCore
 from maraboupy.MarabouCore import StatisticsUnsignedAttribute
 
@@ -33,16 +34,16 @@ net1 = Marabou.read_nnet(nnetFile)
 
 # %%
 # Require that a input variable is either 0 or 1
-for var in net1.inputVars[0]:
+for var in net1.inputVars[0][0]:
     # eq1: 1 * var = 0
-    eq1 = MarabouCore.Equation(MarabouCore.Equation.EQ);
-    eq1.addAddend(1, var);
-    eq1.setScalar(0);
+    eq1 = MarabouUtils.Equation(MarabouCore.Equation.EQ)
+    eq1.addAddend(1, var)
+    eq1.setScalar(0)
 
     # eq2: 1 * var = 1
-    eq2 = MarabouCore.Equation(MarabouCore.Equation.EQ);
-    eq2.addAddend(1, var);
-    eq2.setScalar(1);
+    eq2 = MarabouUtils.Equation(MarabouCore.Equation.EQ)
+    eq2.addAddend(1, var)
+    eq2.setScalar(1)
 
     # ( var = 0) \/ (var = 1)
     disjunction = [[eq1], [eq2]]
