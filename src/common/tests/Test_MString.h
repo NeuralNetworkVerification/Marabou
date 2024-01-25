@@ -253,6 +253,10 @@ public:
         TS_ASSERT_EQUALS( String( "   ab\n" ).trim() , "ab" );
         TS_ASSERT_EQUALS( String( "ab\n   \n" ).trim() , "ab" );
         TS_ASSERT_EQUALS( String( "hey there   \n" ).trim() , "hey there" );
+        TS_ASSERT_EQUALS( String( "ab   \r" ).trim() , "ab" );
+        TS_ASSERT_EQUALS( String( "   ab\r   \r" ).trim() , "ab" );
+        TS_ASSERT_EQUALS( String( "ab   \r\n" ).trim() , "ab" );
+        TS_ASSERT_EQUALS( String( "   ab  \r   \r\n" ).trim() , "ab" );
     }
 };
 
