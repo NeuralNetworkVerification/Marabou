@@ -5,6 +5,7 @@ Top contributors (to current version):
     - Andrew Wu
     - Kyle Julian
     - Teruhiro Tagomori
+    - Min Wu
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -17,7 +18,7 @@ MarabouNetwork defines an abstract class that represents neural networks with pi
 
 from maraboupy import MarabouCore
 from maraboupy import MarabouUtils
-
+from maraboupy.MarabouPythonic import *
 import numpy as np
 
 
@@ -523,3 +524,48 @@ class MarabouNetwork:
         assert len(outMar) == len(outNotMar)
         err = [np.abs(outMar[i] - outNotMar[i]) for i in range(len(outMar))]
         return err
+
+    def isEqual(self, network):
+        """
+        Add a comparison between two Marabou networks and all their attributes.
+
+        :param network: the other Marabou network to be compared with.
+        :return: True if these two networks and all their attributes are identical; False if not.
+        """
+        equivalence = True
+        if self.numVars != network.numVars \
+                or self.reluList != network.reluList \
+                or self.sigmoidList != network.sigmoidList \
+                or self.maxList != network.maxList \
+                or self.absList != network.absList \
+                or self.signList != network.signList \
+                or self.disjunctionList != network.disjunctionList \
+                or self.lowerBounds != network.lowerBounds \
+                or self.upperBounds != network.upperBounds \
+                or (self.inputVars[0].flatten() != network.inputVars[0].flatten()).all() \
+                or (self.outputVars != network.outputVars).all():
+            equivalence = False
+        # or self.isEqual_equList(network.equList) \
+        for equation1, equation2 in zip(self.equList, network.equList):
+            if not equation1.isEqual(equation2):
+                equivalence = False
+        return equivalence
+
+    def addConstraint(self, constraint: VarConstraint):
+        """
+        Support the Pythonic API to add constraints to the neurons in the Marabou network.
+
+        :param constraint: an instance of the VarConstraint class, which comprises various neuron constraints.
+        :return: delegate various constraints into lower/upper bounds and equality/inequality.
+        """
+        vars = list(constraint.combination.varCoeffs)
+        coeffs = [constraint.combination.varCoeffs[i] for i in vars]
+        if constraint.lowerBound is not None:
+            self.setLowerBound(vars[0], constraint.lowerBound)
+        elif constraint.upperBound is not None:
+            self.setUpperBound(vars[0], constraint.upperBound)
+        else:
+            if constraint.isEquality:
+                self.addEquality(vars, coeffs, - constraint.combination.const)
+            else:
+                self.addInequality(vars, coeffs, - constraint.combination.const)
