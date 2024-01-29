@@ -542,8 +542,8 @@ class MarabouNetwork:
                 or self.disjunctionList != network.disjunctionList \
                 or self.lowerBounds != network.lowerBounds \
                 or self.upperBounds != network.upperBounds \
-                or (self.inputVars[0].flatten() != network.inputVars[0].flatten()).all() \
-                or (self.outputVars != network.outputVars).all():
+                or (self.inputVars[0].flatten() != network.inputVars[0].flatten()).any() \
+                or (self.outputVars[0].flatten() != network.outputVars[0].flatten()).any():
             equivalence = False
         # or self.isEqual_equList(network.equList) \
         for equation1, equation2 in zip(self.equList, network.equList):
