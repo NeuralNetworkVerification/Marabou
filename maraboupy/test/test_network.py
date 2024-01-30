@@ -1,5 +1,6 @@
 # Tests MarabouNetwork features not tested by it's subclasses
 from maraboupy import Marabou
+from maraboupy import MarabouUtils
 from maraboupy import MarabouCore
 import os
 import numpy as np
@@ -56,12 +57,12 @@ def test_disjunction_constraint():
 
     for var in network.inputVars[0][0]:
         # eq1: 1 * var = 0
-        eq1 = MarabouCore.Equation(MarabouCore.Equation.EQ)
+        eq1 = MarabouUtils.Equation(MarabouCore.Equation.EQ)
         eq1.addAddend(1, var)
         eq1.setScalar(0)
 
         # eq2: 1 * var = 1
-        eq2 = MarabouCore.Equation(MarabouCore.Equation.EQ)
+        eq2 = MarabouUtils.Equation(MarabouCore.Equation.EQ)
         eq2.addAddend(1, var)
         eq2.setScalar(1)
 
