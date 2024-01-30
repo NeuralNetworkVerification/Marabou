@@ -272,7 +272,18 @@ class MarabouNetwork:
             MarabouCore.addSignConstraint(ipq, b, f)
 
         for disjunction in self.disjunctionList:
-            MarabouCore.addDisjunctionConstraint(ipq, disjunction)
+            converted_disjunction = []
+            for disjunct in disjunction:
+                converted_disjunct = []
+                for e in disjunct:
+                    eq = MarabouCore.Equation(e.EquationType)
+                    for (c, v) in e.addendList:
+                        assert v < self.numVars
+                        eq.addAddend(c, v)
+                    eq.setScalar(e.scalar)
+                    converted_disjunct.append(eq)
+                converted_disjunction.append(converted_disjunct)
+            MarabouCore.addDisjunctionConstraint(ipq, converted_disjunction)
 
         for l in self.lowerBounds:
             assert l < self.numVars
