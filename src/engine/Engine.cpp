@@ -911,6 +911,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
 
     try
     {
+        findMissingInputBoundsFromDisjunctions(inputQuery);
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, true );
         if ( _verbosity > 0 )
@@ -1402,6 +1403,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
+        findMissingInputBoundsFromDisjunctions(inputQuery);
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 0 )
@@ -3709,6 +3711,85 @@ void Engine::extractBounds( InputQuery &inputQuery )
         {
             inputQuery.setLowerBound( i, _preprocessedQuery->getLowerBound( i ) );
             inputQuery.setUpperBound( i, _preprocessedQuery->getUpperBound( i ) );
+        }
+    }
+}
+
+void Engine::findMissingInputBoundsFromDisjunctions(InputQuery &inputQuery)
+{
+    List<const DisjunctionConstraint *> disjunctions;
+    for ( const auto *plc : inputQuery.getPiecewiseLinearConstraints() )
+    {
+        if ( plc->getType() == PiecewiseLinearFunctionType::DISJUNCTION )
+        {
+            disjunctions.append( ( DisjunctionConstraint * ) plc );
+        }
+    }
+
+    if (disjunctions.empty())
+    {
+        return;
+    }
+
+    auto &lowerBounds = inputQuery.getLowerBounds();
+    auto &upperBounds = inputQuery.getUpperBounds();
+
+    for (unsigned int var : inputQuery.getInputVariables())
+    {
+        if (!lowerBounds.exists(var))
+        {
+            double minLowerBound = FloatUtils::infinity();
+            for ( const auto *disjunction : disjunctions )
+            {
+                bool foundLowerBound = false;
+                for (const auto &disjunct : disjunction->getCaseSplits() )
+                {
+                    for (const auto &bound : disjunct.getBoundTightenings())
+                    {
+                        if (bound._variable == var && bound._type == Tightening::LB)
+                        {
+                            foundLowerBound = true;
+                            minLowerBound = FloatUtils::min(minLowerBound, bound._value);
+                        }
+                    }
+                }
+
+                if (!foundLowerBound)
+                {
+                    throw MarabouError(MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                                       "All input variables should have lower and upper bounds");
+                }
+            }
+
+            inputQuery.setLowerBound(var, minLowerBound);
+        }
+
+        if (!upperBounds.exists(var))
+        {
+            double maxUpperBound = -FloatUtils::infinity();
+            for ( const auto *disjunction : disjunctions )
+            {
+                bool foundUpperBound = false;
+                for (const auto &disjunct : disjunction->getCaseSplits() )
+                {
+                    for (const auto &bound : disjunct.getBoundTightenings())
+                    {
+                        if (bound._variable == var && bound._type == Tightening::UB)
+                        {
+                            foundUpperBound = true;
+                            maxUpperBound = FloatUtils::max(maxUpperBound, bound._value);
+                        }
+                    }
+                }
+
+                if (!foundUpperBound)
+                {
+                    throw MarabouError(MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                                       "All input variables should have lower and upper bounds");
+                }
+            }
+
+            inputQuery.setUpperBound(var, maxUpperBound);
         }
     }
 }

@@ -712,6 +712,7 @@ private:
     void addAuxiliaryVariables();
     void augmentInitialBasisIfNeeded( List<unsigned> &initialBasis, const List<unsigned> &basicRows );
     void performMILPSolverBoundedTightening( InputQuery *inputQuery = nullptr );
+    void findMissingInputBoundsFromDisjunctions( InputQuery &inputQuery );
 
     /*
       Call MILP bound tightening for a single layer.
