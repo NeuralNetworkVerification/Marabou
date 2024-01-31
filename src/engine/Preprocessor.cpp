@@ -226,7 +226,7 @@ void Preprocessor::getMissingInputBoundsFromConstraints()
                 minLowerBound = FloatUtils::min( minLowerBound, plConstraint->getMinLowerBound( var ) );
             }
 
-            if (!FloatUtils::areEqual(minLowerBound, FloatUtils::infinity()))
+            if ( !FloatUtils::areEqual( minLowerBound, FloatUtils::infinity() ) )
             {
                 _preprocessed->setLowerBound( var, minLowerBound );
             }
@@ -240,7 +240,7 @@ void Preprocessor::getMissingInputBoundsFromConstraints()
                 maxUpperBound = FloatUtils::max( maxUpperBound, plConstraint->getMaxUpperBound( var ) );
             }
 
-            if (!FloatUtils::areEqual(maxUpperBound, FloatUtils::negativeInfinity()))
+            if ( !FloatUtils::areEqual( maxUpperBound, FloatUtils::negativeInfinity() ) )
             {
                 _preprocessed->setUpperBound( var, maxUpperBound );
             }
