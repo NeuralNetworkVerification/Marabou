@@ -911,7 +911,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
 
     try
     {
-        findMissingInputBoundsFromDisjunctions(inputQuery);
+        findMissingInputBoundsFromDisjunctions( inputQuery );
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, true );
         if ( _verbosity > 0 )
@@ -1403,7 +1403,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
     try
     {
-        findMissingInputBoundsFromDisjunctions(inputQuery);
+        findMissingInputBoundsFromDisjunctions( inputQuery );
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
         if ( _verbosity > 0 )
@@ -3715,7 +3715,7 @@ void Engine::extractBounds( InputQuery &inputQuery )
     }
 }
 
-void Engine::findMissingInputBoundsFromDisjunctions(InputQuery &inputQuery)
+void Engine::findMissingInputBoundsFromDisjunctions( InputQuery &inputQuery )
 {
     List<const DisjunctionConstraint *> disjunctions;
     for ( const auto *plc : inputQuery.getPiecewiseLinearConstraints() )
@@ -3726,7 +3726,7 @@ void Engine::findMissingInputBoundsFromDisjunctions(InputQuery &inputQuery)
         }
     }
 
-    if (disjunctions.empty())
+    if ( disjunctions.empty() )
     {
         return;
     }
@@ -3734,62 +3734,62 @@ void Engine::findMissingInputBoundsFromDisjunctions(InputQuery &inputQuery)
     auto &lowerBounds = inputQuery.getLowerBounds();
     auto &upperBounds = inputQuery.getUpperBounds();
 
-    for (unsigned int var : inputQuery.getInputVariables())
+    for ( unsigned int var : inputQuery.getInputVariables() )
     {
-        if (!lowerBounds.exists(var))
+        if ( !lowerBounds.exists( var ) )
         {
             double minLowerBound = FloatUtils::infinity();
             for ( const auto *disjunction : disjunctions )
             {
                 bool foundLowerBound = false;
-                for (const auto &disjunct : disjunction->getCaseSplits() )
+                for ( const auto &disjunct : disjunction->getCaseSplits() )
                 {
-                    for (const auto &bound : disjunct.getBoundTightenings())
+                    for ( const auto &bound : disjunct.getBoundTightenings() )
                     {
-                        if (bound._variable == var && bound._type == Tightening::LB)
+                        if ( bound._variable == var && bound._type == Tightening::LB )
                         {
                             foundLowerBound = true;
-                            minLowerBound = FloatUtils::min(minLowerBound, bound._value);
+                            minLowerBound = FloatUtils::min( minLowerBound, bound._value );
                         }
                     }
                 }
 
-                if (!foundLowerBound)
+                if ( !foundLowerBound )
                 {
-                    throw MarabouError(MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-                                       "All input variables should have lower and upper bounds");
+                    throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                                        "All input variables should have lower and upper bounds" );
                 }
             }
 
-            inputQuery.setLowerBound(var, minLowerBound);
+            inputQuery.setLowerBound( var, minLowerBound );
         }
 
-        if (!upperBounds.exists(var))
+        if ( !upperBounds.exists( var ) )
         {
             double maxUpperBound = -FloatUtils::infinity();
             for ( const auto *disjunction : disjunctions )
             {
                 bool foundUpperBound = false;
-                for (const auto &disjunct : disjunction->getCaseSplits() )
+                for ( const auto &disjunct : disjunction->getCaseSplits() )
                 {
-                    for (const auto &bound : disjunct.getBoundTightenings())
+                    for ( const auto &bound : disjunct.getBoundTightenings() )
                     {
-                        if (bound._variable == var && bound._type == Tightening::UB)
+                        if ( bound._variable == var && bound._type == Tightening::UB )
                         {
                             foundUpperBound = true;
-                            maxUpperBound = FloatUtils::max(maxUpperBound, bound._value);
+                            maxUpperBound = FloatUtils::max( maxUpperBound, bound._value );
                         }
                     }
                 }
 
-                if (!foundUpperBound)
+                if ( !foundUpperBound )
                 {
-                    throw MarabouError(MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
-                                       "All input variables should have lower and upper bounds");
+                    throw MarabouError( MarabouError::UNBOUNDED_VARIABLES_NOT_YET_SUPPORTED,
+                                        "All input variables should have lower and upper bounds" );
                 }
             }
 
-            inputQuery.setUpperBound(var, maxUpperBound);
+            inputQuery.setUpperBound( var, maxUpperBound );
         }
     }
 }

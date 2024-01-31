@@ -211,12 +211,12 @@ int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, InputQue
                 }
                 else if ( addend._coefficient > 0 )
                 {
-                    inputQuery.setUpperBound(addend._variable, eq._scalar / addend._coefficient );
+                    inputQuery.setUpperBound( addend._variable, eq._scalar / addend._coefficient );
                 }
-                else if ( eq._scalar < 0)
+                else if ( eq._scalar < 0 )
                 {
-                    throw InputParserError(InputParserError::UNEXPECTED_INPUT,
-                                           Stringf("Illegal vnnlib constraint: 0 < %f", eq._scalar).ascii() );
+                    throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                            Stringf( "Illegal vnnlib constraint: 0 < %f", eq._scalar ).ascii() );
                 }
                 else
                 {
