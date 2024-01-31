@@ -102,7 +102,7 @@ int VnnLibParser::parseScript( const Vector<String> &tokens, InputQuery &inputQu
 {
     int index = 0;
 
-    while ( ( unsigned ) index < tokens.size() )
+    while ( (unsigned) index < tokens.size() )
     {
         ASSERT( tokens[index] == "(" )
         index = parseCommand( index + 1, tokens, inputQuery );
