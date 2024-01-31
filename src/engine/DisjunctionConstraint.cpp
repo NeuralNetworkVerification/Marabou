@@ -557,7 +557,7 @@ double DisjunctionConstraint::getMinLowerBound( unsigned int var ) const
 {
     if ( !participatingVariable( var ) )
     {
-        return -FloatUtils::infinity();
+        return FloatUtils::negativeInfinity();
     }
 
     double minLowerBound = FloatUtils::infinity();
@@ -591,7 +591,7 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
         return FloatUtils::infinity();
     }
 
-    double maxUpperBound = -FloatUtils::infinity();
+    double maxUpperBound = FloatUtils::negativeInfinity();
     for ( const auto &disjunct : _disjuncts )
     {
         bool foundUpperBound = false;

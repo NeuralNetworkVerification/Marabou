@@ -220,7 +220,7 @@ double PiecewiseLinearConstraint::getMaxUpperBound( unsigned int var ) const
         return getUpperBound( var );
     }
 
-    return -FloatUtils::infinity();
+    return FloatUtils::negativeInfinity();
 }
 
 //
