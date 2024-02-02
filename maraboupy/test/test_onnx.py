@@ -52,6 +52,20 @@ def test_split_onnx_error():
 
     os.remove(presplit_filename)
 
+def test_transformer():
+    """
+    Test another transformer network
+    """
+    filename =  "self-attention-mnist-pgd-medium-sim.onnx"
+    evaluateFile(filename)
+
+def test_softmax():
+    """
+    Test loading network with softmax in the last layer
+    """
+    filename =  "softmax-last-layer.onnx"
+    evaluateFile(filename)
+
 def test_gtsrb():
     """
     Test a convolutional network, exported from tensorflow

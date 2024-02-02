@@ -30,9 +30,9 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
-/tools/boost_1_68_0
+/tools/boost_1_80_0
 /tools/boost.unzipped
-/tools/boost_1_68_0.tar.gz
+/tools/boost_1_80_0.tar.gz
 /tools/pybind11-2.3.0
 /tools/pybind11_2_3_0.tar.gz
 /tools/pybind11-2.10.4

@@ -45,6 +45,8 @@ public:
         MAX,
         SIGN,
         SIGMOID,
+        SOFTMAX,
+        BILINEAR,
     };
 
     /*

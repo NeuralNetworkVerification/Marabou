@@ -187,6 +187,8 @@ bool Engine::solve( unsigned timeoutInSeconds )
     // Register the boundManager with all the PL constraints
     for ( auto &plConstraint : _plConstraints )
         plConstraint->registerBoundManager( &_boundManager );
+    for ( auto &nlConstraint : _nlConstraints )
+        nlConstraint->registerBoundManager( &_boundManager );
 
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
@@ -478,7 +480,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
     collectViolatedPlConstraints();
 
     // If all constraints are satisfied, we are possibly done
-    if ( allPlConstraintsHold() )
+    if ( allPlConstraintsHold() && allNonlinearConstraintsHold() )
     {
         if ( _lpSolverType == LPSolverType::NATIVE &&
              _tableau->getBasicAssignmentStatus() !=
@@ -966,13 +968,13 @@ void Engine::informConstraintsOfInitialBounds( InputQuery &inputQuery ) const
         }
     }
 
-    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    for ( const auto &nlConstraint : inputQuery.getNonlinearConstraints() )
     {
-        List<unsigned> variables = tsConstraint->getParticipatingVariables();
+        List<unsigned> variables = nlConstraint->getParticipatingVariables();
         for ( unsigned variable : variables )
         {
-            tsConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
-            tsConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
+            nlConstraint->notifyLowerBound( variable, inputQuery.getLowerBound( variable ) );
+            nlConstraint->notifyUpperBound( variable, inputQuery.getUpperBound( variable ) );
         }
     }
 }
@@ -1369,8 +1371,8 @@ void Engine::initializeBoundsAndConstraintWatchersInTableau( unsigned
                     constraint->addTableauAuxVar( _preprocessedQuery->_lastAddendToAux.at( var ), var );
     }
 
-    _tsConstraints = _preprocessedQuery->getTranscendentalConstraints();
-    for ( const auto &constraint : _tsConstraints )
+    _nlConstraints = _preprocessedQuery->getNonlinearConstraints();
+    for ( const auto &constraint : _nlConstraints )
     {
         constraint->registerAsWatcher( _tableau );
         constraint->setStatistics( &_statistics );
@@ -1494,17 +1496,12 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             _boundManager.initialize( n );
             _tableau->setDimensions( m, n );
             initializeBoundsAndConstraintWatchersInTableau( n );
-
-            for ( const auto &constraint : _plConstraints )
-            {
-                constraint->registerGurobi( &( *_gurobi ) );
-            }
         }
 
         for ( const auto &constraint : _plConstraints )
-        {
             constraint->registerTableau( _tableau );
-        }
+        for ( const auto &constraint : _nlConstraints )
+            constraint->registerTableau( _tableau );
 
         if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
@@ -1573,7 +1570,7 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound Tightening.
         if ( Options::get()->getMILPSolverBoundTighteningType() != MILPSolverBoundTighteningType::NONE
-            && _preprocessedQuery->getTranscendentalConstraints().size() > 0 )
+            && _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
 
@@ -1742,6 +1739,16 @@ void Engine::collectViolatedPlConstraints()
 bool Engine::allPlConstraintsHold()
 {
     return _violatedPlConstraints.empty();
+}
+
+bool Engine::allNonlinearConstraintsHold()
+{
+    for ( const auto &constraint : _nlConstraints )
+    {
+        if ( !constraint->satisfied() )
+            return false;
+    }
+    return true;
 }
 
 void Engine::selectViolatedPlConstraint()
@@ -2880,6 +2887,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 
     ENGINE_LOG( "Encoding the input query with Gurobi...\n" );
     _gurobi = std::unique_ptr<GurobiWrapper>( new GurobiWrapper() );
+    _tableau->setGurobi( &( *_gurobi ) );
     _milpEncoder = std::unique_ptr<MILPEncoder>( new MILPEncoder( *_tableau ) );
     _milpEncoder->encodeInputQuery( *_gurobi, *_preprocessedQuery );
     ENGINE_LOG( "Query encoded in Gurobi...\n" );
@@ -2895,16 +2903,16 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
 
     if ( _gurobi->haveFeasibleSolution() )
     {
-        // Return UNKNOWN if input query has transcendental constratints.
-        if ( _preprocessedQuery->getTranscendentalConstraints().size() > 0 )
+        if ( allNonlinearConstraintsHold() )
         {
-            // TODO: Return UNKNOWN exitCode instead of throwing Error after implementing python interface to support UNKNOWN.
-            throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED, "UNKNOWN (Marabou doesn't support UNKNOWN cases with exitCode yet.)" );
-            // _exitCode = IEngine::UNKNOWN;
-            // return false;
+            _exitCode = IEngine::SAT;
+            return true;
         }
-        _exitCode = IEngine::SAT;
-        return true;
+        else
+        {
+            _exitCode = IEngine::UNKNOWN;
+            return false;
+        }
     }
     else if ( _gurobi->infeasible() )
         _exitCode = IEngine::UNSAT;
@@ -3016,7 +3024,7 @@ bool Engine::performDeepSoILocalSearch()
               The overhead is low anyway.
             */
             collectViolatedPlConstraints();
-            if ( allPlConstraintsHold() )
+            if ( allPlConstraintsHold() && allNonlinearConstraintsHold() )
             {
                 if ( _lpSolverType == LPSolverType::NATIVE &&
                      _tableau->getBasicAssignmentStatus() !=
@@ -3680,7 +3688,7 @@ void Engine::propagateBoundManagerTightenings()
 }
 
 void Engine::extractBounds( InputQuery &inputQuery )
-{    
+{
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
         if ( _preprocessingEnabled )

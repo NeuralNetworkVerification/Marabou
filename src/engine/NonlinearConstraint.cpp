@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file TranscendentalConstraint.cpp
+/*! \file NonlinearConstraint.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Teruhiro Tagomori
@@ -9,32 +9,27 @@
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** See the description of the class in TranscendentalConstraint.h.
+ ** See the description of the class in NonlinearConstraint.h.
 **/
 
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 #include "Statistics.h"
 
-TranscendentalConstraint::TranscendentalConstraint()
+NonlinearConstraint::NonlinearConstraint()
     : _boundManager( nullptr )
-    , _constraintBoundTightener( NULL )
-    , _statistics( NULL )
+    , _tableau( nullptr )
+    , _statistics( nullptr )
 {
 }
 
-void TranscendentalConstraint::registerBoundManager(
+void NonlinearConstraint::registerBoundManager(
     BoundManager *boundManager )
 {
     ASSERT( _boundManager == nullptr );
     _boundManager = boundManager;
 }
 
-void TranscendentalConstraint::setStatistics( Statistics *statistics )
+void NonlinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
-}
-
-void TranscendentalConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
-{
-    _constraintBoundTightener = tightener;
 }
