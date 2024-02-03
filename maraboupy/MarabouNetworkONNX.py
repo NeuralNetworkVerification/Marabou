@@ -515,9 +515,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         # get the file name
         temp_file_name = tf.name
-
         # close the file
         tf.close()
+
         onnx.utils.extract_model(self.filename, temp_file_name,
                                  input_names=[inputName],
                                  output_names=[nodeName])
@@ -657,10 +657,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                     self.addMaxConstraint(maxVars, outVars[0][k][i][j])
 
     def softmaxEquations(self, node, makeEquations):
-        """Function to generate softmax equations
+        """Function to generate constraints for softmax
 
         Args:
-        node (node): ONNX node representing maxpool operation
+        node (node): ONNX node representing the softmax operation
         makeEquations (bool): True if we need to create new variables and maxpool constraints
 
         :meta private:

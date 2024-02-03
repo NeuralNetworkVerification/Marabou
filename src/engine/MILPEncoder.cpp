@@ -657,6 +657,7 @@ void MILPEncoder::encodeBilinearConstraint( GurobiWrapper &gurobi,
 {
     if ( relax )
     {
+        // Encode the DeepPoly abstraction
         auto sourceVariables = bilinear->getBs();
         unsigned sourceVariable1 = sourceVariables[0];
         unsigned sourceVariable2 = sourceVariables[1];

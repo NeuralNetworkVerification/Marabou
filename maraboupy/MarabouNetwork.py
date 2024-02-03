@@ -119,9 +119,11 @@ class MarabouNetwork:
         self.reluList += [(v1, v2)]
 
     def addBilinear(self, v1, v2, v3):
-        """Function to add new equation to the network
+        """Function to add a bilinear constraint to the network
         Args:
-            x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
+            v1 (int): Variable representing input1 of Bilinear
+            v2 (int): Variable representing input2 of Bilinear
+            v3 (int): Variable representing output of Bilinear
         """
         self.bilinearList += [(v1, v2, v3)]
 
