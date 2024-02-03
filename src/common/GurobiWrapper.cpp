@@ -236,6 +236,11 @@ void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int b
     }
 }
 
+void GurobiWrapper::addBilinearConstraint( const String input1, const String input2, const String output )
+{
+    _model->addQConstr( ( *_nameToVariable[output] ) == ( *_nameToVariable[input1] ) * ( *_nameToVariable[input2] ) );
+}
+
 void GurobiWrapper::setCost( const List<Term> &terms, double constant )
 {
     try

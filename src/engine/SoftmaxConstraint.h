@@ -1,20 +1,21 @@
 /*********************                                                        */
-/*! \file SigmoidConstraint.h
+/*! \file SoftmaxConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori, Haoze Wu
+ **   Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
  ** All rights reserved. See the file COPYING in the top-level source
  ** directory for licensing information.\endverbatim
  **
- ** [[ Add lengthier description here ]]
+ ** SoftmaxConstraint implements the following constraint:
+ ** f_i = e^b_i / (e^b_1 + ... + e^b_n) for each of the Softmax output
+ **
+ **/
 
-**/
-
-#ifndef __SigmoidConstraint_h__
-#define __SigmoidConstraint_h__
+#ifndef __SoftmaxConstraint_h__
+#define __SoftmaxConstraint_h__
 
 #include "List.h"
 #include "Map.h"
@@ -22,11 +23,11 @@
 
 #include <cmath>
 
-class SigmoidConstraint : public NonlinearConstraint
+class SoftmaxConstraint : public NonlinearConstraint
 {
 public:
-    SigmoidConstraint( unsigned b, unsigned f );
-    SigmoidConstraint( const String &serializedSigmoid );
+    SoftmaxConstraint( const Vector<unsigned> &inputs, const Vector<unsigned> &outputs );
+    SoftmaxConstraint( const String &serializedSoftmax );
 
     /*
       Get the type of this constraint.
@@ -41,7 +42,7 @@ public:
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const NonlinearConstraint *state ) override; 
+    void restoreState( const NonlinearConstraint *state ) override;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -77,8 +78,6 @@ public:
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) override;
     bool constraintObsolete() const override;
 
-    bool supportVariableElimination() const override { return true; };
-
     /*
       Get the tightenings entailed by the constraint.
     */
@@ -89,40 +88,26 @@ public:
     */
     bool satisfied() const override;
 
-    /*
-      Dump the current state of the constraint.
-    */
-    void dump( String &output ) const override;
-
-    /*
-      Returns string with shape: sigmoid, _f, _b
-    */
     String serializeToString() const override;
 
-    /*
-      Get the index of the B and F variables.
-    */
-    unsigned getB() const;
-    unsigned getF() const;
+    const Vector<unsigned> &getInputs() const;
+    const Vector<unsigned> &getOutputs() const;
+    unsigned getOutput( unsigned input ) const;
 
-    /*
-      Compute the sigmoid function.
-    */
-    static double sigmoid( double x );
+    static void softmax( const Vector<double> &input, Vector<double> &output );
 
-    /*
-      Compute the inverse of the sigmoid function.
-    */
-    static double sigmoidInverse( double y );
+    // Given a vector input, subtract value from each element in the vector and
+    // store the result in output.
+    static void xTilda( const Vector<double> &input, double value, Vector<double> &output );
 
-    /*
-      Compute the derivative of the sigmoid function.
-    */
-    static double sigmoidDerivative( double x );
+    static double sumOfExponential( const Vector<double> &input );
+
+    static double logSumOfExponential( const Vector<double> &input );
 
 private:
-    unsigned _b, _f;
-    bool _haveEliminatedVariables;
+    Vector<unsigned> _inputs;
+    Vector<unsigned> _outputs;
+    Map<unsigned, unsigned> _inputToOutput;
 };
 
-#endif // __SigmoidConstraint_h__
+#endif // __SoftmaxConstraint_h__

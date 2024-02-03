@@ -114,7 +114,7 @@ void NetworkParser::getMarabouQuery( InputQuery& query )
     {
         SigmoidConstraint constraint = *constraintPtr;
         ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        query.addTranscendentalConstraint( constraintPtr );
+        query.addNonlinearConstraint( constraintPtr );
     }
 
     for ( MaxConstraint* constraintPtr : _maxList )

@@ -346,9 +346,9 @@ private:
     List<PiecewiseLinearConstraint *> _plConstraints;
 
     /*
-      The existing transcendental constraints.
+      The existing nonlinear constraints.
     */
-    List<TranscendentalConstraint *> _tsConstraints;
+    List<NonlinearConstraint *> _nlConstraints;
 
     /*
       Piecewise linear constraints that are currently violated.
@@ -567,6 +567,11 @@ private:
       Return true iff all piecewise linear constraints hold.
     */
     bool allPlConstraintsHold();
+
+    /*
+      Return true iff all nonlinear constraints hold.
+    */
+    bool allNonlinearConstraintsHold();
 
     /*
       Select a currently-violated LP constraint for fixing

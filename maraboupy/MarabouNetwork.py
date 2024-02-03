@@ -51,6 +51,8 @@ class MarabouNetwork:
         self.reluList = []
         self.sigmoidList = []
         self.maxList = []
+        self.softmaxList = []
+        self.bilinearList = []
         self.absList = []
         self.signList = []
         self.disjunctionList = []
@@ -116,6 +118,15 @@ class MarabouNetwork:
         """
         self.reluList += [(v1, v2)]
 
+    def addBilinear(self, v1, v2, v3):
+        """Function to add a bilinear constraint to the network
+        Args:
+            v1 (int): Variable representing input1 of Bilinear
+            v2 (int): Variable representing input2 of Bilinear
+            v3 (int): Variable representing output of Bilinear
+        """
+        self.bilinearList += [(v1, v2, v3)]
+
     def addSigmoid(self, v1, v2):
         """Function to add a new Sigmoid constraint
 
@@ -133,6 +144,15 @@ class MarabouNetwork:
             v (int): Variable representing output of max constraint
         """
         self.maxList += [(elements, v)]
+
+    def addSoftmaxConstraint(self, inputs, outputs):
+        """Function to add a new softmax constraint
+
+        Args:
+            inputs (set of int): Variable representing input to max constraint
+            outputs (set of int): Variables representing outputs of max constraint
+        """
+        self.softmaxList += [(inputs, outputs)]
 
     def addAbsConstraint(self, b, f):
         """Function to add a new Abs constraint
@@ -255,6 +275,10 @@ class MarabouNetwork:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
 
+        for r in self.bilinearList:
+            assert r[2] < self.numVars and r[1] < self.numVars and r[0] < self.numVars
+            MarabouCore.addBilinearConstraint(ipq, r[0], r[1], r[2])
+
         for r in self.sigmoidList:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addSigmoidConstraint(ipq, r[0], r[1])
@@ -264,6 +288,13 @@ class MarabouNetwork:
             for e in m[0]:
                 assert e < self.numVars
             MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+
+        for m in self.softmaxList:
+            for e in m[1]:
+                assert e < self.numVars
+            for e in m[0]:
+                assert e < self.numVars
+            MarabouCore.addSoftmaxConstraint(ipq, m[0], m[1])
 
         for b, f in self.absList:
             MarabouCore.addAbsConstraint(ipq, b, f)
