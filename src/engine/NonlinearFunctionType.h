@@ -1,8 +1,8 @@
 /*********************                                                        */
-/*! \file TranscendentalFunctionType.h
+/*! \file NonlinearFunctionType.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -13,19 +13,13 @@
 
  **/
 
-#ifndef __TranscendentalFunctionType_h__
-#define __TranscendentalFunctionType_h__
+#ifndef __NonlinearFunctionType_h__
+#define __NonlinearFunctionType_h__
 
-enum TranscendentalFunctionType {
+enum NonlinearFunctionType {
     SIGMOID = 0,
+    SOFTMAX = 1,
+    BILINEAR = 2,
 };
 
-#endif // __TranscendentalFunctionType_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+#endif // __NonlinearFunctionType_h__

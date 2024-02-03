@@ -469,14 +469,14 @@ public:
         equation4.setScalar( -0.341 );
         inputQuery.addEquation( equation4 );
 
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint(2, 4) );
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint(3, 5) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint(2, 4) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint(3, 5) );
 
         InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // All equations and varaibles should have been eliminated
         TS_ASSERT_EQUALS( processed.getEquations().size(), 0U );
-        TS_ASSERT_EQUALS( processed.getTranscendentalConstraints().size(), 0U );
+        TS_ASSERT_EQUALS( processed.getNonlinearConstraints().size(), 0U );
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
@@ -843,8 +843,8 @@ public:
         // Specify activation functions
         SigmoidConstraint *sigmoid1 = new SigmoidConstraint( 2, 4 );
         SigmoidConstraint *sigmoid2 = new SigmoidConstraint( 3, 5 );
-        inputQuery.addTranscendentalConstraint( sigmoid1 );
-        inputQuery.addTranscendentalConstraint( sigmoid2 );
+        inputQuery.addNonlinearConstraint( sigmoid1 );
+        inputQuery.addNonlinearConstraint( sigmoid2 );
         sigmoid1->notifyLowerBound( 4, 0 );
         sigmoid2->notifyLowerBound( 5, 0 );
         sigmoid1->notifyUpperBound( 4, 1 );

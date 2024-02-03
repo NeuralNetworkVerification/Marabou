@@ -111,8 +111,8 @@ public:
         inputQuery.addEquation( equation3 );
 
         // Sigmoid Constraints
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint( 5, 7 ) );
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint( 6, 8 ) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint( 5, 7 ) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint( 6, 8 ) );
 
         // Fifth equation, second hidden layer to output
         Equation equation4;
@@ -164,19 +164,19 @@ public:
         constraint2 = (ReluConstraint *)*it2;
         TS_ASSERT( constraint->serializeToString() == constraint2->serializeToString() );
 
-        // Transcendental Constraints unchanged
-        TS_ASSERT( inputQuery.getTranscendentalConstraints().size() == 2U );
-        TS_ASSERT( inputQuery2.getTranscendentalConstraints().size() == 2U );
-        auto tsIt = inputQuery.getTranscendentalConstraints().begin();
-        SigmoidConstraint *tsConstraint = (SigmoidConstraint *)*tsIt;
-        auto tsIt2 = inputQuery2.getTranscendentalConstraints().begin();
-        SigmoidConstraint *tsConstraint2 = (SigmoidConstraint *)*tsIt2;
-        TS_ASSERT( tsConstraint->serializeToString() == tsConstraint2->serializeToString() );
+        // Nonlinear Constraints unchanged
+        TS_ASSERT( inputQuery.getNonlinearConstraints().size() == 2U );
+        TS_ASSERT( inputQuery2.getNonlinearConstraints().size() == 2U );
+        auto tsIt = inputQuery.getNonlinearConstraints().begin();
+        SigmoidConstraint *nlConstraint = (SigmoidConstraint *)*tsIt;
+        auto tsIt2 = inputQuery2.getNonlinearConstraints().begin();
+        SigmoidConstraint *nlConstraint2 = (SigmoidConstraint *)*tsIt2;
+        TS_ASSERT( nlConstraint->serializeToString() == nlConstraint2->serializeToString() );
         ++tsIt;
         ++tsIt2;
-        tsConstraint = (SigmoidConstraint *)*tsIt;
-        tsConstraint2 = (SigmoidConstraint *)*tsIt2;
-        TS_ASSERT( tsConstraint->serializeToString() == tsConstraint2->serializeToString() );
+        nlConstraint = (SigmoidConstraint *)*tsIt;
+        nlConstraint2 = (SigmoidConstraint *)*tsIt2;
+        TS_ASSERT( nlConstraint->serializeToString() == nlConstraint2->serializeToString() );
     }
 };
 
