@@ -632,15 +632,15 @@ public:
         List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
 
         // Add lower bound for x0 in first disjunct (otherwise MarabouError will be thrown)
-        caseSplits.front().storeBoundTightening(Tightening(0, -1, Tightening::LB));
+        caseSplits.front().storeBoundTightening( Tightening( 0, -1, Tightening::LB ) );
 
         DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
 
         double minX0LowerBound = 0;
-        TS_ASSERT_THROWS_NOTHING(minX0LowerBound = disj.getMinLowerBound(0))
-        TS_ASSERT_EQUALS(minX0LowerBound, -1)
+        TS_ASSERT_THROWS_NOTHING( minX0LowerBound = disj.getMinLowerBound( 0 ) )
+        TS_ASSERT_EQUALS( minX0LowerBound, -1 )
 
-        TS_ASSERT_THROWS(disj.getMinLowerBound(1), MarabouError)
+        TS_ASSERT_THROWS( disj.getMinLowerBound( 1 ), MarabouError )
     }
 
     void test_max_upper_bound()
@@ -653,14 +653,14 @@ public:
         List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
 
         // Add upper bound for x0 in last disjunct (otherwise MarabouError will be thrown)
-        caseSplits.back().storeBoundTightening(Tightening(0, 3, Tightening::UB));
+        caseSplits.back().storeBoundTightening( Tightening( 0, 3, Tightening::UB ) );
 
         DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
 
         double maxX0UpperBound = 0;
-        TS_ASSERT_THROWS_NOTHING(maxX0UpperBound = disj.getMaxUpperBound(0))
-        TS_ASSERT_EQUALS(maxX0UpperBound, 5)
+        TS_ASSERT_THROWS_NOTHING( maxX0UpperBound = disj.getMaxUpperBound( 0 ) )
+        TS_ASSERT_EQUALS( maxX0UpperBound, 5 )
 
-        TS_ASSERT_THROWS(disj.getMaxUpperBound(1), MarabouError)
+        TS_ASSERT_THROWS( disj.getMaxUpperBound( 1 ), MarabouError )
     }
 };
