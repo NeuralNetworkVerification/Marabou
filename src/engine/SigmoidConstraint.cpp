@@ -14,7 +14,7 @@
 
 #include "SigmoidConstraint.h"
 
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -31,7 +31,7 @@
 #endif
 
 SigmoidConstraint::SigmoidConstraint( unsigned b, unsigned f )
-    : TranscendentalConstraint()
+    : NonlinearConstraint()
     , _b( b )
     , _f( f )
     , _haveEliminatedVariables( false )
@@ -56,19 +56,19 @@ SigmoidConstraint::SigmoidConstraint( const String &serializedSigmoid )
     _b = atoi( var->ascii() );
 }
 
-TranscendentalFunctionType SigmoidConstraint::getType() const
+NonlinearFunctionType SigmoidConstraint::getType() const
 {
-    return TranscendentalFunctionType::SIGMOID;
+    return NonlinearFunctionType::SIGMOID;
 }
 
-TranscendentalConstraint *SigmoidConstraint::duplicateConstraint() const
+NonlinearConstraint *SigmoidConstraint::duplicateConstraint() const
 {
     SigmoidConstraint *clone = new SigmoidConstraint( _b, _f );
     *clone = *this;
     return clone;
 }
 
-void SigmoidConstraint::restoreState( const TranscendentalConstraint *state )
+void SigmoidConstraint::restoreState( const NonlinearConstraint *state )
 {
     const SigmoidConstraint *sigmoid = dynamic_cast<const SigmoidConstraint *>( state );
     *this = *sigmoid;
@@ -146,16 +146,9 @@ void SigmoidConstraint::dump( String &output ) const
 void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
 	ASSERT( oldIndex == _b || oldIndex == _f );
-    ASSERT( !_assignment.exists( newIndex ) &&
-            !_lowerBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) &&
             !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
-
-    if ( _assignment.exists( oldIndex ) )
-    {
-        _assignment[newIndex] = _assignment.get( oldIndex );
-        _assignment.erase( oldIndex );
-    }
 
     if ( _lowerBounds.exists( oldIndex ) )
     {
@@ -190,7 +183,7 @@ bool SigmoidConstraint::constraintObsolete() const
 }
 
 void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
-{ 
+{
     ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
             existsUpperBound( _b ) && existsUpperBound( _f ) );
 
@@ -204,6 +197,17 @@ void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) 
 
     tightenings.append( Tightening( _b, bUpperBound, Tightening::UB ) );
     tightenings.append( Tightening( _f, fUpperBound, Tightening::UB ) );
+}
+
+bool SigmoidConstraint::satisfied() const
+{
+    if ( !( existsAssignment( _b ) && existsAssignment( _f ) ) )
+        throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT );
+
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
+
+    return FloatUtils::areEqual( sigmoid( bValue ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 String SigmoidConstraint::serializeToString() const

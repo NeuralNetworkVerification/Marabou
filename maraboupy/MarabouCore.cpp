@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include "MarabouMain.h"
 #include "AcasParser.h"
+#include "BilinearConstraint.h"
 #include "CommonError.h"
 #include "DnCManager.h"
 #include "DisjunctionConstraint.h"
@@ -43,10 +44,11 @@
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "Set.h"
+#include "SoftmaxConstraint.h"
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -107,9 +109,15 @@ void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     ipq.addPiecewiseLinearConstraint(r);
 }
 
+void addBilinearConstraint(InputQuery& ipq, unsigned var1, unsigned var2,
+                           unsigned var3){
+    NonlinearConstraint* r = new BilinearConstraint(var1, var2, var3);
+    ipq.addNonlinearConstraint(r);
+}
+
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
-    ipq.addTranscendentalConstraint(s);
+    NonlinearConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addNonlinearConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -123,6 +131,20 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
         e.insert(var);
     PiecewiseLinearConstraint* m = new MaxConstraint(v, e);
     ipq.addPiecewiseLinearConstraint(m);
+}
+
+void addSoftmaxConstraint( InputQuery& ipq, std::list<unsigned> inputs,
+                           std::list<unsigned> outputs ){
+    Vector<unsigned> inputList;
+    for ( const auto &e :inputs )
+        inputList.append(e);
+
+    Vector<unsigned> outputList;
+    for ( const auto &e :outputs )
+        outputList.append(e);
+
+    SoftmaxConstraint *s = new SoftmaxConstraint(inputList, outputList);
+    ipq.addNonlinearConstraint(s);
 }
 
 void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
@@ -588,6 +610,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addBilinearConstraint", &addBilinearConstraint, R"pbdoc(
+        Add a Bilinear constraint to the InputQuery
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Bilinear constraint
+            var2 (int): Input variable to Bilinear constraint
+            var3 (int): Output variable to Bilinear constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("var3"));
     m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
         Add a Sigmoid constraint to the InputQuery
 
@@ -615,6 +646,14 @@ PYBIND11_MODULE(MarabouCore, m) {
             v (int): Output variable from max constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
+    m.def("addSoftmaxConstraint", &addSoftmaxConstraint, R"pbdoc(
+        Add a Softmax constraint to the InputQuery
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            inputs (list of int): Input variables to softmax constraint
+            outputs (list of int): Output variables from softmax constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("inputs"), py::arg("outputs"));
     m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
         Add an Abs constraint to the InputQuery
 

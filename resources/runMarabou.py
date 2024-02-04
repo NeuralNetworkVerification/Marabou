@@ -95,7 +95,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     if target_label == -1:
         print("No output constraint!")
     else:
-        outputVars = network.outputVars.flatten()
+        outputVars = network.outputVars[0].flatten()
         for i in range(10):
             if i != target_label:
                 network.addInequality([outputVars[i],

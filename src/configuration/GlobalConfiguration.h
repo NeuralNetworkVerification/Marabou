@@ -167,6 +167,9 @@ public:
     // The tolerance for checking whether f = Constraint( b ), Constraint \in { ReLU, ABS, Sign}
     static const double CONSTRAINT_COMPARISON_TOLERANCE;
 
+    // Toggle between two types of LSE lower bound for softmax
+    static const double SOFTMAX_LSE2_THRESHOLD;
+
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
 
