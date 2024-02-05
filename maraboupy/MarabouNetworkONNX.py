@@ -998,7 +998,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 split = get_attribute_value(attr)
 
         inputName = node.input[0]
-        inputVars = Split_2.eval(self.varMap[inputName], split=split, axis=axis)
+        inputVars = Split_18.eval(self.varMap[inputName], split=split, axis=axis)
 
         assert len(inputVars) == len(node.output)
 
