@@ -167,6 +167,9 @@ public:
     // The tolerance for checking whether f = Constraint( b ), Constraint \in { ReLU, ABS, Sign}
     static const double CONSTRAINT_COMPARISON_TOLERANCE;
 
+    // Toggle between two types of LSE lower bound for softmax
+    static const double SOFTMAX_LSE2_THRESHOLD;
+
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
 
@@ -185,6 +188,7 @@ public:
 
     // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
+    static const double EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT;
 
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;

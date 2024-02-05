@@ -475,7 +475,7 @@ void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQ
         NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
         SigmoidConstraint *sigmoid = new SigmoidConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
-        inputQuery.addTranscendentalConstraint( sigmoid );
+        inputQuery.addNonlinearConstraint( sigmoid );
     }
 }
 

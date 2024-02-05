@@ -16,6 +16,7 @@
 #ifndef __MILPEncoder_h__
 #define __MILPEncoder_h__
 
+#include "BilinearConstraint.h"
 #include "DisjunctionConstraint.h"
 #include "GurobiWrapper.h"
 #include "InputQuery.h"
@@ -23,6 +24,7 @@
 #include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MStringf.h"
+#include "SoftmaxConstraint.h"
 #include "Statistics.h"
 
 #include "Map.h"
@@ -141,6 +143,18 @@ private:
       Encode a Sigmoid constraint
     */
     void encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid );
+
+    /*
+      Encode a Softmax constraint
+    */
+    void encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstraint *softmax );
+
+    /*
+      Encode a Bilinear constraint
+    */
+    void encodeBilinearConstraint( GurobiWrapper &gurobi,
+                                   BilinearConstraint *bilinear,
+                                   bool relax );
 };
 
 #endif // __MILPEncoder_h__

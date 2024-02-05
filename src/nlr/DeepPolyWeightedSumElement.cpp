@@ -287,10 +287,12 @@ void DeepPolyWeightedSumElement::concretizeSymbolicBoundForSourceLayer
     // Get concrete bounds
     for ( unsigned i = 0; i < sourceElement->getSize(); ++i )
     {
-        double sourceLb = sourceElement->getLowerBoundFromLayer( i );
-        double sourceUb = sourceElement->getUpperBoundFromLayer( i );
+        double sourceLb = sourceElement->getLowerBoundFromLayer( i )
+            - GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
+        double sourceUb = sourceElement->getUpperBoundFromLayer( i )
+            + GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT;
 
-        log( Stringf( "Bounds of neuron%u_%u: [%f, %f]\n", sourceElement->
+        log( Stringf( "Bounds of neuron%u_%u: [%f, %f]", sourceElement->
                       getLayerIndex(), i, sourceLb, sourceUb ) );
 
         for ( unsigned j = 0; j < _size; ++j )

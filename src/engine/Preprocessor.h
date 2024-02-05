@@ -105,7 +105,7 @@ private:
     bool processEquations();
 
     /*
-      Tighten the bounds using the piecewise linear and transcendental constraints
+      Tighten the bounds using the piecewise linear and nonlinear constraints
     */
     bool processConstraints();
 

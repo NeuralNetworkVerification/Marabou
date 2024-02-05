@@ -61,6 +61,7 @@ public:
       Register initial SnC split
     */
     virtual void applySnCSplit( PiecewiseLinearCaseSplit split, String queryId ) = 0;
+    virtual bool inSnCMode() const = 0;
 
     /*
       Hooks invoked before/after context push/pop to store/restore/update context independent data.

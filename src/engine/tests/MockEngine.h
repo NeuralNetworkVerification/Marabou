@@ -197,16 +197,24 @@ public:
             return NULL;
     }
 
+    bool _snc;
+    CVC4::context::Context _context;
+
     void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
     {
+        _snc = true;
+        _context.push();
+    }
+
+    bool inSnCMode() const {
+        return _snc;
     }
 
     void applyAllBoundTightenings() {};
 
     bool applyAllValidConstraintCaseSplits() { return false; };
 
-    CVC4::context::Context _dontCare;
-    CVC4::context::Context &getContext() { return _dontCare; }
+    CVC4::context::Context &getContext() { return _context; }
 
     bool consistentBounds() const { return true; }
 

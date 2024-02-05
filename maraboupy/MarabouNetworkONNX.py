@@ -4,6 +4,7 @@ Top contributors (to current version):
     - Haoze Wu
     - Teruhiro Tagomori
     - Tobey Shim
+    - Idan Refaeli
 
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -20,12 +21,12 @@ from onnx import numpy_helper
 from onnx.helper import get_attribute_value
 from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
-from maraboupy import MarabouCore
 from onnx import TensorProto
 import itertools
 import torch
+import tempfile
 import os
-import re
+from copy import copy
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkONNX object from an ONNX file
@@ -34,14 +35,13 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         filename (str): Path to the ONNX file
         inputNames: (list of str, optional): List of node names corresponding to inputs
         outputNames: (list of str, optional): List of node names corresponding to outputs
-        vnnlibFilename (str): Optional argument of filename to vnnlib file containing a property
 
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True, vnnlibFilename=None):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars, vnnlibFilename=vnnlibFilename)
+        self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
     def clear(self):
         """Reset values to represent empty network
@@ -70,7 +70,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputNames = None
         self.graph = None
 
-    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True, vnnlibFilename=None):
+    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
@@ -78,7 +78,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             inputNames: (list of str): List of node names corresponding to inputs
             outputNames: (list of str): List of node names corresponding to outputs
             reindexOutputVars: (bool): Reindex the variables so that the output variables are immediate after input variables.
-            vnnlibFilename (str): Optional argument of filename to vnnlib file containing a property
 
         :meta private:
         """
@@ -123,9 +122,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.reassignOutputVariables()
         else:
             self.outputVars = [self.varMap[outputName] for outputName in self.outputNames]
-
-        if vnnlibFilename:
-            self.loadPropertyWithVnnlib(vnnlibFilename)
 
     def splitNetworkAtNode(self, nodeName, networkNamePreSplit=None,
                            networkNamePostSplit=None):
@@ -253,6 +249,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.flatten(node)
         elif node.op_type == "Transpose":
             self.transpose(node)
+        elif node.op_type == 'Unsqueeze':
+            self.unsqueeze(node)
+        elif node.op_type == 'Squeeze':
+            self.squeeze(node)
         elif node.op_type == "BatchNormalization":
             self.batchNorm(node, makeEquations)
         elif node.op_type == 'Concat':
@@ -281,6 +281,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.tanhEquations(node, makeEquations)
         elif node.op_type == 'LeakyRelu':
             self.leakyReluEquations(node, makeEquations)
+        elif node.op_type == 'Softmax':
+            self.softmaxEquations(node, makeEquations)
         elif node.op_type == 'Sub':
             self.subEquations(node, makeEquations)
         else:
@@ -439,7 +441,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         reshapeVals = self.constantMap[inputName2]
         self.shapeMap[nodeName] = list(np.zeros(self.shapeMap[inputName1]).reshape(reshapeVals).shape)
         if inputName1 in self.varMap:
-            self.varMap[nodeName] = self.varMap[inputName1].reshape(reshapeVals)
+            self.varMap[nodeName] = copy(self.varMap[inputName1]).reshape(reshapeVals)
         elif inputName1 in self.constantMap:
             self.constantMap[nodeName] = self.constantMap[inputName1].reshape(reshapeVals)
 
@@ -500,6 +502,73 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         elif inputName in self.constantMap:
             self.constantMap[nodeName] = np.transpose(self.constantMap[inputName], perm)
 
+    def unsqueeze(self, node):
+        """Function representing unsqueeze
+
+        Args:
+            node (node): ONNX node representing unsqueeze operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        # create a temporary file in the current directory
+        tf = tempfile.NamedTemporaryFile(dir=".")
+
+        # get the file name
+        temp_file_name = tf.name
+        # close the file
+        tf.close()
+
+        onnx.utils.extract_model(self.filename, temp_file_name,
+                                 input_names=[inputName],
+                                 output_names=[nodeName])
+        session = onnxruntime.InferenceSession(temp_file_name)
+        os.remove(temp_file_name)
+
+        # get the input and output names
+        input_name = session.get_inputs()[0].name
+        output_name = session.get_outputs()[0].name
+
+        if inputName in self.varMap:
+            # prepare the input data
+            input_data = np.array(self.varMap[inputName], dtype="float32")
+            # run the inference session and get the output predictions
+            output_data = session.run([output_name], {input_name: input_data})[0].astype(int)
+            self.shapeMap[nodeName] = output_data.shape
+            self.varMap[nodeName] = output_data
+        else:
+            # prepare the input data
+            input_data = np.array(self.constantMap[inputName], dtype="int")
+            # run the inference session and get the output predictions
+            output_data = session.run([output_name], {input_name: input_data})[0].astype(int)
+            self.shapeMap[nodeName] = output_data.shape
+            self.constantMap[nodeName] = output_data
+
+    def squeeze(self, node):
+        """Function representing squeeze
+
+        Args:
+            node (node): ONNX node representing squeeze operation
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName, axisName = node.input
+
+        axis = self.constantMap[axisName]
+
+        axis_ = copy(axis)
+        if inputName in self.varMap:
+            vars = copy(self.varMap[inputName])
+            for i in range(len(axis)):
+                vars = np.squeeze(vars, axis_[i])
+                for j in range(len(axis))[i+1:]:
+                    axis_[j] -= 1
+            self.varMap[nodeName] = vars
+            self.shapeMap[nodeName] = vars.shape
+        return
+
     def batchNorm(self, node, makeEquations):
         """Function to generate equations for a BatchNormalization
 
@@ -543,8 +612,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 # To know this computation,
                 # refer to https://github.com/onnx/onnx/blob/master/docs/Operators.md#batchnormalization.
                 e = MarabouUtils.Equation()
-                e.addAddend(-1, outputVars[i][j])
                 e.addAddend(1 / np.sqrt(input_variances[i] + epsilon) * scales[i], inputVars[i][j])
+                e.addAddend(-1, outputVars[i][j])
                 e.setScalar(input_means[i] / np.sqrt(input_variances[i] + epsilon) * scales[i] - biases[i])
                 self.addEquation(e)
 
@@ -588,6 +657,47 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                             if di < inputShape[2] and dj < inputShape[3]:
                                 maxVars.add(inVars[0][k][di][dj])
                     self.addMaxConstraint(maxVars, outVars[0][k][i][j])
+
+    def softmaxEquations(self, node, makeEquations):
+        """Function to generate constraints for softmax
+
+        Args:
+        node (node): ONNX node representing the softmax operation
+        makeEquations (bool): True if we need to create new variables and maxpool constraints
+
+        :meta private:
+        """
+        nodeName = node.output[0]
+
+        # Extract attributes and define shape
+        inputShape = self.shapeMap[node.input[0]]
+        for attr in node.attribute:
+            if attr.name == 'axis':
+                axis = get_attribute_value(attr)
+
+        self.shapeMap[nodeName] = inputShape
+
+        if not makeEquations:
+            return
+
+        inVars = self.varMap[node.input[0]]
+        outVars = self.makeNewVariables(nodeName)
+
+        if len(inputShape) == 2 and inputShape[0] == 1:
+            self.addSoftmaxConstraint(list(np.array(inVars).flatten()), list(np.array(outVars).flatten()))
+        else:
+            axis = ( len(inputShape) + axis ) % len(inputShape)
+            perm = []
+            for i, s in enumerate(inputShape):
+                if i == axis:
+                    continue
+                perm.append(i)
+            perm.append(axis)
+
+            inVarsReshaped = np.transpose(inVars, perm).reshape(-1, inputShape[axis])
+            outVarsReshaped = np.transpose(outVars, perm).reshape(-1, inputShape[axis])
+            for i in range(inVarsReshaped.shape[0]):
+                self.addSoftmaxConstraint(inVarsReshaped[i], outVarsReshaped[i])
 
     def convEquations(self, node, makeEquations):
         """Function to generate equations for a 2D convolution
@@ -680,7 +790,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         nodeName = node.output[0]
 
         # Get inputs
-        inputName1, inputName2, inputName3 = node.input
+        if len(node.input) == 3:
+            inputName1, inputName2, inputName3 = node.input
+        else:
+            inputName1, inputName2 = node.input
+            inputName3 = None
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
 
@@ -712,14 +826,16 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Assume that first input is variables, second is Matrix for MatMul, and third is bias addition
         input1 = self.varMap[inputName1]
         input2 = self.constantMap[inputName2]
-        input3 = self.constantMap[inputName3]
+        if inputName3:
+            input3 = self.constantMap[inputName3]
 
         # Transpose inputs
         if transA:
             input1 = np.transpose(input1)
         if transB:
             input2 = np.transpose(input2)
-        input3 = np.broadcast_to(input3, outShape)
+        if inputName3:
+            input3 = np.broadcast_to(input3, outShape)
 
         assert shape1[-1] == shape2[0]
         assert shape1[0] == outShape[0]
@@ -736,8 +852,12 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
                 # Put output variable as the last addend last
                 e.addAddend(-1, outputVariables[i][j])
-                e.setScalar(-input3[i][j]*beta)
+                if inputName3:
+                    e.setScalar(-input3[i][j]*beta)
+                else:
+                    e.setScalar(0)
                 self.addEquation(e)
+
 
     def matMulEquations(self, node, makeEquations):
         """Function to generate equations corresponding to matrix multiplication
@@ -754,8 +874,19 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         inputName1, inputName2 = node.input
         shape1 = self.shapeMap[inputName1]
         shape2 = self.shapeMap[inputName2]
-        assert shape1[-1] == shape2[0]
-        self.shapeMap[nodeName] = shape1[:-1] + shape2[1:]
+        if len(shape1) > 2 and shape1[0] == 1:
+            shape1 = shape1[1:]
+        elif len(shape1) == 1:
+            # Broadcast first input to make sure the first input is a matrix
+            shape1 = [1] + shape1
+
+        if len(shape2) > 2 and shape2[0] == 1:
+            shape2 = shape2[1:]
+        a = np.zeros(shape1)
+        b = np.zeros(shape2)
+        c = np.matmul(a, b)
+        outshape = c.shape
+        self.shapeMap[nodeName] = outshape
         if not makeEquations:
             return
 
@@ -772,13 +903,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         else:
             input2 = self.varMap[inputName2]
 
-        # Broadcast first input to make sure the first input is a matrix
-        if len(shape1) == 1:
-            shape1 = [1] + shape1
         input1 = input1.reshape(shape1)
-
-        # Assume that at least one input is a constant (We cannot represent variable products with linear equations)
-        assert firstInputConstant or secondInputConstant
+        input2 = input2.reshape(shape2)
 
         # If both inputs are constant, than the output is constant as well, and we don't need new variables or equations
         if firstInputConstant and secondInputConstant:
@@ -788,38 +914,71 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Create new variables
         outputVariables = self.makeNewVariables(nodeName)
 
-        # Pad the output if needed (matrix-matrix multiplication)
-        if len(outputVariables.shape) == 1 and len(shape2) > 1:
-            outputVariables = outputVariables.reshape([1, outputVariables.shape[0]])
+        if not firstInputConstant and not secondInputConstant:
+            # bi-linear constraints
+            self.addBilinearConstraints(shape1, shape2, input1, input2, outputVariables)
+        else:
+            # Generate equations
+            for i in range(shape1[0]):
+                # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
+                if len(shape2)>1:
+                    for j in range(shape2[1]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[1]):
+                            if firstInputConstant:
+                                e.addAddend(input1[i][k], input2[k][j])
+                            else:
+                                e.addAddend(input2[k][j], input1[i][k])
 
-        # Generate equations
-        for i in range(shape1[0]):
-            # Differentiate between matrix-vector multiplication and matrix-matrix multiplication
-            if len(shape2)>1:
-                for j in range(shape2[1]):
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+                else:
                     e = MarabouUtils.Equation()
                     for k in range(shape1[1]):
                         if firstInputConstant:
-                            e.addAddend(input1[i][k], input2[k][j])
+                            e.addAddend(input1[i][k], input2[k])
                         else:
-                            e.addAddend(input2[k][j], input1[i][k])
+                            e.addAddend(input2[k], input1[i][k])
+
+                    # Put output variable as the last addend last
+                    e.addAddend(-1, outputVariables[i])
+                    e.setScalar(0.0)
+                    self.addEquation(e)
+
+    def addBilinearConstraints(self, shape1, shape2, input1, input2, outputVariables):
+        # Generate equations
+        if len(shape2) == 2:
+            for i in range(shape1[0]):
+                for j in range(shape2[1]):
+                    e = MarabouUtils.Equation()
+                    for k in range(shape1[1]):
+                        v = self.getNewVariable()
+                        self.addBilinear(input1[i][k], input2[k][j], v)
+                        e.addAddend(1, v)
 
                     # Put output variable as the last addend last
                     e.addAddend(-1, outputVariables[i][j])
                     e.setScalar(0.0)
                     self.addEquation(e)
-            else:
-                e = MarabouUtils.Equation()
-                for k in range(shape1[1]):
-                    if firstInputConstant:
-                        e.addAddend(input1[i][k], input2[k])
-                    else:
-                        e.addAddend(input2[k], input1[i][k])
+        elif len(shape2) == 3:
+            assert(shape1[0] == shape2[0])
+            for l in range(shape1[0]):
+                for i in range(shape1[1]):
+                    for j in range(shape2[2]):
+                        e = MarabouUtils.Equation()
+                        for k in range(shape1[2]):
+                            v = self.getNewVariable()
+                            self.addBilinear(input1[l][i][k], input2[l][k][j], v)
+                            e.addAddend(1, v)
 
-                # Put output variable as the last addend last
-                e.addAddend(-1, outputVariables[i])
-                e.setScalar(0.0)
-                self.addEquation(e)
+                        # Put output variable as the last addend last
+                        e.addAddend(-1, outputVariables[l][i][j])
+                        e.setScalar(0.0)
+                        self.addEquation(e)
+        else:
+            raise RuntimeError(f"Unsupported shape in matMul tensor: {shape2}")
 
     def concatEquations(self, node):
         """Function to generate equations corresponding to concat
@@ -885,8 +1044,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 for j in range(len(reshapedInputVars)):
                     # Add equation
                     e = MarabouUtils.Equation()
-                    e.addAddend(-1, outputVars[j])
                     e.addAddend(1, reshapedInputVars[j])
+                    e.addAddend(-1, outputVars[j])
                     e.setScalar(0)
                     self.addEquation(e)
                 break
@@ -959,8 +1118,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 for k in range(outputShape[3]):
                     # Add equation
                     e = MarabouUtils.Equation()
-                    e.addAddend(-1, outputVars[0][i][j][k])
                     e.addAddend(1, inputVars[0][i][int(j / 2)][int(k / 2)])
+                    e.addAddend(-1, outputVars[0][i][j][k])
                     e.setScalar(0)
                     self.addEquation(e)
 
@@ -1087,7 +1246,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # If we changed one equation for every input variable, then
         # we don't need any new equations
         if numEquationsChanged == len(varInput):
-            self.varMap[nodeName] = varInput
+            self.varMap[nodeName] = copy(varInput).reshape(outShape)
         else:
             # Otherwise, assert no equations were changed, and we need to create new equations
             assert numEquationsChanged == 0
@@ -1313,6 +1472,21 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for i, variables in enumerate(self.sigmoidList):
             self.sigmoidList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
 
+        # Adjust bilinear list
+        for i, variables in enumerate(self.bilinearList):
+            self.bilinearList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
+
+        # Adjust softmax list
+        for i, (inputs, outputs) in enumerate(self.softmaxList):
+            newInputs = []
+            for var in inputs:
+                newInputs.append(self.reassignVariable(var, numInVars, outVars, newOutVars))
+            newOutputs = []
+            for var in outputs:
+                newOutputs.append(self.reassignVariable(var, numInVars, outVars, newOutVars))
+
+            self.softmaxList[i] = (newInputs, newOutputs)
+
         # Adjust max pool list
         for i, (elements, outVar) in enumerate(self.maxList):
             newOutVar = self.reassignVariable(outVar, numInVars, outVars, newOutVars)
@@ -1381,367 +1555,6 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             input_dict[inputName] = inputValues[i].reshape(self.inputVars[i].shape).astype(inputType)
         return sess.run(self.outputNames, input_dict)
 
-    def loadPropertyWithVnnlib(self, vnnlibFilename):
-        """Loads the property from the given vnnlib file
-
-        Args:
-            vnnlibFilename (str): Filename for the vnnlib file
-
-        Returns:
-            None
-        """
-        with open(vnnlibFilename, 'r') as f:
-            lines = f.readlines()
-
-        vnnlib_content = ""
-        for i in range(len(lines)):
-            if lines[i] == "" or lines[i].startswith(";"):
-                continue
-
-            vnnlib_content += lines[i].strip()
-
-        vnnlib_content = "(" + vnnlib_content + ")"
-        vnnlib_commands = make_tree(vnnlib_content)
-
-        for command in vnnlib_commands:
-            self.parse_command(command)
-
-    def parse_command(self, command):
-        """
-        Parses a single VNN-LIB command
-        Args:
-            command (lst): The command to pars
-
-        Returns:
-            None
-        """
-        assert isinstance(command, list) and len(command) >= 2
-        command_type = command[0]
-        assert isinstance(command_type, str)
-
-        if command_type == "declare-const":
-            self.parse_declare_const(command[1], command[2])
-        elif command_type == "assert":
-            self.parse_assert(command[1])
-        else:
-            raise NotImplementedError(f"VNN-LIB statement type '{command_type} not implemented")
-
-    def parse_declare_const(self, var_name, var_type):
-        """
-        Parses a single "declare-const" command
-        Args:
-            var_name (str): Declared variable name
-            var_type (str): Declared variable type
-
-        Returns:
-            None
-        """
-        assert isinstance(var_name, str) and isinstance(var_type, str)
-
-        if var_type != "Real":
-            raise NotImplementedError("Declaration of variables not of type 'Real' is not supported")
-
-        var_kind, var_index = var_name.split("_")
-        if not var_index.isnumeric():
-            raise RuntimeError("Variable index should be a non-negative integer number")
-
-        if var_kind == 'X':
-            if int(var_index) >= len(self.inputVars[0].reshape(-1)):
-                raise RuntimeError("There is an input variable declaration in the VNN-LIB specification that does not "
-                                   "exists in the ONNX network itself")
-            self.vnnlibMap[var_name] = (int(var_index), var_type)
-        elif var_kind == 'Y':
-            if int(var_index) >= len(self.outputVars[0][0].reshape(-1)):
-                raise RuntimeError("There is an output variable declaration in the VNN-LIB specification that does not "
-                                   "exists in the ONNX network itself")
-            self.vnnlibMap[var_name] = (int(var_index) + len(self.inputVars[0].reshape(-1)), var_type)
-        else:
-            raise RuntimeError("All variable name should should begin with 'X_' for input variables, "
-                               "and 'Y_' for output variables in variable declarations")
-
-
-    def parse_assert(self, assert_command):
-        """
-        Parses a single "assert" command
-        Args:
-            assert_command (list): The 'assert' command to parse
-
-        Returns:
-            None
-        """
-        assert isinstance(assert_command, list) and len(assert_command) >= 2
-        operator = assert_command[0]
-        if operator in {"<=", ">=", "and"}:
-            equations = self.parse_condition(assert_command)
-            for eq in equations:
-                self.addEquation(eq)
-        elif operator == "or": # TODO: change after fixing MarabouUtils.Equation for Disjunction constraint
-            disjuncts = self.parse_condition(assert_command)
-            new_disjuncts = []
-            for disjunct in disjuncts:
-                new_disjunct = []
-                for eq in disjunct:
-                    new_eq = MarabouCore.Equation(eq.EquationType)
-                    for (c, v) in eq.addendList:
-                        new_eq.addAddend(c, v)
-                    new_eq.setScalar(eq.scalar)
-                    new_disjunct.append(new_eq)
-
-                new_disjuncts.append(new_disjunct)
-
-            self.addDisjunctionConstraint(new_disjuncts)
-        else:
-            raise NotImplementedError(f"assert operator {operator} not implemented")
-
-    def parse_condition(self, cond_command):
-        """
-        Parses a single condition
-        Args:
-            cond_command: Condition to parse
-
-        Returns:
-            list of Equations, or list of list of Equations (in case of disjunction)
-        """
-        assert isinstance(cond_command, list)
-        if len(cond_command) < 2:
-            raise RuntimeError("Each condition command should contain at least 1 argument")
-
-        operator = cond_command[0]
-        if operator == "<=":
-            if len(cond_command) != 3:
-                raise RuntimeError("Assert command of type '<=' only support 2 terms as arguments")
-
-            arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
-            return [self.parse_le(arg1, arg2)]
-        elif operator == ">=":
-            if len(cond_command) != 3:
-                raise RuntimeError("Assert command of type '>=' only support 2 terms as arguments")
-
-            arg1, arg2 = self.parse_term(cond_command[1]), self.parse_term(cond_command[2])
-            return [self.parse_le(arg2, arg1)]
-        elif operator == "and":
-            cond_equations = []
-            for sub_cond_command in cond_command[1:]:
-                if not isinstance(sub_cond_command, list):
-                    raise RuntimeError("Sub conditions of 'and' should be between parentheses characters '(' and ')'")
-
-                cond_equations += self.parse_condition(sub_cond_command)
-
-            return cond_equations
-        elif operator == "or":
-            disjuncts = []
-            for sub_cond_command in cond_command[1:]:
-                if not isinstance(sub_cond_command, list):
-                    raise RuntimeError("Sub conditions of 'or' should be between parentheses characters '(' and ')'")
-
-                disjuncts.append(self.parse_condition(sub_cond_command))
-
-            return disjuncts
-
-    def parse_term(self, term):
-        """
-        Parses a single term
-        Args:
-            term (list): The term to parse
-
-        Returns:
-            a tuple of parsing results, depending on term's operator type
-        """
-        if isinstance(term, list):
-            assert len(term) >= 2
-            operator = term[0]
-            if operator == "+":
-                return self.parse_add(term)
-            elif operator == "-":
-                return self.parse_sub(term)
-            elif operator == "*":
-                return self.parse_mul(term)
-        elif term in self.vnnlibMap:
-            return self.vnnlibMap[term][0], "var"
-        else:
-            try:
-                const_value = float(term)
-                return const_value, "const"
-            except ValueError:
-                raise RuntimeError(f"Term {term} is not a variable declaration, a number or a function")
-
-    def parse_le(self, arg1, arg2):
-        """
-        Parses an '<=' condition
-        Args:
-            arg1 (tuple): Left term of '<='
-            arg2 (tuple): Right term of '<='
-
-        Returns:
-            Equation representing this condition
-        """
-        assert isinstance(arg1, tuple) and isinstance(arg2, tuple)
-        assert isinstance(arg1[-1], str) and isinstance(arg2[-1], str)
-
-        eq = MarabouUtils.Equation(MarabouCore.Equation.LE)
-        scalar = 0
-
-        if arg1[-1] == "const":
-            assert len(arg1) == 2 and isinstance(arg1[0], float)
-            scalar -= arg1[0]
-        elif arg1[-1] == "var":
-            assert len(arg1) == 2 and isinstance(arg1[0], int)
-            eq.addAddend(1, arg1[0])
-        elif arg1[-1] == "+":
-            assert len(arg1) == 3 and isinstance(arg1[0], list) and isinstance(arg1[1], float)
-            for v in arg1[0]:
-                eq.addAddend(1, v)
-            scalar -= arg1[1]
-        elif arg1[-1] == "-":
-            assert len(arg1) == 3 and isinstance(arg1[0], tuple) and isinstance(arg1[1], tuple)
-            assert len(arg1[0]) == 2 and len(arg1[1]) == 2
-            if arg1[0][1] == "const":
-                scalar -= arg1[0][0]
-            else: # arg1[0][1] == "var"
-                eq.addAddend(1, arg1[0][0])
-            if arg1[1][1] == "const":
-                scalar -= arg1[1][0]
-            else: # arg1[1][1] == "var"
-                eq.addAddend(-1, arg1[1][0])
-        elif arg1[-1] == "*":
-            assert len(arg1) == 3 and (isinstance(arg1[0], int) or arg1[0] is None) and isinstance(arg1[1], float)
-            if arg1[0] is None:
-                scalar -= arg1[1]
-            else:
-                eq.addAddend(arg1[1], arg1[0])
-
-        if arg2[-1] == "const":
-            assert len(arg2) == 2 and isinstance(arg2[0], float)
-            scalar += arg2[0]
-        elif arg2[-1] == "var":
-            assert len(arg2) == 2 and isinstance(arg2[0], int)
-            eq.addAddend(-1, arg2[0])
-        elif arg2[-1] == "+":
-            assert len(arg2) == 3 and isinstance(arg2[0], list) and isinstance(arg2[1], float)
-            for v in arg2[0]:
-                eq.addAddend(-1, v)
-            scalar += arg2[1]
-        elif arg2[-1] == "-":
-            assert len(arg2) == 3 and isinstance(arg2[0], tuple) and isinstance(arg2[1], tuple)
-            assert len(arg2[0]) == 2 and len(arg2[1]) == 2
-            if arg2[0][1] == "const":
-                scalar += arg2[0][0]
-            else:  # arg2[0][1] == "var"
-                eq.addAddend(-1, arg2[0][0])
-            if arg2[1][1] == "const":
-                scalar += arg2[1][0]
-            else:  # arg2[1][1] == "var"
-                eq.addAddend(1, arg2[1][0])
-        elif arg2[-1] == "*":
-            assert len(arg2) == 3 and (isinstance(arg2[0], int) or arg2[0] is None) and isinstance(arg2[1], float)
-            if arg2[0] is None:
-                scalar += arg2[1]
-            else:
-                eq.addAddend(-arg2[1], arg2[0])
-
-        eq.setScalar(scalar)
-        return eq
-
-    def parse_add(self, add_term):
-        """
-        Parses a single '+' term
-        Args:
-            add_term (list): The '+' term to parse
-
-        Returns:
-            A 3-tuple of (list of variables, sum of constants, '+')
-        """
-        assert isinstance(add_term, list)
-        assert add_term[0] == "+"
-
-        if len(add_term) < 3:
-            raise RuntimeError("A '+' term should contain at lease 2 arguments")
-
-        args = [self.parse_term(add_term[i]) for i in range(1, len(add_term))]
-        variables = []
-        const_total = 0.
-        for arg in args:
-            assert isinstance(arg, tuple)
-            if len(arg) != 2 or not (arg[1] == "const" or arg[1] == "var"):
-                raise RuntimeError("All arguments of a '+' term should be declared variable names, or constant numbers")
-
-            if arg[1] == "const":
-                const_total += arg[0]
-            elif arg[1] == "var":
-                variables.append(arg[0])
-
-        return variables, const_total, "+"
-
-    def parse_sub(self, sub_term):
-        """
-        Parses a single '-' term
-        Args:
-            sub_term (list): The '-' term to parse
-
-        Returns:
-            A 3-tuple of (term of left argument, term of right argument, '-') in case of 2 arguments,
-            or a 2-tuple of (-argument, "const") in case of 1 constant number argument
-        """
-        assert isinstance(sub_term, list)
-        assert sub_term[0] == "-"
-
-        if len(sub_term) not in {2, 3}:
-            raise RuntimeError("A '-' term should contain 1 or 2 arguments")
-
-        arg1 = self.parse_term(sub_term[1])
-        assert isinstance(arg1, tuple)
-        if len(arg1) != 2 or not (arg1[1] == "const" or arg1[1] == "var"):
-            raise RuntimeError("The arguments of a '-' term should be declared variable names, or constant numbers")
-
-        if len(sub_term) == 3:
-            # subtraction between two terms
-            arg2 = self.parse_term(sub_term[2])
-            assert isinstance(arg2, tuple)
-            if len(arg2) != 2 or not (arg2[1] == "const" or arg2[1] == "var"):
-                raise RuntimeError("The arguments of a '-' term should be declared variable names, or constant numbers")
-
-            return arg1, arg2, "-"
-        else:
-            # negation to constant number
-            if arg1[1] == "const":
-                return -arg1[0], "const"
-            else:
-                raise NotImplementedError("Using the '-' term for one argument other than constant number is not supported")
-
-    def parse_mul(self, mul_term):
-        """
-        Parses a single '*' term
-        Args:
-            mul_term (tuple): The '*' term to parse
-
-        Returns:
-            A 3-tuple of (variable or None, multiplication of constant numbers, '*')
-        """
-        assert isinstance(mul_term, list)
-        assert mul_term[0] == "*"
-
-        if len(mul_term) < 3:
-            raise RuntimeError("A '*' term should contain at lease 2 arguments")
-
-        args = [self.parse_term(mul_term[i]) for i in range(1, len(mul_term))]
-        variable = None
-        const_total = 1.
-
-        for arg in args:
-            assert isinstance(arg, tuple)
-            if len(arg) != 2 or not (arg[1] == "const" or arg[1] == "var"):
-                raise RuntimeError("All arguments of a '*' term should be declared variable names, or constant numbers")
-
-            if arg[1] == "const":
-                const_total *= arg[0]
-            elif arg[1] == "var":
-                if variable is None:
-                    variable = arg[0]
-                else:
-                    raise RuntimeError("In a '*' term only 1 variable argument is allowed")
-
-        return variable, const_total, "*"
-
 def getBroadcastShape(shape1, shape2):
     """Helper function to get the shape that results from broadcasting these shapes together
 
@@ -1755,33 +1568,3 @@ def getBroadcastShape(shape1, shape2):
     :meta private:
     """
     return [l1 if l1 == l2 else max(l1, l2) for l1, l2 in itertools.zip_longest(shape1[::-1], shape2[::-1], fillvalue=1)][::-1]
-
-
-def make_tree(content):
-    """Helper function to get the statements of given vnnlib content file split into lists
-
-    Args:
-        content (str): Content of vnnlib file (filtered after removing comments)
-
-    Returns:
-        (nested lists of str): list of statements in vnnlib content, possibly with more nested lists
-
-    :meta private:
-    """
-    items = re.findall(r"\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*", content)
-
-    def req(index):
-        result = []
-        item = items[index]
-        while item != ")":
-            if item == "(":
-                subtree, index = req(index + 1)
-                result.append(subtree)
-            else:
-                result.append(item)
-            index += 1
-            item = items[index]
-        return result, index
-
-    return req(1)[0]
-

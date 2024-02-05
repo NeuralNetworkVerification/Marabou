@@ -2,7 +2,7 @@
 /*! \file Options.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -48,7 +48,7 @@ void Options::initializeDefaultValues()
     _boolOptions[DUMP_BOUNDS] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
     _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
-    _boolOptions[NO_PARALLEL_DEEPSOI] = false;
+    _boolOptions[PARALLEL_DEEPSOI] = false;
     _boolOptions[EXPORT_ASSIGNMENT] = false;
     _boolOptions[DEBUG_ASSIGNMENT] = false;
     _boolOptions[PRODUCE_PROOFS] = false;
@@ -94,6 +94,7 @@ void Options::initializeDefaultValues()
     _stringOptions[SOI_SEARCH_STRATEGY] = "mcmc";
     _stringOptions[SOI_INITIALIZATION_STRATEGY] = "input-assignment";
     _stringOptions[LP_SOLVER] = gurobiEnabled() ? "gurobi" : "native";
+    _stringOptions[SOFTMAX_BOUND_TYPE] = "lse";
 }
 
 void Options::parseOptions( int argc, char **argv )
@@ -254,4 +255,18 @@ LPSolverType Options::getLPSolverType() const
         return LPSolverType::GUROBI;
     else
         return gurobiEnabled() ? LPSolverType::GUROBI : LPSolverType::NATIVE;
+}
+
+SoftmaxBoundType Options::getSoftmaxBoundType() const
+{
+    String boundType = String( _stringOptions.get( Options::SOFTMAX_BOUND_TYPE ) );
+    if ( boundType == "er" )
+        return SoftmaxBoundType::EXPONENTIAL_RECIPROCAL_DECOMPOSITION;
+    else if ( boundType == "lse" )
+        return SoftmaxBoundType::LOG_SUM_EXP_DECOMPOSITION;
+    else
+    {
+        return SoftmaxBoundType::LOG_SUM_EXP_DECOMPOSITION;
+    }
+
 }

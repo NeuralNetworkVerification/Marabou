@@ -66,7 +66,7 @@ const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
-const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000005;
+const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000000001;
 
 const double GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT = 20;
 
@@ -88,11 +88,14 @@ const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
 const double GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
 
+const double GlobalConfiguration::SOFTMAX_LSE2_THRESHOLD = 0.6;
+
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 
 const GlobalConfiguration::ExplicitBasisBoundTighteningType GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE =
     GlobalConfiguration::COMPUTE_INVERTED_BASIS_MATRIX;
 const bool GlobalConfiguration::EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION = false;
+const double GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT = 1e-6;
 
 const unsigned GlobalConfiguration::REFACTORIZATION_THRESHOLD = 100;
 const GlobalConfiguration::BasisFactorizationType GlobalConfiguration::BASIS_FACTORIZATION_TYPE =

@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file TranscendentalConstraint.h
+/*! \file NonlinearConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
  **   Teruhiro Tagomori
@@ -13,48 +13,47 @@
 
 **/
 
-#ifndef __TranscendentalConstraint_h__
-#define __TranscendentalConstraint_h__
+#ifndef __NonlinearConstraint_h__
+#define __NonlinearConstraint_h__
 
-#include "BoundManager.h"
 #include "FloatUtils.h"
+#include "BoundManager.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
-#include "TranscendentalFunctionType.h"
+#include "NonlinearFunctionType.h"
 #include "Queue.h"
 #include "Tightening.h"
 
 class Equation;
-class IConstraintBoundTightener;
 class ITableau;
 class InputQuery;
 class String;
 
-class TranscendentalConstraint : public ITableau::VariableWatcher
+class NonlinearConstraint : public ITableau::VariableWatcher
 {
 public:
-    TranscendentalConstraint();
-    virtual ~TranscendentalConstraint()
+    NonlinearConstraint();
+    virtual ~NonlinearConstraint()
     {
     }
 
     /*
       Get the type of this constraint.
     */
-    virtual TranscendentalFunctionType getType() const = 0;
+    virtual NonlinearFunctionType getType() const = 0;
 
     /*
       Return a clone of the constraint.
     */
-    virtual TranscendentalConstraint *duplicateConstraint() const = 0;
+    virtual NonlinearConstraint *duplicateConstraint() const = 0;
 
     /*
       Restore the state of this constraint from the given one.
       We have this function in order to take advantage of the polymorphically
       correct assignment operator.
     */
-    virtual void restoreState( const TranscendentalConstraint *state ) = 0;
+    virtual void restoreState( const NonlinearConstraint *state ) = 0;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -69,7 +68,7 @@ public:
     virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
 
     /*
-      Returns true iff the variable participates in this transcendental constraint.
+      Returns true iff the variable participates in this nonlinear constraint.
     */
     virtual bool participatingVariable( unsigned variable ) const = 0;
 
@@ -77,6 +76,11 @@ public:
       Get the list of variables participating in this constraint.
     */
     virtual List<unsigned> getParticipatingVariables() const = 0;
+
+    /*
+      Returns true iff the assignment satisfies the constraint.
+    */
+    virtual bool satisfied() const = 0;
 
     /*
       Dump the current state of the constraint.
@@ -93,6 +97,8 @@ public:
     virtual void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) = 0;
     virtual bool constraintObsolete() const = 0;
 
+    virtual bool supportVariableElimination() const { return false; };
+
     /*
       Get the tightenings entailed by the constraint.
     */
@@ -101,7 +107,7 @@ public:
     void setStatistics( Statistics *statistics );
 
     /*
-      Produce string representation of the transcendental constraint.
+      Produce string representation of the nonlinear constraint.
       This representation contains only the information necessary to reproduce it
       but does not account for state or change in state during execution. Additionally
       the first string before a comma has the contraint type identifier
@@ -109,13 +115,10 @@ public:
     */
     virtual String serializeToString() const = 0;
 
-    /*
-      Register a constraint bound tightener. If a tightener is registered,
-      this transcendental constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
-
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
 
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
@@ -123,19 +126,17 @@ public:
 
     /*
       Register a bound manager. If a bound manager is registered,
-      this transcendental constraint will inform the tightener whenever
+      this nonlinear constraint will inform the tightener whenever
       it discovers a tighter (entailed) bound.
     */
     void registerBoundManager( BoundManager *boundManager );
 
 protected:
-    Map<unsigned, double> _assignment;
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
-    BoundManager *_boundManager;
-
-    IConstraintBoundTightener *_constraintBoundTightener;
+    BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
 
     /*
       Statistics collection
@@ -239,6 +240,18 @@ protected:
       return false;
     }
 
+    /**********************************************************************/
+    /*                      ASSIGNMENT WRAPPER METHODS                    */
+    /**********************************************************************/
+    inline bool existsAssignment( unsigned variable ) const
+    {
+        return _tableau && _tableau->existsValue( variable );
+    }
+
+    inline double getAssignment( unsigned variable ) const
+    {
+        return _tableau->getValue( variable );
+    }
 };
 
-#endif // __TranscendentalConstraint_h__
+#endif // __NonlinearConstraint_h__

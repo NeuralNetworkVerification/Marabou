@@ -146,7 +146,7 @@ public:
      // Number of bound notifications sent to pl constraints
      NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS,
 
-     // Number of bound notification send to transcendental constraints
+     // Number of bound notification send to nonlinear constraints
      NUM_BOUND_NOTIFICATIONS_TO_TRANSCENDENTAL_CONSTRAINTS,
 
      // Number of bound tightenings proposed by the pl constraints

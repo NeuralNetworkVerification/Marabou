@@ -2,7 +2,7 @@
 /*! \file Options.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -25,6 +25,7 @@
 #include "SnCDivideStrategy.h"
 #include "SoIInitializationStrategy.h"
 #include "SoISearchStrategy.h"
+#include "SoftmaxBoundType.h"
 #include "SymbolicBoundTighteningType.h"
 
 #include "boost/program_options.hpp"
@@ -63,7 +64,7 @@ public:
         // If false, when multiple threads are allowed, run the DeepSoI-based procedure
         // with a different random seed on each thread. The problem is solved once
         // any of the thread finishes.
-        NO_PARALLEL_DEEPSOI,
+        PARALLEL_DEEPSOI,
 
         // Export SAT assignment into a file, use EXPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
         EXPORT_ASSIGNMENT,
@@ -130,6 +131,7 @@ public:
         QUERY_DUMP_FILE,
         EXPORT_ASSIGNMENT_FILE_PATH,
         IMPORT_ASSIGNMENT_FILE_PATH,
+        SOFTMAX_BOUND_TYPE,
 
         // The strategy used for soi minimization
         SOI_SEARCH_STRATEGY,
@@ -137,8 +139,7 @@ public:
         SOI_INITIALIZATION_STRATEGY,
 
         // The procedure/solver for solving the LP
-        LP_SOLVER,
-
+        LP_SOLVER
     };
 
     /*
@@ -170,6 +171,7 @@ public:
     SoIInitializationStrategy getSoIInitializationStrategy() const;
     SoISearchStrategy getSoISearchStrategy() const;
     LPSolverType getLPSolverType() const;
+    SoftmaxBoundType getSoftmaxBoundType() const;
 
     /*
       Retrieve the value of the various options, by type
@@ -215,11 +217,3 @@ private:
 };
 
 #endif // __Options_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

@@ -10,12 +10,12 @@
  ** directory for licensing information.\endverbatim
  **
  ** SignConstraint implements the following constraint:
- ** f = Sign( b ) =    ( b > 0 -> f =  1 )
- **                 /\ ( b <=0 -> f = -1 )
+ ** f = Sign( b ) =    ( b >= 0 -> f =  1 )
+ **                 /\ ( b < 0 -> f = -1 )
  **
  ** It distinguishes two relevant phases for search:
- ** SIGN_PHASE_POSITIVE: b > 0 and f =  1
- ** SIGN_PHASE_NEGATIVE: b <=0 and f = -1
+ ** SIGN_PHASE_POSITIVE: b >= 0 and f =  1
+ ** SIGN_PHASE_NEGATIVE: b < 0 and f = -1
  **
  ** The constraint is implemented as PiecewiseLinearConstraint
  ** and operates in two modes:

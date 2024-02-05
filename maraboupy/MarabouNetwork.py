@@ -53,6 +53,8 @@ class MarabouNetwork:
         self.leakyReluList = []
         self.sigmoidList = []
         self.maxList = []
+        self.softmaxList = []
+        self.bilinearList = []
         self.absList = []
         self.signList = []
         self.disjunctionList = []
@@ -128,6 +130,15 @@ class MarabouNetwork:
         """
         self.leakyReluList += [(v1, v2, slope)]
 
+    def addBilinear(self, v1, v2, v3):
+        """Function to add a bilinear constraint to the network
+        Args:
+            v1 (int): Variable representing input1 of Bilinear
+            v2 (int): Variable representing input2 of Bilinear
+            v3 (int): Variable representing output of Bilinear
+        """
+        self.bilinearList += [(v1, v2, v3)]
+
     def addSigmoid(self, v1, v2):
         """Function to add a new Sigmoid constraint
 
@@ -145,6 +156,15 @@ class MarabouNetwork:
             v (int): Variable representing output of max constraint
         """
         self.maxList += [(elements, v)]
+
+    def addSoftmaxConstraint(self, inputs, outputs):
+        """Function to add a new softmax constraint
+
+        Args:
+            inputs (set of int): Variable representing input to max constraint
+            outputs (set of int): Variables representing outputs of max constraint
+        """
+        self.softmaxList += [(inputs, outputs)]
 
     def addAbsConstraint(self, b, f):
         """Function to add a new Abs constraint
@@ -272,6 +292,10 @@ class MarabouNetwork:
             assert(r[2] > 0 and r[2] < 1)
             MarabouCore.addLeakyReluConstraint(ipq, r[0], r[1], r[2])
 
+        for r in self.bilinearList:
+            assert r[2] < self.numVars and r[1] < self.numVars and r[0] < self.numVars
+            MarabouCore.addBilinearConstraint(ipq, r[0], r[1], r[2])
+
         for r in self.sigmoidList:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addSigmoidConstraint(ipq, r[0], r[1])
@@ -282,6 +306,13 @@ class MarabouNetwork:
                 assert e < self.numVars
             MarabouCore.addMaxConstraint(ipq, m[0], m[1])
 
+        for m in self.softmaxList:
+            for e in m[1]:
+                assert e < self.numVars
+            for e in m[0]:
+                assert e < self.numVars
+            MarabouCore.addSoftmaxConstraint(ipq, m[0], m[1])
+
         for b, f in self.absList:
             MarabouCore.addAbsConstraint(ipq, b, f)
 
@@ -289,7 +320,18 @@ class MarabouNetwork:
             MarabouCore.addSignConstraint(ipq, b, f)
 
         for disjunction in self.disjunctionList:
-            MarabouCore.addDisjunctionConstraint(ipq, disjunction)
+            converted_disjunction = []
+            for disjunct in disjunction:
+                converted_disjunct = []
+                for e in disjunct:
+                    eq = MarabouCore.Equation(e.EquationType)
+                    for (c, v) in e.addendList:
+                        assert v < self.numVars
+                        eq.addAddend(c, v)
+                    eq.setScalar(e.scalar)
+                    converted_disjunct.append(eq)
+                converted_disjunction.append(converted_disjunct)
+            MarabouCore.addDisjunctionConstraint(ipq, converted_disjunction)
 
         for l in self.lowerBounds:
             assert l < self.numVars
@@ -301,13 +343,14 @@ class MarabouNetwork:
 
         return ipq
 
-    def solve(self, filename="", verbose=True, options=None):
+    def solve(self, filename="", verbose=True, options=None, propertyFilename=""):
         """Function to solve query represented by this network
 
         Args:
             filename (string): Path for redirecting output
             verbose (bool): If true, print out solution after solve finishes
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+            propertyFilename(string): Path for property file
 
         Returns:
             (tuple): tuple containing:
@@ -316,6 +359,8 @@ class MarabouNetwork:
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
         ipq = self.getMarabouQuery()
+        if propertyFilename:
+            MarabouCore.loadProperty(ipq, propertyFilename)
         if options == None:
             options = MarabouCore.Options()
         exitCode, vals, stats = MarabouCore.solve(ipq, options, str(filename))

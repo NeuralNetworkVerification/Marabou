@@ -96,6 +96,9 @@ public:
     // Add a new EQ indicator constraint
     void addEqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
 
+    // Add a bilinear constraint
+    void addBilinearConstraint( const String input1, const String input2, const String output );
+
     // A cost function to minimize, or an objective function to maximize
     void setCost( const List<Term> &terms, double constant = 0 );
     void setObjective( const List<Term> &terms, double constant = 0 );
@@ -139,6 +142,11 @@ public:
     inline void setNumberOfThreads( unsigned threads )
     {
         _model->getEnv().set( GRB_IntParam_Threads, threads );
+    }
+
+    inline void nonConvex()
+    {
+        _model->getEnv().set( GRB_IntParam_NonConvex, 2 );
     }
 
     // Solve and extract the solution, or the best known bound on the
@@ -247,6 +255,7 @@ public:
     void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
+    void addBilinearConstraint( const String, const String, const String ) {}
     void setCost( const List<Term> &, double /* constant */=0 ) {}
     void setObjective( const List<Term> &, double /* constant */=0 ) {}
     double getOptimalCostOrObjective() { return 0; };
@@ -263,6 +272,7 @@ public:
     void setTimeLimit( double ) {};
     void setVerbosity( unsigned ) {};
     void setNumberOfThreads( unsigned ) {};
+    void nonConvex() {};
     double getObjectiveBound() { return 0; };
     double getAssignment( const String & ){ return 0; };
     unsigned getNumberOfSimplexIterations() { return 0; };
