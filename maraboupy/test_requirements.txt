@@ -7,4 +7,3 @@ pytest-cov>=4.0.0,<5
 # 2023-07-12:
 # Cannot use tensorflow 2.13 because it removes 'tensorflow.python.framework.graph_util.convert_variables_to_constants'
 tensorflow>=2.10,<2.13
-torch>=1.11.0,<3
