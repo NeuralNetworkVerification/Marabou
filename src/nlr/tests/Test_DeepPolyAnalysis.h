@@ -1715,7 +1715,7 @@ public:
 
         TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
         for ( const auto &bound : expectedBounds )
-            TS_ASSERT( bounds.exists( bound ) );
+            TS_ASSERT( existsBound( bounds, bound ) );
     }
 
     void test_deeppoly_leaky_relus_fixed_input1()
