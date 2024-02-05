@@ -153,6 +153,63 @@ public:
         TS_ASSERT( lrelu.satisfied() );
     }
 
+    void test_leaky_relu_fixes()
+    {
+        unsigned b = 1;
+        unsigned f = 4;
+
+        LeakyReluConstraint relu( b, f, slope );
+        MockTableau tableau;
+        relu.registerTableau( &tableau );
+
+        List<PiecewiseLinearConstraint::Fix> fixes;
+        List<PiecewiseLinearConstraint::Fix>::iterator it;
+
+        tableau.setValue( b, -1 );
+        tableau.setValue( f, 1 );
+
+        fixes = relu.getPossibleFixes();
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, slope * -1 );
+
+        tableau.setValue( b, 2 );
+        tableau.setValue( f, 1 );
+
+        fixes = relu.getPossibleFixes();
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, 1 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 2 );
+
+        tableau.setValue( b, -2 );
+        tableau.setValue( f, -1 );
+
+        fixes = relu.getPossibleFixes();
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, slope * -2 );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -1 / slope );
+
+        tableau.setValue( b, 11 );
+        tableau.setValue( f, -1 );
+
+        fixes = relu.getPossibleFixes();
+        it = fixes.begin();
+        TS_ASSERT_EQUALS( it->_variable, b );
+        TS_ASSERT_EQUALS( it->_value, -1 / slope );
+        ++it;
+        TS_ASSERT_EQUALS( it->_variable, f );
+        TS_ASSERT_EQUALS( it->_value, 11 );
+    }
+
     void test_leaky_relu_case_splits()
     {
         unsigned b = 1;

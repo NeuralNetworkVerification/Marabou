@@ -193,17 +193,17 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
     gurobi.addLeqConstraint( terms, 0 );
 }
 
-void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *relu,
+void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
                                              bool relax )
 {
 
-    if ( !relu->isActive() || relu->phaseFixed() )
+    if ( !lRelu->isActive() || lRelu->phaseFixed() )
     {
         return;
     }
-    unsigned sourceVariable = relu->getB();
-    unsigned targetVariable = relu->getF();
-    double slope = relu->getSlope();
+    unsigned sourceVariable = lRelu->getB();
+    unsigned targetVariable = lRelu->getF();
+    double slope = lRelu->getSlope();
     double sourceLb = _tableau.getLowerBound( sourceVariable );
     double sourceUb = _tableau.getUpperBound( sourceVariable );
 
@@ -223,7 +223,8 @@ void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluCon
     }
     else
     {
-        if ( relax ) {
+        if ( relax )
+        {
             /*
               We have added f - b >= 0 and f >= 0. Additionally, we add
                 (ub - slope * lb) / (ub - lb) * (b - ub) >= (f - ub)
@@ -235,7 +236,8 @@ void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluCon
             terms.append( GurobiWrapper::Term( lambda, Stringf( "x%u", sourceVariable ) ) );
             terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", targetVariable ) ) );
             gurobi.addGeqConstraint( terms, ( lambda  - 1 ) * sourceUb );
-        } else {
+        } else
+        {
             double xPoints[3];
             double yPoints[3];
             xPoints[0] = sourceLb;

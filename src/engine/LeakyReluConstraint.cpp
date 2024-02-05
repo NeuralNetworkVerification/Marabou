@@ -279,12 +279,76 @@ bool LeakyReluConstraint::satisfied() const
 
 List<PiecewiseLinearConstraint::Fix> LeakyReluConstraint::getPossibleFixes() const
 {
-    return List<PiecewiseLinearConstraint::Fix>();
+    // Reluplex does not currently work with Gurobi.
+    ASSERT( _gurobi == NULL );
+
+    ASSERT( !satisfied() );
+    ASSERT( existsAssignment( _b ) );
+    ASSERT( existsAssignment( _f ) );
+
+    double bValue = getAssignment( _b );
+    double fValue = getAssignment( _f );
+
+    List<PiecewiseLinearConstraint::Fix> fixes;
+
+    // Possible violations:
+    //   Case 1. f is positive, b is positive, b and f are disequal
+    //   Case 2. f is positive, b is non-positive
+    //   Case 3. f is non-positive, b is non-positive, f is not equal to slope * b
+    //   Case 4. f is non-positive, b is positive
+    if ( FloatUtils::isPositive( fValue ) )
+    {
+        if ( FloatUtils::isPositive( bValue ) )
+        {
+            // Case 1
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+        }
+        else
+        {
+            // Case 2
+            if ( _direction == RELU_PHASE_INACTIVE )
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, _slope * bValue ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+            }
+            else
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, _slope * bValue ) );
+            }
+        }
+    }
+    else
+    {
+        if ( !FloatUtils::isPositive( bValue ) )
+        {
+            // Case 3
+            fixes.append( PiecewiseLinearConstraint::Fix( _f, _slope * bValue ) );
+            fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue / _slope ) );
+        }
+        else
+        {
+            // Case 4
+            if ( _direction == RELU_PHASE_ACTIVE )
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue / _slope ) );
+            }
+            else
+            {
+                fixes.append( PiecewiseLinearConstraint::Fix( _b, fValue / _slope ) );
+                fixes.append( PiecewiseLinearConstraint::Fix( _f, bValue ) );
+            }
+        }
+    }
+
+    return fixes;
 }
 
 List<PiecewiseLinearConstraint::Fix> LeakyReluConstraint::getSmartFixes( ITableau * ) const
 {
-    return List<PiecewiseLinearConstraint::Fix>();
+    return getPossibleFixes();
 }
 
 List<PiecewiseLinearCaseSplit> LeakyReluConstraint::getCaseSplits() const
@@ -324,8 +388,6 @@ List<PiecewiseLinearCaseSplit> LeakyReluConstraint::getCaseSplits() const
     }
     else
     {
-        // Default: start with the inactive case, because it doesn't
-        // introduce a new equation and is hence computationally cheaper.
         splits.append( getInactiveSplit() );
         splits.append( getActiveSplit() );
     }
@@ -563,7 +625,6 @@ void LeakyReluConstraint::getEntailedTightenings( List<Tightening> &tightenings 
         inactiveAuxLowerBound = getLowerBound( _inactiveAux );
         inactiveAuxUpperBound = getUpperBound( _inactiveAux );
     }
-
 
     // Determine if we are in the active phase, inactive phase or unknown phase
     if ( FloatUtils::isPositive( bLowerBound ) ||

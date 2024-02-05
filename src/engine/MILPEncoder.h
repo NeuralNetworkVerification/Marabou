@@ -101,7 +101,7 @@ private:
     /*
       Encode a LeakyReLU constraint f = LeakyReLU(b) into Gurobi as a Piecewise Linear Constraint
     */
-    void encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *relu,
+    void encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
                                     bool relax );
 
     /*
