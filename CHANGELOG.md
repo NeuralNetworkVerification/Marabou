@@ -4,7 +4,9 @@
 * Added support for onnx networks with tanh nodes to command-line interface.
 * Added proof producing versions of Sign, Max, Absolute Value and Disjunction constraints
 * Added support for properties provided in VNN-LIB format for ONNX networks via the Python API.
-* Support additional non-linear constraints Softmax and Bilinear
+* Supported additional non-linear constraints Softmax and Bilinear
+* Removed dependency on torch and drop support for Python3.7
+* Bump ONNX version to >= 1.15.0
 
 ## Version 1.0.0
 * Initial versioned release
