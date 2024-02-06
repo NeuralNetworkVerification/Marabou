@@ -135,7 +135,7 @@ written to build/Debug.
 It may be useful to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
 
-The python interface was tested only on versions >3.5 and >2.7. The build process prefers python3 but will work if there is only python 2.7 available. (To control the default change the DEFAULT_PYTHON_VERSION variable).  
+The python interface was tested only on versions >=3.8.
 The Python interface requires *pybind11* (which is automatically downloaded). 
 By default Marabou builds also the python API, the BUILD_PYTHON variable
 controls that.
