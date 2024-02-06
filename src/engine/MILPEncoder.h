@@ -16,12 +16,15 @@
 #ifndef __MILPEncoder_h__
 #define __MILPEncoder_h__
 
+#include "BilinearConstraint.h"
 #include "DisjunctionConstraint.h"
 #include "GurobiWrapper.h"
 #include "InputQuery.h"
 #include "ITableau.h"
+#include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MStringf.h"
+#include "SoftmaxConstraint.h"
 #include "Statistics.h"
 
 #include "Map.h"
@@ -98,6 +101,12 @@ private:
                                bool relax );
 
     /*
+      Encode a LeakyReLU constraint f = LeakyReLU(b) into Gurobi as a Piecewise Linear Constraint
+    */
+    void encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
+                                    bool relax );
+
+    /*
       Encode a MAX constraint y = max(x_1, x_2, ... ,x_m) into Gurobi using the same encoding in
       https://arxiv.org/pdf/1711.07356.pdf
 
@@ -134,6 +143,18 @@ private:
       Encode a Sigmoid constraint
     */
     void encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid );
+
+    /*
+      Encode a Softmax constraint
+    */
+    void encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstraint *softmax );
+
+    /*
+      Encode a Bilinear constraint
+    */
+    void encodeBilinearConstraint( GurobiWrapper &gurobi,
+                                   BilinearConstraint *bilinear,
+                                   bool relax );
 };
 
 #endif // __MILPEncoder_h__

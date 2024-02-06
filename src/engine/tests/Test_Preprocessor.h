@@ -16,6 +16,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
@@ -469,14 +470,14 @@ public:
         equation4.setScalar( -0.341 );
         inputQuery.addEquation( equation4 );
 
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint(2, 4) );
-        inputQuery.addTranscendentalConstraint( new SigmoidConstraint(3, 5) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint(2, 4) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint(3, 5) );
 
         InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
         // All equations and varaibles should have been eliminated
         TS_ASSERT_EQUALS( processed.getEquations().size(), 0U );
-        TS_ASSERT_EQUALS( processed.getTranscendentalConstraints().size(), 0U );
+        TS_ASSERT_EQUALS( processed.getNonlinearConstraints().size(), 0U );
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 0U );
     }
 
@@ -843,8 +844,8 @@ public:
         // Specify activation functions
         SigmoidConstraint *sigmoid1 = new SigmoidConstraint( 2, 4 );
         SigmoidConstraint *sigmoid2 = new SigmoidConstraint( 3, 5 );
-        inputQuery.addTranscendentalConstraint( sigmoid1 );
-        inputQuery.addTranscendentalConstraint( sigmoid2 );
+        inputQuery.addNonlinearConstraint( sigmoid1 );
+        inputQuery.addNonlinearConstraint( sigmoid2 );
         sigmoid1->notifyLowerBound( 4, 0 );
         sigmoid2->notifyLowerBound( 5, 0 );
         sigmoid1->notifyUpperBound( 4, 1 );
@@ -933,6 +934,32 @@ public:
             eq._scalar = 0;
             TS_ASSERT( processed.getEquations().exists( eq ) );
         }
+    }
+
+    void test_preprocessor_with_input_bounds_in_disjunction()
+    {
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 1 );
+        ipq.markInputVariable( 0, 0 );
+
+        PiecewiseLinearCaseSplit cs1;
+        cs1.storeBoundTightening( Tightening( 0, -1, Tightening::LB ) );
+        cs1.storeBoundTightening( Tightening( 0, 3, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit cs2;
+        cs2.storeBoundTightening( Tightening( 0, -4, Tightening::LB ) );
+        cs2.storeBoundTightening( Tightening( 0, 2, Tightening::UB ) );
+
+        List<PiecewiseLinearCaseSplit> caseSplits = {cs1, cs2};
+        DisjunctionConstraint *disj = new DisjunctionConstraint( caseSplits );
+        ipq.addPiecewiseLinearConstraint( disj );
+
+        InputQuery processed;
+        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().
+            preprocess( ipq ) ) );
+
+        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -4 )
+        TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 3 )
     }
 
     void test_todo()

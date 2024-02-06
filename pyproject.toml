@@ -9,20 +9,20 @@ authors = [{ name = "The Marabou Development Team" }]
 description = "A package wrapping the Marabou Neural Network Verification tool."
 readme = "README.md"
 license = { file = "COPYING" }
-requires-python = ">=3.7,<3.12"
+requires-python = ">=3.8,<3.12"
 
 [project.optional-dependencies]
 test = [
   # NOTE: These dependencies must be kept in-sync with the legacy requirements file 'maraboupy/test_requirements.txt'
   "numpy>=1.21.0,<2",
-  "onnx>=1.12.0,<2",
+  # NOTE: The ONNX version must be kept in sync with 'tools/download_onnx.sh'
+  "onnx>=1.15.0,<2",
   "onnxruntime>=1.12.0,<2",
   "pytest>=7.2.1,<8",
   "pytest-cov>=4.0.0,<5",
   # 2023-07-12:
   # Cannot use tensorflow 2.13 because it removes 'tensorflow.python.framework.graph_util.convert_variables_to_constants'
   "tensorflow>=2.10,<2.13",
-  "torch>=1.11.0,<3",
 ]
 
 [project.scripts]

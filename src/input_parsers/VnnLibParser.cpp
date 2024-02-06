@@ -14,6 +14,7 @@
 **/
 
 #include <regex>
+#include "Equation.h"
 #include "File.h"
 #include "InputParserError.h"
 #include "VnnLibParser.h"
@@ -199,9 +200,33 @@ int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, InputQue
     {
         List<Equation> equations;
         index = parseCondition( index, tokens, equations );
-        for ( const auto &it: equations )
+        for ( const auto &eq : equations )
         {
-            inputQuery.addEquation( it );
+            if ( eq._addends.size() == 1 )
+            {
+                const Equation::Addend &addend = eq._addends.front();
+                if ( addend._coefficient < 0 )
+                {
+                    inputQuery.setLowerBound( addend._variable, eq._scalar / addend._coefficient );
+                }
+                else if ( addend._coefficient > 0 )
+                {
+                    inputQuery.setUpperBound( addend._variable, eq._scalar / addend._coefficient );
+                }
+                else if ( eq._scalar < 0 )
+                {
+                    throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                            Stringf( "Illegal vnnlib constraint: 0 < %f", eq._scalar ).ascii() );
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                inputQuery.addEquation( eq );
+            }
         }
     }
     else if ( op == "or" )
@@ -214,9 +239,34 @@ int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, InputQue
             index = parseCondition( index + 1, tokens, equations );
 
             PiecewiseLinearCaseSplit split;
-            for ( const auto &it: equations )
+            for ( const auto &eq : equations )
             {
-                split.addEquation( it );
+                if ( eq._addends.size() == 1 )
+                {
+                    // Add bounds as tightenings
+                    unsigned var = eq._addends.front()._variable;
+                    double coeff = eq._addends.front()._coefficient;
+                    if ( coeff == 0 )
+                        throw CommonError( CommonError::DIVISION_BY_ZERO,
+                                           "Zero coefficient encountered in vnnlib constraint" );
+                    double scalar = eq._scalar / coeff;
+                    Equation::EquationType type = eq._type;
+
+                    if ( type == Equation::EQ )
+                    {
+                        split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
+                        split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
+                    }
+                    else if ( ( type == Equation::GE && coeff > 0 ) ||
+                              ( type == Equation::LE && coeff < 0 ) )
+                        split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
+                    else
+                        split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
+                }
+                else
+                {
+                    split.addEquation( eq );
+                }
             }
             disjunctList.append( split );
         }
@@ -323,7 +373,7 @@ double VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equat
     double scalar = 0;
     double coefficient = isRhs ? -1 : 1;
 
-    for ( const auto &arg: term._args )
+    for ( const auto &arg : term._args )
     {
         if ( arg._type == Term::TermType::CONST )
         {
@@ -420,7 +470,7 @@ double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equat
     bool varExists = false;
     unsigned int var;
 
-    for ( const Term &arg: term._args )
+    for ( const Term &arg : term._args )
     {
         if ( arg._type == Term::TermType::CONST )
         {

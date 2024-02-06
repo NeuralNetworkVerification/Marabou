@@ -18,6 +18,7 @@
 #include "MString.h"
 #include <cstdio>
 
+
 // The exponential moving average is calculated as
 //     ema = current * alpha + previous * (1 - alpha)
 const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;
@@ -65,7 +66,7 @@ const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 
 const bool GlobalConfiguration::USE_HARRIS_RATIO_TEST = true;
 
-const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000005;
+const double GlobalConfiguration::SYMBOLIC_TIGHTENING_ROUNDING_CONSTANT = 0.00000000001;
 
 const double GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT = 20;
 
@@ -86,6 +87,8 @@ const double GlobalConfiguration::PSE_GAMMA_ERROR_THRESHOLD = 0.001;
 const double GlobalConfiguration::PSE_GAMMA_UPDATE_TOLERANCE = 0.000000001;
 
 const double GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE = 0.00001;
+
+const double GlobalConfiguration::SOFTMAX_LSE2_THRESHOLD = 0.6;
 
 const bool GlobalConfiguration::ONLY_AUX_INITIAL_BASIS = false;
 

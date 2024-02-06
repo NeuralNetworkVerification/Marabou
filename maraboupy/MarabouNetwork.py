@@ -5,7 +5,7 @@ Top contributors (to current version):
     - Andrew Wu
     - Kyle Julian
     - Teruhiro Tagomori
-    
+
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
 in the top-level source directory) and their institutional affiliations.
@@ -23,11 +23,12 @@ import numpy as np
 
 class MarabouNetwork:
     """Abstract class representing general Marabou network
-    
+
     Attributes:
         numVars (int): Total number of variables to represent network
         equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
         reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
+        leakyReluList (list of tuples): List of leaky relu constraint tuples, where each tuple contains the backward and forward variables, and the slope
         sigmoidList (list of tuples): List of sigmoid constraint tuples, where each tuple contains the backward and forward variables
         maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
         absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
@@ -49,8 +50,11 @@ class MarabouNetwork:
         self.equList = []
         self.additionalEquList = [] # used to store user defined equations
         self.reluList = []
+        self.leakyReluList = []
         self.sigmoidList = []
         self.maxList = []
+        self.softmaxList = []
+        self.bilinearList = []
         self.absList = []
         self.signList = []
         self.disjunctionList = []
@@ -116,6 +120,25 @@ class MarabouNetwork:
         """
         self.reluList += [(v1, v2)]
 
+    def addLeakyRelu(self, v1, v2, slope):
+        """Function to add a new Leaky Relu constraint
+
+        Args:
+            v1 (int): Variable representing input of Leaky Relu
+            v2 (int): Variable representing output of Leaky Relu
+            slope (float): Shope of the Leaky ReLU
+        """
+        self.leakyReluList += [(v1, v2, slope)]
+
+    def addBilinear(self, v1, v2, v3):
+        """Function to add a bilinear constraint to the network
+        Args:
+            v1 (int): Variable representing input1 of Bilinear
+            v2 (int): Variable representing input2 of Bilinear
+            v3 (int): Variable representing output of Bilinear
+        """
+        self.bilinearList += [(v1, v2, v3)]
+
     def addSigmoid(self, v1, v2):
         """Function to add a new Sigmoid constraint
 
@@ -133,6 +156,15 @@ class MarabouNetwork:
             v (int): Variable representing output of max constraint
         """
         self.maxList += [(elements, v)]
+
+    def addSoftmaxConstraint(self, inputs, outputs):
+        """Function to add a new softmax constraint
+
+        Args:
+            inputs (set of int): Variable representing input to max constraint
+            outputs (set of int): Variables representing outputs of max constraint
+        """
+        self.softmaxList += [(inputs, outputs)]
 
     def addAbsConstraint(self, b, f):
         """Function to add a new Abs constraint
@@ -255,6 +287,15 @@ class MarabouNetwork:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addReluConstraint(ipq, r[0], r[1])
 
+        for r in self.leakyReluList:
+            assert r[1] < self.numVars and r[0] < self.numVars
+            assert(r[2] > 0 and r[2] < 1)
+            MarabouCore.addLeakyReluConstraint(ipq, r[0], r[1], r[2])
+
+        for r in self.bilinearList:
+            assert r[2] < self.numVars and r[1] < self.numVars and r[0] < self.numVars
+            MarabouCore.addBilinearConstraint(ipq, r[0], r[1], r[2])
+
         for r in self.sigmoidList:
             assert r[1] < self.numVars and r[0] < self.numVars
             MarabouCore.addSigmoidConstraint(ipq, r[0], r[1])
@@ -264,6 +305,13 @@ class MarabouNetwork:
             for e in m[0]:
                 assert e < self.numVars
             MarabouCore.addMaxConstraint(ipq, m[0], m[1])
+
+        for m in self.softmaxList:
+            for e in m[1]:
+                assert e < self.numVars
+            for e in m[0]:
+                assert e < self.numVars
+            MarabouCore.addSoftmaxConstraint(ipq, m[0], m[1])
 
         for b, f in self.absList:
             MarabouCore.addAbsConstraint(ipq, b, f)
@@ -292,7 +340,7 @@ class MarabouNetwork:
         for u in self.upperBounds:
             assert u < self.numVars
             ipq.setUpperBound(u, self.upperBounds[u])
-            
+
         return ipq
 
     def solve(self, filename="", verbose=True, options=None, propertyFilename=""):
