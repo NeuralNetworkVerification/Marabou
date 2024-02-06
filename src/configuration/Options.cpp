@@ -246,6 +246,11 @@ LPSolverType Options::getLPSolverType() const
                                     ( Options::LP_SOLVER ) );
     if ( solverString == "native" )
         return LPSolverType::NATIVE;
+    else if ( _boolOptions.get( Options::PRODUCE_PROOFS ) )
+    {
+        printf( "Proof-producing mode on, using native LP engine..." );
+        return LPSolverType::NATIVE;
+    }
     else if ( solverString == "gurobi" )
         return LPSolverType::GUROBI;
     else

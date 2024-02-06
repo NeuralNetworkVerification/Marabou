@@ -21,6 +21,7 @@
 #include "GurobiWrapper.h"
 #include "InputQuery.h"
 #include "ITableau.h"
+#include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MStringf.h"
 #include "SoftmaxConstraint.h"
@@ -98,6 +99,12 @@ private:
     */
     void encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu,
                                bool relax );
+
+    /*
+      Encode a LeakyReLU constraint f = LeakyReLU(b) into Gurobi as a Piecewise Linear Constraint
+    */
+    void encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
+                                    bool relax );
 
     /*
       Encode a MAX constraint y = max(x_1, x_2, ... ,x_m) into Gurobi using the same encoding in

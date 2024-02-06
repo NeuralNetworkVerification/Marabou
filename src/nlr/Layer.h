@@ -44,6 +44,7 @@ public:
         ABSOLUTE_VALUE,
         MAX,
         SIGN,
+        LEAKY_RELU,
         SIGMOID,
         SOFTMAX,
         BILINEAR,
@@ -127,6 +128,9 @@ public:
     double *getLbs() const;
     double *getUbs() const;
 
+    void setAlpha( double alpha ) { _alpha = alpha; }
+    double getAlpha() const { return _alpha; }
+
     void obtainCurrentBounds( const InputQuery &inputQuery );
     void obtainCurrentBounds();
     void computeSymbolicBounds();
@@ -190,6 +194,11 @@ private:
     double *_symbolicUbOfLb;
     double *_symbolicLbOfUb;
     double *_symbolicUbOfUb;
+
+    // A field variable to store parameter value. Right now it is only used to store the slope of
+    // leaky relus. Moving forward, we should keep a parameter map (e.g., Map<String, void *>) 
+    // to store layer-specific information like "weights" and "alpha".
+    double _alpha = 0;
 
     void allocateMemory();
     void freeMemoryIfNeeded();

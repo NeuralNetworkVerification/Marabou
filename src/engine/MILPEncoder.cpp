@@ -61,6 +61,10 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
             encodeReLUConstraint( gurobi, (ReluConstraint *)plConstraint,
                                   relax );
             break;
+        case PiecewiseLinearFunctionType::LEAKY_RELU:
+            encodeLeakyReLUConstraint( gurobi, (LeakyReluConstraint *)plConstraint,
+                                       relax );
+            break;
         case PiecewiseLinearFunctionType::MAX:
             encodeMaxConstraint( gurobi, (MaxConstraint *)plConstraint,
                                  relax );
@@ -194,6 +198,66 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
     terms.append( GurobiWrapper::Term( -targetUb, Stringf( "a%u", _binVarIndex++ ) ) );
     gurobi.addLeqConstraint( terms, 0 );
+}
+
+void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
+                                             bool relax )
+{
+
+    if ( !lRelu->isActive() || lRelu->phaseFixed() )
+    {
+        return;
+    }
+    unsigned sourceVariable = lRelu->getB();
+    unsigned targetVariable = lRelu->getF();
+    double slope = lRelu->getSlope();
+    double sourceLb = _tableau.getLowerBound( sourceVariable );
+    double sourceUb = _tableau.getUpperBound( sourceVariable );
+
+    if ( sourceLb >= 0 )
+    {
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", sourceVariable ) ) );
+        gurobi.addEqConstraint( terms, 0 );
+    }
+    else if ( sourceUb <= 0 )
+    {
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -slope, Stringf( "x%u", sourceVariable ) ) );
+        gurobi.addEqConstraint( terms, 0 );
+    }
+    else
+    {
+        if ( relax )
+        {
+            /*
+              We have added f - b >= 0 and f >= 0. Additionally, we add
+                (ub - slope * lb) / (ub - lb) * (b - ub) >= (f - ub)
+              which is the upper bound in the triangular relaxation
+            */
+
+            double lambda = ( sourceUb - slope * sourceLb ) / (sourceUb - sourceLb );
+            List<GurobiWrapper::Term> terms;
+            terms.append( GurobiWrapper::Term( lambda, Stringf( "x%u", sourceVariable ) ) );
+            terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", targetVariable ) ) );
+            gurobi.addGeqConstraint( terms, ( lambda  - 1 ) * sourceUb );
+        } else
+        {
+            double xPoints[3];
+            double yPoints[3];
+            xPoints[0] = sourceLb;
+            yPoints[0] = slope * sourceLb;
+            xPoints[1] = 0;
+            yPoints[1] = 0;
+            xPoints[2] = sourceUb;
+            yPoints[2] = sourceUb;
+            gurobi.addPiecewiseLinearConstraint( Stringf( "x%u", sourceVariable ),
+                                                 Stringf( "x%u", targetVariable ),
+                                                 3, xPoints, yPoints );
+        }
+    }
 }
 
 void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max,

@@ -22,6 +22,7 @@ enum PiecewiseLinearFunctionType {
     MAX = 2,
     DISJUNCTION = 3,
     SIGN = 4,
+    LEAKY_RELU = 5,
 };
 
 #endif // __PiecewiseLinearFunctionType_h__

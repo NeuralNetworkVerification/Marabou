@@ -18,6 +18,7 @@
 #include "DeepPolyAbsoluteValueElement.h"
 #include "DeepPolyInputElement.h"
 #include "DeepPolyBilinearElement.h"
+#include "DeepPolyLeakyReLUElement.h"
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
@@ -207,6 +208,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
     }
     else if ( type ==  Layer::RELU )
         deepPolyElement = new DeepPolyReLUElement( layer );
+    else if ( type ==  Layer::LEAKY_RELU )
+        deepPolyElement = new DeepPolyLeakyReLUElement( layer );
     else if ( type ==  Layer::SIGN )
         deepPolyElement = new DeepPolySignElement( layer );
     else if ( type ==  Layer::ABSOLUTE_VALUE )
