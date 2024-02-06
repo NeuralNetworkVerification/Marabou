@@ -525,7 +525,7 @@ class MarabouNetwork:
         err = [np.abs(outMar[i] - outNotMar[i]) for i in range(len(outMar))]
         return err
 
-    def isEqual(self, network):
+    def isEqualTo(self, network):
         """
         Add a comparison between two Marabou networks and all their attributes.
 
@@ -541,13 +541,16 @@ class MarabouNetwork:
                 or self.signList != network.signList \
                 or self.disjunctionList != network.disjunctionList \
                 or self.lowerBounds != network.lowerBounds \
-                or self.upperBounds != network.upperBounds \
-                or (self.inputVars[0].flatten() != network.inputVars[0].flatten()).any() \
-                or (self.outputVars[0].flatten() != network.outputVars[0].flatten()).any():
+                or self.upperBounds != network.upperBounds:
             equivalence = False
-        # or self.isEqual_equList(network.equList) \
         for equation1, equation2 in zip(self.equList, network.equList):
-            if not equation1.isEqual(equation2):
+            if not equation1.isEqualTo(equation2):
+                equivalence = False
+        for inputvars1, inputvars2 in zip(self.inputVars, network.inputVars):
+            if (inputvars1.flatten() != inputvars2.flatten()).any():
+                equivalence = False
+        for outputVars1, outputVars2 in zip(self.outputVars, network.outputVars):
+            if (outputVars1.flatten() != outputVars1.flatten()).any():
                 equivalence = False
         return equivalence
 
@@ -566,6 +569,6 @@ class MarabouNetwork:
             self.setUpperBound(vars[0], constraint.upperBound)
         else:
             if constraint.isEquality:
-                self.addEquality(vars, coeffs, - constraint.combination.const)
+                self.addEquality(vars, coeffs, - constraint.combination.scalar)
             else:
-                self.addInequality(vars, coeffs, - constraint.combination.const)
+                self.addInequality(vars, coeffs, - constraint.combination.scalar)
