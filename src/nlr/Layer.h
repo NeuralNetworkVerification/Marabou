@@ -195,7 +195,9 @@ private:
     double *_symbolicLbOfUb;
     double *_symbolicUbOfUb;
 
-    // Alpha parameter for leaky relus
+    // A field variable to store parameter value. Right now it is only used to store the slope of
+    // leaky relus. Moving forward, we should keep a parameter map (e.g., Map<String, void *>) 
+    // to store layer-specific information like "weights" and "alpha".
     double _alpha = 0;
 
     void allocateMemory();
