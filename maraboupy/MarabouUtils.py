@@ -48,7 +48,7 @@ class Equation:
         """
         self.addendList += [(c, x)]
 
-    def isEqual(self, equation):
+    def isEqualTo(self, equation):
         """
         Add a comparison between two equations.
 

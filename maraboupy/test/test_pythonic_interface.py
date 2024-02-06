@@ -42,7 +42,7 @@ def test_pythonic_interface():
         network_b.addInequality([i], [10 - 5], -8)
         network_a.addConstraint(5 * (2 * v + 8) <= 6)
         network_b.addInequality([i], [5 * 2], 6 - 5 * 8)
-    assert network_a.isEqual(network_b)
+    assert network_a.isEqualTo(network_b)
 
     filename = "fc2.onnx"
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
@@ -70,7 +70,7 @@ def test_pythonic_interface():
         with pytest.raises(NotImplementedError,
                            match="Only linear constraints are supported."):
             network_a.addConstraint(v * u >= w)
-    assert network_a.isEqual(network_b)
+    assert network_a.isEqualTo(network_b)
 
     filename = "cnn_max_mninst2.onnx"
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
@@ -100,4 +100,4 @@ def test_pythonic_interface():
         network_b.addInequality([j, outvars[-1]], [-1, -1], -20)
         network_a.addConstraint(7 * v - 11 * u <= 4)
         network_b.addInequality([j, outvars[-1]], [7, -11], 4)
-    assert network_a.isEqual(network_b)
+    assert network_a.isEqualTo(network_b)
