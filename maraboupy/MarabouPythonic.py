@@ -64,6 +64,7 @@ class VarAffine:
         :param other: the subtrahend could be a constant (float, int) or an affine transformation.
         :return: the result of subtraction is an affine transformation of neuron(s).
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if isinstance(other, float) or isinstance(other, int):
             return VarAffine(self.varCoeffs, self.scalar - other)
         elif isinstance(other, VarAffine):
@@ -83,6 +84,7 @@ class VarAffine:
         :param other: the addend could be a constant (float, int) or an affine transformation.
         :return: the result of reverse addition is an affine transformation of neuron(s).
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if isinstance(other, float) or isinstance(other, int):
             return VarAffine(self.varCoeffs, self.scalar + other)
         elif isinstance(other, VarAffine):
@@ -97,6 +99,7 @@ class VarAffine:
         :param other: the minuend could be a constant (float, int) or an affine transformation.
         :return: the result of reverse subtraction is an affine transformation of neuron(s).
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if isinstance(other, float) or isinstance(other, int):
             return - self + other
         elif isinstance(other, VarAffine):
@@ -110,6 +113,7 @@ class VarAffine:
         :param other: the multiplier could only be a constant.
         :return: the result of multiplication is an affine transformation of neuron(s).
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if isinstance(other, float) or isinstance(other, int):
             varCoeffs = defaultdict(float)
             for variable in self.varCoeffs:
@@ -150,6 +154,7 @@ class VarAffine:
         :param other: the right operand could be a constant (float, int) or an affine transformation.
         :return: an instance of the VarConstraint class.
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if list(self.varCoeffs.values()) == [1] and (isinstance(other, float) or isinstance(other, int)):
             return VarConstraint(self, isEquality=False,
                                  lowerBound=None,
@@ -169,6 +174,7 @@ class VarAffine:
         :param other: the right operand could be a constant (float, int) or an affine transformation.
         :return: an instance of the VarConstraint class.
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if list(self.varCoeffs.values()) == [1] and (isinstance(other, float) or isinstance(other, int)):
             return VarConstraint(self, isEquality=False,
                                  lowerBound=other - self.scalar,
