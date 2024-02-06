@@ -254,6 +254,13 @@ def test_resize():
     filename =  "resize/resize_4dims.onnx"
     evaluateFile(filename, inputNames = ['X'], outputNames = 'Y')
 
+def test_leaky_relu():
+    """
+    Test a network with Leaky ReLUs
+    """
+    filename = "mnist5x20_leaky_relu.onnx"
+    evaluateFile(filename)
+
 def test_errors():
     """
     This function tests that the ONNX parser catches errors.

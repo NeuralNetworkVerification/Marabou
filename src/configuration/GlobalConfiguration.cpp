@@ -18,6 +18,7 @@
 #include "MString.h"
 #include <cstdio>
 
+
 // The exponential moving average is calculated as
 //     ema = current * alpha + previous * (1 - alpha)
 const double GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA = 0.5;

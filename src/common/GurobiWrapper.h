@@ -81,6 +81,12 @@ public:
     // Add a new EQ constraint, e.g. 3x + 4y = -5
     void addEqConstraint( const List<Term> &terms, double scalar );
 
+    // Add a piece-wise linear constraint
+    void addPiecewiseLinearConstraint( String sourceVariable,
+                                       String targetVariable,
+                                       unsigned numPoints,
+                                       const double *xPoints, const double *yPoints );
+
     // Add a new LEQ indicator constraint
     void addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
 
@@ -242,6 +248,10 @@ public:
     void addLeqConstraint( const List<Term> &, double ) {}
     void addGeqConstraint( const List<Term> &, double ) {}
     void addEqConstraint( const List<Term> &, double ) {}
+    void addPiecewiseLinearConstraint( String,
+                                       String,
+                                       unsigned,
+                                       const double *, const double * ) {}
     void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
     void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}

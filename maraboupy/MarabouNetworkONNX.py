@@ -278,6 +278,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.resizeEquations(node, makeEquations)
         elif node.op_type == 'Tanh':
             self.tanhEquations(node, makeEquations)
+        elif node.op_type == 'LeakyRelu':
+            self.leakyReluEquations(node, makeEquations)
         elif node.op_type == 'Softmax':
             self.softmaxEquations(node, makeEquations)
         elif node.op_type == 'Sub':
@@ -1259,6 +1261,28 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for f in outputVars:
             self.setLowerBound(f, 0.0)
 
+    def leakyReluEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to pointwise LeakyRelu
+        Args:
+            node (node): ONNX node representing the LeakyRelu operation
+            makeEquations (bool): True if we need to create new variables and add new LeakyRelus
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName]
+        if not makeEquations:
+            return
+
+        # Get variables
+        inputVars = self.varMap[inputName].reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        assert len(inputVars) == len(outputVars)
+
+        # Generate equations
+        for i in range(len(inputVars)):
+            self.addLeakyRelu(inputVars[i], outputVars[i], 0.1)
+
     def subEquations(self, node, makeEquations):
         """Function to generate equations corresponding to subtraction
 
@@ -1416,6 +1440,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Adjust relu list
         for i, variables in enumerate(self.reluList):
             self.reluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
+
+        # Adjust relu list
+        for i, variables in enumerate(self.leakyReluList):
+            self.leakyReluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
 
         # Adjust sigmoid list
         for i, variables in enumerate(self.sigmoidList):

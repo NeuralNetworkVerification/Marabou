@@ -20,6 +20,7 @@
 #include "Equation.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
+#include "LeakyReluConstraint.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
@@ -208,6 +209,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         {
             inputQuery.addPiecewiseLinearConstraint( new ReluConstraint( serializeConstraint ) );
         }
+        else if ( coType == "leaky_relu" )
+        {
+            inputQuery.addPiecewiseLinearConstraint( new LeakyReluConstraint( serializeConstraint ) );
+        }
         else if ( coType == "max" )
         {
             inputQuery.addPiecewiseLinearConstraint( new MaxConstraint( serializeConstraint ) );
@@ -252,12 +257,3 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     inputQuery.constructNetworkLevelReasoner();
     return inputQuery;
 }
-
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
