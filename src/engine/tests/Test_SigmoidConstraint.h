@@ -321,7 +321,7 @@ public:
         unsigned f = 1;
 
         SigmoidConstraint sigmoid( b, f );
-    
+
         String serializedString = sigmoid.serializeToString();
 
         SigmoidConstraint serializedSigmooid( serializedString.ascii() );
@@ -344,10 +344,28 @@ public:
         SigmoidConstraint sigmoid2( b_2, f_2 );
         TS_ASSERT_EQUALS( sigmoid2.getB(), b_2 );
         TS_ASSERT_EQUALS( sigmoid2.getF(), f_2 );
-        
+
         // restore
         sigmoid1.restoreState( &sigmoid2 );
         TS_ASSERT_EQUALS( sigmoid1.getB(), b_2 );
-        TS_ASSERT_EQUALS( sigmoid1.getF(), f_2 );        
+        TS_ASSERT_EQUALS( sigmoid1.getF(), f_2 );
+    }
+
+    void test_sigmoid_satisfied()
+    {
+        unsigned b1 = 0;
+        unsigned f1 = 1;
+
+        SigmoidConstraint sigmoid( b1, f1 );
+        MockTableau tableau;
+        sigmoid.registerTableau( &tableau );
+        tableau.setValue( b1, 1 );
+        tableau.setValue( f1, 1 );
+        TS_ASSERT( !sigmoid.satisfied() );
+
+        tableau.setValue( b1, 1 );
+        tableau.setValue( f1, 0.73105857863 );
+        TS_ASSERT( sigmoid.satisfied() );
+
     }
 };

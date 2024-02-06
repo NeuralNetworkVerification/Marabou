@@ -197,6 +197,29 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
     }
 }
 
+void GurobiWrapper::addPiecewiseLinearConstraint( String sourceVariable,
+                                                  String targetVariable,
+                                                  unsigned numPoints,
+                                                  const double *xPoints,
+                                                  const double *yPoints )
+{
+    try
+    {
+        _model->addGenConstrPWL( *_nameToVariable[sourceVariable],
+                                 *_nameToVariable[targetVariable],
+                                 numPoints,
+                                 xPoints,
+                                 yPoints );
+    }
+    catch (GRBException e )
+    {
+        throw CommonError( CommonError::GUROBI_EXCEPTION,
+                           Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
+                                    e.getErrorCode(),
+                                    e.getMessage().c_str() ).ascii() );
+    }
+}
+
 void GurobiWrapper::addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
 {
     addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_LESS_EQUAL );
@@ -234,6 +257,11 @@ void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int b
                                     e.getErrorCode(),
                                     e.getMessage().c_str() ).ascii() );
     }
+}
+
+void GurobiWrapper::addBilinearConstraint( const String input1, const String input2, const String output )
+{
+    _model->addQConstr( ( *_nameToVariable[output] ) == ( *_nameToVariable[input1] ) * ( *_nameToVariable[input2] ) );
 }
 
 void GurobiWrapper::setCost( const List<Term> &terms, double constant )

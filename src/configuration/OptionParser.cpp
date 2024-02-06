@@ -2,7 +2,7 @@
 /*! \file OptionParser.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -160,6 +160,9 @@ void OptionParser::initialize()
         ( "preprocessor-bound-tolerance",
           boost::program_options::value<float>( &((*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE]) )->default_value( (*_floatOptions)[Options::PREPROCESSOR_BOUND_TOLERANCE] ),
           "epsilon for preprocessor bound tightening comparisons." )
+        ( "softmax-bound-type",
+          boost::program_options::value<std::string>( &(*_stringOptions)[Options::SOFTMAX_BOUND_TYPE] )->default_value( (*_stringOptions)[Options::SOFTMAX_BOUND_TYPE] ),
+          "Type of softmax symbolic bound to use: er/lse, detailed in paper 'Convex Bounds on the Softmax Function with Applications to Robustness Verification'" )
         ( "poi",
           boost::program_options::bool_switch( &(*_boolOptions)[Options::PARALLEL_DEEPSOI] )->default_value( (*_boolOptions)[Options::PARALLEL_DEEPSOI] ),
           "Use the parallel deep-soi solving mode." )
@@ -223,11 +226,3 @@ void OptionParser::printHelpMessage() const
     std::cerr << "\n" << _other << std::endl;
     std::cerr << "\n" << _expert << std::endl;
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

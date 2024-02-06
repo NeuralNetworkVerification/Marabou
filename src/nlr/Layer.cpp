@@ -16,6 +16,7 @@
 #include "InputQuery.h"
 #include "Layer.h"
 #include "Options.h"
+#include "SoftmaxConstraint.h"
 #include "SymbolicBoundTighteningType.h"
 
 namespace NLR {
@@ -158,6 +159,17 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == LEAKY_RELU )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+            ASSERT( _alpha > 0 && _alpha < 1 );
+            _assignment[i] = FloatUtils::max( inputValue, _alpha * inputValue );
+        }
+    }
+
     else if ( _type == ABSOLUTE_VALUE )
     {
         for ( unsigned i = 0; i < _size; ++i )
@@ -206,6 +218,43 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == SOFTMAX )
+    {
+      for ( unsigned i = 0; i < _size; ++i )
+      {
+        _assignment[i] = FloatUtils::negativeInfinity();
+
+        Vector<double> inputs;
+        Vector<double> outputs;
+        unsigned outputIndex = 0;
+        unsigned index = 0;
+        for ( const auto &input : _neuronToActivationSources[i] )
+        {
+          if ( input._neuron == i )
+            outputIndex = index;
+          double value = _layerOwner->getLayer( input._layer )->getAssignment( input._neuron );
+          inputs.append(value);
+          ++index;
+        }
+
+        SoftmaxConstraint::softmax(inputs, outputs);
+        _assignment[i] = outputs[outputIndex];
+
+      }
+    }
+
+    else if ( _type == BILINEAR )
+    {
+      for ( unsigned i = 0; i < _size; ++i )
+      {
+        _assignment[i] = 1;
+        for ( const auto &input : _neuronToActivationSources[i] )
+        {
+          double value = _layerOwner->getLayer( input._layer )->getAssignment( input._neuron );
+          _assignment[i] *= value;
+        }
+      }
+    }
     else
     {
         printf( "Error! Neuron type %u unsupported\n", _type );
@@ -255,6 +304,17 @@ void Layer::computeSimulations()
             const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
             for ( unsigned j = 0; j < simulationSize; ++j )
                 _simulations[i][j] = FloatUtils::max( simulations.get( j ), 0 );
+        }
+    }
+    else if ( _type == LEAKY_RELU )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            const Vector<double> &simulations = ( *( _layerOwner->getLayer( sourceIndex._layer )->getSimulations() ) ).get( sourceIndex._neuron );
+            ASSERT( _alpha > 0 && _alpha < 1);
+            for ( unsigned j = 0; j < simulationSize; ++j )
+                _simulations[i][j] = FloatUtils::max( simulations.get( j ), _alpha * simulations.get( j ) );
         }
     }
     else if ( _type == ABSOLUTE_VALUE )
@@ -424,7 +484,8 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == SIGN || _type == SIGMOID );
+    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == MAX ||
+            _type == SIGN || _type == SIGMOID || _type == SOFTMAX || _type == BILINEAR );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
         _neuronToActivationSources[targetNeuron] = List<NeuronIndex>();
@@ -432,7 +493,7 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
     _neuronToActivationSources[targetNeuron].append( NeuronIndex( sourceLayer, sourceNeuron ) );
 
     DEBUG({
-            if ( _type == RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
+            if ( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
 }
@@ -1561,6 +1622,7 @@ Layer::Layer( const Layer *other )
     _type = other->_type;
     _size = other->_size;
     _layerOwner = other->_layerOwner;
+    _alpha = other->_alpha;
 
     allocateMemory();
 
@@ -1739,6 +1801,10 @@ String Layer::typeToString( Type type )
         return "RELU";
         break;
 
+    case LEAKY_RELU:
+        return "LEAKY_RELU";
+        break;
+
     case SIGMOID:
         return "SIGMOID";
         break;
@@ -1754,6 +1820,15 @@ String Layer::typeToString( Type type )
     case SIGN:
         return "SIGN";
         break;
+
+    case SOFTMAX:
+      return "SOFTMAX";
+      break;
+
+    case BILINEAR:
+      return "BILINEAR";
+      break;
+
 
     default:
         return "UNKNOWN TYPE";
@@ -1809,11 +1884,13 @@ void Layer::dump() const
         break;
 
     case RELU:
+    case LEAKY_RELU:
     case ABSOLUTE_VALUE:
     case MAX:
     case SIGN:
     case SIGMOID:
-
+    case BILINEAR:
+    case SOFTMAX:
         for ( unsigned i = 0; i < _size; ++i )
         {
             if ( _eliminatedNeurons.exists( i ) )

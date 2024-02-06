@@ -88,6 +88,12 @@ private:
     */
     void transformConstraintsIfNeeded();
 
+    /**
+     * Try to find missing lower and upper bounds of input variables from
+     * piecewise linear constraints.
+     */
+    void getMissingInputBoundsFromConstraints();
+
     /*
       Transform all equations of type GE or LE to type EQ.
     */
@@ -105,7 +111,7 @@ private:
     bool processEquations();
 
     /*
-      Tighten the bounds using the piecewise linear and transcendental constraints
+      Tighten the bounds using the piecewise linear and nonlinear constraints
     */
     bool processConstraints();
 

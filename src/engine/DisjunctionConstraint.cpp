@@ -552,3 +552,65 @@ bool DisjunctionConstraint::addFeasibleDisjunct( const PiecewiseLinearCaseSplit 
 void DisjunctionConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */, unsigned /* constraintAuxVar */ )
 {
 }
+
+double DisjunctionConstraint::getMinLowerBound( unsigned int var ) const
+{
+    if ( !participatingVariable( var ) )
+    {
+        return FloatUtils::negativeInfinity();
+    }
+
+    double minLowerBound = FloatUtils::infinity();
+    for ( const auto &disjunct : _disjuncts )
+    {
+        bool foundLowerBound = false;
+        for ( const auto &bound : disjunct.getBoundTightenings() )
+        {
+            if ( bound._variable == var && bound._type == Tightening::LB )
+            {
+                foundLowerBound = true;
+                minLowerBound = FloatUtils::min( minLowerBound, bound._value );
+            }
+        }
+
+        if ( !foundLowerBound )
+        {
+            throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_BOUND,
+                                Stringf( "Variable %d missing lower bound in given disjunction constraint %s", var,
+                                         serializeToString().ascii() ).ascii() );
+        }
+    }
+
+    return minLowerBound;
+}
+
+double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
+{
+    if ( !participatingVariable( var ) )
+    {
+        return FloatUtils::infinity();
+    }
+
+    double maxUpperBound = FloatUtils::negativeInfinity();
+    for ( const auto &disjunct : _disjuncts )
+    {
+        bool foundUpperBound = false;
+        for ( const auto &bound : disjunct.getBoundTightenings() )
+        {
+            if ( bound._variable == var && bound._type == Tightening::UB )
+            {
+                foundUpperBound = true;
+                maxUpperBound = FloatUtils::max( maxUpperBound, bound._value );
+            }
+        }
+
+        if ( !foundUpperBound )
+        {
+            throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_BOUND,
+                                Stringf( "Variable %d missing upper bound in given disjunction constraint %s", var,
+                                         serializeToString().ascii() ).ascii() );
+        }
+    }
+
+    return maxUpperBound;
+}
