@@ -79,6 +79,12 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     transformConstraintsIfNeeded();
 
     /*
+      Try to find missing lower and upper bounds for input variables from
+      piecewise linear constraints.
+     */
+    getMissingInputBoundsFromConstraints();
+
+    /*
       Merge consecutive WS layers
     */
     if ( GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS )
@@ -208,6 +214,43 @@ void Preprocessor::transformConstraintsIfNeeded()
 {
     for ( auto &plConstraint : _preprocessed->getPiecewiseLinearConstraints() )
         plConstraint->transformToUseAuxVariables( *_preprocessed );
+}
+
+void Preprocessor::getMissingInputBoundsFromConstraints()
+{
+    const auto &lowerBounds = _preprocessed->getLowerBounds();
+    const auto &upperBounds = _preprocessed->getUpperBounds();
+
+    for ( unsigned int var : _preprocessed->getInputVariables() )
+    {
+        if ( !lowerBounds.exists( var ) )
+        {
+            double minLowerBound = FloatUtils::infinity();
+            for ( const auto &plConstraint : _preprocessed->getPiecewiseLinearConstraints() )
+            {
+                minLowerBound = FloatUtils::min( minLowerBound, plConstraint->getMinLowerBound( var ) );
+            }
+
+            if ( !FloatUtils::areEqual( minLowerBound, FloatUtils::infinity() ) )
+            {
+                _preprocessed->setLowerBound( var, minLowerBound );
+            }
+        }
+
+        if ( !upperBounds.exists( var ) )
+        {
+            double maxUpperBound = FloatUtils::negativeInfinity();
+            for ( const auto &plConstraint : _preprocessed->getPiecewiseLinearConstraints() )
+            {
+                maxUpperBound = FloatUtils::max( maxUpperBound, plConstraint->getMaxUpperBound( var ) );
+            }
+
+            if ( !FloatUtils::areEqual( maxUpperBound, FloatUtils::negativeInfinity() ) )
+            {
+                _preprocessed->setUpperBound( var, maxUpperBound );
+            }
+        }
+    }
 }
 
 void Preprocessor::makeAllEquationsEqualities()
