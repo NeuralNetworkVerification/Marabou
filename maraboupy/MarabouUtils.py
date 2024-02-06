@@ -55,9 +55,6 @@ class Equation:
         :param equation: the other equation to be compared with.
         :return: True if these two equations are identical; False if not.
         """
-        equivalence = True
-        if self.addendList != equation.addendList \
-                or self.scalar != equation.scalar \
-                or self.EquationType != equation.EquationType:
-            equivalence = False
-        return equivalence
+        return self.addendList == equation.addendList \
+               and self.scalar == equation.scalar \
+               and self.EquationType == equation.EquationType
