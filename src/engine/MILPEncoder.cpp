@@ -14,6 +14,7 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
 #include "MILPEncoder.h"
@@ -85,18 +86,24 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
         }
     }
 
-    // Add Transcendental Constraints
-    for ( const auto &tsConstraint : inputQuery.getTranscendentalConstraints() )
+    // Add Nonlinear Constraints
+    for ( const auto &nlConstraint : inputQuery.getNonlinearConstraints() )
     {
-        switch ( tsConstraint->getType() )
+        switch ( nlConstraint->getType() )
         {
-        case TranscendentalFunctionType::SIGMOID:
-            encodeSigmoidConstraint( gurobi, (SigmoidConstraint *)tsConstraint );
+        case NonlinearFunctionType::SIGMOID:
+            encodeSigmoidConstraint( gurobi, (SigmoidConstraint *)nlConstraint );
+            break;
+        case NonlinearFunctionType::SOFTMAX:
+            encodeSoftmaxConstraint( gurobi, (SoftmaxConstraint *)nlConstraint );
+            break;
+        case NonlinearFunctionType::BILINEAR:
+            encodeBilinearConstraint( gurobi, (BilinearConstraint *)nlConstraint, relax );
             break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_TRANSCENDENTAL_CONSTRAINT,
                                 "GurobiWrapper::encodeInputQuery: "
-                                "Only Sigmoid is supported\n" );
+                                "Unsupported non-linear constraints\n" );
         }
     }
 
@@ -494,18 +501,18 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
 
         // upper bound of x_b
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, 0 );  
+        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, 0 );
         terms.clear();
 
         // upper bound of x_f
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, y_u );  
-        terms.clear(); 
+        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, y_u );
+        terms.clear();
 
         _binVarIndex++;
     }
     else
-    {   
+    {
         // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
         double tangentPoint = ( sourceLb + sourceUb ) / 2;
         double yAtTangentPoint = sigmoid->sigmoid( tangentPoint );
@@ -541,6 +548,144 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
             gurobi.addLeqConstraint( terms, -secantSlope * sourceLb + y_l );
         }
         terms.clear();
+    }
+}
+
+void MILPEncoder::encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstraint *softmax )
+{
+    Vector<double> sourceLbs;
+    Vector<double> sourceUbs;
+    Vector<double> sourceMids;
+    Vector<double> targetLbs;
+    Vector<double> targetUbs;
+    Vector<unsigned> sourceVariables = softmax->getInputs();
+    Vector<unsigned> targetVariables = softmax->getOutputs();
+    unsigned size = sourceVariables.size();
+    for ( unsigned i = 0; i < size; ++i )
+    {
+        double sourceLb = _tableau.getLowerBound( sourceVariables[i] );
+        sourceLbs.append( sourceLb - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+        double sourceUb = _tableau.getUpperBound( sourceVariables[i] );
+        sourceUbs.append( sourceUb + GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+        sourceMids.append( ( sourceLb + sourceUb ) / 2 );
+        targetLbs.append( _tableau.getLowerBound( targetVariables[i] ) );
+        targetUbs.append( _tableau.getUpperBound( targetVariables[i] ) );
+    }
+
+    for ( unsigned i = 0; i < size; ++i )
+    {
+        // The output is fixed, no need to encode symbolic bounds
+        if ( FloatUtils::areEqual( targetLbs[i], targetUbs[i] ) )
+            continue;
+        else
+        {
+            // lower-bound
+            bool wellFormed = true;
+            List<GurobiWrapper::Term> terms;
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariables[i] ) ) );
+            double symbolicLowerBias;
+            bool useLSE2 = false;
+            for ( const auto &lb : targetLbs )
+            {
+                if ( lb > GlobalConfiguration::SOFTMAX_LSE2_THRESHOLD )
+                    useLSE2 = true;
+            }
+            if ( !useLSE2 )
+            {
+                symbolicLowerBias =
+                    NLR::DeepPolySoftmaxElement::LSELowerBound( sourceMids, sourceLbs, sourceUbs, i );
+                if ( !FloatUtils::wellFormed( symbolicLowerBias ) )
+                    wellFormed = false;
+                for ( unsigned j = 0; j < size; ++j )
+                {
+                    double dldj =
+                        NLR::DeepPolySoftmaxElement::dLSELowerBound( sourceMids, sourceLbs,
+                                                                     sourceUbs, i, j );
+                    if ( !FloatUtils::wellFormed( dldj ) )
+                        wellFormed = false;
+                    terms.append( GurobiWrapper::Term( -dldj, Stringf( "x%u", sourceVariables[j] ) ) );
+                    symbolicLowerBias -= dldj * sourceMids[j];
+                }
+            }
+            else
+            {
+                symbolicLowerBias =
+                    NLR::DeepPolySoftmaxElement::LSELowerBound2( sourceMids, sourceLbs, sourceUbs, i );
+                if ( !FloatUtils::wellFormed( symbolicLowerBias ) )
+                    wellFormed = false;
+                for ( unsigned j = 0; j < size; ++j )
+                {
+                    double dldj =
+                        NLR::DeepPolySoftmaxElement::dLSELowerBound2( sourceMids, sourceLbs,
+                                                                      sourceUbs, i, j );
+                    if ( !FloatUtils::wellFormed( dldj ) )
+                        wellFormed = false;
+                    terms.append( GurobiWrapper::Term( -dldj, Stringf( "x%u", sourceVariables[j] ) ) );
+                    symbolicLowerBias -= dldj * sourceMids[j];
+                }
+            }
+            if ( wellFormed )
+                gurobi.addGeqConstraint( terms, symbolicLowerBias );
+
+            // Upper-bound
+            wellFormed = true;
+            double symbolicUpperBias =
+                NLR::DeepPolySoftmaxElement::LSEUpperBound( sourceMids, targetLbs, targetUbs, i );
+            if ( !FloatUtils::wellFormed( symbolicUpperBias ) )
+                wellFormed = false;
+            terms.clear();
+            terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariables[i] ) ) );
+            for ( unsigned j = 0; j < size; ++j )
+            {
+                double dudj =
+                    NLR::DeepPolySoftmaxElement::dLSEUpperbound( sourceMids, targetLbs,
+                                                                 targetUbs, i, j );
+                if ( !FloatUtils::wellFormed( dudj ) )
+                    wellFormed = false;
+                terms.append( GurobiWrapper::Term( -dudj, Stringf( "x%u", sourceVariables[j] ) ) );
+                symbolicUpperBias -= dudj * sourceMids[j];
+            }
+            if ( wellFormed )
+                gurobi.addLeqConstraint( terms, symbolicUpperBias );
+        }
+    }
+}
+
+void MILPEncoder::encodeBilinearConstraint( GurobiWrapper &gurobi,
+                                            BilinearConstraint *bilinear,
+                                            bool relax )
+{
+    if ( relax )
+    {
+        // Encode the DeepPoly abstraction
+        auto sourceVariables = bilinear->getBs();
+        unsigned sourceVariable1 = sourceVariables[0];
+        unsigned sourceVariable2 = sourceVariables[1];
+        unsigned targetVariable = bilinear->getF();
+        double sourceLb1 = _tableau.getLowerBound( sourceVariable1 );
+        double sourceLb2 = _tableau.getLowerBound( sourceVariable2 );
+        double sourceUb2 = _tableau.getUpperBound( sourceVariable2 );
+
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -sourceLb2, Stringf( "x%u", sourceVariable1 ) ) );
+        terms.append( GurobiWrapper::Term( -sourceLb1, Stringf( "x%u", sourceVariable2 ) ) );
+        gurobi.addGeqConstraint( terms, -sourceLb1 * sourceLb2 );
+
+        terms.clear();
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -sourceUb2, Stringf( "x%u", sourceVariable1 ) ) );
+        terms.append( GurobiWrapper::Term( -sourceLb1, Stringf( "x%u", sourceVariable2 ) ) );
+        gurobi.addLeqConstraint( terms, -sourceLb1 * sourceUb2 );
+    }
+    else
+    {
+        gurobi.nonConvex();
+        auto bs = bilinear->getBs();
+        ASSERT( bs.size() == 2 );
+        auto f = bilinear->getF();
+        gurobi.addBilinearConstraint( Stringf( "x%u", bs[0] ), Stringf( "x%u", bs[1] ), Stringf( "x%u", f ) );
+        return;
     }
 }
 

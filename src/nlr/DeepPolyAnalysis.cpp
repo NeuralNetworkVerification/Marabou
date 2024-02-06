@@ -17,11 +17,13 @@
 #include "DeepPolyAnalysis.h"
 #include "DeepPolyAbsoluteValueElement.h"
 #include "DeepPolyInputElement.h"
+#include "DeepPolyBilinearElement.h"
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
 #include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
+#include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "Layer.h"
@@ -44,7 +46,17 @@ DeepPolyAnalysis::DeepPolyAnalysis( LayerOwner *layerOwner )
     , _workSymbolicUpperBias( NULL )
 {
     const Map<unsigned, Layer *> &layers = _layerOwner->getLayerIndexToLayer();
-    allocateMemory( layers );
+    // Get the maximal layer size
+    unsigned maxLayerSize = 0;
+    for ( const auto &pair : layers )
+    {
+        unsigned thisLayerSize = pair.second->getSize();
+        if ( thisLayerSize > maxLayerSize )
+            maxLayerSize = thisLayerSize;
+    }
+    _maxLayerSize = maxLayerSize;
+
+    allocateMemory();
     for ( const auto &pair : layers )
     {
         /*
@@ -158,34 +170,24 @@ void DeepPolyAnalysis::run()
     }
 }
 
-void DeepPolyAnalysis::allocateMemory( const Map<unsigned, Layer *> &layers )
+void DeepPolyAnalysis::allocateMemory()
 {
     freeMemoryIfNeeded();
+   _work1SymbolicLb= new double[_maxLayerSize * _maxLayerSize];
+   _work1SymbolicUb= new double[_maxLayerSize * _maxLayerSize];
+   _work2SymbolicLb= new double[_maxLayerSize * _maxLayerSize];
+   _work2SymbolicUb= new double[_maxLayerSize * _maxLayerSize];
 
-    // Get the maximal layer size
-    unsigned maxLayerSize = 0;
-    for ( const auto &pair : layers )
-    {
-        unsigned thisLayerSize = pair.second->getSize();
-        if ( thisLayerSize > maxLayerSize )
-            maxLayerSize = thisLayerSize;
-    }
+   _workSymbolicLowerBias = new double[_maxLayerSize];
+   _workSymbolicUpperBias = new double[_maxLayerSize];
 
-   _work1SymbolicLb= new double[maxLayerSize * maxLayerSize];
-   _work1SymbolicUb= new double[maxLayerSize * maxLayerSize];
-   _work2SymbolicLb= new double[maxLayerSize * maxLayerSize];
-   _work2SymbolicUb= new double[maxLayerSize * maxLayerSize];
+   std::fill_n( _work1SymbolicLb, _maxLayerSize * _maxLayerSize, 0 );
+   std::fill_n( _work1SymbolicUb, _maxLayerSize * _maxLayerSize, 0 );
+   std::fill_n( _work2SymbolicLb, _maxLayerSize * _maxLayerSize, 0 );
+   std::fill_n( _work2SymbolicUb, _maxLayerSize * _maxLayerSize, 0 );
 
-   _workSymbolicLowerBias = new double[maxLayerSize];
-   _workSymbolicUpperBias = new double[maxLayerSize];
-
-   std::fill_n( _work1SymbolicLb, maxLayerSize * maxLayerSize, 0 );
-   std::fill_n( _work1SymbolicUb, maxLayerSize * maxLayerSize, 0 );
-   std::fill_n( _work2SymbolicLb, maxLayerSize * maxLayerSize, 0 );
-   std::fill_n( _work2SymbolicUb, maxLayerSize * maxLayerSize, 0 );
-
-   std::fill_n( _workSymbolicLowerBias, maxLayerSize, 0 );
-   std::fill_n( _workSymbolicUpperBias, maxLayerSize, 0 );
+   std::fill_n( _workSymbolicLowerBias, _maxLayerSize, 0 );
+   std::fill_n( _workSymbolicUpperBias, _maxLayerSize, 0 );
 }
 
 DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
@@ -213,6 +215,10 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
         deepPolyElement = new DeepPolyMaxPoolElement( layer );
     else if ( type == Layer::SIGMOID )
         deepPolyElement = new DeepPolySigmoidElement( layer );
+    else if ( type == Layer::SOFTMAX )
+        deepPolyElement = new DeepPolySoftmaxElement( layer, _maxLayerSize );
+    else if ( type == Layer::BILINEAR )
+      deepPolyElement = new DeepPolyBilinearElement( layer );
     else
         throw NLRError( NLRError::LAYER_TYPE_NOT_SUPPORTED,
                         Stringf( "Layer %u not yet supported",

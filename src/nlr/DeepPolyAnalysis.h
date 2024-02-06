@@ -51,7 +51,9 @@ private:
     double * _workSymbolicLowerBias;
     double * _workSymbolicUpperBias;
 
-    void allocateMemory( const Map<unsigned, Layer *> &layers );
+    unsigned _maxLayerSize;
+
+    void allocateMemory();
     void freeMemoryIfNeeded();
 
     DeepPolyElement *createDeepPolyElement( Layer *layer );
