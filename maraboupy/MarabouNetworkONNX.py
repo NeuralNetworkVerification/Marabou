@@ -23,10 +23,9 @@ from maraboupy import MarabouUtils
 from maraboupy import MarabouNetwork
 from onnx import TensorProto
 import itertools
-import torch
-import tempfile
 import os
 from copy import copy
+from onnx.reference.ops._op_list import Split_18, Unsqueeze_1
 
 class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     """Constructs a MarabouNetworkONNX object from an ONNX file
@@ -279,6 +278,8 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             self.resizeEquations(node, makeEquations)
         elif node.op_type == 'Tanh':
             self.tanhEquations(node, makeEquations)
+        elif node.op_type == 'LeakyRelu':
+            self.leakyReluEquations(node, makeEquations)
         elif node.op_type == 'Softmax':
             self.softmaxEquations(node, makeEquations)
         elif node.op_type == 'Sub':
@@ -510,38 +511,17 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         nodeName = node.output[0]
         inputName = node.input[0]
-        # create a temporary file in the current directory
-        tf = tempfile.NamedTemporaryFile(dir=".")
-
-        # get the file name
-        temp_file_name = tf.name
-        # close the file
-        tf.close()
-
-        onnx.utils.extract_model(self.filename, temp_file_name,
-                                 input_names=[inputName],
-                                 output_names=[nodeName])
-        session = onnxruntime.InferenceSession(temp_file_name)
-        os.remove(temp_file_name)
-
-        # get the input and output names
-        input_name = session.get_inputs()[0].name
-        output_name = session.get_outputs()[0].name
+        axes = self.constantMap[node.input[1]]
 
         if inputName in self.varMap:
-            # prepare the input data
-            input_data = np.array(self.varMap[inputName], dtype="float32")
-            # run the inference session and get the output predictions
-            output_data = session.run([output_name], {input_name: input_data})[0].astype(int)
+            output_data = Unsqueeze_1.eval(self.varMap[inputName], axes=axes)
             self.shapeMap[nodeName] = output_data.shape
             self.varMap[nodeName] = output_data
         else:
-            # prepare the input data
-            input_data = np.array(self.constantMap[inputName], dtype="int")
-            # run the inference session and get the output predictions
-            output_data = session.run([output_name], {input_name: input_data})[0].astype(int)
+            output_data = Unsqueeze_1.eval(self.constantMap[inputName], axes=axes)
             self.shapeMap[nodeName] = output_data.shape
             self.constantMap[nodeName] = output_data
+
 
     def squeeze(self, node):
         """Function representing squeeze
@@ -1020,15 +1000,14 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
                 split = get_attribute_value(attr)
 
         inputName = node.input[0]
-        inputVars = torch.from_numpy(self.varMap[inputName]) # rely on torch since split opereation of numpy behaves differently from that of onnx
-        inputVars = inputVars.split(split, axis) # tuple
+        inputVars = Split_18.eval(self.varMap[inputName], split=split, axis=axis)
 
         assert len(inputVars) == len(node.output)
 
         # Set a shape of target output
         for i in range(len(node.output)):
             if node.output[i] == nodeName:
-                self.shapeMap[node.output[i]] = inputVars[i].numpy().shape
+                self.shapeMap[node.output[i]] = inputVars[i].shape
                 break
 
         if not makeEquations:
@@ -1282,6 +1261,28 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         for f in outputVars:
             self.setLowerBound(f, 0.0)
 
+    def leakyReluEquations(self, node, makeEquations):
+        """Function to generate equations corresponding to pointwise LeakyRelu
+        Args:
+            node (node): ONNX node representing the LeakyRelu operation
+            makeEquations (bool): True if we need to create new variables and add new LeakyRelus
+        :meta private:
+        """
+        nodeName = node.output[0]
+        inputName = node.input[0]
+        self.shapeMap[nodeName] = self.shapeMap[inputName]
+        if not makeEquations:
+            return
+
+        # Get variables
+        inputVars = self.varMap[inputName].reshape(-1)
+        outputVars = self.makeNewVariables(nodeName).reshape(-1)
+        assert len(inputVars) == len(outputVars)
+
+        # Generate equations
+        for i in range(len(inputVars)):
+            self.addLeakyRelu(inputVars[i], outputVars[i], 0.1)
+
     def subEquations(self, node, makeEquations):
         """Function to generate equations corresponding to subtraction
 
@@ -1439,6 +1440,10 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         # Adjust relu list
         for i, variables in enumerate(self.reluList):
             self.reluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
+
+        # Adjust relu list
+        for i, variables in enumerate(self.leakyReluList):
+            self.leakyReluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
 
         # Adjust sigmoid list
         for i, variables in enumerate(self.sigmoidList):

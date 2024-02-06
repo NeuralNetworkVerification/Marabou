@@ -167,9 +167,12 @@ private:
     bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );
+    bool constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
+                                  Map<unsigned, unsigned> &handledVariableToLayer,
+                                  unsigned newLayerIndex );
     bool constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
-                             Map<unsigned, unsigned> &handledVariableToLayer,
-                             unsigned newLayerIndex );
+                                Map<unsigned, unsigned> &handledVariableToLayer,
+                                unsigned newLayerIndex );
     bool constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                       Map<unsigned, unsigned> &handledVariableToLayer,
                                       unsigned newLayerIndex );

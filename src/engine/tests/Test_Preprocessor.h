@@ -16,6 +16,7 @@
 
 #include <cxxtest/TestSuite.h>
 
+#include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
@@ -933,6 +934,32 @@ public:
             eq._scalar = 0;
             TS_ASSERT( processed.getEquations().exists( eq ) );
         }
+    }
+
+    void test_preprocessor_with_input_bounds_in_disjunction()
+    {
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 1 );
+        ipq.markInputVariable( 0, 0 );
+
+        PiecewiseLinearCaseSplit cs1;
+        cs1.storeBoundTightening( Tightening( 0, -1, Tightening::LB ) );
+        cs1.storeBoundTightening( Tightening( 0, 3, Tightening::UB ) );
+
+        PiecewiseLinearCaseSplit cs2;
+        cs2.storeBoundTightening( Tightening( 0, -4, Tightening::LB ) );
+        cs2.storeBoundTightening( Tightening( 0, 2, Tightening::UB ) );
+
+        List<PiecewiseLinearCaseSplit> caseSplits = {cs1, cs2};
+        DisjunctionConstraint *disj = new DisjunctionConstraint( caseSplits );
+        ipq.addPiecewiseLinearConstraint( disj );
+
+        InputQuery processed;
+        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().
+            preprocess( ipq ) ) );
+
+        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -4 )
+        TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 3 )
     }
 
     void test_todo()
