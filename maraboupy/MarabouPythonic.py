@@ -35,7 +35,7 @@ class VarAffine:
         const: constant of the affine transformation, e.g., b.
     """
     varCoeffs: DefaultDict[int, float]
-    const: float
+    scalar: float
 
     def __add__(self, other):
         """
@@ -45,15 +45,16 @@ class VarAffine:
         :param other: the addend could be a constant (float, int) or an affine transformation.
         :return: the result of addition is an affine transformation of neuron(s).
         """
+        assert isinstance(other, float) or isinstance(other, int) or isinstance(other, VarAffine)
         if isinstance(other, float) or isinstance(other, int):
-            return VarAffine(self.varCoeffs, self.const + other)
+            return VarAffine(self.varCoeffs, self.scalar + other)
         elif isinstance(other, VarAffine):
             varCoeffs = defaultdict(float)
             for variable in self.varCoeffs:
                 varCoeffs[variable] += self.varCoeffs[variable]
             for variable in other.varCoeffs:
                 varCoeffs[variable] += other.varCoeffs[variable]
-            return VarAffine(varCoeffs, self.const + other.const)
+            return VarAffine(varCoeffs, self.scalar + other.scalar)
 
     def __sub__(self, other):
         """
@@ -64,14 +65,14 @@ class VarAffine:
         :return: the result of subtraction is an affine transformation of neuron(s).
         """
         if isinstance(other, float) or isinstance(other, int):
-            return VarAffine(self.varCoeffs, self.const - other)
+            return VarAffine(self.varCoeffs, self.scalar - other)
         elif isinstance(other, VarAffine):
             varCoeffs = defaultdict(float)
             for variable in self.varCoeffs:
                 varCoeffs[variable] += self.varCoeffs[variable]
             for variable in other.varCoeffs:
                 varCoeffs[variable] -= other.varCoeffs[variable]
-            return VarAffine(varCoeffs, self.const - other.const)
+            return VarAffine(varCoeffs, self.scalar - other.scalar)
 
     def __radd__(self, other):
         """
@@ -83,7 +84,7 @@ class VarAffine:
         :return: the result of reverse addition is an affine transformation of neuron(s).
         """
         if isinstance(other, float) or isinstance(other, int):
-            return VarAffine(self.varCoeffs, self.const + other)
+            return VarAffine(self.varCoeffs, self.scalar + other)
         elif isinstance(other, VarAffine):
             raise NotImplementedError
 
@@ -114,7 +115,7 @@ class VarAffine:
             for variable in self.varCoeffs:
                 varCoeffs[variable] += other * self.varCoeffs[variable]
                 # varCoeffs[variable] = other * self.varCoeffs[variable]
-            return VarAffine(varCoeffs, other * self.const)
+            return VarAffine(varCoeffs, other * self.scalar)
         elif isinstance(other, VarAffine):
             raise NotImplementedError("Only linear constraints are supported.")
 
@@ -152,7 +153,7 @@ class VarAffine:
         if list(self.varCoeffs.values()) == [1] and (isinstance(other, float) or isinstance(other, int)):
             return VarConstraint(self, isEquality=False,
                                  lowerBound=None,
-                                 upperBound=other - self.const)
+                                 upperBound=other - self.scalar)
         else:
             return VarConstraint(self - other, isEquality=False,
                                  lowerBound=None,
@@ -170,7 +171,7 @@ class VarAffine:
         """
         if list(self.varCoeffs.values()) == [1] and (isinstance(other, float) or isinstance(other, int)):
             return VarConstraint(self, isEquality=False,
-                                 lowerBound=other - self.const,
+                                 lowerBound=other - self.scalar,
                                  upperBound=None)
         else:
             return VarConstraint(other - self, isEquality=False,
