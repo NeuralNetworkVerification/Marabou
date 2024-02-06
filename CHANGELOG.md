@@ -6,6 +6,7 @@
 * Added support for properties provided in VNN-LIB format for ONNX networks via the Python API.
 * Supported additional non-linear constraints Softmax and Bilinear
 * Removed dependency on torch and drop support for Python3.7
+* Bump onnx version to >= 1.15.0
 
 ## Version 1.0.0
 * Initial versioned release
