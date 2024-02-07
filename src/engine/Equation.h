@@ -86,6 +86,22 @@ public:
     */
     void setCoefficient( unsigned variable, double newCoefficient );
 
+    /*
+      Transform the equation so that any two addends have different variables
+      and no addends have zero coefficients
+
+      CAUTION: Should only be used during preprocessing.
+    */
+    void removeRedundantAddends();
+
+    /*
+      Returns true if two addends have the same variables or some addend
+      has zero coefficients
+
+      NOTE: for debug only
+    */
+    bool containsRedundantAddends() const;
+
     List<Addend> _addends;
     double _scalar;
     EquationType _type;

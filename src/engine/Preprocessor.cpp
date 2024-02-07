@@ -61,6 +61,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
 {
     _preprocessed = std::unique_ptr<InputQuery>( new InputQuery( query ) );
 
+    removeRedundantAddendsInAllEquations();
+
     /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
       into one.
@@ -146,6 +148,10 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     bool continueTightening = true;
     while ( continueTightening && tighteningRound++ < GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND )
     {
+        DEBUG({
+                for ( const auto &equation : _preprocessed->getEquations() )
+                    ASSERT( !equation.containsRedundantAddends() );
+            });
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
         if ( attemptVariableElimination )
@@ -251,6 +257,12 @@ void Preprocessor::getMissingInputBoundsFromConstraints()
             }
         }
     }
+}
+
+void Preprocessor::removeRedundantAddendsInAllEquations()
+{
+    for ( auto &equation : _preprocessed->getEquations() )
+        equation.removeRedundantAddends();
 }
 
 void Preprocessor::makeAllEquationsEqualities()
