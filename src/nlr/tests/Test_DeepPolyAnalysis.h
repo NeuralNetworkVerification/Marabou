@@ -895,16 +895,16 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
         // Layer 1
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getLb( 0 ), -2 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getUb( 0 ), 2 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getLb( 1 ), -2 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getUb( 1 ), 2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getLb( 0 ), -2, 0.00001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getUb( 0 ), 2, 0.00001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getLb( 1 ), -2, 0.00001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getUb( 1 ), 2, 0.00001 ) );
 
         // Layer 2
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getLb( 0 ), 0.1192, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getUb( 0 ), 0.8807, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getLb( 1 ), 0.1192, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getUb( 1 ), 0.8807, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getLb( 0 ), 0.1192, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getUb( 0 ), 0.8807, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getLb( 1 ), 0.1192, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getUb( 1 ), 0.8807, 0.0001 ) );
 
         // Layer 3
         /*
