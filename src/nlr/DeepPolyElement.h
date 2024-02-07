@@ -65,6 +65,7 @@ public:
     double *getSymbolicUpperBias() const;
     double getLowerBound( unsigned index ) const;
     double getUpperBound( unsigned index ) const;
+  double getParameter( String name, unsigned index ) const;
 
     void setWorkingMemory( double *work1SymbolicLb, double *work1SymbolicUb,
                            double *work2SymbolicLb, double *work2SymbolicUb,

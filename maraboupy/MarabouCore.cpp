@@ -44,6 +44,7 @@
 #include "VnnLibParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
+#include "RoundConstraint.h"
 #include "Set.h"
 #include "SoftmaxConstraint.h"
 #include "SnCDivideStrategy.h"
@@ -105,6 +106,10 @@ void restoreOutputStream(int outputStream)
     close(outputStream);
 }
 
+void addClipConstraint( InputQuery& ipq, unsigned var1, unsigned var2, double floor, double ceiling ){
+    ipq.addClipConstraint( var1, var2, floor, ceiling );
+}
+
 void addLeakyReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2, double slope){
     PiecewiseLinearConstraint* r = new LeakyReluConstraint(var1, var2, slope);
     ipq.addPiecewiseLinearConstraint(r);
@@ -113,6 +118,11 @@ void addLeakyReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2, doubl
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
+}
+
+void addRoundConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    NonlinearConstraint* r = new RoundConstraint(var1, var2);
+    ipq.addNonlinearConstraint(r);
 }
 
 void addBilinearConstraint(InputQuery& ipq, unsigned var1, unsigned var2,
@@ -607,8 +617,19 @@ PYBIND11_MODULE(MarabouCore, m) {
             :class:`~maraboupy.MarabouCore.InputQuery`
         )pbdoc",
         py::arg("filename"));
+    m.def("addClipConstraint", &addClipConstraint, R"pbdoc(
+        Add a Clip constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Clip constraint
+            var2 (int): Output variable to Clip constraint
+            lb (double): Floor
+            ub (double): Ceiling
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("floor"), py::arg("ceiling"));
     m.def("addLeakyReluConstraint", &addLeakyReluConstraint, R"pbdoc(
-        Add a Relu constraint to the InputQuery
+        Add a LeakyRelu constraint to the InputQuery
 
         Args:
             inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
@@ -626,6 +647,15 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addRoundConstraint", &addRoundConstraint, R"pbdoc(
+        Add a Round constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to round constraint
+            var2 (int): Output variable to round constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
     m.def("addBilinearConstraint", &addBilinearConstraint, R"pbdoc(
         Add a Bilinear constraint to the InputQuery
         Args:

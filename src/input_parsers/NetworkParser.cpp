@@ -34,8 +34,8 @@ NetworkParser::NetworkParser()
     _numVars = 0;
 }
 
-Variable NetworkParser::getNewVariable(){
-
+Variable NetworkParser::getNewVariable()
+{
     _numVars += 1;
     return _numVars-1;
 }

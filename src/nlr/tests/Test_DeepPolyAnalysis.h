@@ -800,19 +800,19 @@ public:
             TS_ASSERT( existsBound( bounds, bound ) );
     }
 
-    void populateNetworkWithSigmoids( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
+ void populateNetworkWithSigmoidsAndRound( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )
     {
         /*
 
-              1      S       1
-          x0 --- x2 ---> x4 --- x6
+              1      S       1     Rd
+          x0 --- x2 ---> x4 --- x6 --- x8
             \    /        \    /
            1 \  /        1 \  /
               \/            \/
               /\            /\
            1 /  \        1 /  \
-            /    \   S    /    \
-          x1 --- x3 ---> x5 --- x7
+            /    \   S    /    \   Rd
+          x1 --- x3 ---> x5 --- x7 --- x9
               -1            -1
 
         */
@@ -822,9 +822,10 @@ public:
         nlr.addLayer( 1, NLR::Layer::WEIGHTED_SUM, 2 );
         nlr.addLayer( 2, NLR::Layer::SIGMOID, 2 );
         nlr.addLayer( 3, NLR::Layer::WEIGHTED_SUM, 2 );
+        nlr.addLayer( 4, NLR::Layer::ROUND, 2 );
 
         // Mark layer dependencies
-        for ( unsigned i = 1; i <= 3; ++i )
+        for ( unsigned i = 1; i <= 4; ++i )
             nlr.addLayerDependency( i - 1, i );
 
         // Set the weights and biases for the weighted sum layers
@@ -841,6 +842,8 @@ public:
         // Mark the Sigmoid sources
         nlr.addActivationSource( 1, 0, 2, 0 );
         nlr.addActivationSource( 1, 1, 2, 1 );
+        nlr.addActivationSource( 3, 0, 4, 0 );
+        nlr.addActivationSource( 3, 1, 4, 1 );
 
         // Variable indexing
         nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
@@ -855,30 +858,29 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 3, 0 ), 6 );
         nlr.setNeuronVariable( NLR::NeuronIndex( 3, 1 ), 7 );
 
+        nlr.setNeuronVariable( NLR::NeuronIndex( 4, 0 ), 8 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 4, 1 ), 9 );
+
         // Very loose bounds for neurons except inputs
         double large = 1000000;
 
-        tableau.getBoundManager().initialize( 8 );
-        tableau.setLowerBound( 2, -large );
-        tableau.setUpperBound( 2, large );
-        tableau.setLowerBound( 3, -large );
-        tableau.setUpperBound( 3, large );
-        tableau.setLowerBound( 4, -large );
-        tableau.setUpperBound( 4, large );
-        tableau.setLowerBound( 5, -large );
-        tableau.setUpperBound( 5, large );
-        tableau.setLowerBound( 6, -large );
-        tableau.setUpperBound( 6, large );
-        tableau.setLowerBound( 7, -large );
-        tableau.setUpperBound( 7, large );
+        tableau.getBoundManager().initialize( 10 );
+        tableau.setLowerBound( 2, -large ); tableau.setUpperBound( 2, large );
+        tableau.setLowerBound( 3, -large ); tableau.setUpperBound( 3, large );
+        tableau.setLowerBound( 4, -large ); tableau.setUpperBound( 4, large );
+        tableau.setLowerBound( 5, -large ); tableau.setUpperBound( 5, large );
+        tableau.setLowerBound( 6, -large ); tableau.setUpperBound( 6, large );
+        tableau.setLowerBound( 7, -large ); tableau.setUpperBound( 7, large );
+        tableau.setLowerBound( 8, -large ); tableau.setUpperBound( 8, large );
+        tableau.setLowerBound( 9, -large ); tableau.setUpperBound( 9, large );
     }
 
-    void test_deeppoly_sigmoids()
+    void test_deeppoly_sigmoids_and_round()
     {
         NLR::NetworkLevelReasoner nlr;
         MockTableau tableau;
         nlr.setTableau( &tableau );
-        populateNetworkWithSigmoids( nlr, tableau );
+        populateNetworkWithSigmoidsAndRound( nlr, tableau );
 
         tableau.setLowerBound( 0, -1 );
         tableau.setUpperBound( 0, 1 );
@@ -893,16 +895,16 @@ public:
         TS_ASSERT_THROWS_NOTHING( nlr.getConstraintTightenings( bounds ) );
 
         // Layer 1
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getLb( 0 ), -2, 0.00001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getUb( 0 ), 2, 0.00001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getLb( 1 ), -2, 0.00001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 1 )->getUb( 1 ), 2, 0.00001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getLb( 0 ), -2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getUb( 0 ), 2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getLb( 1 ), -2 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(1)->getUb( 1 ), 2 ) );
 
         // Layer 2
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getLb( 0 ), 0.1192, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getUb( 0 ), 0.8807, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getLb( 1 ), 0.1192, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 2 )->getUb( 1 ), 0.8807, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getLb( 0 ), 0.1192, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getUb( 0 ), 0.8807, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getLb( 1 ), 0.1192, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(2)->getUb( 1 ), 0.8807, 0.0001 ) );
 
         // Layer 3
         /*
@@ -944,10 +946,16 @@ public:
             -0.5516069851487517
             0.5516069851487517
         */
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 3 )->getLb( 0 ), 0.4483, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 3 )->getUb( 0 ), 1.5516, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 3 )->getLb( 1 ), -0.5516, 0.0001 ) );
-        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer( 3 )->getUb( 1 ), 0.5516, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 0 ), 0.4483, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 0 ), 1.5516, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getLb( 1 ), -0.5516, 0.0001 ) );
+        TS_ASSERT( FloatUtils::areEqual( nlr.getLayer(3)->getUb( 1 ), 0.5516, 0.0001 ) );
+
+        // Layer 4
+        TS_ASSERT_EQUALS( nlr.getLayer(4)->getLb( 0 ), 0 );
+        TS_ASSERT_EQUALS( nlr.getLayer(4)->getUb( 0 ), 2 );
+        TS_ASSERT_EQUALS( nlr.getLayer(4)->getLb( 1 ), -1 );
+        TS_ASSERT_EQUALS( nlr.getLayer(4)->getUb( 1 ), 1 );
     }
 
     void populateNetworkSoftmax( NLR::NetworkLevelReasoner &nlr, MockTableau &tableau )

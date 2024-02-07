@@ -52,6 +52,28 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
+    void test_add_addend()
+    {
+        Equation eq;
+        eq.addAddend(1.5, 1);
+        eq.addAddend(1.5, 1);
+        eq.addAddend(-1, 2);
+
+        TS_ASSERT_EQUALS(eq.getCoefficient(1), 3);
+        TS_ASSERT_EQUALS(eq.getCoefficient(2), -1);
+    }
+
+    void test_get_new_variable()
+    {
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 1 );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 1u );
+        TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 1u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 2u );
+        TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 2u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
+    }
+
     void test_lower_bounds()
     {
         InputQuery inputQuery;

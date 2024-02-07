@@ -1422,6 +1422,11 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
                 plConstraint->addAuxiliaryEquationsAfterPreprocessing
                     ( *_preprocessedQuery );
 
+        if ( GlobalConfiguration::NL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
+            for ( auto &nlConstraint : _preprocessedQuery->getNonlinearConstraints() )
+                nlConstraint->addAuxiliaryEquationsAfterPreprocessing
+                    ( *_preprocessedQuery );
+
         if ( _produceUNSATProofs )
         {
             for ( auto &plConstraint : _preprocessedQuery->getPiecewiseLinearConstraints() )
