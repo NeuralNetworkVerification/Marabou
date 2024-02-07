@@ -1119,7 +1119,7 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
 
     for ( const auto &plc : nlConstraints )
     {
-        // Only consider ReLUs
+        // Only consider Rounds
         if ( plc->getType() != ROUND )
             continue;
 

@@ -29,7 +29,6 @@ def test_solve_round_and_clip_unsat():
     x3 = Clip(x2, 0.5, 1.5) (so x4 is between 0.5 and 1.5)
     2.5 <= x4
     x4 = Round(x3) (so x5 is between 0 and 2)
-
     """
 
     ipq = MarabouCore.InputQuery()

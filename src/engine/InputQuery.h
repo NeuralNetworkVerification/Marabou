@@ -55,7 +55,7 @@ public:
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
 
-    // Add a clip constraint as two ReLU constraints
+    // Encode a clip constraint using two ReLU constraints
     void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling );
 
     void addNonlinearConstraint( NonlinearConstraint *constraint );

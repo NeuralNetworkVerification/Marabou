@@ -760,6 +760,15 @@ void MILPEncoder::encodeRoundConstraint( GurobiWrapper &gurobi,
                                          RoundConstraint *round,
                                          bool relax )
 {
+    /*
+      We have already introduced during preprocessing
+      f - b <= 0.5
+      b - f <= 0.5
+
+      Therefore, nothing needs to be done if we are encoding the relaxation.
+      Otherwise, we introduce a new integer variable i and assert that f is
+      equal to i.
+    */
     if ( !relax )
     {
         unsigned targetVariable = round->getF();

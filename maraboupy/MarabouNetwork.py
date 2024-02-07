@@ -50,7 +50,6 @@ class MarabouNetwork:
         self.numVars = 0
         self.equList = []
         self.additionalEquList = [] # used to store user defined equations
-        self.clipList = []
         self.reluList = []
         self.leakyReluList = []
         self.sigmoidList = []
@@ -112,15 +111,6 @@ class MarabouNetwork:
             v (float): Value representing upper bound
         """
         self.upperBounds[x]=v
-
-    def addClip(self, v1, v2, lb, ub):
-        """Function to add a new Clip constraint
-
-        Args:
-            v1 (int): Variable representing input of Clip
-            v2 (int): Variable representing output of Clip
-        """
-        self.clipList += [(v1, v2, lb, ub)]
 
     def addRelu(self, v1, v2):
         """Function to add a new Relu constraint
@@ -293,10 +283,6 @@ class MarabouNetwork:
                 eq.addAddend(c, v)
             eq.setScalar(e.scalar)
             ipq.addEquation(eq)
-
-        for r in self.clipList:
-            assert r[1] < self.numVars and r[0] < self.numVars
-            MarabouCore.addClipConstraint(ipq, r[0], r[1], r[2], r[3])
 
         for r in self.reluList:
             assert r[1] < self.numVars and r[0] < self.numVars

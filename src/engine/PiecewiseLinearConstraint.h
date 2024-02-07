@@ -79,9 +79,6 @@ enum PhaseStatus : unsigned {
     ABS_PHASE_NEGATIVE = 4,
     SIGN_PHASE_POSITIVE = 5,
     SIGN_PHASE_NEGATIVE = 6,
-    CLIP_PHASE_FLOOR = 7,
-    CLIP_PHASE_CEILING = 8,
-    CLIP_PHASE_MIDDLE = 9,
 
     // SPECIAL VALUE FOR ELIMINATED MAX CASES
     MAX_PHASE_ELIMINATED = 999999,
@@ -465,7 +462,7 @@ public:
     /*
       Add a variable to the list of aux vars designated in the Tableau, add connect it to the constraintAuxVariable
     */
-    virtual void addTableauAuxVar( unsigned /*tableauAuxVar*/, unsigned  /*constraintAuxVar*/ ) {};
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned  constraintAuxVar ) = 0;
 
     /*
       Get the native auxiliary vars

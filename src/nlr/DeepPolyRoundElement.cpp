@@ -50,7 +50,7 @@ void DeepPolyRoundElement::execute( const Map<unsigned, DeepPolyElement *> &deep
         double sourceLbRound = FloatUtils::round( sourceLb );
         if ( FloatUtils::areEqual( FloatUtils::round( sourceUb ), FloatUtils::round( sourceLb ) ) )
         {
-            // Phase ceil
+            // Case when the round constraint is fixed
             _symbolicUb[i] = 0;
             _symbolicUpperBias[i] = sourceUbRound;
             _ub[i] = sourceUbRound;
