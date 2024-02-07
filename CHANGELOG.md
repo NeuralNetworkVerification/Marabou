@@ -8,6 +8,7 @@
 * Removed dependency on torch and drop support for Python3.7
 * Bumped ONNX version to >= 1.15.0
 * Added support for Leaky ReLU
+* Added support for Pythonic API
 
 ## Version 1.0.0
 * Initial versioned release
