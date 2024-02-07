@@ -93,6 +93,11 @@ double DeepPolyElement::getUpperBound( unsigned index ) const
     return _ub[index];
 }
 
+  double DeepPolyElement::getParameter( String name, unsigned index ) const
+  {
+    return _layer->getParameter(name, index);
+  }
+
 double DeepPolyElement::getLowerBoundFromLayer( unsigned index ) const
 {
     ASSERT( index < getSize() );

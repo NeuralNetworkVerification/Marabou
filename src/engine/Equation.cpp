@@ -43,6 +43,15 @@ Equation::Equation( EquationType type )
 
 void Equation::addAddend( double coefficient, unsigned variable )
 {
+    for ( auto &addend : _addends )
+    {
+        if ( addend._variable == variable )
+        {
+            addend._coefficient += coefficient;
+            return;
+        }
+    }
+    // If we get here, than the variable was not participating in the equation before.
     _addends.append( Addend( coefficient, variable ) );
 }
 

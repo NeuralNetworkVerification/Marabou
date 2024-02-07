@@ -24,6 +24,7 @@
 #include "MaxConstraint.h"
 #include "RoundConstraint.h"
 #include "Options.h"
+#include "RoundConstraint.h"
 #include "SoftmaxConstraint.h"
 #include "SymbolicBoundTighteningType.h"
 

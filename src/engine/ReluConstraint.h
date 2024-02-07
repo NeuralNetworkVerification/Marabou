@@ -234,7 +234,6 @@ public:
     */
     void updateDirection() override;
 
-
     PhaseStatus getDirection() const;
 
     void updateScoreBasedOnPolarity() override;

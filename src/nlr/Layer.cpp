@@ -30,8 +30,7 @@ void Layer::setLayerOwner( LayerOwner *layerOwner )
 {
     _layerOwner = layerOwner;
 }
-
-Layer::Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
+  Layer::Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
     : _layerIndex( index )
     , _type( type )
     , _size( size )
@@ -50,7 +49,7 @@ Layer::Layer( unsigned index, Type type, unsigned size, LayerOwner *layerOwner )
     , _symbolicLbOfUb( NULL )
     , _symbolicUbOfUb( NULL )
 {
-    allocateMemory();
+  allocateMemory();
 }
 
 void Layer::allocateMemory()
@@ -97,6 +96,14 @@ void Layer::allocateMemory()
         std::fill_n( _symbolicLbOfUb, _size, 0 );
         std::fill_n( _symbolicUbOfUb, _size, 0 );
     }
+
+    List<String> parameters;
+    if ( _type == CLIP )
+      parameters =  {"floor", "ceiling"};
+
+    for (const auto &parameter : parameters )
+      _parameterToValue[parameter] = new double[_size];
+
 }
 
 void Layer::setAssignment( const double *values )
@@ -180,7 +187,6 @@ void Layer::computeAssignment()
             _assignment[i] = FloatUtils::max( inputValue, _alpha * inputValue );
         }
     }
-
     else if ( _type == ABSOLUTE_VALUE )
     {
         for ( unsigned i = 0; i < _size; ++i )
@@ -607,6 +613,16 @@ void Layer::setUb( unsigned neuron, double bound )
 {
     ASSERT( !_eliminatedNeurons.exists( neuron ) );
     _ub[neuron] = bound;
+}
+
+void Layer::setParameter( String name, unsigned neuron, double value )
+{
+  _parameterToValue[name][neuron] = value;
+}
+
+double Layer::getParameter( String name, unsigned neuron ) const
+{
+  return _parameterToValue[name][neuron];
 }
 
 void Layer::computeIntervalArithmeticBounds()
@@ -1724,6 +1740,10 @@ void Layer::freeMemoryIfNeeded()
         delete[] weights.second;
     _layerToNegativeWeights.clear();
 
+    for ( const auto &values : _parameterToValue )
+      delete[] values.second;
+    _parameterToValue.clear();
+
     if ( _bias )
     {
         delete[] _bias;
@@ -1832,6 +1852,11 @@ String Layer::typeToString( Type type )
     case SIGN:
         return "SIGN";
         break;
+    case CLIP:
+      return "CLIP";
+    case ROUND:
+      return "ROUND";
+      break;
 
     case ROUND:
       return "ROUND";
@@ -1906,6 +1931,7 @@ void Layer::dump() const
     case MAX:
     case SIGN:
     case SIGMOID:
+    case CLIP:
     case BILINEAR:
     case SOFTMAX:
         for ( unsigned i = 0; i < _size; ++i )
@@ -1925,6 +1951,9 @@ void Layer::dump() const
                 else
                     printf( "Neuron_%u (eliminated)", source._neuron );
             }
+            printf( "\t Parameters: ");
+            for ( const auto &name : _parameterToValue )
+              printf( "%s -> %.3f  ", name.first.ascii(), name.second[i] );
 
             printf( "\n" );
         }

@@ -40,6 +40,7 @@ public:
         WEIGHTED_SUM,
 
         // Activation functions
+        CLIP,
         RELU,
         ABSOLUTE_VALUE,
         MAX,
@@ -126,6 +127,9 @@ public:
     double getLb( unsigned neuron ) const;
     double getUb( unsigned neuron ) const;
 
+  void setParameter( String name, unsigned neuron, double value );
+  double getParameter( String name, unsigned neuron ) const;
+
     double *getLbs() const;
     double *getUbs() const;
 
@@ -159,6 +163,8 @@ public:
     static String typeToString( Type type );
     bool operator==( const Layer &layer ) const;
     bool compareWeights( const Map<unsigned, double *> &map, const Map<unsigned, double *> &mapOfOtherLayer ) const;
+
+  Map<String, double *> _parameterToValue;
 
 private:
     unsigned _layerIndex;
