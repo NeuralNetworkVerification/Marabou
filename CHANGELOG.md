@@ -9,7 +9,6 @@
 * Bumped ONNX version to >= 1.15.0
 * Added support for Leaky ReLU
 * Added support for Pythonic API
-* Remove redundant addends in Equation objects
 
 ## Version 1.0.0
 * Initial versioned release
