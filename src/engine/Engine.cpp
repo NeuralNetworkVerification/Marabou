@@ -1396,7 +1396,10 @@ void Engine::initializeNetworkLevelReasoning()
     {
         _networkLevelReasoner->setTableau( _tableau );
         if ( Options::get()->getBool( Options::DUMP_TOPOLOGY ) )
+        {
             _networkLevelReasoner->dumpTopology( false );
+            std::cout << std::endl;
+        }
     }
 }
 
