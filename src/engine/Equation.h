@@ -89,6 +89,9 @@ public:
     /*
       Transform the equation so that any two addends have different variables
       and no addends have zero coefficients
+
+      CAUTION: the method is rather inefficient so try to avoid invoking this
+      if possible.
     */
     void removeRedundantAddends();
 
