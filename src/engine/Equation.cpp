@@ -224,10 +224,34 @@ void Equation::setCoefficient( unsigned variable, double newCoefficient)
     addAddend(newCoefficient, variable);
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+void Equation::removeRedundantAddends()
+{
+    Map<unsigned, double> addends;
+    for ( auto &addend : _addends )
+    {
+        if ( addends.exists( addend._variable ) )
+            addends[addend._variable] += addend._coefficient;
+        else
+            addends[addend._variable] = addend._coefficient;
+    }
+
+    _addends.clear();
+    for ( const auto &pair : addends )
+    {
+        if ( !FloatUtils::isZero( pair.second ) )
+            addAddend( pair.second, pair.first );
+    }
+}
+
+bool Equation::containsRedundantAddends() const
+{
+    Set<unsigned> addends;
+    for ( auto &addend : _addends )
+    {
+        if ( addends.exists( addend._variable ) ||
+             FloatUtils::isZero( addend._coefficient ) )
+            return true;
+        addends.insert( addend._variable );
+    }
+    return false;
+}
