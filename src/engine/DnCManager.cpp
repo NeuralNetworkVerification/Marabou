@@ -81,7 +81,7 @@ DnCManager::DnCManager( InputQuery *inputQuery )
         DNC_MANAGER_LOG( Stringf( "Deciding splitting strategy automatically...\n" ).ascii() );
         if ( inputQuery->getNumInputVariables() <
              GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD ||
-             inputQuery->getNonlinearConstraints().empty() )
+             inputQuery->getPiecewiseLinearConstraints().empty() )
         {
             DNC_MANAGER_LOG( Stringf( "\tUsing Largest Interval Heuristics\n" ).ascii() );
             _sncSplittingStrategy = SnCDivideStrategy::LargestInterval;
