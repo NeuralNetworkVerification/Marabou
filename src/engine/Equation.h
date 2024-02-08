@@ -89,8 +89,6 @@ public:
     /*
       Transform the equation so that any two addends have different variables
       and no addends have zero coefficients
-
-      CAUTION: Should only be used during preprocessing.
     */
     void removeRedundantAddends();
 
