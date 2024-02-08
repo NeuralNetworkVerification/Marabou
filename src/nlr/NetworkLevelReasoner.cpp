@@ -125,7 +125,7 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
     ASSERT( inputLayerSize > 0 );
 
     double *input = new double[inputLayerSize];
-    
+
     // First obtain the input assignment from the _tableau
     for ( unsigned index = 0; index < inputLayerSize; ++index )
     {
@@ -141,7 +141,7 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
     }
 
     _layerIndexToLayer[0]->setAssignment( input );
-    
+
     // Evaluate layers iteratively and store the results in "assignment"
     for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
     {

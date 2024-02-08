@@ -868,6 +868,8 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints =
         getPiecewiseLinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
         // Only consider ReLUs
@@ -878,7 +880,9 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
         // Has the b variable been handled?
         unsigned b = relu->getB();
-        if ( !handledVariableToLayer.exists( b ) )
+        if ( !handledVariableToLayer.exists( b ) ||
+             ( ensureSameSourceLayer && !newNeurons.empty() &&
+               handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -887,6 +891,8 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
             continue;
 
         // B has been handled, f hasn't. Add f
+        if ( ensureSameSourceLayer && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
     }
@@ -957,6 +963,8 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints =
       getPiecewiseLinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     double alpha = 0;
     for ( const auto &plc : plConstraints )
     {
@@ -968,7 +976,9 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
 
         // Has the b variable been handled?
         unsigned b = leakyRelu->getB();
-        if ( !handledVariableToLayer.exists( b ) )
+        if ( !handledVariableToLayer.exists( b ) ||
+             ( ensureSameSourceLayer && !newNeurons.empty() &&
+               handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -976,6 +986,8 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
         if ( handledVariableToLayer.exists( f ) )
             continue;
         // B has been handled, f hasn't. Add f
+        if ( ensureSameSourceLayer && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
         double alphaTemp = leakyRelu->getSlope();
@@ -1027,8 +1039,8 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
 }
 
 bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
-                                     Map<unsigned, unsigned> &handledVariableToLayer,
-                                     unsigned newLayerIndex )
+                                        Map<unsigned, unsigned> &handledVariableToLayer,
+                                        unsigned newLayerIndex )
 {
     INPUT_QUERY_LOG( "Attempting to construct SigmoidLayer..." );
     struct NeuronInformation
@@ -1053,6 +1065,8 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
     const List<NonlinearConstraint *> &nlConstraints =
         getNonlinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     for ( const auto &tsc : nlConstraints )
     {
         // Only consider Sigmoids
@@ -1063,7 +1077,9 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
 
         // Has the b variable been handled?
         unsigned b = sigmoid->getB();
-        if ( !handledVariableToLayer.exists( b ) )
+        if ( !handledVariableToLayer.exists( b ) ||
+             ( ensureSameSourceLayer && !newNeurons.empty() &&
+               handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -1072,8 +1088,9 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
             continue;
 
         // B has been handled, f hasn't. Add f
+        if ( ensureSameSourceLayer && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
-        // nlr->addConstraintInTopologicalOrder( tsc );
     }
 
     // No neurons found for the new layer
@@ -1142,6 +1159,8 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints =
         getPiecewiseLinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
         // Only consider ABSOLUTE_VALUE
@@ -1152,7 +1171,9 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
         // Has the b variable been handled?
         unsigned b = abs->getB();
-        if ( !handledVariableToLayer.exists( b ) )
+        if ( !handledVariableToLayer.exists( b ) ||
+             ( ensureSameSourceLayer && !newNeurons.empty() &&
+               handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -1161,6 +1182,8 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
             continue;
 
         // B has been handled, f hasn't. Add f
+        if ( ensureSameSourceLayer && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
     }
@@ -1231,6 +1254,8 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints =
         getPiecewiseLinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
         // Only consider Signs
@@ -1241,7 +1266,9 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
 
         // Has the b variable been handled?
         unsigned b = sign->getB();
-        if ( !handledVariableToLayer.exists( b ) )
+        if ( !handledVariableToLayer.exists( b ) ||
+             ( ensureSameSourceLayer && !newNeurons.empty() &&
+               handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -1250,6 +1277,8 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
             continue;
 
         // B has been handled, f hasn't. Add f
+        if ( ensureSameSourceLayer && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
     }
@@ -1320,6 +1349,8 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints =
         getPiecewiseLinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
         // Only consider Signs
@@ -1329,17 +1360,25 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
         const MaxConstraint *max = (const MaxConstraint *)plc;
 
         // Have all elements been handled?
-        bool missingElement = false;
-        for ( const auto &element : max->getElements() )
+        // Have all input variables been handled?
+        bool missingInput = false;
+        bool sourceLayerDiffers = false;
+        for ( const auto &input : max->getElements() )
         {
-            if ( !handledVariableToLayer.exists( element ) )
+            if ( !handledVariableToLayer.exists( input ) )
             {
-                missingElement = true;
+                missingInput = true;
+                break;
+            }
+            else if ( ensureSameSourceLayer && newNeurons.size() &&
+                      handledVariableToLayer[input] != currentSourceLayer )
+            {
+                sourceLayerDiffers = true;
                 break;
             }
         }
 
-        if ( missingElement )
+        if ( missingInput || sourceLayerDiffers )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -1348,10 +1387,13 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
             continue;
 
         // Elements have been handled, f hasn't. Add f
+        if ( ensureSameSourceLayer && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[*max->getElements().begin()];
         newNeurons.append( NeuronInformation( f,
                                               newNeurons.size(),
                                               max->getElements() ) );
         nlr->addConstraintInTopologicalOrder( plc );
+
     }
 
     // No neurons found for the new layer
@@ -1499,8 +1541,8 @@ bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
 }
 
 bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
-                                    Map<unsigned, unsigned> &handledVariableToLayer,
-                                    unsigned newLayerIndex )
+                                        Map<unsigned, unsigned> &handledVariableToLayer,
+                                        unsigned newLayerIndex )
 {
     INPUT_QUERY_LOG( "Attempting to construct SoftmaxLayer..." );
     struct NeuronInformation
@@ -1522,12 +1564,13 @@ bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
     };
 
     List<NeuronInformation> newNeurons;
-    unsigned currentSourceLayer = 0;
 
     // Look for Softmaxes where all the element variables have already been handled
     const List<NonlinearConstraint *> &nlConstraints =
         getNonlinearConstraints();
 
+    bool ensureSameSourceLayer = GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER;
+    unsigned currentSourceLayer = 0;
     for ( const auto &ts : nlConstraints )
     {
         // Only consider Softmax
@@ -1546,7 +1589,9 @@ bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
                 missingInput = true;
                 break;
             }
-            else if ( newNeurons.size() && handledVariableToLayer[input] != currentSourceLayer )
+            else if ( ensureSameSourceLayer &&
+                      newNeurons.size() &&
+                      handledVariableToLayer[input] != currentSourceLayer )
             {
                 sourceLayerDiffers = true;
                 break;
