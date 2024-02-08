@@ -153,6 +153,8 @@ private:
 
     Map<unsigned, double> _solution;
 
+    bool _ensureSameSourceLayerInNLR;
+
     /*
       Free any stored pl constraints.
     */

@@ -62,7 +62,7 @@ const unsigned GlobalConfiguration::BOUND_TIGHTING_ON_CONSTRAINT_MATRIX_FREQUENC
 const unsigned GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS = 20;
 const double GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD = 0.0000000001;
 
-const bool GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER = true;
+const bool GlobalConfiguration::NLR_ENSURE_SAME_SOURCE_LAYER = false;
 
 const unsigned GlobalConfiguration::SIMULATION_RANDOM_SEED = 1;
 
