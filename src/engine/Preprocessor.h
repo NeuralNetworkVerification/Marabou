@@ -82,17 +82,17 @@ private:
     }
 
     /*
+      Transform each equation so that any two addends have different variables
+      and no addends have zero coefficients
+    */
+    void removeRedundantAddendsInAllEquations();
+
+    /*
       Transform the piecewise linear constraints if needed. For instance, this
       will make sure all disjuncts in all disjunctions contain only bounds and
       no (in)equalities between variables.
     */
     void transformConstraintsIfNeeded();
-
-    /**
-     * Try to find missing lower and upper bounds of input variables from
-     * piecewise linear constraints.
-     */
-    void getMissingInputBoundsFromConstraints();
 
     /*
       Transform all equations of type GE or LE to type EQ.
