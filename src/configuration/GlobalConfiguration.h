@@ -152,10 +152,6 @@ public:
     // If the cost function error exceeds this threshold, it is recomputed
     static const double COST_FUNCTION_ERROR_THRESHOLD;
 
-    // In the network level reasoner, for all layers other than the weighted-sum layer, ensure that
-    // neurons in the same layer have the same source layer(s)
-    static const bool NLR_ENSURE_SAME_SOURCE_LAYER;
-
     // Random seed for generating simulation values.
     static const unsigned SIMULATION_RANDOM_SEED;
 

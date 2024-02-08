@@ -1510,7 +1510,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             constraint->registerTableau( _tableau );
 
         if ( _networkLevelReasoner && Options::get()->getBool( Options::DUMP_BOUNDS ) )
-                _networkLevelReasoner->dumpBounds();
+            _networkLevelReasoner->dumpBounds();
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
         {
