@@ -49,6 +49,9 @@ public:
         // Dump the bounds of each variable after preprocessing
         DUMP_BOUNDS,
 
+        // Dump the topology of the network
+        DUMP_TOPOLOGY,
+
         // Help flag
         HELP,
 

@@ -136,7 +136,7 @@ public:
     /*
       For debugging purposes: dump the network topology
     */
-    void dumpTopology() const;
+    void dumpTopology( bool dumpLayerDetails=true ) const;
 
     /*
       Duplicate the reasoner

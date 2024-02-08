@@ -323,8 +323,7 @@ void NetworkLevelReasoner::eliminateVariable( unsigned variable, double value )
         layer.second->eliminateVariable( variable, value );
 }
 
-
-void NetworkLevelReasoner::dumpTopology() const
+void NetworkLevelReasoner::dumpTopology( bool dumpLayerDetails ) const
 {
     printf( "Number of layers: %u. Sizes:\n", _layerIndexToLayer.size() );
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
@@ -335,8 +334,9 @@ void NetworkLevelReasoner::dumpTopology() const
             printf(" %u", sourceLayer.first );
         printf("\n");
     }
-    for ( const auto &layer : _layerIndexToLayer )
-        layer.second->dump();
+    if ( dumpLayerDetails )
+        for ( const auto &layer : _layerIndexToLayer )
+            layer.second->dump();
 }
 
 unsigned NetworkLevelReasoner::getNumberOfLayers() const
