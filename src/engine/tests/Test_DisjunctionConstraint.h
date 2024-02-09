@@ -622,45 +622,116 @@ public:
         TS_ASSERT_EQUALS( *split, *cs3);
     }
 
-    void test_min_lower_bound()
+    void test_get_entailed_tightenings()
     {
-        // Disjuncts are:
-        // -1 <= x0 <= 1, x1 = 2
-        // 1 <= x0 <= 5, x1 = x0
-        // 5 <= x0 , x1 = 2x2 + 5
+        {
+            // Disjuncts are:
+            // x0 <= 1, x1 = 2
+            // 1 <= x0 <= 5, x1 = x0
+            // 5 <= x0 , x1 = 2x2 + 5
 
-        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+            List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
 
-        // Add lower bound for x0 in first disjunct (otherwise MarabouError will be thrown)
-        caseSplits.front().storeBoundTightening( Tightening( 0, -1, Tightening::LB ) );
+            DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
 
-        DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
+            List<Tightening> bounds;
+            TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );
 
-        double minX0LowerBound = 0;
-        TS_ASSERT_THROWS_NOTHING( minX0LowerBound = disj.getMinLowerBound( 0 ) )
-        TS_ASSERT_EQUALS( minX0LowerBound, -1 )
+            TS_ASSERT( bounds.empty() );
+        }
+        {
+            // Disjuncts are:
+            // -1 <= x0 <= 1, x1 = 2
+            // 1 <= x0 <= 5, x1 = x0
+            // 5 <= x0 , x1 = 2x2 + 5
 
-        TS_ASSERT_THROWS( disj.getMinLowerBound( 1 ), MarabouError )
+            List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+
+            // Add lower bound for x0 in first disjunct
+            caseSplits.front().storeBoundTightening( Tightening( 0, -1, Tightening::LB ) );
+
+            DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
+
+            List<Tightening> expectedBounds = {
+                Tightening( 0, -1, Tightening::LB )
+            };
+
+            List<Tightening> bounds;
+            TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );
+
+            TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+            for ( const auto &bound : bounds )
+            {
+                TS_ASSERT( existsBounds( expectedBounds, bound ) );
+            }
+        }
+        {
+            // Disjuncts are:
+            // x0 <= 1, x1 = 2
+            // 1 <= x0 <= 5, x1 = x0
+            // 5 <= x0 <= 3 , x1 = 2x2 + 5
+
+            List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+
+            // Add upper bound for x0 in last disjunct (otherwise MarabouError will be thrown)
+            caseSplits.back().storeBoundTightening( Tightening( 0, 3, Tightening::UB ) );
+
+            DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
+
+            List<Tightening> expectedBounds = {
+                Tightening( 0, 5, Tightening::UB )
+            };
+
+            List<Tightening> bounds;
+            TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );
+
+            TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+            for ( const auto &bound : bounds )
+            {
+                TS_ASSERT( existsBounds( expectedBounds, bound ) );
+            }
+        }
+        {
+            // Disjuncts are:
+            // -1 <= x0 <= 1, x1 = 2
+            // 1 <= x0 <= 5, x1 = x0
+            // 5 <= x0 <= 3 , x1 = 2x2 + 5
+
+            List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
+
+            // Add lower bound for x0 in first disjunct
+            caseSplits.front().storeBoundTightening( Tightening( 0, -1, Tightening::LB ) );
+            // Add upper bound for x0 in last disjunct
+            caseSplits.back().storeBoundTightening( Tightening( 0, 3, Tightening::UB ) );
+
+            DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
+
+            List<Tightening> expectedBounds = {
+                Tightening( 0, -1, Tightening::LB ),
+                Tightening( 0, 5, Tightening::UB )
+            };
+
+            List<Tightening> bounds;
+            TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );
+
+            TS_ASSERT_EQUALS( expectedBounds.size(), bounds.size() );
+            for ( const auto &bound : bounds )
+            {
+                TS_ASSERT( existsBounds( expectedBounds, bound ) );
+            }
+        }
     }
 
-    void test_max_upper_bound()
+    bool existsBounds( const List<Tightening> &bounds, Tightening bound )
     {
-        // Disjuncts are:
-        // x0 <= 1, x1 = 2
-        // 1 <= x0 <= 5, x1 = x0
-        // 5 <= x0 <= 3 , x1 = 2x2 + 5
-
-        List<PiecewiseLinearCaseSplit> caseSplits = { *cs1, *cs2, *cs3 };
-
-        // Add upper bound for x0 in last disjunct (otherwise MarabouError will be thrown)
-        caseSplits.back().storeBoundTightening( Tightening( 0, 3, Tightening::UB ) );
-
-        DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
-
-        double maxX0UpperBound = 0;
-        TS_ASSERT_THROWS_NOTHING( maxX0UpperBound = disj.getMaxUpperBound( 0 ) )
-        TS_ASSERT_EQUALS( maxX0UpperBound, 5 )
-
-        TS_ASSERT_THROWS( disj.getMaxUpperBound( 1 ), MarabouError )
+        for ( const auto &b : bounds )
+        {
+            if ( b._type == bound._type && b._variable == bound._variable )
+            {
+                if ( FloatUtils::areEqual( b._value, bound._value ) )
+                    return true;
+            }
+        }
+        return false;
     }
 };
