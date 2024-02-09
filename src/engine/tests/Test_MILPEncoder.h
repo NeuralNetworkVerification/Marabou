@@ -1758,6 +1758,7 @@ public:
 
         Map<String, double> solution;
         double costValue;
+	// NOTE: the encoding for Round is sound but incomplete.
         TS_ASSERT_THROWS_NOTHING( gurobi.extractSolution( solution, costValue ) );
         TS_ASSERT( FloatUtils::areEqual( solution["x1"], 1 ) ||
                    FloatUtils::areEqual( solution["x1"], 2 ) ||
