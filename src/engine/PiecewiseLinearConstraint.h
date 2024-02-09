@@ -256,12 +256,6 @@ public:
                                                           &/* inputQuery */ ) {}
 
     /*
-      Get the minimal lower bound and maximal upper bound for the given variable.
-     */
-    virtual double getMinLowerBound( unsigned int var ) const;
-    virtual double getMaxUpperBound( unsigned int var ) const;
-
-    /*
       Whether the constraint can contribute the SoI cost function.
     */
     virtual bool supportSoI() const { return false; };

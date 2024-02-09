@@ -202,31 +202,3 @@ void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
 }
-
-double PiecewiseLinearConstraint::getMinLowerBound( unsigned int var ) const
-{
-    if ( existsLowerBound( var ) )
-    {
-        return getLowerBound( var );
-    }
-
-    return FloatUtils::infinity();
-}
-
-double PiecewiseLinearConstraint::getMaxUpperBound( unsigned int var ) const
-{
-    if ( existsUpperBound( var ) )
-    {
-        return getUpperBound( var );
-    }
-
-    return FloatUtils::negativeInfinity();
-}
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
