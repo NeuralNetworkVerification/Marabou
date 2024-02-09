@@ -511,7 +511,15 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         """
         nodeName = node.output[0]
         inputName = node.input[0]
-        axes = self.constantMap[node.input[1]]
+        axes = None
+        if len(node.input) > 1:
+            axes = self.constantMap[node.input[1]]
+        else:
+            for attr in node.attribute:
+                if attr.name == "axes":
+                    axes = get_attribute_value(attr)
+        if axes is None:
+            raise RuntimeError("Axes attibute unspecified")
 
         if inputName in self.varMap:
             output_data = Unsqueeze_1.eval(self.varMap[inputName], axes=axes)
