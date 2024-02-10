@@ -189,14 +189,6 @@ public:
     */
     bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
 
-    /*
-      Get the minimal lower bound and maximal upper bound for the given variable,
-      across all disjuncts. If some disjunct does not contain a bound, an exception
-      will be thrown.
-     */
-    double getMinLowerBound( unsigned int var ) const override;
-    double getMaxUpperBound( unsigned int var ) const override;
-
 private:
     /*
       The disjuncts that form this PL constraint
@@ -246,6 +238,13 @@ private:
     }
 
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
+
+    /*
+      Get the minimal lower bound and maximal upper bound for the given variable,
+      across all disjuncts. If some disjunct does not contain a bound, return infinity.
+    */
+    double getMinLowerBound( unsigned int var ) const;
+    double getMaxUpperBound( unsigned int var ) const;
 };
 
 #endif // __DisjunctionConstraint_h__
