@@ -1134,6 +1134,7 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
     const List<NonlinearConstraint *> &nlConstraints =
         getNonlinearConstraints();
 
+    unsigned currentSourceLayer = 0;
     for ( const auto &plc : nlConstraints )
     {
         // Only consider Rounds
@@ -1144,7 +1145,9 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
 
         // Has the b variable been handled?
         unsigned b = round->getB();
-        if ( !handledVariableToLayer.exists( b ) )
+        if ( !handledVariableToLayer.exists( b ) ||
+             ( _ensureSameSourceLayerInNLR && !newNeurons.empty() &&
+               handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
         // If the f variable has also been handled, ignore this constraint
@@ -1153,6 +1156,8 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
             continue;
 
         // B has been handled, f hasn't. Add f
+        if ( _ensureSameSourceLayerInNLR && newNeurons.empty() )
+            currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
     }
 
