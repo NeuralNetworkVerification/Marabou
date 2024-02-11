@@ -125,7 +125,7 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
     ASSERT( inputLayerSize > 0 );
 
     double *input = new double[inputLayerSize];
-    
+
     // First obtain the input assignment from the _tableau
     for ( unsigned index = 0; index < inputLayerSize; ++index )
     {
@@ -141,7 +141,7 @@ void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
     }
 
     _layerIndexToLayer[0]->setAssignment( input );
-    
+
     // Evaluate layers iteratively and store the results in "assignment"
     for ( unsigned i = 1; i < _layerIndexToLayer.size(); ++i )
     {
@@ -323,8 +323,7 @@ void NetworkLevelReasoner::eliminateVariable( unsigned variable, double value )
         layer.second->eliminateVariable( variable, value );
 }
 
-
-void NetworkLevelReasoner::dumpTopology() const
+void NetworkLevelReasoner::dumpTopology( bool dumpLayerDetails ) const
 {
     printf( "Number of layers: %u. Sizes:\n", _layerIndexToLayer.size() );
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
@@ -335,8 +334,9 @@ void NetworkLevelReasoner::dumpTopology() const
             printf(" %u", sourceLayer.first );
         printf("\n");
     }
-    for ( const auto &layer : _layerIndexToLayer )
-        layer.second->dump();
+    if ( dumpLayerDetails )
+        for ( const auto &layer : _layerIndexToLayer )
+            layer.second->dump();
 }
 
 unsigned NetworkLevelReasoner::getNumberOfLayers() const

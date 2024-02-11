@@ -88,6 +88,9 @@ void OptionParser::initialize()
         ( "dump-bounds",
           boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_BOUNDS]) )->default_value( (*_boolOptions)[Options::DUMP_BOUNDS] ),
           "Dump the bounds after preprocessing." )
+        ( "dump-topology",
+          boost::program_options::bool_switch( &((*_boolOptions)[Options::DUMP_TOPOLOGY]) )->default_value( (*_boolOptions)[Options::DUMP_TOPOLOGY] ),
+          "Dump the topology after the network level reasoning is initialized." )
         ( "query-dump-file",
           boost::program_options::value<std::string>( &(*_stringOptions)[Options::QUERY_DUMP_FILE] )->default_value( (*_stringOptions)[Options::QUERY_DUMP_FILE] ),
           "Dump the verification query in Marabou's input query format." )
