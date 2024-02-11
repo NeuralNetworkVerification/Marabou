@@ -1837,10 +1837,6 @@ String Layer::typeToString( Type type )
       return "ROUND";
       break;
 
-    case ROUND:
-      return "ROUND";
-      break;
-
     case SOFTMAX:
       return "SOFTMAX";
       break;
