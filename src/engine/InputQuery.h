@@ -40,6 +40,7 @@ public:
     void addEquation( const Equation &equation );
 
     unsigned getNumberOfVariables() const;
+    unsigned getNewVariable();
     double getLowerBound( unsigned variable ) const;
     double getUpperBound( unsigned variable ) const;
     const Map<unsigned, double> &getLowerBounds() const;
@@ -53,7 +54,10 @@ public:
     void addPiecewiseLinearConstraint( PiecewiseLinearConstraint *constraint );
     const List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints() const;
     List<PiecewiseLinearConstraint *> &getPiecewiseLinearConstraints();
-  
+
+    // Encode a clip constraint using two ReLU constraints
+    void addClipConstraint( unsigned b, unsigned f, double floor, double ceiling );
+
     void addNonlinearConstraint( NonlinearConstraint *constraint );
     const List<NonlinearConstraint *> &getNonlinearConstraints() const;
     List<NonlinearConstraint *> &getNonlinearConstraints();
@@ -171,6 +175,9 @@ private:
     bool constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                                    Map<unsigned, unsigned> &handledVariableToLayer,
                                    unsigned newLayerIndex );
+    bool constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
+                              Map<unsigned, unsigned> &handledVariableToLayer,
+                              unsigned newLayerIndex );
     bool constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                              Map<unsigned, unsigned> &handledVariableToLayer,
                              unsigned newLayerIndex );

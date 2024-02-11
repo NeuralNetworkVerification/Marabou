@@ -104,6 +104,9 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
         case NonlinearFunctionType::BILINEAR:
             encodeBilinearConstraint( gurobi, (BilinearConstraint *)nlConstraint, relax );
             break;
+        case NonlinearFunctionType::ROUND:
+            encodeRoundConstraint( gurobi, (RoundConstraint *)nlConstraint, relax );
+            break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_TRANSCENDENTAL_CONSTRAINT,
                                 "GurobiWrapper::encodeInputQuery: "
@@ -750,6 +753,35 @@ void MILPEncoder::encodeBilinearConstraint( GurobiWrapper &gurobi,
         auto f = bilinear->getF();
         gurobi.addBilinearConstraint( Stringf( "x%u", bs[0] ), Stringf( "x%u", bs[1] ), Stringf( "x%u", f ) );
         return;
+    }
+}
+
+void MILPEncoder::encodeRoundConstraint( GurobiWrapper &gurobi,
+                                         RoundConstraint *round,
+                                         bool relax )
+{
+    /*
+      We have already introduced during preprocessing
+      f - b <= 0.5
+      b - f <= 0.5
+
+      Therefore, nothing needs to be done if we are encoding the relaxation.
+      Otherwise, we introduce a new integer variable i and assert that f is
+      equal to i.
+    */
+    if ( !relax )
+    {
+        unsigned targetVariable = round->getF();
+        String varName = Stringf( "i%u", _intVarIndex );
+        gurobi.addVariable( varName,
+                            _tableau.getLowerBound( targetVariable ),
+                            _tableau.getUpperBound( targetVariable ),
+                            GurobiWrapper::INTEGER );
+        List<GurobiWrapper::Term> terms;
+        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
+        terms.append( GurobiWrapper::Term( -1, Stringf( "i%u", _intVarIndex ) ) );
+        gurobi.addEqConstraint( terms, 0 );
+        ++_intVarIndex;
     }
 }
 

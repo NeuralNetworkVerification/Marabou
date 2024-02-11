@@ -159,6 +159,17 @@ void Layer::computeAssignment()
         }
     }
 
+    else if ( _type == ROUND )
+    {
+        for ( unsigned i = 0; i < _size; ++i )
+        {
+            NeuronIndex sourceIndex = *_neuronToActivationSources[i].begin();
+            double inputValue = _layerOwner->getLayer( sourceIndex._layer )->getAssignment( sourceIndex._neuron );
+
+            _assignment[i] = FloatUtils::round( inputValue );
+        }
+    }
+
     else if ( _type == LEAKY_RELU )
     {
         for ( unsigned i = 0; i < _size; ++i )
@@ -484,7 +495,7 @@ double *Layer::getBiases() const
 
 void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, unsigned targetNeuron )
 {
-    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == MAX ||
+    ASSERT( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == MAX || _type == ROUND ||
             _type == SIGN || _type == SIGMOID || _type == SOFTMAX || _type == BILINEAR );
 
     if ( !_neuronToActivationSources.exists( targetNeuron ) )
@@ -493,7 +504,8 @@ void Layer::addActivationSource( unsigned sourceLayer, unsigned sourceNeuron, un
     _neuronToActivationSources[targetNeuron].append( NeuronIndex( sourceLayer, sourceNeuron ) );
 
     DEBUG({
-            if ( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE || _type == SIGN )
+            if ( _type == RELU || _type == LEAKY_RELU || _type == ABSOLUTE_VALUE ||
+                 _type == SIGN || _type == ROUND )
                 ASSERT( _neuronToActivationSources[targetNeuron].size() == 1 );
         });
 }
@@ -1821,6 +1833,10 @@ String Layer::typeToString( Type type )
         return "SIGN";
         break;
 
+    case ROUND:
+      return "ROUND";
+      break;
+
     case SOFTMAX:
       return "SOFTMAX";
       break;
@@ -1884,6 +1900,7 @@ void Layer::dump() const
         break;
 
     case RELU:
+    case ROUND:
     case LEAKY_RELU:
     case ABSOLUTE_VALUE:
     case MAX:
