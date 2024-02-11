@@ -125,8 +125,6 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
     }
     ASSERT( largestInterval >= 0 );
 
-    ASSERT( largestInterval >= 0 );
-
     ASSERT( haveCandidate );
 
     return dimensionToSplit;
