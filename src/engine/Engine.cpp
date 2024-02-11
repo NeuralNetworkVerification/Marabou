@@ -924,9 +924,8 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         performSimulation();
         performMILPSolverBoundedTightening( &(*_preprocessedQuery) );
 
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        if ( _networkLevelReasoner && Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
-
 
         struct timespec end = TimeUtils::sampleMicro();
         _statistics.setLongAttribute( Statistics::CALCULATE_BOUNDS_TIME_MICRO,
@@ -1394,7 +1393,14 @@ void Engine::initializeNetworkLevelReasoning()
     _networkLevelReasoner = _preprocessedQuery->getNetworkLevelReasoner();
 
     if ( _networkLevelReasoner )
+    {
         _networkLevelReasoner->setTableau( _tableau );
+        if ( Options::get()->getBool( Options::DUMP_TOPOLOGY ) )
+        {
+            _networkLevelReasoner->dumpTopology( false );
+            std::cout << std::endl;
+        }
+    }
 }
 
 bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
@@ -1503,7 +1509,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
         for ( const auto &constraint : _nlConstraints )
             constraint->registerTableau( _tableau );
 
-        if ( Options::get()->getBool( Options::DUMP_BOUNDS ) )
+        if ( _networkLevelReasoner && Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
 
         if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )

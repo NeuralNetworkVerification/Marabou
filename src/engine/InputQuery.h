@@ -154,6 +154,13 @@ private:
     Map<unsigned, double> _solution;
 
     /*
+      Attempt to ensure that neurons in the same non-linear NLR layer 
+      have the same source layer by spacing neurons with different 
+      source neurons in separate NLR layers.
+    */
+    bool _ensureSameSourceLayerInNLR;
+
+    /*
       Free any stored pl constraints.
     */
     void freeConstraintsIfNeeded();

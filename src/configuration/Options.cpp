@@ -46,6 +46,7 @@ void Options::initializeDefaultValues()
     _boolOptions[PREPROCESSOR_PL_CONSTRAINTS_ADD_AUX_EQUATIONS] = false;
     _boolOptions[RESTORE_TREE_STATES] = false;
     _boolOptions[DUMP_BOUNDS] = false;
+    _boolOptions[DUMP_TOPOLOGY] = false;
     _boolOptions[SOLVE_WITH_MILP] = false;
     _boolOptions[PERFORM_LP_TIGHTENING_AFTER_SPLIT] = false;
     _boolOptions[PARALLEL_DEEPSOI] = false;
