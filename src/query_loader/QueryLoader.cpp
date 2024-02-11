@@ -27,6 +27,7 @@
 #include "BilinearConstraint.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
+#include "RoundConstraint.h"
 #include "SignConstraint.h"
 #include "SoftmaxConstraint.h"
 
@@ -247,6 +248,10 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         {
             BilinearConstraint *bilinear = new BilinearConstraint( serializeConstraint );
             inputQuery.addNonlinearConstraint(bilinear);
+        }
+        else if ( coType == "round" )
+        {
+            inputQuery.addNonlinearConstraint( new RoundConstraint( serializeConstraint ) );
         }
         else
         {

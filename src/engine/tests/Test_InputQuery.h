@@ -52,6 +52,17 @@ public:
         TS_ASSERT_THROWS_NOTHING( delete mock );
     }
 
+    void test_get_new_variable()
+    {
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 1 );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 1u );
+        TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 1u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 2u );
+        TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 2u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
+    }
+
     void test_lower_bounds()
     {
         InputQuery inputQuery;

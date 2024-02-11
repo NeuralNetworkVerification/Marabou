@@ -106,6 +106,20 @@ public:
         return gt( x, y, epsilon ) ? x : y;
     }
 
+    static double round( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    {
+        // # Implement pytorch round https://pytorch.org/docs/stable/generated/torch.round.html
+        // "Values equidistant from two integers are rounded towards the nearest even value"
+        // i.e., round(2.5) == round(1.5) == 2
+        double f = floor( x );
+        double c = ceil( x );
+        if ( areEqual( x - f, 0.5, epsilon ) &&
+             areEqual( c - x, 0.5, epsilon ) )
+            return ( (int)c % 2 == 0 ) ? c : f;
+        else
+            return gt( x - f, 0.5, epsilon ) ? c : f;
+    }
+
     static double infinity()
     {
         return DBL_MAX;
