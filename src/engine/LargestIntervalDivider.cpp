@@ -123,6 +123,7 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
             largestInterval = interval;
         }
     }
+    ASSERT( largestInterval >= 0 );
 
     ASSERT( largestInterval >= 0 );
 

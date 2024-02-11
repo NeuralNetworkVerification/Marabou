@@ -52,6 +52,13 @@ def test_split_onnx_error():
 
     os.remove(presplit_filename)
 
+def test_concat_network():
+    """
+    Test an onnx file that actually contains two disjoint network
+    """
+    filename =  "certificate_and_controller_mandal.onnx"
+    evaluateFile(filename)
+
 def test_transformer():
     """
     Test another transformer network
