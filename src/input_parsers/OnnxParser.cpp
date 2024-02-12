@@ -875,7 +875,7 @@ void OnnxParser::cast( onnx::NodeProto& node )
     {
         // We shouldn't be casting variables to different types, since Marabou assumes variables
         // have double precision
-        String errorMessage = Stringf( "The node '%s' casts non-constant values which is not supported by Marabou", inputNodeName ) ;
+        String errorMessage = Stringf( "The node '%s' casts non-constant values which is not supported by Marabou", inputNodeName.ascii() ) ;
         throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() ) ;
     }
 
