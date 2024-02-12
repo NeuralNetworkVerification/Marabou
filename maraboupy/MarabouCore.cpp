@@ -463,7 +463,7 @@ std::tuple<std::string, std::map<int, double>, Statistics>
         }
     }
     catch(const MarabouError &e){
-        printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        fprintf( stderr, "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return std::make_tuple
             ("ERROR",
              ret, retStats);
