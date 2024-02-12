@@ -78,6 +78,13 @@ public:
     virtual List<unsigned> getParticipatingVariables() const = 0;
 
     /*
+      Before solving: get additional auxiliary euqations (typically bound-dependent)
+      that this constraint would like to add to the equation pool.
+    */
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                          &/* inputQuery */ ) {};
+
+    /*
       Returns true iff the assignment satisfies the constraint.
     */
     virtual bool satisfied() const = 0;

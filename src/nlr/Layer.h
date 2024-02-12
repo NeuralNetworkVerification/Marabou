@@ -46,6 +46,7 @@ public:
         SIGN,
         LEAKY_RELU,
         SIGMOID,
+        ROUND,
         SOFTMAX,
         BILINEAR,
     };

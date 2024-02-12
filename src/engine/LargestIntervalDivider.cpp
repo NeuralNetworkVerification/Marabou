@@ -106,7 +106,7 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
 {
     ASSERT( inputRegion._lowerBounds.size() == inputRegion._upperBounds.size() );
     unsigned dimensionToSplit = 0;
-    double largestInterval = 0;
+    double largestInterval = -1;
 
     DEBUG( bool haveCandidate = false );
 
@@ -114,9 +114,6 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
     {
         double interval = inputRegion._upperBounds[variable] -
             inputRegion._lowerBounds[variable];
-
-        if ( FloatUtils::isZero( interval ) )
-            continue;
 
         DEBUG( haveCandidate = true );
 
@@ -126,6 +123,7 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
             largestInterval = interval;
         }
     }
+    ASSERT( largestInterval >= 0 );
 
     ASSERT( haveCandidate );
 
