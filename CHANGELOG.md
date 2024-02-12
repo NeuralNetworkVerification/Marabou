@@ -9,6 +9,7 @@
 * Bumped ONNX version to >= 1.15.0
 * Added support for Leaky ReLU
 * Added support for Pythonic API
+* Command-line ONNX parser now supports cast operator.
 
 ## Version 1.0.0
 * Initial versioned release

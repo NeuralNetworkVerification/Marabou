@@ -31,6 +31,12 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             InputQuery inputQuery;
 
             String networkPath = Stringf("%s/%s.onnx", RESOURCES_DIR "/onnx/layer-zoo", name.ascii());
+            if ( !File::exists( networkPath ) )
+            {
+                printf( "Error: the specified test inputQuery file (%s) doesn't exist!\n", networkPath.ascii() );
+                throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkPath.ascii() );
+            }
+
             OnnxParser onnxParser ( networkPath );
             TS_ASSERT_THROWS_NOTHING( onnxParser.generateQuery( inputQuery ) );
 
@@ -313,4 +319,17 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
     //     };
     //     run_test("tanh", input, output);
     // }
+
+    void test_cast_int_to_float()
+    {
+        Vector<double> input = {
+            0.0, 0.0,
+            0.0, 0.0
+        };
+        Vector<double> output = {
+            0.0, 1.0,
+            -1.0, 2.0
+        };
+        run_test("cast_int_to_float", input, output);
+    }
 };
