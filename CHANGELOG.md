@@ -4,6 +4,7 @@
 * Added support for ONNX networks with tanh nodes to command-line interface
 * Added proof producing versions of Sign, Max, Absolute Value and Disjunction constraints
 * Added support for properties provided in VNN-LIB format for ONNX networks via the Python API
+* Fixed bugs when parsing Sigmoid layers in the C++ ONNX parser.
 * Supported additional non-linear constraints Softmax and Bilinear
 * Removed dependency on torch and drop support for Python3.7
 * Bumped ONNX version to >= 1.15.0
