@@ -96,7 +96,9 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( tightenLowerBound( variable, bound ) )
     {
-        if ( variable == _f )
+        if ( variable == _f &&
+             !FloatUtils::areEqual( bound, 0 ) &&
+             !FloatUtils::areEqual( bound, 1 ) )
           tightenLowerBound( _b, sigmoidInverse( bound ) );
         else if ( variable == _b )
           tightenLowerBound( _f, sigmoid( bound ) );
@@ -113,10 +115,12 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( tightenUpperBound( variable, bound ) )
     {
-      if ( variable == _f )
-        tightenUpperBound( _b, sigmoidInverse( bound ) );
-      else if ( variable == _b )
-        tightenUpperBound( _f, sigmoid( bound ) );
+        if ( variable == _f &&
+             !FloatUtils::areEqual( bound, 0 ) &&
+             !FloatUtils::areEqual( bound, 1 ) )
+            tightenUpperBound( _b, sigmoidInverse( bound ) );
+        else if ( variable == _b )
+            tightenUpperBound( _f, sigmoid( bound ) );
     }
 }
 
@@ -237,9 +241,9 @@ double SigmoidConstraint::sigmoid( double x )
 
 double SigmoidConstraint::sigmoidInverse( double y )
 {
-  if (FloatUtils::areEqual(y, 0))
+  if ( FloatUtils::areEqual( y, 0 ) )
     return FloatUtils::negativeInfinity();
-  else if (FloatUtils::areEqual(y,1))
+  else if ( FloatUtils::areEqual( y, 1 ) )
     return FloatUtils::infinity();
   else
     return log( y / ( 1 - y ) );

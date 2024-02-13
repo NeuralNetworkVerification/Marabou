@@ -116,6 +116,10 @@ void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType
         variableType = GRB_BINARY;
         break;
 
+    case INTEGER:
+        variableType = GRB_INTEGER;
+        break;
+
     default:
         break;
     }

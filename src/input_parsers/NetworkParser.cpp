@@ -62,7 +62,7 @@ void NetworkParser::addRelu( Variable inputVar, Variable outputVar )
 
 void NetworkParser::addSigmoid( Variable inputVar, Variable outputVar )
 {
-    _signList.append( new SignConstraint( inputVar, outputVar ) );
+    _sigmoidList.append( new SigmoidConstraint( inputVar, outputVar ) );
 }
 
 void NetworkParser::addMaxConstraint( Variable var, Set<Variable> elements )
@@ -152,7 +152,7 @@ void NetworkParser::getMarabouQuery( InputQuery& query )
     for ( std::pair<Variable,float> upper : _upperBounds )
     {
         ASSERT( upper.first < _numVars );
-        query.setLowerBound( upper.first,upper.second );
+        query.setUpperBound( upper.first,upper.second );
     }
 }
 

@@ -382,8 +382,17 @@ bool DisjunctionConstraint::constraintObsolete() const
     return false;
 }
 
-void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &/* tightenings */ ) const
+void DisjunctionConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
+    for ( const auto &var : _participatingVariables )
+    {
+        double bound = getMinLowerBound( var );
+        if ( FloatUtils::isFinite( bound ) )
+            tightenings.append( Tightening( var, bound, Tightening::LB ) );
+        bound = getMaxUpperBound( var );
+        if ( FloatUtils::isFinite( bound ) )
+            tightenings.append( Tightening( var, bound, Tightening::UB ) );
+    }
 }
 
 String DisjunctionConstraint::serializeToString() const
@@ -575,9 +584,7 @@ double DisjunctionConstraint::getMinLowerBound( unsigned int var ) const
 
         if ( !foundLowerBound )
         {
-            throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_BOUND,
-                                Stringf( "Variable %d missing lower bound in given disjunction constraint %s", var,
-                                         serializeToString().ascii() ).ascii() );
+            return FloatUtils::negativeInfinity();
         }
     }
 
@@ -606,9 +613,7 @@ double DisjunctionConstraint::getMaxUpperBound( unsigned int var ) const
 
         if ( !foundUpperBound )
         {
-            throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_BOUND,
-                                Stringf( "Variable %d missing upper bound in given disjunction constraint %s", var,
-                                         serializeToString().ascii() ).ascii() );
+            return FloatUtils::infinity();
         }
     }
 

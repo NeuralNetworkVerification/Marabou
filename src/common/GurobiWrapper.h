@@ -29,6 +29,7 @@ public:
     enum VariableType {
         CONTINUOUS = 0,
         BINARY = 1,
+        INTEGER = 2,
     };
 
     /*
@@ -229,6 +230,7 @@ public:
     enum VariableType {
         CONTINUOUS = 0,
         BINARY = 1,
+        INTEGER = 2,
     };
 
     struct Term
