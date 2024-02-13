@@ -309,48 +309,19 @@ String DnCManager::getResultString()
     }
 }
 
+void DnCManager::extractSolution( InputQuery &inputQuery )
+{
+    ASSERT( _engineWithSATAssignment != nullptr );
+    _engineWithSATAssignment->extractSolution( inputQuery,
+                                               _baseEngine->getPreprocessor() );
+}
+
 void DnCManager::getSolution( std::map<int, double> &ret,
                               InputQuery &inputQuery )
 {
-    ASSERT( _engineWithSATAssignment != nullptr );
-    InputQuery *solvedInputQuery = _engineWithSATAssignment->getInputQuery();
-    _engineWithSATAssignment->extractSolution( *( solvedInputQuery ) );
-
-    double value;
+    extractSolution( inputQuery );
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
-    {
-        if ( _baseEngine->preprocessingEnabled() )
-        {
-            const Preprocessor *basePreprocessor = _baseEngine->getPreprocessor();
-
-            unsigned variable = i;
-            while ( basePreprocessor->variableIsMerged( variable ) )
-                variable = basePreprocessor->getMergedIndex( variable );
-
-            if ( basePreprocessor->variableIsFixed( variable ) )
-            {
-                value = basePreprocessor->getFixedValue( variable );
-                inputQuery.setSolutionValue( i, value );
-                inputQuery.setLowerBound( i, value );
-                inputQuery.setUpperBound( i, value );
-                ret[i] = value;
-                continue;
-            }
-
-            variable = basePreprocessor->getNewIndex( variable );
-            value = solvedInputQuery->getSolutionValue( variable );
-            inputQuery.setSolutionValue( i, value );
-            ret[i] = value;
-        }
-        else
-        {
-            double value = solvedInputQuery->getSolutionValue( i );
-            inputQuery.setSolutionValue( i, value );
-            ret[i] = value;
-        }
-    }
-
-    return;
+        ret[i] = inputQuery.getSolutionValue( i );
 }
 
 void DnCManager::printResult()
@@ -362,21 +333,18 @@ void DnCManager::printResult()
     {
         std::cout << "sat\n" << std::endl;
 
-        ASSERT( _engineWithSATAssignment != nullptr );
+        extractSolution( *_baseInputQuery );
 
-        InputQuery *inputQuery = _engineWithSATAssignment->getInputQuery();
-        _engineWithSATAssignment->extractSolution( *( inputQuery ) );
-
-        Vector<double> inputVector( inputQuery->getNumInputVariables() );
-        Vector<double> outputVector( inputQuery->getNumOutputVariables() );
+        Vector<double> inputVector( _baseInputQuery->getNumInputVariables() );
+        Vector<double> outputVector( _baseInputQuery->getNumOutputVariables() );
         double *inputs( inputVector.data() );
         double *outputs( outputVector.data() );
 
         printf( "Input assignment:\n" );
-        for ( unsigned i = 0; i < inputQuery->getNumInputVariables(); ++i )
+        for ( unsigned i = 0; i < _baseInputQuery->getNumInputVariables(); ++i )
         {
-            printf( "\tx%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) ) );
-            inputs[i] = inputQuery->getSolutionValue( inputQuery->inputVariableByIndex( i ) );
+            printf( "\tx%u = %lf\n", i, _baseInputQuery->getSolutionValue( _baseInputQuery->inputVariableByIndex( i ) ) );
+            inputs[i] = _baseInputQuery->getSolutionValue( _baseInputQuery->inputVariableByIndex( i ) );
         }
 
         NLR::NetworkLevelReasoner *nlr = _baseInputQuery->getNetworkLevelReasoner();
@@ -385,12 +353,12 @@ void DnCManager::printResult()
 
         printf( "\n" );
         printf( "Output:\n" );
-        for ( unsigned i = 0; i < inputQuery->getNumOutputVariables(); ++i )
+        for ( unsigned i = 0; i < _baseInputQuery->getNumOutputVariables(); ++i )
         {
             if ( nlr )
                 printf( "\tnlr y%u = %lf\n", i, outputs[i] );
             else
-                printf( "\ty%u = %lf\n", i, inputQuery->getSolutionValue( inputQuery->outputVariableByIndex( i ) ) );
+                printf( "\ty%u = %lf\n", i, _baseInputQuery->getSolutionValue( _baseInputQuery->outputVariableByIndex( i ) ) );
         }
         printf( "\n" );
         break;

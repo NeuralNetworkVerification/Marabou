@@ -49,8 +49,10 @@ double LinearExpression::evaluate( const Map<unsigned, double> &assignment )
     {
         if ( FloatUtils::isZero( addend.second ) )
             continue;
-        else
+        else if ( assignment.exists( addend.first ) )
             sum += addend.second * assignment[addend.first];
+        else
+            return NAN;
     }
     sum += _constant;
     return sum;

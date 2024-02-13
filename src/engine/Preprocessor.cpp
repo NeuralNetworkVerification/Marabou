@@ -61,8 +61,6 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
 {
     _preprocessed = std::unique_ptr<InputQuery>( new InputQuery( query ) );
 
-    removeRedundantAddendsInAllEquations();
-
     /*
       Next, make sure all equations are of type EQUALITY. If not, turn them
       into one.
@@ -72,28 +70,27 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     /*
       Attempt to construct a network level reasoner
     */
-    _preprocessed->constructNetworkLevelReasoner();
+    List<Equation> unhandledEquations;
+    Set<unsigned> varsInUnhandledConstraints;
+    _preprocessed->constructNetworkLevelReasoner( unhandledEquations, varsInUnhandledConstraints );
+
+    /*
+      Merge consecutive WS layers
+    */
+    if ( !Options::get()->getBool( Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS ) )
+    {
+        _preprocessed->mergeConsecutiveWeightedSumLayers( unhandledEquations,
+                                                          varsInUnhandledConstraints,
+                                                          _unusedSymbolicallyFixedVariables );
+    }
+
+    removeRedundantAddendsInAllEquations();
 
     /*
       Transform the piecewise linear constraints if needed so that the case
       splits can all be represented as bounds over existing variables.
     */
     transformConstraintsIfNeeded();
-
-    /*
-      Merge consecutive WS layers
-    */
-    if ( GlobalConfiguration::PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS )
-    {
-        if ( query._networkLevelReasoner )
-        {
-            unsigned oldNumberOfVariables = _preprocessed->getNumberOfVariables();
-            _preprocessed->_networkLevelReasoner->mergeConsecutiveWSLayers();
-            _preprocessed = std::unique_ptr<InputQuery>
-                ( new InputQuery( _preprocessed->_networkLevelReasoner->generateInputQuery() ) );
-            _preprocessed->setNumberOfVariables( oldNumberOfVariables );
-        }
-    }
 
     /*
       Collect input and output variables
@@ -1061,6 +1058,50 @@ void Preprocessor::setStatistics( Statistics *statistics )
     _statistics = statistics;
 }
 
+void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery )
+{
+    Map<unsigned, double> assignment;
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+    {
+        if ( !_unusedSymbolicallyFixedVariables.exists( i ) )
+            assignment[i] = inputQuery.getSolutionValue( i );
+    }
+
+    bool progressMade = true;
+    List<unsigned> assignedVariables;
+    while ( progressMade )
+    {
+        assignedVariables.clear();
+        for ( auto &variableToExpression : _unusedSymbolicallyFixedVariables )
+        {
+            unsigned var = variableToExpression.first;
+            ASSERT( !assignment.exists( var ) );
+
+            LinearExpression &exp = variableToExpression.second;
+            double value = exp.evaluate( assignment );
+            if ( !FloatUtils::isNan( value ) )
+            {
+                progressMade = true;
+                assignment[var] = value;
+                assignedVariables.append( var );
+            }
+        }
+        for ( const auto &var : assignedVariables )
+            _unusedSymbolicallyFixedVariables.erase( var );
+        progressMade = !assignedVariables.empty();
+    }
+
+    if ( !_unusedSymbolicallyFixedVariables.empty() )
+    {
+        throw MarabouError( MarabouError::UNABLE_TO_RECONSTRUCT_SOLUTION_FOR_ELIMINATED_NEURONS );
+    }
+
+    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
+    {
+        inputQuery.setSolutionValue( i, assignment[i] );
+    }
+}
+
 void Preprocessor::setMissingBoundsToInfinity()
 {
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
@@ -1083,11 +1124,3 @@ void Preprocessor::dumpAllBounds( const String &message )
 
     printf( "\n" );
 }
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

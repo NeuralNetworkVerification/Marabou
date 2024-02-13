@@ -1720,7 +1720,10 @@ public:
 
         // Start the testing
         InputQuery ipq = nlr.generateInputQuery();
-        TS_ASSERT( ipq.constructNetworkLevelReasoner() );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( ipq.constructNetworkLevelReasoner( unhandledEquations,
+                                                      varsInUnhandledConstraints ) );
         NLR::NetworkLevelReasoner *reconstructedNlr = ipq.getNetworkLevelReasoner();
 
         double input[2];
