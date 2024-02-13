@@ -128,7 +128,7 @@ int marabouMain( int argc, char **argv )
     }
     catch ( const Error &e )
     {
-        printf( "Caught a %s error. Code: %u, Errno: %i, Message: %s.\n",
+        fprintf( stderr, "Caught a %s error. Code: %u, Errno: %i, Message: %s.\n",
                 e.getErrorClass(),
                 e.getCode(),
                 e.getErrno(),

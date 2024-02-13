@@ -22,6 +22,7 @@
 #include "DeepPolyMaxPoolElement.h"
 #include "DeepPolyWeightedSumElement.h"
 #include "DeepPolyReLUElement.h"
+#include "DeepPolyRoundElement.h"
 #include "DeepPolySigmoidElement.h"
 #include "DeepPolySignElement.h"
 #include "DeepPolySoftmaxElement.h"
@@ -208,6 +209,8 @@ DeepPolyElement *DeepPolyAnalysis::createDeepPolyElement( Layer *layer )
     }
     else if ( type ==  Layer::RELU )
         deepPolyElement = new DeepPolyReLUElement( layer );
+    else if ( type ==  Layer::ROUND )
+      deepPolyElement = new DeepPolyRoundElement( layer );
     else if ( type ==  Layer::LEAKY_RELU )
         deepPolyElement = new DeepPolyLeakyReLUElement( layer );
     else if ( type ==  Layer::SIGN )
