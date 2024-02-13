@@ -33,8 +33,8 @@ public:
     double *ranges;    // Array of the ranges used to scale the inputs and outputs
     double ****matrix; // 4D jagged array that stores the weights and biases
                        // the neural network.
-    double *inputs; // Scratch array for inputs to the different layers
-    double *temp;   // Scratch array for outputs of different layers
+    double *inputs;    // Scratch array for inputs to the different layers
+    double *temp;      // Scratch array for outputs of different layers
 };
 
 // Functions Implemented
