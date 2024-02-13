@@ -10,6 +10,8 @@
 * Bumped ONNX version to >= 1.15.0
 * Added support for Leaky ReLU
 * Added support for Pythonic API
+* Command-line ONNX parser now supports networks with multiple outputs.
+* Command-line ONNX parser now supports cast operator.
 * Errors now are printed on `stderr` rather than `stdout`
 
 ## Version 1.0.0
