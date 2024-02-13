@@ -118,9 +118,9 @@ TensorIndex unsignIndex ( TensorShape shape, SignedTensorIndex signedIndex )
 {
     if ( signedIndex >= 0 )
     {
-        return static_cast<uint64_t>( signedIndex );
+        return static_cast<unsigned int>( signedIndex );
     }
-    return shape.size() - static_cast<uint64_t>( -signedIndex );
+    return shape.size() - static_cast<unsigned int>( -signedIndex );
 }
 
 Padding::Padding ( int padFront, int padBack )

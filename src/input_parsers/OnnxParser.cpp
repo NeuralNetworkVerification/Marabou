@@ -1098,7 +1098,7 @@ void OnnxParser::squeeze( onnx::NodeProto& node )
         TensorIndex axis = unsignIndex( inputShape, signedAxis );
         if ( inputShape[axis] != 1 )
         {
-            String errorMessage = Stringf( "Invalid axis found on Squeeze node '%s'. Expected dimension %d to be of size 1 but was size %d", inputNodeName, axis, inputShape[axis] );
+            String errorMessage = Stringf( "Invalid axis found on Squeeze node '%s'. Expected dimension %d to be of size 1 but was size %d", inputNodeName.ascii(), axis, inputShape[axis] );
             throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
         }
         outputShape.eraseAt( axis );
