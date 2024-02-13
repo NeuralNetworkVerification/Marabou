@@ -129,6 +129,12 @@ void unsupportedError( onnx::NodeProto &node )
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
+void unsupportedCastError ( onnx::TensorProto_DataType from, onnx::TensorProto_DataType to )
+{
+    String errorMessage = Stringf( "The ONNX parser does not currently support casting from '%s' to '%s'", TensorProto_DataType_Name(from).c_str(), TensorProto_DataType_Name(to).c_str());
+    throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+}
+
 void unexpectedNegativeValue (int value, String location)
 {
     String errorMessage = Stringf( "Found unexpected negative value '%d' for '%s'", value, location.ascii() );
@@ -303,6 +309,16 @@ int getIntAttribute( onnx::NodeProto& node, String name, int defaultValue )
     if ( attr == nullptr )
     {
         return defaultValue;
+    }
+    return attr->i();
+}
+
+int getRequiredIntAttribute( onnx::NodeProto& node, String name )
+{
+    const onnx::AttributeProto* attr = findAttribute( node, name, onnx::AttributeProto_AttributeType_INT );
+    if ( attr == nullptr )
+    {
+        missingAttributeError( node, name );
     }
     return attr->i();
 }
@@ -848,9 +864,67 @@ void OnnxParser::identity( onnx::NodeProto& node )
  */
 void OnnxParser::cast( onnx::NodeProto& node )
 {
-    // See https://github.com/NeuralNetworkVerification/Marabou/blob/76b8eaf23518ca468c2cf05b742e3b4c858a64c3/maraboupy/MarabouNetworkONNX.py#L294
-    // for reference implementation
-    unimplementedOperationError( node );
+    String outputNodeName = node.output()[0];
+    String inputNodeName = node.input()[0];
+    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+
+    // Try to find type to cast to. If not found, raise error.
+    onnx::TensorProto_DataType to = static_cast<onnx::TensorProto_DataType>( getRequiredIntAttribute( node, "to" ) );
+
+    if ( _varMap.exists(inputNodeName) )
+    {
+        // We shouldn't be casting variables to different types, since Marabou assumes variables
+        // have double precision
+        String errorMessage = Stringf( "The node '%s' casts non-constant values which is not supported by Marabou", inputNodeName.ascii() ) ;
+        throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() ) ;
+    }
+
+    if ( _constantIntTensors.exists( inputNodeName ) )
+    {
+        Vector<int> tensor = _constantIntTensors[inputNodeName];
+        if ( to == onnx::TensorProto_DataType_INT64 )
+        {
+            _constantIntTensors.insert( outputNodeName, tensor );
+        }
+        else if ( to == onnx::TensorProto_DataType_FLOAT )
+        {
+            Vector<double> castTensor = Vector<double>( tensor.size() );
+            for ( PackedTensorIndices i = 0; i < tensor.size(); i++ )
+            {
+                castTensor[i] = static_cast<double>( tensor[i] );
+            }
+            _constantFloatTensors.insert( outputNodeName, castTensor );
+        }
+        else
+        {
+            unsupportedCastError( onnx::TensorProto_DataType_INT64, to );
+        }
+    }
+    else if ( _constantFloatTensors.exists( inputNodeName ) )
+    {
+        Vector<double> tensor = _constantFloatTensors[inputNodeName];
+        if ( to == onnx::TensorProto_DataType_INT64 )
+        {
+            Vector<int> castTensor = Vector<int>( tensor.size() );
+            for ( PackedTensorIndices i = 0; i < tensor.size(); i++ )
+            {
+                castTensor[i] = static_cast<int>( tensor[i] );
+            }
+            _constantIntTensors.insert( outputNodeName, castTensor );
+        }
+        else if ( to == onnx::TensorProto_DataType_FLOAT )
+        {
+            _constantFloatTensors.insert( outputNodeName, tensor );
+        }
+        else
+        {
+            unsupportedCastError( onnx::TensorProto_DataType_FLOAT, to );
+        }
+    }
+    else
+    {
+        missingNodeError( inputNodeName );
+    }
 }
 
 /**
