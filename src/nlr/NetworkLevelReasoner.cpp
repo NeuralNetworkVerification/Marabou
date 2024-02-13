@@ -32,6 +32,8 @@
 #include "SignConstraint.h"
 #include <cstring>
 
+#define NLR_LOG( x, ... ) LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
+
 namespace NLR {
 
 NetworkLevelReasoner::NetworkLevelReasoner()
@@ -360,6 +362,13 @@ void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinear
         _constraintsInTopologicalOrder.erase( constraint );
 }
 
+void NetworkLevelReasoner::encodeAffineLayers( InputQuery &inputQuery )
+{
+    for ( const auto &pair : _layerIndexToLayer )
+        if ( pair.second->getLayerType() == Layer::WEIGHTED_SUM )
+            generateInputQueryForWeightedSumLayer( inputQuery, pair.second );
+}
+
 InputQuery NetworkLevelReasoner::generateInputQuery()
 {
     InputQuery result;
@@ -401,7 +410,6 @@ InputQuery NetworkLevelReasoner::generateInputQuery()
         }
     }
 
-    result.constructNetworkLevelReasoner();
     return result;
 }
 
@@ -533,30 +541,76 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
             for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
             {
                 double coefficient = layer.getWeight( sourceLayer->getLayerIndex(), j, i );
-                eq.addAddend( coefficient, sourceLayer->neuronToVariable( j ) );
+                if ( !FloatUtils::isZero( coefficient ) )
+                    eq.addAddend( coefficient, sourceLayer->neuronToVariable( j ) );
             }
         }
-
         inputQuery.addEquation( eq );
     }
 }
 
-void NetworkLevelReasoner::mergeConsecutiveWSLayers()
+void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer( Map<unsigned, LinearExpression>
+                                                                        &variableToExpression,
+                                                                        const Layer &layer )
+{
+    ASSERT( layer.getLayerType() == Layer::WEIGHTED_SUM );
+    for ( unsigned i = 0; i < layer.getSize(); ++i )
+    {
+        LinearExpression exp;
+        exp._constant = layer.getBias( i );
+        for ( const auto &it : layer.getSourceLayers() )
+        {
+            const Layer *sourceLayer = _layerIndexToLayer[it.first];
+            for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
+            {
+
+                double coefficient = layer.getWeight( sourceLayer->getLayerIndex(), j, i );
+                if ( !FloatUtils::isZero( coefficient ) )
+                {
+                    unsigned var = sourceLayer->neuronToVariable( j );
+                    if ( exp._addends.exists( var ) )
+                        exp._addends[var] += coefficient;
+                    else
+                        exp._addends[var] = coefficient;
+                }
+            }
+        }
+        variableToExpression[layer.neuronToVariable( i )] = exp;
+    }
+}
+
+unsigned NetworkLevelReasoner::mergeConsecutiveWSLayers( const Map<unsigned, double> &lowerBounds,
+                                                         const Map<unsigned, double> &upperBounds,
+                                                         const Set<unsigned> &varsInUnhandledConstraints,
+                                                         Map<unsigned, LinearExpression> &eliminatedNeurons )
 {
     // Iterate over all layers, except the input layer
     unsigned layer = 1;
 
+    unsigned numberOfMergedLayers = 0;
     while ( layer < _layerIndexToLayer.size() )
     {
-        if ( suitableForMerging( layer ) )
-            mergeWSLayers( layer );
+        if ( suitableForMerging( layer, lowerBounds, upperBounds, varsInUnhandledConstraints ) )
+        {
+            NLR_LOG( Stringf( "Merging layer %u with its predecessor...", layer ).ascii() );
+            mergeWSLayers( layer, eliminatedNeurons );
+            ++numberOfMergedLayers;
+            NLR_LOG( Stringf( "Merging layer %u with its predecessor - done", layer ).ascii() );
+        }
         else
             ++layer;
     }
+    return numberOfMergedLayers;
 }
 
-bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex )
+bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex,
+                                               const Map<unsigned, double> &lowerBounds,
+                                               const Map<unsigned, double> &upperBounds,
+                                               const Set<unsigned> &varsInConstraintsUnhandledByNLR )
 {
+    NLR_LOG( Stringf( "Checking whether layer %u is suitable for merging...",
+                      secondLayerIndex ).ascii() );
+
     /*
       The given layer index is a candidate layer. We now check whether
       it is an eligible second WS layer that can be merged with its
@@ -581,18 +635,36 @@ bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex )
         return false;
 
     // First layer should not feed into any other layer
-    for ( unsigned i = secondLayerIndex + 1; i < getNumberOfLayers(); ++i )
+    unsigned count = 0;
+    for ( unsigned i = 0; i < getNumberOfLayers(); ++i )
     {
         const Layer *layer = _layerIndexToLayer[i];
 
         if ( layer->getSourceLayers().exists( firstLayerIndex ) )
+            ++count;
+    }
+    if ( count > 1 )
+        return false;
+
+    // If there are bounds on the predecessor layer or if
+    // the predecessor layer participates in any constraints
+    // (equations, piecewise-linear constraints, nonlinear-constraints)
+    // unaccounted for in the NLR cannot merge
+    for ( unsigned i = 0; i < firstLayer->getSize(); ++i )
+    {
+        unsigned variable = firstLayer->neuronToVariable( i );
+        if ( ( lowerBounds.exists( variable ) &&
+               FloatUtils::isFinite( lowerBounds[variable] ) ) ||
+             ( upperBounds.exists( variable ) &&
+               FloatUtils::isFinite( upperBounds[variable] ) ) ||
+             varsInConstraintsUnhandledByNLR.exists( variable ) )
             return false;
     }
-
     return true;
 }
 
-void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
+void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex,
+                                          Map<unsigned, LinearExpression> &eliminatedNeurons )
 {
     Layer *secondLayer = _layerIndexToLayer[secondLayerIndex];
     unsigned firstLayerIndex = secondLayer->getSourceLayers().begin()->first;
@@ -650,6 +722,8 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex )
 
     // Remove the first layer from second layer's sources
     secondLayer->removeSourceLayer( firstLayerIndex );
+
+    generateLinearExpressionForWeightedSumLayer( eliminatedNeurons, firstLayer );
 
     // Finally, remove the first layer from the map and delete it
     _layerIndexToLayer.erase( firstLayerIndex );

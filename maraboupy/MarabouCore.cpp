@@ -191,12 +191,6 @@ bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );
     acasParser->generateQuery( inputQuery );
 
-    bool success = inputQuery.constructNetworkLevelReasoner();
-    if ( success )
-      printf("Successfully created a network level reasoner.\n");
-    else
-      printf("Warning: network level reasoner construction failed.\n");
-
     String propertyFilePathM = String(propertyFilePath);
     if ( propertyFilePath != "" )
       {

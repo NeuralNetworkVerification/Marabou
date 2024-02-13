@@ -68,9 +68,16 @@ public:
     void printResult();
 
     /*
-      Store the solution into the map
+      Store the solution into the map and the input query
+
+      NOTE: Currently used in the Python API
     */
     void getSolution( std::map<int, double> &ret, InputQuery &inputQuery );
+
+    /*
+      Store the solution into the input query
+    */
+    void extractSolution( InputQuery &inputQuery );
 
 private:
     /*

@@ -169,6 +169,10 @@ void OptionParser::initialize()
         ( "poi",
           boost::program_options::bool_switch( &(*_boolOptions)[Options::PARALLEL_DEEPSOI] )->default_value( (*_boolOptions)[Options::PARALLEL_DEEPSOI] ),
           "Use the parallel deep-soi solving mode." )
+        ( "no-merge-ws-layers",
+          boost::program_options::bool_switch( &(*_boolOptions)[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] )->
+          default_value( (*_boolOptions)[Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] ),
+          "Do no merge consecutive weighted-sum layers." )
 #ifdef ENABLE_GUROBI
         ( "lp-solver",
           boost::program_options::value<std::string>( &((*_stringOptions)[Options::LP_SOLVER]) )->default_value( (*_stringOptions)[Options::LP_SOLVER] ),
