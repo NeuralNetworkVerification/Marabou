@@ -31,6 +31,12 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             InputQuery inputQuery;
 
             String networkPath = Stringf("%s/%s.onnx", RESOURCES_DIR "/onnx/layer-zoo", name.ascii());
+            if ( !File::exists( networkPath ) )
+            {
+                printf( "Error: the specified test inputQuery file (%s) doesn't exist!\n", networkPath.ascii() );
+                throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkPath.ascii() );
+            }
+
             OnnxParser onnxParser ( networkPath );
             TS_ASSERT_THROWS_NOTHING( onnxParser.generateQuery( inputQuery ) );
 
@@ -85,7 +91,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             0, 0.5,
             1, 1.5
         };
-        run_test("identity", input, output);
+        run_test( "identity", input, output );
     }
 
     void test_reshape()
@@ -100,7 +106,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             1,
             1.5
         };
-        run_test("reshape", input, output);
+        run_test( "reshape", input, output );
     }
 
     void test_reshape_with_dimension_inference()
@@ -115,7 +121,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             1,
             1.5
         };
-        run_test("reshape_with_dimension_inference", input, output);
+        run_test( "reshape_with_dimension_inference", input, output );
     }
 
     void test_flatten()
@@ -131,7 +137,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             0, 0.5, 1, 1.5,
             -1, -3, -4, 0.0
         };
-        run_test("flatten", input, output);
+        run_test( "flatten", input, output );
     }
 
     void test_transpose()
@@ -145,7 +151,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             1, 1.5,
             -2, -3
         };
-        run_test("transpose", input, output);
+        run_test( "transpose", input, output );
     }
 
     // Reference implementation for batch normalisation
@@ -167,7 +173,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             batchnorm_fn(2, eps, 1, 1, 6, 0.5), batchnorm_fn(3, eps, 1, 1, 6, 0.5),
             batchnorm_fn(4, eps, 2, 0, 7, 0.5), batchnorm_fn(5, eps, 2, 0, 7, 0.5),
         };
-        run_test("batchnorm", input, output);
+        run_test( "batchnorm", input, output );
     }
 
     void test_maxpool()
@@ -183,7 +189,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             11, 12,
             15, 16
         };
-        run_test("maxpool", input, output);
+        run_test( "maxpool", input, output );
     }
 
     void test_conv()
@@ -203,7 +209,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             93.0, 144.0, 153.0, 162.0, 111.0,
             72.0, 111.0, 117.0, 123.0, 84.0,
         };
-        run_test("conv", input, output);
+        run_test( "conv", input, output );
     }
 
     void test_gemm()
@@ -217,7 +223,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             1.75, 2.75,
             2.5, 4.5
         };
-        run_test("gemm", input, output);
+        run_test( "gemm", input, output );
     }
 
     void test_relu()
@@ -230,7 +236,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             0, 0,
             0.1, 3
         };
-        run_test("relu", input, output);
+        run_test( "relu", input, output );
     }
 
     void test_add()
@@ -243,7 +249,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             -1.5, 1,
             1.6, 5
         };
-        run_test("add", input, output);
+        run_test( "add", input, output );
     }
 
     void test_sub()
@@ -256,7 +262,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             -2.5, -1,
             -1.4, 1
         };
-        run_test("sub", input, output);
+        run_test( "sub", input, output );
     }
 
     void test_matmul()
@@ -269,7 +275,7 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
             -1, -3,
             0, -1.25
         };
-        run_test("matmul", input, output);
+        run_test( "matmul", input, output );
     }
 
     double sigmoid_fn( double value )
@@ -313,4 +319,17 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
     //     };
     //     run_test("tanh", input, output);
     // }
+
+    void test_cast_int_to_float()
+    {
+        Vector<double> input = {
+            0.0, 0.0,
+            0.0, 0.0
+        };
+        Vector<double> output = {
+            0.0, 1.0,
+            -1.0, 2.0
+        };
+        run_test( "cast_int_to_float", input, output );
+    }
 };
