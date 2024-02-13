@@ -24,6 +24,7 @@
 #include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MStringf.h"
+#include "RoundConstraint.h"
 #include "SoftmaxConstraint.h"
 #include "Statistics.h"
 
@@ -75,9 +76,14 @@ private:
     Map<unsigned, String> _variableToVariableName;
 
     /*
-      Index for Guroby binary variables
+      Index for Gurobi binary variables
     */
     unsigned _binVarIndex = 0;
+
+    /*
+      Index for Gurobi integer variables
+    */
+    unsigned _intVarIndex = 0;
 
     /*
       Encode an (in)equality into Gurobi.
@@ -155,6 +161,13 @@ private:
     void encodeBilinearConstraint( GurobiWrapper &gurobi,
                                    BilinearConstraint *bilinear,
                                    bool relax );
+
+    /*
+      Encode a Round constraint
+    */
+    void encodeRoundConstraint( GurobiWrapper &gurobi,
+                                RoundConstraint *round,
+                                bool relax );
 };
 
 #endif // __MILPEncoder_h__

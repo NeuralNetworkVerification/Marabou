@@ -20,6 +20,7 @@ enum NonlinearFunctionType {
     SIGMOID = 0,
     SOFTMAX = 1,
     BILINEAR = 2,
+    ROUND = 3,
 };
 
 #endif // __NonlinearFunctionType_h__
