@@ -43,6 +43,11 @@ private:
 
     onnx::GraphProto _network;
     Set<String> _inputNames;
+
+    /*
+      The set of terminal nodes for the query. Note that these doesn't have to be outputs of
+      the network, they can be intermediate nodes.
+    */
     Set<String> _terminalNames;
 
     // State //

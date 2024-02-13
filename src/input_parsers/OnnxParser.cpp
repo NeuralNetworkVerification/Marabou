@@ -75,7 +75,7 @@ void OnnxParser::generateQuery( InputQuery& query )
  * @param query The query object to be populated
  * @param inputNames The set of input nodes. Note these don't have to be an actual input to the
  * network, they can be intermediate nodes.
- * @param outputName The set of terminal nodes. Note that these doesn't have to be outputs of
+ * @param terminalNames The set of terminal nodes. Note that these doesn't have to be outputs of
  * the network, they can be intermediate nodes.
  */
 void OnnxParser::generatePartialQuery( InputQuery& query, Set<String>& inputNames, Set<String>& terminalNames )
@@ -612,7 +612,7 @@ void OnnxParser::validateAllInputsAndOutputsFound()
  * Unlike the Python implementation, at the moment assumes there is only a single output.
  *
  * @param inputNames The names of the input nodes to start at.
- * @param outputName The names of the output node to end at.
+ * @param terminalNames The names of the output node to end at.
  * @param query The query in which to store the generated constraints.
  */
 void OnnxParser::processGraph( Set<String> &inputNames, Set<String> &terminalNames, InputQuery& query )
