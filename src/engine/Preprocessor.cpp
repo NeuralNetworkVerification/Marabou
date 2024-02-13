@@ -81,7 +81,7 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     {
         _preprocessed->mergeConsecutiveWeightedSumLayers( unhandledEquations,
                                                           varsInUnhandledConstraints,
-                                                          _eliminatedNeurons );
+                                                          _unusedSymbolicallyFixedVariables );
     }
 
     removeRedundantAddendsInAllEquations();
@@ -1063,7 +1063,7 @@ void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery 
     Map<unsigned, double> assignment;
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
-        if ( !_eliminatedNeurons.exists( i ) )
+        if ( !_unusedSymbolicallyFixedVariables.exists( i ) )
             assignment[i] = inputQuery.getSolutionValue( i );
     }
 
@@ -1072,7 +1072,7 @@ void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery 
     while ( progressMade )
     {
         assignedVariables.clear();
-        for ( auto &variableToExpression : _eliminatedNeurons )
+        for ( auto &variableToExpression : _unusedSymbolicallyFixedVariables )
         {
             unsigned var = variableToExpression.first;
             ASSERT( !assignment.exists( var ) );
@@ -1087,11 +1087,11 @@ void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery 
             }
         }
         for ( const auto &var : assignedVariables )
-            _eliminatedNeurons.erase( var );
+            _unusedSymbolicallyFixedVariables.erase( var );
         progressMade = !assignedVariables.empty();
     }
 
-    if ( !_eliminatedNeurons.empty() )
+    if ( !_unusedSymbolicallyFixedVariables.empty() )
     {
         throw MarabouError( MarabouError::UNABLE_TO_RECONSTRUCT_SOLUTION_FOR_ELIMINATED_NEURONS );
     }

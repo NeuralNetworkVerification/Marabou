@@ -180,17 +180,18 @@ private:
     Map<unsigned, unsigned> _mergedVariables;
 
     /*
+      Variables that have been eliminated due to the merge of weighted
+      sum layers. These variables are symbolically fixed (as a weighted
+      sum of other variables), not needed for solving, but need to be
+      tracked here for reconstruction of the full assignment.
+    */
+    Map<unsigned, LinearExpression> _unusedSymbolicallyFixedVariables;
+
+    /*
       Mapping of old variable indices to new varibale indices, if
       indices were changed during preprocessing.
     */
     Map<unsigned, unsigned> _oldIndexToNewIndex;
-
-    /*
-      Some of the equations might be removed when removing consecutive
-      weighted sum layers. These equations are not needed for solving, but
-      are required to reconstruct the full assignment.
-    */
-    Map<unsigned, LinearExpression> _eliminatedNeurons;
 
     /*
       For debugging only
