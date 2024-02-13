@@ -60,6 +60,11 @@ void NetworkParser::addRelu( Variable inputVar, Variable outputVar )
     _reluList.append( new ReluConstraint( inputVar, outputVar ) );
 }
 
+void NetworkParser::addLeakyRelu( Variable inputVar, Variable outputVar, float alpha )
+{
+    _leakyReluList.append( new LeakyReluConstraint( inputVar, outputVar, alpha ) );
+}
+
 void NetworkParser::addSigmoid( Variable inputVar, Variable outputVar )
 {
     _sigmoidList.append( new SigmoidConstraint( inputVar, outputVar ) );
@@ -106,6 +111,13 @@ void NetworkParser::getMarabouQuery( InputQuery& query )
     for ( ReluConstraint* constraintPtr : _reluList )
     {
         ReluConstraint constraint = *constraintPtr;
+        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        query.addPiecewiseLinearConstraint( constraintPtr );
+    }
+
+    for ( LeakyReluConstraint* constraintPtr : _leakyReluList )
+    {
+        LeakyReluConstraint constraint = *constraintPtr;
         ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
