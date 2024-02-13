@@ -117,6 +117,24 @@ def transpose_node():
     )
     return ("transpose", node, [2,3], [3,2], [])
 
+def squeeze_node():
+    node = onnx.helper.make_node(
+        "Squeeze",
+        inputs=[input_name],
+        outputs=[output_name]
+    )
+    return ("squeeze", node, [1,2,1,3], [2,3], [])
+
+def squeeze_node_with_axes():
+    axes = make_constant_int_node( "axes", [-2] )
+
+    node = onnx.helper.make_node(
+        "Squeeze",
+        inputs=[input_name, "axes"],
+        outputs=[output_name]
+    )
+    return ("squeeze_with_axes", node, [1,2,1,3], [2,3], [axes])
+
 def batch_normalization_node():
     scale = make_constant_float_node("scale", [0.5, 1, 2])
     bias = make_constant_float_node("bias", [0, 1, 0])
@@ -269,6 +287,8 @@ if __name__ == "__main__":
     make_network(*reshape_node_with_dimension_inference())
     make_network(*flatten_node())
     make_network(*transpose_node())
+    make_network(*squeeze_node())
+    make_network(*squeeze_node_with_axes())
     make_network(*batch_normalization_node())
     make_network(*max_pool_node())
     make_network(*conv_node())
