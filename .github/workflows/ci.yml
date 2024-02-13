@@ -155,6 +155,6 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{ ( matrix.compiler == 'g++' ) && ( matrix.build_type == 'Debug' ) }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
