@@ -84,6 +84,7 @@ private:
     void identity( onnx::NodeProto& node );
     void cast( onnx::NodeProto& node );
     void reshape( onnx::NodeProto& node );
+    void squeeze( onnx::NodeProto& node );
     void flatten( onnx::NodeProto& node );
     void transpose( onnx::NodeProto& node );
     void batchNormEquations( onnx::NodeProto& node, bool makeEquations );

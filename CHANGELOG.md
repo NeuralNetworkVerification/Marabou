@@ -11,7 +11,7 @@
 * Added support for Leaky ReLU
 * Added support for Pythonic API
 * Command-line ONNX parser now supports networks with multiple outputs.
-* Command-line ONNX parser now supports cast operator.
+* Command-line ONNX parser now supports the following operators: Cast, Squeeze.
 * Errors now are printed on `stderr` rather than `stdout`
 
 ## Version 1.0.0
