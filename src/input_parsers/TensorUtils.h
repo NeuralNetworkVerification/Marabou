@@ -25,9 +25,15 @@
 typedef Vector<unsigned int> TensorShape;
 
 /**
- * @brief An single index into one-dimension of a tensor.
+ * @brief A single index into one dimension of a tensor.
  */
 typedef unsigned int TensorIndex;
+
+/**
+ * @brief A single index into a one dimension of a tensor.
+ * Can be negative in which case it counts from the end.
+ */
+typedef int SignedTensorIndex;
 
 /**
  * @brief A n-dimensional index into an n-dimensional tensor,
@@ -90,6 +96,8 @@ unsigned int tensorSize( TensorShape shape );
 TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape shape2 );
 
 TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastShape, TensorIndices broadcastIndices );
+
+TensorIndex unsignIndex ( TensorShape shape, SignedTensorIndex signedIndex );
 
 Permutation reversePermutation( unsigned int size );
 

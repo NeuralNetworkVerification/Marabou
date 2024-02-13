@@ -147,6 +147,20 @@ void missingNodeError( String& missingNodeName )
     throw MarabouError(  MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
+void unexpectedNumberOfInputs( onnx::NodeProto &node, unsigned int actualNumberOfInputs, unsigned int lowerBound, unsigned int upperBound )
+{
+    String errorMessage;
+    if ( lowerBound == upperBound )
+    {
+        errorMessage = Stringf( "%s node expected to have exactly %d inputs, but found %d", node.op_type().c_str(), lowerBound, actualNumberOfInputs );
+    }
+    else
+    {
+        errorMessage = Stringf( "%s node expected to have between %d and %d inputs, but found %d", node.op_type().c_str(), lowerBound, upperBound, actualNumberOfInputs );
+    }
+    throw MarabouError(  MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+}
+
 void checkTensorDataSourceIsInternal( const onnx::TensorProto& tensor )
 {
     if ( tensor.data_location() == onnx::TensorProto_DataLocation_EXTERNAL )
@@ -780,6 +794,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         transpose( node );
     }
+    else if ( strcmp( nodeType, "Squeeze" ) == 0 )
+    {
+        squeeze( node );
+    }
     else if ( strcmp( nodeType, "BatchNormalization" ) == 0 )
     {
         batchNormEquations( node, makeEquations );
@@ -1030,6 +1048,65 @@ void OnnxParser::transpose( onnx::NodeProto& node )
     {
         missingNodeError( inputNodeName );
     }
+}
+
+/**
+ * @brief Processes a "squeeze" node in the network.
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Squeeze
+ *
+ * @param node The ONNX node
+ */
+void OnnxParser::squeeze( onnx::NodeProto& node )
+{
+    String inputNodeName = node.input()[0];
+    String outputNodeName = node.output()[0];
+
+    // Get the input shape
+    TensorShape inputShape = _shapeMap[inputNodeName];
+
+    // Get the axes to squeeze
+    Vector<SignedTensorIndex> axes;
+    unsigned int numberOfInputs = node.input().size();
+    if ( numberOfInputs == 1 )
+    {
+        for( unsigned int i = 0; i < inputShape.size(); i++ )
+        {
+            if ( inputShape[i] == 1 )
+            {
+                axes.append( i );
+            }
+        }
+    }
+    else if ( numberOfInputs == 2 )
+    {
+        String axisName = node.input()[1];
+        if ( !_constantIntTensors.exists( axisName ) )
+        {
+            missingNodeError( axisName );
+        }
+        axes = _constantIntTensors[axisName];
+    }
+    else
+    {
+        unexpectedNumberOfInputs( node, numberOfInputs, 1, 2 );
+    }
+
+    // Calculate the output shape
+    TensorShape outputShape = Vector<unsigned int>( inputShape );
+    for ( SignedTensorIndex signedAxis : axes )
+    {
+        TensorIndex axis = unsignIndex( inputShape, signedAxis );
+        if ( inputShape[axis] != 1 )
+        {
+            String errorMessage = Stringf( "Invalid axis found on Squeeze node '%s'. Expected dimension %d to be of size 1 but was size %d", inputNodeName.ascii(), axis, inputShape[axis] );
+            throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+        }
+        outputShape.eraseAt( axis );
+    }
+
+    // Update the maps
+    _shapeMap[outputNodeName] = outputShape;
+    _varMap[outputNodeName] = _varMap[inputNodeName];
 }
 
 /**
