@@ -12,8 +12,9 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <iomanip>
 #include "JsonWriter.h"
+
+#include <iomanip>
 
 const char JsonWriter::AFFECTED_VAR[] = "\"affVar\" : ";
 const char JsonWriter::AFFECTED_BOUND[] = "\"affBound\" : ";
@@ -41,16 +42,17 @@ const char JsonWriter::VARIABLE[] = "\"var\" : ";
 const char JsonWriter::VARIABLES[] = "\"vars\" : ";
 
 const bool JsonWriter::PROVE_LEMMAS = true;
-const unsigned JsonWriter::JSONWRITER_PRECISION = ( unsigned ) std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+const unsigned JsonWriter::JSONWRITER_PRECISION =
+    (unsigned)std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
 const char JsonWriter::PROOF_FILENAME[] = "proof.json";
 
-void JsonWriter::writeProofToJson(  const UnsatCertificateNode *root,
-                                    unsigned explanationSize,
-                                    const SparseMatrix *initialTableau,
-                                    const Vector<double> &upperBounds,
-                                    const Vector<double> &lowerBounds,
-                                    const List<PiecewiseLinearConstraint *> &problemConstraints,
-                                    IFile &file )
+void JsonWriter::writeProofToJson( const UnsatCertificateNode *root,
+                                   unsigned explanationSize,
+                                   const SparseMatrix *initialTableau,
+                                   const Vector<double> &upperBounds,
+                                   const Vector<double> &lowerBounds,
+                                   const List<PiecewiseLinearConstraint *> &problemConstraints,
+                                   IFile &file )
 {
     ASSERT( root );
     ASSERT( upperBounds.size() > 0 );
@@ -77,7 +79,9 @@ void JsonWriter::writeProofToJson(  const UnsatCertificateNode *root,
     writeInstanceToFile( file, jsonLines );
 }
 
-void JsonWriter::writeBounds( const Vector<double> &bounds, BoundType isUpper, List<String> &instance )
+void JsonWriter::writeBounds( const Vector<double> &bounds,
+                              BoundType isUpper,
+                              List<String> &instance )
 {
     String boundsString = isUpper == UPPER ? UPPER_BOUNDS : LOWER_BOUNDS;
 
@@ -87,7 +91,9 @@ void JsonWriter::writeBounds( const Vector<double> &bounds, BoundType isUpper, L
     instance.append( String( ",\n" ) );
 }
 
-void JsonWriter::writeInitialTableau( const SparseMatrix *initialTableau, unsigned explanationSize, List<String> &instance )
+void JsonWriter::writeInitialTableau( const SparseMatrix *initialTableau,
+                                      unsigned explanationSize,
+                                      List<String> &instance )
 {
     instance.append( String( TABLEAU ) );
     instance.append( "[\n" );
@@ -108,10 +114,12 @@ void JsonWriter::writeInitialTableau( const SparseMatrix *initialTableau, unsign
             instance.append( "]\n" );
     }
 
-    instance.append ( "], \n" );
+    instance.append( "], \n" );
 }
 
-void JsonWriter::writePiecewiseLinearConstraints( const List<PiecewiseLinearConstraint *> &problemConstraints, List<String> &instance )
+void JsonWriter::writePiecewiseLinearConstraints(
+    const List<PiecewiseLinearConstraint *> &problemConstraints,
+    List<String> &instance )
 {
     instance.append( CONSTRAINTS );
     instance.append( "[\n" );
@@ -132,17 +140,18 @@ void JsonWriter::writePiecewiseLinearConstraints( const List<PiecewiseLinearCons
 
         for ( unsigned var : tableauVars )
         {
-            vars += std::to_string( var ) ;
+            vars += std::to_string( var );
             if ( var != tableauVars.back() )
                 vars += ", ";
         }
 
         vars += "]";
 
-        instance.append( String( "{" ) + String( CONSTRAINT_TYPE ) + type + String( ", " ) + String( VARIABLES ) + vars );
+        instance.append( String( "{" ) + String( CONSTRAINT_TYPE ) + type + String( ", " ) +
+                         String( VARIABLES ) + vars );
 
         // Not adding a comma after the last element
-        if (counter != size - 1 )
+        if ( counter != size - 1 )
             instance.append( "},\n" );
         else
             instance.append( "}\n" );
@@ -151,7 +160,9 @@ void JsonWriter::writePiecewiseLinearConstraints( const List<PiecewiseLinearCons
     instance.append( "],\n" );
 }
 
-void JsonWriter::writeUnsatCertificateNode( const UnsatCertificateNode *node, unsigned explanationSize ,List<String> &instance )
+void JsonWriter::writeUnsatCertificateNode( const UnsatCertificateNode *node,
+                                            unsigned explanationSize,
+                                            List<String> &instance )
 {
     // For SAT examples only (used for debugging)
     if ( !node->getVisited() || node->getSATSolutionFlag() )
@@ -172,14 +183,14 @@ void JsonWriter::writeUnsatCertificateNode( const UnsatCertificateNode *node, un
         unsigned size = node->getChildren().size();
         for ( auto child : node->getChildren() )
         {
-            instance.append("{\n" );
+            instance.append( "{\n" );
             writeUnsatCertificateNode( child, explanationSize, instance );
 
             // Not adding a comma after the last element
-            if (counter != size - 1)
-                instance.append("},\n" );
+            if ( counter != size - 1 )
+                instance.append( "},\n" );
             else
-                instance.append("}\n" );
+                instance.append( "}\n" );
             ++counter;
         }
 
@@ -200,13 +211,15 @@ void JsonWriter::writeHeadSplit( const PiecewiseLinearCaseSplit &headSplit, List
     instance.append( "[" );
     for ( auto tightening : headSplit.getBoundTightenings() )
     {
-        instance.append( String ( "{" ) + String( VARIABLE ) + std::to_string( tightening._variable ) + String(", " ) + \
-        String ( VALUE ) + convertDoubleToString( tightening._value ) + String(", " ) + \
-        String ( BOUND ) );
-        boundTypeString = tightening._type == Tightening::UB ? String ( UPPER_BOUND ) : String ( LOWER_BOUND );
+        instance.append( String( "{" ) + String( VARIABLE ) +
+                         std::to_string( tightening._variable ) + String( ", " ) + String( VALUE ) +
+                         convertDoubleToString( tightening._value ) + String( ", " ) +
+                         String( BOUND ) );
+        boundTypeString =
+            tightening._type == Tightening::UB ? String( UPPER_BOUND ) : String( LOWER_BOUND );
         boundTypeString += String( "}" );
         // Not adding a comma after the last element
-        if ( counter !=  size - 1 )
+        if ( counter != size - 1 )
             boundTypeString += ", ";
         instance.append( boundTypeString );
         ++counter;
@@ -219,12 +232,14 @@ void JsonWriter::writeContradiction( const Contradiction *contradiction, List<St
     String contradictionString = CONTRADICTION;
     const SparseUnsortedList explanation = contradiction->getContradiction();
     contradictionString += "[ ";
-    contradictionString += explanation.empty() ? std::to_string( contradiction->getVar() ) : convertSparseUnsortedListToString( explanation );
+    contradictionString += explanation.empty() ? std::to_string( contradiction->getVar() )
+                                               : convertSparseUnsortedListToString( explanation );
     contradictionString += String( " ]\n" );
     instance.append( contradictionString );
 }
 
-void JsonWriter::writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCExplanations, List<String> &instance )
+void JsonWriter::writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCExplanations,
+                                 List<String> &instance )
 {
     unsigned counter = 0;
     unsigned size = PLCExplanations.size();
@@ -240,9 +255,11 @@ void JsonWriter::writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCExpla
     for ( auto lemma : PLCExplanations )
     {
         instance.append( String( "{" ) );
-        instance.append( String( AFFECTED_VAR) + std::to_string( lemma->getAffectedVar() ) + String( ", " ) );
-        affectedBoundType = lemma->getAffectedVarBound() == UPPER ? String ( UPPER_BOUND ) : String ( LOWER_BOUND );
-        instance.append( String( AFFECTED_BOUND ) + affectedBoundType  + String( ", " ) );
+        instance.append( String( AFFECTED_VAR ) + std::to_string( lemma->getAffectedVar() ) +
+                         String( ", " ) );
+        affectedBoundType =
+            lemma->getAffectedVarBound() == UPPER ? String( UPPER_BOUND ) : String( LOWER_BOUND );
+        instance.append( String( AFFECTED_BOUND ) + affectedBoundType + String( ", " ) );
         instance.append( String( BOUND ) + convertDoubleToString( lemma->getBound() ) );
 
         if ( PROVE_LEMMAS )
@@ -251,35 +268,39 @@ void JsonWriter::writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCExpla
             List<unsigned> causingVars = lemma->getCausingVars();
 
             if ( causingVars.size() == 1 )
-                instance.append( String( CAUSING_VAR ) + std::to_string( causingVars.front() ) + String( ", " ) );
+                instance.append( String( CAUSING_VAR ) + std::to_string( causingVars.front() ) +
+                                 String( ", " ) );
             else
             {
-                instance.append( String( CAUSING_VARS ) + "[ ");
+                instance.append( String( CAUSING_VARS ) + "[ " );
                 for ( unsigned var : causingVars )
                 {
                     instance.append( std::to_string( var ) );
                     if ( var != causingVars.back() )
                         instance.append( ", " );
                 }
-                instance.append( " ]\n");
+                instance.append( " ]\n" );
             }
 
-            causingBoundType = lemma->getCausingVarBound() == UPPER ? String( UPPER_BOUND ) : String( LOWER_BOUND );
+            causingBoundType = lemma->getCausingVarBound() == UPPER ? String( UPPER_BOUND )
+                                                                    : String( LOWER_BOUND );
             instance.append( String( CAUSING_BOUND ) + causingBoundType + String( ", " ) );
-            instance.append( String( CONSTRAINT ) + std::to_string( lemma->getConstraintType() ) + String( ",\n" ) );
+            instance.append( String( CONSTRAINT ) + std::to_string( lemma->getConstraintType() ) +
+                             String( ",\n" ) );
 
             List<SparseUnsortedList> expls = lemma->getExplanations();
             if ( expls.size() == 1 )
-                instance.append( String( EXPLANATION ) + "[ " + convertSparseUnsortedListToString( expls.front() ) + " ]");
+                instance.append( String( EXPLANATION ) + "[ " +
+                                 convertSparseUnsortedListToString( expls.front() ) + " ]" );
             else
             {
-                instance.append( String( EXPLANATIONS ) + "[ ");
+                instance.append( String( EXPLANATIONS ) + "[ " );
                 unsigned innerCounter = 0;
                 for ( SparseUnsortedList &expl : expls )
                 {
-                    instance.append( "[ ");
+                    instance.append( "[ " );
                     instance.append( convertSparseUnsortedListToString( expl ) );
-                    instance.append( " ]");
+                    instance.append( " ]" );
                     if ( innerCounter != expls.size() - 1 )
                         instance.append( ",\n" );
 
@@ -314,7 +335,7 @@ String JsonWriter::convertDoubleToString( double value )
 {
     std::stringstream s;
     s << std::fixed << std::setprecision( JSONWRITER_PRECISION ) << value;
-    String str = String ( s.str() ).trimZerosFromRight();
+    String str = String( s.str() ).trimZerosFromRight();
 
     // Add .0 for integers for some JSON parsers.
     if ( !str.contains( "." ) )
@@ -328,7 +349,7 @@ String JsonWriter::convertDoubleArrayToString( const double *arr, unsigned size 
     for ( unsigned i = 0; i < size - 1; ++i )
         arrString += convertDoubleToString( arr[i] ) + ", ";
 
-    arrString += convertDoubleToString( arr[size -1] ) + "]";
+    arrString += convertDoubleToString( arr[size - 1] ) + "]";
 
     return arrString;
 }
@@ -338,14 +359,15 @@ String JsonWriter::convertSparseUnsortedListToString( SparseUnsortedList sparseL
     String sparseListString = "";
     unsigned counter = 0;
     unsigned size = sparseList.getNnz();
-    for ( auto entry = sparseList.begin() ; entry != sparseList.end(); ++entry )
+    for ( auto entry = sparseList.begin(); entry != sparseList.end(); ++entry )
     {
-        sparseListString +=  String( "{" ) + String( VARIABLE ) + std::to_string( entry->_index ) + String(", " ) +
-                         String( VALUE ) + convertDoubleToString( entry->_value ) + String ( "}" );
+        sparseListString += String( "{" ) + String( VARIABLE ) + std::to_string( entry->_index ) +
+                            String( ", " ) + String( VALUE ) +
+                            convertDoubleToString( entry->_value ) + String( "}" );
 
         // Not adding a comma after the last element
         if ( counter != size - 1 )
-            sparseListString += ", " ;
+            sparseListString += ", ";
         ++counter;
     }
     return sparseListString;

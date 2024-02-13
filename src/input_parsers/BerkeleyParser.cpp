@@ -14,6 +14,7 @@
 **/
 
 #include "BerkeleyParser.h"
+
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "ReluConstraint.h"
@@ -30,8 +31,7 @@ void BerkeleyParser::generateQuery( InputQuery &inputQuery )
     // The total number of variables required for the encoding is computed as follows:
     //   1. One for every variable that's part of the query
 
-    unsigned numberOfVariables =
-        _berkeleyNeuralNetwork.getNumVariables();
+    unsigned numberOfVariables = _berkeleyNeuralNetwork.getNumVariables();
 
     printf( "Total number of Marabou variables: %u\n", numberOfVariables );
 
@@ -100,7 +100,9 @@ void BerkeleyParser::addAuxiliaryEquations( List<Equation> &auxiliaryEquations )
         addAuxiliaryEquation( fToB.first, fToB.second, auxiliaryEquations );
 }
 
-void BerkeleyParser::addAuxiliaryEquation( unsigned xf, unsigned xb, List<Equation> &auxiliaryEquations )
+void BerkeleyParser::addAuxiliaryEquation( unsigned xf,
+                                           unsigned xb,
+                                           List<Equation> &auxiliaryEquations )
 {
     Set<unsigned> inputVariables = _berkeleyNeuralNetwork.getInputVariables();
 

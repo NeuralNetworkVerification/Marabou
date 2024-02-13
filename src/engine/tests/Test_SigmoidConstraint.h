@@ -13,12 +13,12 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "InputQuery.h"
 #include "MarabouError.h"
-#include "SigmoidConstraint.h"
 #include "MockTableau.h"
+#include "SigmoidConstraint.h"
+
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForSigmoidConstraint
@@ -32,9 +32,10 @@ public:
 class TestSigmoidConstraint : public SigmoidConstraint
 {
 public:
-    TestSigmoidConstraint( unsigned b, unsigned f  )
+    TestSigmoidConstraint( unsigned b, unsigned f )
         : SigmoidConstraint( b, f )
-    {}
+    {
+    }
 };
 
 class MaxConstraintTestSuite : public CxxTest::TestSuite
@@ -78,7 +79,7 @@ public:
         TS_ASSERT( !sigmoid.constraintObsolete() );
 
         // eliminate variable b
-        sigmoid.eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+        sigmoid.eliminateVariable( b, 0 ); // 0 is dummy for the argument of fixedValue
 
         // sigmoid is obsolete now
         TS_ASSERT( sigmoid.constraintObsolete() );
@@ -98,7 +99,8 @@ public:
         TS_ASSERT( !sigmoid->constraintObsolete() );
 
         // duplicate constraint
-        SigmoidConstraint *sigmoid2 = dynamic_cast<SigmoidConstraint *>( sigmoid->duplicateConstraint() );
+        SigmoidConstraint *sigmoid2 =
+            dynamic_cast<SigmoidConstraint *>( sigmoid->duplicateConstraint() );
         TS_ASSERT_THROWS_NOTHING( participatingVariables = sigmoid2->getParticipatingVariables() );
         TS_ASSERT_EQUALS( participatingVariables.size(), 2U );
         auto it = participatingVariables.begin();
@@ -113,7 +115,7 @@ public:
         TS_ASSERT( !sigmoid2->participatingVariable( 5 ) );
 
         // eliminate variable b
-        sigmoid->eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+        sigmoid->eliminateVariable( b, 0 ); // 0 is dummy for the argument of fixedValue
 
         // sigmoid is obsolete now
         TS_ASSERT( sigmoid->constraintObsolete() );
@@ -185,7 +187,7 @@ public:
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1- 0.26894142, 0.001 ) );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1 - 0.26894142, 0.001 ) );
     }
 
     void test_sigmoid_notify_bounds_f()
@@ -219,7 +221,7 @@ public:
         ++it;
         TS_ASSERT_EQUALS( it->_type, Tightening::UB );
         TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT( FloatUtils::areEqual( it->_value, 1- 0.26894142, 0.001 ) );
+        TS_ASSERT( FloatUtils::areEqual( it->_value, 1 - 0.26894142, 0.001 ) );
     }
 
     void test_sigmoid_update_variable_index()
@@ -281,7 +283,7 @@ public:
             ++it;
             TS_ASSERT_EQUALS( it->_type, Tightening::UB );
             TS_ASSERT_EQUALS( it->_variable, new_f );
-            TS_ASSERT( FloatUtils::areEqual( it->_value, 1- 0.26894142, 0.001 ) );
+            TS_ASSERT( FloatUtils::areEqual( it->_value, 1 - 0.26894142, 0.001 ) );
         }
     }
 
@@ -366,6 +368,5 @@ public:
         tableau.setValue( b1, 1 );
         tableau.setValue( f1, 0.73105857863 );
         TS_ASSERT( sigmoid.satisfied() );
-
     }
 };

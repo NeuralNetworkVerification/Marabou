@@ -19,23 +19,25 @@
 #ifndef __NetworkParser_h__
 #define __NetworkParser_h__
 
-#include "Map.h"
-#include "List.h"
-#include "Vector.h"
+#include "DisjunctionConstraint.h"
 #include "Equation.h"
 #include "InputQuery.h"
-#include "ReluConstraint.h"
-#include "DisjunctionConstraint.h"
+#include "List.h"
+#include "Map.h"
 #include "MaxConstraint.h"
+#include "NonlinearConstraint.h"
 #include "PiecewiseLinearConstraint.h"
+#include "ReluConstraint.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
-#include "NonlinearConstraint.h"
+#include "Vector.h"
+
 #include <utility>
 
 typedef unsigned int Variable;
 
-class NetworkParser {
+class NetworkParser
+{
 private:
     unsigned int _numVars;
 
@@ -44,13 +46,13 @@ protected:
     List<Variable> _outputVars;
 
     Vector<Equation> _equationList;
-    List<ReluConstraint*> _reluList;
-    List<SigmoidConstraint*> _sigmoidList;
-    List<MaxConstraint*> _maxList;
-    List<AbsoluteValueConstraint*> _absList;
-    List<SignConstraint*> _signList;
-    Map<Variable,float> _lowerBounds;
-    Map<Variable,float> _upperBounds;
+    List<ReluConstraint *> _reluList;
+    List<SigmoidConstraint *> _sigmoidList;
+    List<MaxConstraint *> _maxList;
+    List<AbsoluteValueConstraint *> _absList;
+    List<SignConstraint *> _signList;
+    Map<Variable, float> _lowerBounds;
+    Map<Variable, float> _upperBounds;
 
     NetworkParser();
     void initNetwork();
@@ -65,7 +67,7 @@ protected:
     void addAbsConstraint( Variable var1, Variable var2 );
 
     Variable getNewVariable();
-    void getMarabouQuery( InputQuery& query );
+    void getMarabouQuery( InputQuery &query );
 
     int findEquationWithOutputVariable( Variable variable );
 };

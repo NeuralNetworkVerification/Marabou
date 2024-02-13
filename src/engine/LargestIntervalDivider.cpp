@@ -13,14 +13,14 @@
 
 **/
 
+#include "LargestIntervalDivider.h"
+
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "LargestIntervalDivider.h"
 #include "MStringf.h"
 #include "PiecewiseLinearCaseSplit.h"
 
-LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
-                                                &inputVariables )
+LargestIntervalDivider::LargestIntervalDivider( const List<unsigned> &inputVariables )
     : _inputVariables( inputVariables )
 {
 }
@@ -28,8 +28,7 @@ LargestIntervalDivider::LargestIntervalDivider( const List<unsigned>
 void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
                                                const String queryIdPrefix,
                                                const unsigned previousDepth,
-                                               const PiecewiseLinearCaseSplit
-                                               &previousSplit,
+                                               const PiecewiseLinearCaseSplit &previousSplit,
                                                const unsigned timeoutInSeconds,
                                                SubQueries &subQueries )
 {
@@ -78,31 +77,27 @@ void LargestIntervalDivider::createSubQueries( unsigned numNewSubqueries,
             queryId = queryIdPrefix + Stringf( "-%u", queryIdSuffix++ );
 
         // Create a new case split
-        auto split = std::unique_ptr<PiecewiseLinearCaseSplit>
-            ( new PiecewiseLinearCaseSplit() );
+        auto split = std::unique_ptr<PiecewiseLinearCaseSplit>( new PiecewiseLinearCaseSplit() );
         // Add bound as equations for each input variable
         for ( const auto &variable : _inputVariables )
         {
             double lb = inputRegion._lowerBounds[variable];
             double ub = inputRegion._upperBounds[variable];
-            split->storeBoundTightening( Tightening( variable, lb,
-                                                     Tightening::LB ) );
-            split->storeBoundTightening( Tightening( variable, ub,
-                                                     Tightening::UB ) );
+            split->storeBoundTightening( Tightening( variable, lb, Tightening::LB ) );
+            split->storeBoundTightening( Tightening( variable, ub, Tightening::UB ) );
         }
 
         // Construct the new subquery and add it to subqueries
         SubQuery *subQuery = new SubQuery;
         subQuery->_queryId = queryId;
-        subQuery->_split = std::move(split);
+        subQuery->_split = std::move( split );
         subQuery->_timeoutInSeconds = timeoutInSeconds;
         subQuery->_depth = previousDepth + 1;
         subQueries.append( subQuery );
     }
 }
 
-unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
-                                                     &inputRegion )
+unsigned LargestIntervalDivider::getLargestInterval( const InputRegion &inputRegion )
 {
     ASSERT( inputRegion._lowerBounds.size() == inputRegion._upperBounds.size() );
     unsigned dimensionToSplit = 0;
@@ -112,8 +107,7 @@ unsigned LargestIntervalDivider::getLargestInterval( const InputRegion
 
     for ( const auto &variable : _inputVariables )
     {
-        double interval = inputRegion._upperBounds[variable] -
-            inputRegion._lowerBounds[variable];
+        double interval = inputRegion._upperBounds[variable] - inputRegion._lowerBounds[variable];
 
         DEBUG( haveCandidate = true );
 

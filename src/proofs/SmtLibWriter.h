@@ -23,8 +23,8 @@
 #include "Vector.h"
 
 /*
-* A class responsible for writing instances of LP+PLC into SMTLIB format
-*/
+ * A class responsible for writing instances of LP+PLC into SMTLIB format
+ */
 class SmtLibWriter
 {
 public:
@@ -46,27 +46,35 @@ public:
     /*
       Adds a line representing a ReLU constraint, in SMTLIB format, to the SMTLIB instance
     */
-    static void addReLUConstraint( unsigned b, unsigned f, const PhaseStatus status, List<String> &instance );
+    static void
+    addReLUConstraint( unsigned b, unsigned f, const PhaseStatus status, List<String> &instance );
 
     /*
       Adds a line representing a sign constraint, in SMTLIB format, to the SMTLIB instance
     */
-    static void addSignConstraint( unsigned b, unsigned f, const PhaseStatus status, List<String> &instance );
+    static void
+    addSignConstraint( unsigned b, unsigned f, const PhaseStatus status, List<String> &instance );
 
     /*
      Adds a line representing an absolute value constraint, in SMTLIB format, to the SMTLIB instance
    */
-    static void addAbsConstraint( unsigned b, unsigned f, const PhaseStatus status, List<String> &instance );
+    static void
+    addAbsConstraint( unsigned b, unsigned f, const PhaseStatus status, List<String> &instance );
 
     /*
      Adds a line representing a max constraint, in SMTLIB format, to the SMTLIB instance
     */
-    static void addMaxConstraint( unsigned f, const Set<unsigned> &elements, const PhaseStatus status, double maxVal, List<String> &instance );
+    static void addMaxConstraint( unsigned f,
+                                  const Set<unsigned> &elements,
+                                  const PhaseStatus status,
+                                  double maxVal,
+                                  List<String> &instance );
 
     /*
      Adds a line representing a disjunction constraint, in SMTLIB format, to the SMTLIB instance
     */
-    static void addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts, List<String> &instance );
+    static void addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts,
+                                          List<String> &instance );
 
     /*
       Adds a line representing a Tableau Row, in SMTLIB format, to the SMTLIB instance

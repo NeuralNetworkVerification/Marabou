@@ -16,18 +16,17 @@
 
 #include "File.h"
 
-namespace T
+namespace T {
+IFile *createFile( const String &path )
 {
-	IFile *createFile( const String &path )
-	{
-		return new File( path );
-	}
-
-	void discardFile( IFile *file )
-	{
-		delete file;
-	}
+    return new File( path );
 }
+
+void discardFile( IFile *file )
+{
+    delete file;
+}
+} // namespace T
 
 //
 // Local Variables:

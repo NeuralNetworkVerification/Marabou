@@ -31,31 +31,37 @@
 class FloatUtils
 {
 public:
-    static bool areEqual( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
-    static String doubleToString( double x,
-                                  unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
+    static bool areEqual( double x,
+                          double y,
+                          double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
+    static String
+    doubleToString( double x,
+                    unsigned precision = GlobalConfiguration::DEFAULT_DOUBLE_TO_STRING_PRECISION );
 
     static bool isNan( double x );
 
     static bool isInf( double x );
 
-    static bool isZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool isZero( double x,
+                        double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
-        ASSERT( epsilon > 0 );                                                                                                                
-        double lower = -epsilon; 
-        double upper = epsilon;                                                                                                               
+        ASSERT( epsilon > 0 );
+        double lower = -epsilon;
+        double upper = epsilon;
         return ( x - upper ) * ( x - lower ) <= 0;
     }
 
-    static bool isPositive( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool isPositive( double x,
+                            double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
-        ASSERT( epsilon > 0 ); 
+        ASSERT( epsilon > 0 );
         return x > epsilon;
     }
 
-    static bool isNegative( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool isNegative( double x,
+                            double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
-        ASSERT( epsilon > 0 ); 
+        ASSERT( epsilon > 0 );
         return x < -epsilon;
     }
 
@@ -71,50 +77,57 @@ public:
         return !areEqual( x, y, epsilon );
     }
 
-    static double roundToZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static double
+    roundToZero( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return isZero( x, epsilon ) ? 0.0 : x;
     }
 
-    static bool gt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool
+    gt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return isPositive( x - y, epsilon );
     }
 
-    static bool gte( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool
+    gte( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return !isNegative( x - y, epsilon );
     }
 
-    static bool lt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool
+    lt( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return gt( y, x, epsilon );
     }
 
-    static bool lte( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static bool
+    lte( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return gte( y, x, epsilon );
     }
 
-    static double min( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static double
+    min( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return lt( x, y, epsilon ) ? x : y;
     }
 
-    static double max( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static double
+    max( double x, double y, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         return gt( x, y, epsilon ) ? x : y;
     }
 
-    static double round( double x, double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
+    static double round( double x,
+                         double epsilon = GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS )
     {
         // # Implement pytorch round https://pytorch.org/docs/stable/generated/torch.round.html
         // "Values equidistant from two integers are rounded towards the nearest even value"
         // i.e., round(2.5) == round(1.5) == 2
         double f = floor( x );
         double c = ceil( x );
-        if ( areEqual( x - f, 0.5, epsilon ) &&
-             areEqual( c - x, 0.5, epsilon ) )
+        if ( areEqual( x - f, 0.5, epsilon ) && areEqual( c - x, 0.5, epsilon ) )
             return ( (int)c % 2 == 0 ) ? c : f;
         else
             return gt( x - f, 0.5, epsilon ) ? c : f;
@@ -139,7 +152,6 @@ public:
     {
         return !isNan( x ) && !isInf( x );
     }
-
 };
 
 #endif // __FloatUtils_h__

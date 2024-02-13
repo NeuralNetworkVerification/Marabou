@@ -14,14 +14,19 @@
 **/
 
 #include "ConstSimpleData.h"
+
 #include "HeapData.h"
 #include "MStringf.h"
 
-ConstSimpleData::ConstSimpleData( const void *data, unsigned size ) : _data( data ), _size( size )
+ConstSimpleData::ConstSimpleData( const void *data, unsigned size )
+    : _data( data )
+    , _size( size )
 {
 }
 
-ConstSimpleData::ConstSimpleData( const HeapData &data ) : _data( data.data() ), _size( data.size() )
+ConstSimpleData::ConstSimpleData( const HeapData &data )
+    : _data( data.data() )
+    , _size( data.size() )
 {
 }
 

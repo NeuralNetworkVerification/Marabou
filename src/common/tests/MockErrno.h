@@ -19,21 +19,20 @@
 
 #include "T/Errno.h"
 
-class MockErrno :
-	public T::Base_errorNumber
+class MockErrno : public T::Base_errorNumber
 {
 public:
-	MockErrno()
-	{
+    MockErrno()
+    {
         nextErrno = 28;
-	}
+    }
 
     int nextErrno;
 
     int errorNumber()
-	{
+    {
         return nextErrno;
-	}
+    }
 };
 
 #endif // __MockErrno_h__

@@ -21,7 +21,7 @@
 class InputParserError : public Error
 {
 public:
-	enum Code {
+    enum Code {
         VARIABLE_INDEX_OUT_OF_RANGE = 0,
         UNEXPECTED_INPUT = 1,
         FILE_DOESNT_EXIST = 2,
@@ -30,12 +30,13 @@ public:
         HIDDEN_VARIABLE_DOESNT_EXIST_IN_NLR = 5,
     };
 
-    InputParserError( InputParserError::Code code ) : Error( "InputParserError", (int)code )
-	{
-	}
+    InputParserError( InputParserError::Code code )
+        : Error( "InputParserError", (int)code )
+    {
+    }
 
     InputParserError( InputParserError::Code code, const char *userMessage )
-      : Error( "InputParserError", (int)code, userMessage )
+        : Error( "InputParserError", (int)code, userMessage )
     {
     }
 };

@@ -21,8 +21,8 @@
 #include "MString.h"
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
-#include "PiecewiseLinearConstraint.h"
 #include "NonlinearConstraint.h"
+#include "PiecewiseLinearConstraint.h"
 
 class InputQuery
 {
@@ -158,8 +158,8 @@ private:
     Map<unsigned, double> _solution;
 
     /*
-      Attempt to ensure that neurons in the same non-linear NLR layer 
-      have the same source layer by spacing neurons with different 
+      Attempt to ensure that neurons in the same non-linear NLR layer
+      have the same source layer by spacing neurons with different
       source neurons in separate NLR layers.
     */
     bool _ensureSameSourceLayerInNLR;
@@ -197,8 +197,8 @@ private:
                             Map<unsigned, unsigned> &handledVariableToLayer,
                             unsigned newLayerIndex );
     bool constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
-                                  Map<unsigned, unsigned> &handledVariableToLayer,
-                                  unsigned newLayerIndex );
+                                 Map<unsigned, unsigned> &handledVariableToLayer,
+                                 unsigned newLayerIndex );
     bool constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
                                 Map<unsigned, unsigned> &handledVariableToLayer,
                                 unsigned newLayerIndex );

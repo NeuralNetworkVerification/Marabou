@@ -19,12 +19,13 @@
 #include "CommonError.h"
 #include "List.h"
 #include "Set.h"
+
 #include <map>
 
-template<class Key, class Value>
-class Map
+template <class Key, class Value> class Map
 {
-    typedef std::map<Key,Value> Super;
+    typedef std::map<Key, Value> Super;
+
 public:
     typedef typename Super::iterator iterator;
     typedef typename Super::const_iterator const_iterator;
@@ -86,17 +87,17 @@ public:
         return _container.at( key );
     }
 
-    bool operator==( const Map<Key,Value> &other ) const
+    bool operator==( const Map<Key, Value> &other ) const
     {
         return _container == other._container;
     }
 
-    bool operator!=( const Map<Key,Value> &other ) const
+    bool operator!=( const Map<Key, Value> &other ) const
     {
         return _container != other._container;
     }
 
-    bool operator<( const Map<Key,Value> &other ) const
+    bool operator<( const Map<Key, Value> &other ) const
     {
         return _container < other._container;
     }

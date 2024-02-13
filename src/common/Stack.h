@@ -17,14 +17,14 @@
 #define __Stack_h__
 
 #include "CommonError.h"
+
 #include <stack>
 
-template<class T>
-class Stack
+template <class T> class Stack
 {
     typedef std::stack<T> Super;
-public:
 
+public:
     void push( T value )
     {
         _container.push( value );

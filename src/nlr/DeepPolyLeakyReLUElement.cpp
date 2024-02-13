@@ -1,4 +1,4 @@
- /*********************                                                        */
+/*********************                                                        */
 /*! \file DeepPolyLeakyReLUElement.cpp
  ** \verbatim
  ** Top contributors (to current version):
@@ -14,6 +14,7 @@
 **/
 
 #include "DeepPolyLeakyReLUElement.h"
+
 #include "FloatUtils.h"
 
 namespace NLR {
@@ -33,8 +34,8 @@ DeepPolyLeakyReLUElement::~DeepPolyLeakyReLUElement()
     freeMemoryIfNeeded();
 }
 
-void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
-                               &deepPolyElementsBefore )
+void DeepPolyLeakyReLUElement::execute(
+    const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Executing..." );
     ASSERT( hasPredecessor() );
@@ -45,12 +46,9 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
     for ( unsigned i = 0; i < _size; ++i )
     {
         NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
-        DeepPolyElement *predecessor =
-            deepPolyElementsBefore[sourceIndex._layer];
-        double sourceLb = predecessor->getLowerBound
-            ( sourceIndex._neuron );
-        double sourceUb = predecessor->getUpperBound
-            ( sourceIndex._neuron );
+        DeepPolyElement *predecessor = deepPolyElementsBefore[sourceIndex._layer];
+        double sourceLb = predecessor->getLowerBound( sourceIndex._neuron );
+        double sourceUb = predecessor->getUpperBound( sourceIndex._neuron );
 
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
@@ -84,7 +82,7 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
             // Symbolic upper bound: x_f <= (x_b - l) * u / ( u - l)
             // Concrete upper bound: x_f <= ub_b
             double width = sourceUb - sourceLb;
-            double coeff = (sourceUb - _slope * sourceLb) / width;
+            double coeff = ( sourceUb - _slope * sourceLb ) / width;
 
             if ( _slope <= 1 )
             {
@@ -137,18 +135,25 @@ void DeepPolyLeakyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
             }
         }
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
-                      i, _symbolicLb[i], _symbolicLowerBias[i],
-                      _symbolicUb[i], _symbolicUpperBias[i] ) );
+                      i,
+                      _symbolicLb[i],
+                      _symbolicLowerBias[i],
+                      _symbolicUb[i],
+                      _symbolicUpperBias[i] ) );
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
     log( "Executing - done" );
 }
 
-void DeepPolyLeakyReLUElement::symbolicBoundInTermsOfPredecessor
-( const double *symbolicLb, const double*symbolicUb, double
-  *symbolicLowerBias, double *symbolicUpperBias, double
-  *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-  unsigned targetLayerSize, DeepPolyElement *predecessor )
+void DeepPolyLeakyReLUElement::symbolicBoundInTermsOfPredecessor(
+    const double *symbolicLb,
+    const double *symbolicUb,
+    double *symbolicLowerBias,
+    double *symbolicUpperBias,
+    double *symbolicLbInTermsOfPredecessor,
+    double *symbolicUbInTermsOfPredecessor,
+    unsigned targetLayerSize,
+    DeepPolyElement *predecessor )
 {
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessor->getLayerIndex() ) );
@@ -160,12 +165,9 @@ void DeepPolyLeakyReLUElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
-        NeuronIndex sourceIndex = *( _layer->
-                                     getActivationSources( i ).begin() );
+        NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
         unsigned sourceNeuronIndex = sourceIndex._neuron;
-        DEBUG({
-                ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
-            });
+        DEBUG( { ASSERT( predecessor->getLayerIndex() == sourceIndex._layer ); } );
 
         /*
           Take symbolic upper bound as an example.
@@ -199,7 +201,8 @@ void DeepPolyLeakyReLUElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffLb;
                 symbolicLowerBias[j] += weightLb * lowerBias;
-            } else
+            }
+            else
             {
                 symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;
@@ -211,7 +214,8 @@ void DeepPolyLeakyReLUElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffUb;
                 symbolicUpperBias[j] += weightUb * upperBias;
-            } else
+            }
+            else
             {
                 symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffLb;
                 symbolicUpperBias[j] += weightUb * lowerBias;

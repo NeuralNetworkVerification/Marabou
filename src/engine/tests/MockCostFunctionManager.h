@@ -24,10 +24,10 @@
 class MockCostFunctionManager : public ICostFunctionManager
 {
 public:
-	MockCostFunctionManager()
-	{
-		wasCreated = false;
-		wasDiscarded = false;
+    MockCostFunctionManager()
+    {
+        wasCreated = false;
+        wasDiscarded = false;
 
         initializeWasCalled = false;
         lastTableau = NULL;
@@ -41,24 +41,24 @@ public:
             delete[] nextCostFunction;
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
     ITableau *lastTableau;
-	void mockConstructor( ITableau *tableau )
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
+    void mockConstructor( ITableau *tableau )
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
 
         lastTableau = tableau;
-	}
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     bool initializeWasCalled;
     void initialize()
@@ -81,15 +81,15 @@ public:
         computeCoreCostFunctionCalled = true;
     }
 
-    void computeCostFunction( const Map<unsigned, double> &/* heuristicCost */ )
+    void computeCostFunction( const Map<unsigned, double> & /* heuristicCost */ )
     {
     }
 
-    void computeGivenCostFunction( const Map<unsigned, double> &/* heuristicCost */ )
+    void computeGivenCostFunction( const Map<unsigned, double> & /* heuristicCost */ )
     {
     }
 
-    double computeGivenCostFunctionDirectly( const Map<unsigned, double> &/* heuristicCost */ )
+    double computeGivenCostFunctionDirectly( const Map<unsigned, double> & /* heuristicCost */ )
     {
         return 0;
     }
@@ -107,14 +107,14 @@ public:
     double updateCostFunctionForPivot( unsigned /* enteringVariableIndex */,
                                        unsigned /* leavingVariableIndex */,
                                        double /* pivotElement */,
-                                       const TableauRow */* pivotRow */,
-                                       const double */* changeColumn */
-                                       )
+                                       const TableauRow * /* pivotRow */,
+                                       const double * /* changeColumn */
+    )
     {
         return 0;
     }
 
-    Map <unsigned, double> nextBasicCost;
+    Map<unsigned, double> nextBasicCost;
     double getBasicCost( unsigned basicIndex ) const
     {
         TS_ASSERT( nextBasicCost.exists( basicIndex ) );
@@ -139,10 +139,10 @@ public:
     {
     }
 
-	const SparseUnsortedList* createRowOfCostFunction() const
-	{
-    	return NULL;
-	}
+    const SparseUnsortedList *createRowOfCostFunction() const
+    {
+        return NULL;
+    }
 };
 
 #endif // __MockCostFunctionManager_h__

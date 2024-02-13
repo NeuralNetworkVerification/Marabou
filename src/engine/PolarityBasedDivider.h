@@ -29,8 +29,7 @@ public:
     void createSubQueries( unsigned numNewSubQueries,
                            const String queryIdPrefix,
                            const unsigned previousDepth,
-                           const PiecewiseLinearCaseSplit
-                           &previousSplit,
+                           const PiecewiseLinearCaseSplit &previousSplit,
                            const unsigned timeoutInSeconds,
                            SubQueries &subQueries );
 
@@ -41,9 +40,7 @@ private:
       Aong the K earliest unfixed ReLUs in the topological order, pick the one
       with polarity closest to 0. K is equal to GlobalConfiguration::POLARITY_CAONDIDATES_THRESHOLD
     */
-    PiecewiseLinearConstraint *getPLConstraintToSplit( const
-                                                       PiecewiseLinearCaseSplit
-                                                       &split );
+    PiecewiseLinearConstraint *getPLConstraintToSplit( const PiecewiseLinearCaseSplit &split );
 };
 
 #endif // __LargestIntervalDivider_h__

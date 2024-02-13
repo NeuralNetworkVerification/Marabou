@@ -20,24 +20,23 @@
 
 class IProjectedSteepestEdgeRule;
 
-namespace T
-{
-	IProjectedSteepestEdgeRule *createProjectedSteepestEdgeRule();
-	void discardProjectedSteepestEdgeRule( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule );
-}
+namespace T {
+IProjectedSteepestEdgeRule *createProjectedSteepestEdgeRule();
+void discardProjectedSteepestEdgeRule( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule );
+} // namespace T
 
 CXXTEST_SUPPLY( createProjectedSteepestEdgeRule,
-				IProjectedSteepestEdgeRule *,
-				createProjectedSteepestEdgeRule,
-				(),
-				T::createProjectedSteepestEdgeRule,
-				() );
+                IProjectedSteepestEdgeRule *,
+                createProjectedSteepestEdgeRule,
+                (),
+                T::createProjectedSteepestEdgeRule,
+                () );
 
 CXXTEST_SUPPLY_VOID( discardProjectedSteepestEdgeRule,
-					 discardProjectedSteepestEdgeRule,
-					 ( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule ),
-					 T::discardProjectedSteepestEdgeRule,
-					 ( projectedSteepestEdgeRule ) );
+                     discardProjectedSteepestEdgeRule,
+                     ( IProjectedSteepestEdgeRule * projectedSteepestEdgeRule ),
+                     T::discardProjectedSteepestEdgeRule,
+                     ( projectedSteepestEdgeRule ) );
 
 #endif // __T__ProjectedSteepestEdgeFactory_h__
 

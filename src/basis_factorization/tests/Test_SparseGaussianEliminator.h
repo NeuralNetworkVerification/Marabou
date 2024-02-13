@@ -13,14 +13,14 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "BasisFactorizationError.h"
 #include "CSRMatrix.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "SparseGaussianEliminator.h"
+
 #include <cstring>
+#include <cxxtest/TestSuite.h>
 
 class MockForSparseGaussianEliminator
 {
@@ -57,12 +57,12 @@ public:
         {
             for ( unsigned j = 0; j < m; ++j )
             {
-                result[i*m + j] = 0;
+                result[i * m + j] = 0;
                 for ( unsigned k = 0; k < m; ++k )
                 {
                     double fValue = ( i == k ) ? 1.0 : lu->_F->get( i, k );
                     double vValue = lu->_V->get( k, j );
-                    result[i*m + j] += fValue * vValue;
+                    result[i * m + j] += fValue * vValue;
                 }
             }
         }
@@ -77,7 +77,7 @@ public:
         {
             for ( unsigned row = 0; row < m; ++row )
             {
-                denseColumn[row] = B[row*m + col];
+                denseColumn[row] = B[row * m + col];
             }
 
             SparseUnsortedList *list = new SparseUnsortedList( denseColumn, m );
@@ -99,13 +99,13 @@ public:
         {
             for ( unsigned j = 0; j < m; ++j )
             {
-                result[i*m + j] = 0;
+                result[i * m + j] = 0;
                 for ( unsigned k = 0; k < m; ++k )
                 {
                     double vtValue = lu->_Vt->get( i, k );
                     double ftValue = ( k == j ) ? 1.0 : lu->_Ft->get( k, j );
 
-                    result[i*m + j] += vtValue * ftValue;
+                    result[i * m + j] += vtValue * ftValue;
                 }
             }
         }
@@ -121,7 +121,7 @@ public:
             printf( "\t" );
             for ( unsigned j = 0; j < m; ++j )
             {
-                printf( "%8.lf ", matrix[i*m + j] );
+                printf( "%8.lf ", matrix[i * m + j] );
             }
             printf( "\n" );
         }
@@ -135,7 +135,7 @@ public:
         {
             for ( unsigned j = 0; j < m; ++j )
             {
-                result[i*m + j] = orig[j*m + i];
+                result[i * m + j] = orig[j * m + i];
             }
         }
     }
@@ -146,12 +146,7 @@ public:
         SparseLUFactors lu4( 4 );
 
         {
-            double A[] =
-            {
-                2, 3, 0,
-                0, 1, 0,
-                0, 0, 1
-            };
+            double A[] = { 2, 3, 0, 0, 1, 0, 0, 0, 1 };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
@@ -182,12 +177,7 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, 0,
-                0, 1, 2,
-                0, 4, 1
-            };
+            double A[] = { 2, 3, 0, 0, 1, 2, 0, 4, 1 };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
@@ -218,12 +208,7 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, -4,
-                -5, 1, 2,
-                0, 4, 1
-            };
+            double A[] = { 2, 3, -4, -5, 1, 2, 0, 4, 1 };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
@@ -254,12 +239,8 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, -4, 0,
-                -5, 1, 2, 2,
-                0, 4, 1, -5,
-                1, 2, 3, 4,
+            double A[] = {
+                2, 3, -4, 0, -5, 1, 2, 2, 0, 4, 1, -5, 1, 2, 3, 4,
             };
 
             SparseColumnsOfBasis sparseCols( 4 );
@@ -291,12 +272,7 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, 0,
-                0, 1, 0,
-                5, 4, 0
-            };
+            double A[] = { 2, 3, 0, 0, 1, 0, 5, 4, 0 };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
@@ -313,12 +289,7 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, 7,
-                0, 0, 0,
-                5, 4, 0
-            };
+            double A[] = { 2, 3, 7, 0, 0, 0, 5, 4, 0 };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );

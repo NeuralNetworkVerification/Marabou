@@ -19,10 +19,10 @@
 
 #include "T/stdlib.h"
 
-class RealMalloc :
-	public T::Real_malloc,
-	public T::Real_free,
-    public T::Real_realloc
+class RealMalloc
+    : public T::Real_malloc
+    , public T::Real_free
+    , public T::Real_realloc
 {
 };
 

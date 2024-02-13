@@ -13,11 +13,11 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "FloatUtils.h"
 #include "Map.h"
 #include "SparseUnsortedArray.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForSparseUnsortedArray
 {
@@ -51,9 +51,7 @@ public:
 
     void test_initialize_from_dense()
     {
-        double dense[8] = {
-            1, 2, 3, 0, 0, 4, 5, 6
-        };
+        double dense[8] = { 1, 2, 3, 0, 0, 4, 5, 6 };
 
         SparseUnsortedArray v1( dense, 8 );
 
@@ -66,9 +64,7 @@ public:
 
     void test_cloning()
     {
-        double dense[8] = {
-            1, 2, 3, 0, 0, 4, 5, 6
-        };
+        double dense[8] = { 1, 2, 3, 0, 0, 4, 5, 6 };
 
         SparseUnsortedArray v1( dense, 8 );
 
@@ -88,9 +84,7 @@ public:
 
     void test_iterate()
     {
-        double dense[8] = {
-            1, 2, 3, 0, 0, 4, 5, 6
-        };
+        double dense[8] = { 1, 2, 3, 0, 0, 4, 5, 6 };
 
         Map<unsigned, double> answers;
         answers[0] = 1;
@@ -129,9 +123,7 @@ public:
         double dense[5];
         TS_ASSERT_THROWS_NOTHING( v1.toDense( dense ) );
 
-        double expected[5] = {
-            4, 0, 3, 0, -7
-        };
+        double expected[5] = { 4, 0, 3, 0, -7 };
 
         for ( unsigned i = 0; i < 5; ++i )
             TS_ASSERT( FloatUtils::areEqual( expected[i], dense[i] ) );
@@ -141,9 +133,7 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( v1.toDense( dense ) );
 
-        double expected2[5] = {
-            4, 5, 0, 0, -7
-        };
+        double expected2[5] = { 4, 5, 0, 0, -7 };
 
         for ( unsigned i = 0; i < 5; ++i )
             TS_ASSERT( FloatUtils::areEqual( expected2[i], dense[i] ) );

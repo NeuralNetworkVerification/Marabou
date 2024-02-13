@@ -22,29 +22,29 @@
 class AutoFile
 {
 public:
-	AutoFile( const String &path )
-	{
-		_file = T::createFile( path );
-	}
+    AutoFile( const String &path )
+    {
+        _file = T::createFile( path );
+    }
 
-	~AutoFile()
-	{
-		T::discardFile( _file );
-		_file = 0;
-	}
+    ~AutoFile()
+    {
+        T::discardFile( _file );
+        _file = 0;
+    }
 
-	operator IFile &()
-	{
-		return *_file;
-	}
+    operator IFile &()
+    {
+        return *_file;
+    }
 
-	IFile *operator->()
-	{
-		return _file;
-	}
+    IFile *operator->()
+    {
+        return _file;
+    }
 
 private:
-	IFile *_file;
+    IFile *_file;
 };
 
 #endif // __AutoFile_h__

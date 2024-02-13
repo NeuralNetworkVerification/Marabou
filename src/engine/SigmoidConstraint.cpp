@@ -14,7 +14,6 @@
 
 #include "SigmoidConstraint.h"
 
-#include "NonlinearConstraint.h"
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "FloatUtils.h"
@@ -23,11 +22,12 @@
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "MarabouError.h"
+#include "NonlinearConstraint.h"
 #include "Statistics.h"
 #include "TableauRow.h"
 
 #ifdef _WIN32
-#define __attribute__(x)
+#define __attribute__( x )
 #endif
 
 SigmoidConstraint::SigmoidConstraint( unsigned b, unsigned f )
@@ -96,12 +96,11 @@ void SigmoidConstraint::notifyLowerBound( unsigned variable, double bound )
 
     if ( tightenLowerBound( variable, bound ) )
     {
-        if ( variable == _f &&
-             !FloatUtils::areEqual( bound, 0 ) &&
+        if ( variable == _f && !FloatUtils::areEqual( bound, 0 ) &&
              !FloatUtils::areEqual( bound, 1 ) )
-          tightenLowerBound( _b, sigmoidInverse( bound ) );
+            tightenLowerBound( _b, sigmoidInverse( bound ) );
         else if ( variable == _b )
-          tightenLowerBound( _f, sigmoid( bound ) );
+            tightenLowerBound( _f, sigmoid( bound ) );
     }
 }
 
@@ -115,8 +114,7 @@ void SigmoidConstraint::notifyUpperBound( unsigned variable, double bound )
 
     if ( tightenUpperBound( variable, bound ) )
     {
-        if ( variable == _f &&
-             !FloatUtils::areEqual( bound, 0 ) &&
+        if ( variable == _f && !FloatUtils::areEqual( bound, 0 ) &&
              !FloatUtils::areEqual( bound, 1 ) )
             tightenUpperBound( _b, sigmoidInverse( bound ) );
         else if ( variable == _b )
@@ -138,20 +136,21 @@ void SigmoidConstraint::dump( String &output ) const
 {
     output = Stringf( "SigmoidConstraint: x%u = Sigmoid( x%u ).\n", _f, _b );
 
-    output += Stringf( "b in [%s, %s], ",
-                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
-                       existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
+    output +=
+        Stringf( "b in [%s, %s], ",
+                 existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
+                 existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
-    output += Stringf( "f in [%s, %s]",
-                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "1",
-                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
+    output +=
+        Stringf( "f in [%s, %s]",
+                 existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "1",
+                 existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "0" );
 }
 
 void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 {
-	ASSERT( oldIndex == _b || oldIndex == _f );
-    ASSERT( !_lowerBounds.exists( newIndex ) &&
-            !_upperBounds.exists( newIndex ) &&
+    ASSERT( oldIndex == _b || oldIndex == _f );
+    ASSERT( !_lowerBounds.exists( newIndex ) && !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
 
     if ( _lowerBounds.exists( oldIndex ) )
@@ -172,8 +171,8 @@ void SigmoidConstraint::updateVariableIndex( unsigned oldIndex, unsigned newInde
         _f = newIndex;
 }
 
-void SigmoidConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
-                                        __attribute__((unused)) double fixedValue )
+void SigmoidConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned variable,
+                                           __attribute__( ( unused ) ) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
 
@@ -188,8 +187,8 @@ bool SigmoidConstraint::constraintObsolete() const
 
 void SigmoidConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
-            existsUpperBound( _b ) && existsUpperBound( _f ) );
+    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) && existsUpperBound( _b ) &&
+            existsUpperBound( _f ) );
 
     double bLowerBound = getLowerBound( _b );
     double fLowerBound = getLowerBound( _f );
@@ -211,7 +210,8 @@ bool SigmoidConstraint::satisfied() const
     double bValue = getAssignment( _b );
     double fValue = getAssignment( _f );
 
-    return FloatUtils::areEqual( sigmoid( bValue ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
+    return FloatUtils::areEqual(
+        sigmoid( bValue ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 String SigmoidConstraint::serializeToString() const
@@ -231,22 +231,22 @@ unsigned SigmoidConstraint::getF() const
 
 double SigmoidConstraint::sigmoid( double x )
 {
-  if ( x > GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
-    return 1 - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
-  else if ( x < -GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
-    return GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
-  else
-    return 1 / ( 1 + std::exp( -x ) );
+    if ( x > GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+        return 1 - GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    else if ( x < -GlobalConfiguration::SIGMOID_CUTOFF_CONSTANT )
+        return GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
+    else
+        return 1 / ( 1 + std::exp( -x ) );
 }
 
 double SigmoidConstraint::sigmoidInverse( double y )
 {
-  if ( FloatUtils::areEqual( y, 0 ) )
-    return FloatUtils::negativeInfinity();
-  else if ( FloatUtils::areEqual( y, 1 ) )
-    return FloatUtils::infinity();
-  else
-    return log( y / ( 1 - y ) );
+    if ( FloatUtils::areEqual( y, 0 ) )
+        return FloatUtils::negativeInfinity();
+    else if ( FloatUtils::areEqual( y, 1 ) )
+        return FloatUtils::infinity();
+    else
+        return log( y / ( 1 - y ) );
 }
 
 double SigmoidConstraint::sigmoidDerivative( double x )

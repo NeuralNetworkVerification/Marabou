@@ -14,6 +14,7 @@
  **/
 
 #include "CostFunctionManager.h"
+
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "ITableau.h"
@@ -117,8 +118,7 @@ void CostFunctionManager::computeCostFunction( const Map<unsigned, double> &heur
     computeReducedCosts();
 }
 
-void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double>
-                                                    &heuristicCost )
+void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double> &heuristicCost )
 {
     /*
       The heuristic cost may include variables that are basic and variables
@@ -155,15 +155,15 @@ void CostFunctionManager::computeGivenCostFunction( const Map<unsigned, double>
     _costFunctionStatus = ICostFunctionManager::COST_FUNCTION_JUST_COMPUTED;
 }
 
-double CostFunctionManager::computeGivenCostFunctionDirectly( const Map<unsigned, double>
-                                                              &heuristicCost )
+double
+CostFunctionManager::computeGivenCostFunctionDirectly( const Map<unsigned, double> &heuristicCost )
 {
     double cost = 0;
     for ( const auto &pair : heuristicCost )
-        {
-            double value = _tableau->getValue( pair.first );
-            cost += pair.second * value;
-        }
+    {
+        double value = _tableau->getValue( pair.first );
+        cost += pair.second * value;
+    }
     return cost;
 }
 
@@ -218,10 +218,9 @@ void CostFunctionManager::adjustBasicCostAccuracy()
         if ( _basicCosts[i] < 0 )
         {
             lb = _tableau->getLowerBound( variable );
-            relaxedLb =
-                lb -
-                ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-                  GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+            relaxedLb = lb - ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                               GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE *
+                                   FloatUtils::abs( lb ) );
 
             // Current basic cost is negative, assignment should be too small
             if ( assignment >= relaxedLb )
@@ -233,10 +232,9 @@ void CostFunctionManager::adjustBasicCostAccuracy()
         else if ( _basicCosts[i] > 0 )
         {
             ub = _tableau->getUpperBound( variable );
-            relaxedUb =
-                ub +
-                ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-                  GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+            relaxedUb = ub + ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                               GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE *
+                                   FloatUtils::abs( ub ) );
 
             // Current basic cost is positive, assignment should be too large
             if ( assignment <= relaxedUb )
@@ -252,7 +250,6 @@ void CostFunctionManager::adjustBasicCostAccuracy()
               1 or -1, but apparently this leads to cycling.
             */
         }
-
     }
 
     if ( needToRecompute )
@@ -274,10 +271,9 @@ void CostFunctionManager::computeBasicOOBCosts()
         assignment = _tableau->getBasicAssignment( i );
 
         lb = _tableau->getLowerBound( variable );
-        relaxedLb =
-            lb -
-            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+        relaxedLb = lb - ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                           GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE *
+                               FloatUtils::abs( lb ) );
 
         if ( assignment < relaxedLb )
         {
@@ -286,10 +282,9 @@ void CostFunctionManager::computeBasicOOBCosts()
         }
 
         ub = _tableau->getUpperBound( variable );
-        relaxedUb =
-            ub +
-            ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
-              GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+        relaxedUb = ub + ( GlobalConfiguration::BASIC_COSTS_ADDITIVE_TOLERANCE +
+                           GlobalConfiguration::BASIC_COSTS_MULTIPLICATIVE_TOLERANCE *
+                               FloatUtils::abs( ub ) );
 
         if ( assignment > relaxedUb )
         {
@@ -358,8 +353,7 @@ double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariabl
                                                         unsigned leavingVariableIndex,
                                                         double pivotElement,
                                                         const TableauRow *pivotRow,
-                                                        const double *changeColumn
-                                                        )
+                                                        const double *changeColumn )
 {
     /*
       This method is invoked when the non-basic _enteringVariable and
@@ -403,7 +397,7 @@ double CostFunctionManager::updateCostFunctionForPivot( unsigned enteringVariabl
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         if ( i != enteringVariableIndex )
-            _costFunction[i] -= (*pivotRow)[i] * _costFunction[enteringVariableIndex];
+            _costFunction[i] -= ( *pivotRow )[i] * _costFunction[enteringVariableIndex];
     }
 
     /*
@@ -439,13 +433,16 @@ double CostFunctionManager::getBasicCost( unsigned basicIndex ) const
     return _basicCosts[basicIndex];
 }
 
-const SparseUnsortedList* CostFunctionManager::createRowOfCostFunction() const
+const SparseUnsortedList *CostFunctionManager::createRowOfCostFunction() const
 {
-    SparseUnsortedList* costRow = new SparseUnsortedList( 0 );
+    SparseUnsortedList *costRow = new SparseUnsortedList( 0 );
     for ( unsigned i = 0; i < _m; ++i )
         if ( !FloatUtils::isZero( _basicCosts[i] ) )
         {
-            costRow->append( _tableau->basicIndexToVariable( i ), -_basicCosts[i] ); //Minus sign since we are used to think about basics in lhs (while the row has all variables in rhs).
+            costRow->append( _tableau->basicIndexToVariable( i ),
+                             -_basicCosts[i] ); // Minus sign since we are used to think about
+                                                // basics in lhs (while the row has all variables in
+                                                // rhs).
             costRow->incrementSize();
         }
 

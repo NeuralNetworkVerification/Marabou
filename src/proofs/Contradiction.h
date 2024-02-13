@@ -19,7 +19,8 @@
 #include "Vector.h"
 
 /*
-  Contains all info relevant for a simple Marabou contradiction - i.e. explanations of contradicting bounds of a variable
+  Contains all info relevant for a simple Marabou contradiction - i.e. explanations of contradicting
+  bounds of a variable
 */
 class Contradiction
 {

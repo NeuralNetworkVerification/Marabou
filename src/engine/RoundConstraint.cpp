@@ -142,8 +142,7 @@ List<unsigned> RoundConstraint::getParticipatingVariables() const
     return List<unsigned>( { _b, _f } );
 }
 
-void RoundConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
-                                                               &inputQuery )
+void RoundConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery )
 {
     // Since at this point we can only encode equality,
     // we encode the following:

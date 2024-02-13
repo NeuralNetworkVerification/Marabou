@@ -14,6 +14,7 @@
 **/
 
 #include "DeepPolyMaxPoolElement.h"
+
 #include "FloatUtils.h"
 
 namespace NLR {
@@ -30,8 +31,8 @@ DeepPolyMaxPoolElement::~DeepPolyMaxPoolElement()
     freeMemoryIfNeeded();
 }
 
-void DeepPolyMaxPoolElement::execute( const Map<unsigned, DeepPolyElement *>
-                               &deepPolyElementsBefore )
+void DeepPolyMaxPoolElement::execute(
+    const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Executing..." );
     ASSERT( hasPredecessor() );
@@ -52,13 +53,10 @@ void DeepPolyMaxPoolElement::execute( const Map<unsigned, DeepPolyElement *>
         Map<NeuronIndex, double> sourceUbs;
         for ( const auto &sourceIndex : sources )
         {
-            DeepPolyElement *predecessor =
-                deepPolyElementsBefore[sourceIndex._layer];
-            double sourceLb = predecessor->getLowerBound
-                ( sourceIndex._neuron );
+            DeepPolyElement *predecessor = deepPolyElementsBefore[sourceIndex._layer];
+            double sourceLb = predecessor->getLowerBound( sourceIndex._neuron );
             sourceLbs[sourceIndex] = sourceLb;
-            double sourceUb = predecessor->getUpperBound
-                ( sourceIndex._neuron );
+            double sourceUb = predecessor->getUpperBound( sourceIndex._neuron );
             sourceUbs[sourceIndex] = sourceUb;
 
             if ( maxLowerBound < sourceLb )
@@ -88,7 +86,9 @@ void DeepPolyMaxPoolElement::execute( const Map<unsigned, DeepPolyElement *>
         if ( phaseFixed )
         {
             log( Stringf( "Neuron %u_%u fixed to Neuron %u_%u",
-                          _layerIndex, i, indexOfMaxLowerBound._layer,
+                          _layerIndex,
+                          i,
+                          indexOfMaxLowerBound._layer,
                           indexOfMaxLowerBound._neuron ) );
             // Phase fixed
             // Symbolic bound: x_b <= x_f <= x_b
@@ -99,8 +99,7 @@ void DeepPolyMaxPoolElement::execute( const Map<unsigned, DeepPolyElement *>
         }
         else
         {
-            log( Stringf( "Neuron %u_%u not fixed",
-                          _layerIndex, i ) );
+            log( Stringf( "Neuron %u_%u not fixed", _layerIndex, i ) );
             // MaxPool not fixed
             // Symbolic bounds: x_b <= x_f <= maxUpperBound
             // Concrete bounds: lb_b <= x_f <= maxUpperBound
@@ -114,20 +113,22 @@ void DeepPolyMaxPoolElement::execute( const Map<unsigned, DeepPolyElement *>
     log( "Executing - done" );
 }
 
-void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor
-( const double *symbolicLb, const double*symbolicUb, double
-  *symbolicLowerBias, double *symbolicUpperBias, double
-  *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-  unsigned targetLayerSize, DeepPolyElement *predecessor )
+void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor(
+    const double *symbolicLb,
+    const double *symbolicUb,
+    double *symbolicLowerBias,
+    double *symbolicUpperBias,
+    double *symbolicLbInTermsOfPredecessor,
+    double *symbolicUbInTermsOfPredecessor,
+    unsigned targetLayerSize,
+    DeepPolyElement *predecessor )
 {
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessor->getLayerIndex() ) );
 
     unsigned predecessorSize = predecessor->getSize();
-    std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
-    std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize *
-                 predecessorSize, 0 );
+    std::fill_n( symbolicLbInTermsOfPredecessor, targetLayerSize * predecessorSize, 0 );
+    std::fill_n( symbolicUbInTermsOfPredecessor, targetLayerSize * predecessorSize, 0 );
 
     /*
       We have the symbolic bound of the target layer in terms of the
@@ -136,11 +137,10 @@ void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
-        DEBUG({
-                NeuronIndex sourceIndex = *( _layer->
-                                             getActivationSources( i ).begin() );
-                ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
-            });
+        DEBUG( {
+            NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
+            ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
+        } );
 
         /*
           Take symbolic upper bound as an example.
@@ -159,11 +159,11 @@ void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor
         //    b_sourceIndex <= f_i <= maxUpperBound
         NeuronIndex sourceNeuronIndex = _sourceIndexForSymbolicBounds[i];
         ASSERT( sourceNeuronIndex._layer == predecessor->getLayerIndex() );
-        unsigned sourceIndex =  sourceNeuronIndex._neuron;
+        unsigned sourceIndex = sourceNeuronIndex._neuron;
         ASSERT( sourceIndex < predecessorSize );
         // coeffLb = 1
         // lowerBias = 0
-        bool phaseFixed =  _phaseFixed[i];
+        bool phaseFixed = _phaseFixed[i];
         double coeffUb = phaseFixed ? 1 : 0;
         double upperBias = phaseFixed ? 0 : _ub[i];
 
@@ -180,14 +180,12 @@ void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor
             double weightLb = symbolicLb[indexInOldSymbolicBound];
             if ( weightLb >= 0 )
             {
-                symbolicLbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightLb;
+                symbolicLbInTermsOfPredecessor[indexInNewSymbolicBound] += weightLb;
                 // symbolicLowerBias[j] += weightLb * lowerBias;
             }
             else
             {
-                symbolicLbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightLb * coeffUb;
+                symbolicLbInTermsOfPredecessor[indexInNewSymbolicBound] += weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;
             }
 
@@ -195,14 +193,13 @@ void DeepPolyMaxPoolElement::symbolicBoundInTermsOfPredecessor
             double weightUb = symbolicUb[indexInOldSymbolicBound];
             if ( weightUb >= 0 )
             {
-                symbolicUbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightUb * coeffUb;
+                symbolicUbInTermsOfPredecessor[indexInNewSymbolicBound] += weightUb * coeffUb;
                 symbolicUpperBias[j] += weightUb * upperBias;
-            } else
+            }
+            else
             {
-                symbolicUbInTermsOfPredecessor[indexInNewSymbolicBound] +=
-                    weightUb;
-                //symbolicUpperBias[j] += weightUb * lowerBias;
+                symbolicUbInTermsOfPredecessor[indexInNewSymbolicBound] += weightUb;
+                // symbolicUpperBias[j] += weightUb * lowerBias;
             }
         }
     }

@@ -67,9 +67,9 @@
 #define __CDSmtCore_h__
 
 #include "Options.h"
+#include "PLConstraintScoreTracker.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
-#include "PLConstraintScoreTracker.h"
 #include "Stack.h"
 #include "Statistics.h"
 #include "TrailEntry.h"
@@ -96,8 +96,7 @@ public:
     /*
       Initialize the score tracker with the given list of pl constraints.
     */
-    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *>
-                                         &plConstraints );
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints );
 
     /*
       Inform the SMT core that a SoI phase pattern proposal is rejected.
@@ -107,8 +106,7 @@ public:
     /*
       Update the score of the constraint with the given score in the costTracker.
     */
-    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
-                                         double score )
+    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint, double score )
     {
         ASSERT( _scoreTracker != nullptr );
         _scoreTracker->updateScore( constraint, score );
@@ -146,7 +144,7 @@ public:
     /*
        Push TrailEntry representing the decision onto the trail.
      */
-    void pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision );
+    void pushDecision( PiecewiseLinearConstraint *constraint, PhaseStatus decision );
 
     /*
       Inform SmtCore of an implied (formerly valid) case split that was discovered.
@@ -228,7 +226,8 @@ public:
       Have the SMT core choose, among a set of violated PL constraints, which
       constraint should be repaired (without splitting)
     */
-    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
+    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing(
+        List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     void setConstraintViolationThreshold( unsigned threshold );
 
@@ -258,6 +257,7 @@ public:
     bool checkSkewFromDebuggingSolution();
     bool splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const;
     void interruptIfCompliantWithDebugSolution();
+
 private:
     /*
       Collect and print various statistics.
@@ -327,7 +327,6 @@ private:
       current search state.
     */
     unsigned _numRejectedPhasePatternProposal;
-
 };
 
 #endif // __CDSmtCore_h__

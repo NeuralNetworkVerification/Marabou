@@ -13,16 +13,16 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "SparseLUFactorization.h"
 #include "List.h"
 #include "MockColumnOracle.h"
 #include "MockErrno.h"
+#include "SparseLUFactorization.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForSparseLUFactorization
 {
@@ -52,9 +52,7 @@ public:
         SparseLUFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1,
+            1, 0, 0, 0, 1, 0, 0, 0, 1,
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -65,7 +63,7 @@ public:
         double expected1[] = { 1, 1, 3 };
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a1, d1 ) );
-        TS_ASSERT_SAME_DATA( d1, expected1, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( d1, expected1, sizeof( double ) * 3 );
 
         // E1 = | 1 1   |
         //      |   1   |
@@ -83,7 +81,7 @@ public:
         // --> d = [ 2 1 1 ]^T
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a2, d2 ) );
-        TS_ASSERT_SAME_DATA( d2, expected2, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( d2, expected2, sizeof( double ) * 3 );
 
         // E2 = | 2     |
         //      | 1 1   |
@@ -101,7 +99,7 @@ public:
         // --> d = [ 0.5 0.5 0.5 ]^T
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a3, d3 ) );
-        TS_ASSERT_SAME_DATA( d3, expected3, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( d3, expected3, sizeof( double ) * 3 );
     }
 
     void test_forward_transformation_with_B0()
@@ -113,16 +111,12 @@ public:
         basis.updateToAdjacentBasis( 1, e1, NULL );
 
         double e2[] = { 2, 1, 1 };
-        basis.updateToAdjacentBasis ( 0, e2, NULL );
+        basis.updateToAdjacentBasis( 0, e2, NULL );
 
         double e3[] = { 0.5, 0.5, 0.5 };
         basis.updateToAdjacentBasis( 2, e3, NULL );
 
-        double B[] = {
-            1, 2, 4,
-            4, 5, 7,
-            7, 8, 9
-        };
+        double B[] = { 1, 2, 4, 4, 5, 7, 7, 8, 9 };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
 
@@ -141,9 +135,7 @@ public:
         SparseLUFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1,
+            1, 0, 0, 0, 1, 0, 0, 0, 1,
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -154,7 +146,7 @@ public:
         double expected1[] = { 1, 2, 3 };
 
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y1, x1 ) );
-        TS_ASSERT_SAME_DATA( x1, expected1, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( x1, expected1, sizeof( double ) * 3 );
 
         // E1 = | 1 1   |
         //      |   1   |
@@ -173,7 +165,7 @@ public:
         // --> x = [ 0 12 0 ]
 
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y2, x2 ) );
-        TS_ASSERT_SAME_DATA( x2, expected2, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( x2, expected2, sizeof( double ) * 3 );
 
         // E2 = | 2     |
         //      | 1 1   |
@@ -192,7 +184,7 @@ public:
         // --> x = [ 3.5 8.5 0 ]
 
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y3, x3 ) );
-        TS_ASSERT_SAME_DATA( x3, expected3, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( x3, expected3, sizeof( double ) * 3 );
 
         // E3 = | 1   0.5 |
         //      |   1 0.5 |
@@ -210,7 +202,7 @@ public:
         //
         // --> x = [ 2 1 3 ]
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y4, x4 ) );
-        TS_ASSERT_SAME_DATA( x4, expected4, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( x4, expected4, sizeof( double ) * 3 );
     }
 
     void test_backward_transformation_2()
@@ -218,9 +210,7 @@ public:
         SparseLUFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1,
+            1, 0, 0, 0, 1, 0, 0, 0, 1,
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -242,7 +232,7 @@ public:
         // --> x = [ 0 0 -1 ]
 
         TS_ASSERT_THROWS_NOTHING( basis.backwardTransformation( y, x ) );
-        TS_ASSERT_SAME_DATA( x, expected, sizeof(double) * 3 );
+        TS_ASSERT_SAME_DATA( x, expected, sizeof( double ) * 3 );
     }
 
     void test_backward_transformation_with_B0()
@@ -260,16 +250,14 @@ public:
         basis.updateToAdjacentBasis( 2, e3, NULL );
 
         double B[] = {
-            1, 2, 4,
-            4, 5, 7,
-            7, 8, 9,
+            1, 2, 4, 4, 5, 7, 7, 8, 9,
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
 
         double y[] = { 19, 12, 17 };
         double x[] = { 0, 0, 0 };
-        double expected[] = { -104.0/3, 140.0/3, -19 };
+        double expected[] = { -104.0 / 3, 140.0 / 3, -19 };
 
         //     	| 1 2 4	|
         //  x *	| 4	5 7 | = | 19 12 17 |
@@ -288,9 +276,7 @@ public:
         SparseLUFactorization otherBasis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1,
+            1, 0, 0, 0, 1, 0, 0, 0, 1,
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -302,11 +288,7 @@ public:
         basis.updateToAdjacentBasis( 1, a1, NULL );
 
         // Save the expected basis after this push
-        double currentBasis[] = {
-            1, 1, 0,
-            0, 1, 0,
-            0, 3, 1
-        };
+        double currentBasis[] = { 1, 1, 0, 0, 1, 0, 0, 3, 1 };
         oracle->storeBasis( 3, currentBasis );
 
         // Do a computation using both basis, see that we get the same result.
@@ -348,7 +330,7 @@ public:
         // The original basis wasn't modified, so the result should be different
 
         TS_ASSERT_THROWS_NOTHING( basis.forwardTransformation( a3, d3 ) );
-        TS_ASSERT( memcmp( d3other, d3, sizeof(double) * 3 ) );
+        TS_ASSERT( memcmp( d3other, d3, sizeof( double ) * 3 ) );
     }
 };
 

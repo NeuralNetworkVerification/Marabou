@@ -15,18 +15,17 @@
 
 #include "ProjectedSteepestEdge.h"
 
-namespace T
+namespace T {
+IProjectedSteepestEdgeRule *createProjectedSteepestEdgeRule()
 {
-	IProjectedSteepestEdgeRule *createProjectedSteepestEdgeRule()
-	{
-		return new ProjectedSteepestEdgeRule();
-	}
-
-	void discardProjectedSteepestEdgeRule( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule )
-	{
-		delete projectedSteepestEdgeRule;
-	}
+    return new ProjectedSteepestEdgeRule();
 }
+
+void discardProjectedSteepestEdgeRule( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule )
+{
+    delete projectedSteepestEdgeRule;
+}
+} // namespace T
 
 //
 // Local Variables:
