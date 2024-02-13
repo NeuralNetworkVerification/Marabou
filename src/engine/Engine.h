@@ -118,7 +118,7 @@ public:
       method can be used to extract the solution.
      */
     void extractSolution( InputQuery &inputQuery,
-                          Preprocessor *preprocessor=nullptr );
+                          Preprocessor *preprocessor = nullptr );
 
     /*
       Methods for storing and restoring the state of the engine.
