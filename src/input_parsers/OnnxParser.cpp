@@ -65,8 +65,8 @@ OnnxParser::OnnxParser( const String &path )
 void OnnxParser::generateQuery( InputQuery& query )
 {
     Set<String> inputNames = readInputNames();
-    String outputName = readOutputName();
-    processGraph( inputNames, outputName, query );
+    Set<String> terminalNames = readOutputNames();
+    processGraph( inputNames, terminalNames, query );
 }
 
 /**
@@ -75,14 +75,14 @@ void OnnxParser::generateQuery( InputQuery& query )
  * @param query The query object to be populated
  * @param inputNames The set of input nodes. Note these don't have to be an actual input to the
  * network, they can be intermediate nodes.
- * @param outputName The output node. Note that again this doesn't have to be an actual output of
- * the network, it can be an intermediate node.
+ * @param terminalNames The set of terminal nodes. Note that these doesn't have to be outputs of
+ * the network, they can be intermediate nodes.
  */
-void OnnxParser::generatePartialQuery( InputQuery& query, Set<String>& inputNames, String& outputName )
+void OnnxParser::generatePartialQuery( InputQuery& query, Set<String>& inputNames, Set<String>& terminalNames )
 {
     validateUserInputNames( inputNames );
-    validateUserOutputNames( outputName );
-    processGraph( inputNames, outputName, query );
+    validateUserTerminalNames( terminalNames );
+    processGraph( inputNames, terminalNames, query );
 }
 
 /*************
@@ -510,19 +510,22 @@ void OnnxParser::validateUserInputNames( Set<String>& inputNames )
     }
 }
 
-void OnnxParser::validateUserOutputNames( String &outputName )
+void OnnxParser::validateUserTerminalNames( Set<String>& terminalNames )
 {
-    for ( auto node : _network.node() )
+    for ( String terminalName : terminalNames )
     {
-        for ( String outputNodeName : node.output() )
+        for ( auto node : _network.node() )
         {
-            if ( outputName == outputNodeName )
-                return;
+            for ( String outputNodeName : node.output() )
+            {
+                if ( terminalName == outputNodeName )
+                    return;
+            }
         }
-    }
 
-    String errorMessage = Stringf( "Output %s not found in graph!", outputName.ascii() );
-    throw MarabouError(  MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+        String errorMessage = Stringf( "Output %s not found in graph!", terminalName.ascii() );
+        throw MarabouError(  MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+    }
 }
 
 Set<String> OnnxParser::readInputNames()
@@ -546,22 +549,15 @@ Set<String> OnnxParser::readInputNames()
     return Set<String>::difference( inputNames, initializerNames );
 }
 
-String OnnxParser::readOutputName()
+Set<String> OnnxParser::readOutputNames()
 {
-    if ( _network.output().size() > 1 )
+    Set<String> outputNames;
+    for ( auto &outputNode : _network.output() )
     {
-        String message = "Your model has multiple outputs defined\n";
-        message += "Please specify the name of the output you want to consider using the 'outputName' argument\n";
-        message += "Possible options:";
-        for ( auto output : _network.output() )
-        {
-            message += " " + output.name();
-        }
-        throw MarabouError( MarabouError::ONNX_PARSER_ERROR, message.ascii() );
+        ONNX_LOG( Stringf( "Found output '%s'", outputNode.name().c_str() ).ascii() );
+        outputNames.insert( outputNode.name() );
     }
-    auto &outputNode = _network.output()[0];
-    ONNX_LOG( Stringf( "Found input: %s", outputNode.name().c_str() ).ascii() );
-    return outputNode.name();
+    return outputNames;
 }
 
 void OnnxParser::initializeShapeAndConstantMaps()
@@ -618,9 +614,12 @@ void OnnxParser::validateAllInputsAndOutputsFound()
     }
 
     // Mark the output variables
-    for ( Variable var : _varMap[_outputName] )
+    for ( String terminalName : _terminalNames )
     {
-        _outputVars.append( var );
+        for ( Variable var : _varMap[terminalName] )
+        {
+            _outputVars.append( var );
+        }
     }
 }
 
@@ -629,17 +628,20 @@ void OnnxParser::validateAllInputsAndOutputsFound()
  * Unlike the Python implementation, at the moment assumes there is only a single output.
  *
  * @param inputNames The names of the input nodes to start at.
- * @param outputName The names of the output node to end at.
+ * @param terminalNames The names of the output node to end at.
  * @param query The query in which to store the generated constraints.
  */
-void OnnxParser::processGraph( Set<String> &inputNames, String &outputName, InputQuery& query )
+void OnnxParser::processGraph( Set<String> &inputNames, Set<String> &terminalNames, InputQuery& query )
 {
     _inputNames = inputNames;
-    _outputName = outputName;
+    _terminalNames = terminalNames;
     _numberOfFoundInputs = 0;
 
     initializeShapeAndConstantMaps();
-    processNode( outputName, true );
+    for ( String terminalName : terminalNames )
+    {
+        processNode( terminalName, true );
+    }
     validateAllInputsAndOutputsFound();
     getMarabouQuery( query );
 }
