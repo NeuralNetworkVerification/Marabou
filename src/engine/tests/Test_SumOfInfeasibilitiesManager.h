@@ -122,7 +122,12 @@ public:
             max1->notifyUpperBound( aux, 3 );
         }
 
-        TS_ASSERT( ipq.constructNetworkLevelReasoner() );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( ipq.constructNetworkLevelReasoner( unhandledEquations,
+                                                      varsInUnhandledConstraints ) );
+        TS_ASSERT( unhandledEquations.empty() );
+        TS_ASSERT( varsInUnhandledConstraints.empty() );
     }
 
     void test_initialize_phase_pattern_with_input_assignment1()

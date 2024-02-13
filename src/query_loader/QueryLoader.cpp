@@ -259,6 +259,5 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
     }
 
-    inputQuery.constructNetworkLevelReasoner();
     return inputQuery;
 }

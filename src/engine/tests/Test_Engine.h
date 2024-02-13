@@ -335,7 +335,12 @@ public:
         inputQuery.setUpperBound( 9, 5 );
 
         Engine engine;
-        TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( inputQuery.constructNetworkLevelReasoner( unhandledEquations,
+                                                             varsInUnhandledConstraints ) );
+        TS_ASSERT( unhandledEquations.empty() );
+        TS_ASSERT( varsInUnhandledConstraints.empty() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
@@ -436,7 +441,12 @@ public:
         inputQuery.setUpperBound( 9, 5 );
 
         Engine engine;
-        TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( inputQuery.constructNetworkLevelReasoner( unhandledEquations,
+                                                             varsInUnhandledConstraints ) );
+        TS_ASSERT( unhandledEquations.empty() );
+        TS_ASSERT( varsInUnhandledConstraints.empty() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
@@ -537,7 +547,12 @@ public:
         Options::get()->setString( Options::SPLITTING_STRATEGY,
                                    "largest-interval" );
         Engine engine;
-        TS_ASSERT( inputQuery.constructNetworkLevelReasoner() );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( inputQuery.constructNetworkLevelReasoner( unhandledEquations,
+                                                             varsInUnhandledConstraints ) );
+        TS_ASSERT( unhandledEquations.empty() );
+        TS_ASSERT( varsInUnhandledConstraints.empty() );
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::LargestInterval );

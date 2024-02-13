@@ -53,6 +53,7 @@ void Options::initializeDefaultValues()
     _boolOptions[EXPORT_ASSIGNMENT] = false;
     _boolOptions[DEBUG_ASSIGNMENT] = false;
     _boolOptions[PRODUCE_PROOFS] = false;
+    _boolOptions[DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS] = false;
 
     /*
       Int options

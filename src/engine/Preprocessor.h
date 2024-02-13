@@ -2,7 +2,7 @@
 /*! \file Preprocessor.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Derek Huang, Shantanu Thakoor
+ **   Guy Katz, Derek Huang, Shantanu Thakoor, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,6 +18,7 @@
 
 #include "Equation.h"
 #include "InputQuery.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
@@ -56,6 +57,13 @@ public:
       Obtain the new index of a variable.
     */
     unsigned getNewIndex( unsigned oldIndex ) const;
+
+    /*
+      Given an inputQuery with all variable assignment other than ones for
+      variables corresponding to eliminated neurons, compute the full
+      assignment.
+    */
+    void setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery );
 
 private:
 
@@ -176,6 +184,13 @@ private:
       indices were changed during preprocessing.
     */
     Map<unsigned, unsigned> _oldIndexToNewIndex;
+
+    /*
+      Some of the equations might be removed when removing consecutive
+      weighted sum layers. These equations are not needed for solving, but
+      are required to reconstruct the full assignment.
+    */
+    Map<unsigned, LinearExpression> _eliminatedNeurons;
 
     /*
       For debugging only
