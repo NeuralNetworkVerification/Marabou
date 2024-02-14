@@ -48,7 +48,6 @@ void DnCMarabou::run()
 
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
-        _inputQuery.constructNetworkLevelReasoner();
     }
     else
     {
@@ -75,8 +74,6 @@ void DnCMarabou::run()
             AcasParser* _acasParser = new AcasParser( networkFilePath );
             _acasParser->generateQuery( _inputQuery );
         }
-
-        _inputQuery.constructNetworkLevelReasoner();
 
         /*
           Step 2: extract the property in question

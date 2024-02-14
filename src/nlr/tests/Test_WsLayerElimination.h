@@ -2,7 +2,7 @@
 /*! \file Test_WsLayerElimination.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Amir
+ **   Guy Amir, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -120,10 +120,16 @@ public:
 
         NLR::NetworkLevelReasoner nlr;
         populateNetwork_CaseA( nlr );
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer )
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
 
-        nlr.mergeConsecutiveWSLayers();
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer )
+        Map<unsigned, double> lowerBounds;
+        Map<unsigned, double> upperBounds;
+        Set<unsigned> varsInUnhandledConstraints;
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT( eliminatedNeurons.empty() );
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
 
         NLR::NetworkLevelReasoner expectedNlr;
         populateNetwork_CaseA( expectedNlr );
@@ -131,7 +137,7 @@ public:
         // Check the layers are correct
         for ( unsigned layerNumber = 0; layerNumber < originalNumberOfLayer - 1; ++layerNumber )
         {
-            TS_ASSERT( *nlr.getLayer( layerNumber ) == *expectedNlr.getLayer( layerNumber ) )
+            TS_ASSERT( *nlr.getLayer( layerNumber ) == *expectedNlr.getLayer( layerNumber ) );
         }
 
         // Check the NN outputs are correct
@@ -320,11 +326,29 @@ public:
         populateNetwork_CaseB( nlr );
 
         // Before merging the layers
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer )
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
 
         // After merging layers [WS] 3 & [WS] 4
-        nlr.mergeConsecutiveWSLayers();
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 1 )
+        Map<unsigned, double> lowerBounds;
+        Map<unsigned, double> upperBounds;
+        Set<unsigned> varsInUnhandledConstraints;
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT_EQUALS( eliminatedNeurons.size(), 2u );
+        TS_ASSERT( eliminatedNeurons.exists( 8 ) );
+        Map<unsigned, double> expectedAddends;
+        expectedAddends[5] = 1;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[8], LinearExpression( expectedAddends, 2 ) );
+        TS_ASSERT( eliminatedNeurons.exists( 9 ) );
+        expectedAddends[5] = -1;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[9], LinearExpression( expectedAddends, 6 ) );
+
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 1 );
 
         NLR::NetworkLevelReasoner expectedNlr;
         populateNetworkAfterMerge_CaseB( expectedNlr );
@@ -332,7 +356,7 @@ public:
         // Check the layers are correct
         for ( unsigned layerNumber = 0; layerNumber < originalNumberOfLayer - 1; ++layerNumber )
         {
-            TS_ASSERT( *nlr.getLayer( layerNumber ) == *expectedNlr.getLayer( layerNumber ) )
+            TS_ASSERT( *nlr.getLayer( layerNumber ) == *expectedNlr.getLayer( layerNumber ) );
         }
 
         // Check the NN outputs are correct
@@ -584,11 +608,28 @@ public:
         populateNetwork_CaseC( nlr );
 
         // Before merging the layers
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer )
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
 
         // After merging layer [WS] 7 & [WS] 8
-        nlr.mergeConsecutiveWSLayers();
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 1 )
+        Map<unsigned, double> lowerBounds;
+        Map<unsigned, double> upperBounds;
+        Set<unsigned> varsInUnhandledConstraints;
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 1 );
+        TS_ASSERT_EQUALS( eliminatedNeurons.size(), 2u );
+        TS_ASSERT( eliminatedNeurons.exists( 9 ) );
+        Map<unsigned, double> expectedAddends;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = 1;
+        expectedAddends[8] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[9], LinearExpression( expectedAddends, 2 ) );
+        TS_ASSERT( eliminatedNeurons.exists( 10 ) );
+        expectedAddends[6] = -1;
+        expectedAddends[7] = 1;
+        expectedAddends[8] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[10], LinearExpression( expectedAddends, 6 ) );
 
         NLR::NetworkLevelReasoner expectedNlr;
         populateNetworkAfterMerge_CaseC( expectedNlr );
@@ -606,7 +647,7 @@ public:
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
 
-            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 )
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 );
         }
 
         delete[] input;
@@ -790,7 +831,7 @@ public:
         nlr.setNeuronVariable( NLR::NeuronIndex( 5, 2 ), 14 );
     }
 
-    void test_eliminate_two_pairs()
+    void test_eliminate_two_pairs1()
     {
         unsigned originalNumberOfLayer = 8;
 
@@ -798,11 +839,42 @@ public:
         populateNetwork_CaseD( nlr );
 
         // Before merging the layers
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer )
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
 
         // After merging layers [WS] 3 & [WS] 4, and also layers [WS] 6 & [WS] 7
-        nlr.mergeConsecutiveWSLayers();
-        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 2 )
+        Map<unsigned, double> lowerBounds;
+        Map<unsigned, double> upperBounds;
+        Set<unsigned> varsInUnhandledConstraints;
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 2 );
+
+        TS_ASSERT_EQUALS( eliminatedNeurons.size(), 4u );
+        TS_ASSERT( eliminatedNeurons.exists( 8 ) );
+        Map<unsigned, double> expectedAddends;
+        expectedAddends[5] = 1;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[8], LinearExpression( expectedAddends, 2 ) );
+
+        TS_ASSERT( eliminatedNeurons.exists( 9 ) );
+        expectedAddends[5] = -1;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[9], LinearExpression( expectedAddends, 6 ) );
+
+        TS_ASSERT( eliminatedNeurons.exists( 14 ) );
+        expectedAddends.clear();
+        expectedAddends[12] = 1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[14], LinearExpression( expectedAddends, 0 ) );
+
+
+        TS_ASSERT( eliminatedNeurons.exists( 15 ) );
+        expectedAddends[12] = 1;
+        expectedAddends[13] = 3;
+        TS_ASSERT_EQUALS( eliminatedNeurons[15], LinearExpression( expectedAddends, 0 ) );
+
 
         NLR::NetworkLevelReasoner expectedNlr;
         populateNetworkAfterMerge_CaseD( expectedNlr );
@@ -820,7 +892,174 @@ public:
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
 
-            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 )
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 );
+        }
+
+        delete[] input;
+        delete[] output;
+        delete[] expectedOutput;
+    }
+
+    void test_eliminate_two_pairs2()
+    {
+        unsigned originalNumberOfLayer = 8;
+
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork_CaseD( nlr );
+
+        // Before merging the layers
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
+
+        // After merging layers [WS] 3 & [WS] 4, and also layers [WS] 6 & [WS] 7
+        Map<unsigned, double> lowerBounds;
+        lowerBounds[10] = -1;
+        lowerBounds[11] = -1;
+        Map<unsigned, double> upperBounds;
+        upperBounds[10] = -1;
+        upperBounds[11] = -1;
+        Set<unsigned> varsInUnhandledConstraints;
+        varsInUnhandledConstraints.insert( 0 );
+        varsInUnhandledConstraints.insert( 17 );
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 2 );
+
+        TS_ASSERT_EQUALS( eliminatedNeurons.size(), 4u );
+        TS_ASSERT( eliminatedNeurons.exists( 8 ) );
+        Map<unsigned, double> expectedAddends;
+        expectedAddends[5] = 1;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[8], LinearExpression( expectedAddends, 2 ) );
+
+        TS_ASSERT( eliminatedNeurons.exists( 9 ) );
+        expectedAddends[5] = -1;
+        expectedAddends[6] = 1;
+        expectedAddends[7] = -1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[9], LinearExpression( expectedAddends, 6 ) );
+
+        TS_ASSERT( eliminatedNeurons.exists( 14 ) );
+        expectedAddends.clear();
+        expectedAddends[12] = 1;
+        TS_ASSERT_EQUALS( eliminatedNeurons[14], LinearExpression( expectedAddends, 0 ) );
+
+
+        TS_ASSERT( eliminatedNeurons.exists( 15 ) );
+        expectedAddends[12] = 1;
+        expectedAddends[13] = 3;
+        TS_ASSERT_EQUALS( eliminatedNeurons[15], LinearExpression( expectedAddends, 0 ) );
+
+
+        NLR::NetworkLevelReasoner expectedNlr;
+        populateNetworkAfterMerge_CaseD( expectedNlr );
+
+        // Check the NN outputs are correct
+        double *input = new double[2];
+        double *output = new double[3];
+        double *expectedOutput = new double[3];
+
+        for ( int i = -250; i < 250; ++i )
+        {
+            input[0] = ( i+19 ) / 2 -7;
+            input[1] = ( 3*i ) / 4 -1;
+
+            nlr.evaluate( input, output );
+            expectedNlr.evaluate( input, expectedOutput );
+
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 );
+        }
+
+        delete[] input;
+        delete[] output;
+        delete[] expectedOutput;
+    }
+
+    void test_not_eliminate_two_pairs1()
+    {
+        unsigned originalNumberOfLayer = 8;
+
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork_CaseD( nlr );
+
+        // Before merging the layers
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
+
+        // Cannot merge layer 3 and 6
+        Map<unsigned, double> lowerBounds;
+        Map<unsigned, double> upperBounds;
+        upperBounds[9] = -1;
+        Set<unsigned> varsInUnhandledConstraints;
+        varsInUnhandledConstraints.insert( 14 );
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
+        TS_ASSERT_EQUALS( eliminatedNeurons.size(), 0u );
+
+        NLR::NetworkLevelReasoner expectedNlr;
+        populateNetwork_CaseD( expectedNlr );
+
+        // Check the NN outputs does not change
+        double *input = new double[2];
+        double *output = new double[3];
+        double *expectedOutput = new double[3];
+
+        for ( int i = -250; i < 250; ++i )
+        {
+            input[0] = ( i+19 ) / 2 -7;
+            input[1] = ( 3*i ) / 4 -1;
+
+            nlr.evaluate( input, output );
+            expectedNlr.evaluate( input, expectedOutput );
+
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 );
+        }
+
+        delete[] input;
+        delete[] output;
+        delete[] expectedOutput;
+    }
+
+    void test_not_eliminate_two_pairs2()
+    {
+        unsigned originalNumberOfLayer = 8;
+
+        NLR::NetworkLevelReasoner nlr;
+        populateNetwork_CaseD( nlr );
+
+        // Before merging the layers
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
+
+        // Cannot merge layer 3 and 6
+        Map<unsigned, double> lowerBounds;
+        lowerBounds[8] = -1;
+        Map<unsigned, double> upperBounds;
+        Set<unsigned> varsInUnhandledConstraints;
+        varsInUnhandledConstraints.insert( 15 );
+        Map<unsigned, LinearExpression> eliminatedNeurons;
+        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
+                                      varsInUnhandledConstraints, eliminatedNeurons );
+        TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
+        TS_ASSERT_EQUALS( eliminatedNeurons.size(), 0u );
+
+        NLR::NetworkLevelReasoner expectedNlr;
+        populateNetwork_CaseD( expectedNlr );
+
+        // Check the NN outputs does not change
+        double *input = new double[2];
+        double *output = new double[3];
+        double *expectedOutput = new double[3];
+
+        for ( int i = -250; i < 250; ++i )
+        {
+            input[0] = ( i+19 ) / 2 -7;
+            input[1] = ( 3*i ) / 4 -1;
+
+            nlr.evaluate( input, output );
+            expectedNlr.evaluate( input, expectedOutput );
+
+            TS_ASSERT_EQUALS( std::memcmp( output, expectedOutput, 2 ), 0 );
         }
 
         delete[] input;

@@ -76,7 +76,12 @@ public:
         DEBUG_ASSIGNMENT,
 
         // Produce proofs of unsatisfiability and check them
-        PRODUCE_PROOFS
+        PRODUCE_PROOFS,
+
+        // If the flag is false, the preprocessor will try to merge two
+        // logically-consecutive weighted sum layers into a single
+        // weighted sum layer, to reduce the number of variables
+        DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS,
     };
 
     enum IntOptions {

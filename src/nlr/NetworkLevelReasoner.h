@@ -161,6 +161,11 @@ public:
     void removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint );
 
     /*
+      Add an ecoding of all the affine layers as equations in the given InputQuery
+    */
+    void encodeAffineLayers( InputQuery &inputQuery );
+
+    /*
       Generate an input query from this NLR, according to the
       discovered network topology
     */
@@ -171,7 +176,10 @@ public:
       to reduce the total number of layers and variables in the
       network
     */
-    void mergeConsecutiveWSLayers();
+    unsigned mergeConsecutiveWSLayers( const Map<unsigned, double> &lowerBounds,
+                                       const Map<unsigned, double> &upperBounds,
+                                       const Set<unsigned> &varsInUnhandledConstraints,
+                                       Map<unsigned, LinearExpression> &eliminatedNeurons );
 
     /*
       Print the bounds of variables layer by layer
@@ -186,6 +194,7 @@ public:
     const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
 
 private:
+
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
@@ -199,17 +208,27 @@ private:
 
     List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
 
+    // Map each neuron to a linear expression representing its weighted sum
+    void generateLinearExpressionForWeightedSumLayer( Map<unsigned, LinearExpression>
+                                                      &variableToExpression,
+                                                      const Layer &layer );
+
     // Helper functions for generating an input query
     void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer );
+    void generateEquationsForWeightedSumLayer( List<Equation> &equations, const Layer &layer );
     void generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer );
     void generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer );
 
-    bool suitableForMerging( unsigned secondLayerIndex );
-    void mergeWSLayers( unsigned secondLayerIndex );
+    bool suitableForMerging( unsigned secondLayerIndex,
+                             const Map<unsigned, double> &lowerBounds,
+                             const Map<unsigned, double> &upperBounds,
+                             const Set<unsigned> &varsInConstraintsUnhandledByNLR );
+    void mergeWSLayers( unsigned secondLayerIndex,
+                        Map<unsigned, LinearExpression> &eliminatedNeurons );
     double *multiplyWeights( const double *firstMatrix,
                              const double *secondMatrix,
                              unsigned inputDimension,

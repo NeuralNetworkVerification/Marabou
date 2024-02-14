@@ -958,8 +958,70 @@ public:
         TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().
             preprocess( ipq ) ) );
 
-        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -4 )
-        TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 3 )
+        TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -4 );
+        TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 3 );
+    }
+
+    void test_set_solution_for_eliminated_neurons()
+    {
+        InputQuery ipq;
+        ipq.setNumberOfVariables( 6 );
+        {
+            // x2 = x0 + x1 + 1
+            Equation eq;
+            eq.setScalar( -1 );
+            eq.addAddend( 1, 0 );
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -1, 2 );
+            ipq.addEquation( eq );
+        }
+        {
+            // x3 = x0 + x1
+            Equation eq;
+            eq.setScalar( 0 );
+            eq.addAddend( 1, 0 );
+            eq.addAddend( 1, 1 );
+            eq.addAddend( -1, 3 );
+            ipq.addEquation( eq );
+        }
+        {
+            // x4 = x2 + x3
+            Equation eq;
+            eq.setScalar( 0 );
+            eq.addAddend( 1, 2 );
+            eq.addAddend( 1, 3 );
+            eq.addAddend( -1, 4 );
+            ipq.addEquation( eq );
+        }
+        {
+            // x5 = x2 + x3
+            Equation eq;
+            eq.setScalar( 0 );
+            eq.addAddend( 1, 2 );
+            eq.addAddend( 1, 3 );
+            eq.addAddend( -1, 5 );
+            ipq.addEquation( eq );
+        }
+        ipq.markInputVariable( 0, 0 );
+        ipq.markInputVariable( 1, 1 );
+
+        Preprocessor preprocessor;
+        auto preprocessedQuery = preprocessor.preprocess( ipq, true );
+        TS_ASSERT_EQUALS( preprocessedQuery->getNumberOfVariables(), 4u );
+
+        ipq.setSolutionValue( 0, 1 );
+        ipq.setSolutionValue( 1, 2 );
+        ipq.setSolutionValue( 2, 1000 );
+        ipq.setSolutionValue( 3, 1000 );
+        ipq.setSolutionValue( 4, 1000 );
+        ipq.setSolutionValue( 5, 1000 );
+
+        // This should only update variable 2 and 3
+        TS_ASSERT_THROWS_NOTHING( preprocessor.setSolutionValuesOfEliminatedNeurons( ipq ) );
+        TS_ASSERT_EQUALS( ipq.getSolutionValue( 2 ), 4 );
+        TS_ASSERT_EQUALS( ipq.getSolutionValue( 3 ), 3 );
+        TS_ASSERT_EQUALS( ipq.getSolutionValue( 4 ), 1000 );
+        TS_ASSERT_EQUALS( ipq.getSolutionValue( 5 ), 1000 );
     }
 
     void test_todo()
