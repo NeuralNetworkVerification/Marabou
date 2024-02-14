@@ -204,15 +204,14 @@ def test_multiOutput():
     filename = "conv_mp1_intermediateOutput.onnx"
     evaluateFile(filename)
 
-def test_shallow_clear():
+def test_preserve_existing_constraints_clear():
     filename = "tanh_test.onnx"
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
     network = Marabou.read_onnx(filename, reindexOutputVars=False)
     numVar1 = network.numVars
     numEq1 = len(network.equList)
     numSigmoid1 = len(network.sigmoidList)
-    network.shallowClear()
-    network.readONNX(filename, None, None, reindexOutputVars=False)
+    network.readONNX(filename, None, None, reindexOutputVars=False, preserveExistingConstraints=True)
     numVar2 = network.numVars
     numEq2 = len(network.equList)
     numSigmoid2 = len(network.sigmoidList)
