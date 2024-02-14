@@ -60,6 +60,7 @@ protected:
     void setUpperBound( Variable var, float value );
     void addRelu( Variable var1, Variable var2 );
     void addSigmoid( Variable var1, Variable var2 );
+    void addTanh( Variable var1, Variable var2 );
     void addSignConstraint( Variable var1, Variable var2 );
     void addMaxConstraint( Variable maxVar, Set<Variable> elements );
     void addAbsConstraint( Variable var1, Variable var2 );
