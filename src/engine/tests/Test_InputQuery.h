@@ -282,7 +282,12 @@ public:
         inputQuery->addEquation(eq3);
         inputQuery->markInputVariable(0, 0);
         inputQuery->markInputVariable(1, 1);
-        TS_ASSERT( inputQuery->constructNetworkLevelReasoner() );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( inputQuery->constructNetworkLevelReasoner( unhandledEquations,
+                                                              varsInUnhandledConstraints ) );
+        TS_ASSERT( unhandledEquations.empty() );
+        TS_ASSERT( varsInUnhandledConstraints.empty() );
         NLR::NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
         TS_ASSERT( nlr->getNumberOfLayers() == 4 );
         NLR::Layer *layer = nlr->getLayer( 2 );

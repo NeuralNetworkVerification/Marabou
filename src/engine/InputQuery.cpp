@@ -347,30 +347,20 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
         INPUT_QUERY_LOG( Stringf( "Number of piecewise linear constraints in topological order %u",
                                   other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() ).ascii() );
 
-        unsigned numberOfDisjunctions = 0;
-        unsigned numberOfMaxs = 0;
+        unsigned numberOfConstraintsUnhandledByNLR = 0;
         for ( const auto &constraint : other._plConstraints )
         {
-            if ( constraint->getType() == DISJUNCTION )
+            if ( !other._networkLevelReasoner->
+                 getConstraintsInTopologicalOrder().exists( constraint ) )
             {
                 auto *newPlc = constraint->duplicateConstraint();
                 _plConstraints.append( newPlc );
-                ++numberOfDisjunctions;
+                ++numberOfConstraintsUnhandledByNLR;
             }
-            else if ( constraint->getType() == MAX &&
-                        !other._networkLevelReasoner->getConstraintsInTopologicalOrder().exists( constraint ) )
-            {
-                auto *newPlc = constraint->duplicateConstraint();
-                _plConstraints.append( newPlc );
-                ++numberOfMaxs;
-            }
-
         }
 
         ASSERT( other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() +
-                numberOfDisjunctions +
-                numberOfMaxs
-                == other._plConstraints.size() );
+                numberOfConstraintsUnhandledByNLR == other._plConstraints.size() );
 
         for ( const auto &constraint : other._networkLevelReasoner->
                   getConstraintsInTopologicalOrder() )
@@ -379,6 +369,10 @@ InputQuery &InputQuery::operator=( const InputQuery &other )
             _plConstraints.append( newPlc );
             _networkLevelReasoner->addConstraintInTopologicalOrder( newPlc );
         }
+
+        ASSERT( _plConstraints.size() == other._plConstraints.size() );
+        ASSERT( _networkLevelReasoner->getConstraintsInTopologicalOrder().size() ==
+                other._networkLevelReasoner->getConstraintsInTopologicalOrder().size() );
     }
 
     INPUT_QUERY_LOG( "Calling deep copy constructor - done\n" );
@@ -719,7 +713,8 @@ NLR::NetworkLevelReasoner *InputQuery::getNetworkLevelReasoner() const
     return _networkLevelReasoner;
 }
 
-bool InputQuery::constructNetworkLevelReasoner()
+bool InputQuery::constructNetworkLevelReasoner( List<Equation> &unhandledEquations,
+                                                Set<unsigned> &varsInUnhandledConstraints )
 {
     INPUT_QUERY_LOG( "PP: constructing an NLR... " );
 
@@ -757,18 +752,22 @@ bool InputQuery::constructNetworkLevelReasoner()
     }
 
     unsigned newLayerIndex = 1;
+    Set<unsigned> handledEquations;
+    Set<PiecewiseLinearConstraint *> handledPLConstraints;
+    Set<NonlinearConstraint *> handledNLConstraints;
     // Now, repeatedly attempt to construct additional layers
-    while ( constructWeighedSumLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructRoundLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructLeakyReluLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructSignLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructSigmoidLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructBilinearLayer( nlr, handledVariableToLayer, newLayerIndex ) ||
-            constructSoftmaxLayer( nlr, handledVariableToLayer, newLayerIndex )
-            )
+    while ( constructWeighedSumLayer( nlr, handledVariableToLayer,
+                                      newLayerIndex, handledEquations ) ||
+            constructReluLayer( nlr, handledVariableToLayer, newLayerIndex, handledPLConstraints ) ||
+            constructRoundLayer( nlr, handledVariableToLayer, newLayerIndex, handledNLConstraints ) ||
+            constructLeakyReluLayer( nlr, handledVariableToLayer, newLayerIndex, handledPLConstraints ) ||
+            constructAbsoluteValueLayer( nlr, handledVariableToLayer, newLayerIndex, handledPLConstraints ) ||
+            constructSignLayer( nlr, handledVariableToLayer, newLayerIndex, handledPLConstraints ) ||
+            constructSigmoidLayer( nlr, handledVariableToLayer, newLayerIndex, handledNLConstraints ) ||
+            constructMaxLayer( nlr, handledVariableToLayer, newLayerIndex, handledPLConstraints ) ||
+            constructBilinearLayer( nlr, handledVariableToLayer, newLayerIndex, handledNLConstraints ) ||
+            constructSoftmaxLayer( nlr, handledVariableToLayer, newLayerIndex, handledNLConstraints )
+        )
     {
         ++newLayerIndex;
     }
@@ -781,10 +780,42 @@ bool InputQuery::constructNetworkLevelReasoner()
         for ( unsigned i = 0; i < nlr->getNumberOfLayers(); ++i )
             count += nlr->getLayer( i )->getSize();
 
-        INPUT_QUERY_LOG( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)\n",
-                      newLayerIndex,
-                      count,
-                      getNumberOfVariables() ).ascii() );
+        // Collect 1) equations unaccounted for by the NLR; 2) variables that
+        // participate in constraints unhandled by the NLR.
+        unsigned index = 0;
+        for ( const auto &e : _equations )
+        {
+            if ( !handledEquations.exists( index++ ) )
+            {
+                unhandledEquations.append( e );
+                varsInUnhandledConstraints.insert( e.getParticipatingVariables() );
+            }
+        }
+
+        for ( const auto &c : _plConstraints )
+        {
+            if ( !handledPLConstraints.exists( c ) )
+                varsInUnhandledConstraints.insert( c->getParticipatingVariables() );
+        }
+
+        for ( const auto &c : _nlConstraints )
+        {
+            if ( !handledNLConstraints.exists( c ) )
+                varsInUnhandledConstraints.insert( c->getParticipatingVariables() );
+        }
+
+        INPUT_QUERY_LOG( Stringf( "successful. Constructed %u layers with %u neurons (out of %u)."
+                                  " %u out of %u equations, %u out of %u piecewise-linear constraints,"
+                                  " %u out of %u nonlinear constraints accounted for.",
+                                  newLayerIndex,
+                                  count,
+                                  getNumberOfVariables(),
+                                  handledEquations.size(),
+                                  _equations.size(),
+                                  handledPLConstraints.size(),
+                                  _plConstraints.size(),
+                                  handledNLConstraints.size(),
+                                  _nlConstraints.size() ).ascii() );
 
         _networkLevelReasoner = nlr;
     }
@@ -797,9 +828,37 @@ bool InputQuery::constructNetworkLevelReasoner()
     return success;
 }
 
+void InputQuery::mergeConsecutiveWeightedSumLayers( const List<Equation> &unhandledEquations,
+                                                    const Set<unsigned> &varsInUnhandledConstraints,
+                                                    Map<unsigned, LinearExpression> &eliminatedNeurons )
+{
+    /*
+      Merge consecutive weighted sum layers
+    */
+    if ( _networkLevelReasoner )
+    {
+        INPUT_QUERY_LOG( "Attempting to merge consecutive weighted sum layers..." );
+        unsigned numberOfMergedLayers =
+            _networkLevelReasoner->mergeConsecutiveWSLayers( _lowerBounds,
+                                                             _upperBounds,
+                                                             varsInUnhandledConstraints,
+                                                             eliminatedNeurons );
+
+        if ( numberOfMergedLayers > 0 )
+        {
+            // Re-encode the affine connections if there are merged layers
+            _equations = unhandledEquations;
+            _networkLevelReasoner->encodeAffineLayers( *this );
+        }
+
+        INPUT_QUERY_LOG( "Attempting to merge consecutive weighted sum layers - done" );
+    }
+}
+
 bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
                                            Map<unsigned, unsigned> &handledVariableToLayer,
-                                           unsigned newLayerIndex )
+                                           unsigned newLayerIndex,
+                                           Set<unsigned> &handledEquations )
 {
     INPUT_QUERY_LOG( "Attempting to construct weightedSumLayer..." );
     struct NeuronInformation
@@ -827,8 +886,12 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
 
     // Look for equations where all variables except one have already been handled
     const List<Equation> &equations = getEquations();
+    unsigned index = 0;
     for ( const auto &eq : equations )
     {
+        if ( handledEquations.exists( index++ ) )
+            continue;
+
         // Only consider equalities
         if ( eq._type != Equation::EQ )
             continue;
@@ -847,6 +910,7 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
         {
             // Add the surviving variable to the new layer
             newNeurons.append( NeuronInformation( *eqVariables.begin(), newNeurons.size(), &eq ) );
+            handledEquations.insert( index - 1 );
         }
     }
 
@@ -913,7 +977,8 @@ bool InputQuery::constructWeighedSumLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
                                      Map<unsigned, unsigned> &handledVariableToLayer,
-                                     unsigned newLayerIndex )
+                                     unsigned newLayerIndex,
+                                     Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct ReluLayer..." );
     struct NeuronInformation
@@ -941,6 +1006,9 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
     unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
+        if ( handledPLConstraints.exists( plc ) )
+            continue;
+
         // Only consider ReLUs
         if ( plc->getType() != RELU )
             continue;
@@ -964,6 +1032,7 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
             currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
+        handledPLConstraints.insert( plc );
     }
 
     // No neurons found for the new layer
@@ -1007,7 +1076,8 @@ bool InputQuery::constructReluLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
                                           Map<unsigned, unsigned> &handledVariableToLayer,
-                                          unsigned newLayerIndex )
+                                          unsigned newLayerIndex,
+                                          Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct LeakyReLULayer..." );
     struct NeuronInformation
@@ -1036,6 +1106,9 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     double alpha = 0;
     for ( const auto &plc : plConstraints )
     {
+        if ( handledPLConstraints.exists( plc ) )
+            continue;
+
         // Only consider Leaky ReLUs
         if ( plc->getType() != LEAKY_RELU )
             continue;
@@ -1058,6 +1131,7 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
             currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
+        handledPLConstraints.insert( plc );
         double alphaTemp = leakyRelu->getSlope();
         ASSERT( alphaTemp > 0 );
         if ( alpha != 0 && alpha != alphaTemp ) {
@@ -1108,7 +1182,8 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
                                       Map<unsigned, unsigned> &handledVariableToLayer,
-                                      unsigned newLayerIndex )
+                                      unsigned newLayerIndex,
+                                      Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct RoundLayer..." );
     struct NeuronInformation
@@ -1134,13 +1209,16 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
         getNonlinearConstraints();
 
     unsigned currentSourceLayer = 0;
-    for ( const auto &plc : nlConstraints )
+    for ( const auto &nlc : nlConstraints )
     {
-        // Only consider Rounds
-        if ( plc->getType() != ROUND )
+        if ( handledNLConstraints.exists( nlc ) )
             continue;
 
-        const RoundConstraint *round = (const RoundConstraint *)plc;
+        // Only consider Rounds
+        if ( nlc->getType() != ROUND )
+            continue;
+
+        const RoundConstraint *round = (const RoundConstraint *)nlc;
 
         // Has the b variable been handled?
         unsigned b = round->getB();
@@ -1158,6 +1236,7 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
         if ( _ensureSameSourceLayerInNLR && newNeurons.empty() )
             currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+        handledNLConstraints.insert( nlc );
     }
 
     // No neurons found for the new layer
@@ -1201,7 +1280,8 @@ bool InputQuery::constructRoundLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
                                         Map<unsigned, unsigned> &handledVariableToLayer,
-                                        unsigned newLayerIndex )
+                                        unsigned newLayerIndex,
+                                        Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct SigmoidLayer..." );
     struct NeuronInformation
@@ -1227,13 +1307,16 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
         getNonlinearConstraints();
 
     unsigned currentSourceLayer = 0;
-    for ( const auto &tsc : nlConstraints )
+    for ( const auto &nlc : nlConstraints )
     {
-        // Only consider Sigmoids
-        if ( tsc->getType() != SIGMOID )
+        if ( handledNLConstraints.exists( nlc ) )
             continue;
 
-        const SigmoidConstraint *sigmoid = (const SigmoidConstraint *)tsc;
+        // Only consider Sigmoids
+        if ( nlc->getType() != SIGMOID )
+            continue;
+
+        const SigmoidConstraint *sigmoid = (const SigmoidConstraint *)nlc;
 
         // Has the b variable been handled?
         unsigned b = sigmoid->getB();
@@ -1251,6 +1334,8 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
         if ( _ensureSameSourceLayerInNLR && newNeurons.empty() )
             currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
+
+        handledNLConstraints.insert( nlc );
     }
 
     // No neurons found for the new layer
@@ -1294,7 +1379,8 @@ bool InputQuery::constructSigmoidLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
                                               Map<unsigned, unsigned> &handledVariableToLayer,
-                                              unsigned newLayerIndex )
+                                              unsigned newLayerIndex,
+                                              Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct AbsoluteValueLayer..." );
     struct NeuronInformation
@@ -1322,6 +1408,9 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
     unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
+        if ( handledPLConstraints.exists( plc ) )
+            continue;
+
         // Only consider ABSOLUTE_VALUE
         if ( plc->getType() != ABSOLUTE_VALUE )
             continue;
@@ -1345,6 +1434,7 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
             currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
+        handledPLConstraints.insert( plc );
     }
 
     // No neurons found for the new layer
@@ -1388,7 +1478,8 @@ bool InputQuery::constructAbsoluteValueLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
                                      Map<unsigned, unsigned> &handledVariableToLayer,
-                                     unsigned newLayerIndex )
+                                     unsigned newLayerIndex,
+                                     Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct SignLayer..." );
     struct NeuronInformation
@@ -1416,6 +1507,9 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
     unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
+        if ( handledPLConstraints.exists( plc ) )
+            continue;
+
         // Only consider Signs
         if ( plc->getType() != SIGN )
             continue;
@@ -1439,6 +1533,7 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
             currentSourceLayer = handledVariableToLayer[b];
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
+        handledPLConstraints.insert( plc );
     }
 
     // No neurons found for the new layer
@@ -1482,7 +1577,8 @@ bool InputQuery::constructSignLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
                                     Map<unsigned, unsigned> &handledVariableToLayer,
-                                    unsigned newLayerIndex )
+                                    unsigned newLayerIndex,
+                                    Set<PiecewiseLinearConstraint *> &handledPLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct MaxLayer..." );
     struct NeuronInformation
@@ -1510,7 +1606,10 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
     unsigned currentSourceLayer = 0;
     for ( const auto &plc : plConstraints )
     {
-        // Only consider Signs
+        if ( handledPLConstraints.exists( plc ) )
+            continue;
+
+        // Only consider Max
         if ( plc->getType() != MAX )
             continue;
 
@@ -1550,7 +1649,7 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
                                               newNeurons.size(),
                                               max->getElements() ) );
         nlr->addConstraintInTopologicalOrder( plc );
-
+        handledPLConstraints.insert( plc );
     }
 
     // No neurons found for the new layer
@@ -1597,7 +1696,8 @@ bool InputQuery::constructMaxLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
                                           Map<unsigned, unsigned> &handledVariableToLayer,
-                                          unsigned newLayerIndex )
+                                         unsigned newLayerIndex,
+                                         Set<NonlinearConstraint *> &handledNLConstraints )
 {
   INPUT_QUERY_LOG( "Attempting to construct BilinearLayer..." );
   struct NeuronInformation
@@ -1624,6 +1724,9 @@ bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
 
   for ( const auto &nlc : nlConstraints )
   {
+      if ( handledNLConstraints.exists( nlc ) )
+          continue;
+
     // Only consider bilinear
     if ( nlc->getType() != BILINEAR )
       continue;
@@ -1653,6 +1756,8 @@ bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
     newNeurons.append( NeuronInformation( f,
                                           newNeurons.size(),
                                           bilinear->getBs() ) );
+
+    handledNLConstraints.insert( nlc );
   }
 
   // No neurons found for the new layer
@@ -1699,7 +1804,8 @@ bool InputQuery::constructBilinearLayer( NLR::NetworkLevelReasoner *nlr,
 
 bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
                                         Map<unsigned, unsigned> &handledVariableToLayer,
-                                        unsigned newLayerIndex )
+                                        unsigned newLayerIndex,
+                                        Set<NonlinearConstraint *> &handledNLConstraints )
 {
     INPUT_QUERY_LOG( "Attempting to construct SoftmaxLayer..." );
     struct NeuronInformation
@@ -1727,13 +1833,16 @@ bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
         getNonlinearConstraints();
 
     unsigned currentSourceLayer = 0;
-    for ( const auto &ts : nlConstraints )
+    for ( const auto &nlc : nlConstraints )
     {
+        if ( handledNLConstraints.exists( nlc ) )
+            continue;
+
         // Only consider Softmax
-        if ( ts->getType() != SOFTMAX )
+        if ( nlc->getType() != SOFTMAX )
           continue;
 
-        const SoftmaxConstraint *softmax = (const SoftmaxConstraint *)ts;
+        const SoftmaxConstraint *softmax = (const SoftmaxConstraint *)nlc;
 
         // Have all input variables been handled?
         bool missingInput = false;
@@ -1794,6 +1903,7 @@ bool InputQuery::constructSoftmaxLayer( NLR::NetworkLevelReasoner *nlr,
                                                   newNeurons.size(),
                                                   softmax->getInputs() ) );
         }
+        handledNLConstraints.insert( nlc );
     }
 
     // No neurons found for the new layer

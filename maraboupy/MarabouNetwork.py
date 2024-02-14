@@ -127,7 +127,7 @@ class MarabouNetwork:
         Args:
             v1 (int): Variable representing input of Leaky Relu
             v2 (int): Variable representing output of Leaky Relu
-            slope (float): Shope of the Leaky ReLU
+            slope (float): Slope of the Leaky ReLU
         """
         self.leakyReluList += [(v1, v2, slope)]
 

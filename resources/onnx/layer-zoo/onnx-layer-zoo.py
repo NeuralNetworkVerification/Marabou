@@ -205,6 +205,16 @@ def relu_node():
 
     return ("relu", node, [2,2], [2,2], [])
 
+def leakyRelu_node():
+    node = onnx.helper.make_node(
+        "LeakyRelu",
+        inputs=[input_name],
+        outputs=[output_name],
+        alpha=0.05
+    )
+
+    return ("leakyRelu", node, [2,2], [2,2], [])
+
 def add_node():
     const_node = make_constant_float_node("const", [[0.5, 1.0], [1.5, 2.0]])
 
@@ -294,6 +304,7 @@ if __name__ == "__main__":
     make_network(*conv_node())
     make_network(*gemm_node())
     make_network(*relu_node())
+    make_network(*leakyRelu_node())
     make_network(*add_node())
     make_network(*sub_node())
     make_network(*matmul_node())

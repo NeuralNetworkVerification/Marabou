@@ -1682,35 +1682,35 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
     }
 }
 
-void Engine::extractSolution( InputQuery &inputQuery )
+void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor )
 {
-    if ( _solveWithMILP )
-    {
-        extractSolutionFromGurobi( inputQuery );
-        return;
-    }
+    Preprocessor *preprocessorInUse = nullptr;
+    if ( preprocessor != nullptr )
+        preprocessorInUse = preprocessor;
+    else if ( _preprocessingEnabled )
+        preprocessorInUse = &_preprocessor;
 
     for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
     {
-        if ( _preprocessingEnabled )
+        if ( preprocessorInUse )
         {
             // Has the variable been merged into another?
             unsigned variable = i;
-            while ( _preprocessor.variableIsMerged( variable ) )
-                variable = _preprocessor.getMergedIndex( variable );
+            while ( preprocessorInUse->variableIsMerged( variable ) )
+                variable = preprocessorInUse->getMergedIndex( variable );
 
             // Fixed variables are easy: return the value they've been fixed to.
-            if ( _preprocessor.variableIsFixed( variable ) )
+            if ( preprocessorInUse->variableIsFixed( variable ) )
             {
-                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
+                inputQuery.setSolutionValue( i, preprocessorInUse->getFixedValue( variable ) );
+                inputQuery.setLowerBound( i, preprocessorInUse->getFixedValue( variable ) );
+                inputQuery.setUpperBound( i, preprocessorInUse->getFixedValue( variable ) );
                 continue;
             }
 
             // We know which variable to look for, but it may have been assigned
             // a new index, due to variable elimination
-            variable = _preprocessor.getNewIndex( variable );
+            variable = preprocessorInUse->getNewIndex( variable );
 
             // Finally, set the assigned value
             inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
@@ -1723,6 +1723,14 @@ void Engine::extractSolution( InputQuery &inputQuery )
             inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
             inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
         }
+    }
+
+    if ( preprocessorInUse )
+    {
+        /*
+          Recover the assignment of eliminated neurons (e.g., due to merging of WS layers)
+        */
+        preprocessorInUse->setSolutionValuesOfEliminatedNeurons( inputQuery );
     }
 }
 
@@ -2934,53 +2942,12 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     return false;
 }
 
-void Engine::extractSolutionFromGurobi( InputQuery &inputQuery )
-{
-    ASSERT( _gurobi != nullptr );
-    Map<String, double> assignment;
-    double costOrObjective;
-    _gurobi->extractSolution( assignment, costOrObjective );
-
-    for ( unsigned i = 0; i < inputQuery.getNumberOfVariables(); ++i )
-    {
-        if ( _preprocessingEnabled )
-        {
-            // Has the variable been merged into another?
-            unsigned variable = i;
-            while ( _preprocessor.variableIsMerged( variable ) )
-                variable = _preprocessor.getMergedIndex( variable );
-
-            // Fixed variables are easy: return the value they've been fixed to.
-            if ( _preprocessor.variableIsFixed( variable ) )
-            {
-                inputQuery.setSolutionValue( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setLowerBound( i, _preprocessor.getFixedValue( variable ) );
-                inputQuery.setUpperBound( i, _preprocessor.getFixedValue( variable ) );
-                continue;
-            }
-
-            // We know which variable to look for, but it may have been assigned
-            // a new index, due to variable elimination
-            variable = _preprocessor.getNewIndex( variable );
-
-            // Finally, set the assigned value
-            String variableName = _milpEncoder->getVariableNameFromVariable( variable );
-            inputQuery.setSolutionValue( i, assignment[variableName] );
-        }
-        else
-        {
-            String variableName = _milpEncoder->getVariableNameFromVariable( i );
-            inputQuery.setSolutionValue( i, assignment[variableName] );
-        }
-    }
-}
-
 bool Engine::preprocessingEnabled() const
 {
     return _preprocessingEnabled;
 }
 
-const Preprocessor *Engine::getPreprocessor()
+Preprocessor *Engine::getPreprocessor()
 {
     return &_preprocessor;
 }
