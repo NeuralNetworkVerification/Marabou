@@ -22,39 +22,39 @@
 class AutoProjectedSteepestEdgeRule
 {
 public:
-	AutoProjectedSteepestEdgeRule()
-	{
-		_projectedSteepestEdgeRule = T::createProjectedSteepestEdgeRule();
-	}
+    AutoProjectedSteepestEdgeRule()
+    {
+        _projectedSteepestEdgeRule = T::createProjectedSteepestEdgeRule();
+    }
 
-	~AutoProjectedSteepestEdgeRule()
-	{
-		T::discardProjectedSteepestEdgeRule( _projectedSteepestEdgeRule );
-		_projectedSteepestEdgeRule = 0;
-	}
+    ~AutoProjectedSteepestEdgeRule()
+    {
+        T::discardProjectedSteepestEdgeRule( _projectedSteepestEdgeRule );
+        _projectedSteepestEdgeRule = 0;
+    }
 
-	operator IProjectedSteepestEdgeRule &()
-	{
-		return *_projectedSteepestEdgeRule;
-	}
+    operator IProjectedSteepestEdgeRule &()
+    {
+        return *_projectedSteepestEdgeRule;
+    }
 
-	operator IProjectedSteepestEdgeRule *()
-	{
-		return _projectedSteepestEdgeRule;
-	}
+    operator IProjectedSteepestEdgeRule *()
+    {
+        return _projectedSteepestEdgeRule;
+    }
 
-	IProjectedSteepestEdgeRule *operator->()
-	{
-		return _projectedSteepestEdgeRule;
-	}
+    IProjectedSteepestEdgeRule *operator->()
+    {
+        return _projectedSteepestEdgeRule;
+    }
 
-	const IProjectedSteepestEdgeRule *operator->() const
-	{
-		return _projectedSteepestEdgeRule;
-	}
+    const IProjectedSteepestEdgeRule *operator->() const
+    {
+        return _projectedSteepestEdgeRule;
+    }
 
 private:
-	IProjectedSteepestEdgeRule *_projectedSteepestEdgeRule;
+    IProjectedSteepestEdgeRule *_projectedSteepestEdgeRule;
 };
 
 #endif // __AutoProjectedSteepestEdge_h__

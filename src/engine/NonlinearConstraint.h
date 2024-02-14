@@ -16,8 +16,8 @@
 #ifndef __NonlinearConstraint_h__
 #define __NonlinearConstraint_h__
 
-#include "FloatUtils.h"
 #include "BoundManager.h"
+#include "FloatUtils.h"
 #include "ITableau.h"
 #include "List.h"
 #include "Map.h"
@@ -64,8 +64,12 @@ public:
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
-    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
+    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
 
     /*
       Returns true iff the variable participates in this nonlinear constraint.
@@ -81,8 +85,7 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
-                                                          &/* inputQuery */ ) {};
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery & /* inputQuery */ ){};
 
     /*
       Returns true iff the assignment satisfies the constraint.
@@ -92,7 +95,9 @@ public:
     /*
       Dump the current state of the constraint.
     */
-    virtual void dump( String & ) const {}
+    virtual void dump( String & ) const
+    {
+    }
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
@@ -104,7 +109,10 @@ public:
     virtual void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) = 0;
     virtual bool constraintObsolete() const = 0;
 
-    virtual bool supportVariableElimination() const { return false; };
+    virtual bool supportVariableElimination() const
+    {
+        return false;
+    };
 
     /*
       Get the tightenings entailed by the constraint.
@@ -216,17 +224,17 @@ protected:
     */
     bool tightenLowerBound( unsigned var, double value )
     {
-      if ( _boundManager != nullptr )
-      {
-        _boundManager->setLowerBound( var, value );
-        return true;
-      }
-      else if ( !existsLowerBound( var ) || _lowerBounds[var] < value )
-      {
-        _lowerBounds[var] = value;
-        return true;
-      }
-      return false;
+        if ( _boundManager != nullptr )
+        {
+            _boundManager->setLowerBound( var, value );
+            return true;
+        }
+        else if ( !existsLowerBound( var ) || _lowerBounds[var] < value )
+        {
+            _lowerBounds[var] = value;
+            return true;
+        }
+        return false;
     }
 
     /*
@@ -234,17 +242,17 @@ protected:
     */
     bool tightenUpperBound( unsigned var, double value )
     {
-      if ( _boundManager != nullptr )
-      {
-        _boundManager->setUpperBound( var, value );
-        return true;
-      }
-      else if ( !existsUpperBound( var ) || _upperBounds[var] > value )
-      {
-        _upperBounds[var] = value;
-        return true;
-      }
-      return false;
+        if ( _boundManager != nullptr )
+        {
+            _boundManager->setUpperBound( var, value );
+            return true;
+        }
+        else if ( !existsUpperBound( var ) || _upperBounds[var] > value )
+        {
+            _upperBounds[var] = value;
+            return true;
+        }
+        return false;
     }
 
     /**********************************************************************/

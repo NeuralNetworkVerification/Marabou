@@ -28,13 +28,13 @@
 #ifndef __DisjunctionConstraint_h__
 #define __DisjunctionConstraint_h__
 
-#include "Vector.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Vector.h"
 
 class DisjunctionConstraint : public PiecewiseLinearConstraint
 {
 public:
-    ~DisjunctionConstraint() {};
+    ~DisjunctionConstraint(){};
     DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const String &serializedDisjunction );
@@ -153,7 +153,7 @@ public:
 
     virtual bool supportVariableElimination() const override
     {
-      return false;
+        return false;
     }
 
     /*
@@ -224,7 +224,7 @@ private:
     */
     void updateFeasibleDisjuncts();
     bool disjunctIsFeasible( unsigned ind ) const;
-    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit & caseSplit ) const;
+    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit &caseSplit ) const;
 
     inline PhaseStatus indToPhaseStatus( unsigned ind ) const
     {
@@ -233,7 +233,7 @@ private:
 
     inline unsigned phaseStatusToInd( PhaseStatus phase ) const
     {
-        //ASSERT( phase != PHASE_NOT_FIXED );
+        // ASSERT( phase != PHASE_NOT_FIXED );
         return static_cast<unsigned>( phase ) - 1;
     }
 

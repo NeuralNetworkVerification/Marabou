@@ -19,7 +19,8 @@
 #include "IProjectedSteepestEdge.h"
 #include "SparseUnsortedList.h"
 
-#define PSE_LOG( x, ... ) LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
+#define PSE_LOG( x, ... )                                                                          \
+    LOG( GlobalConfiguration::PROJECTED_STEEPEST_EDGE_LOGGING, "Projected SE: %s\n", x )
 
 class ProjectedSteepestEdgeRule : public IProjectedSteepestEdgeRule
 {
@@ -35,9 +36,8 @@ public:
     /*
       Apply the projected steepest edge pivot selection rule.
     */
-    bool select( ITableau &tableau,
-                 const List<unsigned> &candidates,
-                 const Set<unsigned> &excluded );
+    bool
+    select( ITableau &tableau, const List<unsigned> &candidates, const Set<unsigned> &excluded );
 
     /*
       We use this hook to update gamma according to the entering

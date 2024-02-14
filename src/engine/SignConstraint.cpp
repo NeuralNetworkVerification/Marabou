@@ -17,9 +17,9 @@
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
+#include "ITableau.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
-#include "ITableau.h"
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "PiecewiseLinearCaseSplit.h"
@@ -27,7 +27,7 @@
 #include "Statistics.h"
 
 #ifdef _WIN32
-#define __attribute__(x)
+#define __attribute__( x )
 #endif
 
 SignConstraint::SignConstraint( unsigned b, unsigned f )
@@ -223,8 +223,7 @@ bool SignConstraint::phaseFixed() const
     return _phaseStatus != PHASE_NOT_FIXED;
 }
 
-void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
-                                                              &inputQuery )
+void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery )
 {
     /*
       If the phase is not fixed, add _f <= -2/lb_b * _b + 1
@@ -239,8 +238,7 @@ void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
         double lowerBound = inputQuery.getLowerBound( _b );
         double upperBound = inputQuery.getUpperBound( _b );
 
-        ASSERT( FloatUtils::lt( lowerBound, 0 ) &&
-                FloatUtils::gte( upperBound, 0 ) );
+        ASSERT( FloatUtils::lt( lowerBound, 0 ) && FloatUtils::gte( upperBound, 0 ) );
 
         // Create the aux variable
         unsigned auxUpper = inputQuery.getNumberOfVariables();
@@ -249,7 +247,7 @@ void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
         // Create and add the equation
         Equation equation( Equation::EQ );
         equation.addAddend( 1.0, _f );
-        equation.addAddend( 2/lowerBound, _b );
+        equation.addAddend( 2 / lowerBound, _b );
         equation.addAddend( 1.0, auxUpper );
         equation.setScalar( 1 );
         inputQuery.addEquation( equation );
@@ -265,7 +263,7 @@ void SignConstraint::addAuxiliaryEquationsAfterPreprocessing( InputQuery
             // Create and add the equation
             Equation equation2( Equation::EQ );
             equation2.addAddend( 1.0, _f );
-            equation2.addAddend( -2/upperBound, _b );
+            equation2.addAddend( -2 / upperBound, _b );
             equation2.addAddend( 1.0, auxLower );
             equation2.setScalar( -1 );
             inputQuery.addEquation( equation2 );
@@ -302,11 +300,10 @@ String SignConstraint::serializeToString() const
     return Stringf( "sign,%u,%u", _f, _b );
 }
 
-void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
-                                               PhaseStatus phase ) const
+void SignConstraint::getCostFunctionComponent( LinearExpression &cost, PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if( !isActive() || phaseFixed() )
+    if ( !isActive() || phaseFixed() )
         return;
 
     ASSERT( phase == SIGN_PHASE_NEGATIVE || phase == SIGN_PHASE_POSITIVE );
@@ -335,13 +332,11 @@ void SignConstraint::getCostFunctionComponent( LinearExpression &cost,
     }
 }
 
-PhaseStatus SignConstraint::getPhaseStatusInAssignment( const
-                                                        Map<unsigned, double>
-                                                        &assignment ) const
+PhaseStatus
+SignConstraint::getPhaseStatusInAssignment( const Map<unsigned, double> &assignment ) const
 {
     ASSERT( assignment.exists( _b ) );
-    return FloatUtils::isNegative( assignment[_b] ) ?
-        SIGN_PHASE_NEGATIVE : SIGN_PHASE_POSITIVE;
+    return FloatUtils::isNegative( assignment[_b] ) ? SIGN_PHASE_NEGATIVE : SIGN_PHASE_POSITIVE;
 }
 
 bool SignConstraint::haveOutOfBoundVariables() const
@@ -349,12 +344,16 @@ bool SignConstraint::haveOutOfBoundVariables() const
     double bValue = getAssignment( _b );
     double fValue = getAssignment( _f );
 
-    if ( FloatUtils::gt( getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE )
-         || FloatUtils::lt( getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::gt(
+             getLowerBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+         FloatUtils::lt(
+             getUpperBound( _b ), bValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
-    if ( FloatUtils::gt( getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE )
-         || FloatUtils::lt( getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
+    if ( FloatUtils::gt(
+             getLowerBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) ||
+         FloatUtils::lt(
+             getUpperBound( _f ), fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE ) )
         return true;
 
     return false;
@@ -403,10 +402,10 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
                 if ( FloatUtils::gt( bound, 1 ) )
                     throw InfeasibleQueryException();
 
-                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, { variable },
-                                                                   BoundType::LOWER, getType() );
-                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::LOWER, { variable },
-                                                                   BoundType::LOWER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _f, 1, BoundType::LOWER, { variable }, BoundType::LOWER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _b, 0, BoundType::LOWER, { variable }, BoundType::LOWER, getType() );
             }
             else
             {
@@ -421,8 +420,8 @@ void SignConstraint::notifyLowerBound( unsigned variable, double bound )
         if ( _boundManager != nullptr )
         {
             if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound( _f, 1, BoundType::LOWER, { variable },
-                                                                   BoundType::LOWER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _f, 1, BoundType::LOWER, { variable }, BoundType::LOWER, getType() );
             else
                 _boundManager->tightenLowerBound( _f, 1 );
         }
@@ -450,13 +449,13 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
             if ( _boundManager->shouldProduceProofs() )
             {
                 // If ub of f is < -1, we have a contradiction
-                if ( FloatUtils::lt( bound, -1 )  )
+                if ( FloatUtils::lt( bound, -1 ) )
                     throw InfeasibleQueryException();
 
-                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, { variable },
-                                                                  BoundType::UPPER, getType() );
-                _boundManager->addLemmaExplanationAndTightenBound( _b, 0, BoundType::UPPER, { variable },
-                                                                   BoundType::UPPER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _f, -1, BoundType::UPPER, { variable }, BoundType::UPPER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _b, 0, BoundType::UPPER, { variable }, BoundType::UPPER, getType() );
             }
             else
             {
@@ -471,8 +470,8 @@ void SignConstraint::notifyUpperBound( unsigned variable, double bound )
         if ( _boundManager != nullptr )
         {
             if ( _boundManager->shouldProduceProofs() )
-                _boundManager->addLemmaExplanationAndTightenBound( _f, -1, BoundType::UPPER, { variable },
-                                                                  BoundType::UPPER, getType() );
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _f, -1, BoundType::UPPER, { variable }, BoundType::UPPER, getType() );
             else
                 _boundManager->tightenUpperBound( _f, -1 );
         }
@@ -503,8 +502,8 @@ List<PiecewiseLinearConstraint::Fix> SignConstraint::getSmartFixes( ITableau * )
 
 void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) const
 {
-    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) &&
-            existsUpperBound( _b ) && existsUpperBound( _f ) );
+    ASSERT( existsLowerBound( _b ) && existsLowerBound( _f ) && existsUpperBound( _b ) &&
+            existsUpperBound( _f ) );
 
     double bLowerBound = getLowerBound( _b );
     double fLowerBound = getLowerBound( _f );
@@ -517,15 +516,13 @@ void SignConstraint::getEntailedTightenings( List<Tightening> &tightenings ) con
     tightenings.append( Tightening( _f, 1, Tightening::UB ) );
 
     // Additional bounds can only be propagated if we are in the POSITIVE or NEGATIVE phases
-    if ( !FloatUtils::isNegative( bLowerBound ) ||
-         FloatUtils::gt( fLowerBound, -1 ) )
+    if ( !FloatUtils::isNegative( bLowerBound ) || FloatUtils::gt( fLowerBound, -1 ) )
     {
         // Positive case
         tightenings.append( Tightening( _b, 0, Tightening::LB ) );
         tightenings.append( Tightening( _f, 1, Tightening::LB ) );
     }
-    else if ( FloatUtils::isNegative( bUpperBound ) ||
-              FloatUtils::lt( fUpperBound, 1 ) )
+    else if ( FloatUtils::isNegative( bUpperBound ) || FloatUtils::lt( fUpperBound, 1 ) )
     {
         // Negative case
         tightenings.append( Tightening( _b, 0, Tightening::UB ) );
@@ -541,8 +538,7 @@ void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
 
     ASSERT( oldIndex == _b || oldIndex == _f );
     ASSERT( !_boundManager );
-    ASSERT( !_lowerBounds.exists( newIndex ) &&
-            !_upperBounds.exists( newIndex ) &&
+    ASSERT( !_lowerBounds.exists( newIndex ) && !_upperBounds.exists( newIndex ) &&
             newIndex != _b && newIndex != _f );
 
     if ( existsLowerBound( oldIndex ) )
@@ -563,38 +559,38 @@ void SignConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _f = newIndex;
 }
 
-void SignConstraint::eliminateVariable( __attribute__((unused)) unsigned variable,
-                                        __attribute__((unused)) double fixedValue )
+void SignConstraint::eliminateVariable( __attribute__( ( unused ) ) unsigned variable,
+                                        __attribute__( ( unused ) ) double fixedValue )
 {
     ASSERT( variable == _b || variable == _f );
 
-    DEBUG({
-              if ( variable == _f )
-              {
-                  ASSERT( ( FloatUtils::areEqual( fixedValue, 1 ) ) ||
-                          ( FloatUtils::areEqual( fixedValue,-1 ) ) );
+    DEBUG( {
+        if ( variable == _f )
+        {
+            ASSERT( ( FloatUtils::areEqual( fixedValue, 1 ) ) ||
+                    ( FloatUtils::areEqual( fixedValue, -1 ) ) );
 
-                  if ( FloatUtils::areEqual( fixedValue, 1 ) )
-                  {
-                      ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
-                  }
-                  else if (FloatUtils::areEqual( fixedValue, -1 ) )
-                  {
-                      ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
-                  }
-              }
-              else if ( variable == _b )
-              {
-                  if ( FloatUtils::gte( fixedValue, 0 ) )
-                  {
-                      ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
-                  }
-                  else if ( FloatUtils::lt( fixedValue, 0 ) )
-                  {
-                      ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
-                  }
-              }
-        });
+            if ( FloatUtils::areEqual( fixedValue, 1 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+            }
+            else if ( FloatUtils::areEqual( fixedValue, -1 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+            }
+        }
+        else if ( variable == _b )
+        {
+            if ( FloatUtils::gte( fixedValue, 0 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_NEGATIVE );
+            }
+            else if ( FloatUtils::lt( fixedValue, 0 ) )
+            {
+                ASSERT( _phaseStatus != SIGN_PHASE_POSITIVE );
+            }
+        }
+    } );
 
     // In a Sign constraint, if a variable is removed the entire constraint can be discarded.
     _haveEliminatedVariables = true;
@@ -613,26 +609,31 @@ unsigned SignConstraint::getF() const
 void SignConstraint::dump( String &output ) const
 {
     output = Stringf( "SignConstraint: x%u = Sign( x%u ). Active? %s. PhaseStatus = %u (%s). ",
-                      _f, _b,
+                      _f,
+                      _b,
                       _constraintActive ? "Yes" : "No",
-                      _phaseStatus, phaseToString( _phaseStatus ).ascii()
-                      );
+                      _phaseStatus,
+                      phaseToString( _phaseStatus ).ascii() );
 
-    output += Stringf( "b in [%s, %s], ",
-                       existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
-                       existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
+    output +=
+        Stringf( "b in [%s, %s], ",
+                 existsLowerBound( _b ) ? Stringf( "%lf", getLowerBound( _b ) ).ascii() : "-inf",
+                 existsUpperBound( _b ) ? Stringf( "%lf", getUpperBound( _b ) ).ascii() : "inf" );
 
-    output += Stringf( "f in [%s, %s]\n",
-                       existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
-                       existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
+    output +=
+        Stringf( "f in [%s, %s]\n",
+                 existsLowerBound( _f ) ? Stringf( "%lf", getLowerBound( _f ) ).ascii() : "-inf",
+                 existsUpperBound( _f ) ? Stringf( "%lf", getUpperBound( _f ) ).ascii() : "inf" );
 }
 
 double SignConstraint::computePolarity() const
 {
     double currentLb = getLowerBound( _b );
     double currentUb = getUpperBound( _b );
-    if ( !FloatUtils::isNegative( currentLb ) ) return 1;
-    if ( FloatUtils::isNegative( currentUb ) ) return -1;
+    if ( !FloatUtils::isNegative( currentLb ) )
+        return 1;
+    if ( FloatUtils::isNegative( currentUb ) )
+        return -1;
     double width = currentUb - currentLb;
     double sum = currentUb + currentLb;
     return sum / width;
@@ -640,8 +641,8 @@ double SignConstraint::computePolarity() const
 
 void SignConstraint::updateDirection()
 {
-    _direction = ( FloatUtils::isNegative( computePolarity() ) ) ?
-        SIGN_PHASE_NEGATIVE : SIGN_PHASE_POSITIVE;
+    _direction =
+        ( FloatUtils::isNegative( computePolarity() ) ) ? SIGN_PHASE_NEGATIVE : SIGN_PHASE_POSITIVE;
 }
 
 PhaseStatus SignConstraint::getDirection() const
@@ -660,6 +661,7 @@ bool SignConstraint::supportPolarity() const
 }
 
 // No aux vars in Sign constraint, so the function is suppressed
-void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */, unsigned /* constraintAuxVar */ )
+void SignConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
+                                       unsigned /* constraintAuxVar */ )
 {
 }

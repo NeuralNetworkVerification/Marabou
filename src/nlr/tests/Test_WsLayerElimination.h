@@ -13,13 +13,14 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "Layer.h"
 #include "Map.h"
 #include "NetworkLevelReasoner.h"
 #include "Tightening.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForNetworkLevelReasoner
 {
@@ -93,8 +94,8 @@ public:
         nlr.addActivationSource( 3, 1, 4, 1 );
 
         // Variable indexing
-        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0);
-        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1);
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 0 ), 0 );
+        nlr.setNeuronVariable( NLR::NeuronIndex( 0, 1 ), 1 );
 
         nlr.setNeuronVariable( NLR::NeuronIndex( 1, 0 ), 2 );
         nlr.setNeuronVariable( NLR::NeuronIndex( 1, 1 ), 3 );
@@ -126,8 +127,8 @@ public:
         Map<unsigned, double> upperBounds;
         Set<unsigned> varsInUnhandledConstraints;
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT( eliminatedNeurons.empty() );
         TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
 
@@ -146,8 +147,8 @@ public:
         double *expectedOutput = new double[2];
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+4 ) / 2;
-            input[1] = ( 2*i ) / 3 - 3;
+            input[0] = ( i + 4 ) / 2;
+            input[1] = ( 2 * i ) / 3 - 3;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
@@ -333,8 +334,8 @@ public:
         Map<unsigned, double> upperBounds;
         Set<unsigned> varsInUnhandledConstraints;
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT_EQUALS( eliminatedNeurons.size(), 2u );
         TS_ASSERT( eliminatedNeurons.exists( 8 ) );
         Map<unsigned, double> expectedAddends;
@@ -397,7 +398,7 @@ public:
         nlr.addLayer( 8, NLR::Layer::WEIGHTED_SUM, 2 );
 
         nlr.addLayer( 9, NLR::Layer::SIGN, 2 );
-        nlr.addLayer(10, NLR::Layer::WEIGHTED_SUM, 2);
+        nlr.addLayer( 10, NLR::Layer::WEIGHTED_SUM, 2 );
 
         // Mark layer dependencies
         nlr.addLayerDependency( 0, 1 );
@@ -615,8 +616,8 @@ public:
         Map<unsigned, double> upperBounds;
         Set<unsigned> varsInUnhandledConstraints;
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 1 );
         TS_ASSERT_EQUALS( eliminatedNeurons.size(), 2u );
         TS_ASSERT( eliminatedNeurons.exists( 9 ) );
@@ -640,8 +641,8 @@ public:
         double *expectedOutput = new double[2];
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+4 ) / 2;
-            input[1] = ( 2*i ) / 3 -3;
+            input[0] = ( i + 4 ) / 2;
+            input[1] = ( 2 * i ) / 3 - 3;
             input[2] = 15;
 
             nlr.evaluate( input, output );
@@ -704,8 +705,8 @@ public:
         nlr.setWeight( 5, 1, 6, 1, 3 );
 
         // [WS] 6 -> [WS] 7
-        nlr.setWeight( 6, 0, 7, 0,-1 );
-        nlr.setWeight( 6, 0, 7, 1,-2 );
+        nlr.setWeight( 6, 0, 7, 0, -1 );
+        nlr.setWeight( 6, 0, 7, 1, -2 );
         nlr.setWeight( 6, 1, 7, 1, 5 );
         nlr.setWeight( 6, 1, 7, 2, 1 );
 
@@ -846,8 +847,8 @@ public:
         Map<unsigned, double> upperBounds;
         Set<unsigned> varsInUnhandledConstraints;
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 2 );
 
         TS_ASSERT_EQUALS( eliminatedNeurons.size(), 4u );
@@ -886,8 +887,8 @@ public:
 
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+19 ) / 2 -7;
-            input[1] = ( 3*i ) / 4 -1;
+            input[0] = ( i + 19 ) / 2 - 7;
+            input[1] = ( 3 * i ) / 4 - 1;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
@@ -921,8 +922,8 @@ public:
         varsInUnhandledConstraints.insert( 0 );
         varsInUnhandledConstraints.insert( 17 );
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer - 2 );
 
         TS_ASSERT_EQUALS( eliminatedNeurons.size(), 4u );
@@ -961,8 +962,8 @@ public:
 
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+19 ) / 2 -7;
-            input[1] = ( 3*i ) / 4 -1;
+            input[0] = ( i + 19 ) / 2 - 7;
+            input[1] = ( 3 * i ) / 4 - 1;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
@@ -992,8 +993,8 @@ public:
         Set<unsigned> varsInUnhandledConstraints;
         varsInUnhandledConstraints.insert( 14 );
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
         TS_ASSERT_EQUALS( eliminatedNeurons.size(), 0u );
 
@@ -1007,8 +1008,8 @@ public:
 
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+19 ) / 2 -7;
-            input[1] = ( 3*i ) / 4 -1;
+            input[0] = ( i + 19 ) / 2 - 7;
+            input[1] = ( 3 * i ) / 4 - 1;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );
@@ -1038,8 +1039,8 @@ public:
         Set<unsigned> varsInUnhandledConstraints;
         varsInUnhandledConstraints.insert( 15 );
         Map<unsigned, LinearExpression> eliminatedNeurons;
-        nlr.mergeConsecutiveWSLayers( lowerBounds, upperBounds,
-                                      varsInUnhandledConstraints, eliminatedNeurons );
+        nlr.mergeConsecutiveWSLayers(
+            lowerBounds, upperBounds, varsInUnhandledConstraints, eliminatedNeurons );
         TS_ASSERT_EQUALS( nlr.getNumberOfLayers(), originalNumberOfLayer );
         TS_ASSERT_EQUALS( eliminatedNeurons.size(), 0u );
 
@@ -1053,8 +1054,8 @@ public:
 
         for ( int i = -250; i < 250; ++i )
         {
-            input[0] = ( i+19 ) / 2 -7;
-            input[1] = ( 3*i ) / 4 -1;
+            input[0] = ( i + 19 ) / 2 - 7;
+            input[1] = ( 3 * i ) / 4 - 1;
 
             nlr.evaluate( input, output );
             expectedNlr.evaluate( input, expectedOutput );

@@ -14,19 +14,20 @@
  ** may be altered during parsing of a network. Once the network has been parsed
  ** they are then loaded into an InputQuery.
  ** Future parsers for individual network formats should extend this interface.
-**/
+ **/
 
 #include "NetworkParser.h"
-#include "Map.h"
-#include "List.h"
+
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
-#include "MString.h"
 #include "InputQuery.h"
+#include "List.h"
 #include "MString.h"
-#include "Set.h"
 #include "MStringf.h"
-#include "Debug.h"
+#include "Map.h"
+#include "Set.h"
+
 #include <assert.h>
 
 NetworkParser::NetworkParser()
@@ -34,10 +35,10 @@ NetworkParser::NetworkParser()
     _numVars = 0;
 }
 
-Variable NetworkParser::getNewVariable(){
-
+Variable NetworkParser::getNewVariable()
+{
     _numVars += 1;
-    return _numVars-1;
+    return _numVars - 1;
 }
 
 void NetworkParser::addEquation( Equation &eq )
@@ -112,7 +113,7 @@ void NetworkParser::addAbsConstraint( Variable inputVar, Variable outputVar )
     _absList.append( new AbsoluteValueConstraint( inputVar, outputVar ) );
 }
 
-void NetworkParser::getMarabouQuery( InputQuery& query )
+void NetworkParser::getMarabouQuery( InputQuery &query )
 {
     query.setNumberOfVariables( _numVars );
 
@@ -135,82 +136,82 @@ void NetworkParser::getMarabouQuery( InputQuery& query )
         query.addEquation( equation );
     }
 
-    for ( ReluConstraint* constraintPtr : _reluList )
+    for ( ReluConstraint *constraintPtr : _reluList )
     {
-        DEBUG({
+        DEBUG( {
             ReluConstraint constraint = *constraintPtr;
             ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        });
+        } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for ( LeakyReluConstraint* constraintPtr : _leakyReluList )
+    for ( LeakyReluConstraint *constraintPtr : _leakyReluList )
     {
-        DEBUG({
+        DEBUG( {
             LeakyReluConstraint constraint = *constraintPtr;
             ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        });
+        } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for ( SigmoidConstraint* constraintPtr : _sigmoidList )
+    for ( SigmoidConstraint *constraintPtr : _sigmoidList )
     {
-        DEBUG({
+        DEBUG( {
             SigmoidConstraint constraint = *constraintPtr;
             ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        });
+        } );
         query.addNonlinearConstraint( constraintPtr );
     }
 
-    for ( MaxConstraint* constraintPtr : _maxList )
+    for ( MaxConstraint *constraintPtr : _maxList )
     {
-        DEBUG({
+        DEBUG( {
             MaxConstraint constraint = *constraintPtr;
             ASSERT( constraint.getF() < _numVars );
             for ( [[maybe_unused]] Variable var : constraint.getElements() )
             {
-                ASSERT ( var < _numVars );
+                ASSERT( var < _numVars );
             }
-        });
+        } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for ( AbsoluteValueConstraint* constraintPtr : _absList )
+    for ( AbsoluteValueConstraint *constraintPtr : _absList )
     {
-        DEBUG({
+        DEBUG( {
             AbsoluteValueConstraint constraint = *constraintPtr;
             ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        });
+        } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
-    for ( SignConstraint* constraintPtr : _signList )
+    for ( SignConstraint *constraintPtr : _signList )
     {
-        DEBUG({
+        DEBUG( {
             SignConstraint constraint = *constraintPtr;
             ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
-        });
+        } );
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     // TODO check this last two
-    for ( std::pair<Variable,float> lower : _lowerBounds )
+    for ( std::pair<Variable, float> lower : _lowerBounds )
     {
         ASSERT( lower.first < _numVars );
-        query.setLowerBound( lower.first,lower.second );
+        query.setLowerBound( lower.first, lower.second );
     }
 
-    for ( std::pair<Variable,float> upper : _upperBounds )
+    for ( std::pair<Variable, float> upper : _upperBounds )
     {
         ASSERT( upper.first < _numVars );
-        query.setUpperBound( upper.first,upper.second );
+        query.setUpperBound( upper.first, upper.second );
     }
 }
 
 int NetworkParser::findEquationWithOutputVariable( Variable variable )
 {
     int i = 0;
-    for ( Equation& equation : _equationList )
+    for ( Equation &equation : _equationList )
     {
         Equation::Addend outputAddend = equation._addends.back();
         if ( variable == outputAddend._variable )
