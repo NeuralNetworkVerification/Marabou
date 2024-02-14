@@ -146,69 +146,11 @@ public:
         SparseLUFactors lu4( 4 );
 
         {
-            double A[] = { 2, 3, 0, 0, 1, 0, 0, 0, 1 };
-
-            SparseColumnsOfBasis sparseCols( 3 );
-            basisIntoSparseColumns( A, 3, sparseCols );
-
-            SparseGaussianEliminator *ge = NULL;
-
-            TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
-
-            double result[9];
-            computeMatrixFromFactorization( &lu3, result );
-
-            for ( unsigned i = 0; i < 9; ++i )
-            {
-                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
-            }
-
-            double At[9];
-            transposeMatrix( A, At, 3 );
-            computeTransposedMatrixFromFactorization( &lu3, result );
-
-            for ( unsigned i = 0; i < 9; ++i )
-            {
-                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
-            }
-
-            TS_ASSERT_THROWS_NOTHING( delete ge );
-        }
-
-        {
-            double A[] = { 2, 3, 0, 0, 1, 2, 0, 4, 1 };
-
-            SparseColumnsOfBasis sparseCols( 3 );
-            basisIntoSparseColumns( A, 3, sparseCols );
-
-            SparseGaussianEliminator *ge = NULL;
-
-            TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
-
-            double result[9];
-            computeMatrixFromFactorization( &lu3, result );
-
-            for ( unsigned i = 0; i < 9; ++i )
-            {
-                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
-            }
-
-            double At[9];
-            transposeMatrix( A, At, 3 );
-            computeTransposedMatrixFromFactorization( &lu3, result );
-
-            for ( unsigned i = 0; i < 9; ++i )
-            {
-                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
-            }
-
-            TS_ASSERT_THROWS_NOTHING( delete ge );
-        }
-
-        {
-            double A[] = { 2, 3, -4, -5, 1, 2, 0, 4, 1 };
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 0, //
+                0, 0, 1  //
+            };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
@@ -240,7 +182,80 @@ public:
 
         {
             double A[] = {
-                2, 3, -4, 0, -5, 1, 2, 2, 0, 4, 1, -5, 1, 2, 3, 4,
+                2, 3, 0, //
+                0, 1, 2, //
+                0, 4, 1  //
+            };
+
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
+
+            SparseGaussianEliminator *ge = NULL;
+
+            TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
+
+            double result[9];
+            computeMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
+            }
+
+            double At[9];
+            transposeMatrix( A, At, 3 );
+            computeTransposedMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
+            }
+
+            TS_ASSERT_THROWS_NOTHING( delete ge );
+        }
+
+        {
+            double A[] = {
+                2,  3, -4, //
+                -5, 1, 2,  //
+                0,  4, 1   //
+            };
+
+            SparseColumnsOfBasis sparseCols( 3 );
+            basisIntoSparseColumns( A, 3, sparseCols );
+
+            SparseGaussianEliminator *ge = NULL;
+
+            TS_ASSERT( ge = new SparseGaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( &sparseCols, &lu3 ) );
+
+            double result[9];
+            computeMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
+            }
+
+            double At[9];
+            transposeMatrix( A, At, 3 );
+            computeTransposedMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( At[i], result[i] ) );
+            }
+
+            TS_ASSERT_THROWS_NOTHING( delete ge );
+        }
+
+        {
+            double A[] = {
+                2,  3, -4, 0,  //
+                -5, 1, 2,  2,  //
+                0,  4, 1,  -5, //
+                1,  2, 3,  4,  //
             };
 
             SparseColumnsOfBasis sparseCols( 4 );
@@ -272,7 +287,11 @@ public:
         }
 
         {
-            double A[] = { 2, 3, 0, 0, 1, 0, 5, 4, 0 };
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 0, //
+                5, 4, 0  //
+            };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );
@@ -289,7 +308,11 @@ public:
         }
 
         {
-            double A[] = { 2, 3, 7, 0, 0, 0, 5, 4, 0 };
+            double A[] = {
+                2, 3, 7, //
+                0, 0, 0, //
+                5, 4, 0  //
+            };
 
             SparseColumnsOfBasis sparseCols( 3 );
             basisIntoSparseColumns( A, 3, sparseCols );

@@ -83,45 +83,11 @@ public:
         LUFactors lu4( 4 );
 
         {
-            double A[] = { 2, 3, 0, 0, 1, 0, 0, 0, 1 };
-
-            GaussianEliminator *ge;
-
-            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
-
-            double result[9];
-            computeMatrixFromFactorization( &lu3, result );
-
-            for ( unsigned i = 0; i < 9; ++i )
-            {
-                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
-            }
-
-            TS_ASSERT_THROWS_NOTHING( delete ge );
-        }
-
-        {
-            double A[] = { 2, 3, 0, 0, 1, 2, 0, 4, 1 };
-
-            GaussianEliminator *ge;
-
-            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
-            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
-
-            double result[9];
-            computeMatrixFromFactorization( &lu3, result );
-
-            for ( unsigned i = 0; i < 9; ++i )
-            {
-                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
-            }
-
-            TS_ASSERT_THROWS_NOTHING( delete ge );
-        }
-
-        {
-            double A[] = { 2, 3, -4, -5, 1, 2, 0, 4, 1 };
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 0, //
+                0, 0, 1  //
+            };
 
             GaussianEliminator *ge;
 
@@ -141,7 +107,56 @@ public:
 
         {
             double A[] = {
-                2, 3, -4, 0, -5, 1, 2, 2, 0, 4, 1, -5, 1, 2, 3, 4,
+                2, 3, 0, //
+                0, 1, 2, //
+                0, 4, 1, //
+            };
+
+            GaussianEliminator *ge;
+
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
+
+            double result[9];
+            computeMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
+            }
+
+            TS_ASSERT_THROWS_NOTHING( delete ge );
+        }
+
+        {
+            double A[] = {
+                2,  3, -4, //
+                -5, 1, 2,  //
+                0,  4, 1,  //
+            };
+
+            GaussianEliminator *ge;
+
+            TS_ASSERT( ge = new GaussianEliminator( 3 ) );
+            TS_ASSERT_THROWS_NOTHING( ge->run( A, &lu3 ) );
+
+            double result[9];
+            computeMatrixFromFactorization( &lu3, result );
+
+            for ( unsigned i = 0; i < 9; ++i )
+            {
+                TS_ASSERT( FloatUtils::areEqual( A[i], result[i] ) );
+            }
+
+            TS_ASSERT_THROWS_NOTHING( delete ge );
+        }
+
+        {
+            double A[] = {
+                2,  3, -4, 0,  //
+                -5, 1, 2,  2,  //
+                0,  4, 1,  -5, //
+                1,  2, 3,  4,  //
             };
 
             GaussianEliminator *ge;
@@ -161,7 +176,11 @@ public:
         }
 
         {
-            double A[] = { 2, 3, 0, 0, 1, 0, 5, 4, 0 };
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 0, //
+                5, 4, 0, //
+            };
 
             GaussianEliminator *ge;
 
@@ -175,7 +194,11 @@ public:
         }
 
         {
-            double A[] = { 2, 3, 7, 0, 0, 0, 5, 4, 0 };
+            double A[] = {
+                2, 3, 7, //
+                0, 0, 0, //
+                5, 4, 0  //
+            };
 
             GaussianEliminator *ge;
 

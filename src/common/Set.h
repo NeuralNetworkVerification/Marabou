@@ -16,6 +16,7 @@
 #ifndef __Set_h__
 #define __Set_h__
 
+#include "List.h"
 #include "T/stdlib.h"
 
 #include <algorithm>
@@ -50,6 +51,12 @@ public:
     }
 
     void insert( const Set<Value> &other )
+    {
+        for ( auto it = other.begin(); it != other.end(); ++it )
+            _container.insert( *it );
+    }
+
+    void insert( const List<Value> &other )
     {
         for ( auto it = other.begin(); it != other.end(); ++it )
             _container.insert( *it );

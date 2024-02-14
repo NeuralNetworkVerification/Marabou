@@ -58,7 +58,9 @@ public:
 
         {
             double A1[] = {
-                1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+                1, 0, 0, 0, 0, //
+                0, 0, 1, 0, 0, //
+                0, 0, 0, 1, 0, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
@@ -70,7 +72,9 @@ public:
 
         {
             double A1[] = {
-                1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0,
+                1, 0, 0, 0, 0, //
+                0, 0, 1, 0, 0, //
+                0, 1, 0, 1, 0, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
@@ -85,7 +89,9 @@ public:
 
         {
             double A1[] = {
-                1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 2, 0,
+                1, 0, 0, 0, 0, //
+                1, 0, 0, 0, 0, //
+                0, 1, 0, 2, 0, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
@@ -101,7 +107,9 @@ public:
 
         {
             double A1[] = {
-                1, 1, 0, 1, 0, 0, 0, 3, 0, 0, 2, 2, 0, 0, 0,
+                1, 1, 0, 1, 0, //
+                0, 0, 3, 0, 0, //
+                2, 2, 0, 0, 0, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
@@ -116,7 +124,9 @@ public:
 
         {
             double A1[] = {
-                15, 3, 0, 1, 0, 0, 0, -1, 1, 4, 15, 3, -1, 2, 4,
+                15, 3, 0,  1, 0, //
+                0,  0, -1, 1, 4, //
+                15, 3, -1, 2, 4, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
@@ -135,7 +145,9 @@ public:
 
         {
             double A1[] = {
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, //
+                0, 0, 0, 0, 0, //
+                0, 0, 0, 0, 0, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );
@@ -147,7 +159,9 @@ public:
 
         {
             double A1[] = {
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 14, 1,
+                0, 0, 0, 0,  0, //
+                0, 0, 0, 0,  0, //
+                0, 2, 3, 14, 1, //
             };
 
             TS_ASSERT_THROWS_NOTHING( analyzer.analyze( A1, 3, 5 ) );

@@ -67,8 +67,8 @@ OnnxParser::OnnxParser( const String &path )
 void OnnxParser::generateQuery( InputQuery &query )
 {
     Set<String> inputNames = readInputNames();
-    String outputName = readOutputName();
-    processGraph( inputNames, outputName, query );
+    Set<String> terminalNames = readOutputNames();
+    processGraph( inputNames, terminalNames, query );
 }
 
 /**
@@ -77,16 +77,16 @@ void OnnxParser::generateQuery( InputQuery &query )
  * @param query The query object to be populated
  * @param inputNames The set of input nodes. Note these don't have to be an actual input to the
  * network, they can be intermediate nodes.
- * @param outputName The output node. Note that again this doesn't have to be an actual output of
- * the network, it can be an intermediate node.
+ * @param terminalNames The set of terminal nodes. Note that these doesn't have to be outputs of
+ * the network, they can be intermediate nodes.
  */
 void OnnxParser::generatePartialQuery( InputQuery &query,
                                        Set<String> &inputNames,
-                                       String &outputName )
+                                       Set<String> &terminalNames )
 {
     validateUserInputNames( inputNames );
-    validateUserOutputNames( outputName );
-    processGraph( inputNames, outputName, query );
+    validateUserTerminalNames( terminalNames );
+    processGraph( inputNames, terminalNames, query );
 }
 
 /*************
@@ -145,6 +145,15 @@ void unsupportedError( onnx::NodeProto &node )
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
+void unsupportedCastError( onnx::TensorProto_DataType from, onnx::TensorProto_DataType to )
+{
+    String errorMessage =
+        Stringf( "The ONNX parser does not currently support casting from '%s' to '%s'",
+                 TensorProto_DataType_Name( from ).c_str(),
+                 TensorProto_DataType_Name( to ).c_str() );
+    throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+}
+
 void unexpectedNegativeValue( int value, String location )
 {
     String errorMessage =
@@ -156,6 +165,30 @@ void missingNodeError( String &missingNodeName )
 {
     String errorMessage = Stringf( "Internal invariant violated: missing node '%s' not found",
                                    missingNodeName.ascii() );
+    throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+}
+
+void unexpectedNumberOfInputs( onnx::NodeProto &node,
+                               unsigned int actualNumberOfInputs,
+                               unsigned int lowerBound,
+                               unsigned int upperBound )
+{
+    String errorMessage;
+    if ( lowerBound == upperBound )
+    {
+        errorMessage = Stringf( "%s node expected to have exactly %d inputs, but found %d",
+                                node.op_type().c_str(),
+                                lowerBound,
+                                actualNumberOfInputs );
+    }
+    else
+    {
+        errorMessage = Stringf( "%s node expected to have between %d and %d inputs, but found %d",
+                                node.op_type().c_str(),
+                                lowerBound,
+                                upperBound,
+                                actualNumberOfInputs );
+    }
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
@@ -332,6 +365,17 @@ int getIntAttribute( onnx::NodeProto &node, String name, int defaultValue )
     if ( attr == nullptr )
     {
         return defaultValue;
+    }
+    return attr->i();
+}
+
+int getRequiredIntAttribute( onnx::NodeProto &node, String name )
+{
+    const onnx::AttributeProto *attr =
+        findAttribute( node, name, onnx::AttributeProto_AttributeType_INT );
+    if ( attr == nullptr )
+    {
+        missingAttributeError( node, name );
     }
     return attr->i();
 }
@@ -530,19 +574,22 @@ void OnnxParser::validateUserInputNames( Set<String> &inputNames )
     }
 }
 
-void OnnxParser::validateUserOutputNames( String &outputName )
+void OnnxParser::validateUserTerminalNames( Set<String> &terminalNames )
 {
-    for ( auto node : _network.node() )
+    for ( String terminalName : terminalNames )
     {
-        for ( String outputNodeName : node.output() )
+        for ( auto node : _network.node() )
         {
-            if ( outputName == outputNodeName )
-                return;
+            for ( String outputNodeName : node.output() )
+            {
+                if ( terminalName == outputNodeName )
+                    return;
+            }
         }
-    }
 
-    String errorMessage = Stringf( "Output %s not found in graph!", outputName.ascii() );
-    throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+        String errorMessage = Stringf( "Output %s not found in graph!", terminalName.ascii() );
+        throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+    }
 }
 
 Set<String> OnnxParser::readInputNames()
@@ -566,23 +613,15 @@ Set<String> OnnxParser::readInputNames()
     return Set<String>::difference( inputNames, initializerNames );
 }
 
-String OnnxParser::readOutputName()
+Set<String> OnnxParser::readOutputNames()
 {
-    if ( _network.output().size() > 1 )
+    Set<String> outputNames;
+    for ( auto &outputNode : _network.output() )
     {
-        String message = "Your model has multiple outputs defined\n";
-        message += "Please specify the name of the output you want to consider using the "
-                   "'outputName' argument\n";
-        message += "Possible options:";
-        for ( auto output : _network.output() )
-        {
-            message += " " + output.name();
-        }
-        throw MarabouError( MarabouError::ONNX_PARSER_ERROR, message.ascii() );
+        ONNX_LOG( Stringf( "Found output '%s'", outputNode.name().c_str() ).ascii() );
+        outputNames.insert( outputNode.name() );
     }
-    auto &outputNode = _network.output()[0];
-    ONNX_LOG( Stringf( "Found input: %s", outputNode.name().c_str() ).ascii() );
-    return outputNode.name();
+    return outputNames;
 }
 
 void OnnxParser::initializeShapeAndConstantMaps()
@@ -641,9 +680,12 @@ void OnnxParser::validateAllInputsAndOutputsFound()
     }
 
     // Mark the output variables
-    for ( Variable var : _varMap[_outputName] )
+    for ( String terminalName : _terminalNames )
     {
-        _outputVars.append( var );
+        for ( Variable var : _varMap[terminalName] )
+        {
+            _outputVars.append( var );
+        }
     }
 }
 
@@ -652,17 +694,22 @@ void OnnxParser::validateAllInputsAndOutputsFound()
  * Unlike the Python implementation, at the moment assumes there is only a single output.
  *
  * @param inputNames The names of the input nodes to start at.
- * @param outputName The names of the output node to end at.
+ * @param terminalNames The names of the output node to end at.
  * @param query The query in which to store the generated constraints.
  */
-void OnnxParser::processGraph( Set<String> &inputNames, String &outputName, InputQuery &query )
+void OnnxParser::processGraph( Set<String> &inputNames,
+                               Set<String> &terminalNames,
+                               InputQuery &query )
 {
     _inputNames = inputNames;
-    _outputName = outputName;
+    _terminalNames = terminalNames;
     _numberOfFoundInputs = 0;
 
     initializeShapeAndConstantMaps();
-    processNode( outputName, true );
+    for ( String terminalName : terminalNames )
+    {
+        processNode( terminalName, true );
+    }
     validateAllInputsAndOutputsFound();
     getMarabouQuery( query );
 }
@@ -802,6 +849,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         transpose( node );
     }
+    else if ( strcmp( nodeType, "Squeeze" ) == 0 )
+    {
+        squeeze( node );
+    }
     else if ( strcmp( nodeType, "BatchNormalization" ) == 0 )
     {
         batchNormEquations( node, makeEquations );
@@ -829,6 +880,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     else if ( strcmp( nodeType, "Relu" ) == 0 )
     {
         reluEquations( node, makeEquations );
+    }
+    else if ( strcmp( nodeType, "LeakyRelu" ) == 0 )
+    {
+        leakyReluEquations( node, makeEquations );
     }
     else if ( strcmp( nodeType, "MatMul" ) == 0 )
     {
@@ -888,10 +943,70 @@ void OnnxParser::identity( onnx::NodeProto &node )
  */
 void OnnxParser::cast( onnx::NodeProto &node )
 {
-    // See
-    // https://github.com/NeuralNetworkVerification/Marabou/blob/76b8eaf23518ca468c2cf05b742e3b4c858a64c3/maraboupy/MarabouNetworkONNX.py#L294
-    // for reference implementation
-    unimplementedOperationError( node );
+    String outputNodeName = node.output()[0];
+    String inputNodeName = node.input()[0];
+    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+
+    // Try to find type to cast to. If not found, raise error.
+    onnx::TensorProto_DataType to =
+        static_cast<onnx::TensorProto_DataType>( getRequiredIntAttribute( node, "to" ) );
+
+    if ( _varMap.exists( inputNodeName ) )
+    {
+        // We shouldn't be casting variables to different types, since Marabou assumes variables
+        // have double precision
+        String errorMessage =
+            Stringf( "The node '%s' casts non-constant values which is not supported by Marabou",
+                     inputNodeName.ascii() );
+        throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+    }
+
+    if ( _constantIntTensors.exists( inputNodeName ) )
+    {
+        Vector<int> tensor = _constantIntTensors[inputNodeName];
+        if ( to == onnx::TensorProto_DataType_INT64 )
+        {
+            _constantIntTensors.insert( outputNodeName, tensor );
+        }
+        else if ( to == onnx::TensorProto_DataType_FLOAT )
+        {
+            Vector<double> castTensor = Vector<double>( tensor.size() );
+            for ( PackedTensorIndices i = 0; i < tensor.size(); i++ )
+            {
+                castTensor[i] = static_cast<double>( tensor[i] );
+            }
+            _constantFloatTensors.insert( outputNodeName, castTensor );
+        }
+        else
+        {
+            unsupportedCastError( onnx::TensorProto_DataType_INT64, to );
+        }
+    }
+    else if ( _constantFloatTensors.exists( inputNodeName ) )
+    {
+        Vector<double> tensor = _constantFloatTensors[inputNodeName];
+        if ( to == onnx::TensorProto_DataType_INT64 )
+        {
+            Vector<int> castTensor = Vector<int>( tensor.size() );
+            for ( PackedTensorIndices i = 0; i < tensor.size(); i++ )
+            {
+                castTensor[i] = static_cast<int>( tensor[i] );
+            }
+            _constantIntTensors.insert( outputNodeName, castTensor );
+        }
+        else if ( to == onnx::TensorProto_DataType_FLOAT )
+        {
+            _constantFloatTensors.insert( outputNodeName, tensor );
+        }
+        else
+        {
+            unsupportedCastError( onnx::TensorProto_DataType_FLOAT, to );
+        }
+    }
+    else
+    {
+        missingNodeError( inputNodeName );
+    }
 }
 
 /**
@@ -997,6 +1112,69 @@ void OnnxParser::transpose( onnx::NodeProto &node )
     {
         missingNodeError( inputNodeName );
     }
+}
+
+/**
+ * @brief Processes a "squeeze" node in the network.
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Squeeze
+ *
+ * @param node The ONNX node
+ */
+void OnnxParser::squeeze( onnx::NodeProto &node )
+{
+    String inputNodeName = node.input()[0];
+    String outputNodeName = node.output()[0];
+
+    // Get the input shape
+    TensorShape inputShape = _shapeMap[inputNodeName];
+
+    // Get the axes to squeeze
+    Vector<SignedTensorIndex> axes;
+    unsigned int numberOfInputs = node.input().size();
+    if ( numberOfInputs == 1 )
+    {
+        for ( unsigned int i = 0; i < inputShape.size(); i++ )
+        {
+            if ( inputShape[i] == 1 )
+            {
+                axes.append( i );
+            }
+        }
+    }
+    else if ( numberOfInputs == 2 )
+    {
+        String axisName = node.input()[1];
+        if ( !_constantIntTensors.exists( axisName ) )
+        {
+            missingNodeError( axisName );
+        }
+        axes = _constantIntTensors[axisName];
+    }
+    else
+    {
+        unexpectedNumberOfInputs( node, numberOfInputs, 1, 2 );
+    }
+
+    // Calculate the output shape
+    TensorShape outputShape = Vector<unsigned int>( inputShape );
+    for ( SignedTensorIndex signedAxis : axes )
+    {
+        TensorIndex axis = unsignIndex( inputShape, signedAxis );
+        if ( inputShape[axis] != 1 )
+        {
+            String errorMessage = Stringf( "Invalid axis found on Squeeze node '%s'. Expected "
+                                           "dimension %d to be of size 1 but was size %d",
+                                           inputNodeName.ascii(),
+                                           axis,
+                                           inputShape[axis] );
+            throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+        }
+        outputShape.eraseAt( axis );
+    }
+
+    // Update the maps
+    _shapeMap[outputNodeName] = outputShape;
+    _varMap[outputNodeName] = _varMap[inputNodeName];
 }
 
 /**
@@ -1502,7 +1680,37 @@ void OnnxParser::reluEquations( onnx::NodeProto &node, bool makeEquations )
         int inputVar = inputVars[i];
         int outputVar = outputVars[i];
         addRelu( inputVar, outputVar );
-        setLowerBound( outputVar, 0.0f );
+    }
+}
+
+/**
+ * @brief Function to generate equations corresponding to leaky pointwise Relu
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#LeakyRelu
+ *
+ * @param node ONNX node representing the LeakyRelu operation
+ * @param makeEquations True if we need to create new variables and add new LeakyRelus
+ */
+void OnnxParser::leakyReluEquations( onnx::NodeProto &node, bool makeEquations )
+{
+    String outputNodeName = node.output()[0];
+    String inputNodeName = node.input()[0];
+
+    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+    if ( !makeEquations )
+        return;
+
+    // Get alpha attribute
+    float alpha = getFloatAttribute( node, "alpha", 0.01 );
+
+    // Get variables
+    Vector<Variable> inputVars = _varMap[inputNodeName];
+    Vector<Variable> outputVars = makeNodeVariables( outputNodeName, false );
+    ASSERT( inputVars.size() == outputVars.size() );
+
+    // Generate equations
+    for ( PackedTensorIndices i = 0; i < inputVars.size(); i++ )
+    {
+        addLeakyRelu( inputVars[i], outputVars[i], alpha );
     }
 }
 
@@ -1808,8 +2016,6 @@ void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
         Variable inputVar = inputVars[i];
         Variable outputVar = outputVars[i];
         addSigmoid( inputVar, outputVar );
-        setLowerBound( outputVar, 0.0 );
-        setUpperBound( outputVar, 1.0 );
     }
 }
 
@@ -1838,27 +2044,6 @@ void OnnxParser::tanhEquations( onnx::NodeProto &node, bool makeEquations )
     // Generate equations
     for ( uint i = 0; i < outputVars.size(); i++ )
     {
-        // tanh(x) = 2 * sigmoid(2x) - 1
-        Variable inputVar = inputVars[i];
-        Variable firstAffine = getNewVariable();
-        Variable sigmoidOutput = getNewVariable();
-        Variable outputVar = outputVars[i];
-
-        Equation e1;
-        e1.addAddend( 2.0, inputVar );
-        e1.addAddend( -1.0, firstAffine );
-        e1.setScalar( 0.0 );
-        addEquation( e1 );
-
-        addSigmoid( firstAffine, sigmoidOutput );
-
-        Equation e2;
-        e2.addAddend( 2.0, sigmoidOutput );
-        e2.addAddend( -1.0, outputVar );
-        e2.setScalar( 1.0 );
-        addEquation( e2 );
-
-        setLowerBound( outputVar, -1.0 );
-        setUpperBound( outputVar, 1.0 );
+        addTanh( inputVars[i], outputVars[i] );
     }
 }

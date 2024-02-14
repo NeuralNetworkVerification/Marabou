@@ -97,11 +97,6 @@ public:
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
 
-    // If the flag is true, the preprocessor will try to merge two
-    // logically-consecutive weighted sum layers into a single
-    // weighted sum layer, to reduce the number of variables
-    static const bool PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS;
-
     // Maximal rounds of tightening to perform in the preprocessor to avoid non-termination.
     static const unsigned PREPROCESSSING_MAX_TIGHTEING_ROUND;
 

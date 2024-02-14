@@ -52,7 +52,9 @@ public:
         SparseLUFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -116,7 +118,11 @@ public:
         double e3[] = { 0.5, 0.5, 0.5 };
         basis.updateToAdjacentBasis( 2, e3, NULL );
 
-        double B[] = { 1, 2, 4, 4, 5, 7, 7, 8, 9 };
+        double B[] = {
+            1, 2, 4, //
+            4, 5, 7, //
+            7, 8, 9  //
+        };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
 
@@ -135,7 +141,9 @@ public:
         SparseLUFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -210,7 +218,9 @@ public:
         SparseLUFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -250,7 +260,9 @@ public:
         basis.updateToAdjacentBasis( 2, e3, NULL );
 
         double B[] = {
-            1, 2, 4, 4, 5, 7, 7, 8, 9,
+            1, 2, 4, //
+            4, 5, 7, //
+            7, 8, 9, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -276,7 +288,9 @@ public:
         SparseLUFactorization otherBasis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -288,7 +302,11 @@ public:
         basis.updateToAdjacentBasis( 1, a1, NULL );
 
         // Save the expected basis after this push
-        double currentBasis[] = { 1, 1, 0, 0, 1, 0, 0, 3, 1 };
+        double currentBasis[] = {
+            1, 1, 0, //
+            0, 1, 0, //
+            0, 3, 1  //
+        };
         oracle->storeBasis( 3, currentBasis );
 
         // Do a computation using both basis, see that we get the same result.

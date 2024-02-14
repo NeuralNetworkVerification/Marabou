@@ -52,7 +52,9 @@ public:
         SparseFTFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -107,7 +109,9 @@ public:
         SparseFTFactorization basis( 3, *oracle );
 
         double identity[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, identity );
         basis.obtainFreshBasis();
@@ -121,7 +125,11 @@ public:
         double e3[] = { 0.5, 0.5, 0.5 };
         basis.updateToAdjacentBasis( 2, NULL, e3 );
 
-        double B[] = { 1, 2, 4, 4, 5, 7, 7, 8, 9 };
+        double B[] = {
+            1, 2, 4, //
+            4, 5, 7, //
+            7, 8, 9  //
+        };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
 
@@ -140,7 +148,9 @@ public:
         SparseFTFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -218,7 +228,9 @@ public:
         SparseFTFactorization basis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -250,7 +262,9 @@ public:
         SparseFTFactorization basis( 3, *oracle );
 
         double identity[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, identity );
         basis.obtainFreshBasis();
@@ -265,7 +279,9 @@ public:
         basis.updateToAdjacentBasis( 2, NULL, e3 );
 
         double B[] = {
-            1, 2, 4, 4, 5, 7, 7, 8, 9,
+            1, 2, 4, //
+            4, 5, 7, //
+            7, 8, 9, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -291,7 +307,9 @@ public:
         SparseFTFactorization otherBasis( 3, *oracle );
 
         double B[] = {
-            1, 0, 0, 0, 1, 0, 0, 0, 1,
+            1, 0, 0, //
+            0, 1, 0, //
+            0, 0, 1, //
         };
         oracle->storeBasis( 3, B );
         basis.obtainFreshBasis();
@@ -303,7 +321,11 @@ public:
         basis.updateToAdjacentBasis( 1, NULL, a1 );
 
         // Save the expected basis after this push
-        double currentBasis[] = { 1, 1, 0, 0, 1, 0, 0, 3, 1 };
+        double currentBasis[] = {
+            1, 1, 0, //
+            0, 1, 0, //
+            0, 3, 1  //
+        };
         oracle->storeBasis( 3, currentBasis );
         basis.obtainFreshBasis();
 

@@ -117,6 +117,15 @@ TensorIndices broadcastIndex( TensorShape currentShape,
     return result;
 }
 
+TensorIndex unsignIndex( TensorShape shape, SignedTensorIndex signedIndex )
+{
+    if ( signedIndex >= 0 )
+    {
+        return static_cast<unsigned int>( signedIndex );
+    }
+    return shape.size() - static_cast<unsigned int>( -signedIndex );
+}
+
 Padding::Padding( int padFront, int padBack )
     : padFront( padFront )
     , padBack( padBack )

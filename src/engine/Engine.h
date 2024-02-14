@@ -119,7 +119,7 @@ public:
       If the query is feasiable and has been successfully solved, this
       method can be used to extract the solution.
      */
-    void extractSolution( InputQuery &inputQuery );
+    void extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor = nullptr );
 
     /*
       Methods for storing and restoring the state of the engine.
@@ -132,7 +132,7 @@ public:
       Preprocessor access.
     */
     bool preprocessingEnabled() const;
-    const Preprocessor *getPreprocessor();
+    Preprocessor *getPreprocessor();
 
     /*
       A request from the user to terminate
@@ -759,11 +759,6 @@ private:
       Solve the input query with a MILP solver (Gurobi)
     */
     bool solveWithMILPEncoding( unsigned timeoutInSeconds );
-
-    /*
-      Extract the satisfying assignment from the MILP solver
-    */
-    void extractSolutionFromGurobi( InputQuery &inputQuery );
 
     /*
       Perform SoI-based stochastic local search

@@ -34,8 +34,9 @@ public:
     OnnxParser( const String &path );
 
     void generateQuery( InputQuery &inputQuery );
-    void
-    generatePartialQuery( InputQuery &inputQuery, Set<String> &inputNames, String &outputName );
+    void generatePartialQuery( InputQuery &inputQuery,
+                               Set<String> &inputNames,
+                               Set<String> &terminalNames );
 
 
 private:
@@ -43,7 +44,12 @@ private:
 
     onnx::GraphProto _network;
     Set<String> _inputNames;
-    String _outputName;
+
+    /*
+      The set of terminal nodes for the query. Note that these doesn't have to be outputs of
+      the network, they can be intermediate nodes.
+    */
+    Set<String> _terminalNames;
 
     // State //
 
@@ -58,13 +64,14 @@ private:
 
     void readNetwork( const String &path );
     Set<String> readInputNames();
-    String readOutputName();
+    Set<String> readOutputNames();
     void initializeShapeAndConstantMaps();
     void validateUserInputNames( Set<String> &inputNames );
-    void validateUserOutputNames( String &outputName );
+    void validateUserTerminalNames( Set<String> &terminalNames );
     void validateAllInputsAndOutputsFound();
 
-    void processGraph( Set<String> &inputNames, String &outputName, InputQuery &inputQuery );
+    void
+    processGraph( Set<String> &inputNames, Set<String> &terminalNames, InputQuery &inputQuery );
     void processNode( String &nodeName, bool makeEquations );
     void makeMarabouEquations( onnx::NodeProto &node, bool makeEquations );
     Set<String> getInputsToNode( onnx::NodeProto &node );
@@ -79,6 +86,7 @@ private:
     void identity( onnx::NodeProto &node );
     void cast( onnx::NodeProto &node );
     void reshape( onnx::NodeProto &node );
+    void squeeze( onnx::NodeProto &node );
     void flatten( onnx::NodeProto &node );
     void transpose( onnx::NodeProto &node );
     void batchNormEquations( onnx::NodeProto &node, bool makeEquations );
@@ -91,6 +99,7 @@ private:
                                double coefficient2 );
     void matMulEquations( onnx::NodeProto &node, bool makeEquations );
     void reluEquations( onnx::NodeProto &node, bool makeEquations );
+    void leakyReluEquations( onnx::NodeProto &node, bool makeEquations );
     void sigmoidEquations( onnx::NodeProto &node, bool makeEquations );
     void tanhEquations( onnx::NodeProto &node, bool makeEquations );
 };
