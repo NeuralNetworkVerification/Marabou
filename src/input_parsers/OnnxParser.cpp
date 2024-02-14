@@ -425,12 +425,26 @@ Vector<int> getTensorIntValues( const onnx::TensorProto& tensor, const TensorSha
     {
         checkEndianness();
         const char* bytes = raw_data.c_str();
-        const int* ints = reinterpret_cast<const int*>( bytes );
-        for ( int i = 0; i < size; i++ )
-        {
-            int value = *(ints + i);
-            result.append( value );
-        }
+        onnx::TensorProto_DataType dataType = static_cast<onnx::TensorProto_DataType>( tensor.data_type() );
+        
+        if (dataType == onnx::TensorProto_DataType_INT32) {
+    		const int32_t* ints = reinterpret_cast<const int32_t*>( bytes );
+		for ( int i = 0; i < size; i++ )
+		{
+		    int value = *(ints + i);
+		    result.append( value );
+		}
+	} else if (dataType == onnx::TensorProto_DataType_INT64) {
+		const int64_t* ints = reinterpret_cast<const int64_t*>( bytes );
+		for ( int i = 0; i < size; i++ )
+		{
+		    int value = *(ints + i);
+		    result.append( value );
+		}
+	} else {
+		String errorMessage = Stringf( "Illegal data type for integer tensors used in the model. Only INT32 and INT64 supported." );
+            throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
+	}
     }
     else
     {
@@ -1320,6 +1334,13 @@ void OnnxParser::convEquations( onnx::NodeProto& node, [[maybe_unused]] bool mak
     // First input should be variable tensor
     String inputNodeName = node.input()[0];
     TensorShape inputShape = _shapeMap[inputNodeName];
+
+    // Added: Check if convolutional layers are only 2D
+    if (inputShape.size()!=4) {
+    	String errorMessage = Stringf( "Onnx '%s' operation has an unsupported number of dimensions -- only 2D convolutions are supported.", node.op_type().c_str() ) ;
+        throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() ) ;
+    }
+
     [[maybe_unused]] unsigned int inputChannels = inputShape[1];
     unsigned int inputWidth = inputShape[2];
     unsigned int inputHeight = inputShape[3];
