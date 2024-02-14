@@ -1274,6 +1274,11 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         if not makeEquations:
             return
 
+        alpha = 0.01
+        for attr in node.attribute:
+            if attr.name == 'alpha':
+                alpha = get_attribute_value(attr)
+
         # Get variables
         inputVars = self.varMap[inputName].reshape(-1)
         outputVars = self.makeNewVariables(nodeName).reshape(-1)
@@ -1281,7 +1286,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
 
         # Generate equations
         for i in range(len(inputVars)):
-            self.addLeakyRelu(inputVars[i], outputVars[i], 0.1)
+            self.addLeakyRelu(inputVars[i], outputVars[i], alpha)
 
     def subEquations(self, node, makeEquations):
         """Function to generate equations corresponding to subtraction
