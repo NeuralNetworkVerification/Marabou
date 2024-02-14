@@ -111,7 +111,7 @@ void unimplementedOperationError( onnx::NodeProto &node )
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() ) ;
 }
 
-void unimplementedAttributeError ( onnx::NodeProto &node, String attributeName )
+void unimplementedAttributeError( onnx::NodeProto &node, String attributeName )
 {
     String errorMessage = Stringf( "Onnx '%s' operation with non-default value for attribute '%s' not yet supported.", node.op_type().c_str(), attributeName.ascii() ) ;
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() ) ;
@@ -129,13 +129,13 @@ void unsupportedError( onnx::NodeProto &node )
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
-void unsupportedCastError ( onnx::TensorProto_DataType from, onnx::TensorProto_DataType to )
+void unsupportedCastError( onnx::TensorProto_DataType from, onnx::TensorProto_DataType to )
 {
     String errorMessage = Stringf( "The ONNX parser does not currently support casting from '%s' to '%s'", TensorProto_DataType_Name(from).c_str(), TensorProto_DataType_Name(to).c_str());
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
 }
 
-void unexpectedNegativeValue (int value, String location)
+void unexpectedNegativeValue(int value, String location)
 {
     String errorMessage = Stringf( "Found unexpected negative value '%d' for '%s'", value, location.ascii() );
     throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
@@ -829,6 +829,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     else if ( strcmp( nodeType, "Relu" ) == 0 )
     {
         reluEquations( node, makeEquations );
+    }
+    else if ( strcmp( nodeType, "LeakyRelu" ) == 0 )
+    {
+        leakyReluEquations( node, makeEquations );
     }
     else if ( strcmp( nodeType, "MatMul" ) == 0 )
     {
@@ -1634,7 +1638,37 @@ void OnnxParser::reluEquations( onnx::NodeProto& node, bool makeEquations )
         int inputVar = inputVars[i];
         int outputVar = outputVars[i];
         addRelu( inputVar, outputVar );
-        setLowerBound( outputVar, 0.0f );
+    }
+}
+
+/**
+ * @brief Function to generate equations corresponding to leaky pointwise Relu
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#LeakyRelu
+ *
+ * @param node ONNX node representing the LeakyRelu operation
+ * @param makeEquations True if we need to create new variables and add new LeakyRelus
+ */
+void OnnxParser::leakyReluEquations( onnx::NodeProto& node, bool makeEquations )
+{
+    String outputNodeName = node.output()[0];
+    String inputNodeName = node.input()[0];
+
+    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+    if ( !makeEquations )
+        return;
+
+    // Get alpha attribute
+    float alpha = getFloatAttribute( node, "alpha", 0.01 );
+
+    // Get variables
+    Vector<Variable> inputVars = _varMap[inputNodeName];
+    Vector<Variable> outputVars = makeNodeVariables( outputNodeName, false );
+    ASSERT ( inputVars.size() == outputVars.size() );
+
+    // Generate equations
+    for ( PackedTensorIndices i = 0; i < inputVars.size(); i++ )
+    {
+        addLeakyRelu( inputVars[i], outputVars[i], alpha );
     }
 }
 
@@ -1927,8 +1961,6 @@ void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
         Variable inputVar = inputVars[i];
         Variable outputVar = outputVars[i];
         addSigmoid( inputVar, outputVar );
-        setLowerBound( outputVar, 0.0 );
-        setUpperBound( outputVar, 1.0 );
     }
 }
 
@@ -1957,27 +1989,6 @@ void OnnxParser::tanhEquations( onnx::NodeProto &node, bool makeEquations )
     // Generate equations
     for( uint i = 0; i < outputVars.size(); i++ )
     {
-        // tanh(x) = 2 * sigmoid(2x) - 1
-        Variable inputVar = inputVars[i];
-        Variable firstAffine = getNewVariable();
-        Variable sigmoidOutput = getNewVariable();
-        Variable outputVar = outputVars[i];
-
-        Equation e1;
-        e1.addAddend( 2.0, inputVar );
-        e1.addAddend( -1.0, firstAffine );
-        e1.setScalar( 0.0 );
-        addEquation( e1 );
-
-        addSigmoid(firstAffine, sigmoidOutput);
-
-        Equation e2;
-        e2.addAddend( 2.0, sigmoidOutput );
-        e2.addAddend( -1.0, outputVar );
-        e2.setScalar( 1.0 );
-        addEquation( e2 );
-
-        setLowerBound( outputVar, -1.0 );
-        setUpperBound( outputVar, 1.0 );
+        addTanh(inputVars[i], outputVars[i]);
     }
 }
