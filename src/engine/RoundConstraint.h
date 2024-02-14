@@ -72,7 +72,8 @@ public:
     /*
       Encoding the convex relaxation of the round constraint
     */
-    void addAuxiliaryEquationsAfterPreprocessing( InputQuery &inputQuery ) override;
+    void addAuxiliaryEquationsAfterPreprocessing( InputQuery
+                                                  &inputQuery ) override;
 
     /*
       Preprocessing related functions, to inform that a variable has

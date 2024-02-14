@@ -19,15 +19,16 @@
 #include "BilinearConstraint.h"
 #include "DisjunctionConstraint.h"
 #include "GurobiWrapper.h"
-#include "ITableau.h"
 #include "InputQuery.h"
+#include "ITableau.h"
 #include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
 #include "MStringf.h"
-#include "Map.h"
 #include "RoundConstraint.h"
 #include "SoftmaxConstraint.h"
 #include "Statistics.h"
+
+#include "Map.h"
 
 class MILPEncoder
 {
@@ -38,8 +39,8 @@ public:
       Encode the input query as a Gurobi query, variables and inequalities
       are from inputQuery, and latest variable bounds are from tableau
     */
-    void
-    encodeInputQuery( GurobiWrapper &gurobi, const InputQuery &inputQuery, bool relax = false );
+    void encodeInputQuery( GurobiWrapper &gurobi, const InputQuery &inputQuery,
+                           bool relax = false );
 
     /*
       get variable name from a variable in the encoded inputquery
@@ -54,9 +55,11 @@ public:
     /*
       Encode the cost function into Gurobi
     */
-    void encodeCostFunction( GurobiWrapper &gurobi, const LinearExpression &cost );
+    void encodeCostFunction( GurobiWrapper &gurobi,
+                             const LinearExpression &cost );
 
 private:
+
     /*
       Tableau has the latest bound
     */
@@ -100,12 +103,14 @@ private:
       The other two constraints f >= b and f >= 0 are encoded already when
       preprocessing
     */
-    void encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu, bool relax );
+    void encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu,
+                               bool relax );
 
     /*
       Encode a LeakyReLU constraint f = LeakyReLU(b) into Gurobi as a Piecewise Linear Constraint
     */
-    void encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu, bool relax );
+    void encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
+                                    bool relax );
 
     /*
       Encode a MAX constraint y = max(x_1, x_2, ... ,x_m) into Gurobi using the same encoding in
@@ -117,7 +122,8 @@ private:
       a_1 + a_2 + ... + a_m = 1
       a_i \in {0, 1} (i = 1 ~ m)
     */
-    void encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max, bool relax );
+    void encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max,
+                              bool relax );
 
     /*
       Encode an abs constraint f = Abs(b) into Gurobi
@@ -129,13 +135,15 @@ private:
     /*
       Encode a sign constraint f = Sign(b) into Gurobi
     */
-    void encodeSignConstraint( GurobiWrapper &gurobi, SignConstraint *sign, bool relax );
+    void encodeSignConstraint( GurobiWrapper &gurobi, SignConstraint *sign,
+                               bool relax );
 
     /*
       Encode a disjunction constraint into Gurobi
     */
-    void
-    encodeDisjunctionConstraint( GurobiWrapper &gurobi, DisjunctionConstraint *disj, bool relax );
+    void encodeDisjunctionConstraint( GurobiWrapper &gurobi,
+                                      DisjunctionConstraint *disj,
+                                      bool relax );
 
     /*
       Encode a Sigmoid constraint
@@ -150,13 +158,16 @@ private:
     /*
       Encode a Bilinear constraint
     */
-    void
-    encodeBilinearConstraint( GurobiWrapper &gurobi, BilinearConstraint *bilinear, bool relax );
+    void encodeBilinearConstraint( GurobiWrapper &gurobi,
+                                   BilinearConstraint *bilinear,
+                                   bool relax );
 
     /*
       Encode a Round constraint
     */
-    void encodeRoundConstraint( GurobiWrapper &gurobi, RoundConstraint *round, bool relax );
+    void encodeRoundConstraint( GurobiWrapper &gurobi,
+                                RoundConstraint *round,
+                                bool relax );
 };
 
 #endif // __MILPEncoder_h__

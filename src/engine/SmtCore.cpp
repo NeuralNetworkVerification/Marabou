@@ -13,8 +13,6 @@
 
  **/
 
-#include "SmtCore.h"
-
 #include "Debug.h"
 #include "DivideStrategy.h"
 #include "EngineState.h"
@@ -26,6 +24,7 @@
 #include "Options.h"
 #include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
+#include "SmtCore.h"
 #include "UnsatCertificateNode.h"
 
 SmtCore::SmtCore( IEngine *engine )
@@ -35,8 +34,7 @@ SmtCore::SmtCore( IEngine *engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
     , _stateId( 0 )
-    , _constraintViolationThreshold(
-          Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
+    , _constraintViolationThreshold( Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) )
     , _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
     , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
@@ -80,7 +78,8 @@ void SmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint )
 
     ++_constraintToViolationCount[constraint];
 
-    if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
+    if ( _constraintToViolationCount[constraint] >=
+         _constraintViolationThreshold )
     {
         _needToSplit = true;
         if ( !pickSplitPLConstraint() )
@@ -98,12 +97,14 @@ unsigned SmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) co
     return _constraintToViolationCount[constraint];
 }
 
-void SmtCore::initializeScoreTrackerIfNeeded(
-    const List<PiecewiseLinearConstraint *> &plConstraints )
+void SmtCore::initializeScoreTrackerIfNeeded( const
+                                              List<PiecewiseLinearConstraint *>
+                                              &plConstraints )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
     {
-        _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
+        _scoreTracker = std::unique_ptr<PseudoImpactTracker>
+            ( new PseudoImpactTracker() );
         _scoreTracker->initialize( plConstraints );
 
         SMT_LOG( "\tTracking Pseudo Impact..." );
@@ -114,7 +115,8 @@ void SmtCore::reportRejectedPhasePatternProposal()
 {
     ++_numRejectedPhasePatternProposal;
 
-    if ( _numRejectedPhasePatternProposal >= _deepSoIRejectionThreshold )
+    if ( _numRejectedPhasePatternProposal >=
+         _deepSoIRejectionThreshold )
     {
         _needToSplit = true;
         _engine->applyAllBoundTightenings();
@@ -168,17 +170,18 @@ void SmtCore::performSplit()
     EngineState *stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
-    _engine->storeState( *stateBeforeSplits, TableauStateStorageLevel::STORE_BOUNDS_ONLY );
+    _engine->storeState( *stateBeforeSplits,
+                         TableauStateStorageLevel::STORE_BOUNDS_ONLY );
     _engine->preContextPushHook();
     pushContext();
 
-    UnsatCertificateNode *certificateNode = NULL;
+    UnsatCertificateNode* certificateNode = NULL;
     if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateRoot() )
     {
         certificateNode = _engine->getUNSATCertificateCurrentPointer();
         // Create children for UNSATCertificate current node, and assign a split to each of them
         ASSERT( certificateNode );
-        for ( PiecewiseLinearCaseSplit &childSplit : splits )
+        for ( PiecewiseLinearCaseSplit& childSplit : splits )
             new UnsatCertificateNode( certificateNode, childSplit );
     }
 
@@ -189,8 +192,7 @@ void SmtCore::performSplit()
 
     if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateRoot() )
     {
-        // Set the current node of the UNSAT certificate to be the child corresponding to the first
-        // split
+        //Set the current node of the UNSAT certificate to be the child corresponding to the first split
         UnsatCertificateNode *firstSplitChild = certificateNode->getChildBySplit( *split );
         ASSERT( firstSplitChild );
         _engine->setUNSATCertificateCurrentPointer( firstSplitChild );
@@ -214,12 +216,14 @@ void SmtCore::performSplit()
     if ( _statistics )
     {
         unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
 
     _constraintForSplitting = NULL;
@@ -227,8 +231,7 @@ void SmtCore::performSplit()
 
 unsigned SmtCore::getStackDepth() const
 {
-    ASSERT(
-        ( _engine->inSnCMode() || _stack.size() == static_cast<unsigned>( _context.getLevel() ) ) );
+    ASSERT( ( _engine->inSnCMode() || _stack.size() == static_cast<unsigned>( _context.getLevel() ) ) );
     return _stack.size();
 }
 
@@ -241,8 +244,7 @@ void SmtCore::popContext()
     if ( _statistics )
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_CONTEXT_POPS );
-        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_POP,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_POP, TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -255,8 +257,7 @@ void SmtCore::pushContext()
     if ( _statistics )
     {
         _statistics->incUnsignedAttribute( Statistics::NUM_CONTEXT_PUSHES );
-        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_PUSH,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TIME_CONTEXT_PUSH, TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -298,8 +299,7 @@ bool SmtCore::popSplit()
 
             if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateCurrentPointer() )
             {
-                UnsatCertificateNode *certificateNode =
-                    _engine->getUNSATCertificateCurrentPointer();
+                UnsatCertificateNode *certificateNode = _engine->getUNSATCertificateCurrentPointer();
                 _engine->setUNSATCertificateCurrentPointer( certificateNode->getParent() );
             }
 
@@ -330,8 +330,7 @@ bool SmtCore::popSplit()
         // popped
         stackEntry->_impliedValidSplits.clear();
 
-        // Set the current node of the UNSAT certificate to be the child corresponding to the chosen
-        // split
+        // Set the current node of the UNSAT certificate to be the child corresponding to the chosen split
         if ( _engine->shouldProduceProofs() && _engine->getUNSATCertificateCurrentPointer() )
         {
             UnsatCertificateNode *certificateNode = _engine->getUNSATCertificateCurrentPointer();
@@ -367,12 +366,14 @@ bool SmtCore::popSplit()
     if ( _statistics )
     {
         unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
 
     checkSkewFromDebuggingSolution();
@@ -450,13 +451,11 @@ bool SmtCore::checkSkewFromDebuggingSolution()
             if ( stackEntry->_alternativeSplits.empty() )
             {
                 printf( "Error! Have a split that is non-compliant with the stored solution, "
-                        "without alternatives:\n\t%s\n",
-                        error.ascii() );
+                        "without alternatives:\n\t%s\n", error.ascii() );
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
 
-            // Active split is non-compliant but this is fine, because there are alternatives. We're
-            // done.
+            // Active split is non-compliant but this is fine, because there are alternatives. We're done.
             return false;
         }
 
@@ -476,8 +475,7 @@ bool SmtCore::checkSkewFromDebuggingSolution()
     return true;
 }
 
-bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
-                                         String &error ) const
+bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const
 {
     // False if the split prevents one of the values in the stored solution, true otherwise.
     error = "";
@@ -499,20 +497,18 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
 
         if ( ( bound._type == Tightening::LB ) && FloatUtils::gt( boundValue, solutionValue ) )
         {
-            error =
-                Stringf( "Variable %u: new LB is %.5lf, which contradicts possible solution %.5lf",
-                         variable,
-                         boundValue,
-                         solutionValue );
+            error = Stringf( "Variable %u: new LB is %.5lf, which contradicts possible solution %.5lf",
+                             variable,
+                             boundValue,
+                             solutionValue );
             return false;
         }
         else if ( ( bound._type == Tightening::UB ) && FloatUtils::lt( boundValue, solutionValue ) )
         {
-            error =
-                Stringf( "Variable %u: new UB is %.5lf, which contradicts possible solution %.5lf",
-                         variable,
-                         boundValue,
-                         solutionValue );
+            error = Stringf( "Variable %u: new UB is %.5lf, which contradicts possible solution %.5lf",
+                             variable,
+                             boundValue,
+                             solutionValue );
             return false;
         }
     }
@@ -520,8 +516,7 @@ bool SmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
     return true;
 }
 
-PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing(
-    List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
+PiecewiseLinearConstraint *SmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
 {
     ASSERT( !_violatedPlConstraints.empty() );
 
@@ -568,7 +563,8 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
     EngineState *stateBeforeSplits = new EngineState;
     stateBeforeSplits->_stateId = _stateId;
     ++_stateId;
-    _engine->storeState( *stateBeforeSplits, TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
+    _engine->storeState( *stateBeforeSplits,
+                         TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE );
     stackEntry->_engineState = stateBeforeSplits;
 
     // Apply all the splits
@@ -581,12 +577,14 @@ void SmtCore::replaySmtStackEntry( SmtStackEntry *stackEntry )
     if ( _statistics )
     {
         unsigned level = getStackDepth();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
-        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
+                                           level );
+        if ( level > _statistics->getUnsignedAttribute
+             ( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
+                                               level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
-                                       TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -604,7 +602,8 @@ bool SmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
     {
-        _constraintForSplitting = _engine->pickSplitPLConstraint( _branchingHeuristic );
+        _constraintForSplitting = _engine->pickSplitPLConstraint
+            ( _branchingHeuristic );
     }
     return _constraintForSplitting != NULL;
 }

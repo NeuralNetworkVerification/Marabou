@@ -13,9 +13,8 @@
 
 **/
 
-#include "TableauRow.h"
-
 #include "MarabouError.h"
+#include "TableauRow.h"
 
 TableauRow::TableauRow( unsigned size )
     : _size( size )

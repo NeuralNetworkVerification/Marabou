@@ -70,7 +70,7 @@ MaxConstraint::MaxConstraint( const String &serializedMax )
     if ( eliminatedVariableFromString )
         maxValueOfEliminatedFromString = std::stod( valuesIter->ascii() );
 
-    *( this ) = MaxConstraint( f, elements );
+    *(this) = MaxConstraint( f, elements );
     _haveFeasibleEliminatedPhases = eliminatedVariableFromString;
     _maxValueOfEliminatedPhases = maxValueOfEliminatedFromString;
 }
@@ -137,11 +137,13 @@ void MaxConstraint::unregisterAsWatcher( ITableau *tableau )
 void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( _boundManager == nullptr )
     {
-        if ( existsLowerBound( variable ) && !FloatUtils::gt( value, getLowerBound( variable ) ) )
+        if ( existsLowerBound( variable ) &&
+             !FloatUtils::gt( value, getLowerBound( variable ) ) )
             return;
 
         setLowerBound( variable, value );
@@ -186,8 +188,9 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        _phaseStatus = ( _haveFeasibleEliminatedPhases
+                             ? MAX_PHASE_ELIMINATED
+                             : variableToPhase( *_elements.begin() ) );
 
     if ( isActive() && _boundManager )
     {
@@ -206,11 +209,13 @@ void MaxConstraint::notifyLowerBound( unsigned variable, double value )
 void MaxConstraint::notifyUpperBound( unsigned variable, double value )
 {
     if ( _statistics )
-        _statistics->incLongAttribute( Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
+        _statistics->incLongAttribute(
+            Statistics::NUM_BOUND_NOTIFICATIONS_TO_PL_CONSTRAINTS );
 
     if ( _boundManager == nullptr )
     {
-        if ( existsUpperBound( variable ) && !FloatUtils::lt( value, getUpperBound( variable ) ) )
+        if ( existsUpperBound( variable ) &&
+             !FloatUtils::lt( value, getUpperBound( variable ) ) )
             return;
 
         setUpperBound( variable, value );
@@ -247,8 +252,9 @@ void MaxConstraint::notifyUpperBound( unsigned variable, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        _phaseStatus = ( _haveFeasibleEliminatedPhases
+                             ? MAX_PHASE_ELIMINATED
+                             : variableToPhase( *_elements.begin() ) );
 
     // There is no need to recompute the max lower bound and max index here.
 
@@ -305,14 +311,15 @@ void MaxConstraint::getEntailedTightenings( List<Tightening> &tightenings ) cons
 
     // fLB cannot be smaller than maxElementLB
     if ( FloatUtils::lt( fLB, maxElementLB ) )
-        tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
+            tightenings.append( Tightening( _f, maxElementLB, Tightening::LB ) );
 
     // TODO: bound tightening for aux vars.
 }
 
 bool MaxConstraint::participatingVariable( unsigned variable ) const
 {
-    return ( variable == _f ) || _elements.exists( variable ) || _auxToElement.exists( variable );
+    return ( variable == _f ) || _elements.exists( variable ) ||
+        _auxToElement.exists( variable );
 }
 
 List<unsigned> MaxConstraint::getParticipatingVariables() const
@@ -346,15 +353,18 @@ unsigned MaxConstraint::getF() const
 
 bool MaxConstraint::satisfied() const
 {
-    DEBUG( {
-        if ( !( existsAssignment( _f ) ) )
-            throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
-                                Stringf( "f(x%u) assignment missing.", _f ).ascii() );
-        for ( const auto &element : _elements )
-            if ( !( existsAssignment( element ) ) )
-                throw MarabouError( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
-                                    Stringf( "input(x%u) assignment missing.", element ).ascii() );
-    } );
+    DEBUG({
+            if ( !( existsAssignment( _f ) ) )
+                throw MarabouError
+                    ( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
+                      Stringf( "f(x%u) assignment missing.", _f ).ascii() );
+            for ( const auto &element : _elements )
+                if ( !( existsAssignment( element ) ) )
+                    throw MarabouError
+                        ( MarabouError::PARTICIPATING_VARIABLE_MISSING_ASSIGNMENT,
+                          Stringf( "input(x%u) assignment missing.",
+                                   element ).ascii() );
+        });
 
     double fValue = getAssignment( _f );
     double maxValue = _maxValueOfEliminatedPhases;
@@ -440,10 +450,12 @@ PiecewiseLinearCaseSplit MaxConstraint::getCaseSplit( PhaseStatus phase ) const
     if ( phase == MAX_PHASE_ELIMINATED )
     {
         PiecewiseLinearCaseSplit eliminatedPhase;
-        eliminatedPhase.storeBoundTightening(
-            Tightening( _f, _maxValueOfEliminatedPhases, Tightening::LB ) );
-        eliminatedPhase.storeBoundTightening(
-            Tightening( _f, _maxValueOfEliminatedPhases, Tightening::UB ) );
+        eliminatedPhase.storeBoundTightening
+            ( Tightening( _f, _maxValueOfEliminatedPhases,
+                          Tightening::LB ) );
+        eliminatedPhase.storeBoundTightening
+            ( Tightening( _f, _maxValueOfEliminatedPhases,
+                          Tightening::UB ) );
         return eliminatedPhase;
     }
     else
@@ -454,7 +466,8 @@ PiecewiseLinearCaseSplit MaxConstraint::getCaseSplit( PhaseStatus phase ) const
         if ( argMax != _f )
         {
             // We had f - argMax = aux and
-            maxPhase.storeBoundTightening( Tightening( _elementToAux[argMax], 0, Tightening::UB ) );
+            maxPhase.storeBoundTightening( Tightening( _elementToAux[argMax], 0,
+                                                           Tightening::UB ) );
         }
         return maxPhase;
     }
@@ -482,7 +495,7 @@ void MaxConstraint::updateVariableIndex( unsigned oldIndex, unsigned newIndex )
         _auxToElement[auxVar] = newIndex;
 
         if ( _phaseStatus == variableToPhase( oldIndex ) )
-            _phaseStatus = variableToPhase( newIndex );
+            _phaseStatus = variableToPhase( newIndex ) ;
     }
     else
     {
@@ -512,7 +525,8 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
 
         _maxLowerBound = FloatUtils::max( value, _maxLowerBound );
 
-        _maxValueOfEliminatedPhases = FloatUtils::max( value, _maxValueOfEliminatedPhases );
+        _maxValueOfEliminatedPhases = FloatUtils::max
+            ( value, _maxValueOfEliminatedPhases );
 
         _haveFeasibleEliminatedPhases =
             FloatUtils::gte( _maxValueOfEliminatedPhases, _maxLowerBound );
@@ -533,8 +547,9 @@ void MaxConstraint::eliminateVariable( unsigned var, double value )
     }
 
     if ( phaseFixed() )
-        _phaseStatus = ( _haveFeasibleEliminatedPhases ? MAX_PHASE_ELIMINATED
-                                                       : variableToPhase( *_elements.begin() ) );
+        _phaseStatus = ( _haveFeasibleEliminatedPhases ?
+                         MAX_PHASE_ELIMINATED :
+                         variableToPhase( *_elements.begin() ) );
 
     if ( _elements.size() == 0 )
         _obsolete = true;
@@ -588,10 +603,11 @@ void MaxConstraint::transformToUseAuxVariables( InputQuery &inputQuery )
     }
 }
 
-void MaxConstraint::getCostFunctionComponent( LinearExpression &cost, PhaseStatus phase ) const
+void MaxConstraint::getCostFunctionComponent( LinearExpression &cost,
+                                              PhaseStatus phase ) const
 {
     // If the constraint is not active or is fixed, it contributes nothing
-    if ( !isActive() || phaseFixed() )
+    if( !isActive() || phaseFixed() )
         return;
 
     if ( phase == MAX_PHASE_ELIMINATED )
@@ -612,16 +628,18 @@ void MaxConstraint::getCostFunctionComponent( LinearExpression &cost, PhaseStatu
     }
 }
 
-PhaseStatus
-MaxConstraint::getPhaseStatusInAssignment( const Map<unsigned, double> &assignment ) const
+PhaseStatus MaxConstraint::getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                       &assignment ) const
 {
-    auto byAssignment = [&]( const unsigned &a, const unsigned &b ) {
-        return assignment[a] < assignment[b];
-    };
-    unsigned largestVariable =
-        *std::max_element( _elements.begin(), _elements.end(), byAssignment );
+    auto byAssignment = [&](const unsigned& a, const unsigned& b) {
+                            return assignment[a] < assignment[b];
+                        };
+    unsigned largestVariable =  *std::max_element( _elements.begin(),
+                                                   _elements.end(),
+                                                   byAssignment );
     double value = assignment[largestVariable];
-    if ( _haveFeasibleEliminatedPhases && FloatUtils::lt( value, _maxValueOfEliminatedPhases ) )
+    if ( _haveFeasibleEliminatedPhases &&
+         FloatUtils::lt( value, _maxValueOfEliminatedPhases ) )
         return MAX_PHASE_ELIMINATED;
     else
         return variableToPhase( largestVariable );
@@ -671,8 +689,7 @@ void MaxConstraint::eliminateCase( unsigned variable )
         }
         if ( proofs )
         {
-            if ( _elementToTighteningRow.exists( variable ) &&
-                 _elementToTighteningRow[variable] != NULL )
+            if ( _elementToTighteningRow.exists( variable ) && _elementToTighteningRow[variable] != NULL )
             {
                 _elementToTighteningRow[variable] = NULL;
                 _elementToTighteningRow.erase( variable );
@@ -696,12 +713,13 @@ bool MaxConstraint::haveOutOfBoundVariables() const
         double value = getAssignment( element );
         if ( FloatUtils::gt( getLowerBound( element ), value ) ||
              FloatUtils::lt( getUpperBound( element ), value ) )
-            return true;
+        return true;
         unsigned aux = _elementToAux[element];
         double auxValue = getAssignment( aux );
         if ( FloatUtils::gt( getLowerBound( aux ), auxValue ) ||
              FloatUtils::lt( getUpperBound( aux ), auxValue ) )
             return true;
+
     }
     return false;
 }
@@ -715,18 +733,17 @@ void MaxConstraint::createElementTighteningRow( unsigned element )
     _elementToTighteningRow[element] = std::make_shared<TableauRow>( 3 );
 
     // f = element + aux + counterpart (an additional aux variable of tableau)
-    _elementToTighteningRow[element]->_lhs = _f;
+    _elementToTighteningRow[element]->_lhs =  _f;
     _elementToTighteningRow[element]->_row[0] = TableauRow::Entry( element, 1 );
     _elementToTighteningRow[element]->_row[1] = TableauRow::Entry( _elementToAux[element], 1 );
-    _elementToTighteningRow[element]->_row[2] =
-        TableauRow::Entry( _elementToTableauAux[element], 1 );
+    _elementToTighteningRow[element]->_row[2] = TableauRow::Entry( _elementToTableauAux[element], 1 );
 }
 
 const List<unsigned> MaxConstraint::getNativeAuxVars() const
 {
     List<unsigned> auxVars = {};
     for ( const auto &element : _elements )
-        auxVars.append( _elementToAux[element] );
+        auxVars.append( _elementToAux[element]);
 
     return auxVars;
 }
@@ -761,11 +778,9 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
                     }
                 }
 
-                ASSERT( _elements.exists( maxElementForLB ) &&
-                        _elementToTighteningRow[maxElementForLB] != NULL );
-                ASSERT( tightening._variable == _f );
-                _boundManager->tightenLowerBound(
-                    _f, maxElementLB, *_elementToTighteningRow[maxElementForLB] );
+                ASSERT( _elements.exists( maxElementForLB ) && _elementToTighteningRow[maxElementForLB] != NULL );
+                ASSERT ( tightening._variable == _f );
+                _boundManager->tightenLowerBound( _f, maxElementLB, *_elementToTighteningRow[maxElementForLB] );
             }
             else
                 _boundManager->tightenLowerBound( tightening._variable, tightening._value );
@@ -775,20 +790,13 @@ void MaxConstraint::applyTightenings( const List<Tightening> &tightenings ) cons
             if ( proofs )
             {
                 if ( tightening._variable == _f )
-                    _boundManager->addLemmaExplanationAndTightenBound( _f,
-                                                                       tightening._value,
-                                                                       BoundType::UPPER,
-                                                                       getElements(),
-                                                                       BoundType::UPPER,
-                                                                       getType() );
+                    _boundManager->addLemmaExplanationAndTightenBound( _f, tightening._value, BoundType::UPPER, getElements(),
+                                                                       BoundType::UPPER, getType() );
                 else
                 {
-                    ASSERT( _elements.exists( tightening._variable ) );
+                    ASSERT (_elements.exists( tightening._variable ) );
                     ASSERT( _elementToTighteningRow[tightening._variable] != NULL );
-                    _boundManager->tightenUpperBound(
-                        tightening._variable,
-                        tightening._value,
-                        *_elementToTighteningRow[tightening._variable] );
+                    _boundManager->tightenUpperBound( tightening._variable, tightening._value, *_elementToTighteningRow[tightening._variable] );
                 }
             }
             else

@@ -19,12 +19,10 @@
 #include "ITableau.h"
 #include "Tightening.h"
 
-class IRowBoundTightener
-    : public ITableau::VariableWatcher
-    , public ITableau::ResizeWatcher
+class IRowBoundTightener : public ITableau::VariableWatcher, public ITableau::ResizeWatcher
 {
 public:
-    virtual ~IRowBoundTightener(){};
+    virtual ~IRowBoundTightener() {};
 
     /*
       Allocate internal work memory according to the tableau size.
@@ -77,6 +75,7 @@ public:
        Update pointers to local lower/upper bounds in BoundManager
      */
     virtual void setBoundsPointers( const double *lower, const double *upper ) = 0;
+
 };
 
 #endif // __IRowBoundTightener_h__

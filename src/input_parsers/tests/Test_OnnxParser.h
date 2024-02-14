@@ -291,16 +291,12 @@ public:
     void test_leakyRelu()
     {
         Vector<double> input = {
-            -2.0,
-            0.0, //
-            0.1,
-            3.0, //
+            -2.0, 0.0, //
+            0.1, 3.0, //
         };
         Vector<double> output = {
-            -0.1,
-            0, //
-            0.1,
-            3, //
+            -0.1, 0, //
+            0.1, 3, //
         };
         run_test( "leakyRelu", input, output );
     }
@@ -399,16 +395,12 @@ public:
     void test_cast_int_to_float()
     {
         Vector<double> input = {
-            0.0,
-            0.0, //
-            0.0,
-            0.0, //
+            0.0, 0.0, //
+            0.0, 0.0, //
         };
         Vector<double> output = {
-            0.0,
-            1.0, //
-            -1.0,
-            2.0, //
+            0.0, 1.0, //
+            -1.0, 2.0, //
         };
         run_test( "cast_int_to_float", input, output );
     }

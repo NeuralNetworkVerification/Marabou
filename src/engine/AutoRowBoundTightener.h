@@ -25,7 +25,8 @@ public:
     AutoRowBoundTightener( const ITableau &tableau )
     {
         _rowBoundTightener = T::createRowBoundTightener( tableau );
-        tableau.getBoundManager().registerRowBoundTightener( _rowBoundTightener );
+        tableau.getBoundManager().registerRowBoundTightener(
+            _rowBoundTightener );
     }
 
     ~AutoRowBoundTightener()

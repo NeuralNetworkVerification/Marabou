@@ -34,8 +34,7 @@ public:
     /*
       Main method of this class: preprocess the input query
     */
-    std::unique_ptr<InputQuery> preprocess( const InputQuery &query,
-                                            bool attemptVariableElimination = true );
+    std::unique_ptr<InputQuery> preprocess( const InputQuery &query, bool attemptVariableElimination = true );
 
     /*
       Have the preprocessor start reporting statistics.
@@ -67,6 +66,7 @@ public:
     void setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery );
 
 private:
+
     void freeMemoryIfNeeded();
 
     inline double getLowerBound( unsigned var )

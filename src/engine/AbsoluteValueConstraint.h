@@ -34,6 +34,7 @@
 
 class AbsoluteValueConstraint : public PiecewiseLinearConstraint
 {
+
 public:
     /*
       The f variable is the absolute value of the b variable:
@@ -60,8 +61,8 @@ public:
     /*
       Register/unregister the constraint with a talbeau.
      */
-    void registerAsWatcher( ITableau *tableau ) override;
-    void unregisterAsWatcher( ITableau *tableau ) override;
+    void registerAsWatcher( ITableau *tableau) override;
+    void unregisterAsWatcher( ITableau *tableau) override;
 
     /*
       These callbacks are invoked when a watched variable's value
@@ -183,40 +184,24 @@ public:
       Return the phase status corresponding to the values of the *input*
       variables in the given assignment.
     */
-    virtual PhaseStatus
-    getPhaseStatusInAssignment( const Map<unsigned, double> &assignment ) const override;
+    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
+                                                    &assignment ) const override;
 
     /*
       Returns string with shape: absoluteValue,_f,_b
      */
     String serializeToString() const override;
 
-    inline unsigned getB() const
-    {
-        return _b;
-    };
+    inline unsigned getB() const { return _b; };
 
-    inline unsigned getF() const
-    {
-        return _f;
-    };
+    inline unsigned getF() const { return _f; };
 
-    inline bool auxVariablesInUse() const
-    {
-        return _auxVarsInUse;
-    };
+    inline bool auxVariablesInUse() const { return _auxVarsInUse; };
 
-    inline unsigned getPosAux() const
-    {
-        return _posAux;
-    };
-    inline unsigned getNegAux() const
-    {
-        return _negAux;
-    };
+    inline unsigned getPosAux() const { return _posAux; };
+    inline unsigned getNegAux() const { return _negAux; };
 
     const List<unsigned> getNativeAuxVars() const override;
-
 private:
     /*
       The variables that make up this constraint; _f = | _b |.
@@ -269,3 +254,4 @@ private:
 };
 
 #endif // __AbsoluteValueConstraint_h__
+

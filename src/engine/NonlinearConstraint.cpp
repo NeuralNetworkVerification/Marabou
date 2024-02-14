@@ -10,10 +10,9 @@
  ** directory for licensing information.\endverbatim
  **
  ** See the description of the class in NonlinearConstraint.h.
- **/
+**/
 
 #include "NonlinearConstraint.h"
-
 #include "Statistics.h"
 
 NonlinearConstraint::NonlinearConstraint()
@@ -23,7 +22,8 @@ NonlinearConstraint::NonlinearConstraint()
 {
 }
 
-void NonlinearConstraint::registerBoundManager( BoundManager *boundManager )
+void NonlinearConstraint::registerBoundManager(
+    BoundManager *boundManager )
 {
     ASSERT( _boundManager == nullptr );
     _boundManager = boundManager;

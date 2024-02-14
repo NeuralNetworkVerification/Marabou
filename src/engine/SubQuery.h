@@ -39,7 +39,8 @@ struct SubQuery
 };
 
 // Synchronized Queue containing the Sub-Queries shared by workers
-typedef boost::lockfree::queue<SubQuery *, boost::lockfree::fixed_sized<false>> WorkerQueue;
+typedef boost::lockfree::queue<SubQuery *, boost::lockfree::
+  fixed_sized<false>>WorkerQueue;
 
 // A vector of Sub-Queries
 

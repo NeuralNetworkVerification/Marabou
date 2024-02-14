@@ -16,9 +16,9 @@
 #ifndef __Tableau_h__
 #define __Tableau_h__
 
+#include "IBoundManager.h"
 #include "GurobiWrapper.h"
 #include "IBasisFactorization.h"
-#include "IBoundManager.h"
 #include "ITableau.h"
 #include "LPSolverType.h"
 #include "MString.h"
@@ -36,9 +36,7 @@ class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class TableauState;
 
-class Tableau
-    : public ITableau
-    , public IBasisFactorization::BasisColumnOracle
+class Tableau : public ITableau, public IBasisFactorization::BasisColumnOracle
 {
 public:
     Tableau( IBoundManager &boundManager );
@@ -171,10 +169,7 @@ public:
     /*
       Get BoundManager reference
      */
-    IBoundManager &getBoundManager() const
-    {
-        return _boundManager;
-    }
+    IBoundManager &getBoundManager() const { return _boundManager; }
 
     /*
       Returns whether any variable's bounds are invalid.
@@ -458,10 +453,7 @@ public:
 
       The inverse coefficient is just 1/c.
     */
-    bool areLinearlyDependent( unsigned x1,
-                               unsigned x2,
-                               double &coefficient,
-                               double &inverseCoefficient );
+    bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient );
 
     /*
       When we start merging columns, variables effectively get renamed.
@@ -483,7 +475,6 @@ public:
     */
     void tightenUpperBoundNaively( unsigned variable, double value );
     void tightenLowerBoundNaively( unsigned variable, double value );
-
 private:
     /*
       Variable watchers
@@ -505,8 +496,8 @@ private:
     /*
        Direct pointers to _boundManager arrays to avoid multiple dereferencing.
      */
-    const double *_lowerBounds;
-    const double *_upperBounds;
+    const double * _lowerBounds;
+    const double * _upperBounds;
 
     /*
       The dimensions of matrix A

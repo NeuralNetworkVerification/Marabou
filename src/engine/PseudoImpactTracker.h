@@ -29,7 +29,8 @@ public:
     /*
       New score is the moving average of the input score and the previous score.
     */
-    virtual void updateScore( PiecewiseLinearConstraint *constraint, double score ) override;
+    virtual void updateScore( PiecewiseLinearConstraint *constraint,
+                              double score ) override;
 };
 
 #endif // __PseudoImpactTracker_h__

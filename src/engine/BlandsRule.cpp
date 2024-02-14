@@ -14,7 +14,6 @@
  **/
 
 #include "BlandsRule.h"
-
 #include "ITableau.h"
 #include "MarabouError.h"
 
