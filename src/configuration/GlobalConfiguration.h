@@ -28,7 +28,7 @@ public:
     static const double EXPONENTIAL_MOVING_AVERAGE_ALPHA;
 
     // Whether to use SoI instead of Reluplex for local search for satisfying assignments
-    //to non-linear constraint.
+    // to non-linear constraint.
     static bool USE_DEEPSOI_LOCAL_SEARCH;
 
     // The quantity by which the score is bumped up for PLContraints not
@@ -114,12 +114,12 @@ public:
     // The threshold of degradation above which restoration is required
     static const double DEGRADATION_THRESHOLD;
 
-    // If a pivot element in a simplex iteration is smaller than this threshold, the engine will attempt
-    // to pick another element.
+    // If a pivot element in a simplex iteration is smaller than this threshold, the engine will
+    // attempt to pick another element.
     static const double ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD;
 
-    // If true, column-merging equations are given special treatment and cause columns in the tableau
-    // to be merged (instead of a new row added).
+    // If true, column-merging equations are given special treatment and cause columns in the
+    // tableau to be merged (instead of a new row added).
     static const bool USE_COLUMN_MERGING_EQUATIONS;
 
     // If a pivot element in a Gaussian elimination iteration is smaller than this threshold times
@@ -154,7 +154,8 @@ public:
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
-    // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
+    // An error threshold which, when crossed, causes projected steepest edge to reset the reference
+    // space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
     // PSE's Gamma function's update tolerance
@@ -182,7 +183,8 @@ public:
         DISABLE_EXPLICIT_BASIS_TIGHTENING = 2,
     };
 
-    // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
+    // When doing bound tightening using the explicit basis matrix, should the basis matrix be
+    // inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
     static const double EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT;
 
@@ -206,8 +208,8 @@ public:
     // for any relevant linear connections between the variables?
     static const bool USE_SMART_FIX;
 
-    // A heuristic for selecting which of the broken PL constraints will be repaired next. In this case,
-    // the one that has been repaired the least number of times so far.
+    // A heuristic for selecting which of the broken PL constraints will be repaired next. In this
+    // case, the one that has been repaired the least number of times so far.
     static const bool USE_LEAST_FIX;
 
     /*
@@ -232,19 +234,19 @@ public:
     static const unsigned POLARITY_CANDIDATES_THRESHOLD;
 
     /* The max number of DnC splits
-    */
+     */
     static const unsigned DNC_DEPTH_THRESHOLD;
 
     /* Minimal coefficient of a variable in a Tableau row, that is used for bound tightening
-    */
+     */
     static const double MINIMAL_COEFFICIENT_FOR_TIGHTENING;
 
     /* The tolerance of errors when checking lemmas in the proof-checking process
-    */
+     */
     static const double LEMMA_CERTIFICATION_TOLERANCE;
 
     /* Denote whether proofs should be written as a JSON file
-    */
+     */
     static const bool WRITE_JSON_PROOF;
 
 #ifdef ENABLE_GUROBI

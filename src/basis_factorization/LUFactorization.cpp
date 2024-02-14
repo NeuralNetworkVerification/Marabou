@@ -13,30 +13,33 @@
 
  **/
 
+#include "LUFactorization.h"
+
 #include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
-#include "LUFactorization.h"
 #include "MalformedBasisException.h"
 
 LUFactorization::LUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
     , _B( NULL )
-	, _m( m )
+    , _m( m )
     , _luFactors( m )
     , _gaussianEliminator( m )
     , _z( NULL )
 {
-    _B = new double[m*m];
+    _B = new double[m * m];
     if ( !_B )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::B" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "LUFactorization::B" );
 
     _z = new double[m];
     if ( !_z )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "LUFactorization::z" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "LUFactorization::z" );
 }
 
 LUFactorization::~LUFactorization()
@@ -46,11 +49,11 @@ LUFactorization::~LUFactorization()
 
 void LUFactorization::freeIfNeeded()
 {
-	if ( _B )
-	{
-		delete[] _B;
-		_B = NULL;
-	}
+    if ( _B )
+    {
+        delete[] _B;
+        _B = NULL;
+    }
 
     List<EtaMatrix *>::iterator it;
     for ( it = _etas.begin(); it != _etas.end(); ++it )
@@ -66,7 +69,7 @@ void LUFactorization::freeIfNeeded()
 
 const double *LUFactorization::getBasis() const
 {
-	return _B;
+    return _B;
 }
 
 const SparseMatrix *LUFactorization::getSparseBasis() const
@@ -77,21 +80,21 @@ const SparseMatrix *LUFactorization::getSparseBasis() const
 
 const List<EtaMatrix *> LUFactorization::getEtas() const
 {
-	return _etas;
+    return _etas;
 }
 
 void LUFactorization::updateToAdjacentBasis( unsigned columnIndex,
                                              const double *changeColumn,
-                                             const double */* newColumn */ )
+                                             const double * /* newColumn */ )
 {
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );
 
-	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
-	{
+    if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
+    {
         LU_FACTORIZATION_LOG( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
-	}
+    }
 }
 
 void LUFactorization::forwardTransformation( const double *y, double *x ) const
@@ -135,18 +138,18 @@ void LUFactorization::backwardTransformation( const double *y, double *x ) const
       We are solving xB = y, where B = B0 * E1 ... * En.
       The first step is to eliminate the eta matrices.
     */
-    memcpy( _z, y, sizeof(double) * _m );
+    memcpy( _z, y, sizeof( double ) * _m );
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
         // The only entry in y that changes is columnIndex
-        unsigned columnIndex = (*eta)->_columnIndex;
+        unsigned columnIndex = ( *eta )->_columnIndex;
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i != columnIndex )
-                _z[columnIndex] -= (_z[i] * (*eta)->_column[i]);
+                _z[columnIndex] -= ( _z[i] * ( *eta )->_column[i] );
         }
 
-        _z[columnIndex] = _z[columnIndex] / (*eta)->_column[columnIndex];
+        _z[columnIndex] = _z[columnIndex] / ( *eta )->_column[columnIndex];
 
         if ( FloatUtils::isZero( _z[columnIndex] ) )
             _z[columnIndex] = 0.0;
@@ -160,7 +163,7 @@ void LUFactorization::backwardTransformation( const double *y, double *x ) const
 
 void LUFactorization::clearFactorization()
 {
-	List<EtaMatrix *>::iterator it;
+    List<EtaMatrix *>::iterator it;
     for ( it = _etas.begin(); it != _etas.end(); ++it )
         delete *it;
     _etas.clear();
@@ -193,7 +196,7 @@ void LUFactorization::storeFactorization( IBasisFactorization *other )
     obtainFreshBasis();
 
     // Store the new basis and factorization
-    memcpy( otherLUFactorization->_B, _B, sizeof(double) * _m * _m );
+    memcpy( otherLUFactorization->_B, _B, sizeof( double ) * _m * _m );
     _luFactors.storeToOther( &otherLUFactorization->_luFactors );
 }
 
@@ -208,7 +211,7 @@ void LUFactorization::restoreFactorization( const IBasisFactorization *other )
     clearFactorization();
 
     // Store the new basis and factorization
-    memcpy( _B, otherLUFactorization->_B, sizeof(double) * _m * _m );
+    memcpy( _B, otherLUFactorization->_B, sizeof( double ) * _m * _m );
     otherLUFactorization->_luFactors.storeToOther( &_luFactors );
 }
 

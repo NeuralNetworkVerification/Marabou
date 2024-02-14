@@ -15,10 +15,11 @@
 
 #ifdef ENABLE_GUROBI
 
+#include "GurobiWrapper.h"
+
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "GurobiWrapper.h"
 #include "MStringf.h"
 #include "Options.h"
 #include "gurobi_c.h"
@@ -77,19 +78,14 @@ void GurobiWrapper::resetModel()
     _model->getEnv().set( GRB_IntParam_OutputFlag, 0 );
 
     // Thread number
-    _model->getEnv().set( GRB_IntParam_Threads,
-                          GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
+    _model->getEnv().set( GRB_IntParam_Threads, GlobalConfiguration::GUROBI_NUMBER_OF_THREADS );
 
     // Numeral parameters
-    _model->getEnv().set
-        ( GRB_DoubleParam_FeasibilityTol,
-          std::max
-          ( GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS, 1e-9 ) );
+    _model->getEnv().set( GRB_DoubleParam_FeasibilityTol,
+                          std::max( GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS, 1e-9 ) );
 
-    _model->getEnv().set
-        ( GRB_DoubleParam_IntFeasTol,
-          std::max
-          ( GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE, 1e-8 ) );
+    _model->getEnv().set( GRB_DoubleParam_IntFeasTol,
+                          std::max( GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE, 1e-8 ) );
 
     // Timeout
     setTimeLimit( _timeoutInSeconds );
@@ -128,11 +124,7 @@ void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType
     {
         GRBVar *newVar = new GRBVar;
         double objectiveValue = 0;
-        *newVar = _model->addVar( lb,
-                                  ub,
-                                  objectiveValue,
-                                  variableType,
-                                  name.ascii() );
+        *newVar = _model->addVar( lb, ub, objectiveValue, variableType, name.ascii() );
 
         _nameToVariable[name] = newVar;
     }
@@ -141,7 +133,8 @@ void GurobiWrapper::addVariable( String name, double lb, double ub, VariableType
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
@@ -197,7 +190,8 @@ void GurobiWrapper::addConstraint( const List<Term> &terms, double scalar, char 
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
@@ -215,31 +209,45 @@ void GurobiWrapper::addPiecewiseLinearConstraint( String sourceVariable,
                                  xPoints,
                                  yPoints );
     }
-    catch (GRBException e )
+    catch ( GRBException e )
     {
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
-void GurobiWrapper::addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+void GurobiWrapper::addLeqIndicatorConstraint( const String binVarName,
+                                               const int binVal,
+                                               const List<Term> &terms,
+                                               double scalar )
 {
     addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_LESS_EQUAL );
 }
 
-void GurobiWrapper::addGeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+void GurobiWrapper::addGeqIndicatorConstraint( const String binVarName,
+                                               const int binVal,
+                                               const List<Term> &terms,
+                                               double scalar )
 {
     addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_GREATER_EQUAL );
 }
 
-void GurobiWrapper::addEqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar )
+void GurobiWrapper::addEqIndicatorConstraint( const String binVarName,
+                                              const int binVal,
+                                              const List<Term> &terms,
+                                              double scalar )
 {
     addIndicatorConstraint( binVarName, binVal, terms, scalar, GRB_EQUAL );
 }
 
-void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar, char sense )
+void GurobiWrapper::addIndicatorConstraint( const String binVarName,
+                                            const int binVal,
+                                            const List<Term> &terms,
+                                            double scalar,
+                                            char sense )
 {
     try
     {
@@ -252,20 +260,25 @@ void GurobiWrapper::addIndicatorConstraint( const String binVarName, const int b
         }
 
         ASSERT( _nameToVariable.exists( binVarName ) );
-        _model->addGenConstrIndicator( *_nameToVariable[binVarName], binVal, constraint, sense, scalar );
+        _model->addGenConstrIndicator(
+            *_nameToVariable[binVarName], binVal, constraint, sense, scalar );
     }
     catch ( GRBException e )
     {
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
-void GurobiWrapper::addBilinearConstraint( const String input1, const String input2, const String output )
+void GurobiWrapper::addBilinearConstraint( const String input1,
+                                           const String input2,
+                                           const String output )
 {
-    _model->addQConstr( ( *_nameToVariable[output] ) == ( *_nameToVariable[input1] ) * ( *_nameToVariable[input2] ) );
+    _model->addQConstr( ( *_nameToVariable[output] ) ==
+                        ( *_nameToVariable[input1] ) * ( *_nameToVariable[input2] ) );
 }
 
 void GurobiWrapper::setCost( const List<Term> &terms, double constant )
@@ -289,7 +302,8 @@ void GurobiWrapper::setCost( const List<Term> &terms, double constant )
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
@@ -314,7 +328,8 @@ void GurobiWrapper::setObjective( const List<Term> &terms, double constant )
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
@@ -335,7 +350,8 @@ void GurobiWrapper::solve()
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
@@ -380,7 +396,8 @@ void GurobiWrapper::extractSolution( Map<String, double> &values, double &costOr
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 
@@ -411,7 +428,8 @@ double GurobiWrapper::getObjectiveBound()
         throw CommonError( CommonError::GUROBI_EXCEPTION,
                            Stringf( "Gurobi exception. Gurobi Code: %u, message: %s\n",
                                     e.getErrorCode(),
-                                    e.getMessage().c_str() ).ascii() );
+                                    e.getMessage().c_str() )
+                               .ascii() );
     }
 }
 

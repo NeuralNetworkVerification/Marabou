@@ -16,13 +16,12 @@
 
 #include <errno.h>
 
-namespace T
+namespace T {
+int errorNumber()
 {
-    int errorNumber()
-	{
-		return errno;
-    }
+    return errno;
 }
+} // namespace T
 
 //
 // Local Variables:

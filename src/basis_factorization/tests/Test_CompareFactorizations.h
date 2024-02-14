@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "FloatUtils.h"
 #include "ForrestTomlinFactorization.h"
 #include "LUFactorization.h"
@@ -22,6 +20,8 @@
 #include "MockErrno.h"
 #include "SparseFTFactorization.h"
 #include "SparseLUFactorization.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForCompareFactorizations
 {
@@ -58,13 +58,12 @@ public:
         TS_ASSERT( sft = new SparseFTFactorization( 4, *oracle ) );
         TS_ASSERT( slu = new SparseLUFactorization( 4, *oracle ) );
 
-        double B[] =
-            {
-                2, 0, 3, -4,
-                0, 1, 10, 0,
-                -3, 4.5, 1, 1,
-                0, 0, 2, 2
-            };
+        double B[] = {
+            2,  0,   3,  -4, //
+            0,  1,   10, 0,  //
+            -3, 4.5, 1,  1,  //
+            0,  0,   2,  2   //
+        };
 
         oracle->storeBasis( 4, B );
         ft->obtainFreshBasis();
@@ -149,10 +148,10 @@ public:
         }
 
         double basisAtThisPoint[] = {
-            2, -20, 64, -4,
-            0, 2, 96, 0,
-            -3, 24, -45, 1,
-            0, 6, 14, 2,
+            2,  -20, 64,  -4, //
+            0,  2,   96,  0,  //
+            -3, 24,  -45, 1,  //
+            0,  6,   14,  2,  //
         };
 
         oracle->storeBasis( 4, basisAtThisPoint );

@@ -14,13 +14,12 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "CostFunctionManager.h"
+#include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "MarabouError.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForCostFunctionManager
@@ -70,7 +69,7 @@ public:
         // Prepare the intermediate information needed for cost function computation:
         // 1. The multipliers
         double multipliers[3] = { 0, 2, -3 };
-        memcpy( tableau.nextBtranOutput, multipliers, sizeof(double) * 3 );
+        memcpy( tableau.nextBtranOutput, multipliers, sizeof( double ) * 3 );
         // 2. Mapping from non-basic indices to original variables
         tableau.nextNonBasicIndexToVariable[0] = 2;
         tableau.nextNonBasicIndexToVariable[1] = 0;
@@ -93,7 +92,7 @@ public:
         tableau.lowerBounds[7] = 0;
         tableau.upperBounds[7] = 1;
 
-        tableau.nextValues[5] = 10; // Too high
+        tableau.nextValues[5] = 10;  // Too high
         tableau.nextValues[6] = -10; // Too low
         tableau.nextValues[7] = 0.5; // Okay
 
@@ -101,7 +100,7 @@ public:
 
         // Basic costs should be [ 1, -1, 0 ], and this should have been sent to BTRAN.
         double expectedBTranInput[] = { 1, -1, 0 };
-        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof(double) * m );
+        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof( double ) * m );
 
         // Each entry of the cost function is a negated dot product of the multiplier vector
         // and the appropriate column from the constraint matrix
@@ -130,7 +129,7 @@ public:
         // Prepare the intermediate information needed for cost function computation:
         // 1. The multipliers
         double multipliers[3] = { 0, 2, -3 };
-        memcpy( tableau.nextBtranOutput, multipliers, sizeof(double) * 3 );
+        memcpy( tableau.nextBtranOutput, multipliers, sizeof( double ) * 3 );
         // 2. Mapping from non-basic indices to original variables
         tableau.nextNonBasicIndexToVariable[0] = 2;
         tableau.nextNonBasicIndexToVariable[1] = 0;
@@ -152,7 +151,7 @@ public:
         tableau.lowerBounds[7] = 0;
         tableau.upperBounds[7] = 1;
 
-        tableau.nextValues[5] = 10; // Too high
+        tableau.nextValues[5] = 10;  // Too high
         tableau.nextValues[6] = -10; // Too low
         tableau.nextValues[7] = 0.5; // Okay
 
@@ -170,7 +169,7 @@ public:
 
         // Basic costs should be [ 2, -1, 0 ], and this should have been sent to BTRAN.
         double expectedBTranInput[] = { 2, -1, 0 };
-        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof(double) * m );
+        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof( double ) * m );
 
         // Each entry of the cost function is a negated dot product of the multiplier vector
         // and the appropriate column from the constraint matrix
@@ -199,7 +198,7 @@ public:
         // Prepare the intermediate information needed for cost function computation:
         // 1. The multipliers
         double multipliers[3] = { 0, 2, -3 };
-        memcpy( tableau.nextBtranOutput, multipliers, sizeof(double) * 3 );
+        memcpy( tableau.nextBtranOutput, multipliers, sizeof( double ) * 3 );
         // 2. Mapping from non-basic indices to original variables
         tableau.nextNonBasicIndexToVariable[0] = 2;
         tableau.nextNonBasicIndexToVariable[1] = 0;
@@ -233,7 +232,7 @@ public:
 
         // Basic costs should be [ 0, 0, 0 ], and this should have been sent to BTRAN.
         double expectedBTranInput[] = { 0, 0, 0 };
-        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof(double) * m );
+        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, expectedBTranInput, sizeof( double ) * m );
 
         // Variable 2 is basic #0
         tableau.nextVariableToIndex[2] = 0;
@@ -255,8 +254,7 @@ public:
         // Entry 1: multipliers * columnZero + heuristic cost
         TS_ASSERT_EQUALS( costFucntion[1], -( 0 - 2 - 6 ) + 4 );
 
-        TS_ASSERT_EQUALS( manager->computeGivenCostFunctionDirectly( heuristicCost ),
-                          8.5 );
+        TS_ASSERT_EQUALS( manager->computeGivenCostFunctionDirectly( heuristicCost ), 8.5 );
 
         TS_ASSERT_THROWS_NOTHING( delete manager );
     }

@@ -14,19 +14,18 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
+#include "MarabouError.h"
 #include "MaxConstraint.h"
 #include "MockErrno.h"
 #include "Preprocessor.h"
 #include "ReluConstraint.h"
-#include "MarabouError.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForPreprocessor
@@ -105,7 +104,7 @@ public:
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), 0 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 13 );
         TS_ASSERT_EQUALS( processed.getLowerBound( 2 ), -10 );
-		TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 3 );
+        TS_ASSERT_EQUALS( processed.getUpperBound( 2 ), 3 );
 
         inputQuery.setLowerBound( 0, FloatUtils::negativeInfinity() );
         inputQuery.setUpperBound( 0, 15 );
@@ -170,10 +169,11 @@ public:
         // x2.ub = -10 + x0.ub + x1.ub = -10 + 5 -2 = -7
         // x2 = [0, -7] -> throw error
 
-        TS_ASSERT_THROWS( Preprocessor().preprocess( inputQuery ), const InfeasibleQueryException &e );
+        TS_ASSERT_THROWS( Preprocessor().preprocess( inputQuery ),
+                          const InfeasibleQueryException &e );
 
         InputQuery inputQuery2;
-		inputQuery2.setNumberOfVariables( 5 );
+        inputQuery2.setNumberOfVariables( 5 );
         inputQuery2.setLowerBound( 1, 0 );
         inputQuery2.setUpperBound( 1, 1 );
         inputQuery2.setLowerBound( 2, 2 );
@@ -255,7 +255,8 @@ public:
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 1 ), 0 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 1 ), 10 ) );
 
-        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ), FloatUtils::negativeInfinity() ) ); //
+        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 0 ),
+                                         FloatUtils::negativeInfinity() ) ); //
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 0 ), 10 ) );
 
         // x2 = Max( x3, x4 )
@@ -270,7 +271,8 @@ public:
         // x4.ub = 13
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 2 ), 5 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 2 ), 13 ) );
-        TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 3 ), FloatUtils::negativeInfinity() ) );
+        TS_ASSERT(
+            FloatUtils::areEqual( processed.getLowerBound( 3 ), FloatUtils::negativeInfinity() ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 3 ), 10 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getLowerBound( 4 ), 4 ) );
         TS_ASSERT( FloatUtils::areEqual( processed.getUpperBound( 4 ), 13 ) );
@@ -376,7 +378,7 @@ public:
         inputQuery.setUpperBound( 3, 5 );
         inputQuery.setLowerBound( 4, 0 ); // unused
         inputQuery.setUpperBound( 4, 10 );
-        inputQuery.setLowerBound( 5, 0 );  // unused
+        inputQuery.setLowerBound( 5, 0 ); // unused
         inputQuery.setUpperBound( 5, 10 );
         inputQuery.setLowerBound( 6, 5 ); // fxied
         inputQuery.setUpperBound( 6, 5 );
@@ -470,8 +472,8 @@ public:
         equation4.setScalar( -0.341 );
         inputQuery.addEquation( equation4 );
 
-        inputQuery.addNonlinearConstraint( new SigmoidConstraint(2, 4) );
-        inputQuery.addNonlinearConstraint( new SigmoidConstraint(3, 5) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint( 2, 4 ) );
+        inputQuery.addNonlinearConstraint( new SigmoidConstraint( 3, 5 ) );
 
         InputQuery processed = *( Preprocessor().preprocess( inputQuery, true ) );
 
@@ -539,7 +541,7 @@ public:
 
         // 2x0 - 2x1 = 0
         Equation equation1;
-        equation1.addAddend(  2, 0 );
+        equation1.addAddend( 2, 0 );
         equation1.addAddend( -2, 1 );
         equation1.setScalar( 0 );
         inputQuery.addEquation( equation1 );
@@ -582,10 +584,10 @@ public:
         TS_ASSERT_EQUALS( addend->_variable, 1U );
         TS_ASSERT_EQUALS( preprocessedEquation._scalar, 1.0 );
 
-        for ( const auto &plConstraint: processed.getPiecewiseLinearConstraints() )
+        for ( const auto &plConstraint : processed.getPiecewiseLinearConstraints() )
         {
-            TS_ASSERT( plConstraint->participatingVariable( 0 ));
-            TS_ASSERT( plConstraint->participatingVariable( 2 ));
+            TS_ASSERT( plConstraint->participatingVariable( 0 ) );
+            TS_ASSERT( plConstraint->participatingVariable( 2 ) );
         }
     }
 
@@ -696,37 +698,37 @@ public:
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 8 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 16 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 5 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 9 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 13 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         eq_eq = new Equation();
         eq_eq->addAddend( 1, 17 );
         eq_eq->setScalar( 0 );
-        inputQuery.addEquation( *eq_eq);
+        inputQuery.addEquation( *eq_eq );
         delete eq_eq;
 
         InputQuery processed = *( Preprocessor().preprocess( inputQuery ) );
@@ -911,8 +913,7 @@ public:
         // x0 - x2 - aux4 = 0 will be added to the processed ipq.
 
         InputQuery processed;
-        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().
-                                                 preprocess( ipq ) ) );
+        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().preprocess( ipq ) ) );
 
         // Four more variables are added.
         TS_ASSERT_EQUALS( processed.getNumberOfVariables(), 7u );
@@ -950,13 +951,12 @@ public:
         cs2.storeBoundTightening( Tightening( 0, -4, Tightening::LB ) );
         cs2.storeBoundTightening( Tightening( 0, 2, Tightening::UB ) );
 
-        List<PiecewiseLinearCaseSplit> caseSplits = {cs1, cs2};
+        List<PiecewiseLinearCaseSplit> caseSplits = { cs1, cs2 };
         DisjunctionConstraint *disj = new DisjunctionConstraint( caseSplits );
         ipq.addPiecewiseLinearConstraint( disj );
 
         InputQuery processed;
-        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().
-            preprocess( ipq ) ) );
+        TS_ASSERT_THROWS_NOTHING( processed = *( Preprocessor().preprocess( ipq ) ) );
 
         TS_ASSERT_EQUALS( processed.getLowerBound( 0 ), -4 );
         TS_ASSERT_EQUALS( processed.getUpperBound( 0 ), 3 );
@@ -1026,7 +1026,8 @@ public:
 
     void test_todo()
     {
-        TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated PL constraints" );
+        TS_TRACE( "In test_variable_elimination, test something about updated bounds and updated "
+                  "PL constraints" );
     }
 };
 

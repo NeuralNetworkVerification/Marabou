@@ -14,40 +14,38 @@
 #ifndef __MockBoundManager_h__
 #define __MockBoundManager_h__
 
-#include "IBoundManager.h"
 #include "FloatUtils.h"
+#include "IBoundManager.h"
 #include "List.h"
-#include "Vector.h"
 #include "Map.h"
-#include "Tightening.h"
 #include "MarabouError.h"
+#include "Tightening.h"
+#include "Vector.h"
 
 class Tableau;
 class MockBoundManager : public IBoundManager
 {
 public:
     MockBoundManager()
-      : _size( 0 )
-      , _lowerBounds( nullptr )
-      , _upperBounds( nullptr )
-      , _tightenedLower( nullptr )
-      , _tightenedUpper( nullptr )
-    {
-    };
+        : _size( 0 )
+        , _lowerBounds( nullptr )
+        , _upperBounds( nullptr )
+        , _tightenedLower( nullptr )
+        , _tightenedUpper( nullptr ){};
 
     ~MockBoundManager()
     {
         if ( _lowerBounds != nullptr )
-            delete [] _lowerBounds;
+            delete[] _lowerBounds;
 
         if ( _upperBounds != nullptr )
-            delete [] _upperBounds;
+            delete[] _upperBounds;
 
         if ( _tightenedLower != nullptr )
-            delete [] _tightenedLower;
+            delete[] _tightenedLower;
 
         if ( _tightenedUpper != nullptr )
-            delete [] _tightenedUpper;
+            delete[] _tightenedUpper;
     };
 
     /*
@@ -57,7 +55,7 @@ public:
      */
     unsigned registerNewVariable()
     {
-      return -1;
+        return -1;
     };
 
     /*
@@ -65,16 +63,16 @@ public:
      */
     void initialize( unsigned size )
     {
-      _lowerBounds = new double[size];
-      _upperBounds = new double[size];
-      _tightenedUpper = new bool[size];
-      _tightenedLower = new bool[size];
+        _lowerBounds = new double[size];
+        _upperBounds = new double[size];
+        _tightenedUpper = new bool[size];
+        _tightenedLower = new bool[size];
 
-      if ( _lowerBounds == nullptr || _upperBounds == nullptr ||
-           _tightenedLower == nullptr || _tightenedUpper == nullptr )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "MockBoundManager" );
+        if ( _lowerBounds == nullptr || _upperBounds == nullptr || _tightenedLower == nullptr ||
+             _tightenedUpper == nullptr )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "MockBoundManager" );
 
-      _size = size;
+        _size = size;
     }
 
     /*
@@ -82,7 +80,7 @@ public:
      */
     unsigned getNumberOfVariables() const
     {
-      return _size;
+        return _size;
     };
 
     double getLowerBound( unsigned variable ) const
@@ -95,31 +93,31 @@ public:
      */
     bool tightenLowerBound( unsigned variable, double value )
     {
-      if ( FloatUtils::lt( getLowerBound( variable), value ) )
-      {
-        setLowerBound( variable, value);
-        _tightenedLower[variable] = true;
-        return true;
-      }
+        if ( FloatUtils::lt( getLowerBound( variable ), value ) )
+        {
+            setLowerBound( variable, value );
+            _tightenedLower[variable] = true;
+            return true;
+        }
 
-      return false;
+        return false;
     }
 
     double getUpperBound( unsigned variable ) const
     {
-      return _upperBounds[variable];
+        return _upperBounds[variable];
     }
 
     bool tightenUpperBound( unsigned variable, double value )
     {
-      if ( FloatUtils::gt( getUpperBound( variable ), value ) )
-      {
-        setUpperBound( variable, value);
-        _tightenedUpper[variable] = true;
-        return true;
-      }
+        if ( FloatUtils::gt( getUpperBound( variable ), value ) )
+        {
+            setUpperBound( variable, value );
+            _tightenedUpper[variable] = true;
+            return true;
+        }
 
-      return false;
+        return false;
     };
 
     /*
@@ -127,39 +125,37 @@ public:
      */
     bool setLowerBound( unsigned variable, double value )
     {
-      _lowerBounds[variable] = value;
-      return true;
+        _lowerBounds[variable] = value;
+        return true;
     };
 
     bool setUpperBound( unsigned variable, double value )
     {
-      _upperBounds[variable] = value;
-      return true;
+        _upperBounds[variable] = value;
+        return true;
     };
 
-    const double * getLowerBounds() const
+    const double *getLowerBounds() const
     {
         return _lowerBounds;
     };
 
-    const double * getUpperBounds() const
+    const double *getUpperBounds() const
     {
         return _upperBounds;
     };
 
-     /*
-       Obtain a list of all the bound updates since the last call to
-       getTightenings.
-     */
+    /*
+      Obtain a list of all the bound updates since the last call to
+      getTightenings.
+    */
     void getTightenings( List<Tightening> &tightenings )
     {
-
         for ( unsigned var = 0; var < _size; ++var )
         {
             if ( _tightenedLower[var] )
             {
-                tightenings.append(
-                    Tightening( var, _lowerBounds[var], Tightening::LB ) );
+                tightenings.append( Tightening( var, _lowerBounds[var], Tightening::LB ) );
                 _tightenedLower[var] = false;
             }
         }
@@ -168,8 +164,7 @@ public:
         {
             if ( _tightenedUpper[var] )
             {
-                tightenings.append(
-                    Tightening( var, _upperBounds[var], Tightening::UB ) );
+                tightenings.append( Tightening( var, _upperBounds[var], Tightening::UB ) );
                 _tightenedUpper[var] = false;
             }
         }
@@ -192,11 +187,11 @@ public:
     */
     bool consistentBounds() const
     {
-      for ( unsigned i = 0; i < _size; ++i )
-        if ( !consistentBounds( i ) )
-          return false;
+        for ( unsigned i = 0; i < _size; ++i )
+            if ( !consistentBounds( i ) )
+                return false;
 
-      return true;
+        return true;
     }
 
     /*
@@ -205,31 +200,34 @@ public:
     */
     bool consistentBounds( unsigned variable ) const
     {
-      return getLowerBound( variable ) <= getUpperBound( variable );
+        return getLowerBound( variable ) <= getUpperBound( variable );
     };
 
-    void registerTableau( ITableau */* tableau */ )
+    void registerTableau( ITableau * /* tableau */ )
     {
     }
 
-    void registerRowBoundTightener( IRowBoundTightener */* rowBoundTightener */ )
+    void registerRowBoundTightener( IRowBoundTightener * /* rowBoundTightener */ )
     {
     }
 
-    const BoundExplainer* getBoundExplainer() const
+    const BoundExplainer *getBoundExplainer() const
     {
         return NULL;
     }
 
-    void copyBoundExplainerContent( const BoundExplainer* /* boundsExplanations */ )
+    void copyBoundExplainerContent( const BoundExplainer * /* boundsExplanations */ )
     {
     }
 
-    void updateBoundExplanation( const TableauRow &/* row */, bool /* isUpper */, unsigned /* var */ )
+    void
+    updateBoundExplanation( const TableauRow & /* row */, bool /* isUpper */, unsigned /* var */ )
     {
     }
 
-    void updateBoundExplanationSparse( const SparseUnsortedList &/* row */, bool /* isUpper */, unsigned /* var */ )
+    void updateBoundExplanationSparse( const SparseUnsortedList & /* row */,
+                                       bool /* isUpper */,
+                                       unsigned /* var */ )
     {
     }
 
@@ -245,29 +243,32 @@ private:
     /* Map<unsigned, bool> _tightenedLower; */
     /* Map<unsigned, bool> _tightenedUpper; */
 
-    bool tightenLowerBound( unsigned variable, double value, const TableauRow &/* row */ )
+    bool tightenLowerBound( unsigned variable, double value, const TableauRow & /* row */ )
     {
         return tightenLowerBound( variable, value );
     }
 
-    bool tightenUpperBound( unsigned variable, double value, const TableauRow &/* row */ )
+    bool tightenUpperBound( unsigned variable, double value, const TableauRow & /* row */ )
     {
         return tightenUpperBound( variable, value );
     }
 
-    bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList &/* row */ )
+    bool tightenLowerBound( unsigned variable, double value, const SparseUnsortedList & /* row */ )
     {
         return tightenLowerBound( variable, value );
     }
 
-    bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList &/* row */ )
+    bool tightenUpperBound( unsigned variable, double value, const SparseUnsortedList & /* row */ )
     {
         return tightenUpperBound( variable, value );
     }
 
-    bool addLemmaExplanationAndTightenBound(unsigned /* var */, double /* value */, BoundType /* affectedVarBound */,
-                                            const List<unsigned> &/* causingVar */, BoundType /* causingVarBound */,
-                                            PiecewiseLinearFunctionType /* constraintType */ )
+    bool addLemmaExplanationAndTightenBound( unsigned /* var */,
+                                             double /* value */,
+                                             BoundType /* affectedVarBound */,
+                                             const List<unsigned> & /* causingVar */,
+                                             BoundType /* causingVarBound */,
+                                             PiecewiseLinearFunctionType /* constraintType */ )
     {
         return true;
     }
@@ -288,5 +289,3 @@ private:
 };
 
 #endif // __MockBoundManager_h__
-
-  

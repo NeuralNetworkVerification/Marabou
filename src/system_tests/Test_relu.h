@@ -13,12 +13,12 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
-#include "InputQuery.h"
 #include "FloatUtils.h"
+#include "InputQuery.h"
 #include "ReluConstraint.h"
+
+#include <cxxtest/TestSuite.h>
 
 
 class ReluTestSuite : public CxxTest::TestSuite
@@ -177,7 +177,7 @@ public:
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
 
-        TS_ASSERT_THROWS_NOTHING ( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
 
         engine.extractSolution( inputQuery );

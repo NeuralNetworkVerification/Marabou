@@ -22,7 +22,7 @@
 class BasisFactorizationError : public Error
 {
 public:
-	enum Code {
+    enum Code {
         ALLOCATION_FAILED = 0,
         CANT_INVERT_BASIS_BECAUSE_OF_ETAS = 1,
         UNKNOWN_BASIS_FACTORIZATION_TYPE = 2,
@@ -32,13 +32,13 @@ public:
         FEATURE_NOT_YET_SUPPORTED = 6,
     };
 
-    BasisFactorizationError( BasisFactorizationError::Code code ) :
-      Error( "BasisFactorizationError", (int)code )
-	{
-	}
+    BasisFactorizationError( BasisFactorizationError::Code code )
+        : Error( "BasisFactorizationError", (int)code )
+    {
+    }
 
-    BasisFactorizationError( BasisFactorizationError::Code code, const char *userMessage ) :
-        Error( "BasisFactorizationError", (int)code, userMessage )
+    BasisFactorizationError( BasisFactorizationError::Code code, const char *userMessage )
+        : Error( "BasisFactorizationError", (int)code, userMessage )
     {
     }
 };

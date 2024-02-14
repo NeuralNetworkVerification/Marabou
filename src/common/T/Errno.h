@@ -19,17 +19,16 @@
 
 #include <cxxtest/Mock.h>
 
-namespace T
-{
-	int errorNumber();
+namespace T {
+int errorNumber();
 }
 
-CXXTEST_SUPPLY( errorNumber,        /* => T::Base_AllocateIrp */
-				int,           /* Return type            */
-				errorNumber,        /* Name of mock member    */
-				(),  /* Prototype              */
-				T::errorNumber,        /* Name of real function  */
-				()       /* Parameter list         */ );
+CXXTEST_SUPPLY( errorNumber,    /* => T::Base_AllocateIrp */
+                int,            /* Return type            */
+                errorNumber,    /* Name of mock member    */
+                (),             /* Prototype              */
+                T::errorNumber, /* Name of real function  */
+                () /* Parameter list         */ );
 
 #endif // __T__Errno_h__
 

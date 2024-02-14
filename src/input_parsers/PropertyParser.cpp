@@ -13,11 +13,12 @@
 
 **/
 
+#include "PropertyParser.h"
+
 #include "Debug.h"
 #include "File.h"
 #include "InputParserError.h"
 #include "MStringf.h"
-#include "PropertyParser.h"
 
 static double extractScalar( const String &token )
 {
@@ -25,8 +26,8 @@ static double extractScalar( const String &token )
     double value = std::stod( token.ascii(), &end );
     if ( end != token.length() )
     {
-	throw InputParserError( InputParserError::UNEXPECTED_INPUT, Stringf( "%s not a scalar",
-									     token.ascii() ).ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                Stringf( "%s not a scalar", token.ascii() ).ascii() );
     }
     return value;
 }
@@ -35,7 +36,8 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
 {
     if ( !File::exists( propertyFilePath ) )
     {
-        printf( "Error: the specified property file (%s) doesn't exist!\n", propertyFilePath.ascii() );
+        printf( "Error: the specified property file (%s) doesn't exist!\n",
+                propertyFilePath.ascii() );
         throw InputParserError( InputParserError::FILE_DOESNT_EXIST, propertyFilePath.ascii() );
     }
 
@@ -47,7 +49,7 @@ void PropertyParser::parse( const String &propertyFilePath, InputQuery &inputQue
         while ( true )
         {
             String line = propertyFile.readLine().trim();
-            if ( line.substring(0,2) != "//" )
+            if ( line.substring( 0, 2 ) != "//" )
             {
                 processSingleLine( line, inputQuery );
             }
@@ -80,7 +82,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
     if ( tokens.size() == 3 )
     {
         // Special case: add as a bound
-        String token = (*it).trim();
+        String token = ( *it ).trim();
 
         bool inputVariable = token.contains( "x" );
         bool outputVariable = token.contains( "y" );
@@ -88,9 +90,12 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
 
         // Make sure that we have identified precisely one kind of variable
         unsigned variableKindSanity = 0;
-        if ( inputVariable ) ++variableKindSanity;
-        if ( outputVariable ) ++variableKindSanity;
-        if ( hiddenVariable ) ++variableKindSanity;
+        if ( inputVariable )
+            ++variableKindSanity;
+        if ( outputVariable )
+            ++variableKindSanity;
+        if ( hiddenVariable )
+            ++variableKindSanity;
 
         if ( variableKindSanity != 1 )
             throw InputParserError( InputParserError::UNEXPECTED_INPUT, token.ascii() );
@@ -181,7 +186,7 @@ void PropertyParser::processSingleLine( const String &line, InputQuery &inputQue
 
         while ( it != tokens.rend() )
         {
-            String token = (*it).trim();
+            String token = ( *it ).trim();
 
             bool inputVariable = token.contains( "x" );
             bool outputVariable = token.contains( "y" );

@@ -14,15 +14,15 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MStringf.h"
+
+#include <cxxtest/TestSuite.h>
 
 class StringfTestSuite : public CxxTest::TestSuite
 {
 public:
-	void test_constructor()
-	{
+    void test_constructor()
+    {
         Stringf stringf( "Hello %s %u world", "bla", 5 );
         String expected( "Hello bla 5 world" );
 

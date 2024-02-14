@@ -1,4 +1,4 @@
- /*********************                                                        */
+/*********************                                                        */
 /*! \file DeepPolyReLUElement.cpp
  ** \verbatim
  ** Top contributors (to current version):
@@ -14,6 +14,7 @@
 **/
 
 #include "DeepPolyReLUElement.h"
+
 #include "FloatUtils.h"
 
 namespace NLR {
@@ -30,8 +31,7 @@ DeepPolyReLUElement::~DeepPolyReLUElement()
     freeMemoryIfNeeded();
 }
 
-void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
-                               &deepPolyElementsBefore )
+void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Executing..." );
     ASSERT( hasPredecessor() );
@@ -42,12 +42,9 @@ void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
     for ( unsigned i = 0; i < _size; ++i )
     {
         NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
-        DeepPolyElement *predecessor =
-            deepPolyElementsBefore[sourceIndex._layer];
-        double sourceLb = predecessor->getLowerBound
-            ( sourceIndex._neuron );
-        double sourceUb = predecessor->getUpperBound
-            ( sourceIndex._neuron );
+        DeepPolyElement *predecessor = deepPolyElementsBefore[sourceIndex._layer];
+        double sourceLb = predecessor->getLowerBound( sourceIndex._neuron );
+        double sourceUb = predecessor->getUpperBound( sourceIndex._neuron );
 
         if ( !FloatUtils::isNegative( sourceLb ) )
         {
@@ -110,18 +107,24 @@ void DeepPolyReLUElement::execute( const Map<unsigned, DeepPolyElement *>
             }
         }
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
-                      i, _symbolicLb[i], _symbolicLowerBias[i],
-                      _symbolicUb[i], _symbolicUpperBias[i] ) );
+                      i,
+                      _symbolicLb[i],
+                      _symbolicLowerBias[i],
+                      _symbolicUb[i],
+                      _symbolicUpperBias[i] ) );
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
     log( "Executing - done" );
 }
 
-void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
-( const double *symbolicLb, const double*symbolicUb, double
-  *symbolicLowerBias, double *symbolicUpperBias, double
-  *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-  unsigned targetLayerSize, DeepPolyElement *predecessor )
+void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor( const double *symbolicLb,
+                                                             const double *symbolicUb,
+                                                             double *symbolicLowerBias,
+                                                             double *symbolicUpperBias,
+                                                             double *symbolicLbInTermsOfPredecessor,
+                                                             double *symbolicUbInTermsOfPredecessor,
+                                                             unsigned targetLayerSize,
+                                                             DeepPolyElement *predecessor )
 {
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessor->getLayerIndex() ) );
@@ -133,12 +136,9 @@ void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
-        NeuronIndex sourceIndex = *( _layer->
-                                     getActivationSources( i ).begin() );
+        NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
         unsigned sourceNeuronIndex = sourceIndex._neuron;
-        DEBUG({
-                ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
-            });
+        DEBUG( { ASSERT( predecessor->getLayerIndex() == sourceIndex._layer ); } );
 
         /*
           Take symbolic upper bound as an example.
@@ -172,7 +172,8 @@ void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffLb;
                 symbolicLowerBias[j] += weightLb * lowerBias;
-            } else
+            }
+            else
             {
                 symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;
@@ -184,7 +185,8 @@ void DeepPolyReLUElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffUb;
                 symbolicUpperBias[j] += weightUb * upperBias;
-            } else
+            }
+            else
             {
                 symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffLb;
                 symbolicUpperBias[j] += weightUb * lowerBias;

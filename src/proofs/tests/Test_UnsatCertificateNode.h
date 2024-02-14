@@ -13,10 +13,11 @@
  **/
 
 #include "BoundExplainer.h"
+#include "UnsatCertificateNode.h"
 #include "context/cdlist.h"
 #include "context/context.h"
+
 #include <cxxtest/TestSuite.h>
-#include "UnsatCertificateNode.h"
 
 class UnsatCertificateNodeTestSuite : public CxxTest::TestSuite
 {
@@ -65,10 +66,10 @@ public:
     {
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
 
-        auto upperBoundExplanation = Vector<double>(1, 1);
-        auto lowerBoundExplanation = Vector<double>(1, 1);
+        auto upperBoundExplanation = Vector<double>( 1, 1 );
+        auto lowerBoundExplanation = Vector<double>( 1, 1 );
 
-        auto *contradiction = new Contradiction( Vector<double>(1, 0 ) );
+        auto *contradiction = new Contradiction( Vector<double>( 1, 0 ) );
         root.setContradiction( contradiction );
         TS_ASSERT_EQUALS( root.getContradiction(), contradiction );
     }
@@ -81,11 +82,14 @@ public:
         UnsatCertificateNode root = UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
         Vector<SparseUnsortedList> emptyVec;
 
-        auto explanation1 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, 0, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
-        auto explanation2 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -1, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
-        auto explanation3 = std::shared_ptr<PLCLemma>( new PLCLemma( { 1 }, 1, -4, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+        auto explanation1 = std::shared_ptr<PLCLemma>(
+            new PLCLemma( { 1 }, 1, 0, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+        auto explanation2 = std::shared_ptr<PLCLemma>(
+            new PLCLemma( { 1 }, 1, -1, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+        auto explanation3 = std::shared_ptr<PLCLemma>(
+            new PLCLemma( { 1 }, 1, -4, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
 
-        TS_ASSERT(root.getPLCLemmas().empty() );
+        TS_ASSERT( root.getPLCLemmas().empty() );
 
         root.addPLCLemma( explanation1 );
         root.addPLCLemma( explanation2 );

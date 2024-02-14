@@ -16,30 +16,29 @@
 #ifndef __DnCManager_h__
 #define __DnCManager_h__
 
-#include "SnCDivideStrategy.h"
 #include "Engine.h"
 #include "InputQuery.h"
+#include "SnCDivideStrategy.h"
 #include "SubQuery.h"
 #include "Vector.h"
 
 #include <atomic>
 
-#define DNC_MANAGER_LOG( x, ... ) LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
+#define DNC_MANAGER_LOG( x, ... )                                                                  \
+    LOG( GlobalConfiguration::DNC_MANAGER_LOGGING, "DnCManager: %s\n", x )
 
 class DnCManager
 {
 public:
+    enum DnCExitCode {
+        UNSAT = 0,
+        SAT = 1,
+        ERROR = 2,
+        TIMEOUT = 3,
+        QUIT_REQUESTED = 4,
 
-    enum DnCExitCode
-        {
-            UNSAT = 0,
-            SAT = 1,
-            ERROR = 2,
-            TIMEOUT = 3,
-            QUIT_REQUESTED = 4,
-
-            NOT_DONE = 999,
-        };
+        NOT_DONE = 999,
+    };
 
     DnCManager( InputQuery *inputQuery );
 
@@ -83,14 +82,19 @@ private:
     /*
       Create and run a DnCWorker
     */
-    static void dncSolve( WorkerQueue *workload, std::shared_ptr<Engine> engine,
+    static void dncSolve( WorkerQueue *workload,
+                          std::shared_ptr<Engine> engine,
                           std::unique_ptr<InputQuery> inputQuery,
                           std::atomic_int &numUnsolvedSubQueries,
                           std::atomic_bool &shouldQuitSolving,
-                          unsigned threadId, unsigned onlineDivides,
-                          float timeoutFactor, SnCDivideStrategy divideStrategy,
-                          bool restoreTreeStates, unsigned verbosity,
-                          unsigned seed, bool parallelDeepSoI );
+                          unsigned threadId,
+                          unsigned onlineDivides,
+                          float timeoutFactor,
+                          SnCDivideStrategy divideStrategy,
+                          bool restoreTreeStates,
+                          unsigned verbosity,
+                          unsigned seed,
+                          bool parallelDeepSoI );
 
     /*
       Create the base engine from the network and property files,
@@ -113,8 +117,7 @@ private:
     /*
       Set _timeoutReached to true if timeout has been reached
     */
-    void updateTimeoutReached( timespec startTime,
-                               unsigned long long timeoutInMicroSeconds );
+    void updateTimeoutReached( timespec startTime, unsigned long long timeoutInMicroSeconds );
 
     /*
       The base engine that is used to perform the initial divides

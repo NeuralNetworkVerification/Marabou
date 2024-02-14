@@ -21,7 +21,7 @@
 class MarabouError : public Error
 {
 public:
-	enum Code {
+    enum Code {
         ALLOCATION_FAILED = 0,
         VARIABLE_INDEX_OUT_OF_RANGE = 1,
         VARIABLE_DOESNT_EXIST_IN_SOLUTION = 2,
@@ -51,7 +51,7 @@ public:
         REQUESTED_NONEXISTENT_CASE_SPLIT = 26,
         UNABLE_TO_INITIALIZATION_PHASE_PATTERN = 27,
         BOUNDS_NOT_UP_TO_DATE_IN_LP_SOLVER = 28,
-        INVALID_LEAKY_RELU_SLOPE= 29,
+        INVALID_LEAKY_RELU_SLOPE = 29,
         UNABLE_TO_RECONSTRUCT_SOLUTION_FOR_ELIMINATED_NEURONS = 30,
 
         // Error codes for Query Loader
@@ -67,12 +67,13 @@ public:
         DEBUGGING_ERROR = 999,
     };
 
-    MarabouError( MarabouError::Code code ) : Error( "MarabouError", (int)code )
-	{
-	}
+    MarabouError( MarabouError::Code code )
+        : Error( "MarabouError", (int)code )
+    {
+    }
 
-    MarabouError( MarabouError::Code code, const char *userMessage ) :
-        Error( "MarabouError", (int)code, userMessage )
+    MarabouError( MarabouError::Code code, const char *userMessage )
+        : Error( "MarabouError", (int)code, userMessage )
     {
     }
 };

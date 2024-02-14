@@ -17,7 +17,7 @@
 
 int main( int argc, char **argv )
 {
-    return marabouMain(argc, argv);
+    return marabouMain( argc, argv );
 }
 
 //

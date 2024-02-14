@@ -198,8 +198,8 @@ bool BilinearConstraint::satisfied() const
     double b2Value = getAssignment( _b2 );
     double fValue = getAssignment( _f );
 
-    return FloatUtils::areEqual( b1Value * b2Value, fValue,
-                                 GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
+    return FloatUtils::areEqual(
+        b1Value * b2Value, fValue, GlobalConfiguration::CONSTRAINT_COMPARISON_TOLERANCE );
 }
 
 String BilinearConstraint::serializeToString() const

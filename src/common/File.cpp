@@ -13,16 +13,19 @@
 
 **/
 
+#include "File.h"
+
 #include "CommonError.h"
 #include "ConstSimpleData.h"
-#include "File.h"
 #include "HeapData.h"
 #include "MStringf.h"
 #include "T/sys/stat.h"
 #include "T/unistd.h"
 #include "Vector.h"
 
-File::File( const String &path ) : _path( path ), _descriptor( NO_DESCRIPTOR )
+File::File( const String &path )
+    : _path( path )
+    , _descriptor( NO_DESCRIPTOR )
 {
 }
 
@@ -39,7 +42,7 @@ void File::close()
 bool File::directory( const String &path )
 {
     struct stat fileData;
-    memset( &fileData, 0, sizeof(struct stat) );
+    memset( &fileData, 0, sizeof( struct stat ) );
 
     if ( T::stat( path.ascii(), &fileData ) == 0 )
         return S_ISDIR( fileData.st_mode );
@@ -50,7 +53,7 @@ bool File::directory( const String &path )
 unsigned File::getSize( const String &path )
 {
     struct stat dataBuffer;
-    memset( &dataBuffer, 0, sizeof(dataBuffer) );
+    memset( &dataBuffer, 0, sizeof( dataBuffer ) );
 
     if ( T::stat( path.ascii(), &dataBuffer ) != 0 )
         throw CommonError( CommonError::STAT_FAILED );
@@ -97,7 +100,7 @@ void File::read( HeapData &buffer, unsigned maxReadSize )
     char *readBuffer( readVector.data() );
     int bytesRead;
 
-    if ( ( bytesRead = T::read( _descriptor, readBuffer, sizeof(readBuffer) ) ) == -1 )
+    if ( ( bytesRead = T::read( _descriptor, readBuffer, sizeof( readBuffer ) ) ) == -1 )
         throw CommonError( CommonError::READ_FAILED );
 
     buffer = ConstSimpleData( readBuffer, bytesRead );
@@ -114,7 +117,7 @@ String File::readLine( char lineSeparatingChar )
     while ( !_readLineBuffer.contains( separatorAsString ) )
     {
         char *buffer = new char[SIZE_OF_BUFFER + 1];
-        int n = T::read( _descriptor, buffer, sizeof(char) * SIZE_OF_BUFFER );
+        int n = T::read( _descriptor, buffer, sizeof( char ) * SIZE_OF_BUFFER );
         if ( ( n == -1 ) || ( n == 0 ) )
         {
             delete[] buffer;

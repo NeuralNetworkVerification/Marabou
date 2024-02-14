@@ -14,13 +14,12 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
-
 #include "HashMap.h"
 #include "MString.h"
 #include "Map.h"
 #include "MockErrno.h"
+
+#include <cxxtest/TestSuite.h>
 class HashMapTestSuite : public CxxTest::TestSuite
 {
 public:

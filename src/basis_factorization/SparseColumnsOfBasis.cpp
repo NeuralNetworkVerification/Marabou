@@ -13,8 +13,9 @@
 
  **/
 
-#include "BasisFactorizationError.h"
 #include "SparseColumnsOfBasis.h"
+
+#include "BasisFactorizationError.h"
 
 SparseColumnsOfBasis::SparseColumnsOfBasis( unsigned m )
     : _columns( NULL )
@@ -22,7 +23,8 @@ SparseColumnsOfBasis::SparseColumnsOfBasis( unsigned m )
 {
     _columns = new const SparseUnsortedList *[m];
     if ( !_columns )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseColumnsOfBasis::columns" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseColumnsOfBasis::columns" );
 }
 
 SparseColumnsOfBasis::~SparseColumnsOfBasis()

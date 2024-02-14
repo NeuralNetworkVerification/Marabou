@@ -20,6 +20,7 @@
 #include "Layer.h"
 #include "MStringf.h"
 #include "NLRError.h"
+
 #include <climits>
 
 namespace NLR {
@@ -30,14 +31,16 @@ public:
     DeepPolyInputElement( Layer *layer );
     ~DeepPolyInputElement();
 
-    void execute( const Map<unsigned, DeepPolyElement *>
-                  &deepPolyElementsBefore );
+    void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore );
 
-    void symbolicBoundInTermsOfPredecessor
-    ( const double *symbolicLb, const double*symbolicUb, double
-      *symbolicLowerBias, double *symbolicUpperBias, double
-      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-      unsigned targetLayerSize, DeepPolyElement *predecessor );
+    void symbolicBoundInTermsOfPredecessor( const double *symbolicLb,
+                                            const double *symbolicUb,
+                                            double *symbolicLowerBias,
+                                            double *symbolicUpperBias,
+                                            double *symbolicLbInTermsOfPredecessor,
+                                            double *symbolicUbInTermsOfPredecessor,
+                                            unsigned targetLayerSize,
+                                            DeepPolyElement *predecessor );
 
 private:
     void log( const String &message );

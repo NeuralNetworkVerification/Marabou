@@ -13,13 +13,13 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GaussianEliminator.h"
+
 #include <cstring>
+#include <cxxtest/TestSuite.h>
 
 class MockForGaussianEliminator
 {
@@ -50,10 +50,10 @@ public:
         {
             for ( unsigned j = 0; j < m; ++j )
             {
-                result[i*m + j] = 0;
+                result[i * m + j] = 0;
                 for ( unsigned k = 0; k < m; ++k )
                 {
-                    result[i*m + j] += lu->_F[i*m + k] * lu->_V[k*m + j];
+                    result[i * m + j] += lu->_F[i * m + k] * lu->_V[k * m + j];
                 }
             }
         }
@@ -69,7 +69,7 @@ public:
             printf( "\t" );
             for ( unsigned j = 0; j < m; ++j )
             {
-                printf( "%8.lf ", matrix[i*m + j] );
+                printf( "%8.lf ", matrix[i * m + j] );
             }
             printf( "\n" );
         }
@@ -83,11 +83,10 @@ public:
         LUFactors lu4( 4 );
 
         {
-            double A[] =
-            {
-                2, 3, 0,
-                0, 1, 0,
-                0, 0, 1
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 0, //
+                0, 0, 1  //
             };
 
             GaussianEliminator *ge;
@@ -107,11 +106,10 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, 0,
-                0, 1, 2,
-                0, 4, 1
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 2, //
+                0, 4, 1, //
             };
 
             GaussianEliminator *ge;
@@ -131,11 +129,10 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, -4,
-                -5, 1, 2,
-                0, 4, 1
+            double A[] = {
+                2,  3, -4, //
+                -5, 1, 2,  //
+                0,  4, 1,  //
             };
 
             GaussianEliminator *ge;
@@ -155,12 +152,11 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, -4, 0,
-                -5, 1, 2, 2,
-                0, 4, 1, -5,
-                1, 2, 3, 4,
+            double A[] = {
+                2,  3, -4, 0,  //
+                -5, 1, 2,  2,  //
+                0,  4, 1,  -5, //
+                1,  2, 3,  4,  //
             };
 
             GaussianEliminator *ge;
@@ -180,11 +176,10 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, 0,
-                0, 1, 0,
-                5, 4, 0
+            double A[] = {
+                2, 3, 0, //
+                0, 1, 0, //
+                5, 4, 0, //
             };
 
             GaussianEliminator *ge;
@@ -199,11 +194,10 @@ public:
         }
 
         {
-            double A[] =
-            {
-                2, 3, 7,
-                0, 0, 0,
-                5, 4, 0
+            double A[] = {
+                2, 3, 7, //
+                0, 0, 0, //
+                5, 4, 0  //
             };
 
             GaussianEliminator *ge;
