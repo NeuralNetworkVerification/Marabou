@@ -110,47 +110,59 @@ void NetworkParser::getMarabouQuery( InputQuery& query )
 
     for ( ReluConstraint* constraintPtr : _reluList )
     {
-        ReluConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            ReluConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( LeakyReluConstraint* constraintPtr : _leakyReluList )
     {
-        LeakyReluConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            LeakyReluConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( SigmoidConstraint* constraintPtr : _sigmoidList )
     {
-        SigmoidConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            SigmoidConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addNonlinearConstraint( constraintPtr );
     }
 
     for ( MaxConstraint* constraintPtr : _maxList )
     {
-        MaxConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getF() < _numVars );
-        for ( [[maybe_unused]] Variable var : constraint.getElements() )
-        {
-            ASSERT ( var < _numVars );
-        }
+        DEBUG({
+            MaxConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getF() < _numVars );
+            for ( [[maybe_unused]] Variable var : constraint.getElements() )
+            {
+                ASSERT ( var < _numVars );
+            }
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( AbsoluteValueConstraint* constraintPtr : _absList )
     {
-        AbsoluteValueConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            AbsoluteValueConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( SignConstraint* constraintPtr : _signList )
     {
-        SignConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            SignConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
