@@ -798,6 +798,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         squeeze( node );
     }
+    else if ( strcmp( nodeType, "Unsqueeze" ) == 0 )
+    {
+        unsqueeze( node );
+    }
     else if ( strcmp( nodeType, "BatchNormalization" ) == 0 )
     {
         batchNormEquations( node, makeEquations );
@@ -1095,13 +1099,57 @@ void OnnxParser::squeeze( onnx::NodeProto& node )
     TensorShape outputShape = Vector<unsigned int>( inputShape );
     for ( SignedTensorIndex signedAxis : axes )
     {
-        TensorIndex axis = unsignIndex( inputShape, signedAxis );
+        TensorIndex axis = unsignIndex( inputShape.size(), signedAxis );
         if ( inputShape[axis] != 1 )
         {
             String errorMessage = Stringf( "Invalid axis found on Squeeze node '%s'. Expected dimension %d to be of size 1 but was size %d", inputNodeName.ascii(), axis, inputShape[axis] );
             throw MarabouError( MarabouError::ONNX_PARSER_ERROR, errorMessage.ascii() );
         }
         outputShape.eraseAt( axis );
+    }
+
+    // Update the maps
+    _shapeMap[outputNodeName] = outputShape;
+    _varMap[outputNodeName] = _varMap[inputNodeName];
+}
+
+
+/**
+ * @brief Processes a "unsqueeze" node in the network.
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#Unsqueeze
+ *
+ * @param node The ONNX node
+ */
+void OnnxParser::unsqueeze( onnx::NodeProto& node )
+{
+    String inputNodeName = node.input()[0];
+    String outputNodeName = node.output()[0];
+
+    // Get the input shape
+    TensorShape inputShape = _shapeMap[inputNodeName];
+
+    // Get the axes to unsqueeze
+    String axisName = node.input()[1];
+    if ( !_constantIntTensors.exists( axisName ) )
+    {
+        missingNodeError( axisName );
+    }
+    Vector<SignedTensorIndex> axes = _constantIntTensors[axisName];
+
+    // Calculate a sorted list of unsigned indices
+    unsigned int outputShapeSize = inputShape.size() + axes.size();
+    Vector<TensorIndex> unsignedAxes;
+    for ( SignedTensorIndex index : axes )
+    {
+        unsignedAxes.append( unsignIndex( outputShapeSize, index ) );
+    }
+    unsignedAxes.sort();
+
+    // Calculate the output shape
+    TensorShape outputShape = Vector<unsigned int>( inputShape );
+    for ( TensorIndex index : unsignedAxes )
+    {
+        outputShape.insertAt( index, 1 );
     }
 
     // Update the maps
