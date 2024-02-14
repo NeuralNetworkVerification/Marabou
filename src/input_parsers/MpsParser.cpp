@@ -13,12 +13,14 @@
 
 **/
 
+#include "MpsParser.h"
+
 #include "File.h"
 #include "FloatUtils.h"
 #include "InputParserError.h"
 #include "InputQuery.h"
 #include "MStringf.h"
-#include "MpsParser.h"
+
 #include <cstdio>
 
 MpsParser::MpsParser( const String &path )
@@ -45,27 +47,27 @@ void MpsParser::parse( const String &path )
     String line;
 
     while ( true )
-	{
+    {
         line = file.readLine();
 
         if ( line.contains( "COLUMNS" ) )
-             break;
+            break;
 
-	    parseRow( line );
-	}
+        parseRow( line );
+    }
 
     MPS_LOG( Stringf( "Number of rows parsed: %u", _numRows ).ascii() );
 
     // Finished parsing rows, proceed to columns
     while ( true )
-	{
+    {
         line = file.readLine();
 
         if ( line.contains( "RHS" ) )
-             break;
+            break;
 
-	    parseColumn( line );
-	}
+        parseColumn( line );
+    }
 
     MPS_LOG( Stringf( "Number of variables detected: %u\n", _numVars ).ascii() );
 
@@ -78,7 +80,7 @@ void MpsParser::parse( const String &path )
             break;
 
         parseRhs( line );
-	}
+    }
 
     // The bounds section is optional, process it if it exists
     if ( line.contains( "BOUNDS" ) )
@@ -102,7 +104,7 @@ void MpsParser::parseRow( const String &line )
     List<String> tokens = line.tokenize( "\t\n " );
 
     if ( tokens.size() != 2 )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.begin();
     String type = *it;
@@ -140,7 +142,7 @@ void MpsParser::parseColumn( const String &line )
 
     // Need an odd number of tokens: row name + pairs
     if ( tokens.size() % 2 == 0 )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     // Variable name and index
     auto it = tokens.begin();
@@ -148,9 +150,9 @@ void MpsParser::parseColumn( const String &line )
     ++it;
     if ( !_variableNameToIndex.exists( name ) )
     {
-	    _variableNameToIndex[name] = _numVars;
-	    _variableIndexToName[_numVars] = name;
-	    ++_numVars;
+        _variableNameToIndex[name] = _numVars;
+        _variableIndexToName[_numVars] = name;
+        ++_numVars;
     }
 
     unsigned varIndex = _variableNameToIndex[name];
@@ -173,8 +175,10 @@ void MpsParser::parseColumn( const String &line )
         {
             // The pair describes a coefficient in an unknown equation (the objective function?)
             if ( coefficient != 0 )
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT,
-                                        Stringf( "Problematic pair: %s, %.2lf", equationName.ascii(), coefficient ).ascii() );
+                throw InputParserError(
+                    InputParserError::UNEXPECTED_INPUT,
+                    Stringf( "Problematic pair: %s, %.2lf", equationName.ascii(), coefficient )
+                        .ascii() );
         }
     }
 }
@@ -185,7 +189,7 @@ void MpsParser::parseRhs( const String &line )
 
     // Need an odd number of tokens: RHS + pairs
     if ( tokens.size() % 2 == 0 )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.begin();
     String name = *it;
@@ -213,7 +217,7 @@ void MpsParser::parseBounds( const String &line )
     List<String> tokens = line.tokenize( "\t\n " );
 
     if ( tokens.size() != 4 )
-	    throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT, line.ascii() );
 
     auto it = tokens.begin();
     String type = *it;
@@ -241,7 +245,7 @@ void MpsParser::parseBounds( const String &line )
         // Lower bound
         if ( !_varToLowerBounds.exists( varIndex ) || ( _varToLowerBounds[varIndex] < scalar ) )
             _varToLowerBounds[varIndex] = scalar;
-	}
+    }
     else if ( type == "FX" )
     {
         // Upper and lower bound
@@ -250,7 +254,7 @@ void MpsParser::parseBounds( const String &line )
 
         if ( !_varToLowerBounds.exists( varIndex ) || ( _varToLowerBounds[varIndex] < scalar ) )
             _varToLowerBounds[varIndex] = scalar;
-	}
+    }
     else
     {
         throw InputParserError( InputParserError::UNSUPPORTED_BOUND_TYPE, line.ascii() );
@@ -264,7 +268,7 @@ void MpsParser::setRemainingBounds()
     {
         if ( !_varToLowerBounds.exists( i ) &&
              ( !_varToUpperBounds.exists( i ) || _varToUpperBounds[i] >= 0 ) )
-	    _varToLowerBounds[i] = 0;
+            _varToLowerBounds[i] = 0;
     }
 }
 
@@ -330,7 +334,7 @@ void MpsParser::populateEquation( Equation &equation, unsigned index ) const
     const Map<unsigned, double> &coeffs( _equationIndexToCoefficients[index] );
 
     for ( const auto &pair : coeffs )
-		equation.addAddend( pair.second, pair.first );
+        equation.addAddend( pair.second, pair.first );
 
     switch ( _equationIndexToRowType[index] )
     {

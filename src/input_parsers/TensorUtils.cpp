@@ -10,14 +10,15 @@
  ** directory for licensing information.\endverbatim
  **
  ** Utilities for working with tensors while parsing networks.
-**/
+ **/
 
 #include "TensorUtils.h"
+
 #include <math.h>
 
 TensorIndices unpackIndex( TensorShape shape, PackedTensorIndices packedIndex )
 {
-    ASSERT ( packedIndex < tensorSize( shape ) );
+    ASSERT( packedIndex < tensorSize( shape ) );
 
     TensorIndices indices;
     int currentIndex = packedIndex;
@@ -25,13 +26,13 @@ TensorIndices unpackIndex( TensorShape shape, PackedTensorIndices packedIndex )
     {
         int dimension = shape[i];
         int index = currentIndex % dimension;
-        currentIndex = (currentIndex - index) / dimension;
+        currentIndex = ( currentIndex - index ) / dimension;
         indices.insertHead( index );
     }
     return indices;
 }
 
-PackedTensorIndices packIndex ( TensorShape shape, TensorIndices indices )
+PackedTensorIndices packIndex( TensorShape shape, TensorIndices indices )
 {
     ASSERT( shape.size() == indices.size() );
 
@@ -39,11 +40,11 @@ PackedTensorIndices packIndex ( TensorShape shape, TensorIndices indices )
     unsigned int index = 0;
     for ( unsigned int i = shape.size(); i-- > 0; )
     {
-        ASSERT ( indices[i] <= shape[i] );
-        index += sizeSoFar*indices[i];
+        ASSERT( indices[i] <= shape[i] );
+        index += sizeSoFar * indices[i];
         sizeSoFar *= shape[i];
     }
-    ASSERT( tensorSize ( shape ) == sizeSoFar );
+    ASSERT( tensorSize( shape ) == sizeSoFar );
     return index;
 }
 
@@ -65,10 +66,10 @@ TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape s
     auto it2 = shape2.rbegin();
     while ( it1 != shape1.rend() || it2 != shape2.rend() )
     {
-        int d1 = it1 == shape1.rend() ? 1 : *(it1++);
-        int d2 = it2 == shape2.rend() ? 1 : *(it2++);
+        int d1 = it1 == shape1.rend() ? 1 : *( it1++ );
+        int d2 = it2 == shape2.rend() ? 1 : *( it2++ );
 
-        ASSERT ( d1 == d2 || d2 == 1 || d1 == 1 );
+        ASSERT( d1 == d2 || d2 == 1 || d1 == 1 );
 
         int d;
         if ( d1 == d2 || d2 == 1 )
@@ -89,9 +90,11 @@ TensorShape getMultidirectionalBroadcastShape( TensorShape shape1, TensorShape s
  * @brief Broadcasts the provided indices into those into the current tensor shape
  * from indices in the desired broadcast shape.
  */
-TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastShape, TensorIndices broadcastIndices )
+TensorIndices broadcastIndex( TensorShape currentShape,
+                              TensorShape broadcastShape,
+                              TensorIndices broadcastIndices )
 {
-    ASSERT ( broadcastIndices.size() == broadcastShape.size() );
+    ASSERT( broadcastIndices.size() == broadcastShape.size() );
 
     int dimOffset = broadcastShape.size() - currentShape.size();
     TensorIndices result;
@@ -100,7 +103,7 @@ TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastSh
         int cd = currentShape[i - dimOffset];
         int bd = broadcastShape[i];
 
-        ASSERT ( cd == 1 || cd == bd );
+        ASSERT( cd == 1 || cd == bd );
 
         if ( cd == bd )
         {
@@ -108,13 +111,13 @@ TensorIndices broadcastIndex ( TensorShape currentShape, TensorShape broadcastSh
         }
         else
         {
-            result.append ( 0 );
+            result.append( 0 );
         }
     }
     return result;
 }
 
-TensorIndex unsignIndex ( TensorShape shape, SignedTensorIndex signedIndex )
+TensorIndex unsignIndex( TensorShape shape, SignedTensorIndex signedIndex )
 {
     if ( signedIndex >= 0 )
     {
@@ -123,12 +126,14 @@ TensorIndex unsignIndex ( TensorShape shape, SignedTensorIndex signedIndex )
     return shape.size() - static_cast<unsigned int>( -signedIndex );
 }
 
-Padding::Padding ( int padFront, int padBack )
+Padding::Padding( int padFront, int padBack )
     : padFront( padFront )
     , padBack( padBack )
-{}
+{
+}
 
-Padding calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool padFrontPreferentially )
+Padding
+calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool padFrontPreferentially )
 {
     int overrun = inputSize % stride;
     int paddingNeeded;
@@ -144,11 +149,11 @@ Padding calculatePaddingNeeded( int inputSize, int filterSize, int stride, bool 
     const int halfPaddingRem = paddingNeeded % 2;
     if ( padFrontPreferentially )
     {
-        return Padding ( halfPaddingQuot + halfPaddingRem, halfPaddingQuot );
+        return Padding( halfPaddingQuot + halfPaddingRem, halfPaddingQuot );
     }
     else
     {
-        return Padding ( halfPaddingQuot, halfPaddingQuot + halfPaddingRem );
+        return Padding( halfPaddingQuot, halfPaddingQuot + halfPaddingRem );
     }
 }
 
@@ -157,7 +162,7 @@ Permutation reversePermutation( unsigned int size )
     Permutation result;
     for ( unsigned int i = size - 1; i-- > 0; )
     {
-        result.append(i);
+        result.append( i );
     }
     return result;
 }

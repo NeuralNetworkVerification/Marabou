@@ -83,7 +83,7 @@ public:
     unsigned _m;
     void getColumnOfBasis( unsigned column, double *result ) const
     {
-        memcpy( result, _basis + ( _m * column ), sizeof(double) * _m );
+        memcpy( result, _basis + ( _m * column ), sizeof( double ) * _m );
     }
 
     void getColumnOfBasis( unsigned column, SparseUnsortedList *result ) const

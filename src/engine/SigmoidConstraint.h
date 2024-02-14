@@ -41,7 +41,7 @@ public:
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const NonlinearConstraint *state ) override; 
+    void restoreState( const NonlinearConstraint *state ) override;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -77,7 +77,10 @@ public:
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) override;
     bool constraintObsolete() const override;
 
-    bool supportVariableElimination() const override { return true; };
+    bool supportVariableElimination() const override
+    {
+        return true;
+    };
 
     /*
       Get the tightenings entailed by the constraint.

@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "InputQuery.h"
 #include "LeakyReluConstraint.h"
 #include "LinearExpression.h"
@@ -24,10 +22,10 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "context/context.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
-class MockForLeakyReluConstraint
-    : public MockErrno
+class MockForLeakyReluConstraint : public MockErrno
 {
 public:
 };
@@ -40,7 +38,8 @@ class TestLeakyReluConstraint : public LeakyReluConstraint
 public:
     TestLeakyReluConstraint( unsigned b, unsigned f, double slope )
         : LeakyReluConstraint( b, f, slope )
-    {}
+    {
+    }
 
     using LeakyReluConstraint::getPhaseStatus;
 };
@@ -353,8 +352,10 @@ public:
                    isInactiveSplitWithAux( b, f, auxVarInactive, split2 ) );
     }
 
-    bool isActiveSplitWithAux( unsigned b, unsigned f,
-                               unsigned activeAux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isActiveSplitWithAux( unsigned b,
+                               unsigned f,
+                               unsigned activeAux,
+                               List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -394,8 +395,10 @@ public:
         return true;
     }
 
-    bool isInactiveSplitWithAux( unsigned b, unsigned f,
-                               unsigned inactiveAux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isInactiveSplitWithAux( unsigned b,
+                                 unsigned f,
+                                 unsigned inactiveAux,
+                                 List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -635,8 +638,7 @@ public:
         String originalSerialized = originalLRelu.serializeToString();
         LeakyReluConstraint recoveredLRelu( originalSerialized );
 
-        TS_ASSERT_EQUALS( originalLRelu.serializeToString(),
-                          recoveredLRelu.serializeToString() );
+        TS_ASSERT_EQUALS( originalLRelu.serializeToString(), recoveredLRelu.serializeToString() );
 
         TS_ASSERT( !originalLRelu.auxVariablesInUse() );
         TS_ASSERT( !recoveredLRelu.auxVariablesInUse() );
@@ -651,16 +653,15 @@ public:
         originalSerialized = originalLRelu.serializeToString();
         LeakyReluConstraint recoveredLRelu2( originalSerialized );
 
-        TS_ASSERT_EQUALS( originalLRelu.serializeToString(),
-                          recoveredLRelu2.serializeToString() );
+        TS_ASSERT_EQUALS( originalLRelu.serializeToString(), recoveredLRelu2.serializeToString() );
 
         TS_ASSERT( recoveredLRelu2.auxVariablesInUse() );
         TS_ASSERT_EQUALS( originalLRelu.getActiveAux(), recoveredLRelu2.getActiveAux() );
         TS_ASSERT_EQUALS( originalLRelu.getInactiveAux(), recoveredLRelu2.getInactiveAux() );
     }
 
-    LeakyReluConstraint prepareLeakyRelu( unsigned b, unsigned f, unsigned activeAux,
-                                          BoundManager *boundManager )
+    LeakyReluConstraint
+    prepareLeakyRelu( unsigned b, unsigned f, unsigned activeAux, BoundManager *boundManager )
     {
         LeakyReluConstraint lrelu( b, f, slope );
         boundManager->initialize( activeAux + 2 );
@@ -706,7 +707,7 @@ public:
             boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
 
-            lrelu.notifyLowerBound( f, -20 * slope);
+            lrelu.notifyLowerBound( f, -20 * slope );
             boundManager.getTightenings( tightenings );
             TS_ASSERT( tightenings.empty() );
             for ( const auto &t : tightenings )
@@ -854,8 +855,8 @@ public:
 
         List<PiecewiseLinearCaseSplit> splits = lrelu.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2u );
-        TS_ASSERT_EQUALS( splits.front(), lrelu.getCaseSplit( RELU_PHASE_INACTIVE ) ) ;
-        TS_ASSERT_EQUALS( splits.back(), lrelu.getCaseSplit( RELU_PHASE_ACTIVE ) ) ;
+        TS_ASSERT_EQUALS( splits.front(), lrelu.getCaseSplit( RELU_PHASE_INACTIVE ) );
+        TS_ASSERT_EQUALS( splits.back(), lrelu.getCaseSplit( RELU_PHASE_ACTIVE ) );
     }
 
     /*
@@ -870,7 +871,6 @@ public:
         TestLeakyReluConstraint lrelu( b, f, slope );
 
         lrelu.initializeCDOs( &context );
-
 
 
         TS_ASSERT_EQUALS( lrelu.getPhaseStatus(), PHASE_NOT_FIXED );
@@ -899,16 +899,20 @@ public:
         Context context;
         LeakyReluConstraint *lrelu1 = new LeakyReluConstraint( 4, 6, slope );
 
-        TS_ASSERT_EQUALS( lrelu1->getContext(), static_cast<Context*>( static_cast<Context*>( nullptr ) ) );
+        TS_ASSERT_EQUALS( lrelu1->getContext(),
+                          static_cast<Context *>( static_cast<Context *>( nullptr ) ) );
 
-        TS_ASSERT_EQUALS( lrelu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( lrelu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( lrelu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( lrelu1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_EQUALS( lrelu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_EQUALS( lrelu1->getInfeasibleCasesCDList(),
+                          static_cast<CDList<PhaseStatus> *>( nullptr ) );
         TS_ASSERT_THROWS_NOTHING( lrelu1->initializeCDOs( &context ) );
         TS_ASSERT_EQUALS( lrelu1->getContext(), &context );
-        TS_ASSERT_DIFFERS( lrelu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( lrelu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( lrelu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( lrelu1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( lrelu1->getPhaseStatusCDO(),
+                           static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( lrelu1->getInfeasibleCasesCDList(),
+                           static_cast<CDList<PhaseStatus> *>( nullptr ) );
 
         bool active = false;
         TS_ASSERT_THROWS_NOTHING( active = lrelu1->isActive() );
@@ -974,5 +978,4 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( delete lrelu1 );
     }
-
 };

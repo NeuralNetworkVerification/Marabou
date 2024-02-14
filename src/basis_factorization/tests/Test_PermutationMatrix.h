@@ -13,15 +13,15 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
-#include "PermutationMatrix.h"
 #include "List.h"
 #include "MockErrno.h"
+#include "PermutationMatrix.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForPermutationMatrix
 {

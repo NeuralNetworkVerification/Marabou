@@ -14,14 +14,13 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "LinearExpression.h"
+
+#include <cxxtest/TestSuite.h>
 
 class LinearExpressionTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -44,6 +43,6 @@ public:
         assignment[1] = 3;
         assignment[2] = -2;
 
-        TS_ASSERT_EQUALS( expr.evaluate( assignment ), -9.5);
+        TS_ASSERT_EQUALS( expr.evaluate( assignment ), -9.5 );
     }
 };

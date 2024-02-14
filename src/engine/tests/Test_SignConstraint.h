@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
@@ -22,10 +20,10 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "SignConstraint.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
-class MockForSignConstraint
-    : public MockErrno
+class MockForSignConstraint : public MockErrno
 {
 public:
 };
@@ -38,7 +36,8 @@ class TestSignConstraint : public SignConstraint
 public:
     TestSignConstraint( unsigned b, unsigned f )
         : SignConstraint( b, f )
-    {}
+    {
+    }
 
     using PiecewiseLinearConstraint::getPhaseStatus;
 };
@@ -239,16 +238,14 @@ public:
     }
 
     // Return true only if the 2 bounds match and there are no equations
-    bool isPositiveSplit( unsigned b, unsigned f,
-                          List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isPositiveSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
-        if ( ( bound1._variable != b ) ||
-             ( bound1._value != 0.0 ) ||
+        if ( ( bound1._variable != b ) || ( bound1._value != 0.0 ) ||
              ( bound1._type != Tightening::LB ) )
             return false;
 
@@ -258,8 +255,7 @@ public:
         ++bound;
         Tightening bound2 = *bound;
 
-        if ( ( bound2._variable != f ) ||
-             ( bound2._value != 1 ) ||
+        if ( ( bound2._variable != f ) || ( bound2._value != 1 ) ||
              ( bound2._type != Tightening::LB ) )
             return false;
 
@@ -270,16 +266,14 @@ public:
     }
 
     // Return true only if the 2 bounds match and there are no equations
-    bool isNegativeSplit( unsigned b, unsigned f,
-                          List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isNegativeSplit( unsigned b, unsigned f, List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
         auto bound = bounds.begin();
         Tightening bound1 = *bound;
 
-        if ( ( bound1._variable != b ) ||
-             ( bound1._value != 0.0 ) ||
+        if ( ( bound1._variable != b ) || ( bound1._value != 0.0 ) ||
              ( bound1._type != Tightening::UB ) )
             return false;
 
@@ -289,8 +283,7 @@ public:
         ++bound;
         Tightening bound2 = *bound;
 
-        if ( ( bound2._variable != f ) ||
-             ( bound2._value != -1 ) ||
+        if ( ( bound2._variable != f ) || ( bound2._value != -1 ) ||
              ( bound2._type != Tightening::UB ) )
             return false;
 
@@ -347,7 +340,7 @@ public:
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
 
-        sign.registerBoundManager( boundManager  );
+        sign.registerBoundManager( boundManager );
         sign.notifyLowerBound( 1, 0 );
         TS_ASSERT_THROWS_EQUALS( splits = sign.getCaseSplits(),
                                  const MarabouError &e,
@@ -357,7 +350,7 @@ public:
         sign.unregisterAsWatcher( &tableau );
 
         sign = SignConstraint( b, f );
-        sign.registerBoundManager( boundManager  );
+        sign.registerBoundManager( boundManager );
         sign.registerAsWatcher( &tableau );
 
         splits = sign.getCaseSplits();
@@ -378,14 +371,15 @@ public:
         unsigned f = 4;
 
         MockTableau tableau;
-        IBoundManager *boundManager = &tableau.getBoundManager();;
+        IBoundManager *boundManager = &tableau.getBoundManager();
+        ;
         boundManager->initialize( 5 );
 
         SignConstraint sign( b, f );
 
         sign.registerAsWatcher( &tableau );
 
-        sign.registerBoundManager( boundManager  );
+        sign.registerBoundManager( boundManager );
 
         List<PiecewiseLinearCaseSplit> splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2U );
@@ -401,7 +395,7 @@ public:
         sign = SignConstraint( b, f );
 
         sign.registerAsWatcher( &tableau );
-        sign.registerBoundManager( boundManager  );
+        sign.registerBoundManager( boundManager );
         splits = sign.getCaseSplits();
         TS_ASSERT_EQUALS( splits.size(), 2U );
 
@@ -420,7 +414,8 @@ public:
         unsigned f = 4;
 
         MockTableau tableau;
-        IBoundManager *boundManager = &tableau.getBoundManager();;
+        IBoundManager *boundManager = &tableau.getBoundManager();
+        ;
         boundManager->initialize( 5 );
 
         // Upper bounds
@@ -819,7 +814,6 @@ public:
 
             entailedTightenings2.clear();
         }
-
     }
     SignConstraint prepareSign( unsigned b, unsigned f, IBoundManager *boundManager )
     {
@@ -965,7 +959,6 @@ public:
                 tightenings.clear();
             }
         }
-
     }
 
     void test_serialize_and_unserialize()
@@ -980,8 +973,7 @@ public:
         String originalSerialized = originalSign.serializeToString();
         SignConstraint recoveredSign( originalSerialized );
 
-        TS_ASSERT_EQUALS( originalSign.serializeToString(),
-                          recoveredSign.serializeToString() );
+        TS_ASSERT_EQUALS( originalSign.serializeToString(), recoveredSign.serializeToString() );
     }
 
     void test_polarity()
@@ -1048,15 +1040,17 @@ public:
         Context context;
         SignConstraint *sign1 = new SignConstraint( 4, 6 );
 
-        TS_ASSERT_EQUALS( sign1->getContext(), static_cast<Context*>( nullptr ) );
-        TS_ASSERT_EQUALS( sign1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( sign1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( sign1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( sign1->getContext(), static_cast<Context *>( nullptr ) );
+        TS_ASSERT_EQUALS( sign1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_EQUALS( sign1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_EQUALS( sign1->getInfeasibleCasesCDList(),
+                          static_cast<CDList<PhaseStatus> *>( nullptr ) );
         TS_ASSERT_THROWS_NOTHING( sign1->initializeCDOs( &context ) );
         TS_ASSERT_EQUALS( sign1->getContext(), &context );
-        TS_ASSERT_DIFFERS( sign1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( sign1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( sign1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( sign1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( sign1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( sign1->getInfeasibleCasesCDList(),
+                           static_cast<CDList<PhaseStatus> *>( nullptr ) );
 
         bool active = false;
         TS_ASSERT_THROWS_NOTHING( active = sign1->isActive() );
@@ -1132,7 +1126,8 @@ public:
         // The sign is fixed, do not add cost term.
         SignConstraint sign1 = SignConstraint( b, f );
         MockTableau tableau;
-        IBoundManager *boundManager = &tableau.getBoundManager();;
+        IBoundManager *boundManager = &tableau.getBoundManager();
+        ;
         boundManager->initialize( 6 );
         sign1.registerBoundManager( boundManager );
 
@@ -1214,7 +1209,8 @@ public:
 
         SignConstraint sign = SignConstraint( b, f );
         MockTableau tableau;
-        IBoundManager *boundManager = &tableau.getBoundManager();;
+        IBoundManager *boundManager = &tableau.getBoundManager();
+        ;
         sign.registerBoundManager( boundManager );
 
         tableau.setValue( b, 1.5 );
@@ -1222,12 +1218,10 @@ public:
 
         Map<unsigned, double> assignment;
         assignment[0] = -1;
-        TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ),
-                          SIGN_PHASE_NEGATIVE );
+        TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ), SIGN_PHASE_NEGATIVE );
 
         assignment[0] = 15;
-        TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ),
-                          SIGN_PHASE_POSITIVE );
+        TS_ASSERT_EQUALS( sign.getPhaseStatusInAssignment( assignment ), SIGN_PHASE_POSITIVE );
     }
 
     void test_add_auxiliary_equations()
@@ -1248,8 +1242,7 @@ public:
         query.setLowerBound( 6, -1 );
         query.setLowerBound( 6, 1 );
 
-        TS_ASSERT_THROWS_NOTHING( sign.addAuxiliaryEquationsAfterPreprocessing
-                                  ( query ) );
+        TS_ASSERT_THROWS_NOTHING( sign.addAuxiliaryEquationsAfterPreprocessing( query ) );
 
         const List<Equation> &equations( query.getEquations() );
 
@@ -1278,7 +1271,7 @@ public:
 
         TS_ASSERT_EQUALS( eq._scalar, 1 );
 
-        eq = *(++ equations.begin());
+        eq = *( ++equations.begin() );
 
         TS_ASSERT_EQUALS( eq._addends.size(), 3U );
 

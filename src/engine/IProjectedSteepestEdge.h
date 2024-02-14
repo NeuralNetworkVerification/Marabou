@@ -25,7 +25,7 @@ class ITableau;
 class IProjectedSteepestEdgeRule : public EntrySelectionStrategy
 {
 public:
-    virtual ~IProjectedSteepestEdgeRule() {};
+    virtual ~IProjectedSteepestEdgeRule(){};
 
     /*
       Allocate and initialize data structures according to the size of the tableau.

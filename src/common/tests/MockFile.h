@@ -24,23 +24,23 @@
 class MockFile : public IFile
 {
 public:
-	MockFile()
-	{
-		wasCreated = false;
-		wasDiscarded = false;
+    MockFile()
+    {
+        wasCreated = false;
+        wasDiscarded = false;
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
     String lastPath;
 
-	void mockConstructor( const String &path )
-	{
-		TS_ASSERT( !wasCreated );
+    void mockConstructor( const String &path )
+    {
+        TS_ASSERT( !wasCreated );
         wasCreated = true;
 
         lastPath = path;
-	}
+    }
 
     void mockDestructor()
     {
@@ -75,7 +75,7 @@ public:
         return result;
     }
 
-    void read( HeapData &/* buffer */, unsigned /* maxReadSize */ )
+    void read( HeapData & /* buffer */, unsigned /* maxReadSize */ )
     {
     }
 

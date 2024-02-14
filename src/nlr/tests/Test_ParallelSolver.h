@@ -13,11 +13,12 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
 #include "GurobiWrapper.h"
 #include "IterativePropagator.h"
 #include "NetworkLevelReasoner.h"
 #include "ParallelSolver.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForNetworkLevelReasoner
 {
@@ -27,7 +28,6 @@ public:
 class NetworkLevelReasonerTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -41,9 +41,9 @@ public:
         NLR::NetworkLevelReasoner nlr;
         NLR::IterativePropagator mock = NLR::IterativePropagator( &nlr );
         unsigned numberOfWorkers = 4;
-        NLR::ParallelSolver::SolverQueue solvers ( numberOfWorkers );
+        NLR::ParallelSolver::SolverQueue solvers( numberOfWorkers );
         GurobiWrapper *gurobi = new GurobiWrapper();
-        TS_ASSERT_THROWS_NOTHING( mock.enqueueSolver( solvers, gurobi) );
+        TS_ASSERT_THROWS_NOTHING( mock.enqueueSolver( solvers, gurobi ) );
         TS_ASSERT( !solvers.empty() );
         GurobiWrapper *gurobiPtr = NULL;
         TS_ASSERT_THROWS_NOTHING( solvers.pop( gurobiPtr ) );
@@ -56,11 +56,11 @@ public:
         NLR::NetworkLevelReasoner nlr;
         NLR::IterativePropagator mock = NLR::IterativePropagator( &nlr );
         unsigned numberOfWorkers = 4;
-        NLR::ParallelSolver::SolverQueue solvers ( numberOfWorkers );
+        NLR::ParallelSolver::SolverQueue solvers( numberOfWorkers );
         for ( unsigned i = 0; i < numberOfWorkers; ++i )
         {
             GurobiWrapper *gurobi = new GurobiWrapper();
-            TS_ASSERT_THROWS_NOTHING( mock.enqueueSolver( solvers, gurobi) );
+            TS_ASSERT_THROWS_NOTHING( mock.enqueueSolver( solvers, gurobi ) );
         }
         TS_ASSERT( !solvers.empty() );
         TS_ASSERT_THROWS_NOTHING( mock.clearSolverQueue( solvers ) );

@@ -21,7 +21,9 @@
 class BasisFactorizationFactory
 {
 public:
-    static IBasisFactorization *createBasisFactorization( unsigned basisSize, const IBasisFactorization::BasisColumnOracle &basisColumnOracle );
+    static IBasisFactorization *
+    createBasisFactorization( unsigned basisSize,
+                              const IBasisFactorization::BasisColumnOracle &basisColumnOracle );
 };
 
 #endif // __BasisFactorizationFactory_h__

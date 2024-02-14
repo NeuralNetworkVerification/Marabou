@@ -17,12 +17,12 @@
 #define __SmtCore_h__
 
 #include "DivideStrategy.h"
+#include "PLConstraintScoreTracker.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
-#include "PLConstraintScoreTracker.h"
+#include "SmtStackEntry.h"
 #include "SmtState.h"
 #include "Stack.h"
-#include "SmtStackEntry.h"
 #include "Statistics.h"
 #include "context/context.h"
 
@@ -55,8 +55,7 @@ public:
     /*
       Initialize the score tracker with the given list of pl constraints.
     */
-    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *>
-                                         &plConstraints );
+    void initializeScoreTrackerIfNeeded( const List<PiecewiseLinearConstraint *> &plConstraints );
 
     /*
       Inform the SMT core that a SoI phase pattern proposal is rejected.
@@ -66,8 +65,7 @@ public:
     /*
       Update the score of the constraint with the given score in the costTracker.
     */
-    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint,
-                                         double score )
+    inline void updatePLConstraintScore( PiecewiseLinearConstraint *constraint, double score )
     {
         ASSERT( _scoreTracker != nullptr );
         _scoreTracker->updateScore( constraint, score );
@@ -90,7 +88,7 @@ public:
       Get the number of times a specific PL constraint has been reported as
       violated.
     */
-    unsigned getViolationCounts( PiecewiseLinearConstraint* constraint ) const;
+    unsigned getViolationCounts( PiecewiseLinearConstraint *constraint ) const;
 
     /*
       Reset all reported violation counts and the number of rejected SoI
@@ -151,7 +149,8 @@ public:
       Have the SMT core choose, among a set of violated PL constraints, which
       constraint should be repaired (without splitting)
     */
-    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
+    PiecewiseLinearConstraint *chooseViolatedConstraintForFixing(
+        List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const;
 
     inline void setBranchingHeuristics( DivideStrategy strategy )
     {

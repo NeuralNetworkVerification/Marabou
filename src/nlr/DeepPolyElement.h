@@ -17,9 +17,10 @@
 #define __DeepPolyElement_h__
 
 #include "Layer.h"
-#include "Map.h"
 #include "MStringf.h"
+#include "Map.h"
 #include "NLRError.h"
+
 #include <climits>
 
 namespace NLR {
@@ -32,19 +33,21 @@ public:
 
     // execute the abstract layer based on the abstract layers topologically
     // before it.
-    virtual void execute( const Map<unsigned, DeepPolyElement *>
-                          &deepPolyElementsBefore ) = 0;
+    virtual void execute( const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore ) = 0;
 
     /*
       Given the symbolic bounds of some layer Y (of size layerSize) in terms of
       this layer, add (to the last four arugment) the symbolic bounds of layer
       Y in terms of an immediate predecessor of this layer.
     */
-    virtual void symbolicBoundInTermsOfPredecessor
-    ( const double *symbolicLb, const double*symbolicUb, double
-      *symbolicLowerBias, double *symbolicUpperBias, double
-      *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-      unsigned targetLayerSize, DeepPolyElement *predecessor ) = 0;
+    virtual void symbolicBoundInTermsOfPredecessor( const double *symbolicLb,
+                                                    const double *symbolicUb,
+                                                    double *symbolicLowerBias,
+                                                    double *symbolicUpperBias,
+                                                    double *symbolicLbInTermsOfPredecessor,
+                                                    double *symbolicUbInTermsOfPredecessor,
+                                                    unsigned targetLayerSize,
+                                                    DeepPolyElement *predecessor ) = 0;
 
     /*
       Returns whether this abstract element has a predecessor.
@@ -66,8 +69,10 @@ public:
     double getLowerBound( unsigned index ) const;
     double getUpperBound( unsigned index ) const;
 
-    void setWorkingMemory( double *work1SymbolicLb, double *work1SymbolicUb,
-                           double *work2SymbolicLb, double *work2SymbolicUb,
+    void setWorkingMemory( double *work1SymbolicLb,
+                           double *work1SymbolicUb,
+                           double *work2SymbolicLb,
+                           double *work2SymbolicUb,
                            double *workSymbolicLowerBias,
                            double *workSymbolicUpperBias );
 
@@ -91,12 +96,12 @@ protected:
     double *_lb;
     double *_ub;
 
-    double * _work1SymbolicLb;
-    double * _work1SymbolicUb;
-    double * _work2SymbolicLb;
-    double * _work2SymbolicUb;
-    double * _workSymbolicLowerBias;
-    double * _workSymbolicUpperBias;
+    double *_work1SymbolicLb;
+    double *_work1SymbolicUb;
+    double *_work2SymbolicLb;
+    double *_work2SymbolicUb;
+    double *_workSymbolicLowerBias;
+    double *_workSymbolicUpperBias;
 
     void allocateMemory();
     void freeMemoryIfNeeded();

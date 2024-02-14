@@ -14,14 +14,14 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MockErrno.h"
 #include "Set.h"
 
-class MockForSet :
-    public MockErrno,
-    public T::Base_rand
+#include <cxxtest/TestSuite.h>
+
+class MockForSet
+    : public MockErrno
+    , public T::Base_rand
 {
 public:
     MockForSet()
@@ -56,7 +56,7 @@ public:
 
     void test_initializer_list()
     {
-        Set<int> set { 1, 2, 3 };
+        Set<int> set{ 1, 2, 3 };
 
         TS_ASSERT_EQUALS( set.size(), 3U );
 
@@ -292,7 +292,7 @@ public:
 
         TS_ASSERT( !Set<int>::containedIn( a, b ) );
 
-        b.insert( 1 ) ;
+        b.insert( 1 );
 
         TS_ASSERT( Set<int>::containedIn( a, b ) );
 

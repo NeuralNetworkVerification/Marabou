@@ -36,7 +36,9 @@ public:
 
     static bool exists( const String &path );
 
-    virtual ~IFile() {}
+    virtual ~IFile()
+    {
+    }
 };
 
 #endif // __IFile_h__

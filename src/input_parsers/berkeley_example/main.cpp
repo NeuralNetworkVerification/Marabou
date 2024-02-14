@@ -13,15 +13,15 @@
 
  **/
 
-#include <cstdio>
-
 #include "BerkeleyParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
-#include "Preprocessor.h"
 #include "MarabouError.h"
+#include "Preprocessor.h"
+
+#include <cstdio>
 
 int main()
 {

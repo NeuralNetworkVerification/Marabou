@@ -13,7 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
@@ -23,10 +22,11 @@
 #include "Preprocessor.h"
 #include "QueryLoader.h"
 
+#include <cxxtest/TestSuite.h>
+
 class wsEliminationTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -38,11 +38,11 @@ public:
     void test_nlr_to_query_and_back_1()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery
-            ( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        InputQuery inputQuery =
+            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
 
         // Fix the input
-        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
         {
             double pixel = 0.5;
 
@@ -71,11 +71,11 @@ public:
     void test_nlr_to_query_and_back_2()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery
-            ( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        InputQuery inputQuery =
+            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
 
         // Fix the input
-        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
         {
             double pixel = 0.5;
 
@@ -104,11 +104,11 @@ public:
     void test_nlr_to_query_and_back_3()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery
-            ( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
+        InputQuery inputQuery =
+            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_original" );
 
         // Fix the input
-        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
         {
             double pixel = 0.123;
 
@@ -137,11 +137,11 @@ public:
     void test_nlr_to_query_and_back_4()
     {
         Engine engine;
-        InputQuery inputQuery = QueryLoader::loadQuery
-            ( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
+        InputQuery inputQuery =
+            QueryLoader::loadQuery( RESOURCES_DIR "/bnn_queries/smallBNN_parsed" );
 
         // Fix the input
-        for ( unsigned inputVariable = 0; inputVariable  < 784; ++ inputVariable )
+        for ( unsigned inputVariable = 0; inputVariable < 784; ++inputVariable )
         {
             double pixel = 0.123;
 

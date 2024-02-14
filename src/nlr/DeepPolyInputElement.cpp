@@ -13,8 +13,9 @@
 
 **/
 
-#include "Debug.h"
 #include "DeepPolyInputElement.h"
+
+#include "Debug.h"
 #include "FloatUtils.h"
 #include "NLRError.h"
 
@@ -46,9 +47,14 @@ void DeepPolyInputElement::execute( const Map<unsigned, DeepPolyElement *> & )
     log( "Executing - done" );
 }
 
-void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor
-( const double *, const double *, double *, double *, double *, double *,
-  unsigned, DeepPolyElement * )
+void DeepPolyInputElement::symbolicBoundInTermsOfPredecessor( const double *,
+                                                              const double *,
+                                                              double *,
+                                                              double *,
+                                                              double *,
+                                                              double *,
+                                                              unsigned,
+                                                              DeepPolyElement * )
 {
     // Input layer should not have a predecessor
     ASSERT( false );

@@ -1,4 +1,4 @@
- /*********************                                                        */
+/*********************                                                        */
 /*! \file DeepPolySigmoidElement.cpp
  ** \verbatim
  ** Top contributors (to current version):
@@ -14,6 +14,7 @@
 **/
 
 #include "DeepPolySigmoidElement.h"
+
 #include "FloatUtils.h"
 #include "SigmoidConstraint.h"
 
@@ -31,8 +32,8 @@ DeepPolySigmoidElement::~DeepPolySigmoidElement()
     freeMemoryIfNeeded();
 }
 
-void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
-                               &deepPolyElementsBefore )
+void DeepPolySigmoidElement::execute(
+    const Map<unsigned, DeepPolyElement *> &deepPolyElementsBefore )
 {
     log( "Executing..." );
     ASSERT( hasPredecessor() );
@@ -43,12 +44,9 @@ void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
     for ( unsigned i = 0; i < _size; ++i )
     {
         NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
-        DeepPolyElement *predecessor =
-            deepPolyElementsBefore[sourceIndex._layer];
-        double sourceLb = predecessor->getLowerBound
-          ( sourceIndex._neuron );
-        double sourceUb = predecessor->getUpperBound
-          ( sourceIndex._neuron );
+        DeepPolyElement *predecessor = deepPolyElementsBefore[sourceIndex._layer];
+        double sourceLb = predecessor->getLowerBound( sourceIndex._neuron );
+        double sourceUb = predecessor->getUpperBound( sourceIndex._neuron );
 
         _ub[i] = SigmoidConstraint::sigmoid( sourceUb );
         _lb[i] = SigmoidConstraint::sigmoid( sourceLb );
@@ -75,7 +73,8 @@ void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
             else
             {
                 _symbolicLb[i] = lambdaPrime;
-                _symbolicLowerBias[i] = SigmoidConstraint::sigmoid( sourceLb ) - lambdaPrime * sourceLb;
+                _symbolicLowerBias[i] =
+                    SigmoidConstraint::sigmoid( sourceLb ) - lambdaPrime * sourceLb;
             }
 
             // update upper bound
@@ -87,23 +86,31 @@ void DeepPolySigmoidElement::execute( const Map<unsigned, DeepPolyElement *>
             else
             {
                 _symbolicUb[i] = lambdaPrime;
-                _symbolicUpperBias[i] = SigmoidConstraint::sigmoid( sourceUb ) - lambdaPrime * sourceUb;
+                _symbolicUpperBias[i] =
+                    SigmoidConstraint::sigmoid( sourceUb ) - lambdaPrime * sourceUb;
             }
         }
 
         log( Stringf( "Neuron%u LB: %f b + %f, UB: %f b + %f",
-                      i, _symbolicLb[i], _symbolicLowerBias[i],
-                      _symbolicUb[i], _symbolicUpperBias[i] ) );
+                      i,
+                      _symbolicLb[i],
+                      _symbolicLowerBias[i],
+                      _symbolicUb[i],
+                      _symbolicUpperBias[i] ) );
         log( Stringf( "Neuron%u LB: %f, UB: %f", i, _lb[i], _ub[i] ) );
     }
     log( "Executing - done" );
 }
 
-void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor
-( const double *symbolicLb, const double*symbolicUb, double
-  *symbolicLowerBias, double *symbolicUpperBias, double
-  *symbolicLbInTermsOfPredecessor, double *symbolicUbInTermsOfPredecessor,
-  unsigned targetLayerSize, DeepPolyElement *predecessor )
+void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor(
+    const double *symbolicLb,
+    const double *symbolicUb,
+    double *symbolicLowerBias,
+    double *symbolicUpperBias,
+    double *symbolicLbInTermsOfPredecessor,
+    double *symbolicUbInTermsOfPredecessor,
+    unsigned targetLayerSize,
+    DeepPolyElement *predecessor )
 {
     log( Stringf( "Computing symbolic bounds with respect to layer %u...",
                   predecessor->getLayerIndex() ) );
@@ -115,12 +122,9 @@ void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor
     */
     for ( unsigned i = 0; i < _size; ++i )
     {
-        NeuronIndex sourceIndex = *( _layer->
-                                     getActivationSources( i ).begin() );
+        NeuronIndex sourceIndex = *( _layer->getActivationSources( i ).begin() );
         unsigned sourceNeuronIndex = sourceIndex._neuron;
-        DEBUG({
-                ASSERT( predecessor->getLayerIndex() == sourceIndex._layer );
-            });
+        DEBUG( { ASSERT( predecessor->getLayerIndex() == sourceIndex._layer ); } );
 
         /*
           Take symbolic upper bound as an example.
@@ -154,7 +158,8 @@ void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffLb;
                 symbolicLowerBias[j] += weightLb * lowerBias;
-            } else
+            }
+            else
             {
                 symbolicLbInTermsOfPredecessor[newIndex] += weightLb * coeffUb;
                 symbolicLowerBias[j] += weightLb * upperBias;
@@ -166,7 +171,8 @@ void DeepPolySigmoidElement::symbolicBoundInTermsOfPredecessor
             {
                 symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffUb;
                 symbolicUpperBias[j] += weightUb * upperBias;
-            } else
+            }
+            else
             {
                 symbolicUbInTermsOfPredecessor[newIndex] += weightUb * coeffLb;
                 symbolicUpperBias[j] += weightUb * lowerBias;

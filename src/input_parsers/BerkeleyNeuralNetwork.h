@@ -18,9 +18,9 @@
 
 #include "File.h"
 #include "MString.h"
+#include "Map.h"
 #include "Set.h"
 #include "Vector.h"
-#include "Map.h"
 
 #include <cassert>
 #include <iomanip>
@@ -73,8 +73,8 @@ private:
     /*
       Maps from b to f variables, and vice-versa.
     */
-    Map <unsigned, unsigned> _bToF;
-    Map <unsigned, unsigned> _fToB;
+    Map<unsigned, unsigned> _bToF;
+    Map<unsigned, unsigned> _fToB;
 
     /*
       All equations extracted from the file.

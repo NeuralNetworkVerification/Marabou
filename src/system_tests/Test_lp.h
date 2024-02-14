@@ -13,17 +13,16 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "LinearExpression.h"
 
+#include <cxxtest/TestSuite.h>
+
 class LpTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -56,21 +55,21 @@ public:
         equation2.setScalar( 0.5 );
         inputQuery.addEquation( equation2 );
 
-        Equation equation3( Equation:: GE );
+        Equation equation3( Equation::GE );
         equation3.addAddend( 1, 1 );
         equation3.addAddend( -1, 2 );
         equation3.setScalar( 0 );
         inputQuery.addEquation( equation3 );
 
-        Equation equation4( Equation:: GE );
+        Equation equation4( Equation::GE );
         equation4.addAddend( 1, 1 );
         equation4.addAddend( -1, 3 );
         equation4.setScalar( 0 );
         inputQuery.addEquation( equation4 );
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING ( engine.processInputQuery( inputQuery ));
-        TS_ASSERT_THROWS_NOTHING ( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         // Cost function: x0 - x1
         Map<unsigned, double> heuristicCost;
@@ -82,8 +81,7 @@ public:
 
         engine.extractSolution( inputQuery );
 
-        TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( heuristicCost ), -0.5 ) );
+        TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost( heuristicCost ), -0.5 ) );
 
         heuristicCost.clear();
         heuristicCost[0] = -2;
@@ -95,8 +93,7 @@ public:
 
         engine.extractSolution( inputQuery );
 
-        TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( cost ), -0.25 ) );
+        TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost( cost ), -0.25 ) );
 
         heuristicCost.clear();
         heuristicCost[1] = -2;
@@ -108,8 +105,7 @@ public:
 
         engine.extractSolution( inputQuery );
 
-        TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost
-                                         ( cost ), -6 ) );
+        TS_ASSERT( FloatUtils::areEqual( engine.computeHeuristicCost( cost ), -6 ) );
     }
 
     void test_fesiablbe()
@@ -138,8 +134,8 @@ public:
 
 
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING ( engine.processInputQuery( inputQuery ));
-        TS_ASSERT_THROWS_NOTHING ( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 
@@ -152,24 +148,23 @@ public:
         double value2 = inputQuery.getSolutionValue( 2 );
         double value3 = inputQuery.getSolutionValue( 3 );
 
-        value += 1  * value0;
-        value += 2  * value1;
+        value += 1 * value0;
+        value += 2 * value1;
         value += -1 * value2;
-        value += 1  * value3;
+        value += 1 * value3;
 
         TS_ASSERT_EQUALS( value, 11 );
 
-        TS_ASSERT( value0 >=  0 );
+        TS_ASSERT( value0 >= 0 );
         TS_ASSERT( value0 <= 2 );
         TS_ASSERT( value1 >= -3 );
         TS_ASSERT( value1 <= 3 );
         TS_ASSERT( value2 >= 4 );
         TS_ASSERT( value2 <= 6 );
         TS_ASSERT( value3 >= 0 );
-
     }
 
-    void test_infesiable() 
+    void test_infesiable()
     {
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 7 );
@@ -217,13 +212,13 @@ public:
         inputQuery.addEquation( equation3 );
 
         Engine engine;
-        bool result = engine.processInputQuery( inputQuery ) ;
+        bool result = engine.processInputQuery( inputQuery );
         if ( !result )
         {
             // got UNSAT from the preprocessing
-            TS_ASSERT(1);
+            TS_ASSERT( 1 );
         }
-        else 
+        else
         {
             result = engine.solve();
             TS_ASSERT( !result );
