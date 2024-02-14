@@ -297,6 +297,38 @@ def test_errors():
         network = Marabou.read_onnx(filename, inputNames = ['X'], outputNames = ['11'])
         network.evaluateWithoutMarabou([])
 
+def test_errors_do_not_reindex():
+    """
+    This function tests that the ONNX parser catches errors when reindex flag is on.
+
+    NOTE: we plan to remove the reindexOuputVars feature in the long run.
+    This test can be removed at that point.
+    """
+    filename =  "conv_mp1.onnx"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
+
+    # Test that we catch if inputNames or outputNames are not in the model
+    with pytest.raises(RuntimeError, match=r"Input.*not found"):
+        Marabou.read_onnx(filename, inputNames = ['BAD_NAME'], outputNames = ['Y'], reindexOutputVars=True)
+    with pytest.raises(RuntimeError, match=r"Output.*not found"):
+        Marabou.read_onnx(filename, outputNames = ['BAD_NAME'])
+
+    # The layer "12" is in the graph, but refers to a constant, so it should not be used
+    # as the network input or output.
+    with pytest.raises(RuntimeError, match=r"input variables could not be found"):
+        Marabou.read_onnx(filename, inputNames = ['12'], outputNames = ['Y'], reindexOutputVars=True)
+    with pytest.raises(RuntimeError, match=r"Output variable.*is a constant"):
+        Marabou.read_onnx(filename, outputNames = ['12'])
+
+    # Evaluating with ONNX instead of Marabou gives errors when using a layer that is not already
+    # defined as part of the model inputs or outputs.
+    with pytest.raises(NotImplementedError, match=r"ONNX does not allow.*as inputs"):
+        network = Marabou.read_onnx(filename, inputNames = ['11'], outputNames = ['Y'], reindexOutputVars=True)
+        network.evaluateWithoutMarabou([])
+    with pytest.raises(NotImplementedError, match=r"ONNX does not allow.*the output"):
+        network = Marabou.read_onnx(filename, inputNames = ['X'], outputNames = ['11'], reindexOutputVars=True)
+        network.evaluateWithoutMarabou([])
+
 def evaluateFile(filename, inputNames = None, outputNames = None, testInputs = None, numPoints = NUM_RAND):
     """
     Load network and evaluate testInputs with and without Marabou

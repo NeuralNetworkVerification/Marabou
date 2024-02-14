@@ -38,7 +38,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=False):
         super().__init__()
         self.readONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
@@ -69,7 +69,7 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
         self.outputNames = None
         self.graph = None
 
-    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=True):
+    def readONNX(self, filename, inputNames, outputNames, reindexOutputVars=False):
         """Read an ONNX file and create a MarabouNetworkONNX object
 
         Args:
@@ -120,6 +120,9 @@ class MarabouNetworkONNX(MarabouNetwork.MarabouNetwork):
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
         else:
+            for outputName in self.outputNames:
+                if outputName in self.constantMap:
+                    raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
             self.outputVars = [self.varMap[outputName] for outputName in self.outputNames]
 
     def splitNetworkAtNode(self, nodeName, networkNamePreSplit=None,
