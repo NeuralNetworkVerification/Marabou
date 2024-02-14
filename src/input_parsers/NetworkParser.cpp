@@ -61,6 +61,11 @@ void NetworkParser::addRelu( Variable inputVar, Variable outputVar )
     setLowerBound( outputVar, 0.0f );
 }
 
+void NetworkParser::addLeakyRelu( Variable inputVar, Variable outputVar, float alpha )
+{
+    _leakyReluList.append( new LeakyReluConstraint( inputVar, outputVar, alpha ) );
+}
+
 void NetworkParser::addSigmoid( Variable inputVar, Variable outputVar )
 {
     _sigmoidList.append( new SigmoidConstraint( inputVar, outputVar ) );
@@ -132,40 +137,59 @@ void NetworkParser::getMarabouQuery( InputQuery& query )
 
     for ( ReluConstraint* constraintPtr : _reluList )
     {
-        ReluConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            ReluConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
+        query.addPiecewiseLinearConstraint( constraintPtr );
+    }
+
+    for ( LeakyReluConstraint* constraintPtr : _leakyReluList )
+    {
+        DEBUG({
+            LeakyReluConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( SigmoidConstraint* constraintPtr : _sigmoidList )
     {
-        SigmoidConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            SigmoidConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addNonlinearConstraint( constraintPtr );
     }
 
     for ( MaxConstraint* constraintPtr : _maxList )
     {
-        MaxConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getF() < _numVars );
-        for ( [[maybe_unused]] Variable var : constraint.getElements() )
-        {
-            ASSERT ( var < _numVars );
-        }
+        DEBUG({
+            MaxConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getF() < _numVars );
+            for ( [[maybe_unused]] Variable var : constraint.getElements() )
+            {
+                ASSERT ( var < _numVars );
+            }
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( AbsoluteValueConstraint* constraintPtr : _absList )
     {
-        AbsoluteValueConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            AbsoluteValueConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 
     for ( SignConstraint* constraintPtr : _signList )
     {
-        SignConstraint constraint = *constraintPtr;
-        ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        DEBUG({
+            SignConstraint constraint = *constraintPtr;
+            ASSERT( constraint.getB() < _numVars && constraint.getF() < _numVars );
+        });
         query.addPiecewiseLinearConstraint( constraintPtr );
     }
 

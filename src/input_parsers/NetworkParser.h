@@ -25,6 +25,7 @@
 #include "Equation.h"
 #include "InputQuery.h"
 #include "ReluConstraint.h"
+#include "LeakyReluConstraint.h"
 #include "DisjunctionConstraint.h"
 #include "MaxConstraint.h"
 #include "PiecewiseLinearConstraint.h"
@@ -45,6 +46,7 @@ protected:
 
     Vector<Equation> _equationList;
     List<ReluConstraint*> _reluList;
+    List<LeakyReluConstraint*> _leakyReluList;
     List<SigmoidConstraint*> _sigmoidList;
     List<MaxConstraint*> _maxList;
     List<AbsoluteValueConstraint*> _absList;
@@ -53,12 +55,12 @@ protected:
     Map<Variable,float> _upperBounds;
 
     NetworkParser();
-    void initNetwork();
 
     void addEquation( Equation &eq );
     void setLowerBound( Variable var, float value );
     void setUpperBound( Variable var, float value );
     void addRelu( Variable var1, Variable var2 );
+    void addLeakyRelu( Variable var1, Variable var2, float alpha );
     void addSigmoid( Variable var1, Variable var2 );
     void addTanh( Variable var1, Variable var2 );
     void addSignConstraint( Variable var1, Variable var2 );

@@ -826,6 +826,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         reluEquations( node, makeEquations );
     }
+    else if ( strcmp( nodeType, "LeakyRelu" ) == 0 )
+    {
+        leakyReluEquations( node, makeEquations );
+    }
     else if ( strcmp( nodeType, "MatMul" ) == 0 )
     {
         matMulEquations( node, makeEquations );
@@ -1586,6 +1590,37 @@ void OnnxParser::reluEquations( onnx::NodeProto& node, bool makeEquations )
         int inputVar = inputVars[i];
         int outputVar = outputVars[i];
         addRelu( inputVar, outputVar );
+    }
+}
+
+/**
+ * @brief Function to generate equations corresponding to leaky pointwise Relu
+ * Implements https://github.com/onnx/onnx/blob/main/docs/Operators.md#LeakyRelu
+ *
+ * @param node ONNX node representing the LeakyRelu operation
+ * @param makeEquations True if we need to create new variables and add new LeakyRelus
+ */
+void OnnxParser::leakyReluEquations( onnx::NodeProto& node, bool makeEquations )
+{
+    String outputNodeName = node.output()[0];
+    String inputNodeName = node.input()[0];
+
+    _shapeMap[outputNodeName] = _shapeMap[inputNodeName];
+    if ( !makeEquations )
+        return;
+
+    // Get alpha attribute
+    float alpha = getFloatAttribute( node, "alpha", 0.01 );
+
+    // Get variables
+    Vector<Variable> inputVars = _varMap[inputNodeName];
+    Vector<Variable> outputVars = makeNodeVariables( outputNodeName, false );
+    ASSERT ( inputVars.size() == outputVars.size() );
+
+    // Generate equations
+    for ( PackedTensorIndices i = 0; i < inputVars.size(); i++ )
+    {
+        addLeakyRelu( inputVars[i], outputVars[i], alpha );
     }
 }
 

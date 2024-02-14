@@ -265,6 +265,19 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
         run_test( "relu", input, output );
     }
 
+    void test_leakyRelu()
+    {
+        Vector<double> input = {
+            -2.0, 0.0,
+            0.1, 3.0
+        };
+        Vector<double> output = {
+            -0.1, 0,
+            0.1, 3
+        };
+        run_test( "leakyRelu", input, output );
+    }
+
     void test_add()
     {
         Vector<double> input = {
