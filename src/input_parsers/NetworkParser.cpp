@@ -58,11 +58,38 @@ void NetworkParser::setUpperBound( Variable var, float value )
 void NetworkParser::addRelu( Variable inputVar, Variable outputVar )
 {
     _reluList.append( new ReluConstraint( inputVar, outputVar ) );
+    setLowerBound( outputVar, 0.0f );
 }
 
 void NetworkParser::addSigmoid( Variable inputVar, Variable outputVar )
 {
     _sigmoidList.append( new SigmoidConstraint( inputVar, outputVar ) );
+    setLowerBound( outputVar, 0.0 );
+    setUpperBound( outputVar, 1.0 );
+}
+
+void NetworkParser::addTanh( Variable inputVar, Variable outputVar )
+{
+    // Uses the identity `tanh(x) = 2 * sigmoid(2x) - 1` to implement
+    // it terms of a sigmoid constraint.
+    Variable firstAffine = getNewVariable();
+    Variable sigmoidOutput = getNewVariable();
+
+    Equation e1;
+    e1.addAddend( 2.0, inputVar );
+    e1.addAddend( -1.0, firstAffine );
+    e1.setScalar( 0.0 );
+
+    Equation e2;
+    e2.addAddend( 2.0, sigmoidOutput );
+    e2.addAddend( -1.0, outputVar );
+    e2.setScalar( 1.0 );
+
+    addEquation( e1 );
+    addSigmoid( firstAffine, sigmoidOutput );
+    addEquation( e2 );
+    setLowerBound( outputVar, -1.0 );
+    setUpperBound( outputVar, 1.0 );
 }
 
 void NetworkParser::addMaxConstraint( Variable var, Set<Variable> elements )
