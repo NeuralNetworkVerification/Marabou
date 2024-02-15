@@ -35,10 +35,8 @@ CDSmtCore::CDSmtCore( IEngine *engine, Context &ctx )
     , _engine( engine )
     , _needToSplit( false )
     , _constraintForSplitting( NULL )
-    , _constraintViolationThreshold
-      ( Options::CONSTRAINT_VIOLATION_THRESHOLD )
-    , _deepSoIRejectionThreshold( Options::get()->getInt
-                                  ( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
+    , _constraintViolationThreshold( Options::CONSTRAINT_VIOLATION_THRESHOLD )
+    , _deepSoIRejectionThreshold( Options::get()->getInt( Options::DEEP_SOI_REJECTION_THRESHOLD ) )
     , _branchingHeuristic( Options::get()->getDivideStrategy() )
     , _scoreTracker( nullptr )
     , _numRejectedPhasePatternProposal( 0 )
@@ -58,12 +56,11 @@ void CDSmtCore::reportViolatedConstraint( PiecewiseLinearConstraint *constraint 
 
     ++_constraintToViolationCount[constraint];
 
-    if ( _constraintToViolationCount[constraint] >=
-         _constraintViolationThreshold )
+    if ( _constraintToViolationCount[constraint] >= _constraintViolationThreshold )
     {
         _needToSplit = true;
-        if ( GlobalConfiguration::SPLITTING_HEURISTICS ==
-             DivideStrategy::ReLUViolation || !pickSplitPLConstraint() )
+        if ( GlobalConfiguration::SPLITTING_HEURISTICS == DivideStrategy::ReLUViolation ||
+             !pickSplitPLConstraint() )
             // If pickSplitConstraint failed to pick one, use the native
             // relu-violation based splitting heuristic.
             _constraintForSplitting = constraint;
@@ -79,33 +76,30 @@ unsigned CDSmtCore::getViolationCounts( PiecewiseLinearConstraint *constraint ) 
     return _constraintToViolationCount[constraint];
 }
 
-void CDSmtCore::initializeScoreTrackerIfNeeded( const
-                                                List<PiecewiseLinearConstraint *>
-                                                &plConstraints )
+void CDSmtCore::initializeScoreTrackerIfNeeded(
+    const List<PiecewiseLinearConstraint *> &plConstraints )
 {
     if ( GlobalConfiguration::USE_DEEPSOI_LOCAL_SEARCH )
-        {
-            _scoreTracker = std::unique_ptr<PseudoImpactTracker>
-                ( new PseudoImpactTracker() );
-            _scoreTracker->initialize( plConstraints );
+    {
+        _scoreTracker = std::unique_ptr<PseudoImpactTracker>( new PseudoImpactTracker() );
+        _scoreTracker->initialize( plConstraints );
 
-            SMT_LOG( "\tTracking Pseudo Impact..." );
-        }
+        SMT_LOG( "\tTracking Pseudo Impact..." );
+    }
 }
 
 void CDSmtCore::reportRejectedPhasePatternProposal()
 {
     ++_numRejectedPhasePatternProposal;
 
-    if ( _numRejectedPhasePatternProposal >=
-         _deepSoIRejectionThreshold )
-        {
-            _needToSplit = true;
-            if ( !pickSplitPLConstraint() )
-                // If pickSplitConstraint failed to pick one, use the native
-                // relu-violation based splitting heuristic.
-                _constraintForSplitting = _scoreTracker->topUnfixed();
-        }
+    if ( _numRejectedPhasePatternProposal >= _deepSoIRejectionThreshold )
+    {
+        _needToSplit = true;
+        if ( !pickSplitPLConstraint() )
+            // If pickSplitConstraint failed to pick one, use the native
+            // relu-violation based splitting heuristic.
+            _constraintForSplitting = _scoreTracker->topUnfixed();
+    }
 }
 
 bool CDSmtCore::needToSplit() const
@@ -113,7 +107,7 @@ bool CDSmtCore::needToSplit() const
     return _needToSplit;
 }
 
-void CDSmtCore::pushDecision( PiecewiseLinearConstraint *constraint,  PhaseStatus decision )
+void CDSmtCore::pushDecision( PiecewiseLinearConstraint *constraint, PhaseStatus decision )
 {
     SMT_LOG( Stringf( "Decision @ %d )", _context.getLevel() + 1 ).ascii() );
     TrailEntry te( constraint, decision );
@@ -188,15 +182,13 @@ void CDSmtCore::decideSplit( PiecewiseLinearConstraint *constraint )
     if ( _statistics )
     {
         unsigned level = _context.getLevel();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
-                                           level );
-        if ( level > _statistics->getUnsignedAttribute
-             ( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
-                                               level );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
 
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
     SMT_LOG( "Performing a ReLU split - DONE" );
 }
@@ -209,7 +201,7 @@ unsigned CDSmtCore::getDecisionLevel() const
 
 bool CDSmtCore::popDecisionLevel( TrailEntry &lastDecision )
 {
-    //ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
+    // ASSERT( static_cast<size_t>( _context.getLevel() ) == _decisions.size() );
     if ( _decisions.empty() )
         return false;
 
@@ -284,14 +276,12 @@ bool CDSmtCore::backtrackAndContinueSearch()
     if ( _statistics )
     {
         unsigned level = _context.getLevel();
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL,
-                                           level );
-        if ( level > _statistics->getUnsignedAttribute
-             ( Statistics::MAX_DECISION_LEVEL ) )
-            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL,
-                                               level );
+        _statistics->setUnsignedAttribute( Statistics::CURRENT_DECISION_LEVEL, level );
+        if ( level > _statistics->getUnsignedAttribute( Statistics::MAX_DECISION_LEVEL ) )
+            _statistics->setUnsignedAttribute( Statistics::MAX_DECISION_LEVEL, level );
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO, TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TOTAL_TIME_SMT_CORE_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 
     checkSkewFromDebuggingSolution();
@@ -351,7 +341,8 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
         {
             if ( !splitAllowsStoredSolution( caseSplit, error ) )
             {
-                printf( "Error with one of the splits implied at root level:\n\t%s\n", error.ascii() );
+                printf( "Error with one of the splits implied at root level:\n\t%s\n",
+                        error.ascii() );
                 throw MarabouError( MarabouError::DEBUGGING_ERROR );
             }
         }
@@ -381,7 +372,8 @@ bool CDSmtCore::checkSkewFromDebuggingSolution()
     return true;
 }
 
-bool CDSmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split, String &error ) const
+bool CDSmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split,
+                                           String &error ) const
 {
     // False if the split prevents one of the values in the stored solution, true otherwise.
     error = "";
@@ -403,18 +395,20 @@ bool CDSmtCore::splitAllowsStoredSolution( const PiecewiseLinearCaseSplit &split
 
         if ( ( bound._type == Tightening::LB ) && FloatUtils::gt( boundValue, solutionValue ) )
         {
-            error = Stringf( "Variable %u: new LB is %.5lf, which contradicts possible solution %.5lf",
-                             variable,
-                             boundValue,
-                             solutionValue );
+            error =
+                Stringf( "Variable %u: new LB is %.5lf, which contradicts possible solution %.5lf",
+                         variable,
+                         boundValue,
+                         solutionValue );
             return false;
         }
         else if ( ( bound._type == Tightening::UB ) && FloatUtils::lt( boundValue, solutionValue ) )
         {
-            error = Stringf( "Variable %u: new UB is %.5lf, which contradicts possible solution %.5lf",
-                             variable,
-                             boundValue,
-                             solutionValue );
+            error =
+                Stringf( "Variable %u: new UB is %.5lf, which contradicts possible solution %.5lf",
+                         variable,
+                         boundValue,
+                         solutionValue );
             return false;
         }
     }
@@ -427,7 +421,8 @@ void CDSmtCore::setConstraintViolationThreshold( unsigned threshold )
     _constraintViolationThreshold = threshold;
 }
 
-PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing( List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
+PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing(
+    List<PiecewiseLinearConstraint *> &_violatedPlConstraints ) const
 {
     ASSERT( !_violatedPlConstraints.empty() );
 
@@ -463,8 +458,7 @@ PiecewiseLinearConstraint *CDSmtCore::chooseViolatedConstraintForFixing( List<Pi
 bool CDSmtCore::pickSplitPLConstraint()
 {
     if ( _needToSplit )
-        _constraintForSplitting = _engine->pickSplitPLConstraint
-            ( _branchingHeuristic );
+        _constraintForSplitting = _engine->pickSplitPLConstraint( _branchingHeuristic );
     return _constraintForSplitting != NULL;
 }
 

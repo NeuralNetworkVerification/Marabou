@@ -13,16 +13,17 @@
 
  **/
 
+#include "Preprocessor.h"
+
 #include "Debug.h"
-#include "Options.h"
 #include "FloatUtils.h"
 #include "InfeasibleQueryException.h"
 #include "InputQuery.h"
 #include "MStringf.h"
 #include "Map.h"
-#include "PiecewiseLinearFunctionType.h"
-#include "Preprocessor.h"
 #include "MarabouError.h"
+#include "Options.h"
+#include "PiecewiseLinearFunctionType.h"
 #include "Statistics.h"
 #include "Tightening.h"
 
@@ -57,7 +58,8 @@ void Preprocessor::freeMemoryIfNeeded()
     }
 }
 
-std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, bool attemptVariableElimination )
+std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query,
+                                                      bool attemptVariableElimination )
 {
     _preprocessed = std::unique_ptr<InputQuery>( new InputQuery( query ) );
 
@@ -79,9 +81,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     */
     if ( !Options::get()->getBool( Options::DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS ) )
     {
-        _preprocessed->mergeConsecutiveWeightedSumLayers( unhandledEquations,
-                                                          varsInUnhandledConstraints,
-                                                          _unusedSymbolicallyFixedVariables );
+        _preprocessed->mergeConsecutiveWeightedSumLayers(
+            unhandledEquations, varsInUnhandledConstraints, _unusedSymbolicallyFixedVariables );
     }
 
     removeRedundantAddendsInAllEquations();
@@ -103,7 +104,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
         if ( !constraint->supportVariableElimination() )
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
-    for ( const auto &constraint : _preprocessed->getNonlinearConstraints() ) {
+    for ( const auto &constraint : _preprocessed->getNonlinearConstraints() )
+    {
         if ( !constraint->supportVariableElimination() )
             for ( const auto &var : constraint->getParticipatingVariables() )
                 _uneliminableVariables.insert( var );
@@ -137,20 +139,20 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
     */
     unsigned tighteningRound = 0;
     bool continueTightening = true;
-    while ( continueTightening && tighteningRound++ < GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND )
+    while ( continueTightening &&
+            tighteningRound++ < GlobalConfiguration::PREPROCESSSING_MAX_TIGHTEING_ROUND )
     {
-        DEBUG({
-                for ( const auto &equation : _preprocessed->getEquations() )
-                    ASSERT( !equation.containsRedundantAddends() );
-            });
+        DEBUG( {
+            for ( const auto &equation : _preprocessed->getEquations() )
+                ASSERT( !equation.containsRedundantAddends() );
+        } );
         continueTightening = processEquations();
         continueTightening = processConstraints() || continueTightening;
         if ( attemptVariableElimination )
             continueTightening = processIdenticalVariables() || continueTightening;
 
         if ( _statistics )
-            _statistics->
-                incUnsignedAttribute( Statistics::PP_NUM_TIGHTENING_ITERATIONS );
+            _statistics->incUnsignedAttribute( Statistics::PP_NUM_TIGHTENING_ITERATIONS );
     }
 
     collectFixedValues();
@@ -169,10 +171,8 @@ std::unique_ptr<InputQuery> Preprocessor::preprocess( const InputQuery &query, b
         _preprocessed->setUpperBound( i, getUpperBound( i ) );
     }
 
-    ASSERT( _preprocessed->getLowerBounds().size() ==
-            _preprocessed->getNumberOfVariables() );
-    ASSERT( _preprocessed->getUpperBounds().size() ==
-            _preprocessed->getNumberOfVariables() );
+    ASSERT( _preprocessed->getLowerBounds().size() == _preprocessed->getNumberOfVariables() );
+    ASSERT( _preprocessed->getUpperBounds().size() == _preprocessed->getNumberOfVariables() );
 
     return std::move( _preprocessed );
 }
@@ -200,11 +200,11 @@ void Preprocessor::separateMergedAndFixed()
         _fixedVariables[merged.first] = merged.second;
     }
 
-    DEBUG({
-            // After this operation, the merged and fixed variable sets are disjoint
-            for ( const auto &fixed : _fixedVariables )
-                ASSERT( !_mergedVariables.exists( fixed.first ) );
-          });
+    DEBUG( {
+        // After this operation, the merged and fixed variable sets are disjoint
+        for ( const auto &fixed : _fixedVariables )
+            ASSERT( !_mergedVariables.exists( fixed.first ) );
+    } );
 }
 
 void Preprocessor::transformConstraintsIfNeeded()
@@ -369,29 +369,21 @@ bool Preprocessor::processEquations()
             */
             if ( ciSign[xi] == NEGATIVE )
             {
-                validLb =
-                    ( ( type == Equation::LE ) || ( type == Equation::EQ ) )
-                    &&
-                    ( excludedFromLB.empty() ||
-                      ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) ) );
-                validUb =
-                    ( ( type == Equation::GE ) || ( type == Equation::EQ ) )
-                    &&
-                    ( excludedFromUB.empty() ||
-                      ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) ) );
+                validLb = ( ( type == Equation::LE ) || ( type == Equation::EQ ) ) &&
+                          ( excludedFromLB.empty() ||
+                            ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) ) );
+                validUb = ( ( type == Equation::GE ) || ( type == Equation::EQ ) ) &&
+                          ( excludedFromUB.empty() ||
+                            ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) ) );
             }
             else
             {
-                validLb =
-                    ( ( type == Equation::GE ) || ( type == Equation::EQ ) )
-                    &&
-                    ( excludedFromUB.empty() ||
-                      ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) ) );
-                validUb =
-                    ( ( type == Equation::LE ) || ( type == Equation::EQ ) )
-                    &&
-                    ( excludedFromLB.empty() ||
-                      ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) ) );
+                validLb = ( ( type == Equation::GE ) || ( type == Equation::EQ ) ) &&
+                          ( excludedFromUB.empty() ||
+                            ( excludedFromUB.size() == 1 && excludedFromUB.exists( xi ) ) );
+                validUb = ( ( type == Equation::LE ) || ( type == Equation::EQ ) ) &&
+                          ( excludedFromLB.empty() ||
+                            ( excludedFromLB.size() == 1 && excludedFromLB.exists( xi ) ) );
             }
 
             // Now compute the actual bounds and see if they are tighter
@@ -414,11 +406,7 @@ bool Preprocessor::processEquations()
 
                 lowerBound /= -ci;
 
-                if (
-                    FloatUtils::gt(
-                        lowerBound, getLowerBound( xi ), epsilon
-                    )
-                )
+                if ( FloatUtils::gt( lowerBound, getLowerBound( xi ), epsilon ) )
                 {
                     tighterBoundFound = true;
                     setLowerBound( xi, lowerBound );
@@ -442,11 +430,7 @@ bool Preprocessor::processEquations()
 
                 upperBound /= -ci;
 
-                if (
-                    FloatUtils::lt(
-                        upperBound, getUpperBound( xi ), epsilon
-                    )
-                )
+                if ( FloatUtils::lt( upperBound, getUpperBound( xi ), epsilon ) )
                 {
                     tighterBoundFound = true;
                     setUpperBound( xi, upperBound );
@@ -481,7 +465,8 @@ bool Preprocessor::processEquations()
             double lb = getLowerBound( var );
             double ub = getUpperBound( var );
 
-            if ( FloatUtils::areEqual( lb, ub, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+            if ( FloatUtils::areEqual(
+                     lb, ub, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
                 setUpperBound( var, getLowerBound( var ) );
             else
                 allFixed = false;
@@ -497,7 +482,10 @@ bool Preprocessor::processEquations()
             for ( const auto &addend : equation->_addends )
                 sum += addend._coefficient * getLowerBound( addend._variable );
 
-            if ( FloatUtils::areDisequal( sum, equation->_scalar, GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
+            if ( FloatUtils::areDisequal(
+                     sum,
+                     equation->_scalar,
+                     GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
             {
                 throw InfeasibleQueryException();
             }
@@ -533,7 +521,8 @@ bool Preprocessor::processConstraints()
             }
 
             else if ( ( tightening._type == Tightening::UB ) &&
-                      ( FloatUtils::lt( tightening._value, getUpperBound( tightening._variable ) ) ) )
+                      ( FloatUtils::lt( tightening._value,
+                                        getUpperBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
                 setUpperBound( tightening._variable, tightening._value );
@@ -542,8 +531,7 @@ bool Preprocessor::processConstraints()
             if ( FloatUtils::areEqual( getLowerBound( tightening._variable ),
                                        getUpperBound( tightening._variable ),
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-                setUpperBound( tightening._variable,
-                                             getLowerBound( tightening._variable ) );
+                setUpperBound( tightening._variable, getLowerBound( tightening._variable ) );
 
             if ( FloatUtils::gt( getLowerBound( tightening._variable ),
                                  getUpperBound( tightening._variable ),
@@ -575,7 +563,8 @@ bool Preprocessor::processConstraints()
             }
 
             else if ( ( tightening._type == Tightening::UB ) &&
-                      ( FloatUtils::lt( tightening._value, getUpperBound( tightening._variable ) ) ) )
+                      ( FloatUtils::lt( tightening._value,
+                                        getUpperBound( tightening._variable ) ) ) )
             {
                 tighterBoundFound = true;
                 setUpperBound( tightening._variable, tightening._value );
@@ -584,8 +573,7 @@ bool Preprocessor::processConstraints()
             if ( FloatUtils::areEqual( getLowerBound( tightening._variable ),
                                        getUpperBound( tightening._variable ),
                                        GlobalConfiguration::PREPROCESSOR_ALMOST_FIXED_THRESHOLD ) )
-                setUpperBound( tightening._variable,
-                                             getLowerBound( tightening._variable ) );
+                setUpperBound( tightening._variable, getLowerBound( tightening._variable ) );
 
             if ( FloatUtils::gt( getLowerBound( tightening._variable ),
                                  getUpperBound( tightening._variable ),
@@ -631,8 +619,7 @@ bool Preprocessor::processIdenticalVariables()
         unsigned v2 = term2._variable;
 
         // Input and output variables should not be merged
-        if ( _uneliminableVariables.exists( v1 ) ||
-             _uneliminableVariables.exists( v2 ) )
+        if ( _uneliminableVariables.exists( v1 ) || _uneliminableVariables.exists( v2 ) )
         {
             ++equation;
             continue;
@@ -642,14 +629,10 @@ bool Preprocessor::processIdenticalVariables()
         found = true;
 
         double bestLowerBound =
-            getLowerBound( v1 ) > getLowerBound( v2 ) ?
-            getLowerBound( v1 ) :
-            getLowerBound( v2 );
+            getLowerBound( v1 ) > getLowerBound( v2 ) ? getLowerBound( v1 ) : getLowerBound( v2 );
 
         double bestUpperBound =
-            getUpperBound( v1 ) < getUpperBound( v2 ) ?
-            getUpperBound( v1 ) :
-            getUpperBound( v2 );
+            getUpperBound( v1 ) < getUpperBound( v2 ) ? getUpperBound( v1 ) : getUpperBound( v2 );
 
         equation = equations.erase( equation );
 
@@ -728,19 +711,19 @@ void Preprocessor::eliminateVariables()
     // If there's nothing to eliminate, we just eliminate obsolete constraints.
     if ( _fixedVariables.empty() && _mergedVariables.empty() )
     {
-        List<PiecewiseLinearConstraint *> &constraints( _preprocessed->getPiecewiseLinearConstraints() );
+        List<PiecewiseLinearConstraint *> &constraints(
+            _preprocessed->getPiecewiseLinearConstraints() );
         List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
         while ( constraint != constraints.end() )
         {
-            if ( (*constraint)->constraintObsolete() )
+            if ( ( *constraint )->constraintObsolete() )
             {
                 if ( _statistics )
-                    _statistics->incUnsignedAttribute
-                        ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
+                    _statistics->incUnsignedAttribute( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
                 if ( _preprocessed->_networkLevelReasoner )
-                    _preprocessed->_networkLevelReasoner->
-                        removeConstraintFromTopologicalOrder( *constraint );
+                    _preprocessed->_networkLevelReasoner->removeConstraintFromTopologicalOrder(
+                        *constraint );
                 delete *constraint;
                 *constraint = NULL;
                 constraint = constraints.erase( constraint );
@@ -753,11 +736,10 @@ void Preprocessor::eliminateVariables()
         List<NonlinearConstraint *>::iterator nlConstraint = nlConstraints.begin();
         while ( nlConstraint != nlConstraints.end() )
         {
-            if ( (*nlConstraint)->constraintObsolete() )
+            if ( ( *nlConstraint )->constraintObsolete() )
             {
                 if ( _statistics )
-                    _statistics->incUnsignedAttribute
-                        ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
+                    _statistics->incUnsignedAttribute( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
                 delete *nlConstraint;
                 *nlConstraint = NULL;
@@ -771,8 +753,7 @@ void Preprocessor::eliminateVariables()
 
     if ( _statistics )
         _statistics->setUnsignedAttribute( Statistics::PP_NUM_ELIMINATED_VARS,
-                                           _fixedVariables.size() +
-                                           _mergedVariables.size() );
+                                           _fixedVariables.size() + _mergedVariables.size() );
 
     // Check and remove any fixed variables from the debugging solution
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
@@ -781,11 +762,12 @@ void Preprocessor::eliminateVariables()
         {
             if ( !FloatUtils::areEqual( _fixedVariables[i], _preprocessed->_debuggingSolution[i] ) )
                 throw MarabouError( MarabouError::DEBUGGING_ERROR,
-                                     Stringf( "Variable %u fixed to %.5lf, "
-                                              "contradicts possible solution %.5lf",
-                                              i,
-                                              _fixedVariables[i],
-                                              _preprocessed->_debuggingSolution[i] ).ascii() );
+                                    Stringf( "Variable %u fixed to %.5lf, "
+                                             "contradicts possible solution %.5lf",
+                                             i,
+                                             _fixedVariables[i],
+                                             _preprocessed->_debuggingSolution[i] )
+                                        .ascii() );
 
             _preprocessed->_debuggingSolution.erase( i );
         }
@@ -801,16 +783,16 @@ void Preprocessor::eliminateVariables()
 
             if ( _preprocessed->_debuggingSolution.exists( newVar ) )
             {
-
-                if ( !FloatUtils::areEqual ( _preprocessed->_debuggingSolution[i],
-                                             _preprocessed->_debuggingSolution[newVar] ) )
+                if ( !FloatUtils::areEqual( _preprocessed->_debuggingSolution[i],
+                                            _preprocessed->_debuggingSolution[newVar] ) )
                     throw MarabouError( MarabouError::DEBUGGING_ERROR,
-                                         Stringf( "Variable %u fixed to %.5lf, "
-                                                  "merged into %u which was fixed to %.5lf",
-                                                  i,
-                                                  _preprocessed->_debuggingSolution[i],
-                                                  newVar,
-                                                  _preprocessed->_debuggingSolution[newVar] ).ascii() );
+                                        Stringf( "Variable %u fixed to %.5lf, "
+                                                 "merged into %u which was fixed to %.5lf",
+                                                 i,
+                                                 _preprocessed->_debuggingSolution[i],
+                                                 newVar,
+                                                 _preprocessed->_debuggingSolution[newVar] )
+                                            .ascii() );
             }
             else
             {
@@ -883,8 +865,7 @@ void Preprocessor::eliminateVariables()
         if ( equation->_addends.empty() )
         {
             if ( _statistics )
-                _statistics->incUnsignedAttribute
-                    ( Statistics::PP_NUM_EQUATIONS_REMOVED );
+                _statistics->incUnsignedAttribute( Statistics::PP_NUM_EQUATIONS_REMOVED );
 
             // No addends left, scalar should be 0
             if ( !FloatUtils::isZero( equation->_scalar ) )
@@ -894,33 +875,34 @@ void Preprocessor::eliminateVariables()
         }
         else
             ++equation;
-	}
+    }
 
     // Let the piecewise-linear constraints know of any eliminated variables, and remove
     // the constraints themselves if they become obsolete.
-    List<PiecewiseLinearConstraint *> &constraints( _preprocessed->getPiecewiseLinearConstraints() );
+    List<PiecewiseLinearConstraint *> &constraints(
+        _preprocessed->getPiecewiseLinearConstraints() );
     List<PiecewiseLinearConstraint *>::iterator constraint = constraints.begin();
     while ( constraint != constraints.end() )
     {
-        List<unsigned> participatingVariables = (*constraint)->getParticipatingVariables();
+        List<unsigned> participatingVariables = ( *constraint )->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _uneliminableVariables.exists( variable ) )
                 continue;
 
-            if ( (*constraint)->supportVariableElimination() && _fixedVariables.exists( variable ) )
-                (*constraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
+            if ( ( *constraint )->supportVariableElimination() &&
+                 _fixedVariables.exists( variable ) )
+                ( *constraint )->eliminateVariable( variable, _fixedVariables.at( variable ) );
         }
 
-        if ( (*constraint)->constraintObsolete() )
+        if ( ( *constraint )->constraintObsolete() )
         {
             if ( _statistics )
-                _statistics->incUnsignedAttribute
-                    ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
+                _statistics->incUnsignedAttribute( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
             if ( _preprocessed->_networkLevelReasoner )
-                _preprocessed->_networkLevelReasoner->
-                    removeConstraintFromTopologicalOrder( *constraint );
+                _preprocessed->_networkLevelReasoner->removeConstraintFromTopologicalOrder(
+                    *constraint );
             delete *constraint;
             *constraint = NULL;
             constraint = constraints.erase( constraint );
@@ -946,23 +928,23 @@ void Preprocessor::eliminateVariables()
     List<NonlinearConstraint *>::iterator nlConstraint = nlConstraints.begin();
     while ( nlConstraint != nlConstraints.end() )
     {
-        List<unsigned> participatingVariables = (*nlConstraint)->getParticipatingVariables();
+        List<unsigned> participatingVariables = ( *nlConstraint )->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _uneliminableVariables.exists( variable ) )
                 continue;
 
-            if ( (*nlConstraint)->supportVariableElimination() && _fixedVariables.exists( variable ) )
+            if ( ( *nlConstraint )->supportVariableElimination() &&
+                 _fixedVariables.exists( variable ) )
             {
-                (*nlConstraint)->eliminateVariable( variable, _fixedVariables.at( variable ) );
+                ( *nlConstraint )->eliminateVariable( variable, _fixedVariables.at( variable ) );
             }
         }
 
-        if ( (*nlConstraint)->constraintObsolete() )
+        if ( ( *nlConstraint )->constraintObsolete() )
         {
             if ( _statistics )
-                _statistics->incUnsignedAttribute
-                    ( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
+                _statistics->incUnsignedAttribute( Statistics::PP_NUM_CONSTRAINTS_REMOVED );
 
             delete *nlConstraint;
             *nlConstraint = NULL;
@@ -974,24 +956,25 @@ void Preprocessor::eliminateVariables()
 
     // Let the remaining nonlinear constraints know of any changes in indices.
     for ( const auto &nlConstraint : nlConstraints )
-	{
-		List<unsigned> participatingVariables = nlConstraint->getParticipatingVariables();
+    {
+        List<unsigned> participatingVariables = nlConstraint->getParticipatingVariables();
         for ( unsigned variable : participatingVariables )
         {
             if ( _oldIndexToNewIndex.at( variable ) != variable )
                 nlConstraint->updateVariableIndex( variable, _oldIndexToNewIndex.at( variable ) );
         }
-	}
+    }
 
     // Let the NLR know of changes in indices and merged variables
     if ( _preprocessed->_networkLevelReasoner )
-        _preprocessed->_networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex, _mergedVariables );
+        _preprocessed->_networkLevelReasoner->updateVariableIndices( _oldIndexToNewIndex,
+                                                                     _mergedVariables );
 
     // Update the lower/upper bound maps
     for ( unsigned i = 0; i < _preprocessed->getNumberOfVariables(); ++i )
     {
         if ( ( _fixedVariables.exists( i ) || _mergedVariables.exists( i ) ) &&
-			 !_uneliminableVariables.exists( i ) )
+             !_uneliminableVariables.exists( i ) )
             continue;
 
         ASSERT( _oldIndexToNewIndex.at( i ) <= i );

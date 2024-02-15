@@ -19,32 +19,32 @@
 #include "MockProjectedSteepestEdge.h"
 #include "T/ProjectedSteepestEdgeFactory.h"
 
-class MockProjectedSteepestEdgeRuleFactory :
-	public T::Base_createProjectedSteepestEdgeRule,
-	public T::Base_discardProjectedSteepestEdgeRule
+class MockProjectedSteepestEdgeRuleFactory
+    : public T::Base_createProjectedSteepestEdgeRule
+    , public T::Base_discardProjectedSteepestEdgeRule
 {
 public:
-	MockProjectedSteepestEdgeRule mockProjectedSteepestEdgeRule;
+    MockProjectedSteepestEdgeRule mockProjectedSteepestEdgeRule;
 
-	~MockProjectedSteepestEdgeRuleFactory()
-	{
-		if ( mockProjectedSteepestEdgeRule.wasCreated )
-		{
-			TS_ASSERT( mockProjectedSteepestEdgeRule.wasDiscarded );
-		}
-	}
+    ~MockProjectedSteepestEdgeRuleFactory()
+    {
+        if ( mockProjectedSteepestEdgeRule.wasCreated )
+        {
+            TS_ASSERT( mockProjectedSteepestEdgeRule.wasDiscarded );
+        }
+    }
 
-	IProjectedSteepestEdgeRule *createProjectedSteepestEdgeRule()
-	{
-		mockProjectedSteepestEdgeRule.mockConstructor();
-		return &mockProjectedSteepestEdgeRule;
-	}
+    IProjectedSteepestEdgeRule *createProjectedSteepestEdgeRule()
+    {
+        mockProjectedSteepestEdgeRule.mockConstructor();
+        return &mockProjectedSteepestEdgeRule;
+    }
 
-	void discardProjectedSteepestEdgeRule( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule )
-	{
-		TS_ASSERT_EQUALS( projectedSteepestEdgeRule, &mockProjectedSteepestEdgeRule );
-		mockProjectedSteepestEdgeRule.mockDestructor();
-	}
+    void discardProjectedSteepestEdgeRule( IProjectedSteepestEdgeRule *projectedSteepestEdgeRule )
+    {
+        TS_ASSERT_EQUALS( projectedSteepestEdgeRule, &mockProjectedSteepestEdgeRule );
+        mockProjectedSteepestEdgeRule.mockDestructor();
+    }
 };
 
 #endif // __MockProjectedSteepestEdgeFactory_h__

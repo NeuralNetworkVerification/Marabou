@@ -32,8 +32,7 @@ class TimeUtils
 {
 public:
     static struct timespec sampleMicro();
-    static unsigned long long timePassed( const struct timespec &then,
-                                          const struct timespec &now );
+    static unsigned long long timePassed( const struct timespec &then, const struct timespec &now );
     static String now();
 };
 

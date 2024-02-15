@@ -13,12 +13,11 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "BlandsRule.h"
-#include "MockTableau.h"
 #include "MarabouError.h"
+#include "MockTableau.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForBlandsRule

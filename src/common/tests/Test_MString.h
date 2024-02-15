@@ -14,65 +14,65 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MString.h"
 
-//template class List<String>;
+#include <cxxtest/TestSuite.h>
+
+// template class List<String>;
 
 class StringTestSuite : public CxxTest::TestSuite
 {
 public:
-	void test_ascii()
-	{
-		char data[] = { "hello world" };
+    void test_ascii()
+    {
+        char data[] = { "hello world" };
 
-		String string( data );
+        String string( data );
 
-		TS_ASSERT_EQUALS( strlen( data ), strlen( string.ascii() ) );
-		TS_ASSERT_SAME_DATA( data, string.ascii(), strlen( data ) );
-	}
+        TS_ASSERT_EQUALS( strlen( data ), strlen( string.ascii() ) );
+        TS_ASSERT_SAME_DATA( data, string.ascii(), strlen( data ) );
+    }
 
-	void test_bracket_operator()
-	{
-	  	String myString( "red apple" );
+    void test_bracket_operator()
+    {
+        String myString( "red apple" );
 
-		TS_ASSERT_EQUALS( myString[0], 'r' );
-		TS_ASSERT_EQUALS( myString[3], ' ' );
-		TS_ASSERT_EQUALS( myString[8], 'e' );
-	}
+        TS_ASSERT_EQUALS( myString[0], 'r' );
+        TS_ASSERT_EQUALS( myString[3], ' ' );
+        TS_ASSERT_EQUALS( myString[8], 'e' );
+    }
 
-	void test_empty_constructor()
-	{
-		String string;
+    void test_empty_constructor()
+    {
+        String string;
 
-		TS_ASSERT_EQUALS( string.length(), 0U );
-	}
+        TS_ASSERT_EQUALS( string.length(), 0U );
+    }
 
-	void test_assignemnt_from_c_str()
-	{
-		String myString;
+    void test_assignemnt_from_c_str()
+    {
+        String myString;
 
-		TS_ASSERT_EQUALS( myString.length(), 0U );
+        TS_ASSERT_EQUALS( myString.length(), 0U );
 
-		myString = "apple";
+        myString = "apple";
 
-		TS_ASSERT_EQUALS( myString.length(), strlen( "apple" ) );
-		TS_ASSERT_SAME_DATA( myString.ascii(), "apple", myString.length() );
-	}
+        TS_ASSERT_EQUALS( myString.length(), strlen( "apple" ) );
+        TS_ASSERT_SAME_DATA( myString.ascii(), "apple", myString.length() );
+    }
 
-	void test_equality_operator()
-	{
-		String string( "apple" );
-		String otherString( "apple" );
-		String different( "banana" );
+    void test_equality_operator()
+    {
+        String string( "apple" );
+        String otherString( "apple" );
+        String different( "banana" );
 
-		TS_ASSERT( string == otherString );
-		TS_ASSERT( !( string == different ) );
-		TS_ASSERT( string != different );
+        TS_ASSERT( string == otherString );
+        TS_ASSERT( !( string == different ) );
+        TS_ASSERT( string != different );
 
-		TS_ASSERT_EQUALS( string, "apple" );
-		TS_ASSERT_DIFFERS( string, "banana" );
+        TS_ASSERT_EQUALS( string, "apple" );
+        TS_ASSERT_DIFFERS( string, "banana" );
 
         String otherApple( "apple" );
 
@@ -247,16 +247,16 @@ public:
 
     void test_trim()
     {
-        TS_ASSERT_EQUALS( String( "   hello      world     \n" ).trim() , "hello      world" );
-        TS_ASSERT_EQUALS( String( "              \n" ).trim() , "" );
-        TS_ASSERT_EQUALS( String( "   a" ).trim() , "a" );
-        TS_ASSERT_EQUALS( String( "   ab\n" ).trim() , "ab" );
-        TS_ASSERT_EQUALS( String( "ab\n   \n" ).trim() , "ab" );
-        TS_ASSERT_EQUALS( String( "hey there   \n" ).trim() , "hey there" );
-        TS_ASSERT_EQUALS( String( "ab   \r" ).trim() , "ab" );
-        TS_ASSERT_EQUALS( String( "   ab\r   \r" ).trim() , "ab" );
-        TS_ASSERT_EQUALS( String( "ab   \r\n" ).trim() , "ab" );
-        TS_ASSERT_EQUALS( String( "   ab  \r   \r\n" ).trim() , "ab" );
+        TS_ASSERT_EQUALS( String( "   hello      world     \n" ).trim(), "hello      world" );
+        TS_ASSERT_EQUALS( String( "              \n" ).trim(), "" );
+        TS_ASSERT_EQUALS( String( "   a" ).trim(), "a" );
+        TS_ASSERT_EQUALS( String( "   ab\n" ).trim(), "ab" );
+        TS_ASSERT_EQUALS( String( "ab\n   \n" ).trim(), "ab" );
+        TS_ASSERT_EQUALS( String( "hey there   \n" ).trim(), "hey there" );
+        TS_ASSERT_EQUALS( String( "ab   \r" ).trim(), "ab" );
+        TS_ASSERT_EQUALS( String( "   ab\r   \r" ).trim(), "ab" );
+        TS_ASSERT_EQUALS( String( "ab   \r\n" ).trim(), "ab" );
+        TS_ASSERT_EQUALS( String( "   ab  \r   \r\n" ).trim(), "ab" );
     }
 };
 

@@ -14,16 +14,18 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "MILPEncoder.h"
+
 #include "DeepPolySoftmaxElement.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
-#include "MILPEncoder.h"
 #include "TimeUtils.h"
 
 MILPEncoder::MILPEncoder( const ITableau &tableau )
     : _tableau( tableau )
     , _statistics( NULL )
-{}
+{
+}
 
 void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
                                     const InputQuery &inputQuery,
@@ -58,30 +60,22 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
         switch ( plConstraint->getType() )
         {
         case PiecewiseLinearFunctionType::RELU:
-            encodeReLUConstraint( gurobi, (ReluConstraint *)plConstraint,
-                                  relax );
+            encodeReLUConstraint( gurobi, (ReluConstraint *)plConstraint, relax );
             break;
         case PiecewiseLinearFunctionType::LEAKY_RELU:
-            encodeLeakyReLUConstraint( gurobi, (LeakyReluConstraint *)plConstraint,
-                                       relax );
+            encodeLeakyReLUConstraint( gurobi, (LeakyReluConstraint *)plConstraint, relax );
             break;
         case PiecewiseLinearFunctionType::MAX:
-            encodeMaxConstraint( gurobi, (MaxConstraint *)plConstraint,
-                                 relax );
+            encodeMaxConstraint( gurobi, (MaxConstraint *)plConstraint, relax );
             break;
         case PiecewiseLinearFunctionType::SIGN:
-            encodeSignConstraint( gurobi, (SignConstraint *)plConstraint,
-                                  relax );
+            encodeSignConstraint( gurobi, (SignConstraint *)plConstraint, relax );
             break;
         case PiecewiseLinearFunctionType::ABSOLUTE_VALUE:
-            encodeAbsoluteValueConstraint( gurobi,
-                                           (AbsoluteValueConstraint *)plConstraint,
-                                           relax );
+            encodeAbsoluteValueConstraint( gurobi, (AbsoluteValueConstraint *)plConstraint, relax );
             break;
         case PiecewiseLinearFunctionType::DISJUNCTION:
-            encodeDisjunctionConstraint( gurobi,
-                                         (DisjunctionConstraint *)plConstraint,
-                                         relax );
+            encodeDisjunctionConstraint( gurobi, (DisjunctionConstraint *)plConstraint, relax );
             break;
         default:
             throw MarabouError( MarabouError::UNSUPPORTED_PIECEWISE_LINEAR_CONSTRAINT,
@@ -119,9 +113,8 @@ void MILPEncoder::encodeInputQuery( GurobiWrapper &gurobi,
     if ( _statistics )
     {
         struct timespec end = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute
-            ( Statistics::TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO,
-              TimeUtils::timePassed( start, end ) );
+        _statistics->incLongAttribute( Statistics::TIME_ADDING_CONSTRAINTS_TO_MILP_SOLVER_MICRO,
+                                       TimeUtils::timePassed( start, end ) );
     }
 }
 
@@ -137,9 +130,7 @@ void MILPEncoder::encodeEquation( GurobiWrapper &gurobi, const Equation &equatio
     List<GurobiWrapper::Term> terms;
     double scalar = equation._scalar;
     for ( const auto &term : equation._addends )
-        terms.append( GurobiWrapper::Term
-                      ( term._coefficient,
-                        Stringf( "x%u", term._variable ) ) );
+        terms.append( GurobiWrapper::Term( term._coefficient, Stringf( "x%u", term._variable ) ) );
     switch ( equation._type )
     {
     case Equation::EQ:
@@ -156,16 +147,13 @@ void MILPEncoder::encodeEquation( GurobiWrapper &gurobi, const Equation &equatio
     }
 }
 
-void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
-                                        ReluConstraint *relu, bool relax )
+void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi, ReluConstraint *relu, bool relax )
 {
-
     if ( !relu->isActive() || relu->phaseFixed() )
     {
         ASSERT( relu->auxVariableInUse() );
-        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( relu->getB() ),  0 ) &&
-                  FloatUtils::lte( _tableau.getLowerBound( relu->getAux() ), 0 ) )
-                ||
+        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( relu->getB() ), 0 ) &&
+                  FloatUtils::lte( _tableau.getLowerBound( relu->getAux() ), 0 ) ) ||
                 ( FloatUtils::lte( _tableau.getUpperBound( relu->getB() ), 0 ) &&
                   FloatUtils::lte( _tableau.getUpperBound( relu->getF() ), 0 ) ) );
         return;
@@ -183,8 +171,7 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
     gurobi.addVariable( Stringf( "a%u", _binVarIndex ),
                         0,
                         1,
-                        relax ?
-                        GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
+                        relax ? GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
 
     unsigned sourceVariable = relu->getB();
     unsigned targetVariable = relu->getF();
@@ -203,10 +190,10 @@ void MILPEncoder::encodeReLUConstraint( GurobiWrapper &gurobi,
     gurobi.addLeqConstraint( terms, 0 );
 }
 
-void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluConstraint *lRelu,
+void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi,
+                                             LeakyReluConstraint *lRelu,
                                              bool relax )
 {
-
     if ( !lRelu->isActive() || lRelu->phaseFixed() )
     {
         return;
@@ -241,12 +228,13 @@ void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluCon
               which is the upper bound in the triangular relaxation
             */
 
-            double lambda = ( sourceUb - slope * sourceLb ) / (sourceUb - sourceLb );
+            double lambda = ( sourceUb - slope * sourceLb ) / ( sourceUb - sourceLb );
             List<GurobiWrapper::Term> terms;
             terms.append( GurobiWrapper::Term( lambda, Stringf( "x%u", sourceVariable ) ) );
             terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", targetVariable ) ) );
-            gurobi.addGeqConstraint( terms, ( lambda  - 1 ) * sourceUb );
-        } else
+            gurobi.addGeqConstraint( terms, ( lambda - 1 ) * sourceUb );
+        }
+        else
         {
             double xPoints[3];
             double yPoints[3];
@@ -258,13 +246,14 @@ void MILPEncoder::encodeLeakyReLUConstraint( GurobiWrapper &gurobi, LeakyReluCon
             yPoints[2] = sourceUb;
             gurobi.addPiecewiseLinearConstraint( Stringf( "x%u", sourceVariable ),
                                                  Stringf( "x%u", targetVariable ),
-                                                 3, xPoints, yPoints );
+                                                 3,
+                                                 xPoints,
+                                                 yPoints );
         }
     }
 }
 
-void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max,
-                                       bool relax )
+void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max, bool relax )
 {
     if ( !max->isActive() )
         return;
@@ -277,8 +266,7 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
         gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, i ),
                             0,
                             1,
-                            relax ?
-                            GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
+                            relax ? GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
 
         terms.append( GurobiWrapper::Term( 1, Stringf( "a%u_%u", _binVarIndex, i ) ) );
     }
@@ -313,10 +301,10 @@ void MILPEncoder::encodeMaxConstraint( GurobiWrapper &gurobi, MaxConstraint *max
               We added aux_i >= 0, for each x.
               We now add, aux_i <= (1 - a) * (ub_aux)
             */
-            DEBUG({
-                    ASSERT( split.getBoundTightenings().size() == 1 );
-                    ASSERT( split.getEquations().size() == 0 );
-                });
+            DEBUG( {
+                ASSERT( split.getBoundTightenings().size() == 1 );
+                ASSERT( split.getEquations().size() == 0 );
+            } );
             unsigned aux = split.getBoundTightenings().begin()->_variable;
             double auxUb = _tableau.getUpperBound( aux );
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", aux ) ) );
@@ -338,9 +326,8 @@ void MILPEncoder::encodeAbsoluteValueConstraint( GurobiWrapper &gurobi,
 
     if ( !abs->isActive() || abs->phaseFixed() )
     {
-        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( abs->getB() ),  0 ) &&
-                  FloatUtils::lte( _tableau.getUpperBound( abs->getPosAux() ), 0 ) )
-                ||
+        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( abs->getB() ), 0 ) &&
+                  FloatUtils::lte( _tableau.getUpperBound( abs->getPosAux() ), 0 ) ) ||
                 ( FloatUtils::lte( _tableau.getUpperBound( abs->getB() ), 0 ) &&
                   FloatUtils::lte( _tableau.getUpperBound( abs->getNegAux() ), 0 ) ) );
         return;
@@ -352,8 +339,7 @@ void MILPEncoder::encodeAbsoluteValueConstraint( GurobiWrapper &gurobi,
     double sourceUb = _tableau.getUpperBound( sourceVariable );
     double targetUb = _tableau.getUpperBound( targetVariable );
 
-    ASSERT( FloatUtils::isPositive( sourceUb ) &&
-            FloatUtils::isNegative( sourceLb ) );
+    ASSERT( FloatUtils::isPositive( sourceUb ) && FloatUtils::isNegative( sourceLb ) );
 
     /*
       We have added f - b >= 0 and f + b >= 0. We add
@@ -367,8 +353,7 @@ void MILPEncoder::encodeAbsoluteValueConstraint( GurobiWrapper &gurobi,
     gurobi.addVariable( Stringf( "a%u", _binVarIndex ),
                         0,
                         1,
-                        relax ?
-                        GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
+                        relax ? GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
 
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -379,8 +364,7 @@ void MILPEncoder::encodeAbsoluteValueConstraint( GurobiWrapper &gurobi,
     terms.clear();
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
-    terms.append( GurobiWrapper::Term( -( targetUb + sourceUb ),
-                                       Stringf( "a%u", _binVarIndex ) ) );
+    terms.append( GurobiWrapper::Term( -( targetUb + sourceUb ), Stringf( "a%u", _binVarIndex ) ) );
     gurobi.addLeqConstraint( terms, 0 );
     ++_binVarIndex;
 }
@@ -401,8 +385,7 @@ void MILPEncoder::encodeDisjunctionConstraint( GurobiWrapper &gurobi,
         gurobi.addVariable( Stringf( "a%u_%u", _binVarIndex, i ),
                             0,
                             1,
-                            relax ?
-                            GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
+                            relax ? GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
 
         terms.append( GurobiWrapper::Term( 1, Stringf( "a%u_%u", _binVarIndex, i ) ) );
     }
@@ -419,9 +402,8 @@ void MILPEncoder::encodeDisjunctionConstraint( GurobiWrapper &gurobi,
         for ( const auto &tightening : disjunct.getBoundTightenings() )
         {
             // add indicator constraint: a_1 => disjunct1, etc.
-            terms.append( GurobiWrapper::Term
-                          ( 1, getVariableNameFromVariable
-                            ( tightening._variable ) ) );
+            terms.append(
+                GurobiWrapper::Term( 1, getVariableNameFromVariable( tightening._variable ) ) );
             if ( tightening._type == Tightening::UB )
                 gurobi.addLeqIndicatorConstraint( binVarName, 1, terms, tightening._value );
             else
@@ -434,31 +416,27 @@ void MILPEncoder::encodeDisjunctionConstraint( GurobiWrapper &gurobi,
     _binVarIndex++;
 }
 
-void MILPEncoder::encodeSignConstraint( GurobiWrapper &gurobi,
-                                        SignConstraint *sign,
-                                        bool relax )
+void MILPEncoder::encodeSignConstraint( GurobiWrapper &gurobi, SignConstraint *sign, bool relax )
 {
     ASSERT( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING );
 
     if ( !sign->isActive() || sign->phaseFixed() )
     {
-        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( sign->getB() ),  0 ) &&
-                  FloatUtils::areEqual( _tableau.getLowerBound( sign->getF() ), 1 ) )
-                ||
+        ASSERT( ( FloatUtils::gte( _tableau.getLowerBound( sign->getB() ), 0 ) &&
+                  FloatUtils::areEqual( _tableau.getLowerBound( sign->getF() ), 1 ) ) ||
                 ( FloatUtils::lte( _tableau.getUpperBound( sign->getB() ), 0 ) &&
                   FloatUtils::areEqual( _tableau.getUpperBound( sign->getF() ), -1 ) ) );
         return;
     }
 
     unsigned targetVariable = sign->getF();
-    DEBUG({
-            unsigned sourceVariable = sign->getB();
+    DEBUG( {
+        unsigned sourceVariable = sign->getB();
 
-            double sourceLb = _tableau.getLowerBound( sourceVariable );
-            double sourceUb = _tableau.getUpperBound( sourceVariable );
-            ASSERT( !FloatUtils::isNegative( sourceUb ) &&
-                    FloatUtils::isNegative( sourceLb ) );
-        });
+        double sourceLb = _tableau.getLowerBound( sourceVariable );
+        double sourceUb = _tableau.getUpperBound( sourceVariable );
+        ASSERT( !FloatUtils::isNegative( sourceUb ) && FloatUtils::isNegative( sourceLb ) );
+    } );
 
     /*
       We have added f <= -2/lb b + 1 and f >= 2/ub * b - 1. We just need to specify
@@ -471,8 +449,7 @@ void MILPEncoder::encodeSignConstraint( GurobiWrapper &gurobi,
     gurobi.addVariable( Stringf( "a%u", _binVarIndex ),
                         0,
                         1,
-                        relax ?
-                        GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
+                        relax ? GurobiWrapper::CONTINUOUS : GurobiWrapper::BINARY );
 
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
@@ -484,8 +461,8 @@ void MILPEncoder::encodeSignConstraint( GurobiWrapper &gurobi,
 
 void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstraint *sigmoid )
 {
-    unsigned sourceVariable = sigmoid->getB();  // x_b
-    unsigned targetVariable = sigmoid->getF();  // x_f
+    unsigned sourceVariable = sigmoid->getB(); // x_b
+    unsigned targetVariable = sigmoid->getF(); // x_f
     double sourceLb = _tableau.getLowerBound( sourceVariable );
     double sourceUb = _tableau.getUpperBound( sourceVariable );
 
@@ -504,14 +481,13 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
     else if ( FloatUtils::lt( sourceLb, 0 ) && FloatUtils::gt( sourceUb, 0 ) )
     {
         List<GurobiWrapper::Term> terms;
-        String binVarName = Stringf( "a%u", _binVarIndex ); // a = 1 -> the case where x_b >= 0, otherwise where x_b <= 0
-        gurobi.addVariable( binVarName,
-                            0,
-                            1,
-                            GurobiWrapper::BINARY );
+        String binVarName = Stringf( "a%u", _binVarIndex ); // a = 1 -> the case where x_b >= 0,
+                                                            // otherwise where x_b <= 0
+        gurobi.addVariable( binVarName, 0, 1, GurobiWrapper::BINARY );
 
         // Constraint where x_b >= 0
-        // Upper line is tangent and lower line is secant for an overapproximation with a linearization.
+        // Upper line is tangent and lower line is secant for an overapproximation with a
+        // linearization.
 
         int binVal = 1;
 
@@ -521,7 +497,8 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         double tangentSlope = sigmoid->sigmoidDerivative( tangentPoint );
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
         terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
+        gurobi.addLeqIndicatorConstraint(
+            binVarName, binVal, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
         terms.clear();
 
         // secant line: x_f = secantSlope * (x_b - 0) + y_l
@@ -535,16 +512,17 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
 
         // lower bound of x_b
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, 0 );  
+        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, 0 );
         terms.clear();
 
         // lower bound of x_f
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, y_l );  
-        terms.clear(); 
+        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, y_l );
+        terms.clear();
 
         // Constraints where x_b <= 0
-        // Upper line is secant and lower line is tangent for an overapproximation with a linearization.
+        // Upper line is secant and lower line is tangent for an overapproximation with a
+        // linearization.
 
         binVal = 0;
 
@@ -554,7 +532,8 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         tangentSlope = sigmoid->sigmoidDerivative( tangentPoint );
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
         terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addGeqIndicatorConstraint( binVarName, binVal, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
+        gurobi.addGeqIndicatorConstraint(
+            binVarName, binVal, terms, -tangentSlope * tangentPoint + yAtTangentPoint );
         terms.clear();
 
         // secant line: x_f = secantSlope * (x_b - sourceLb) + y_l
@@ -563,7 +542,8 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
         secantSlope = ( y_u - y_l ) / ( 0 - sourceLb );
         terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
         terms.append( GurobiWrapper::Term( -secantSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addLeqIndicatorConstraint( binVarName, binVal, terms, -secantSlope * sourceLb + y_l );
+        gurobi.addLeqIndicatorConstraint(
+            binVarName, binVal, terms, -secantSlope * sourceLb + y_l );
         terms.clear();
 
         // upper bound of x_b
@@ -659,35 +639,35 @@ void MILPEncoder::encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstra
             }
             if ( !useLSE2 )
             {
-                symbolicLowerBias =
-                    NLR::DeepPolySoftmaxElement::LSELowerBound( sourceMids, sourceLbs, sourceUbs, i );
+                symbolicLowerBias = NLR::DeepPolySoftmaxElement::LSELowerBound(
+                    sourceMids, sourceLbs, sourceUbs, i );
                 if ( !FloatUtils::wellFormed( symbolicLowerBias ) )
                     wellFormed = false;
                 for ( unsigned j = 0; j < size; ++j )
                 {
-                    double dldj =
-                        NLR::DeepPolySoftmaxElement::dLSELowerBound( sourceMids, sourceLbs,
-                                                                     sourceUbs, i, j );
+                    double dldj = NLR::DeepPolySoftmaxElement::dLSELowerBound(
+                        sourceMids, sourceLbs, sourceUbs, i, j );
                     if ( !FloatUtils::wellFormed( dldj ) )
                         wellFormed = false;
-                    terms.append( GurobiWrapper::Term( -dldj, Stringf( "x%u", sourceVariables[j] ) ) );
+                    terms.append(
+                        GurobiWrapper::Term( -dldj, Stringf( "x%u", sourceVariables[j] ) ) );
                     symbolicLowerBias -= dldj * sourceMids[j];
                 }
             }
             else
             {
-                symbolicLowerBias =
-                    NLR::DeepPolySoftmaxElement::LSELowerBound2( sourceMids, sourceLbs, sourceUbs, i );
+                symbolicLowerBias = NLR::DeepPolySoftmaxElement::LSELowerBound2(
+                    sourceMids, sourceLbs, sourceUbs, i );
                 if ( !FloatUtils::wellFormed( symbolicLowerBias ) )
                     wellFormed = false;
                 for ( unsigned j = 0; j < size; ++j )
                 {
-                    double dldj =
-                        NLR::DeepPolySoftmaxElement::dLSELowerBound2( sourceMids, sourceLbs,
-                                                                      sourceUbs, i, j );
+                    double dldj = NLR::DeepPolySoftmaxElement::dLSELowerBound2(
+                        sourceMids, sourceLbs, sourceUbs, i, j );
                     if ( !FloatUtils::wellFormed( dldj ) )
                         wellFormed = false;
-                    terms.append( GurobiWrapper::Term( -dldj, Stringf( "x%u", sourceVariables[j] ) ) );
+                    terms.append(
+                        GurobiWrapper::Term( -dldj, Stringf( "x%u", sourceVariables[j] ) ) );
                     symbolicLowerBias -= dldj * sourceMids[j];
                 }
             }
@@ -704,9 +684,8 @@ void MILPEncoder::encodeSoftmaxConstraint( GurobiWrapper &gurobi, SoftmaxConstra
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariables[i] ) ) );
             for ( unsigned j = 0; j < size; ++j )
             {
-                double dudj =
-                    NLR::DeepPolySoftmaxElement::dLSEUpperbound( sourceMids, targetLbs,
-                                                                 targetUbs, i, j );
+                double dudj = NLR::DeepPolySoftmaxElement::dLSEUpperbound(
+                    sourceMids, targetLbs, targetUbs, i, j );
                 if ( !FloatUtils::wellFormed( dudj ) )
                     wellFormed = false;
                 terms.append( GurobiWrapper::Term( -dudj, Stringf( "x%u", sourceVariables[j] ) ) );
@@ -751,14 +730,13 @@ void MILPEncoder::encodeBilinearConstraint( GurobiWrapper &gurobi,
         auto bs = bilinear->getBs();
         ASSERT( bs.size() == 2 );
         auto f = bilinear->getF();
-        gurobi.addBilinearConstraint( Stringf( "x%u", bs[0] ), Stringf( "x%u", bs[1] ), Stringf( "x%u", f ) );
+        gurobi.addBilinearConstraint(
+            Stringf( "x%u", bs[0] ), Stringf( "x%u", bs[1] ), Stringf( "x%u", f ) );
         return;
     }
 }
 
-void MILPEncoder::encodeRoundConstraint( GurobiWrapper &gurobi,
-                                         RoundConstraint *round,
-                                         bool relax )
+void MILPEncoder::encodeRoundConstraint( GurobiWrapper &gurobi, RoundConstraint *round, bool relax )
 {
     /*
       We have already introduced during preprocessing
@@ -785,15 +763,12 @@ void MILPEncoder::encodeRoundConstraint( GurobiWrapper &gurobi,
     }
 }
 
-void MILPEncoder::encodeCostFunction( GurobiWrapper &gurobi,
-                                      const LinearExpression &cost )
+void MILPEncoder::encodeCostFunction( GurobiWrapper &gurobi, const LinearExpression &cost )
 {
     List<GurobiWrapper::Term> terms;
     for ( const auto &pair : cost._addends )
     {
-        terms.append( GurobiWrapper::Term
-                      ( pair.second,
-                        Stringf( "x%u", pair.first ) ) );
+        terms.append( GurobiWrapper::Term( pair.second, Stringf( "x%u", pair.first ) ) );
     }
     gurobi.setCost( terms, cost._constant );
 }

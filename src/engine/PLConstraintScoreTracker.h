@@ -23,14 +23,14 @@
 
 #include <set>
 
-#define SCORE_TRACKER_LOG(x, ...) LOG(GlobalConfiguration::SCORE_TRACKER_LOGGING, "PLConstraintScoreTracker: %s\n", x)
+#define SCORE_TRACKER_LOG( x, ... )                                                                \
+    LOG( GlobalConfiguration::SCORE_TRACKER_LOGGING, "PLConstraintScoreTracker: %s\n", x )
 
 struct ScoreEntry
 {
     ScoreEntry( PiecewiseLinearConstraint *constraint, double score )
         : _constraint( constraint )
-        , _score( score )
-    {};
+        , _score( score ){};
 
     bool operator<( const ScoreEntry &other ) const
     {
@@ -64,8 +64,7 @@ public:
     /*
       Update the score of a constraint.
     */
-    virtual void updateScore( PiecewiseLinearConstraint *constraint,
-                              double score ) = 0;
+    virtual void updateScore( PiecewiseLinearConstraint *constraint, double score ) = 0;
 
     /*
       Set the score of a constraint.
@@ -91,13 +90,11 @@ public:
     */
     inline double getScore( PiecewiseLinearConstraint *constraint )
     {
-        DEBUG({
-                ASSERT( _plConstraintToScore.exists( constraint ) );
-                ASSERT( _scores.find
-                        ( ScoreEntry( constraint,
-                                      _plConstraintToScore[constraint] ) ) !=
-                        _scores.end() );
-            });
+        DEBUG( {
+            ASSERT( _plConstraintToScore.exists( constraint ) );
+            ASSERT( _scores.find( ScoreEntry( constraint, _plConstraintToScore[constraint] ) ) !=
+                    _scores.end() );
+        } );
         return _plConstraintToScore[constraint];
     }
 

@@ -13,11 +13,12 @@
 
  **/
 
+#include "TableauState.h"
+
 #include "BasisFactorizationFactory.h"
 #include "CSRMatrix.h"
 #include "MarabouError.h"
 #include "SparseUnsortedList.h"
-#include "TableauState.h"
 
 TableauState::TableauState()
     : _A( NULL )
@@ -135,7 +136,9 @@ TableauState::~TableauState()
     }
 }
 
-void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorization::BasisColumnOracle &oracle )
+void TableauState::setDimensions( unsigned m,
+                                  unsigned n,
+                                  const IBasisFactorization::BasisColumnOracle &oracle )
 {
     _m = m;
     _n = n;
@@ -152,7 +155,8 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     {
         _sparseColumnsOfA[i] = new SparseUnsortedList;
         if ( !_sparseColumnsOfA[i] )
-            throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseColumnsOfA[i]" );
+            throw MarabouError( MarabouError::ALLOCATION_FAILED,
+                                "TableauState::sparseColumnsOfA[i]" );
     }
 
     _sparseRowsOfA = new SparseUnsortedList *[m];
@@ -166,7 +170,7 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
             throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::sparseRowsOfA[i]" );
     }
 
-    _denseA = new double[m*n];
+    _denseA = new double[m * n];
     if ( !_denseA )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::denseA" );
 
@@ -186,7 +190,7 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_basicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::assignment" );
 
-    _nonBasicAssignment = new double[n-m];
+    _nonBasicAssignment = new double[n - m];
     if ( !_nonBasicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicAssignment" );
 
@@ -194,9 +198,10 @@ void TableauState::setDimensions( unsigned m, unsigned n, const IBasisFactorizat
     if ( !_basicIndexToVariable )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::basicIndexToVariable" );
 
-    _nonBasicIndexToVariable = new unsigned[n-m];
+    _nonBasicIndexToVariable = new unsigned[n - m];
     if ( !_nonBasicIndexToVariable )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "TableauState::nonBasicIndexToVariable" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED,
+                            "TableauState::nonBasicIndexToVariable" );
 
     _variableToIndex = new unsigned[n];
     if ( !_variableToIndex )

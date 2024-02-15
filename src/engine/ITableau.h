@@ -67,8 +67,12 @@ public:
           These callbacks will be invoked when the variable's
           lower/upper bounds change.
         */
-        virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-        virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+        virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ )
+        {
+        }
+        virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ )
+        {
+        }
     };
 
     class ResizeWatcher
@@ -78,7 +82,9 @@ public:
           This callback will be invoked when the tableau size changes,
           typically when new variables are added.
         */
-        virtual void notifyDimensionChange( unsigned /* m */, unsigned /* n */ ) {}
+        virtual void notifyDimensionChange( unsigned /* m */, unsigned /* n */ )
+        {
+        }
     };
 
     virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;
@@ -89,7 +95,7 @@ public:
 
     virtual void registerCostFunctionManager( ICostFunctionManager *costFunctionManager ) = 0;
 
-    virtual ~ITableau() {};
+    virtual ~ITableau(){};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
     virtual void setConstraintMatrix( const double *A ) = 0;
@@ -131,7 +137,8 @@ public:
     virtual void setChangeRatio( double changeRatio ) = 0;
     virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
-    virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
+    virtual double
+    ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
     virtual void setNonBasicAssignment( unsigned variable, double value, bool updateBasics ) = 0;
     virtual void computeCostFunction() = 0;
@@ -181,7 +188,10 @@ public:
     virtual double *getInverseBasisMatrix() const = 0;
     virtual void refreshBasisFactorization() = 0;
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
-    virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
+    virtual bool areLinearlyDependent( unsigned x1,
+                                       unsigned x2,
+                                       double &coefficient,
+                                       double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     virtual void postContextPopHook() = 0;
     virtual IBoundManager &getBoundManager() const = 0;

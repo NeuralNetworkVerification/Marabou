@@ -21,47 +21,49 @@
 
 
 #ifndef NDEBUG
-#  define DEBUG(x) x
+#define DEBUG( x ) x
 #else
-#  define DEBUG(x)
+#define DEBUG( x )
 #endif
 
 #ifndef NDEBUG
-#  define LOG(x, f, y, ...)                     \
-    {                                           \
-        if ( ( x ) )                            \
-        {                                       \
-            printf( f, y );                     \
-        }                                       \
+#define LOG( x, f, y, ... )                                                                        \
+    {                                                                                              \
+        if ( ( x ) )                                                                               \
+        {                                                                                          \
+            printf( f, y );                                                                        \
+        }                                                                                          \
     }
 #else
-#  define LOG(x, f, y, ...)  {}
+#define LOG( x, f, y, ... )                                                                        \
+    {                                                                                              \
+    }
 #endif
 
 #ifndef NDEBUG
-#  define ASSERTM(x, y, ...)                    \
-    {                                           \
-        if ( !( x ) )                           \
-        {                                       \
-            printf( y );                        \
-            exit( 1 );                          \
-        }                                       \
+#define ASSERTM( x, y, ... )                                                                       \
+    {                                                                                              \
+        if ( !( x ) )                                                                              \
+        {                                                                                          \
+            printf( y );                                                                           \
+            exit( 1 );                                                                             \
+        }                                                                                          \
     }
 #else
-#  define ASSERTM(x, y, ...)
+#define ASSERTM( x, y, ... )
 #endif
 
 #ifndef NDEBUG
-#  define ASSERT(x)                             \
-    {                                           \
-        if ( !( x ) )                           \
-        {                                       \
-            printf( "Assertion violation! File %s, line %d\n", __FILE__, __LINE__ ); \
-            exit( 1 );                          \
-        }                                       \
+#define ASSERT( x )                                                                                \
+    {                                                                                              \
+        if ( !( x ) )                                                                              \
+        {                                                                                          \
+            printf( "Assertion violation! File %s, line %d\n", __FILE__, __LINE__ );               \
+            exit( 1 );                                                                             \
+        }                                                                                          \
     }
 #else
-#  define ASSERT(x)
+#define ASSERT( x )
 #endif
 
 #endif // __Debug_h__

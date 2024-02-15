@@ -21,7 +21,8 @@
 #include "LUFactors.h"
 #include "List.h"
 
-#define LU_FACTORIZATION_LOG( x, ... ) LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "LUFactorization: %s\n", x )
+#define LU_FACTORIZATION_LOG( x, ... )                                                             \
+    LOG( GlobalConfiguration::BASIS_FACTORIZATION_LOGGING, "LUFactorization: %s\n", x )
 
 class EtaMatrix;
 class LPElement;
@@ -50,7 +51,7 @@ public:
     */
     void updateToAdjacentBasis( unsigned columnIndex,
                                 const double *changeColumn,
-                                const double */* newColumn */ );
+                                const double * /* newColumn */ );
 
     /*
       Perform a forward transformation, i.e. find x such that x = inv(B) * y,
@@ -97,18 +98,18 @@ public:
     void storeFactorization( IBasisFactorization *other );
     void restoreFactorization( const IBasisFactorization *other );
 
-	/*
+    /*
       Factorize the stored _B matrix into LU form.
-	*/
+    */
     void factorizeBasis();
 
-	/*
+    /*
       Ask the basis factorization to obtain a fresh basis
       (through the previously-provided oracle).
-	*/
+    */
     void obtainFreshBasis();
 
-	/*
+    /*
       Swap two rows of a matrix.
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
@@ -143,9 +144,9 @@ public:
     /*
       Getter functions for the various factorization components.
     */
-	const double *getU() const;
-	const List<LPElement *> getLP() const;
-	const List<EtaMatrix *> getEtas() const;
+    const double *getU() const;
+    const List<LPElement *> getLP() const;
+    const List<EtaMatrix *> getEtas() const;
 
     /*
       Debug
@@ -156,7 +157,7 @@ private:
     /*
       The Basis matrix.
     */
-	double *_B;
+    double *_B;
 
     /*
       The dimension of the basis matrix.
@@ -186,7 +187,7 @@ private:
     /*
       Clear a previous factorization.
     */
-	void clearFactorization();
+    void clearFactorization();
 };
 
 #endif // __LUFactorization_h__

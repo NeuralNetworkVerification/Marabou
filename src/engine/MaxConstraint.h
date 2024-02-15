@@ -46,9 +46,9 @@
 #ifndef __MaxConstraint_h__
 #define __MaxConstraint_h__
 
-#include "PiecewiseLinearConstraint.h"
 #include "LinearExpression.h"
 #include "Map.h"
+#include "PiecewiseLinearConstraint.h"
 
 #define MAX_VARIABLE_TO_PHASE_OFFSET 1
 
@@ -194,8 +194,8 @@ public:
     virtual void getCostFunctionComponent( LinearExpression &cost,
                                            PhaseStatus phase ) const override;
 
-    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
-                                                    &assignment ) const override;
+    virtual PhaseStatus
+    getPhaseStatusInAssignment( const Map<unsigned, double> &assignment ) const override;
 
     /*
       Returns string with shape:
@@ -238,18 +238,18 @@ public:
     inline PhaseStatus variableToPhase( unsigned variable ) const
     {
         return ( variable == MAX_PHASE_ELIMINATED )
-               ? MAX_PHASE_ELIMINATED
-               : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<PhaseStatus>( variable + MAX_VARIABLE_TO_PHASE_OFFSET );
     }
 
     inline unsigned phaseToVariable( PhaseStatus phase ) const
     {
         return ( phase == MAX_PHASE_ELIMINATED )
-               ? MAX_PHASE_ELIMINATED
-               : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
+                 ? MAX_PHASE_ELIMINATED
+                 : static_cast<unsigned>( phase ) - MAX_VARIABLE_TO_PHASE_OFFSET;
     }
 
- private:
+private:
     unsigned _f;
     Set<unsigned> _elements;
     Set<unsigned> _initialElements;

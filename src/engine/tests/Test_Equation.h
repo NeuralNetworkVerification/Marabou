@@ -13,26 +13,25 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Equation.h"
+
+#include <cxxtest/TestSuite.h>
 
 class EquationTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void test_remove_redundant_addends()
     {
         Equation eq;
-        eq.addAddend(1.5, 1);
-        eq.addAddend(1.5, 1);
-        eq.addAddend(-1, 2);
-        eq.addAddend(1, 2);
-        eq.addAddend(-0.5, 1);
-        eq.addAddend(0, 1);
-        eq.addAddend(0, 4);
-        eq.addAddend(3.5, 5);
-        eq.setScalar(1);
+        eq.addAddend( 1.5, 1 );
+        eq.addAddend( 1.5, 1 );
+        eq.addAddend( -1, 2 );
+        eq.addAddend( 1, 2 );
+        eq.addAddend( -0.5, 1 );
+        eq.addAddend( 0, 1 );
+        eq.addAddend( 0, 4 );
+        eq.addAddend( 3.5, 5 );
+        eq.setScalar( 1 );
 
         TS_ASSERT_EQUALS( eq._addends.size(), 8u );
         TS_ASSERT( eq.containsRedundantAddends() );

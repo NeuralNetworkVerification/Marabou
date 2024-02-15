@@ -23,8 +23,8 @@
 #include "PlcLemma.h"
 #include "SparseUnsortedList.h"
 #include "Tightening.h"
-#include "Vector.h"
 #include "UnsatCertificateNode.h"
+#include "Vector.h"
 
 /*
   A class responsible for writing Marabou proof instances into JSON format
@@ -34,15 +34,16 @@ class JsonWriter
 public:
     /*
       Write an entire UNSAT proof to a JSON file.
-      General remark - empty JSON properties (such as empty contradiction for non-leaves) will not be written.
+      General remark - empty JSON properties (such as empty contradiction for non-leaves) will not
+      be written.
     */
-   static void writeProofToJson( const UnsatCertificateNode *root,
-                                 unsigned explanationSize,
-                                 const SparseMatrix *initialTableau,
-                                 const Vector<double> &upperBounds,
-                                 const Vector<double> &lowerBounds,
-                                 const List<PiecewiseLinearConstraint *> &problemConstraints,
-                                 IFile &file );
+    static void writeProofToJson( const UnsatCertificateNode *root,
+                                  unsigned explanationSize,
+                                  const SparseMatrix *initialTableau,
+                                  const Vector<double> &upperBounds,
+                                  const Vector<double> &lowerBounds,
+                                  const List<PiecewiseLinearConstraint *> &problemConstraints,
+                                  IFile &file );
     /*
       Configure whether lemmas should be written proved as well
     */
@@ -90,27 +91,35 @@ private:
     /*
       Write the initial tableau to a JSON list of Strings
     */
-    static void writeInitialTableau( const SparseMatrix *initialTableau, unsigned explanationSize, List<String> &instance );
+    static void writeInitialTableau( const SparseMatrix *initialTableau,
+                                     unsigned explanationSize,
+                                     List<String> &instance );
 
     /*
       Write variables bounds to a JSON String
     */
-    static void writeBounds( const Vector<double> &bounds, BoundType isUpper, List<String> &instance );
+    static void
+    writeBounds( const Vector<double> &bounds, BoundType isUpper, List<String> &instance );
 
     /*
       Write a list a piecewise-linear constraints to a JSON String
     */
-    static void writePiecewiseLinearConstraints( const List<PiecewiseLinearConstraint *> &problemConstraints, List<String> &instance );
+    static void
+    writePiecewiseLinearConstraints( const List<PiecewiseLinearConstraint *> &problemConstraints,
+                                     List<String> &instance );
 
     /*
       Write an UNSAT certificate node to a JSON String
     */
-    static void writeUnsatCertificateNode( const UnsatCertificateNode *node, unsigned explanationSize, List<String> &instance );
+    static void writeUnsatCertificateNode( const UnsatCertificateNode *node,
+                                           unsigned explanationSize,
+                                           List<String> &instance );
 
     /*
       Write a list of PLCLemmas to a JSON String
     */
-    static void writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCLemma, List<String> &instance );
+    static void writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCLemma,
+                                List<String> &instance );
 
     /*
       Write a contradiction object to a JSON String

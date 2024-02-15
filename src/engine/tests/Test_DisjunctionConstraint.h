@@ -13,16 +13,15 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "DisjunctionConstraint.h"
+#include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
-#include "InputQuery.h"
 
-class MockForDisjunctionConstraint
-    : public MockErrno
+#include <cxxtest/TestSuite.h>
+
+class MockForDisjunctionConstraint : public MockErrno
 {
 public:
 };
@@ -35,7 +34,8 @@ class TestDisjunctionConstraint : public DisjunctionConstraint
 public:
     TestDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> elements )
         : DisjunctionConstraint( elements )
-    {}
+    {
+    }
 
     using DisjunctionConstraint::getPhaseStatus;
 };
@@ -322,15 +322,19 @@ public:
 
         DisjunctionConstraint disjunction( caseSplits );
 
-        TS_ASSERT_EQUALS( disjunction.getContext(), static_cast<Context*>( nullptr ) );
-        TS_ASSERT_EQUALS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getContext(), static_cast<Context *>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getPhaseStatusCDO(),
+                          static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_EQUALS( disjunction.getInfeasibleCasesCDList(),
+                          static_cast<CDList<PhaseStatus> *>( nullptr ) );
         TS_ASSERT_THROWS_NOTHING( disjunction.initializeCDOs( &context ) );
         TS_ASSERT_EQUALS( disjunction.getContext(), &context );
-        TS_ASSERT_DIFFERS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( disjunction.getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( disjunction.getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getPhaseStatusCDO(),
+                           static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( disjunction.getInfeasibleCasesCDList(),
+                           static_cast<CDList<PhaseStatus> *>( nullptr ) );
 
         bool active = false;
         TS_ASSERT_THROWS_NOTHING( active = disjunction.isActive() );
@@ -485,8 +489,7 @@ public:
 
         List<PhaseStatus> casesBefore = disj->getAllCases();
         List<PiecewiseLinearCaseSplit> splitsBefore = disj->getCaseSplits();
-        TS_ASSERT_THROWS_NOTHING( disj->transformToUseAuxVariables
-                                  ( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( disj->transformToUseAuxVariables( inputQuery ) );
         List<PhaseStatus> casesAfter = disj->getAllCases();
         List<PiecewiseLinearCaseSplit> splitsAfter = disj->getCaseSplits();
 
@@ -514,7 +517,7 @@ public:
             Tightening t2( 0, 5, Tightening::UB );
             Tightening t3( 3, 0, Tightening::UB ); // First aux introduced here.
             Tightening t4( 4, 0, Tightening::LB ); // Second aux introduced here.
-            for ( const auto &t : {t1, t2, t3, t4} )
+            for ( const auto &t : { t1, t2, t3, t4 } )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
         ++split;
@@ -525,7 +528,7 @@ public:
             Tightening t1( 0, 5, Tightening::LB );
             Tightening t2( 5, 0, Tightening::UB ); // Third aux introduced here.
             Tightening t3( 6, 0, Tightening::LB ); // Fourth aux
-            for ( const auto &t : {t1, t2, t3} )
+            for ( const auto &t : { t1, t2, t3 } )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
         ++split;
@@ -535,7 +538,7 @@ public:
             TS_ASSERT( split->getEquations().empty() );
             Tightening t1( 7, 0, Tightening::LB ); // 5th aux
             Tightening t2( 8, 0, Tightening::UB ); // 6th aux
-            for ( const auto &t : {t1, t2} )
+            for ( const auto &t : { t1, t2 } )
                 TS_ASSERT( split->getBoundTightenings().exists( t ) );
         }
 
@@ -611,15 +614,13 @@ public:
         String originalSerialized = disj.serializeToString();
         DisjunctionConstraint recoveredDisj( originalSerialized );
 
-        TS_ASSERT_EQUALS( disj.serializeToString(),
-                          recoveredDisj.serializeToString() );
+        TS_ASSERT_EQUALS( disj.serializeToString(), recoveredDisj.serializeToString() );
 
-        List<PiecewiseLinearCaseSplit> recoveredCaseSplits =
-            recoveredDisj.getCaseSplits();
+        List<PiecewiseLinearCaseSplit> recoveredCaseSplits = recoveredDisj.getCaseSplits();
         auto split = recoveredCaseSplits.begin();
-        TS_ASSERT_EQUALS( *split++, *cs1);
-        TS_ASSERT_EQUALS( *split++, *cs2);
-        TS_ASSERT_EQUALS( *split, *cs3);
+        TS_ASSERT_EQUALS( *split++, *cs1 );
+        TS_ASSERT_EQUALS( *split++, *cs2 );
+        TS_ASSERT_EQUALS( *split, *cs3 );
     }
 
     void test_get_entailed_tightenings()
@@ -652,9 +653,7 @@ public:
 
             DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
 
-            List<Tightening> expectedBounds = {
-                Tightening( 0, -1, Tightening::LB )
-            };
+            List<Tightening> expectedBounds = { Tightening( 0, -1, Tightening::LB ) };
 
             List<Tightening> bounds;
             TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );
@@ -678,9 +677,7 @@ public:
 
             DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
 
-            List<Tightening> expectedBounds = {
-                Tightening( 0, 5, Tightening::UB )
-            };
+            List<Tightening> expectedBounds = { Tightening( 0, 5, Tightening::UB ) };
 
             List<Tightening> bounds;
             TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );
@@ -706,10 +703,8 @@ public:
 
             DisjunctionConstraint disj = DisjunctionConstraint( caseSplits );
 
-            List<Tightening> expectedBounds = {
-                Tightening( 0, -1, Tightening::LB ),
-                Tightening( 0, 5, Tightening::UB )
-            };
+            List<Tightening> expectedBounds = { Tightening( 0, -1, Tightening::LB ),
+                                                Tightening( 0, 5, Tightening::UB ) };
 
             List<Tightening> bounds;
             TS_ASSERT_THROWS_NOTHING( disj.getEntailedTightenings( bounds ) );

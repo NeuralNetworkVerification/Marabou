@@ -14,11 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MString.h"
 #include "Map.h"
 #include "MockErrno.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MapTestSuite : public CxxTest::TestSuite
 {
@@ -198,10 +198,8 @@ public:
         TS_ASSERT_EQUALS( map.get( 2 ), "Red" );
         TS_ASSERT_EQUALS( map.get( 3 ), "Tasty" );
 
-        TS_ASSERT_THROWS_EQUALS( map.at( 4 ),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::KEY_DOESNT_EXIST_IN_MAP );
+        TS_ASSERT_THROWS_EQUALS(
+            map.at( 4 ), const CommonError &e, e.getCode(), CommonError::KEY_DOESNT_EXIST_IN_MAP );
     }
 
     void test_equality()
@@ -275,10 +273,8 @@ public:
 
         TS_ASSERT_EQUALS( map.at( 3 ), "fox" );
 
-        TS_ASSERT_THROWS_EQUALS( map.at( 4 ),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::KEY_DOESNT_EXIST_IN_MAP );
+        TS_ASSERT_THROWS_EQUALS(
+            map.at( 4 ), const CommonError &e, e.getCode(), CommonError::KEY_DOESNT_EXIST_IN_MAP );
     }
 
     void test_rbegin_and_rend()
@@ -320,13 +316,13 @@ public:
         TS_ASSERT_EQUALS( flipped.size(), 3U );
 
         TS_ASSERT_EQUALS( flipped["cat"].size(), 1U );
-        TS_ASSERT_EQUALS( *(flipped["cat"].begin()), 1 );
+        TS_ASSERT_EQUALS( *( flipped["cat"].begin() ), 1 );
 
         TS_ASSERT_EQUALS( flipped["dog"].size(), 1U );
-        TS_ASSERT_EQUALS( *(flipped["dog"].begin()), 2 );
+        TS_ASSERT_EQUALS( *( flipped["dog"].begin() ), 2 );
 
         TS_ASSERT_EQUALS( flipped["bear"].size(), 1U );
-        TS_ASSERT_EQUALS( *(flipped["bear"].begin()), 3 );
+        TS_ASSERT_EQUALS( *( flipped["bear"].begin() ), 3 );
 
         map[4] = "dog";
 
@@ -335,14 +331,14 @@ public:
         TS_ASSERT_EQUALS( flipped.size(), 3U );
 
         TS_ASSERT_EQUALS( flipped["cat"].size(), 1U );
-        TS_ASSERT_EQUALS( *(flipped["cat"].begin()), 1 );
+        TS_ASSERT_EQUALS( *( flipped["cat"].begin() ), 1 );
 
         TS_ASSERT_EQUALS( flipped["dog"].size(), 2U );
-        TS_ASSERT_EQUALS( *(flipped["dog"].begin()), 2 );
+        TS_ASSERT_EQUALS( *( flipped["dog"].begin() ), 2 );
         TS_ASSERT_EQUALS( flipped["dog"].back(), 4 );
 
         TS_ASSERT_EQUALS( flipped["bear"].size(), 1U );
-        TS_ASSERT_EQUALS( *(flipped["bear"].begin()), 3 );
+        TS_ASSERT_EQUALS( *( flipped["bear"].begin() ), 3 );
     }
 
     void test_key_with_largest_value()

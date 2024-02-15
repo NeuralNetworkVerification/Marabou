@@ -14,11 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MString.h"
 #include "MockErrno.h"
 #include "Queue.h"
+
+#include <cxxtest/TestSuite.h>
 
 class QueueTestSuite : public CxxTest::TestSuite
 {
@@ -74,15 +74,11 @@ public:
 
         TS_ASSERT( q.empty() );
 
-        TS_ASSERT_THROWS_EQUALS( q.peak(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::QUEUE_IS_EMPTY );
+        TS_ASSERT_THROWS_EQUALS(
+            q.peak(), const CommonError &e, e.getCode(), CommonError::QUEUE_IS_EMPTY );
 
-        TS_ASSERT_THROWS_EQUALS( q.pop(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::QUEUE_IS_EMPTY );
+        TS_ASSERT_THROWS_EQUALS(
+            q.pop(), const CommonError &e, e.getCode(), CommonError::QUEUE_IS_EMPTY );
     }
 };
 

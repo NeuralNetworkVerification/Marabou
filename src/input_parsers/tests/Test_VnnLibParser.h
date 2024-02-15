@@ -12,12 +12,12 @@
  ** Unit tests for the VnnLibParser class.
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "InputQuery.h"
 #include "OnnxParser.h"
 #include "VnnLibParser.h"
+
+#include <cxxtest/TestSuite.h>
 #include <filesystem>
 
 class VnnLibParserTestSuite : public CxxTest::TestSuite
@@ -25,8 +25,10 @@ class VnnLibParserTestSuite : public CxxTest::TestSuite
 public:
     void test_nano_vnncomp()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
 
         InputQuery inputQuery;
 
@@ -48,8 +50,10 @@ public:
 
     void test_tiny_vnncomp()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_tiny_vnncomp.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_tiny_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_tiny_vnncomp.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_tiny_vnncomp.onnx" );
 
         InputQuery inputQuery;
 
@@ -61,7 +65,8 @@ public:
         unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
         unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
 
-        auto *disjunction = ( DisjunctionConstraint * ) ( inputQuery.getPiecewiseLinearConstraints().back() );
+        auto *disjunction =
+            (DisjunctionConstraint *)( inputQuery.getPiecewiseLinearConstraints().back() );
         const auto &caseSplits = disjunction->getCaseSplits();
         const auto &caseSplitsIter = caseSplits.begin();
         auto boundsIter = ( *caseSplitsIter ).getBoundTightenings().begin();
@@ -80,8 +85,10 @@ public:
 
     void test_small_vnncomp()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_small_vnncomp.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_small_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_small_vnncomp.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_small_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -94,7 +101,8 @@ public:
         unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
         unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
 
-        auto *disjunction = ( DisjunctionConstraint * ) ( inputQuery.getPiecewiseLinearConstraints().back() );
+        auto *disjunction =
+            (DisjunctionConstraint *)( inputQuery.getPiecewiseLinearConstraints().back() );
         const auto &caseSplits = disjunction->getCaseSplits();
         const auto &caseSplitsIter = caseSplits.begin();
         auto boundsIter = ( *caseSplitsIter ).getBoundTightenings().begin();
@@ -113,8 +121,10 @@ public:
 
     void test_sat_vnncomp()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_prop_vnncomp.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_prop_vnncomp.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -133,14 +143,19 @@ public:
         unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
         unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
 
-        TS_ASSERT( lowerBounds.exists( input0 ) && lowerBounds.get( input0 ) == -0.30353115613746867 )
-        TS_ASSERT( upperBounds.exists( input0 ) && upperBounds.get( input0 ) == -0.29855281193475053 )
+        TS_ASSERT( lowerBounds.exists( input0 ) &&
+                   lowerBounds.get( input0 ) == -0.30353115613746867 )
+        TS_ASSERT( upperBounds.exists( input0 ) &&
+                   upperBounds.get( input0 ) == -0.29855281193475053 )
 
-        TS_ASSERT( lowerBounds.exists( input1 ) && lowerBounds.get( input1 ) == -0.009549296585513092 )
-        TS_ASSERT( upperBounds.exists( input1 ) && upperBounds.get( input1 ) == 0.009549296585513092 )
+        TS_ASSERT( lowerBounds.exists( input1 ) &&
+                   lowerBounds.get( input1 ) == -0.009549296585513092 )
+        TS_ASSERT( upperBounds.exists( input1 ) &&
+                   upperBounds.get( input1 ) == 0.009549296585513092 )
 
         TS_ASSERT( lowerBounds.exists( input2 ) && lowerBounds.get( input2 ) == 0.4933803235848431 )
-        TS_ASSERT( upperBounds.exists( input2 ) && upperBounds.get( input2 ) == 0.49999999998567607 )
+        TS_ASSERT( upperBounds.exists( input2 ) &&
+                   upperBounds.get( input2 ) == 0.49999999998567607 )
 
         TS_ASSERT( lowerBounds.exists( input3 ) && lowerBounds.get( input3 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input3 ) && upperBounds.get( input3 ) == 0.5 )
@@ -189,8 +204,10 @@ public:
 
     void test_unsat_vnncomp()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_prop_vnncomp.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_unsat_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_prop_vnncomp.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_unsat_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -209,14 +226,19 @@ public:
         unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
         unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
 
-        TS_ASSERT( lowerBounds.exists( input0 ) && lowerBounds.get( input0 ) == -0.30353115613746867 )
-        TS_ASSERT( upperBounds.exists( input0 ) && upperBounds.get( input0 ) == -0.29855281193475053 )
+        TS_ASSERT( lowerBounds.exists( input0 ) &&
+                   lowerBounds.get( input0 ) == -0.30353115613746867 )
+        TS_ASSERT( upperBounds.exists( input0 ) &&
+                   upperBounds.get( input0 ) == -0.29855281193475053 )
 
-        TS_ASSERT( lowerBounds.exists( input1 ) && lowerBounds.get( input1 ) == -0.009549296585513092 )
-        TS_ASSERT( upperBounds.exists( input1 ) && upperBounds.get( input1 ) == 0.009549296585513092 )
+        TS_ASSERT( lowerBounds.exists( input1 ) &&
+                   lowerBounds.get( input1 ) == -0.009549296585513092 )
+        TS_ASSERT( upperBounds.exists( input1 ) &&
+                   upperBounds.get( input1 ) == 0.009549296585513092 )
 
         TS_ASSERT( lowerBounds.exists( input2 ) && lowerBounds.get( input2 ) == 0.4933803235848431 )
-        TS_ASSERT( upperBounds.exists( input2 ) && upperBounds.get( input2 ) == 0.49999999998567607 )
+        TS_ASSERT( upperBounds.exists( input2 ) &&
+                   upperBounds.get( input2 ) == 0.49999999998567607 )
 
         TS_ASSERT( lowerBounds.exists( input3 ) && lowerBounds.get( input3 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input3 ) && upperBounds.get( input3 ) == 0.5 )
@@ -265,8 +287,10 @@ public:
 
     void test_add_const()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_add_const.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_add_const.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -285,13 +309,13 @@ public:
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 0 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )
         TS_ASSERT( lowerBounds.exists( outputVar ) && lowerBounds.get( outputVar ) == 0 )
-
     }
 
     void test_add_var()
     {
         String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_add_var.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -310,14 +334,19 @@ public:
         unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
         unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
 
-        TS_ASSERT( lowerBounds.exists( input0 ) && lowerBounds.get( input0 ) == -0.30353115613746867 )
-        TS_ASSERT( upperBounds.exists( input0 ) && upperBounds.get( input0 ) == -0.29855281193475053 )
+        TS_ASSERT( lowerBounds.exists( input0 ) &&
+                   lowerBounds.get( input0 ) == -0.30353115613746867 )
+        TS_ASSERT( upperBounds.exists( input0 ) &&
+                   upperBounds.get( input0 ) == -0.29855281193475053 )
 
-        TS_ASSERT( lowerBounds.exists( input1 ) && lowerBounds.get( input1 ) == -0.009549296585513092 )
-        TS_ASSERT( upperBounds.exists( input1 ) && upperBounds.get( input1 ) == 0.009549296585513092 )
+        TS_ASSERT( lowerBounds.exists( input1 ) &&
+                   lowerBounds.get( input1 ) == -0.009549296585513092 )
+        TS_ASSERT( upperBounds.exists( input1 ) &&
+                   upperBounds.get( input1 ) == 0.009549296585513092 )
 
         TS_ASSERT( lowerBounds.exists( input2 ) && lowerBounds.get( input2 ) == 0.4933803235848431 )
-        TS_ASSERT( upperBounds.exists( input2 ) && upperBounds.get( input2 ) == 0.49999999998567607 )
+        TS_ASSERT( upperBounds.exists( input2 ) &&
+                   upperBounds.get( input2 ) == 0.49999999998567607 )
 
         TS_ASSERT( lowerBounds.exists( input3 ) && lowerBounds.get( input3 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input3 ) && upperBounds.get( input3 ) == 0.5 )
@@ -344,8 +373,10 @@ public:
 
     void test_sub_const()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sub_const.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sub_const.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -369,7 +400,8 @@ public:
     void test_sub_var()
     {
         String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sub_var.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );
@@ -388,14 +420,19 @@ public:
         unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
         unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
 
-        TS_ASSERT( lowerBounds.exists( input0 ) && lowerBounds.get( input0 ) == -0.30353115613746867 )
-        TS_ASSERT( upperBounds.exists( input0 ) && upperBounds.get( input0 ) == -0.29855281193475053 )
+        TS_ASSERT( lowerBounds.exists( input0 ) &&
+                   lowerBounds.get( input0 ) == -0.30353115613746867 )
+        TS_ASSERT( upperBounds.exists( input0 ) &&
+                   upperBounds.get( input0 ) == -0.29855281193475053 )
 
-        TS_ASSERT( lowerBounds.exists( input1 ) && lowerBounds.get( input1 ) == -0.009549296585513092 )
-        TS_ASSERT( upperBounds.exists( input1 ) && upperBounds.get( input1 ) == 0.009549296585513092 )
+        TS_ASSERT( lowerBounds.exists( input1 ) &&
+                   lowerBounds.get( input1 ) == -0.009549296585513092 )
+        TS_ASSERT( upperBounds.exists( input1 ) &&
+                   upperBounds.get( input1 ) == 0.009549296585513092 )
 
         TS_ASSERT( lowerBounds.exists( input2 ) && lowerBounds.get( input2 ) == 0.4933803235848431 )
-        TS_ASSERT( upperBounds.exists( input2 ) && upperBounds.get( input2 ) == 0.49999999998567607 )
+        TS_ASSERT( upperBounds.exists( input2 ) &&
+                   upperBounds.get( input2 ) == 0.49999999998567607 )
 
         TS_ASSERT( lowerBounds.exists( input3 ) && lowerBounds.get( input3 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input3 ) && upperBounds.get( input3 ) == 0.5 )
@@ -422,8 +459,10 @@ public:
 
     void test_mul_var_const()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_mul_var_const.vnnlib" );
-        String onnxFilename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        String filename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_mul_var_const.vnnlib" );
+        String onnxFilename =
+            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
 
         InputQuery inputQuery;
         Equation testEq = Equation( Equation::EquationType::LE );

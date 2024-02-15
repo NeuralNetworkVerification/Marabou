@@ -13,9 +13,10 @@
 
  **/
 
+#include "LPFormulator.h"
+
 #include "GurobiWrapper.h"
 #include "InfeasibleQueryException.h"
-#include "LPFormulator.h"
 #include "Layer.h"
 #include "MStringf.h"
 #include "NLRError.h"
@@ -38,7 +39,8 @@ LPFormulator::~LPFormulator()
 
 double LPFormulator::solveLPRelaxation( GurobiWrapper &gurobi,
                                         const Map<unsigned, Layer *> &layers,
-                                        MinOrMax minOrMax, String variableName,
+                                        MinOrMax minOrMax,
+                                        String variableName,
                                         unsigned lastLayer )
 {
     gurobi.resetModel();
@@ -47,8 +49,10 @@ double LPFormulator::solveLPRelaxation( GurobiWrapper &gurobi,
 }
 
 double LPFormulator::optimizeWithGurobi( GurobiWrapper &gurobi,
-                                         MinOrMax minOrMax, String variableName,
-                                         double cutoffValue, std::atomic_bool *infeasible )
+                                         MinOrMax minOrMax,
+                                         String variableName,
+                                         double cutoffValue,
+                                         std::atomic_bool *infeasible )
 {
     List<GurobiWrapper::Term> terms;
     terms.append( GurobiWrapper::Term( 1, variableName ) );
@@ -107,9 +111,9 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
     unsigned cutoffs = 0;
 
     struct timespec gurobiStart;
-    (void) gurobiStart;
+    (void)gurobiStart;
     struct timespec gurobiEnd;
-    (void) gurobiEnd;
+    (void)gurobiEnd;
 
     gurobiStart = TimeUtils::sampleMicro();
 
@@ -170,14 +174,11 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             {
                 gurobi.setUpperBound( variableName, ub );
 
-                if ( FloatUtils::isPositive( currentUb ) &&
-                     !FloatUtils::isPositive( ub ) )
+                if ( FloatUtils::isPositive( currentUb ) && !FloatUtils::isPositive( ub ) )
                     ++signChanges;
 
                 layer->setUb( j, ub );
-                _layerOwner->receiveTighterBound( Tightening( variable,
-                                                              ub,
-                                                              Tightening::UB ) );
+                _layerOwner->receiveTighterBound( Tightening( variable, ub, Tightening::UB ) );
                 ++tighterBoundCounter;
 
                 if ( _cutoffInUse && ub < _cutoffValue )
@@ -217,14 +218,11 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
             {
                 gurobi.setLowerBound( variableName, lb );
 
-                if ( FloatUtils::isNegative( currentLb ) &&
-                     !FloatUtils::isNegative( lb ) )
+                if ( FloatUtils::isNegative( currentLb ) && !FloatUtils::isNegative( lb ) )
                     ++signChanges;
 
                 layer->setLb( j, lb );
-                _layerOwner->receiveTighterBound( Tightening( variable,
-                                                              lb,
-                                                              Tightening::LB ) );
+                _layerOwner->receiveTighterBound( Tightening( variable, lb, Tightening::LB ) );
                 ++tighterBoundCounter;
 
                 if ( _cutoffInUse && lb >= _cutoffValue )
@@ -238,9 +236,15 @@ void LPFormulator::optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned
 
     gurobiEnd = TimeUtils::sampleMicro();
 
-    LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                               tighterBoundCounter, signChanges, cutoffs ).ascii() );
-    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
+    LPFormulator_LOG(
+        Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
+                 tighterBoundCounter,
+                 signChanges,
+                 cutoffs )
+            .ascii() );
+    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n",
+                               TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 )
+                          .ascii() );
 }
 
 void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers )
@@ -268,9 +272,9 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     std::atomic_uint cutoffs( 0 );
 
     struct timespec gurobiStart;
-    (void) gurobiStart;
+    (void)gurobiStart;
     struct timespec gurobiEnd;
-    (void) gurobiEnd;
+    (void)gurobiEnd;
 
     gurobiStart = TimeUtils::sampleMicro();
 
@@ -278,16 +282,18 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
     {
         Layer *layer = currentLayer.second;
 
-        ThreadArgument argument( layer, &layers,
-                        std::ref( freeSolvers ),
-                        std::ref( mtx ), std::ref( infeasible ),
-                        std::ref( tighterBoundCounter ),
-                        std::ref( signChanges ),
-                        std::ref( cutoffs ),
-                        layer->getLayerIndex(),
-                        currentLayer.first,
-                        threads,
-                        &solverToIndex );
+        ThreadArgument argument( layer,
+                                 &layers,
+                                 std::ref( freeSolvers ),
+                                 std::ref( mtx ),
+                                 std::ref( infeasible ),
+                                 std::ref( tighterBoundCounter ),
+                                 std::ref( signChanges ),
+                                 std::ref( cutoffs ),
+                                 layer->getLayerIndex(),
+                                 currentLayer.first,
+                                 threads,
+                                 &solverToIndex );
 
         // optimize every neuron of layer
         optimizeBoundsOfNeuronsWithLpRlaxation( argument );
@@ -300,9 +306,15 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
 
     gurobiEnd = TimeUtils::sampleMicro();
 
-    LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                               tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ).ascii() );
-    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
+    LPFormulator_LOG(
+        Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
+                 tighterBoundCounter.load(),
+                 signChanges.load(),
+                 cutoffs.load() )
+            .ascii() );
+    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n",
+                               TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 )
+                          .ascii() );
 
     clearSolverQueue( freeSolvers );
 
@@ -310,7 +322,8 @@ void LPFormulator::optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> 
         throw InfeasibleQueryException();
 }
 
-void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers, unsigned targetIndex )
+void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
+                                                             unsigned targetIndex )
 {
     unsigned numberOfWorkers = Options::get()->getInt( Options::NUM_WORKERS );
 
@@ -335,24 +348,26 @@ void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned,
     std::atomic_uint cutoffs( 0 );
 
     struct timespec gurobiStart;
-    (void) gurobiStart;
+    (void)gurobiStart;
     struct timespec gurobiEnd;
-    (void) gurobiEnd;
+    (void)gurobiEnd;
 
     gurobiStart = TimeUtils::sampleMicro();
 
     Layer *layer = layers[targetIndex];
 
-    ThreadArgument argument( layer, &layers,
-                    std::ref( freeSolvers ),
-                    std::ref( mtx ), std::ref( infeasible ),
-                    std::ref( tighterBoundCounter ),
-                    std::ref( signChanges ),
-                    std::ref( cutoffs ),
-                    layers.size() - 1,
-                    targetIndex,
-                    threads,
-                    &solverToIndex );
+    ThreadArgument argument( layer,
+                             &layers,
+                             std::ref( freeSolvers ),
+                             std::ref( mtx ),
+                             std::ref( infeasible ),
+                             std::ref( tighterBoundCounter ),
+                             std::ref( signChanges ),
+                             std::ref( cutoffs ),
+                             layers.size() - 1,
+                             targetIndex,
+                             threads,
+                             &solverToIndex );
 
     // optimize every neuron of layer
     optimizeBoundsOfNeuronsWithLpRlaxation( argument );
@@ -364,9 +379,15 @@ void LPFormulator::optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned,
 
     gurobiEnd = TimeUtils::sampleMicro();
 
-    LPFormulator_LOG( Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
-                               tighterBoundCounter.load(), signChanges.load(), cutoffs.load() ).ascii() );
-    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n", TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 ).ascii() );
+    LPFormulator_LOG(
+        Stringf( "Number of tighter bounds found by Gurobi: %u. Sign changes: %u. Cutoffs: %u\n",
+                 tighterBoundCounter.load(),
+                 signChanges.load(),
+                 cutoffs.load() )
+            .ascii() );
+    LPFormulator_LOG( Stringf( "Seconds spent Gurobiing: %llu\n",
+                               TimeUtils::timePassed( gurobiStart, gurobiEnd ) / 1000000 )
+                          .ascii() );
 
     clearSolverQueue( freeSolvers );
 
@@ -380,7 +401,7 @@ void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args 
 
     // Time to wait if no idle worker is availble
     boost::chrono::milliseconds waitTime( numberOfWorkers - 1 );
-    
+
     Layer *layer = args._layer;
     const Map<unsigned, Layer *> layers = *args._layers;
     unsigned targetIndex = args._targetIndex;
@@ -401,8 +422,10 @@ void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args 
     bool skipTightenLb = false; // If true, skip lower bound tightening
     bool skipTightenUb = false; // If true, skip upper bound tightening
 
-    // declare simulations as local var to avoid a problem which can happen due to multi thread process.
-    const Vector<Vector<double>> *simulations = _layerOwner->getLayer( targetIndex )->getSimulations();
+    // declare simulations as local var to avoid a problem which can happen due to multi thread
+    // process.
+    const Vector<Vector<double>> *simulations =
+        _layerOwner->getLayer( targetIndex )->getSimulations();
 
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
@@ -419,12 +442,14 @@ void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args 
         skipTightenUb = false;
 
         // Loop for simulation
-        for ( const auto &simValue : (*simulations).get( i ) )
+        for ( const auto &simValue : ( *simulations ).get( i ) )
         {
-            if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to call tightning upper bound.
+            if ( _cutoffInUse && _cutoffValue < simValue ) // If x_lower < 0 < x_sim, do not try to
+                                                           // call tightning upper bound.
                 skipTightenUb = true;
 
-            if ( _cutoffInUse && simValue < _cutoffValue ) // If x_sim < 0 < x_upper, do not try to call tightning lower bound.
+            if ( _cutoffInUse && simValue < _cutoffValue ) // If x_sim < 0 < x_upper, do not try to
+                                                           // call tightning lower bound.
                 skipTightenLb = true;
 
             if ( skipTightenUb && skipTightenLb )
@@ -434,19 +459,23 @@ void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args 
         // If no tightning is needed, continue
         if ( skipTightenUb && skipTightenLb )
         {
-            LPFormulator_LOG( Stringf( "Skip tightening lower and upper bounds for layer %d index %u",
-                                targetIndex, i ).ascii() );
+            LPFormulator_LOG(
+                Stringf(
+                    "Skip tightening lower and upper bounds for layer %d index %u", targetIndex, i )
+                    .ascii() );
             continue;
         }
         else if ( skipTightenUb )
         {
-            LPFormulator_LOG( Stringf( "Skip tightening upper bound for layer %u index %u",
-                                targetIndex, i ).ascii() );
+            LPFormulator_LOG(
+                Stringf( "Skip tightening upper bound for layer %u index %u", targetIndex, i )
+                    .ascii() );
         }
         else if ( skipTightenLb )
         {
-            LPFormulator_LOG( Stringf( "Skip tightening lower bound for layer %u index %u",
-                                targetIndex, i ).ascii() );
+            LPFormulator_LOG(
+                Stringf( "Skip tightening lower bound for layer %u index %u", targetIndex, i )
+                    .ascii() );
         }
 
         if ( infeasible )
@@ -473,22 +502,28 @@ void LPFormulator::optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args 
         mtx.unlock();
 
         // spawn a thread to tighten the bounds for the current variable
-        ThreadArgument argument( freeSolver, layer,
-                                    i, currentLb, currentUb,
-                                    _cutoffInUse, _cutoffValue,
-                                    _layerOwner, std::ref( freeSolvers ),
-                                    std::ref( mtx ), std::ref( infeasible ),
-                                    std::ref( tighterBoundCounter ),
-                                    std::ref( signChanges ),
-                                    std::ref( cutoffs ),
-                                    skipTightenLb,
-                                    skipTightenUb );
+        ThreadArgument argument( freeSolver,
+                                 layer,
+                                 i,
+                                 currentLb,
+                                 currentUb,
+                                 _cutoffInUse,
+                                 _cutoffValue,
+                                 _layerOwner,
+                                 std::ref( freeSolvers ),
+                                 std::ref( mtx ),
+                                 std::ref( infeasible ),
+                                 std::ref( tighterBoundCounter ),
+                                 std::ref( signChanges ),
+                                 std::ref( cutoffs ),
+                                 skipTightenLb,
+                                 skipTightenUb );
 
         if ( numberOfWorkers == 1 )
             tightenSingleVariableBoundsWithLPRelaxation( argument );
         else
-            threads[solverToIndex[freeSolver]] = boost::thread
-                ( tightenSingleVariableBoundsWithLPRelaxation, argument );
+            threads[solverToIndex[freeSolver]] =
+                boost::thread( tightenSingleVariableBoundsWithLPRelaxation, argument );
     }
 }
 
@@ -514,8 +549,9 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
         bool skipTightenLb = argument._skipTightenLb;
         bool skipTightenUb = argument._skipTightenUb;
 
-        LPFormulator_LOG( Stringf( "Tightening bounds for layer %u index %u",
-                                   layer->getLayerIndex(), index ).ascii() );
+        LPFormulator_LOG(
+            Stringf( "Tightening bounds for layer %u index %u", layer->getLayerIndex(), index )
+                .ascii() );
 
         unsigned variable = layer->neuronToVariable( index );
         Stringf variableName( "x%u", variable );
@@ -523,22 +559,19 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
         if ( !skipTightenUb )
         {
             LPFormulator_LOG( Stringf( "Computing upperbound..." ).ascii() );
-            double ub = optimizeWithGurobi( *gurobi, MinOrMax::MAX, variableName,
-                                            cutoffValue, &infeasible );
+            double ub = optimizeWithGurobi(
+                *gurobi, MinOrMax::MAX, variableName, cutoffValue, &infeasible );
             LPFormulator_LOG( Stringf( "Upperbound computed %f", ub ).ascii() );
 
             // Store the new bound if it is tighter
             if ( ub < currentUb )
             {
-                if ( FloatUtils::isPositive( currentUb ) &&
-                    !FloatUtils::isPositive( ub ) )
+                if ( FloatUtils::isPositive( currentUb ) && !FloatUtils::isPositive( ub ) )
                     ++signChanges;
 
                 mtx.lock();
                 layer->setUb( index, ub );
-                layerOwner->receiveTighterBound( Tightening( variable,
-                                                            ub,
-                                                            Tightening::UB ) );
+                layerOwner->receiveTighterBound( Tightening( variable, ub, Tightening::UB ) );
                 mtx.unlock();
 
                 ++tighterBoundCounter;
@@ -556,21 +589,18 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
         {
             LPFormulator_LOG( Stringf( "Computing lowerbound..." ).ascii() );
             gurobi->reset();
-            double lb = optimizeWithGurobi( *gurobi, MinOrMax::MIN, variableName,
-                                            cutoffValue, &infeasible );
+            double lb = optimizeWithGurobi(
+                *gurobi, MinOrMax::MIN, variableName, cutoffValue, &infeasible );
             LPFormulator_LOG( Stringf( "Lowerbound computed: %f", lb ).ascii() );
             // Store the new bound if it is tighter
             if ( lb > currentLb )
             {
-                if ( FloatUtils::isNegative( currentLb ) &&
-                    !FloatUtils::isNegative( lb ) )
+                if ( FloatUtils::isNegative( currentLb ) && !FloatUtils::isNegative( lb ) )
                     ++signChanges;
 
                 mtx.lock();
                 layer->setLb( index, lb );
-                layerOwner->receiveTighterBound( Tightening( variable,
-                                                            lb,
-                                                            Tightening::LB ) );
+                layerOwner->receiveTighterBound( Tightening( variable, lb, Tightening::LB ) );
                 mtx.unlock();
                 ++tighterBoundCounter;
 
@@ -580,7 +610,7 @@ void LPFormulator::tightenSingleVariableBoundsWithLPRelaxation( ThreadArgument &
         }
         enqueueSolver( freeSolvers, gurobi );
     }
-    catch ( boost::thread_interrupted& )
+    catch ( boost::thread_interrupted & )
     {
         enqueueSolver( argument._freeSolvers, argument._gurobi );
     }
@@ -629,20 +659,16 @@ void LPFormulator::addLayerToModel( GurobiWrapper &gurobi, const Layer *layer )
     }
 }
 
-void LPFormulator::addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                                const Layer *layer )
+void LPFormulator::addInputLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
         unsigned variable = layer->neuronToVariable( i );
-        gurobi.addVariable( Stringf( "x%u", variable ),
-                            layer->getLb( i ),
-                            layer->getUb( i ) );
+        gurobi.addVariable( Stringf( "x%u", variable ), layer->getLb( i ), layer->getUb( i ) );
     }
 }
 
-void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                               const Layer *layer )
+void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
@@ -660,9 +686,7 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                 double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
                 double targetValue = sourceValue > 0 ? sourceValue : 0;
 
-                gurobi.addVariable( Stringf( "x%u", targetVariable ),
-                                    targetValue,
-                                    targetValue );
+                gurobi.addVariable( Stringf( "x%u", targetVariable ), targetValue, targetValue );
 
                 continue;
             }
@@ -671,9 +695,7 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
             double sourceLb = sourceLayer->getLb( sourceNeuron );
             double sourceUb = sourceLayer->getUb( sourceNeuron );
 
-            gurobi.addVariable( Stringf( "x%u", targetVariable ),
-                                0,
-                                layer->getUb( i ) );
+            gurobi.addVariable( Stringf( "x%u", targetVariable ), 0, layer->getUb( i ) );
 
             if ( !FloatUtils::isNegative( sourceLb ) )
             {
@@ -723,15 +745,16 @@ void LPFormulator::addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
                 */
                 terms.clear();
                 terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-                terms.append( GurobiWrapper::Term( -sourceUb / ( sourceUb - sourceLb ), Stringf( "x%u", sourceVariable ) ) );
-                gurobi.addLeqConstraint( terms, ( -sourceUb * sourceLb ) / ( sourceUb - sourceLb ) );
+                terms.append( GurobiWrapper::Term( -sourceUb / ( sourceUb - sourceLb ),
+                                                   Stringf( "x%u", sourceVariable ) ) );
+                gurobi.addLeqConstraint( terms,
+                                         ( -sourceUb * sourceLb ) / ( sourceUb - sourceLb ) );
             }
         }
     }
 }
 
-void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                               const Layer *layer )
+void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
@@ -750,9 +773,7 @@ void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
             double sourceValue = sourceLayer->getEliminatedNeuronValue( sourceNeuron );
             double targetValue = FloatUtils::isNegative( sourceValue ) ? -1 : 1;
 
-            gurobi.addVariable( Stringf( "x%u", targetVariable ),
-                                targetValue,
-                                targetValue );
+            gurobi.addVariable( Stringf( "x%u", targetVariable ), targetValue, targetValue );
 
             continue;
         }
@@ -804,14 +825,14 @@ void LPFormulator::addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
             */
             terms.clear();
             terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-            terms.append( GurobiWrapper::Term( -2.0 / sourceUb, Stringf( "x%u", sourceVariable ) ) );
+            terms.append(
+                GurobiWrapper::Term( -2.0 / sourceUb, Stringf( "x%u", sourceVariable ) ) );
             gurobi.addGeqConstraint( terms, -1 );
         }
     }
 }
 
-void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                              const Layer *layer )
+void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer )
 {
     for ( unsigned i = 0; i < layer->getSize(); ++i )
     {
@@ -819,7 +840,8 @@ void LPFormulator::addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
             continue;
 
         unsigned targetVariable = layer->neuronToVariable( i );
-        gurobi.addVariable( Stringf( "x%u", targetVariable ), layer->getLb( i ), layer->getUb( i ) );
+        gurobi.addVariable(
+            Stringf( "x%u", targetVariable ), layer->getLb( i ), layer->getUb( i ) );
 
         List<NeuronIndex> sources = layer->getActivationSources( i );
 
@@ -892,9 +914,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, con
         {
             unsigned variable = layer->neuronToVariable( i );
 
-            gurobi.addVariable( Stringf( "x%u", variable ),
-                                layer->getLb( i ),
-                                layer->getUb( i ) );
+            gurobi.addVariable( Stringf( "x%u", variable ), layer->getLb( i ), layer->getUb( i ) );
 
             List<GurobiWrapper::Term> terms;
             terms.append( GurobiWrapper::Term( -1, Stringf( "x%u", variable ) ) );
@@ -911,8 +931,7 @@ void LPFormulator::addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, con
                     double weight = layer->getWeight( sourceLayerPair.first, j, i );
                     if ( !sourceLayer->neuronEliminated( j ) )
                     {
-                        Stringf sourceVariableName( "x%u",
-                                                    sourceLayer->neuronToVariable( j ) );
+                        Stringf sourceVariableName( "x%u", sourceLayer->neuronToVariable( j ) );
                         terms.append( GurobiWrapper::Term( weight, sourceVariableName ) );
                     }
                     else

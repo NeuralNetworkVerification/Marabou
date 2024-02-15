@@ -52,7 +52,7 @@ public:
     */
     void updateToAdjacentBasis( unsigned columnIndex,
                                 const double *changeColumn,
-                                const double */* newColumn */ );
+                                const double * /* newColumn */ );
 
     /*
       Perform a forward transformation, i.e. find x such that Bx = y.
@@ -72,7 +72,7 @@ public:
     void storeFactorization( IBasisFactorization *other );
     void restoreFactorization( const IBasisFactorization *other );
 
-	/*
+    /*
       Ask the basis factorization to obtain a fresh basis
       (through the previously-provided oracle).
     */
@@ -121,7 +121,7 @@ private:
     /*
       The current basis matrix B
     */
-	double *_B;
+    double *_B;
 
     /*
       The components of the Forrest-Tomlin factorization.
@@ -132,7 +132,7 @@ private:
     // P1 is the last element of the list
     List<LPElement *> _LP;
     // A1 is the first element of the list
-    List<AlmostIdentityMatrix *>_A;
+    List<AlmostIdentityMatrix *> _A;
 
     /*
       Indicates whether the explicit basis matrix is available.
@@ -155,7 +155,7 @@ private:
     void clearFactorization();
     void initialLUFactorization();
 
-	/*
+    /*
       Swap two rows of a matrix.
     */
     void rowSwap( unsigned rowOne, unsigned rowTwo, double *matrix );
