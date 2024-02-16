@@ -52,11 +52,12 @@ More information about publications involving Marabou can be found
 
 ### Installing via Pip
 
-The recommended way to install Marabou is via `Pip` using the command
+The recommended way to install Marabou is via `pip` using the command
 ```bash
 pip install maraboupy
 ```
 which will install both the `Marabou` executable on your path and the Python bindings.
+The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
 ### Building from source
 
@@ -120,9 +121,7 @@ make check -j PROC_NUM
 The Python bindings for Marabou are built automatically (controllable via the `BUILD_PYTHON` CMake flag).
 This process will produce the binary file and the shared library for the Python API,
 which is created in the `maraboupy` folder.
-
-The Python interface was tested only on Python versions >=3.8.
-The Python interface requires *pybind11* (which is automatically downloaded).
+Building the Python interface requires *pybind11* (which is automatically downloaded).
 
 It may be useful to set up a Python virtual environment, see
 [here](https://docs.python.org/3/tutorial/venv.html) for more information.
