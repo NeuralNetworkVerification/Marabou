@@ -55,7 +55,7 @@ private:
 
     Map<String, TensorShape> _shapeMap;
     Map<String, Vector<Variable>> _varMap;
-    Map<String, const Vector<int>> _constantIntTensors;
+    Map<String, const Vector<int64_t>> _constantIntTensors;
     Map<String, const Vector<double>> _constantFloatTensors;
     Set<String> _processedNodes;
     unsigned _numberOfFoundInputs;
@@ -79,6 +79,7 @@ private:
     Vector<Variable> makeNodeVariables( String &nodeName, bool isInput );
 
     bool isConstantNode( String name );
+
     void transferValues( String oldName, String newName );
     void insertConstant( String name, const onnx::TensorProto &tensor, TensorShape shape );
 
@@ -87,6 +88,7 @@ private:
     void cast( onnx::NodeProto &node );
     void reshape( onnx::NodeProto &node );
     void squeeze( onnx::NodeProto &node );
+    void unsqueeze( onnx::NodeProto &node );
     void flatten( onnx::NodeProto &node );
     void transpose( onnx::NodeProto &node );
     void batchNormEquations( onnx::NodeProto &node, bool makeEquations );

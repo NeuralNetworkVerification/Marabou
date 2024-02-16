@@ -69,6 +69,27 @@ public:
         _container.push_back( value );
     }
 
+    void insert( iterator &it, T value )
+    {
+        _container.insert( it, value );
+    }
+
+    void insertAt( unsigned index, T value )
+    {
+        if ( index >= size() )
+            throw CommonError( CommonError::VECTOR_OUT_OF_BOUNDS );
+
+        iterator it = _container.begin();
+
+        while ( index > 0 )
+        {
+            ++it;
+            --index;
+        }
+
+        _container.insert( it, value );
+    }
+
     virtual void insertHead( T value )
     {
         _container.insert( _container.begin(), value );
