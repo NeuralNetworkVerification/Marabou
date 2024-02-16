@@ -98,9 +98,7 @@ TensorIndices broadcastIndex( TensorShape currentShape,
                               TensorShape broadcastShape,
                               TensorIndices broadcastIndices );
 
-TensorIndex unsignIndex( TensorShape shape, SignedTensorIndex signedIndex );
-
-TensorIndex unsignIndex( TensorShape shape, SignedTensorIndex signedIndex );
+TensorIndex unsignIndex( unsigned int size, SignedTensorIndex signedIndex );
 
 Permutation reversePermutation( unsigned int size );
 

@@ -79,6 +79,7 @@ private:
     Vector<Variable> makeNodeVariables( String &nodeName, bool isInput );
 
     bool isConstantNode( String name );
+
     void transferValues( String oldName, String newName );
     void insertConstant( String name, const onnx::TensorProto &tensor, TensorShape shape );
 
@@ -87,6 +88,7 @@ private:
     void cast( onnx::NodeProto &node );
     void reshape( onnx::NodeProto &node );
     void squeeze( onnx::NodeProto &node );
+    void unsqueeze( onnx::NodeProto &node );
     void flatten( onnx::NodeProto &node );
     void transpose( onnx::NodeProto &node );
     void batchNormEquations( onnx::NodeProto &node, bool makeEquations );
