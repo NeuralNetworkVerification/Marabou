@@ -13,25 +13,33 @@
 
 **/
 
+#include "HeapData.h"
+
 #include "CommonError.h"
 #include "ConstSimpleData.h"
-#include "HeapData.h"
 #include "T/stdlib.h"
+
 #include <string.h>
 
-HeapData::HeapData() : _data( 0 ), _size( 0 )
+HeapData::HeapData()
+    : _data( 0 )
+    , _size( 0 )
 {
 }
 
-HeapData::HeapData( void *data, unsigned size ) : _data( 0 ), _size( 0 )
+HeapData::HeapData( void *data, unsigned size )
+    : _data( 0 )
+    , _size( 0 )
 {
     allocateMemory( size );
     memcpy( _data, data, size );
 }
 
-HeapData::HeapData( HeapData &other ) : _data( 0 ), _size( 0 )
+HeapData::HeapData( HeapData &other )
+    : _data( 0 )
+    , _size( 0 )
 {
-    ( *this )+=other;
+    ( *this ) += other;
 }
 
 HeapData::HeapData( const ConstSimpleData &constSimpleData )
@@ -78,7 +86,7 @@ HeapData &HeapData::operator+=( const ConstSimpleData &data )
 
 HeapData &HeapData::operator+=( const HeapData &data )
 {
-    ( *this )+=( ConstSimpleData( data ) );
+    ( *this ) += ( ConstSimpleData( data ) );
     return *this;
 }
 
@@ -97,9 +105,8 @@ bool HeapData::operator!=( const HeapData &other ) const
 
 bool HeapData::operator<( const HeapData &other ) const
 {
-    return
-        ( _size < other._size ) ||
-        ( ( _size == other._size ) && ( memcmp( _data, other._data, _size ) < 0 ) );
+    return ( _size < other._size ) ||
+           ( ( _size == other._size ) && ( memcmp( _data, other._data, _size ) < 0 ) );
 }
 
 void *HeapData::data()

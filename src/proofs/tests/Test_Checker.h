@@ -12,8 +12,8 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "Checker.h"
 #include "CSRMatrix.h"
+#include "Checker.h"
 #include "cxxtest/TestSuite.h"
 
 class CheckerTestSuite : public CxxTest::TestSuite
@@ -34,13 +34,14 @@ public:
         groundUpperBounds[5] = 2;
 
         ReluConstraint relu1 = ReluConstraint( 0, 2 ); // aux var is 4
-        ReluConstraint relu2 = ReluConstraint( 1, 3 ) ; // aux var is 5
+        ReluConstraint relu2 = ReluConstraint( 1, 3 ); // aux var is 5
         List<PiecewiseLinearConstraint *> constraintsList = { &relu1, &relu2 };
 
         // Set a complete tree of depth 3, using 2 ReLUs
         auto *root = new UnsatCertificateNode( NULL, PiecewiseLinearCaseSplit() );
 
-        Checker checker( root, m, &initialTableau, groundUpperBounds, groundLowerBounds, constraintsList );
+        Checker checker(
+            root, m, &initialTableau, groundUpperBounds, groundLowerBounds, constraintsList );
 
         auto splits1 = relu1.getCaseSplits();
         auto splits2 = relu2.getCaseSplits();

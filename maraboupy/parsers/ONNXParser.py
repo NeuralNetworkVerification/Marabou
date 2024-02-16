@@ -87,6 +87,9 @@ class ONNXParser:
             # If this is skipped, the output variables will be the last variables defined.
             self.reassignOutputVariables()
         else:
+            for outputName in self.outputNames:
+                if outputName in self.constantMap:
+                    raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
             self.query.outputVars.extend([self.varMap[outputName] for outputName in self.outputNames])
 
     def processGraph(self):

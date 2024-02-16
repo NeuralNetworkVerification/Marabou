@@ -13,6 +13,8 @@
 
  **/
 
+#include "NetworkLevelReasoner.h"
+
 #include "AbsoluteValueConstraint.h"
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -26,10 +28,10 @@
 #include "MatrixMultiplication.h"
 #include "MaxConstraint.h"
 #include "NLRError.h"
-#include "NetworkLevelReasoner.h"
 #include "Options.h"
 #include "ReluConstraint.h"
 #include "SignConstraint.h"
+
 #include <cstring>
 
 #define NLR_LOG( x, ... ) LOG( GlobalConfiguration::NETWORK_LEVEL_REASONER_LOGGING, "NLR: %s\n", x )
@@ -69,7 +71,8 @@ void NetworkLevelReasoner::addLayer( unsigned layerIndex, Layer::Type type, unsi
 
 void NetworkLevelReasoner::addLayerDependency( unsigned sourceLayer, unsigned targetLayer )
 {
-    _layerIndexToLayer[targetLayer]->addSourceLayer( sourceLayer, _layerIndexToLayer[sourceLayer]->getSize() );
+    _layerIndexToLayer[targetLayer]->addSourceLayer( sourceLayer,
+                                                     _layerIndexToLayer[sourceLayer]->getSize() );
 }
 
 void NetworkLevelReasoner::setWeight( unsigned sourceLayer,
@@ -78,8 +81,7 @@ void NetworkLevelReasoner::setWeight( unsigned sourceLayer,
                                       unsigned targetNeuron,
                                       double weight )
 {
-    _layerIndexToLayer[targetLayer]->setWeight
-        ( sourceLayer, sourceNeuron, targetNeuron, weight );
+    _layerIndexToLayer[targetLayer]->setWeight( sourceLayer, sourceNeuron, targetNeuron, weight );
 }
 
 void NetworkLevelReasoner::setBias( unsigned layer, unsigned neuron, double bias )
@@ -112,13 +114,10 @@ void NetworkLevelReasoner::evaluate( double *input, double *output )
         _layerIndexToLayer[i]->computeAssignment();
 
     const Layer *outputLayer = _layerIndexToLayer[_layerIndexToLayer.size() - 1];
-    memcpy( output,
-            outputLayer->getAssignment(),
-            sizeof(double) * outputLayer->getSize() );
+    memcpy( output, outputLayer->getAssignment(), sizeof( double ) * outputLayer->getSize() );
 }
 
-void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double>
-                                                      &assignment )
+void NetworkLevelReasoner::concretizeInputAssignment( Map<unsigned, double> &assignment )
 {
     Layer *inputLayer = _layerIndexToLayer[0];
     ASSERT( inputLayer->getLayerType() == Layer::INPUT );
@@ -197,8 +196,7 @@ void NetworkLevelReasoner::symbolicBoundPropagation()
 void NetworkLevelReasoner::deepPolyPropagation()
 {
     if ( _deepPolyAnalysis == nullptr )
-        _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>
-            ( new DeepPolyAnalysis( this ) );
+        _deepPolyAnalysis = std::unique_ptr<DeepPolyAnalysis>( new DeepPolyAnalysis( this ) );
     _deepPolyAnalysis->run();
 }
 
@@ -330,11 +328,14 @@ void NetworkLevelReasoner::dumpTopology( bool dumpLayerDetails ) const
     printf( "Number of layers: %u. Sizes:\n", _layerIndexToLayer.size() );
     for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
     {
-        printf( "\tLayer %u: %u \t[%s]", i, _layerIndexToLayer[i]->getSize(), Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
-        printf("\tSource layers:");
+        printf( "\tLayer %u: %u \t[%s]",
+                i,
+                _layerIndexToLayer[i]->getSize(),
+                Layer::typeToString( _layerIndexToLayer[i]->getLayerType() ).ascii() );
+        printf( "\tSource layers:" );
         for ( const auto &sourceLayer : _layerIndexToLayer[i]->getSourceLayers() )
-            printf(" %u", sourceLayer.first );
-        printf("\n");
+            printf( " %u", sourceLayer.first );
+        printf( "\n" );
     }
     if ( dumpLayerDetails )
         for ( const auto &layer : _layerIndexToLayer )
@@ -356,7 +357,8 @@ void NetworkLevelReasoner::addConstraintInTopologicalOrder( PiecewiseLinearConst
     _constraintsInTopologicalOrder.append( constraint );
 }
 
-void NetworkLevelReasoner::removeConstraintFromTopologicalOrder( PiecewiseLinearConstraint *constraint )
+void NetworkLevelReasoner::removeConstraintFromTopologicalOrder(
+    PiecewiseLinearConstraint *constraint )
 {
     if ( _constraintsInTopologicalOrder.exists( constraint ) )
         _constraintsInTopologicalOrder.erase( constraint );
@@ -426,8 +428,7 @@ void NetworkLevelReasoner::reindexNeurons()
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
-                                                       const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer )
 {
     switch ( layer.getLayerType() )
     {
@@ -465,51 +466,60 @@ void NetworkLevelReasoner::generateInputQueryForLayer( InputQuery &inputQuery,
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForReluLayer( InputQuery &inputQuery,
+                                                           const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
         NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
-        ReluConstraint *relu = new ReluConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        ReluConstraint *relu = new ReluConstraint(
+            sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addPiecewiseLinearConstraint( relu );
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForSigmoidLayer( InputQuery &inputQuery,
+                                                              const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
         NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
-        SigmoidConstraint *sigmoid = new SigmoidConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        SigmoidConstraint *sigmoid = new SigmoidConstraint(
+            sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addNonlinearConstraint( sigmoid );
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForSignLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForSignLayer( InputQuery &inputQuery,
+                                                           const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
         NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
-        SignConstraint *sign = new SignConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        SignConstraint *sign = new SignConstraint(
+            sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addPiecewiseLinearConstraint( sign );
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForAbsoluteValueLayer( InputQuery &inputQuery,
+                                                                    const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
         NeuronIndex sourceIndex = *layer.getActivationSources( i ).begin();
         const Layer *sourceLayer = _layerIndexToLayer[sourceIndex._layer];
-        AbsoluteValueConstraint *absoluteValue = new AbsoluteValueConstraint( sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
+        AbsoluteValueConstraint *absoluteValue = new AbsoluteValueConstraint(
+            sourceLayer->neuronToVariable( sourceIndex._neuron ), layer.neuronToVariable( i ) );
         inputQuery.addPiecewiseLinearConstraint( absoluteValue );
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery,
+                                                          const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -520,13 +530,13 @@ void NetworkLevelReasoner::generateInputQueryForMaxLayer( InputQuery &inputQuery
             elements.insert( sourceLayer->neuronToVariable( source._neuron ) );
         }
 
-        MaxConstraint *max = new MaxConstraint( layer.neuronToVariable( i ),
-                                                elements );
+        MaxConstraint *max = new MaxConstraint( layer.neuronToVariable( i ), elements );
         inputQuery.addPiecewiseLinearConstraint( max );
     }
 }
 
-void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &inputQuery, const Layer &layer )
+void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &inputQuery,
+                                                                  const Layer &layer )
 {
     for ( unsigned i = 0; i < layer.getSize(); ++i )
     {
@@ -549,9 +559,9 @@ void NetworkLevelReasoner::generateInputQueryForWeightedSumLayer( InputQuery &in
     }
 }
 
-void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer( Map<unsigned, LinearExpression>
-                                                                        &variableToExpression,
-                                                                        const Layer &layer )
+void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer(
+    Map<unsigned, LinearExpression> &variableToExpression,
+    const Layer &layer )
 {
     ASSERT( layer.getLayerType() == Layer::WEIGHTED_SUM );
     for ( unsigned i = 0; i < layer.getSize(); ++i )
@@ -563,7 +573,6 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer( Map<unsi
             const Layer *sourceLayer = _layerIndexToLayer[it.first];
             for ( unsigned j = 0; j < sourceLayer->getSize(); ++j )
             {
-
                 double coefficient = layer.getWeight( sourceLayer->getLayerIndex(), j, i );
                 if ( !FloatUtils::isZero( coefficient ) )
                 {
@@ -579,10 +588,11 @@ void NetworkLevelReasoner::generateLinearExpressionForWeightedSumLayer( Map<unsi
     }
 }
 
-unsigned NetworkLevelReasoner::mergeConsecutiveWSLayers( const Map<unsigned, double> &lowerBounds,
-                                                         const Map<unsigned, double> &upperBounds,
-                                                         const Set<unsigned> &varsInUnhandledConstraints,
-                                                         Map<unsigned, LinearExpression> &eliminatedNeurons )
+unsigned
+NetworkLevelReasoner::mergeConsecutiveWSLayers( const Map<unsigned, double> &lowerBounds,
+                                                const Map<unsigned, double> &upperBounds,
+                                                const Set<unsigned> &varsInUnhandledConstraints,
+                                                Map<unsigned, LinearExpression> &eliminatedNeurons )
 {
     // Iterate over all layers, except the input layer
     unsigned layer = 1;
@@ -603,13 +613,14 @@ unsigned NetworkLevelReasoner::mergeConsecutiveWSLayers( const Map<unsigned, dou
     return numberOfMergedLayers;
 }
 
-bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex,
-                                               const Map<unsigned, double> &lowerBounds,
-                                               const Map<unsigned, double> &upperBounds,
-                                               const Set<unsigned> &varsInConstraintsUnhandledByNLR )
+bool NetworkLevelReasoner::suitableForMerging(
+    unsigned secondLayerIndex,
+    const Map<unsigned, double> &lowerBounds,
+    const Map<unsigned, double> &upperBounds,
+    const Set<unsigned> &varsInConstraintsUnhandledByNLR )
 {
-    NLR_LOG( Stringf( "Checking whether layer %u is suitable for merging...",
-                      secondLayerIndex ).ascii() );
+    NLR_LOG( Stringf( "Checking whether layer %u is suitable for merging...", secondLayerIndex )
+                 .ascii() );
 
     /*
       The given layer index is a candidate layer. We now check whether
@@ -653,10 +664,8 @@ bool NetworkLevelReasoner::suitableForMerging( unsigned secondLayerIndex,
     for ( unsigned i = 0; i < firstLayer->getSize(); ++i )
     {
         unsigned variable = firstLayer->neuronToVariable( i );
-        if ( ( lowerBounds.exists( variable ) &&
-               FloatUtils::isFinite( lowerBounds[variable] ) ) ||
-             ( upperBounds.exists( variable ) &&
-               FloatUtils::isFinite( upperBounds[variable] ) ) ||
+        if ( ( lowerBounds.exists( variable ) && FloatUtils::isFinite( lowerBounds[variable] ) ) ||
+             ( upperBounds.exists( variable ) && FloatUtils::isFinite( upperBounds[variable] ) ) ||
              varsInConstraintsUnhandledByNLR.exists( variable ) )
             return false;
     }
@@ -684,21 +693,17 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex,
         // Compute new weights
         const double *firstLayerMatrix = firstLayer->getWeightMatrix( previousToFirstLayerIndex );
         const double *secondLayerMatrix = secondLayer->getWeightMatrix( firstLayerIndex );
-        double *newWeightMatrix = multiplyWeights( firstLayerMatrix,
-                                                   secondLayerMatrix,
-                                                   inputDimension,
-                                                   middleDimension,
-                                                   outputDimension );
+        double *newWeightMatrix = multiplyWeights(
+            firstLayerMatrix, secondLayerMatrix, inputDimension, middleDimension, outputDimension );
         // Update bias for second layer
         for ( unsigned targetNeuron = 0; targetNeuron < secondLayer->getSize(); ++targetNeuron )
         {
             double newBias = secondLayer->getBias( targetNeuron );
-            for ( unsigned sourceNeuron = 0;
-                  sourceNeuron < firstLayer->getSize();
-                  ++sourceNeuron )
+            for ( unsigned sourceNeuron = 0; sourceNeuron < firstLayer->getSize(); ++sourceNeuron )
             {
-                newBias += ( firstLayer->getBias( sourceNeuron ) *
-                             secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron ) );
+                newBias +=
+                    ( firstLayer->getBias( sourceNeuron ) *
+                      secondLayer->getWeight( firstLayerIndex, sourceNeuron, targetNeuron ) );
             }
 
             secondLayer->setBias( targetNeuron, newBias );
@@ -711,10 +716,8 @@ void NetworkLevelReasoner::mergeWSLayers( unsigned secondLayerIndex,
             for ( unsigned targetNeuron = 0; targetNeuron < outputDimension; ++targetNeuron )
             {
                 double weight = newWeightMatrix[sourceNeuron * outputDimension + targetNeuron];
-                secondLayer->setWeight( previousToFirstLayerIndex,
-                                        sourceNeuron,
-                                        targetNeuron,
-                                        weight );
+                secondLayer->setWeight(
+                    previousToFirstLayerIndex, sourceNeuron, targetNeuron, weight );
             }
         }
         delete[] newWeightMatrix;
@@ -743,12 +746,8 @@ double *NetworkLevelReasoner::multiplyWeights( const double *firstMatrix,
 {
     double *newMatrix = new double[inputDimension * outputDimension];
     std::fill_n( newMatrix, inputDimension * outputDimension, 0 );
-    matrixMultiplication( firstMatrix,
-                          secondMatrix,
-                          newMatrix,
-                          inputDimension,
-                          middleDimension,
-                          outputDimension );
+    matrixMultiplication(
+        firstMatrix, secondMatrix, newMatrix, inputDimension, middleDimension, outputDimension );
     return newMatrix;
 }
 

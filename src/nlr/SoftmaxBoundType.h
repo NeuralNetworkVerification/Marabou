@@ -21,10 +21,9 @@
   Details can be found in "Convex Bounds on the Softmax Function
   with Applications to Robustness Verification" by Wei et al. AISTATS'23
 */
-enum class SoftmaxBoundType
-{
-     EXPONENTIAL_RECIPROCAL_DECOMPOSITION = 0,
-     LOG_SUM_EXP_DECOMPOSITION = 1
+enum class SoftmaxBoundType {
+    EXPONENTIAL_RECIPROCAL_DECOMPOSITION = 0,
+    LOG_SUM_EXP_DECOMPOSITION = 1
 };
 
 #endif // __SoftmaxBoundType_h__

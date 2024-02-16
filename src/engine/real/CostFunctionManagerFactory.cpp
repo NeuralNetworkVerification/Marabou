@@ -17,18 +17,17 @@
 
 class ITableau;
 
-namespace T
+namespace T {
+ICostFunctionManager *createCostFunctionManager( ITableau *tableau )
 {
-	ICostFunctionManager *createCostFunctionManager( ITableau *tableau )
-	{
-		return new CostFunctionManager( tableau );
-	}
-
-	void discardCostFunctionManager( ICostFunctionManager *costFunctionManager )
-	{
-		delete costFunctionManager;
-	}
+    return new CostFunctionManager( tableau );
 }
+
+void discardCostFunctionManager( ICostFunctionManager *costFunctionManager )
+{
+    delete costFunctionManager;
+}
+} // namespace T
 
 //
 // Local Variables:

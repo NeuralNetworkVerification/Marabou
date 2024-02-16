@@ -14,9 +14,9 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "FloatUtils.h"
+
+#include <cxxtest/TestSuite.h>
 #include <math.h>
 
 #ifdef _WIN32

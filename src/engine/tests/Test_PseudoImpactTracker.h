@@ -14,18 +14,17 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
-#include "context/context.h"
-#include "PseudoImpactTracker.h"
-#include "PiecewiseLinearConstraint.h"
 #include "PLConstraintScoreTracker.h"
+#include "PiecewiseLinearConstraint.h"
+#include "PseudoImpactTracker.h"
 #include "ReluConstraint.h"
+#include "context/context.h"
+
+#include <cxxtest/TestSuite.h>
 
 class PseudoImpactTrackerTestSuite : public CxxTest::TestSuite
 {
 public:
-
     PLConstraintScoreTracker *_tracker;
     List<PiecewiseLinearConstraint *> _constraints;
 
@@ -48,7 +47,7 @@ public:
         PiecewiseLinearConstraint *r2 = new ReluConstraint( 2, 3 );
         PiecewiseLinearConstraint *r3 = new ReluConstraint( 4, 5 );
         PiecewiseLinearConstraint *r4 = new ReluConstraint( 6, 7 );
-        _constraints = {r1, r2, r3, r4};
+        _constraints = { r1, r2, r3, r4 };
         for ( const auto &constraint : _constraints )
             constraint->initializeCDOs( &context );
 
@@ -61,8 +60,7 @@ public:
 
         double alpha = GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA;
         TS_ASSERT_EQUALS( _tracker->getScore( r1 ), alpha * 2 );
-        TS_ASSERT_EQUALS( _tracker->getScore( r3 ),
-                          (1 - alpha) * (alpha * 5) + alpha * 6 );
+        TS_ASSERT_EQUALS( _tracker->getScore( r3 ), ( 1 - alpha ) * ( alpha * 5 ) + alpha * 6 );
 
         r3->setActiveConstraint( false );
         r1->setActiveConstraint( false );
@@ -82,7 +80,7 @@ public:
         PiecewiseLinearConstraint *r2 = new ReluConstraint( 2, 3 );
         PiecewiseLinearConstraint *r3 = new ReluConstraint( 4, 5 );
         PiecewiseLinearConstraint *r4 = new ReluConstraint( 6, 7 );
-        _constraints = {r1, r2, r3, r4};
+        _constraints = { r1, r2, r3, r4 };
         for ( const auto &constraint : _constraints )
             constraint->initializeCDOs( &context );
 
@@ -100,5 +98,4 @@ public:
         TS_ASSERT( _tracker->top() == r3 );
         TS_ASSERT( _tracker->topUnfixed() == r2 );
     }
-
 };

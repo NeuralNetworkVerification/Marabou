@@ -22,38 +22,38 @@
 class AutoConstraintMatrixAnalyzer
 {
 public:
-	AutoConstraintMatrixAnalyzer()
-	{
-		_constraintMatrixAnalyzer = T::createConstraintMatrixAnalyzer();
-	}
+    AutoConstraintMatrixAnalyzer()
+    {
+        _constraintMatrixAnalyzer = T::createConstraintMatrixAnalyzer();
+    }
 
-	~AutoConstraintMatrixAnalyzer()
-	{
-		T::discardConstraintMatrixAnalyzer( _constraintMatrixAnalyzer );
-	}
+    ~AutoConstraintMatrixAnalyzer()
+    {
+        T::discardConstraintMatrixAnalyzer( _constraintMatrixAnalyzer );
+    }
 
-	operator IConstraintMatrixAnalyzer &()
-	{
-		return *_constraintMatrixAnalyzer;
-	}
+    operator IConstraintMatrixAnalyzer &()
+    {
+        return *_constraintMatrixAnalyzer;
+    }
 
-	operator IConstraintMatrixAnalyzer *()
-	{
-		return _constraintMatrixAnalyzer;
-	}
+    operator IConstraintMatrixAnalyzer *()
+    {
+        return _constraintMatrixAnalyzer;
+    }
 
-	IConstraintMatrixAnalyzer *operator->()
-	{
-		return _constraintMatrixAnalyzer;
-	}
+    IConstraintMatrixAnalyzer *operator->()
+    {
+        return _constraintMatrixAnalyzer;
+    }
 
-	const IConstraintMatrixAnalyzer *operator->() const
-	{
-		return _constraintMatrixAnalyzer;
-	}
+    const IConstraintMatrixAnalyzer *operator->() const
+    {
+        return _constraintMatrixAnalyzer;
+    }
 
 private:
-	IConstraintMatrixAnalyzer *_constraintMatrixAnalyzer;
+    IConstraintMatrixAnalyzer *_constraintMatrixAnalyzer;
 };
 
 #endif // __AutoConstraintMatrixAnalyzer_h__

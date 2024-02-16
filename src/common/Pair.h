@@ -19,16 +19,17 @@
 #include <iostream>
 #include <utility>
 
-template<class L, class R>
-class Pair
+template <class L, class R> class Pair
 {
-    typedef std::pair<L,R> Super;
+    typedef std::pair<L, R> Super;
+
 public:
     Pair()
     {
     }
 
-    Pair( const L &first, const R &second ) : _container( first, second )
+    Pair( const L &first, const R &second )
+        : _container( first, second )
     {
     }
 
@@ -52,21 +53,21 @@ public:
         return _container.second;
     }
 
-	Pair<L, R> &operator=( const Pair<L, R> &other )
-	{
-		_container = other._container;
-		return *this;
-	}
+    Pair<L, R> &operator=( const Pair<L, R> &other )
+    {
+        _container = other._container;
+        return *this;
+    }
 
     bool operator==( const Pair<L, R> &other ) const
-	{
-		return _container == other._container;
-	}
+    {
+        return _container == other._container;
+    }
 
     bool operator!=( const Pair<L, R> &other ) const
-	{
-		return _container != other._container;
-	}
+    {
+        return _container != other._container;
+    }
 
     bool operator<( const Pair<L, R> &other ) const
     {
@@ -77,8 +78,7 @@ protected:
     Super _container;
 };
 
-template<class L, class R>
-std::ostream &operator<<( std::ostream &stream, const Pair<L, R> &pair )
+template <class L, class R> std::ostream &operator<<( std::ostream &stream, const Pair<L, R> &pair )
 {
     return stream << pair.first() << "," << pair.second();
 }

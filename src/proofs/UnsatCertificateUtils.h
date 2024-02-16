@@ -37,7 +37,8 @@ public:
                                 unsigned numberOfVariables );
 
     /*
-      Given a var, a tableau and a column vector, create a linear combination used to explain a bound
+      Given a var, a tableau and a column vector, create a linear combination used to explain a
+      bound
     */
     static void getExplanationRowCombination( unsigned var,
                                               const SparseUnsortedList &explanation,

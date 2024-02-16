@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "InputQuery.h"
 #include "MockConstraintMatrixAnalyzerFactory.h"
@@ -27,14 +25,15 @@
 #include "PiecewiseLinearCaseSplit.h"
 #include "ReluConstraint.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
-class MockForEngine :
-    public MockTableauFactory,
-    public MockProjectedSteepestEdgeRuleFactory,
-    public MockRowBoundTightenerFactory,
-    public MockCostFunctionManagerFactory,
-    public MockConstraintMatrixAnalyzerFactory
+class MockForEngine
+    : public MockTableauFactory
+    , public MockProjectedSteepestEdgeRuleFactory
+    , public MockRowBoundTightenerFactory
+    , public MockCostFunctionManagerFactory
+    , public MockConstraintMatrixAnalyzerFactory
 {
 public:
 };
@@ -141,7 +140,7 @@ public:
         TS_ASSERT( costFunctionManager->initializeWasCalled );
         TS_ASSERT( rowTightener->setDimensionsWasCalled );
 
-        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 1U);
+        TS_ASSERT_EQUALS( tableau->lastResizeWatchers.size(), 1U );
         TS_ASSERT_EQUALS( *( tableau->lastResizeWatchers.begin() ), rowTightener );
 
         TS_ASSERT_EQUALS( tableau->lastCostFunctionManager, costFunctionManager );
@@ -158,21 +157,21 @@ public:
         TS_ASSERT_EQUALS( tableau->lastRightHandSide[1], 0 );
 
         // Tableau entries
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 0], 1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 1], 2 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 2], -1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 3], 1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 4], 0 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 5], -1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(0*7) + 6], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 0], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 1], 2 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 2], -1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 3], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 4], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 5], -1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 0 * 7 ) + 6], 0 );
 
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 0], -3 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 1], 3 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 2], 0 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 3], 0 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 4], 1 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 5], 0 );
-        TS_ASSERT_EQUALS( tableau->lastEntries[(1*7) + 6], -1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 0], -3 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 1], 3 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 2], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 3], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 4], 1 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 5], 0 );
+        TS_ASSERT_EQUALS( tableau->lastEntries[( 1 * 7 ) + 6], -1 );
 
         // Lower and upper bounds
         TS_ASSERT( tableau->lowerBounds.exists( 0 ) );
@@ -224,33 +223,33 @@ public:
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[1].size(), 1U );
         auto it = tableau->lastRegisteredVariableToWatcher[1].begin();
-        auto watcher1 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
-       	TS_ASSERT( watcher1 == relu1->getParticipatingVariables() );
+        auto watcher1 = ( (ReluConstraint *)( *it ) )->getParticipatingVariables();
+        TS_ASSERT( watcher1 == relu1->getParticipatingVariables() );
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[2].size(), 2U );
         it = tableau->lastRegisteredVariableToWatcher[2].begin();
-		auto watcher2 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
-		it++;
-		auto watcher3 = ( ( ReluConstraint * ) ( * it  ) )->getParticipatingVariables();
+        auto watcher2 = ( (ReluConstraint *)( *it ) )->getParticipatingVariables();
+        it++;
+        auto watcher3 = ( (ReluConstraint *)( *it ) )->getParticipatingVariables();
 
-		if ( watcher2 == relu1->getParticipatingVariables() )
-		{
-			TS_ASSERT( watcher3 == relu2->getParticipatingVariables() );
-		}
-		else if ( watcher2 == relu2->getParticipatingVariables() )
-		{
-			TS_ASSERT( watcher3 == relu1->getParticipatingVariables() );
-		}
-		else
-		{
-			TS_ASSERT( false );
-		}
+        if ( watcher2 == relu1->getParticipatingVariables() )
+        {
+            TS_ASSERT( watcher3 == relu2->getParticipatingVariables() );
+        }
+        else if ( watcher2 == relu2->getParticipatingVariables() )
+        {
+            TS_ASSERT( watcher3 == relu1->getParticipatingVariables() );
+        }
+        else
+        {
+            TS_ASSERT( false );
+        }
 
         TS_ASSERT_EQUALS( tableau->lastRegisteredVariableToWatcher[4].size(), 1U );
         it = tableau->lastRegisteredVariableToWatcher[4].begin();
-		auto watcher4 = ( ( ReluConstraint * ) ( * it ) )->getParticipatingVariables();
+        auto watcher4 = ( (ReluConstraint *)( *it ) )->getParticipatingVariables();
 
-       	TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
+        TS_ASSERT( watcher4 == relu2->getParticipatingVariables() );
     }
 
     void test_pick_split_pl_constraint_polarity()
@@ -344,21 +343,22 @@ public:
         engine.processInputQuery( inputQuery, false );
         PiecewiseLinearConstraint *constraintToSplit;
         PiecewiseLinearConstraint *constraintToSplitSnC;
-        constraintToSplit = engine.pickSplitPLConstraint(DivideStrategy::Polarity );
+        constraintToSplit = engine.pickSplitPLConstraint( DivideStrategy::Polarity );
         constraintToSplitSnC = engine.pickSplitPLConstraintSnC( SnCDivideStrategy::Polarity );
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
         TS_ASSERT( constraintToSplit );
         TS_ASSERT( !constraintToSplit->phaseFixed() );
         TS_ASSERT( constraintToSplit->isActive() );
-        for ( const auto &constraint : engine.getInputQuery()->
-                  getNetworkLevelReasoner()->getConstraintsInTopologicalOrder() )
+        for ( const auto &constraint : engine.getInputQuery()
+                                           ->getNetworkLevelReasoner()
+                                           ->getConstraintsInTopologicalOrder() )
         {
-            TS_ASSERT( std::abs( ( ( ReluConstraint * ) constraintToSplit )->computePolarity() ) <=
-                       std::abs( ( ( ReluConstraint * ) constraint )->computePolarity() ) );
+            TS_ASSERT( std::abs( ( (ReluConstraint *)constraintToSplit )->computePolarity() ) <=
+                       std::abs( ( (ReluConstraint *)constraint )->computePolarity() ) );
         }
 
-        TS_ASSERT_EQUALS( 0, ( ( ReluConstraint * ) constraintToSplit )->computePolarity() );
+        TS_ASSERT_EQUALS( 0, ( (ReluConstraint *)constraintToSplit )->computePolarity() );
     }
 
     void test_pick_split_pl_constraint_earliest_relu()
@@ -455,9 +455,10 @@ public:
         TS_ASSERT_EQUALS( constraintToSplitSnC, constraintToSplit );
 
         PiecewiseLinearConstraint *firstConstraintInTopologicalOrder;
-        firstConstraintInTopologicalOrder = *(engine.getInputQuery()->
-                                              getNetworkLevelReasoner()->
-                                              getConstraintsInTopologicalOrder().begin());
+        firstConstraintInTopologicalOrder = *( engine.getInputQuery()
+                                                   ->getNetworkLevelReasoner()
+                                                   ->getConstraintsInTopologicalOrder()
+                                                   .begin() );
 
         TS_ASSERT( firstConstraintInTopologicalOrder );
         TS_ASSERT( !firstConstraintInTopologicalOrder->phaseFixed() );
@@ -544,8 +545,7 @@ public:
         inputQuery.setLowerBound( 9, 0 );
         inputQuery.setUpperBound( 9, 5 );
 
-        Options::get()->setString( Options::SPLITTING_STRATEGY,
-                                   "largest-interval" );
+        Options::get()->setString( Options::SPLITTING_STRATEGY, "largest-interval" );
         Engine engine;
         List<Equation> unhandledEquations;
         Set<unsigned> varsInUnhandledConstraints;
@@ -644,14 +644,15 @@ public:
         TS_ASSERT_EQUALS( inputQuery.getLowerBounds()[6], 2.0 );
         TS_ASSERT_EQUALS( inputQuery.getUpperBounds()[6], 6.0 );
         TS_ASSERT_EQUALS( inputQuery.getLowerBounds()[7], -3.0 );
-        TS_ASSERT_EQUALS( inputQuery.getUpperBounds()[7], -1.0 );    
+        TS_ASSERT_EQUALS( inputQuery.getUpperBounds()[7], -1.0 );
         TS_ASSERT_EQUALS( inputQuery.getLowerBounds()[8], 1.0 );
-        TS_ASSERT_EQUALS( inputQuery.getUpperBounds()[8], 3.0 ); 
+        TS_ASSERT_EQUALS( inputQuery.getUpperBounds()[8], 3.0 );
     }
 
     void test_todo()
     {
-        TS_TRACE( "Future work: Guarantee correct behavior even when some variable is unbounded\n" );
+        TS_TRACE(
+            "Future work: Guarantee correct behavior even when some variable is unbounded\n" );
     }
 };
 

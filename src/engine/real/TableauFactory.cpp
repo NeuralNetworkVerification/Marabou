@@ -15,18 +15,17 @@
 
 #include "Tableau.h"
 
-namespace T
+namespace T {
+ITableau *createTableau( IBoundManager &boundManager )
 {
-	ITableau *createTableau( IBoundManager &boundManager )
-	{
-		return new Tableau( boundManager );
-	}
-
-	void discardTableau( ITableau *tableau )
-	{
-		delete tableau;
-	}
+    return new Tableau( boundManager );
 }
+
+void discardTableau( ITableau *tableau )
+{
+    delete tableau;
+}
+} // namespace T
 
 //
 // Local Variables:

@@ -104,9 +104,7 @@ public:
 
         bool operator==( const Fix &other ) const
         {
-            return
-                _variable == other._variable &&
-                FloatUtils::areEqual( _value, other._value );
+            return _variable == other._variable && FloatUtils::areEqual( _value, other._value );
         }
 
         unsigned _variable;
@@ -151,8 +149,12 @@ public:
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
-    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
+    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
 
     /*
       Turn the constraint on/off.
@@ -223,7 +225,9 @@ public:
     /*
       Dump the current state of the constraint.
     */
-    virtual void dump( String & ) const {}
+    virtual void dump( String & ) const
+    {
+    }
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
@@ -244,7 +248,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ) {};
+    virtual void transformToUseAuxVariables( InputQuery & ){};
 
     void setStatistics( Statistics *statistics );
 
@@ -252,15 +256,22 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
-                                                          &/* inputQuery */ ) {}
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery & /* inputQuery */ )
+    {
+    }
 
     /*
       Whether the constraint can contribute the SoI cost function.
     */
-    virtual bool supportSoI() const { return false; };
+    virtual bool supportSoI() const
+    {
+        return false;
+    };
 
-    virtual bool supportVariableElimination() const { return true; };
+    virtual bool supportVariableElimination() const
+    {
+        return true;
+    };
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to
@@ -269,8 +280,10 @@ public:
       Minimizing the added term should lead to the constraint being
       "closer to satisfied" in the given phase status.
     */
-    virtual void getCostFunctionComponent( LinearExpression &/* cost */,
-                                           PhaseStatus /* phase */ ) const {}
+    virtual void getCostFunctionComponent( LinearExpression & /* cost */,
+                                           PhaseStatus /* phase */ ) const
+    {
+    }
 
     /*
       Return the phase status corresponding to the values of the input
@@ -278,8 +291,8 @@ public:
       variable's assignment is positive, then the method returns
       RELU_PHASE_ACTIVE. Otherwise, it returns RELU_PHASE_INACTIVE.
     */
-    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
-                                                    &/* assignment */ ) const
+    virtual PhaseStatus
+    getPhaseStatusInAssignment( const Map<unsigned, double> & /* assignment */ ) const
     {
         throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
     }
@@ -454,9 +467,10 @@ public:
     }
 
     /*
-      Add a variable to the list of aux vars designated in the Tableau, add connect it to the constraintAuxVariable
+      Add a variable to the list of aux vars designated in the Tableau, add connect it to the
+      constraintAuxVariable
     */
-    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned  constraintAuxVar ) = 0;
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) = 0;
 
     /*
       Get the native auxiliary vars
@@ -620,7 +634,6 @@ protected:
     }
 
     List<unsigned> _tableauAuxVars;
-
 };
 
 #endif // __PiecewiseLinearConstraint_h__

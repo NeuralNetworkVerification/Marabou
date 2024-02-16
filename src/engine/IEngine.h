@@ -18,11 +18,11 @@
 
 #include "BoundExplainer.h"
 #include "DivideStrategy.h"
+#include "List.h"
 #include "SnCDivideStrategy.h"
 #include "TableauStateStorageLevel.h"
-#include "List.h"
-#include "context/context.h"
 #include "Vector.h"
+#include "context/context.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -39,7 +39,7 @@ class UnsatCertificateNode;
 class IEngine
 {
 public:
-    virtual ~IEngine() {};
+    virtual ~IEngine(){};
 
     enum ExitCode {
         UNSAT = 0,
@@ -107,24 +107,23 @@ public:
     /*
       Pick the piecewise linear constraint for internal splitting
     */
-    virtual PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy
-                                                              strategy ) = 0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraint( DivideStrategy strategy ) = 0;
 
     /*
       Pick the piecewise linear constraint for SnC splitting
     */
-    virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy
-                                                                 strategy ) = 0;
+    virtual PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy strategy ) = 0;
     /*
-      Return the value of a variable bound, as expressed by the bounds explainer and the initial bounds
+      Return the value of a variable bound, as expressed by the bounds explainer and the initial
+      bounds
     */
-    virtual double explainBound( unsigned var,  bool isUpper ) const = 0;
+    virtual double explainBound( unsigned var, bool isUpper ) const = 0;
 
-	/*
-	 * Update the ground bounds
-	 */
-	virtual void updateGroundUpperBound( unsigned var, double value ) = 0;
-	virtual void updateGroundLowerBound( unsigned var, double value ) = 0;
+    /*
+     * Update the ground bounds
+     */
+    virtual void updateGroundUpperBound( unsigned var, double value ) = 0;
+    virtual void updateGroundLowerBound( unsigned var, double value ) = 0;
 
     virtual void applyAllBoundTightenings() = 0;
 

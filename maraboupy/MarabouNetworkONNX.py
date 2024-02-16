@@ -31,7 +31,7 @@ class MarabouNetworkONNX(MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True):
+    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=False):
         super().__init__()
         self.readONNX(filename, inputNames, outputNames, reindexOutputVars)
 

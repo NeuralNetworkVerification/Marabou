@@ -13,12 +13,12 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
 #include "RoundConstraint.h"
+
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForRoundConstraint
@@ -67,7 +67,7 @@ public:
         TS_ASSERT( !round.constraintObsolete() );
 
         // eliminate variable b
-        round.eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+        round.eliminateVariable( b, 0 ); // 0 is dummy for the argument of fixedValue
 
         // round is obsolete now
         TS_ASSERT( round.constraintObsolete() );
@@ -102,7 +102,7 @@ public:
         TS_ASSERT( !round2->participatingVariable( 5 ) );
 
         // eliminate variable b
-        round->eliminateVariable( b, 0 );  // 0 is dummy for the argument of fixedValue
+        round->eliminateVariable( b, 0 ); // 0 is dummy for the argument of fixedValue
 
         // round is obsolete now
         TS_ASSERT( round->constraintObsolete() );
@@ -127,7 +127,11 @@ public:
         return false;
     }
 
-    bool testBound( unsigned b, unsigned f, unsigned variable, double lb, double ub,
+    bool testBound( unsigned b,
+                    unsigned f,
+                    unsigned variable,
+                    double lb,
+                    double ub,
                     const List<Tightening> &expectedBounds )
     {
         RoundConstraint round( b, f );
@@ -153,111 +157,91 @@ public:
 
         {
             // Case 1
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -10, Tightening::LB ),
-                Tightening( b, -10, Tightening::UB ),
-                Tightening( f, -10, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -10, Tightening::LB ),
+                                                     Tightening( b, -10, Tightening::UB ),
+                                                     Tightening( f, -10, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, -10, -10, expectedTightenings ) );
         }
         {
             // Case 2
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -9.9, Tightening::LB ),
-                Tightening( b, -9.9, Tightening::UB ),
-                Tightening( f, -10, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -9.9, Tightening::LB ),
+                                                     Tightening( b, -9.9, Tightening::UB ),
+                                                     Tightening( f, -10, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, -9.9, -9.9, expectedTightenings ) );
         }
         {
             // Case 3
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -9.5, Tightening::LB ),
-                Tightening( b, -9.5, Tightening::UB ),
-                Tightening( f, -10, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -9.5, Tightening::LB ),
+                                                     Tightening( b, -9.5, Tightening::UB ),
+                                                     Tightening( f, -10, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, -9.5, -9.5, expectedTightenings ) );
         }
         {
             // Case 4
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -9.3, Tightening::LB ),
-                Tightening( b, -9.3, Tightening::UB ),
-                Tightening( f, -9, Tightening::LB ),
-                Tightening( f, -9, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -9.3, Tightening::LB ),
+                                                     Tightening( b, -9.3, Tightening::UB ),
+                                                     Tightening( f, -9, Tightening::LB ),
+                                                     Tightening( f, -9, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, -9.3, -9.3, expectedTightenings ) );
         }
         {
             // Case 5
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -8.5, Tightening::LB ),
-                Tightening( b, -8.5, Tightening::UB ),
-                Tightening( f, -8, Tightening::LB ),
-                Tightening( f, -8, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -8.5, Tightening::LB ),
+                                                     Tightening( b, -8.5, Tightening::UB ),
+                                                     Tightening( f, -8, Tightening::LB ),
+                                                     Tightening( f, -8, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, -8.5, -8.5, expectedTightenings ) );
         }
         {
             // Case 6
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 10, Tightening::LB ),
-                Tightening( b, 10, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 10, Tightening::LB ),
+                                                     Tightening( b, 10, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, 10, 10, expectedTightenings ) );
         }
         {
             // Case 7
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.9, Tightening::LB ),
-                Tightening( b, 9.9, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.9, Tightening::LB ),
+                                                     Tightening( b, 9.9, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, 9.9, 9.9, expectedTightenings ) );
         }
         {
             // Case 8
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.5, Tightening::LB ),
-                Tightening( b, 9.5, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.5, Tightening::LB ),
+                                                     Tightening( b, 9.5, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, 9.5, 9.5, expectedTightenings ) );
         }
         {
             // Case 9
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.3, Tightening::LB ),
-                Tightening( b, 9.3, Tightening::UB ),
-                Tightening( f, 9, Tightening::LB ),
-                Tightening( f, 9, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.3, Tightening::LB ),
+                                                     Tightening( b, 9.3, Tightening::UB ),
+                                                     Tightening( f, 9, Tightening::LB ),
+                                                     Tightening( f, 9, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, 9.3, 9.3, expectedTightenings ) );
         }
         {
             // Case 10
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 8.5, Tightening::LB ),
-                Tightening( b, 8.5, Tightening::UB ),
-                Tightening( f, 8, Tightening::LB ),
-                Tightening( f, 8, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 8.5, Tightening::LB ),
+                                                     Tightening( b, 8.5, Tightening::UB ),
+                                                     Tightening( f, 8, Tightening::LB ),
+                                                     Tightening( f, 8, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, b, 8.5, 8.5, expectedTightenings ) );
         }
@@ -269,111 +253,91 @@ public:
         unsigned f = 4;
         {
             // Case 1
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -10.5, Tightening::LB ),
-                Tightening( b, -9.5, Tightening::UB ),
-                Tightening( f, -10, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -10.5, Tightening::LB ),
+                                                     Tightening( b, -9.5, Tightening::UB ),
+                                                     Tightening( f, -10, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, -10, -10, expectedTightenings ) );
         }
         {
             // Case 2
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -9.5, Tightening::LB ),
-                Tightening( b, -9.5, Tightening::UB ),
-                Tightening( f, -9, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -9.5, Tightening::LB ),
+                                                     Tightening( b, -9.5, Tightening::UB ),
+                                                     Tightening( f, -9, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, -9.9, -9.9, expectedTightenings ) );
         }
         {
             // Case 3
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -9.5, Tightening::LB ),
-                Tightening( b, -9.5, Tightening::UB ),
-                Tightening( f, -9, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -9.5, Tightening::LB ),
+                                                     Tightening( b, -9.5, Tightening::UB ),
+                                                     Tightening( f, -9, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, -9.5, -9.5, expectedTightenings ) );
         }
         {
             // Case 4
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -9.5, Tightening::LB ),
-                Tightening( b, -9.5, Tightening::UB ),
-                Tightening( f, -9, Tightening::LB ),
-                Tightening( f, -10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -9.5, Tightening::LB ),
+                                                     Tightening( b, -9.5, Tightening::UB ),
+                                                     Tightening( f, -9, Tightening::LB ),
+                                                     Tightening( f, -10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, -9.3, -9.3, expectedTightenings ) );
         }
         {
             // Case 5
-            List<Tightening> expectedTightenings = {
-                Tightening( b, -8.5, Tightening::LB ),
-                Tightening( b, -8.5, Tightening::UB ),
-                Tightening( f, -8, Tightening::LB ),
-                Tightening( f, -9, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, -8.5, Tightening::LB ),
+                                                     Tightening( b, -8.5, Tightening::UB ),
+                                                     Tightening( f, -8, Tightening::LB ),
+                                                     Tightening( f, -9, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, -8.5, -8.5, expectedTightenings ) );
         }
         {
             // Case 6
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.5, Tightening::LB ),
-                Tightening( b, 10.5, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 10, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.5, Tightening::LB ),
+                                                     Tightening( b, 10.5, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 10, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, 10, 10, expectedTightenings ) );
         }
         {
             // Case 7
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.5, Tightening::LB ),
-                Tightening( b, 9.5, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 9, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.5, Tightening::LB ),
+                                                     Tightening( b, 9.5, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 9, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, 9.9, 9.9, expectedTightenings ) );
         }
         {
             // Case 8
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.5, Tightening::LB ),
-                Tightening( b, 9.5, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 9, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.5, Tightening::LB ),
+                                                     Tightening( b, 9.5, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 9, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, 9.5, 9.5, expectedTightenings ) );
         }
         {
             // Case 9
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 9.5, Tightening::LB ),
-                Tightening( b, 9.5, Tightening::UB ),
-                Tightening( f, 10, Tightening::LB ),
-                Tightening( f, 9, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 9.5, Tightening::LB ),
+                                                     Tightening( b, 9.5, Tightening::UB ),
+                                                     Tightening( f, 10, Tightening::LB ),
+                                                     Tightening( f, 9, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, 9.3, 9.3, expectedTightenings ) );
         }
         {
             // Case 10
-            List<Tightening> expectedTightenings = {
-                Tightening( b, 8.5, Tightening::LB ),
-                Tightening( b, 8.5, Tightening::UB ),
-                Tightening( f, 9, Tightening::LB ),
-                Tightening( f, 8, Tightening::UB )
-            };
+            List<Tightening> expectedTightenings = { Tightening( b, 8.5, Tightening::LB ),
+                                                     Tightening( b, 8.5, Tightening::UB ),
+                                                     Tightening( f, 9, Tightening::LB ),
+                                                     Tightening( f, 8, Tightening::UB ) };
 
             TS_ASSERT( testBound( b, f, f, 8.5, 8.5, expectedTightenings ) );
         }

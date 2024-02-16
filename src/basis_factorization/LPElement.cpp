@@ -13,8 +13,9 @@
 
  **/
 
-#include "EtaMatrix.h"
 #include "LPElement.h"
+
+#include "EtaMatrix.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -22,8 +23,8 @@
 #include <utility>
 
 LPElement::LPElement( EtaMatrix *eta, std::pair<unsigned, unsigned> *pair )
-	: _eta( NULL )
-	, _pair( NULL )
+    : _eta( NULL )
+    , _pair( NULL )
 {
     ASSERT( eta || pair );
 
@@ -35,17 +36,17 @@ LPElement::LPElement( EtaMatrix *eta, std::pair<unsigned, unsigned> *pair )
 
 LPElement::~LPElement()
 {
-	if ( _eta )
-	{
-		delete _eta;
-		_eta = NULL;
-	}
+    if ( _eta )
+    {
+        delete _eta;
+        _eta = NULL;
+    }
 
-	if ( _pair )
-	{
-		delete _pair;
-		_pair = NULL;
-	}
+    if ( _pair )
+    {
+        delete _pair;
+        _pair = NULL;
+    }
 }
 
 void LPElement::dump() const

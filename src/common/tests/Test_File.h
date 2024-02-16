@@ -14,8 +14,6 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "CommonError.h"
 #include "ConstSimpleData.h"
 #include "File.h"
@@ -24,33 +22,34 @@
 #include "MStringf.h"
 #include "MockErrno.h"
 #include "RealMalloc.h"
-
 #include "T/sys/stat.h"
 #include "T/unistd.h"
+
+#include <cxxtest/TestSuite.h>
 
 #ifdef _WIN32
 #include <algorithm>
 #endif
 
-class MockForFile :
-	public RealMalloc,
-    public MockErrno,
-    public T::Base_open,
-    public T::Base_write,
-    public T::Base_read,
-    public T::Base_close,
-    public T::Base_stat
+class MockForFile
+    : public RealMalloc
+    , public MockErrno
+    , public T::Base_open
+    , public T::Base_write
+    , public T::Base_read
+    , public T::Base_close
+    , public T::Base_stat
 {
 public:
-	MockForFile()
-	{
+    MockForFile()
+    {
         nextDescriptor = 17;
         openWasCalled = false;
         writeShouldFail = false;
         closeWasCalled = false;
         readShouldFail = false;
         statShouldFail = false;
-	}
+    }
 
     String lastPathname;
     int lastFlags;
@@ -115,7 +114,8 @@ public:
         unsigned bytes = std::min( count, (size_t)nextReadData.size() );
         memcpy( buf, nextReadData.data(), bytes );
 
-        HeapData tempData = ConstSimpleData( (char *)(nextReadData.data()) + bytes, nextReadData.size() - bytes );
+        HeapData tempData =
+            ConstSimpleData( (char *)( nextReadData.data() ) + bytes, nextReadData.size() - bytes );
         nextReadData = tempData;
 
         return bytes;
@@ -130,9 +130,9 @@ public:
     {
         lastStatPath = path;
 
-        memset( buf, 0, sizeof(struct stat) );
+        memset( buf, 0, sizeof( struct stat ) );
         buf->st_size = (off_t)nextFileSize;
-        memcpy( &buf->st_mode, &nextFileMode, sizeof(mode_t) );
+        memcpy( &buf->st_mode, &nextFileMode, sizeof( mode_t ) );
 
         return statShouldFail ? -1 : 0;
     }
@@ -141,17 +141,17 @@ public:
 class FileTestSuite : public CxxTest::TestSuite
 {
 public:
-	MockForFile *mock;
+    MockForFile *mock;
 
-	void setUp()
-	{
-		TS_ASSERT( mock = new MockForFile );
-	}
+    void setUp()
+    {
+        TS_ASSERT( mock = new MockForFile );
+    }
 
-	void tearDown()
-	{
-		TS_ASSERT_THROWS_NOTHING( delete mock );
-	}
+    void tearDown()
+    {
+        TS_ASSERT_THROWS_NOTHING( delete mock );
+    }
 
     void test_todo()
     {
@@ -264,10 +264,8 @@ public:
 
         mock->writeShouldFail = true;
 
-        TS_ASSERT_THROWS_EQUALS( file.write( line1 ),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::WRITE_FAILED );
+        TS_ASSERT_THROWS_EQUALS(
+            file.write( line1 ), const CommonError &e, e.getCode(), CommonError::WRITE_FAILED );
     }
 
     void xtest_read()
@@ -278,7 +276,7 @@ public:
 
         char toRead[] = "hello world, im a buffer";
 
-        mock->nextReadData = ConstSimpleData( toRead, sizeof(toRead) );
+        mock->nextReadData = ConstSimpleData( toRead, sizeof( toRead ) );
 
         HeapData readData1;
 
@@ -286,21 +284,21 @@ public:
         TS_ASSERT_EQUALS( readData1.size(), 5U );
         TS_ASSERT_SAME_DATA( readData1.data(), toRead, 5 );
 
-        mock->nextReadData = ConstSimpleData( toRead, sizeof(toRead) );
+        mock->nextReadData = ConstSimpleData( toRead, sizeof( toRead ) );
 
         HeapData readData2;
 
-        file.read( readData2, sizeof(toRead) );
-        TS_ASSERT_EQUALS( readData2.size(), sizeof(toRead) );
-        TS_ASSERT_SAME_DATA( readData2.data(), toRead, sizeof(toRead) );
+        file.read( readData2, sizeof( toRead ) );
+        TS_ASSERT_EQUALS( readData2.size(), sizeof( toRead ) );
+        TS_ASSERT_SAME_DATA( readData2.data(), toRead, sizeof( toRead ) );
 
-        mock->nextReadData = ConstSimpleData( toRead, sizeof(toRead) );
+        mock->nextReadData = ConstSimpleData( toRead, sizeof( toRead ) );
 
         HeapData readData3;
 
-        file.read( readData3, sizeof(toRead) + 17 );
-        TS_ASSERT_EQUALS( readData3.size(), sizeof(toRead) );
-        TS_ASSERT_SAME_DATA( readData3.data(), toRead, sizeof(toRead) );
+        file.read( readData3, sizeof( toRead ) + 17 );
+        TS_ASSERT_EQUALS( readData3.size(), sizeof( toRead ) );
+        TS_ASSERT_SAME_DATA( readData3.data(), toRead, sizeof( toRead ) );
 
         mock->writeShouldFail = true;
     }
@@ -364,10 +362,8 @@ public:
         expectedLine = "Kittens, cats, sacks and wives, how many were going to St Ives?";
         TS_ASSERT_EQUALS( line, expectedLine );
 
-        TS_ASSERT_THROWS_EQUALS( file.readLine(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::READ_FAILED );
+        TS_ASSERT_THROWS_EQUALS(
+            file.readLine(), const CommonError &e, e.getCode(), CommonError::READ_FAILED );
     }
 
     void xtest_size()
@@ -401,7 +397,7 @@ public:
 
     void xtest_folder()
     {
-        memset( &mock->nextFileMode, 0, sizeof(mode_t) );
+        memset( &mock->nextFileMode, 0, sizeof( mode_t ) );
 
         mock->statShouldFail = false;
 

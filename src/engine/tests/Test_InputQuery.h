@@ -13,18 +13,17 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "LeakyReluConstraint.h"
+#include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockFileFactory.h"
-#include "LeakyReluConstraint.h"
-#include "ReluConstraint.h"
-#include "MarabouError.h"
 #include "NetworkLevelReasoner.h"
+#include "ReluConstraint.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForInputQuery
@@ -261,27 +260,27 @@ public:
         InputQuery *inputQuery = new InputQuery;
         inputQuery->setNumberOfVariables( 7 );
         Equation eq1;
-        eq1.addAddend(1, 0);
-        eq1.addAddend(1, 1);
-        eq1.addAddend(-1, 2);
-        inputQuery->addEquation(eq1);
+        eq1.addAddend( 1, 0 );
+        eq1.addAddend( 1, 1 );
+        eq1.addAddend( -1, 2 );
+        inputQuery->addEquation( eq1 );
         Equation eq2;
-        eq2.addAddend(1, 0);
-        eq2.addAddend(-1, 1);
-        eq2.addAddend(-1, 3);
-        inputQuery->addEquation(eq2);
-        LeakyReluConstraint *r1 = new LeakyReluConstraint(2,4, 0.1);
-        LeakyReluConstraint *r2 = new LeakyReluConstraint(3,5, 0.1);
-        inputQuery->addPiecewiseLinearConstraint(r1);
-        inputQuery->addPiecewiseLinearConstraint(r2);
+        eq2.addAddend( 1, 0 );
+        eq2.addAddend( -1, 1 );
+        eq2.addAddend( -1, 3 );
+        inputQuery->addEquation( eq2 );
+        LeakyReluConstraint *r1 = new LeakyReluConstraint( 2, 4, 0.1 );
+        LeakyReluConstraint *r2 = new LeakyReluConstraint( 3, 5, 0.1 );
+        inputQuery->addPiecewiseLinearConstraint( r1 );
+        inputQuery->addPiecewiseLinearConstraint( r2 );
         Equation eq3;
-        eq3.addAddend(1, 2);
-        eq3.addAddend(1, 3);
-        eq3.addAddend(1, 4);
-        eq3.addAddend(-1, 6);
-        inputQuery->addEquation(eq3);
-        inputQuery->markInputVariable(0, 0);
-        inputQuery->markInputVariable(1, 1);
+        eq3.addAddend( 1, 2 );
+        eq3.addAddend( 1, 3 );
+        eq3.addAddend( 1, 4 );
+        eq3.addAddend( -1, 6 );
+        inputQuery->addEquation( eq3 );
+        inputQuery->markInputVariable( 0, 0 );
+        inputQuery->markInputVariable( 1, 1 );
         List<Equation> unhandledEquations;
         Set<unsigned> varsInUnhandledConstraints;
         TS_ASSERT( inputQuery->constructNetworkLevelReasoner( unhandledEquations,
@@ -302,7 +301,7 @@ public:
         input[0] = 2;
         input[1] = -3;
         double result = 2 - 3 + 2 + 3 - 0.1;
-        nlr->evaluate(input, output);
+        nlr->evaluate( input, output );
         TS_ASSERT_EQUALS( output[0], result );
         delete inputQuery;
     }

@@ -20,30 +20,30 @@
 #include "MockFile.h"
 #include "T/FileFactory.h"
 
-class MockFileFactory :
-	public T::Base_createFile,
-	public T::Base_discardFile
+class MockFileFactory
+    : public T::Base_createFile
+    , public T::Base_discardFile
 {
 public:
-	MockFile mockFile;
+    MockFile mockFile;
 
-	~MockFileFactory()
-	{
-		if ( mockFile.wasCreated )
-		{
-			TS_ASSERT( mockFile.wasDiscarded );
-		}
-	}
+    ~MockFileFactory()
+    {
+        if ( mockFile.wasCreated )
+        {
+            TS_ASSERT( mockFile.wasDiscarded );
+        }
+    }
 
-	IFile *createFile( const String &path )
-	{
-		mockFile.mockConstructor( path );
-		return &mockFile;
-	}
+    IFile *createFile( const String &path )
+    {
+        mockFile.mockConstructor( path );
+        return &mockFile;
+    }
 
-	void discardFile( IFile *file )
-	{
-		TS_ASSERT_EQUALS( file, &mockFile );
+    void discardFile( IFile *file )
+    {
+        TS_ASSERT_EQUALS( file, &mockFile );
         mockFile.mockDestructor();
     }
 };

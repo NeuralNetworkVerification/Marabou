@@ -38,7 +38,8 @@ public:
       passed for determinism; otherwise, time() will be used.
     */
     void runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations );
-    void runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations, unsigned seed );
+    void
+    runSimulations( const InputQuery &inputQuery, unsigned numberOfSimulations, unsigned seed );
 
     /*
       Obtain the results from previously-run simulations.

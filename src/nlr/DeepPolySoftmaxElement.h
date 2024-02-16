@@ -55,14 +55,14 @@ public:
                                   unsigned outputIndex,
                                   unsigned inputIndex );
     static double LSELowerBound2( const Vector<double> &sourceMids,
-                                 const Vector<double> &inputLbs,
-                                 const Vector<double> &inputUbs,
-                                 unsigned outputIndex );
+                                  const Vector<double> &inputLbs,
+                                  const Vector<double> &inputUbs,
+                                  unsigned outputIndex );
     static double dLSELowerBound2( const Vector<double> &sourceMids,
                                    const Vector<double> &inputLbs,
                                    const Vector<double> &inputUbs,
-                                  unsigned outputIndex,
-                                  unsigned inputIndex );
+                                   unsigned outputIndex,
+                                   unsigned inputIndex );
     static double LSEUpperBound( const Vector<double> &sourceMids,
                                  const Vector<double> &outputLb,
                                  const Vector<double> &outputUb,
@@ -100,7 +100,7 @@ public:
 private:
     SoftmaxBoundType _boundType;
     unsigned _maxLayerSize;
-    double * _work;
+    double *_work;
 
     void allocateMemory( unsigned maxLayerSize );
     void freeMemoryIfNeeded();

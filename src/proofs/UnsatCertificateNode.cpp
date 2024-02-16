@@ -12,10 +12,12 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <Options.h>
 #include "UnsatCertificateNode.h"
 
-UnsatCertificateNode::UnsatCertificateNode( UnsatCertificateNode *parent, PiecewiseLinearCaseSplit split )
+#include <Options.h>
+
+UnsatCertificateNode::UnsatCertificateNode( UnsatCertificateNode *parent,
+                                            PiecewiseLinearCaseSplit split )
     : _parent( parent )
     , _contradiction( NULL )
     , _headSplit( std::move( split ) )
@@ -70,7 +72,7 @@ const PiecewiseLinearCaseSplit &UnsatCertificateNode::getSplit() const
     return _headSplit;
 }
 
-const List<UnsatCertificateNode*> &UnsatCertificateNode::getChildren() const
+const List<UnsatCertificateNode *> &UnsatCertificateNode::getChildren() const
 {
     return _children;
 }
@@ -86,7 +88,8 @@ void UnsatCertificateNode::addPLCLemma( std::shared_ptr<PLCLemma> &explanation )
 }
 
 
-UnsatCertificateNode *UnsatCertificateNode::getChildBySplit( const PiecewiseLinearCaseSplit &split ) const
+UnsatCertificateNode *
+UnsatCertificateNode::getChildBySplit( const PiecewiseLinearCaseSplit &split ) const
 {
     for ( UnsatCertificateNode *child : _children )
     {
