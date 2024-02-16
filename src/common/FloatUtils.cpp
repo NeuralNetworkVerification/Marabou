@@ -14,6 +14,7 @@
 **/
 
 #include "FloatUtils.h"
+
 #include <iomanip>
 #include <sstream>
 
@@ -41,13 +42,13 @@ bool FloatUtils::areEqual( double x, double y, double epsilon )
 String FloatUtils::doubleToString( double x, unsigned precision )
 {
     std::ostringstream strout;
-    strout << std::fixed << std::setprecision(precision) << x;
+    strout << std::fixed << std::setprecision( precision ) << x;
     std::string str = strout.str();
     size_t end = str.find_last_not_of( '0' ) + 1;
     str.erase( end );
 
     if ( str[str.size() - 1] == '.' )
-        str = str.substr(0, str.size() - 1);
+        str = str.substr( 0, str.size() - 1 );
 
     return str;
 }

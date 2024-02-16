@@ -13,8 +13,9 @@
 
  **/
 
-#include "BasisFactorizationError.h"
 #include "EtaMatrix.h"
+
+#include "BasisFactorizationError.h"
 #include "FloatUtils.h"
 
 #include <cstdio>
@@ -28,9 +29,10 @@ EtaMatrix::EtaMatrix( unsigned m, unsigned index, const double *column )
 {
     _column = new double[_m];
     if ( !_column )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "EtaMatrix::column" );
 
-    memcpy( _column, column, sizeof(double) * _m );
+    memcpy( _column, column, sizeof( double ) * _m );
 }
 
 EtaMatrix::EtaMatrix( unsigned m, unsigned index )
@@ -40,7 +42,8 @@ EtaMatrix::EtaMatrix( unsigned m, unsigned index )
 {
     _column = new double[_m];
     if ( !_column )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "EtaMatrix::column" );
 
     std::fill( _column, _column + _m, 0.0 );
 
@@ -54,9 +57,10 @@ EtaMatrix::EtaMatrix( const EtaMatrix &other )
 {
     _column = new double[_m];
     if ( !_column )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "EtaMatrix::column" );
 
-    memcpy( _column, other._column, sizeof(double) * _m );
+    memcpy( _column, other._column, sizeof( double ) * _m );
 }
 
 EtaMatrix &EtaMatrix::operator=( const EtaMatrix &other )
@@ -72,9 +76,10 @@ EtaMatrix &EtaMatrix::operator=( const EtaMatrix &other )
 
     _column = new double[_m];
     if ( !_column )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "EtaMatrix::column" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "EtaMatrix::column" );
 
-    memcpy( _column, other._column, sizeof(double) * _m );
+    memcpy( _column, other._column, sizeof( double ) * _m );
 
     return *this;
 }
@@ -101,11 +106,11 @@ void EtaMatrix::dump() const
 void EtaMatrix::toMatrix( double *A ) const
 {
     std::fill_n( A, _m * _m, 0.0 );
-	for ( unsigned i = 0; i < _m; ++i )
+    for ( unsigned i = 0; i < _m; ++i )
     {
-		A[i * _m + i] = 1.;
-		A[_columnIndex + i * _m] = _column[i];
-	}
+        A[i * _m + i] = 1.;
+        A[_columnIndex + i * _m] = _column[i];
+    }
 }
 
 bool EtaMatrix::operator==( const EtaMatrix &other ) const

@@ -17,8 +17,8 @@
 #define __DnCMarabou_h__
 
 #include "DnCManager.h"
-#include "Options.h"
 #include "InputQuery.h"
+#include "Options.h"
 
 class DnCMarabou
 {

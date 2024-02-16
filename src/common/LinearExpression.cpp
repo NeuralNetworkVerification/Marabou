@@ -14,32 +14,30 @@
  **/
 
 #include "LinearExpression.h"
+
 #include "FloatUtils.h"
 #include "MStringf.h"
 
 LinearExpression::LinearExpression()
-  : _constant( 0 )
+    : _constant( 0 )
 {
 }
 
 LinearExpression::LinearExpression( Map<unsigned, double> &addends )
-  : _addends( addends )
-  , _constant( 0 )
+    : _addends( addends )
+    , _constant( 0 )
 {
 }
 
-LinearExpression::LinearExpression( Map<unsigned, double> &addends,
-                                    double constant )
-  : _addends( addends )
-  , _constant( constant )
+LinearExpression::LinearExpression( Map<unsigned, double> &addends, double constant )
+    : _addends( addends )
+    , _constant( constant )
 {
 }
 
 bool LinearExpression::operator==( const LinearExpression &other ) const
 {
-    return
-        ( _addends == other._addends ) &&
-        ( _constant == other._constant );
+    return ( _addends == other._addends ) && ( _constant == other._constant );
 }
 
 double LinearExpression::evaluate( const Map<unsigned, double> &assignment )

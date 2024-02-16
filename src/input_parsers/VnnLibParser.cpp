@@ -13,12 +13,14 @@
 
 **/
 
-#include <regex>
+#include "VnnLibParser.h"
+
+#include "DisjunctionConstraint.h"
 #include "Equation.h"
 #include "File.h"
 #include "InputParserError.h"
-#include "VnnLibParser.h"
-#include "DisjunctionConstraint.h"
+
+#include <regex>
 
 static double extractScalar( const String &token )
 {
@@ -26,8 +28,8 @@ static double extractScalar( const String &token )
     double value = std::stod( token.ascii(), &end );
     if ( end != token.length() )
     {
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, Stringf( "%s not a scalar",
-                                                                             token.ascii() ).ascii() );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                Stringf( "%s not a scalar", token.ascii() ).ascii() );
     }
     return value;
 }
@@ -36,8 +38,8 @@ static String readVnnlibFile( const String &vnnlibFilePath )
 {
     if ( !File::exists( vnnlibFilePath ) )
     {
-        std::cout << "Error: the specified property file "
-                  << vnnlibFilePath.ascii() << " doesn't exist!" << std::endl;
+        std::cout << "Error: the specified property file " << vnnlibFilePath.ascii()
+                  << " doesn't exist!" << std::endl;
         throw InputParserError( InputParserError::FILE_DOESNT_EXIST, vnnlibFilePath.ascii() );
     }
 
@@ -79,15 +81,13 @@ void VnnLibParser::parseVnnlib( const String &vnnlibContent, InputQuery &inputQu
 {
     std::regex re( R"(\(|\)|[\w\-\\.]+|<=|>=|\+|-|\*)" );
 
-    auto tokens_begin = std::cregex_token_iterator( vnnlibContent.ascii(),
-                                                    vnnlibContent.ascii()
-                                                    + vnnlibContent.length(), re );
+    auto tokens_begin = std::cregex_token_iterator(
+        vnnlibContent.ascii(), vnnlibContent.ascii() + vnnlibContent.length(), re );
     auto tokens_end = std::cregex_token_iterator();
 
     Vector<String> all_tokens;
 
-    for ( std::cregex_token_iterator it = tokens_begin;
-          it != tokens_end; ++it )
+    for ( std::cregex_token_iterator it = tokens_begin; it != tokens_end; ++it )
     {
         auto match = *it;
         auto match_str = String( match.str().c_str() );
@@ -102,7 +102,7 @@ int VnnLibParser::parseScript( const Vector<String> &tokens, InputQuery &inputQu
 {
     int index = 0;
 
-    while ( (unsigned) index < tokens.size() )
+    while ( (unsigned)index < tokens.size() )
     {
         ASSERT( tokens[index] == "(" )
         index = parseCommand( index + 1, tokens, inputQuery );
@@ -134,7 +134,9 @@ int VnnLibParser::parseCommand( int index, const Vector<String> &tokens, InputQu
     return index;
 }
 
-int VnnLibParser::parseDeclareConst( int index, const Vector<String> &tokens, InputQuery &inputQuery )
+int VnnLibParser::parseDeclareConst( int index,
+                                     const Vector<String> &tokens,
+                                     InputQuery &inputQuery )
 {
     const String &varName = tokens[index];
     const String &varType = tokens[++index];
@@ -142,7 +144,8 @@ int VnnLibParser::parseDeclareConst( int index, const Vector<String> &tokens, In
 
     if ( varType != "Real" )
     {
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Does not support variable types other than 'Real'" );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                "Does not support variable types other than 'Real'" );
     }
 
     List<String> varTokens = varName.tokenize( "_" );
@@ -168,7 +171,8 @@ int VnnLibParser::parseDeclareConst( int index, const Vector<String> &tokens, In
     {
         if ( varIdx >= inputQuery.getNumInputVariables() )
         {
-            throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, varName.ascii() );
+            throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE,
+                                    varName.ascii() );
         }
 
         _varMap.insert( varName, inputQuery.inputVariableByIndex( varIdx ) );
@@ -177,7 +181,8 @@ int VnnLibParser::parseDeclareConst( int index, const Vector<String> &tokens, In
     {
         if ( varIdx >= inputQuery.getNumOutputVariables() )
         {
-            throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE, varName.ascii() );
+            throw InputParserError( InputParserError::VARIABLE_INDEX_OUT_OF_RANGE,
+                                    varName.ascii() );
         }
 
         _varMap.insert( varName, inputQuery.outputVariableByIndex( varIdx ) );
@@ -215,8 +220,9 @@ int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, InputQue
                 }
                 else if ( eq._scalar < 0 )
                 {
-                    throw InputParserError( InputParserError::UNEXPECTED_INPUT,
-                                            Stringf( "Illegal vnnlib constraint: 0 < %f", eq._scalar ).ascii() );
+                    throw InputParserError(
+                        InputParserError::UNEXPECTED_INPUT,
+                        Stringf( "Illegal vnnlib constraint: 0 < %f", eq._scalar ).ascii() );
                 }
                 else
                 {
@@ -282,7 +288,9 @@ int VnnLibParser::parseAssert( int index, const Vector<String> &tokens, InputQue
     return index;
 }
 
-int VnnLibParser::parseCondition( int index, const Vector<String> &tokens, List<Equation> &equations )
+int VnnLibParser::parseCondition( int index,
+                                  const Vector<String> &tokens,
+                                  List<Equation> &equations )
 {
     const String &op = tokens[index];
 
@@ -353,7 +361,9 @@ int VnnLibParser::parseTerm( int index, const Vector<String> &tokens, Term &term
     return index;
 }
 
-int VnnLibParser::parseComplexTerm( int index, const Vector<String> &tokens, VnnLibParser::Term &term )
+int VnnLibParser::parseComplexTerm( int index,
+                                    const Vector<String> &tokens,
+                                    VnnLibParser::Term &term )
 {
     while ( tokens[index] != ")" )
     {
@@ -366,7 +376,8 @@ int VnnLibParser::parseComplexTerm( int index, const Vector<String> &tokens, Vnn
     return index;
 }
 
-double VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
+double
+VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
 {
     ASSERT( term._type == Term::TermType::ADD )
 
@@ -387,7 +398,9 @@ double VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equat
         {
             if ( arg._args.size() == 2 )
             {
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Using VNN-LIB operator '-' as a sub-term of '+' is allowed with only one argument" );
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                        "Using VNN-LIB operator '-' as a sub-term of '+' is "
+                                        "allowed with only one argument" );
             }
 
             const Term &subArg = arg._args.first();
@@ -401,25 +414,29 @@ double VnnLibParser::processAddConstraint( const VnnLibParser::Term &term, Equat
             }
             else
             {
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '+'" );
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                        "Unsupported argument for VNN-LIB operator '+'" );
             }
         }
         else
         {
-            throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '+'" );
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                    "Unsupported argument for VNN-LIB operator '+'" );
         }
     }
 
     return scalar;
 }
 
-double VnnLibParser::processSubConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
+double
+VnnLibParser::processSubConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
 {
     ASSERT( term._type == Term::TermType::SUB )
 
     if ( term._args.empty() || term._args.size() > 2 )
     {
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, "'-' VNN-LIB operation supports only one or two arguments" );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                "'-' VNN-LIB operation supports only one or two arguments" );
     }
 
     double scalar = 0;
@@ -437,7 +454,8 @@ double VnnLibParser::processSubConstraint( const VnnLibParser::Term &term, Equat
     }
     else
     {
-        throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '-'" );
+        throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                "Unsupported argument for VNN-LIB operator '-'" );
     }
 
     if ( term._args.size() == 2 )
@@ -454,14 +472,16 @@ double VnnLibParser::processSubConstraint( const VnnLibParser::Term &term, Equat
         }
         else
         {
-            throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '-'" );
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                    "Unsupported argument for VNN-LIB operator '-'" );
         }
     }
 
     return scalar;
 }
 
-double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
+double
+VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs )
 {
     ASSERT( term._type == Term::TermType::MUL )
 
@@ -480,7 +500,9 @@ double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equat
         {
             if ( varExists )
             {
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, "No support for using VNN-LIB operator '*' on more than one variable" );
+                throw InputParserError(
+                    InputParserError::UNEXPECTED_INPUT,
+                    "No support for using VNN-LIB operator '*' on more than one variable" );
             }
 
             varExists = true;
@@ -490,7 +512,9 @@ double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equat
         {
             if ( arg._args.size() == 2 )
             {
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Using VNN-LIB operator '-' as a sub-term of '*' is allowed with only one argument" );
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                        "Using VNN-LIB operator '-' as a sub-term of '*' is "
+                                        "allowed with only one argument" );
             }
 
             const Term &subArg = arg._args.first();
@@ -502,7 +526,9 @@ double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equat
             {
                 if ( varExists )
                 {
-                    throw InputParserError( InputParserError::UNEXPECTED_INPUT, "No support for using VNN-LIB operator '*' on more than one variable" );
+                    throw InputParserError(
+                        InputParserError::UNEXPECTED_INPUT,
+                        "No support for using VNN-LIB operator '*' on more than one variable" );
                 }
 
                 varExists = true;
@@ -511,12 +537,14 @@ double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equat
             }
             else
             {
-                throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '*'" );
+                throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                        "Unsupported argument for VNN-LIB operator '*'" );
             }
         }
         else
         {
-            throw InputParserError( InputParserError::UNEXPECTED_INPUT, "Unsupported argument for VNN-LIB operator '*'" );
+            throw InputParserError( InputParserError::UNEXPECTED_INPUT,
+                                    "Unsupported argument for VNN-LIB operator '*'" );
         }
     }
 
@@ -531,7 +559,8 @@ double VnnLibParser::processMulConstraint( const VnnLibParser::Term &term, Equat
     return ( -coefficient ) * scalar;
 }
 
-Equation VnnLibParser::processLeConstraint( const VnnLibParser::Term &arg1, const VnnLibParser::Term &arg2 )
+Equation VnnLibParser::processLeConstraint( const VnnLibParser::Term &arg1,
+                                            const VnnLibParser::Term &arg2 )
 {
     Equation equation( Equation::EquationType::LE );
     double scalar = 0;
@@ -583,5 +612,3 @@ Equation VnnLibParser::processLeConstraint( const VnnLibParser::Term &arg1, cons
     equation.setScalar( scalar );
     return equation;
 }
-
-

@@ -18,7 +18,8 @@
 
 #include "EntrySelectionStrategy.h"
 
-#define DANTZIG_LOG( x, ... ) LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
+#define DANTZIG_LOG( x, ... )                                                                      \
+    LOG( GlobalConfiguration::DANTZIGS_RULE_LOGGING, "DantzigsRule: %s\n", x )
 
 class String;
 
@@ -29,9 +30,8 @@ public:
       Apply Dantzig's rule: choose the candidate associated with the
       largest coefficient (in absolute value) in the cost function.
     */
-    bool select( ITableau &tableau,
-                 const List<unsigned> &candidates,
-                 const Set<unsigned> &excluded );
+    bool
+    select( ITableau &tableau, const List<unsigned> &candidates, const Set<unsigned> &excluded );
 };
 
 #endif // __DantzigsRule_h__

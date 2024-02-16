@@ -13,11 +13,12 @@
 
  **/
 
+#include "GaussianEliminator.h"
+
 #include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
 #include "FloatUtils.h"
-#include "GaussianEliminator.h"
 #include "GlobalConfiguration.h"
 #include "MStringf.h"
 #include "MalformedBasisException.h"
@@ -67,10 +68,10 @@ void GaussianEliminator::initializeFactorization( const double *A, LUFactors *lu
         V = U = A
         F = L = I
     */
-    memcpy( _luFactors->_V, A, sizeof(double) * _m * _m );
+    memcpy( _luFactors->_V, A, sizeof( double ) * _m * _m );
     std::fill_n( _luFactors->_F, _m * _m, 0 );
     for ( unsigned i = 0; i < _m; ++i )
-        _luFactors->_F[i*_m +i] = 1;
+        _luFactors->_F[i * _m + i] = 1;
 
     _luFactors->_P.resetToIdentity();
     _luFactors->_Q.resetToIdentity();
@@ -82,7 +83,7 @@ void GaussianEliminator::initializeFactorization( const double *A, LUFactors *lu
     {
         for ( unsigned j = 0; j < _m; ++j )
         {
-            if ( !FloatUtils::isZero( A[i*_m + j] ) )
+            if ( !FloatUtils::isZero( A[i * _m + j] ) )
             {
                 ++_numURowElements[i];
                 ++_numUColumnElements[j];
@@ -95,8 +96,8 @@ void GaussianEliminator::permute()
 {
     /*
       The element selected for pivoting is U[p,q],
-      We want to update P and Q to move u[p,q] to position [k,k] in U (= P'VQ'), where k is the current
-      eliminiation step.
+      We want to update P and Q to move u[p,q] to position [k,k] in U (= P'VQ'), where k is the
+      current eliminiation step.
     */
 
     _luFactors->_P.swapColumns( _uPivotRow, _eliminationStep );
@@ -198,7 +199,7 @@ void GaussianEliminator::choosePivot()
             for ( unsigned j = _eliminationStep; j < _m; ++j )
             {
                 unsigned vCol = _luFactors->_Q._rowOrdering[j];
-                if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow*_m + vCol] ) )
+                if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow * _m + vCol] ) )
                 {
                     _vPivotColumn = vCol;
                     _uPivotColumn = j;
@@ -211,9 +212,10 @@ void GaussianEliminator::choosePivot()
             ASSERT( found );
 
             GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot (singleton row): V[%u,%u] = %lf",
-                          _vPivotRow,
-                          _vPivotColumn,
-                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ).ascii() );
+                                   _vPivotRow,
+                                   _vPivotColumn,
+                                   _luFactors->_V[_vPivotRow * _m + _vPivotColumn] )
+                              .ascii() );
 
             return;
         }
@@ -231,7 +233,7 @@ void GaussianEliminator::choosePivot()
             for ( unsigned j = _eliminationStep; j < _m; ++j )
             {
                 unsigned vRow = _luFactors->_P._columnOrdering[j];
-                if ( !FloatUtils::isZero( _luFactors->_V[vRow*_m + _vPivotColumn] ) )
+                if ( !FloatUtils::isZero( _luFactors->_V[vRow * _m + _vPivotColumn] ) )
                 {
                     _vPivotRow = vRow;
                     _uPivotRow = j;
@@ -243,10 +245,12 @@ void GaussianEliminator::choosePivot()
 
             ASSERT( found );
 
-            GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
-                          _vPivotRow,
-                          _vPivotColumn,
-                          _luFactors->_V[_vPivotRow*_m + _vPivotColumn] ).ascii() );
+            GAUSSIAN_LOG(
+                Stringf( "Choose pivot selected a pivot (singleton column): V[%u,%u] = %lf",
+                         _vPivotRow,
+                         _vPivotColumn,
+                         _luFactors->_V[_vPivotRow * _m + _vPivotColumn] )
+                    .ascii() );
             return;
         }
     }
@@ -266,7 +270,7 @@ void GaussianEliminator::choosePivot()
         {
             unsigned vRow = _luFactors->_P._columnOrdering[row];
             unsigned vColumn = _luFactors->_Q._rowOrdering[column];
-            double contender = FloatUtils::abs( _luFactors->_V[vRow*_m + vColumn] );
+            double contender = FloatUtils::abs( _luFactors->_V[vRow * _m + vColumn] );
 
             if ( FloatUtils::gt( contender, maxInColumn ) )
                 maxInColumn = contender;
@@ -277,7 +281,6 @@ void GaussianEliminator::choosePivot()
             if ( !found )
                 throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
                                                "Have a zero column" );
-
         }
 
         // Now scan the column for candidates
@@ -285,11 +288,13 @@ void GaussianEliminator::choosePivot()
         {
             unsigned vRow = _luFactors->_P._columnOrdering[row];
             unsigned vColumn = _luFactors->_Q._rowOrdering[column];
-            double contender = FloatUtils::abs( _luFactors->_V[vRow*_m + vColumn] );
+            double contender = FloatUtils::abs( _luFactors->_V[vRow * _m + vColumn] );
 
             // Only consider large-enough elements
-            if ( FloatUtils::gt( contender,
-                                 maxInColumn * GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD ) )
+            if ( FloatUtils::gt(
+                     contender,
+                     maxInColumn *
+                         GlobalConfiguration::GAUSSIAN_ELIMINATION_PIVOT_SCALE_THRESHOLD ) )
             {
                 unsigned cost = ( _numURowElements[row] - 1 ) * ( _numUColumnElements[column] - 1 );
 
@@ -310,7 +315,12 @@ void GaussianEliminator::choosePivot()
         }
     }
 
-    GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)", _vPivotRow, _vPivotColumn, _luFactors->_V[_vPivotRow*_m + _vPivotColumn], minimalCost ).ascii() );
+    GAUSSIAN_LOG( Stringf( "Choose pivot selected a pivot: V[%u,%u] = %lf (cost %u)",
+                           _vPivotRow,
+                           _vPivotColumn,
+                           _luFactors->_V[_vPivotRow * _m + _vPivotColumn],
+                           minimalCost )
+                      .ascii() );
 
     if ( !found )
         throw BasisFactorizationError( BasisFactorizationError::GAUSSIAN_ELIMINATION_FAILED,
@@ -329,7 +339,7 @@ void GaussianEliminator::eliminate()
     for ( unsigned uColumn = _eliminationStep; uColumn < _m; ++uColumn )
     {
         unsigned vColumn = _luFactors->_Q._rowOrdering[uColumn];
-        if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow*_m + vColumn] ) )
+        if ( !FloatUtils::isZero( _luFactors->_V[_vPivotRow * _m + vColumn] ) )
             --_numUColumnElements[uColumn];
     }
 
@@ -337,7 +347,7 @@ void GaussianEliminator::eliminate()
       Eliminate all entries below the pivot element U[k,k]
       We know that V[_pivotRow, _pivotColumn] = U[k,k].
     */
-    double pivotElement = _luFactors->_V[_vPivotRow*_m + _vPivotColumn];
+    double pivotElement = _luFactors->_V[_vPivotRow * _m + _vPivotColumn];
 
     GAUSSIAN_LOG( Stringf( "Eliminate called. Pivot element: %lf", pivotElement ).ascii() );
 
@@ -350,17 +360,18 @@ void GaussianEliminator::eliminate()
           We compute it in terms of V
         */
         unsigned vRowIndex = _luFactors->_P._columnOrdering[row];
-        double subDiagonalEntry = _luFactors->_V[vRowIndex*_m + _vPivotColumn];
+        double subDiagonalEntry = _luFactors->_V[vRowIndex * _m + _vPivotColumn];
 
         // Ignore zero entries
         if ( FloatUtils::isZero( subDiagonalEntry ) )
             continue;
 
         double rowMultiplier = -subDiagonalEntry / pivotElement;
-        GAUSSIAN_LOG( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier ).ascii() );
+        GAUSSIAN_LOG( Stringf( "\tWorking on V row: %u. Multiplier: %lf", vRowIndex, rowMultiplier )
+                          .ascii() );
 
         // Eliminate the row
-        _luFactors->_V[vRowIndex*_m + _vPivotColumn] = 0;
+        _luFactors->_V[vRowIndex * _m + _vPivotColumn] = 0;
         --_numUColumnElements[_eliminationStep];
         --_numURowElements[row];
 
@@ -368,12 +379,12 @@ void GaussianEliminator::eliminate()
         {
             unsigned vColIndex = _luFactors->_Q._rowOrdering[column];
 
-            bool wasZero = FloatUtils::isZero( _luFactors->_V[vRowIndex*_m + vColIndex] );
+            bool wasZero = FloatUtils::isZero( _luFactors->_V[vRowIndex * _m + vColIndex] );
 
-            _luFactors->_V[vRowIndex*_m + vColIndex] +=
-                rowMultiplier * _luFactors->_V[_vPivotRow*_m + vColIndex];
+            _luFactors->_V[vRowIndex * _m + vColIndex] +=
+                rowMultiplier * _luFactors->_V[_vPivotRow * _m + vColIndex];
 
-            bool isZero = FloatUtils::isZero( _luFactors->_V[vRowIndex*_m + vColIndex] );
+            bool isZero = FloatUtils::isZero( _luFactors->_V[vRowIndex * _m + vColIndex] );
 
             if ( wasZero != isZero )
             {
@@ -390,21 +401,21 @@ void GaussianEliminator::eliminate()
             }
 
             if ( isZero )
-                _luFactors->_V[vRowIndex*_m + vColIndex] = 0;
+                _luFactors->_V[vRowIndex * _m + vColIndex] = 0;
         }
 
         /*
           Store the row multiplier in matrix F, using F = PLP'.
           F's rows are ordered same as V's
         */
-        _luFactors->_F[vRowIndex*_m + fColumnIndex] = -rowMultiplier;
+        _luFactors->_F[vRowIndex * _m + fColumnIndex] = -rowMultiplier;
     }
 
     /*
       Put 1 in L's diagonal.
       TODO: This can be made implicit
     */
-    _luFactors->_F[fColumnIndex*_m + fColumnIndex] = 1;
+    _luFactors->_F[fColumnIndex * _m + fColumnIndex] = 1;
 }
 
 //

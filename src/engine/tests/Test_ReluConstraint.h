@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "InputQuery.h"
 #include "LinearExpression.h"
 #include "MarabouError.h"
@@ -24,12 +22,12 @@
 #include "ReluConstraint.h"
 #include "context/context.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 using namespace CVC4::context;
 
-class MockForReluConstraint
-    : public MockErrno
+class MockForReluConstraint : public MockErrno
 {
 public:
 };
@@ -40,9 +38,10 @@ public:
 class TestReluConstraint : public ReluConstraint
 {
 public:
-    TestReluConstraint(unsigned b, unsigned f)
+    TestReluConstraint( unsigned b, unsigned f )
         : ReluConstraint( b, f )
-    {}
+    {
+    }
 
     using ReluConstraint::getPhaseStatus;
 };
@@ -323,11 +322,14 @@ public:
         List<PiecewiseLinearCaseSplit>::iterator split2 = split1;
         ++split2;
 
-        TS_ASSERT( isActiveSplitWithAux( b, auxVar, split1 ) || isActiveSplitWithAux( b, auxVar, split2 ) );
+        TS_ASSERT( isActiveSplitWithAux( b, auxVar, split1 ) ||
+                   isActiveSplitWithAux( b, auxVar, split2 ) );
         TS_ASSERT( isInactiveSplit( b, f, split1 ) || isInactiveSplit( b, f, split2 ) );
     }
 
-    bool isActiveSplitWithAux( unsigned b, unsigned aux, List<PiecewiseLinearCaseSplit>::iterator &split )
+    bool isActiveSplitWithAux( unsigned b,
+                               unsigned aux,
+                               List<PiecewiseLinearCaseSplit>::iterator &split )
     {
         List<Tightening> bounds = split->getBoundTightenings();
 
@@ -799,8 +801,7 @@ public:
         String originalSerialized = originalRelu.serializeToString();
         ReluConstraint recoveredRelu( originalSerialized );
 
-        TS_ASSERT_EQUALS( originalRelu.serializeToString(),
-                          recoveredRelu.serializeToString() );
+        TS_ASSERT_EQUALS( originalRelu.serializeToString(), recoveredRelu.serializeToString() );
 
         TS_ASSERT( !originalRelu.auxVariableInUse() );
         TS_ASSERT( !recoveredRelu.auxVariableInUse() );
@@ -815,8 +816,7 @@ public:
         originalSerialized = originalRelu.serializeToString();
         ReluConstraint recoveredRelu2( originalSerialized );
 
-        TS_ASSERT_EQUALS( originalRelu.serializeToString(),
-                          recoveredRelu2.serializeToString() );
+        TS_ASSERT_EQUALS( originalRelu.serializeToString(), recoveredRelu2.serializeToString() );
 
         TS_ASSERT( recoveredRelu2.auxVariableInUse() );
         TS_ASSERT_EQUALS( originalRelu.getAux(), recoveredRelu2.getAux() );
@@ -1035,7 +1035,7 @@ public:
     ReluConstraint prepareRelu( unsigned b, unsigned f, unsigned aux, BoundManager *boundManager )
     {
         ReluConstraint relu( b, f );
-        boundManager->initialize( aux + 1);
+        boundManager->initialize( aux + 1 );
 
         InputQuery dontCare;
         dontCare.setNumberOfVariables( aux );
@@ -1369,16 +1369,19 @@ public:
         Context context;
         ReluConstraint *relu1 = new ReluConstraint( 4, 6 );
 
-        TS_ASSERT_EQUALS(relu1->getContext(), static_cast<Context*>( static_cast<Context*>( nullptr ) ) );
+        TS_ASSERT_EQUALS( relu1->getContext(),
+                          static_cast<Context *>( static_cast<Context *>( nullptr ) ) );
 
-        TS_ASSERT_EQUALS( relu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( relu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( relu1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_EQUALS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_EQUALS( relu1->getInfeasibleCasesCDList(),
+                          static_cast<CDList<PhaseStatus> *>( nullptr ) );
         TS_ASSERT_THROWS_NOTHING( relu1->initializeCDOs( &context ) );
         TS_ASSERT_EQUALS( relu1->getContext(), &context );
-        TS_ASSERT_DIFFERS( relu1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( relu1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( relu1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( relu1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( relu1->getInfeasibleCasesCDList(),
+                           static_cast<CDList<PhaseStatus> *>( nullptr ) );
 
         bool active = false;
         TS_ASSERT_THROWS_NOTHING( active = relu1->isActive() );
@@ -1540,11 +1543,9 @@ public:
 
         Map<unsigned, double> assignment;
         assignment[0] = -1;
-        TS_ASSERT_EQUALS( relu.getPhaseStatusInAssignment( assignment ),
-                          RELU_PHASE_INACTIVE );
+        TS_ASSERT_EQUALS( relu.getPhaseStatusInAssignment( assignment ), RELU_PHASE_INACTIVE );
 
         assignment[0] = 15;
-        TS_ASSERT_EQUALS( relu.getPhaseStatusInAssignment( assignment ),
-                          RELU_PHASE_ACTIVE );
+        TS_ASSERT_EQUALS( relu.getPhaseStatusInAssignment( assignment ), RELU_PHASE_ACTIVE );
     }
 };

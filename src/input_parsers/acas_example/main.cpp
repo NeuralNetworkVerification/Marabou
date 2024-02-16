@@ -13,15 +13,15 @@
 
  **/
 
-#include <cstdio>
-
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "GlobalConfiguration.h"
 #include "InputQuery.h"
-#include "Preprocessor.h"
 #include "MarabouError.h"
+#include "Preprocessor.h"
+
+#include <cstdio>
 
 int main()
 {
@@ -61,7 +61,7 @@ int main()
         // unsigned variable = acasParser.getOutputVariable( 0 );
         // inputQuery.setLowerBound( variable, 0.5 );
 
-		// Feed the query to the engine
+        // Feed the query to the engine
         Engine engine;
         bool preprocess = engine.processInputQuery( inputQuery );
 

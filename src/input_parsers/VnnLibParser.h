@@ -17,8 +17,8 @@
 #define _VnnLibParser_h_
 
 #include "InputQuery.h"
-#include "Map.h"
 #include "MString.h"
+#include "Map.h"
 #include "Vector.h"
 
 class VnnLibParser
@@ -30,8 +30,7 @@ private:
     class Term
     {
     public:
-        enum TermType
-        {
+        enum TermType {
             CONST,
             VARIABLE,
             ADD,
@@ -62,14 +61,16 @@ private:
 
     int parseComplexTerm( int index, const Vector<String> &tokens, VnnLibParser::Term &term );
 
-    double processAddConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+    double
+    processAddConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
 
-    double processSubConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+    double
+    processSubConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
 
-    double processMulConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
+    double
+    processMulConstraint( const VnnLibParser::Term &term, Equation &equation, bool isRhs = false );
 
     Equation processLeConstraint( const VnnLibParser::Term &arg1, const VnnLibParser::Term &arg2 );
-
 };
 
 #endif //_VnnLibParser_h_

@@ -13,6 +13,8 @@
 
  **/
 
+#include "SparseLUFactorization.h"
+
 #include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "EtaMatrix.h"
@@ -20,9 +22,9 @@
 #include "GlobalConfiguration.h"
 #include "LPElement.h"
 #include "MalformedBasisException.h"
-#include "SparseLUFactorization.h"
 
-SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracle &basisColumnOracle )
+SparseLUFactorization::SparseLUFactorization( unsigned m,
+                                              const BasisColumnOracle &basisColumnOracle )
     : IBasisFactorization( basisColumnOracle )
     , _B( m )
     , _m( m )
@@ -32,7 +34,8 @@ SparseLUFactorization::SparseLUFactorization( unsigned m, const BasisColumnOracl
 {
     _z = new double[m];
     if ( !_z )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseLUFactorization::z" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseLUFactorization::z" );
 }
 
 SparseLUFactorization::~SparseLUFactorization()
@@ -69,23 +72,23 @@ const SparseMatrix *SparseLUFactorization::getSparseBasis() const
 
 const List<EtaMatrix *> SparseLUFactorization::getEtas() const
 {
-	return _etas;
+    return _etas;
 }
 
 void SparseLUFactorization::updateToAdjacentBasis( unsigned columnIndex,
                                                    const double *changeColumn,
-                                                   const double */* newColumn */ )
+                                                   const double * /* newColumn */ )
 {
     ASSERT( !FloatUtils::isZero( changeColumn[columnIndex] ) );
 
     EtaMatrix *matrix = new EtaMatrix( _m, columnIndex, changeColumn );
     _etas.append( matrix );
 
-	if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
-	{
+    if ( _etas.size() > GlobalConfiguration::REFACTORIZATION_THRESHOLD )
+    {
         BASIS_FACTORIZATION_LOG( "Number of etas exceeds threshold. Refactoring basis\n" );
         obtainFreshBasis();
-	}
+    }
 }
 
 void SparseLUFactorization::forwardTransformation( const double *y, double *x ) const
@@ -129,18 +132,18 @@ void SparseLUFactorization::backwardTransformation( const double *y, double *x )
       We are solving xB = y, where B = B0 * E1 ... * En.
       The first step is to eliminate the eta matrices.
     */
-    memcpy( _z, y, sizeof(double) * _m );
+    memcpy( _z, y, sizeof( double ) * _m );
     for ( auto eta = _etas.rbegin(); eta != _etas.rend(); ++eta )
     {
         // The only entry in y that changes is columnIndex
-        unsigned columnIndex = (*eta)->_columnIndex;
+        unsigned columnIndex = ( *eta )->_columnIndex;
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( i != columnIndex )
-                _z[columnIndex] -= (_z[i] * (*eta)->_column[i]);
+                _z[columnIndex] -= ( _z[i] * ( *eta )->_column[i] );
         }
 
-        _z[columnIndex] = _z[columnIndex] / (*eta)->_column[columnIndex];
+        _z[columnIndex] = _z[columnIndex] / ( *eta )->_column[columnIndex];
 
         if ( FloatUtils::isZero( _z[columnIndex] ) )
             _z[columnIndex] = 0.0;
@@ -154,7 +157,7 @@ void SparseLUFactorization::backwardTransformation( const double *y, double *x )
 
 void SparseLUFactorization::clearFactorization()
 {
-	List<EtaMatrix *>::iterator it;
+    List<EtaMatrix *>::iterator it;
     for ( it = _etas.begin(); it != _etas.end(); ++it )
         delete *it;
     _etas.clear();
@@ -258,7 +261,7 @@ void SparseLUFactorization::dumpExplicitBasis() const
     // Start with F
     _sparseLUFactors._F->toDense( result );
     for ( unsigned i = 0; i < _m; ++i )
-        result[i*_m + i] = 1;
+        result[i * _m + i] = 1;
 
     // Multiply by V
     _sparseLUFactors._V->toDense( toMultiply );
@@ -267,14 +270,14 @@ void SparseLUFactorization::dumpExplicitBasis() const
     {
         for ( unsigned j = 0; j < _m; ++j )
         {
-            temp[i*_m + j] = 0;
+            temp[i * _m + j] = 0;
             for ( unsigned k = 0; k < _m; ++k )
             {
-                temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+                temp[i * _m + j] += ( result[i * _m + k] * toMultiply[k * _m + j] );
             }
         }
     }
-    memcpy( result, temp, sizeof(double) * _m * _m );
+    memcpy( result, temp, sizeof( double ) * _m * _m );
 
     // Go eta by eta
     for ( const auto &eta : _etas )
@@ -285,15 +288,15 @@ void SparseLUFactorization::dumpExplicitBasis() const
         {
             for ( unsigned j = 0; j < _m; ++j )
             {
-                temp[i*_m + j] = 0;
+                temp[i * _m + j] = 0;
                 for ( unsigned k = 0; k < _m; ++k )
                 {
-                    temp[i*_m + j] += ( result[i*_m + k] * toMultiply[k*_m + j] );
+                    temp[i * _m + j] += ( result[i * _m + k] * toMultiply[k * _m + j] );
                 }
             }
         }
 
-        memcpy( result, temp, sizeof(double) * _m * _m );
+        memcpy( result, temp, sizeof( double ) * _m * _m );
     }
 
     // Print out the result
@@ -303,7 +306,7 @@ void SparseLUFactorization::dumpExplicitBasis() const
         printf( "\t" );
         for ( unsigned j = 0; j < _m; ++j )
         {
-            printf( "%5.2lf ", result[i*_m + j] );
+            printf( "%5.2lf ", result[i * _m + j] );
         }
 
         printf( "\n" );

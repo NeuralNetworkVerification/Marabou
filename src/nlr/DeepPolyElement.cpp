@@ -32,8 +32,7 @@ DeepPolyElement::DeepPolyElement()
     , _work2SymbolicLb( NULL )
     , _work2SymbolicUb( NULL )
     , _workSymbolicLowerBias( NULL )
-    , _workSymbolicUpperBias( NULL )
-{};
+    , _workSymbolicUpperBias( NULL ){};
 
 unsigned DeepPolyElement::getSize() const
 {

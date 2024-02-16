@@ -17,10 +17,10 @@
 #define __Queue_h__
 
 #include "CommonError.h"
+
 #include <queue>
 
-template<class T>
-class Queue
+template <class T> class Queue
 {
     typedef std::queue<T> Super;
 

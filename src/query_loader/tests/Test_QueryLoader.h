@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "AutoFile.h"
 #include "Equation.h"
 #include "InputQuery.h"
@@ -23,6 +21,8 @@
 #include "ReluConstraint.h"
 #include "T/unistd.h"
 
+#include <cxxtest/TestSuite.h>
+
 const String QUERY_TEST_FILE( "QueryTest.txt" );
 
 class MockForQueryLoader
@@ -30,7 +30,7 @@ class MockForQueryLoader
     , public T::Base_stat
 {
 public:
-    int stat( const char */* path */, StructStat */* buf */ )
+    int stat( const char * /* path */, StructStat * /* buf */ )
     {
         // 0 means file exists
         return 0;

@@ -24,7 +24,7 @@ Contradiction::Contradiction( const Vector<double> &contradiction )
 
 Contradiction::Contradiction( unsigned var )
     : _var( var )
-    , _contradiction( )
+    , _contradiction()
 {
 }
 

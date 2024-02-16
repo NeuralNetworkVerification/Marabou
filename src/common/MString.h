@@ -17,6 +17,7 @@
 #define __String_h__
 
 #include "List.h"
+
 #include <cstring>
 #include <string>
 
@@ -30,7 +31,7 @@ public:
     String( const char *string, unsigned length );
     String( const char *string );
 
-    String(const String &rhs) = default;
+    String( const String &rhs ) = default;
 
     unsigned length() const;
     const char *ascii() const;
@@ -57,7 +58,7 @@ public:
     void replaceAll( const String &toReplace, const String &replaceWith );
 
 protected:
-	Super _super;
+    Super _super;
 };
 
 std::ostream &operator<<( std::ostream &stream, const String &string );
@@ -65,25 +66,25 @@ std::ostream &operator<<( std::ostream &stream, const String &string );
 #ifdef CXXTEST_RUNNING
 #include <cxxtest/ValueTraits.h>
 #include <stdio.h>
-namespace CxxTest
+namespace CxxTest {
+CXXTEST_TEMPLATE_INSTANTIATION
+class ValueTraits<String>
 {
-    CXXTEST_TEMPLATE_INSTANTIATION
-    class ValueTraits<String>
+public:
+    ValueTraits( const String &string )
+        : _string( string )
     {
-    public:
-        ValueTraits( const String &string ) : _string( string )
-        {
-        }
+    }
 
-        const char *asString() const
-        {
-            return _string.ascii();
-        }
+    const char *asString() const
+    {
+        return _string.ascii();
+    }
 
-    private:
-        const String &_string;
-    };
-}
+private:
+    const String &_string;
+};
+} // namespace CxxTest
 
 #endif // CXXTEST_RUNNING
 

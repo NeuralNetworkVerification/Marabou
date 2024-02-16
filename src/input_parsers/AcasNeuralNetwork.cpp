@@ -14,6 +14,7 @@
 **/
 
 #include "AcasNeuralNetwork.h"
+
 #include "AcasNnet.h"
 #include "FloatUtils.h"
 #include "Vector.h"
@@ -69,14 +70,16 @@ unsigned AcasNeuralNetwork::getLayerSize( unsigned layer ) const
     return (unsigned)_network->layerSizes[layer];
 }
 
-void AcasNeuralNetwork::evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const
+void AcasNeuralNetwork::evaluate( const Vector<double> &inputs,
+                                  Vector<double> &outputs,
+                                  unsigned outputSize ) const
 {
     Vector<double> inputVector( inputs.size(), 0.0 );
     Vector<double> outputVector( outputSize, 0.0 );
     double *input( inputVector.data() );
     double *output( outputVector.data() );
 
-    for ( unsigned i = 0; i < inputs.size();  ++i )
+    for ( unsigned i = 0; i < inputs.size(); ++i )
         input[i] = inputs.get( i );
 
     bool normalizeInput = false;
@@ -96,13 +99,9 @@ void AcasNeuralNetwork::evaluate( const Vector<double> &inputs, Vector<double> &
 
 void AcasNeuralNetwork::getInputRange( unsigned index, double &min, double &max )
 {
-    max =
-        ( _network->maxes[index] - _network->means[index] )
-        / ( _network->ranges[index] );
+    max = ( _network->maxes[index] - _network->means[index] ) / ( _network->ranges[index] );
 
-    min =
-        ( _network->mins[index] - _network->means[index] )
-        / ( _network->ranges[index] );
+    min = ( _network->mins[index] - _network->means[index] ) / ( _network->ranges[index] );
 }
 
 //
