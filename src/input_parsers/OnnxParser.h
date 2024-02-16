@@ -55,7 +55,7 @@ private:
 
     Map<String, TensorShape> _shapeMap;
     Map<String, Vector<Variable>> _varMap;
-    Map<String, const Vector<int>> _constantIntTensors;
+    Map<String, const Vector<int64_t>> _constantIntTensors;
     Map<String, const Vector<double>> _constantFloatTensors;
     Set<String> _processedNodes;
     unsigned _numberOfFoundInputs;
