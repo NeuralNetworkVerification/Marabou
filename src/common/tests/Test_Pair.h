@@ -14,15 +14,14 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MString.h"
 #include "Pair.h"
+
+#include <cxxtest/TestSuite.h>
 
 class PairTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void test_pair()
     {
         Pair<int, String> p1;

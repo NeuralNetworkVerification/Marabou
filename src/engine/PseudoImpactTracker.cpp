@@ -13,20 +13,21 @@
 
 **/
 
-#include "GlobalConfiguration.h"
 #include "PseudoImpactTracker.h"
 
-PseudoImpactTracker::PseudoImpactTracker()
-{}
+#include "GlobalConfiguration.h"
 
-void PseudoImpactTracker::updateScore( PiecewiseLinearConstraint *constraint,
-                                       double score )
+PseudoImpactTracker::PseudoImpactTracker()
+{
+}
+
+void PseudoImpactTracker::updateScore( PiecewiseLinearConstraint *constraint, double score )
 {
     ASSERT( _plConstraintToScore.exists( constraint ) );
 
     double alpha = GlobalConfiguration::EXPONENTIAL_MOVING_AVERAGE_ALPHA;
     double oldScore = _plConstraintToScore[constraint];
-    double newScore = ( 1 - alpha ) * oldScore  + alpha * score;
+    double newScore = ( 1 - alpha ) * oldScore + alpha * score;
 
     ASSERT( _scores.find( ScoreEntry( constraint, oldScore ) ) != _scores.end() );
     _scores.erase( ScoreEntry( constraint, oldScore ) );

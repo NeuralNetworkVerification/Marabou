@@ -76,6 +76,12 @@ public:
     void notifyUpperBound( unsigned variable, double bound ) override;
 
     /*
+       Check conditions that fix Phase and met update phase status
+     */
+    void checkIfLowerBoundUpdateFixesPhase( unsigned variable, double bound );
+    void checkIfUpperBoundUpdateFixesPhase( unsigned variable, double bound );
+
+    /*
       Returns true iff the variable participates in this piecewise
       linear constraint
     */
@@ -187,8 +193,8 @@ public:
       Return the phase status corresponding to the values of the *input*
       variables in the given assignment.
     */
-    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
-                                                    &assignment ) const override;
+    virtual PhaseStatus
+    getPhaseStatusInAssignment( const Map<unsigned, double> &assignment ) const override;
 
     /*
       Returns string with shape: relu, _f, _b
@@ -233,6 +239,8 @@ public:
 
     void updateScoreBasedOnPolarity() override;
 
+    const List<unsigned> getNativeAuxVars() const override;
+
 private:
     unsigned _b, _f;
     bool _auxVarInUse;
@@ -255,6 +263,19 @@ private:
       Return true iff b or f are out of bounds.
     */
     bool haveOutOfBoundVariables() const;
+
+    std::shared_ptr<TableauRow> _tighteningRow;
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint
+     Stored in _tighteningRow
+    */
+    void createTighteningRow();
+
+    /*
+     Assign a variable as an aux variable by the tableau, related to some existing aux variable.
+    */
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
 };
 
 #endif // __ReluConstraint_h__

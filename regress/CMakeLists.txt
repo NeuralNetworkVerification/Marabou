@@ -31,15 +31,18 @@ macro(marabou_add_coav_test level net_file result)
 endmacro()
 
 macro(marabou_add_acasxu_test level net_file prop_num result)
-    marabou_add_regress_test(${level} 
-        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}"
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "" "acasxu")
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/onnx/acasxu/${net_file}.onnx"
         "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "" "acasxu")
 endmacro()
 
 macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
-    marabou_add_regress_test(${level} 
-        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}"
-        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--snc" "acasxu")
+    marabou_add_regress_test(${level}
+        "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--num-workers=2+--snc+--initial-divides=2" "acasxu")
 endmacro()
 
 macro(marabou_add_mnist_test level net_file property_file result)
@@ -47,7 +50,7 @@ macro(marabou_add_mnist_test level net_file property_file result)
     "${CMAKE_SOURCE_DIR}/resources/nnet/mnist/${net_file}"
     "${CMAKE_SOURCE_DIR}/resources/properties/mnist/${property_file}" "${result}" "" "mnist")
 endmacro()
-            
+
 
 message(${MPS_PARSER_PATH})
 macro(marabou_add_regress_mps_test level net_file result arguments
@@ -76,6 +79,18 @@ macro(marabou_add_input_query_test level ipq_file result arguments
     ${arguments})
   set_tests_properties(${test_name} PROPERTIES LABELS "regress${level}
     ${result} ${test_properties}")
+endmacro()
+
+macro(marabou_add_acasxu_proof_test level net_file prop_num result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
+            "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--prove-unsat" "acasxu")
+endmacro()
+
+macro(marabou_add_coav_proof_test level net_file result)
+    marabou_add_regress_test(${level}
+            "${CMAKE_SOURCE_DIR}/resources/nnet/coav/${net_file}"
+            "${CMAKE_SOURCE_DIR}/resources/properties/builtin_property.txt" "${result}" "--prove-unsat" "coav")
 endmacro()
 
 add_subdirectory(regress0)

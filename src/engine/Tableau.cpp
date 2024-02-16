@@ -35,11 +35,12 @@
 
 #include <string.h>
 
-Tableau::Tableau( BoundManager &boundManager )
+Tableau::Tableau( IBoundManager &boundManager )
     : _boundManager( boundManager )
-    , _useBoundManager( false )
-    , _n ( 0 )
-    , _m ( 0 )
+    , _lowerBounds( _boundManager.getLowerBounds() )
+    , _upperBounds( _boundManager.getUpperBounds() )
+    , _n( 0 )
+    , _m( 0 )
     , _A( NULL )
     , _sparseColumnsOfA( NULL )
     , _sparseRowsOfA( NULL )
@@ -56,9 +57,6 @@ Tableau::Tableau( BoundManager &boundManager )
     , _nonBasicIndexToVariable( NULL )
     , _variableToIndex( NULL )
     , _nonBasicAssignment( NULL )
-    , _lowerBounds( NULL )
-    , _upperBounds( NULL )
-    , _boundsValid( true )
     , _basicAssignment( NULL )
     , _basicStatus( NULL )
     , _basicAssignmentStatus( ITableau::BASIC_ASSIGNMENT_INVALID )
@@ -173,18 +171,6 @@ void Tableau::freeMemoryIfNeeded()
         _nonBasicAssignment = NULL;
     }
 
-    if ( _lowerBounds )
-    {
-        delete[] _lowerBounds;
-        _lowerBounds = NULL;
-    }
-
-    if ( _upperBounds )
-    {
-        delete[] _upperBounds;
-        _upperBounds = NULL;
-    }
-
     if ( _basicAssignment )
     {
         delete[] _basicAssignment;
@@ -221,123 +207,103 @@ void Tableau::setDimensions( unsigned m, unsigned n )
     _m = m;
     _n = n;
 
-    _A = new CSRMatrix();
-    if ( !_A )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::A" );
-
-    _sparseColumnsOfA = new SparseUnsortedList *[n];
-    if ( !_sparseColumnsOfA )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
-
-    for ( unsigned i = 0; i < n; ++i )
+    if ( _lpSolverType == LPSolverType::NATIVE )
     {
-        _sparseColumnsOfA[i] = new SparseUnsortedList( _m );
-        if ( !_sparseColumnsOfA[i] )
-            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA[i]" );
+        _A = new CSRMatrix();
+        if ( !_A )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::A" );
+
+        _sparseColumnsOfA = new SparseUnsortedList *[n];
+        if ( !_sparseColumnsOfA )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseColumnsOfA" );
+
+        for ( unsigned i = 0; i < n; ++i )
+        {
+            _sparseColumnsOfA[i] = new SparseUnsortedList( _m );
+            if ( !_sparseColumnsOfA[i] )
+                throw MarabouError( MarabouError::ALLOCATION_FAILED,
+                                    "Tableau::sparseColumnsOfA[i]" );
+        }
+
+        _sparseRowsOfA = new SparseUnsortedList *[m];
+        if ( !_sparseRowsOfA )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
+
+        for ( unsigned i = 0; i < m; ++i )
+        {
+            _sparseRowsOfA[i] = new SparseUnsortedList( _n );
+            if ( !_sparseRowsOfA[i] )
+                throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
+        }
+
+        _denseA = new double[m * n];
+        if ( !_denseA )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::denseA" );
+
+        _changeColumn = new double[m];
+        if ( !_changeColumn )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::changeColumn" );
+
+        _pivotRow = new TableauRow( n - m );
+        if ( !_pivotRow )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::pivotRow" );
+
+        _b = new double[m];
+        if ( !_b )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::b" );
+
+        _unitVector = new double[m];
+        if ( !_unitVector )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::unitVector" );
+
+        _multipliers = new double[m];
+        if ( !_multipliers )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::multipliers" );
+
+        _basicIndexToVariable = new unsigned[m];
+        if ( !_basicIndexToVariable )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
+
+        _variableToIndex = new unsigned[n];
+        if ( !_variableToIndex )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
+
+        _nonBasicIndexToVariable = new unsigned[n - m];
+        if ( !_nonBasicIndexToVariable )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED,
+                                "Tableau::nonBasicIndexToVariable" );
+
+        _nonBasicAssignment = new double[n - m];
+        if ( !_nonBasicAssignment )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
+
+        _basicAssignment = new double[m];
+        if ( !_basicAssignment )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::assignment" );
+
+        _basicStatus = new unsigned[m];
+        if ( !_basicStatus )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicStatus" );
+
+        _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
+        if ( !_basisFactorization )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
+        _basisFactorization->setStatistics( _statistics );
+
+        _workM = new double[m];
+        if ( !_workM )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
+
+        _workN = new double[n];
+        if ( !_workN )
+            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
+
+        if ( _statistics )
+        {
+            _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
+            _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
+        }
     }
-
-    _sparseRowsOfA = new SparseUnsortedList *[m];
-    if ( !_sparseRowsOfA )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA" );
-
-    for ( unsigned i = 0; i < m; ++i )
-    {
-        _sparseRowsOfA[i] = new SparseUnsortedList( _n );
-        if ( !_sparseRowsOfA[i] )
-            throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::sparseRowOfA[i]" );
-    }
-
-    _denseA = new double[m*n];
-    if ( !_denseA )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::denseA" );
-
-    _changeColumn = new double[m];
-    if ( !_changeColumn )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::changeColumn" );
-
-    _pivotRow = new TableauRow( n-m );
-    if ( !_pivotRow )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::pivotRow" );
-
-    _b = new double[m];
-    if ( !_b )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::b" );
-
-    _unitVector = new double[m];
-    if ( !_unitVector )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::unitVector" );
-
-    _multipliers = new double[m];
-    if ( !_multipliers )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::multipliers" );
-
-    _basicIndexToVariable = new unsigned[m];
-    if ( !_basicIndexToVariable )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicIndexToVariable" );
-
-    _variableToIndex = new unsigned[n];
-    if ( !_variableToIndex )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::variableToIndex" );
-
-    _nonBasicIndexToVariable = new unsigned[n-m];
-    if ( !_nonBasicIndexToVariable )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicIndexToVariable" );
-
-    _nonBasicAssignment = new double[n-m];
-    if ( !_nonBasicAssignment )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::nonBasicAssignment" );
-
-    _lowerBounds = new double[n];
-    if ( !_lowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
-
-    _upperBounds = new double[n];
-    if ( !_upperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
-
-    _basicAssignment = new double[m];
-    if ( !_basicAssignment )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::assignment" );
-
-    _basicStatus = new unsigned[m];
-    if ( !_basicStatus )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basicStatus" );
-
-    _basisFactorization = BasisFactorizationFactory::createBasisFactorization( _m, *this );
-    if ( !_basisFactorization )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::basisFactorization" );
-    _basisFactorization->setStatistics( _statistics );
-
-    _workM = new double[m];
-    if ( !_workM )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
-
-    _workN = new double[n];
-    if ( !_workN )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::work" );
-
-    if ( _statistics )
-    {
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_M, _m );
-        _statistics->setUnsignedAttribute( Statistics::CURRENT_TABLEAU_N, _n );
-    }
-}
-
-void Tableau::setBoundDimension( unsigned n )
-{
-    _n = n;
-
-    _lowerBounds = new double[n];
-    if ( !_lowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::lowerBounds" );
-    std::fill_n( _lowerBounds, n, FloatUtils::negativeInfinity() );
-
-    _upperBounds = new double[n];
-    if ( !_upperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::upperBounds" );
-    std::fill_n( _upperBounds, n, FloatUtils::infinity() );
 }
 
 void Tableau::setConstraintMatrix( const double *A )
@@ -347,7 +313,7 @@ void Tableau::setConstraintMatrix( const double *A )
     for ( unsigned column = 0; column < _n; ++column )
     {
         for ( unsigned row = 0; row < _m; ++row )
-            _denseA[column*_m + row] = A[row*_n + column];
+            _denseA[column * _m + row] = A[row * _n + column];
 
         _sparseColumnsOfA[column]->initialize( _denseA + ( column * _m ), _m );
     }
@@ -397,7 +363,7 @@ void Tableau::initializeTableau( const List<unsigned> &initialBasicVariables )
     for ( unsigned i = 0; i < _n - _m; ++i )
     {
         unsigned nonBasic = _nonBasicIndexToVariable[i];
-        setNonBasicAssignment( nonBasic, _lowerBounds[nonBasic], false );
+        setNonBasicAssignment( nonBasic, getLowerBound( nonBasic ), false );
     }
 
     // Factorize the basis
@@ -424,7 +390,7 @@ void Tableau::computeAssignment()
       We first compute y (stored in _work), and then do an FTRAN pass to solve B*xB = y
     */
 
-    memcpy( _workM, _b, sizeof(double) * _m );
+    memcpy( _workM, _b, sizeof( double ) * _m );
 
     // Compute a linear combination of the columns of AN
     for ( unsigned i = 0; i < _n - _m; ++i )
@@ -446,9 +412,8 @@ void Tableau::computeAssignment()
 
 bool Tableau::checkValueWithinBounds( unsigned variable, double value )
 {
-    return
-        FloatUtils::gte( value, getLowerBound( variable ) ) &&
-        FloatUtils::lte( value, getUpperBound( variable ) );
+    return FloatUtils::gte( value, getLowerBound( variable ) ) &&
+           FloatUtils::lte( value, getUpperBound( variable ) );
 }
 
 void Tableau::computeBasicStatus()
@@ -462,17 +427,15 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
     unsigned variable = _basicIndexToVariable[basicIndex];
     double value = _basicAssignment[basicIndex];
 
-    double lb = _lowerBounds[variable];
-    double relaxedLb =
-        lb -
-        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
-          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+    double lb = getLowerBound( variable );
+    double relaxedLb = lb - ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+                              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE *
+                                  FloatUtils::abs( lb ) );
 
-    double ub = _upperBounds[variable];
-    double relaxedUb =
-        ub +
-        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
-          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+    double ub = getUpperBound( variable );
+    double relaxedUb = ub + ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+                              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE *
+                                  FloatUtils::abs( ub ) );
 
     if ( value > relaxedUb )
     {
@@ -491,54 +454,22 @@ void Tableau::computeBasicStatus( unsigned basicIndex )
 void Tableau::setLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    if ( _useBoundManager )
-        _boundManager.setLowerBound( variable, value );
-    else
-        _lowerBounds[variable] = value;
+    _boundManager.setLowerBound( variable, value );
     notifyLowerBound( variable, value );
-    checkBoundsValid( variable );
 }
 
 void Tableau::setUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
-    if ( _useBoundManager )
-        _boundManager.setUpperBound( variable, value );
-    else
-        _upperBounds[variable] = value;
+    _boundManager.setUpperBound( variable, value );
     notifyUpperBound( variable, value );
-    checkBoundsValid( variable );
-}
-
-double Tableau::getLowerBound( unsigned variable ) const
-{
-    ASSERT( variable < _n );
-    return ( _useBoundManager ) ? _boundManager.getLowerBound( variable )
-                                        : _lowerBounds[variable];
-}
-
-double Tableau::getUpperBound( unsigned variable ) const
-{
-    ASSERT( variable < _n );
-    return ( _useBoundManager ) ? _boundManager.getUpperBound( variable )
-                                        : _upperBounds[variable];
-}
-
-const double *Tableau::getLowerBounds() const
-{
-    return _lowerBounds;
-}
-
-const double *Tableau::getUpperBounds() const
-{
-    return _upperBounds;
 }
 
 bool Tableau::existsValue( unsigned variable ) const
 {
     if ( _lpSolverType == LPSolverType::GUROBI )
     {
-        return _gurobi->existsAssignment( Stringf( "x%u", variable ) );
+        return _gurobi && _gurobi->existsAssignment( Stringf( "x%u", variable ) );
     }
     else
     {
@@ -596,7 +527,7 @@ unsigned Tableau::variableToIndex( unsigned index ) const
 
 void Tableau::setRightHandSide( const double *b )
 {
-    memcpy( _b, b, sizeof(double) * _m );
+    memcpy( _b, b, sizeof( double ) * _m );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
@@ -714,11 +645,10 @@ bool Tableau::nonBasicCanIncrease( unsigned nonBasic ) const
 {
     unsigned variable = _nonBasicIndexToVariable[nonBasic];
 
-    double ub = _upperBounds[variable];
-    double tighterUb =
-        ub -
-        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
-          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+    double ub = getUpperBound( variable );
+    double tighterUb = ub - ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+                              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE *
+                                  FloatUtils::abs( ub ) );
 
     return _nonBasicAssignment[nonBasic] < tighterUb;
 }
@@ -727,11 +657,10 @@ bool Tableau::nonBasicCanDecrease( unsigned nonBasic ) const
 {
     unsigned variable = _nonBasicIndexToVariable[nonBasic];
 
-    double lb = _lowerBounds[variable];
-    double tighterLb =
-        lb +
-        ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
-          GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+    double lb = getLowerBound( variable );
+    double tighterLb = lb + ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+                              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE *
+                                  FloatUtils::abs( lb ) );
 
     return _nonBasicAssignment[nonBasic] > tighterLb;
 }
@@ -766,11 +695,10 @@ bool Tableau::performingFakePivot() const
 
 void Tableau::performPivot()
 {
-
     bool decrease;
-    unsigned  nonBasic;
-    (void) decrease;
-    (void) nonBasic;
+    unsigned nonBasic;
+    (void)decrease;
+    (void)nonBasic;
     if ( _leavingVariable == _m )
     {
         if ( _statistics )
@@ -785,11 +713,14 @@ void Tableau::performPivot()
         nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         TABLEAU_LOG( Stringf( "Performing 'fake' pivot. Variable x%u jumping to %s bound",
-                      _nonBasicIndexToVariable[_enteringVariable],
-                      decrease ? "LOWER" : "UPPER" ).ascii() );
+                              _nonBasicIndexToVariable[_enteringVariable],
+                              decrease ? "LOWER" : "UPPER" )
+                         .ascii() );
         TABLEAU_LOG( Stringf( "Current value: %.3lf. Range: [%.3lf, %.3lf]\n",
-                      _nonBasicAssignment[_enteringVariable],
-                      _lowerBounds[nonBasic], _upperBounds[nonBasic] ).ascii() );
+                              _nonBasicAssignment[_enteringVariable],
+                              getLowerBound( nonBasic ),
+                              getUpperBound( nonBasic ) )
+                         .ascii() );
 
         updateAssignmentForPivot();
 
@@ -808,17 +739,24 @@ void Tableau::performPivot()
     unsigned currentNonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
     TABLEAU_LOG( Stringf( "Tableau performing pivot. Entering: %u, Leaving: %u",
-                  _nonBasicIndexToVariable[_enteringVariable],
-                  _basicIndexToVariable[_leavingVariable] ).ascii() );
+                          _nonBasicIndexToVariable[_enteringVariable],
+                          _basicIndexToVariable[_leavingVariable] )
+                     .ascii() );
     TABLEAU_LOG( Stringf( "Leaving variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
-                  _leavingVariableIncreases ? "increases" : "decreases",
-                  _basicAssignment[_leavingVariable],
-                  _lowerBounds[currentBasic], _upperBounds[currentBasic] ).ascii() );
+                          _leavingVariableIncreases ? "increases" : "decreases",
+                          _basicAssignment[_leavingVariable],
+                          getLowerBound( currentBasic ),
+                          getUpperBound( currentBasic ) )
+                     .ascii() );
     TABLEAU_LOG( Stringf( "Entering variable %s. Current value: %.15lf. Range: [%.15lf, %.15lf]",
-                  FloatUtils::isNegative( _costFunctionManager->getCostFunction()[_enteringVariable] ) ?
-                  "increases" : "decreases",
-                  _nonBasicAssignment[_enteringVariable],
-                  _lowerBounds[currentNonBasic], _upperBounds[currentNonBasic] ).ascii() );
+                          FloatUtils::isNegative(
+                              _costFunctionManager->getCostFunction()[_enteringVariable] )
+                              ? "increases"
+                              : "decreases",
+                          _nonBasicAssignment[_enteringVariable],
+                          getLowerBound( currentNonBasic ),
+                          getUpperBound( currentNonBasic ) )
+                     .ascii() );
     TABLEAU_LOG( Stringf( "Change ratio is: %.15lf\n", _changeRatio ).ascii() );
 
     // As part of the pivot operation we use both the pivot row and
@@ -826,7 +764,8 @@ void Tableau::performPivot()
     // numerical degradation issue.
     double pivotEntryByColumn = -_changeColumn[_leavingVariable];
     double pivotEntryByRow = _pivotRow->_row[_enteringVariable]._coefficient;
-    if ( !FloatUtils::isZero( pivotEntryByRow - pivotEntryByColumn, GlobalConfiguration::PIVOT_ROW_AND_COLUMN_TOLERANCE ) )
+    if ( !FloatUtils::isZero( pivotEntryByRow - pivotEntryByColumn,
+                              GlobalConfiguration::PIVOT_ROW_AND_COLUMN_TOLERANCE ) )
         throw MalformedBasisException();
 
     updateAssignmentForPivot();
@@ -850,14 +789,14 @@ void Tableau::performPivot()
 
     // Update the basis factorization. The column corresponding to the
     // leaving variable is the one that has changed
-    _basisFactorization->updateToAdjacentBasis( _leavingVariable,
-                                                _changeColumn,
-                                                getAColumn( currentNonBasic ) );
+    _basisFactorization->updateToAdjacentBasis(
+        _leavingVariable, _changeColumn, getAColumn( currentNonBasic ) );
 
     if ( _statistics )
     {
         struct timespec pivotEnd = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TIME_PIVOTS_MICRO, TimeUtils::timePassed( pivotStart, pivotEnd ) );
+        _statistics->incLongAttribute( Statistics::TIME_PIVOTS_MICRO,
+                                       TimeUtils::timePassed( pivotStart, pivotEnd ) );
     }
 }
 
@@ -892,9 +831,8 @@ void Tableau::performDegeneratePivot()
     _variableToIndex[currentNonBasic] = _leavingVariable;
 
     // Update the basis factorization
-    _basisFactorization->updateToAdjacentBasis( _leavingVariable,
-                                                _changeColumn,
-                                                getAColumn( currentNonBasic ) );
+    _basisFactorization->updateToAdjacentBasis(
+        _leavingVariable, _changeColumn, getAColumn( currentNonBasic ) );
 
     // Switch assignment values. No call to notify is required,
     // because values haven't changed.
@@ -906,7 +844,8 @@ void Tableau::performDegeneratePivot()
     if ( _statistics )
     {
         struct timespec pivotEnd = TimeUtils::sampleMicro();
-        _statistics->incLongAttribute( Statistics::TIME_PIVOTS_MICRO, TimeUtils::timePassed( pivotStart, pivotEnd ) );
+        _statistics->incLongAttribute( Statistics::TIME_PIVOTS_MICRO,
+                                       TimeUtils::timePassed( pivotStart, pivotEnd ) );
     }
 }
 
@@ -932,11 +871,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         if ( isOptimizing() )
         {
             ASSERT( !existsBasicOutOfBounds() );
-            actualLowerBound = _lowerBounds[basic];
+            actualLowerBound = getLowerBound( basic );
         }
         else if ( basicCost > 0 )
         {
-            actualLowerBound = _upperBounds[basic];
+            actualLowerBound = getUpperBound( basic );
         }
         else if ( basicCost < 0 )
         {
@@ -944,11 +883,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         }
         else
         {
-            actualLowerBound = _lowerBounds[basic];
+            actualLowerBound = getLowerBound( basic );
         }
 
         double tolerance = GlobalConfiguration::RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
-            FloatUtils::abs( actualLowerBound ) * GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                           FloatUtils::abs( actualLowerBound ) *
+                               GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
 
         if ( _basicAssignment[basicIndex] <= actualLowerBound + tolerance )
         {
@@ -970,11 +910,11 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         if ( isOptimizing() )
         {
             ASSERT( !existsBasicOutOfBounds() );
-            actualUpperBound = _upperBounds[basic];
+            actualUpperBound = getUpperBound( basic );
         }
         else if ( basicCost < 0 )
         {
-            actualUpperBound = _lowerBounds[basic];
+            actualUpperBound = getLowerBound( basic );
         }
         else if ( basicCost > 0 )
         {
@@ -982,11 +922,12 @@ double Tableau::ratioConstraintPerBasic( unsigned basicIndex, double coefficient
         }
         else
         {
-            actualUpperBound = _upperBounds[basic];
+            actualUpperBound = getUpperBound( basic );
         }
 
         double tolerance = GlobalConfiguration::RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
-            FloatUtils::abs( actualUpperBound ) * GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                           FloatUtils::abs( actualUpperBound ) *
+                               GlobalConfiguration::RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
 
         if ( _basicAssignment[basicIndex] >= actualUpperBound - tolerance )
         {
@@ -1023,23 +964,24 @@ void Tableau::pickLeavingVariable( double *changeColumn )
 void Tableau::standardRatioTest( double *changeColumn )
 {
     ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
-    bool decrease = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+    bool decrease =
+        FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
 
-    DEBUG({
-            if ( decrease )
-            {
-                ASSERTM( nonBasicCanDecrease( _enteringVariable ),
-                         "Error! Entering variable needs to decrease but is at its lower bound" );
-            }
-            else
-            {
-                ASSERTM( nonBasicCanIncrease( _enteringVariable ),
-                         "Error! Entering variable needs to increase but is at its upper bound" );
-            }
-        });
+    DEBUG( {
+        if ( decrease )
+        {
+            ASSERTM( nonBasicCanDecrease( _enteringVariable ),
+                     "Error! Entering variable needs to decrease but is at its lower bound" );
+        }
+        else
+        {
+            ASSERTM( nonBasicCanIncrease( _enteringVariable ),
+                     "Error! Entering variable needs to increase but is at its upper bound" );
+        }
+    } );
 
-    double lb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
-    double ub = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double lb = getLowerBound( _nonBasicIndexToVariable[_enteringVariable] );
+    double ub = getUpperBound( _nonBasicIndexToVariable[_enteringVariable] );
     double currentValue = _nonBasicAssignment[_enteringVariable];
 
     // A marker to show that no leaving variable has been selected
@@ -1064,7 +1006,8 @@ void Tableau::standardRatioTest( double *changeColumn )
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
                 if ( ( ratio > _changeRatio ) ||
-                     ( ( ratio == _changeRatio ) && ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
+                     ( ( ratio == _changeRatio ) &&
+                       ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
@@ -1095,7 +1038,8 @@ void Tableau::standardRatioTest( double *changeColumn )
                 double ratio = ratioConstraintPerBasic( i, changeColumn[i], decrease );
 
                 if ( ( ratio < _changeRatio ) ||
-                     ( ( ratio == _changeRatio ) && ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
+                     ( ( ratio == _changeRatio ) &&
+                       ( FloatUtils::abs( changeColumn[i] ) > largestPivot ) ) )
                 {
                     _changeRatio = ratio;
                     _leavingVariable = i;
@@ -1127,20 +1071,21 @@ void Tableau::harrisRatioTest( double *changeColumn )
     ASSERT( !FloatUtils::isZero( _costFunctionManager->getCostFunction()[_enteringVariable] ) );
 
     // Is the entering variable decreasing?
-    bool enteringDecreases = FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
+    bool enteringDecreases =
+        FloatUtils::isPositive( _costFunctionManager->getCostFunction()[_enteringVariable] );
 
-    DEBUG({
-            if ( enteringDecreases )
-            {
-                ASSERTM( nonBasicCanDecrease( _enteringVariable ),
-                         "Error! Entering variable needs to decrease but is at its lower bound" );
-            }
-            else
-            {
-                ASSERTM( nonBasicCanIncrease( _enteringVariable ),
-                         "Error! Entering variable needs to increase but is at its upper bound" );
-            }
-        });
+    DEBUG( {
+        if ( enteringDecreases )
+        {
+            ASSERTM( nonBasicCanDecrease( _enteringVariable ),
+                     "Error! Entering variable needs to decrease but is at its lower bound" );
+        }
+        else
+        {
+            ASSERTM( nonBasicCanIncrease( _enteringVariable ),
+                     "Error! Entering variable needs to increase but is at its upper bound" );
+        }
+    } );
 
     /*
       Alfa:
@@ -1173,22 +1118,25 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
                 }
                 else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
-                    actualUpperBound = _lowerBounds[basic];
+                    actualUpperBound = getLowerBound( basic );
                 else
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
 
                 // Determine the constraint imposed by this basic
-                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
-                    FloatUtils::abs( actualUpperBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                double delta =
+                    GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualUpperBound ) *
+                        GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
                 if ( _basicAssignment[i] > actualUpperBound )
-                    ratioConstraintPerBasic = - delta / changeColumn[i];
+                    ratioConstraintPerBasic = -delta / changeColumn[i];
                 else
-                    ratioConstraintPerBasic = - ( ( actualUpperBound + delta ) - _basicAssignment[i] ) / changeColumn[i];
+                    ratioConstraintPerBasic =
+                        -( ( actualUpperBound + delta ) - _basicAssignment[i] ) / changeColumn[i];
             }
             else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
@@ -1197,22 +1145,25 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
                 }
                 else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
-                    actualLowerBound = _upperBounds[basic];
+                    actualLowerBound = getUpperBound( basic );
                 else
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
 
                 // Determine the constraint imposed by this basic
-                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
-                    FloatUtils::abs( actualLowerBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                double delta =
+                    GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualLowerBound ) *
+                        GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
                 if ( _basicAssignment[i] < actualLowerBound )
                     ratioConstraintPerBasic = delta / changeColumn[i];
                 else
-                    ratioConstraintPerBasic = - ( ( actualLowerBound - delta ) - _basicAssignment[i] ) / changeColumn[i];
+                    ratioConstraintPerBasic =
+                        -( ( actualLowerBound - delta ) - _basicAssignment[i] ) / changeColumn[i];
             }
             else
             {
@@ -1247,22 +1198,25 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
                 }
                 else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
-                    actualLowerBound = _upperBounds[basic];
+                    actualLowerBound = getUpperBound( basic );
                 else
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
 
                 // Determine the constraint imposed by this basic
-                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
-                    FloatUtils::abs( actualLowerBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                double delta =
+                    GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualLowerBound ) *
+                        GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
                 if ( _basicAssignment[i] < actualLowerBound )
                     ratioConstraintPerBasic = delta / changeColumn[i];
                 else
-                    ratioConstraintPerBasic = - ( ( actualLowerBound - delta ) - _basicAssignment[i] ) / changeColumn[i];
+                    ratioConstraintPerBasic =
+                        -( ( actualLowerBound - delta ) - _basicAssignment[i] ) / changeColumn[i];
             }
             else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
@@ -1271,22 +1225,25 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
                 }
                 else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
-                    actualUpperBound = _lowerBounds[basic];
+                    actualUpperBound = getLowerBound( basic );
                 else
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
 
                 // Determine the constraint imposed by this basic
-                double delta = GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
-                    FloatUtils::abs( actualUpperBound ) * GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
+                double delta =
+                    GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_ADDITIVE_TOLERANCE +
+                    FloatUtils::abs( actualUpperBound ) *
+                        GlobalConfiguration::HARRIS_RATIO_CONSTRAINT_MULTIPLICATIVE_TOLERANCE;
                 if ( _basicAssignment[i] > actualUpperBound )
-                    ratioConstraintPerBasic = - delta / changeColumn[i];
+                    ratioConstraintPerBasic = -delta / changeColumn[i];
                 else
-                    ratioConstraintPerBasic = - ( ( actualUpperBound + delta ) - _basicAssignment[i] ) / changeColumn[i];
+                    ratioConstraintPerBasic =
+                        -( ( actualUpperBound + delta ) - _basicAssignment[i] ) / changeColumn[i];
             }
             else
             {
@@ -1303,8 +1260,8 @@ void Tableau::harrisRatioTest( double *changeColumn )
     // *** Second pass: choose leaving variable *** //
 
     // Check if we need to perform a fake pivot
-    double enteringLb = _lowerBounds[_nonBasicIndexToVariable[_enteringVariable]];
-    double enteringUb = _upperBounds[_nonBasicIndexToVariable[_enteringVariable]];
+    double enteringLb = getLowerBound( _nonBasicIndexToVariable[_enteringVariable] );
+    double enteringUb = getUpperBound( _nonBasicIndexToVariable[_enteringVariable] );
     double enteringCurrentValue = _nonBasicAssignment[_enteringVariable];
 
     _leavingVariable = _m;
@@ -1344,16 +1301,17 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
                 }
                 else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
-                    actualUpperBound = _lowerBounds[basic];
+                    actualUpperBound = getLowerBound( basic );
                 else
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
 
-                ratioConstraintPerBasic = - ( actualUpperBound - _basicAssignment[i] ) / changeColumn[i];
+                ratioConstraintPerBasic =
+                    -( actualUpperBound - _basicAssignment[i] ) / changeColumn[i];
             }
             else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
@@ -1362,16 +1320,17 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
                 }
                 else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
-                    actualLowerBound = _upperBounds[basic];
+                    actualLowerBound = getUpperBound( basic );
                 else
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
 
-                ratioConstraintPerBasic = - ( actualLowerBound - _basicAssignment[i] ) / changeColumn[i];
+                ratioConstraintPerBasic =
+                    -( actualLowerBound - _basicAssignment[i] ) / changeColumn[i];
             }
             else
             {
@@ -1396,7 +1355,8 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 largestPivot = pivot;
                 _leavingVariable = i;
                 _changeRatio = ratioConstraintPerBasic;
-                _leavingVariableIncreases = FloatUtils::isPositive( changeColumn[_leavingVariable] );
+                _leavingVariableIncreases =
+                    FloatUtils::isPositive( changeColumn[_leavingVariable] );
             }
         }
     }
@@ -1415,16 +1375,17 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
                 }
                 else if ( basicCost < 0 )
                     continue;
                 else if ( basicCost > 0 )
-                    actualLowerBound = _upperBounds[basic];
+                    actualLowerBound = getUpperBound( basic );
                 else
-                    actualLowerBound = _lowerBounds[basic];
+                    actualLowerBound = getLowerBound( basic );
 
-                ratioConstraintPerBasic = - ( actualLowerBound - _basicAssignment[i] ) / changeColumn[i];
+                ratioConstraintPerBasic =
+                    -( actualLowerBound - _basicAssignment[i] ) / changeColumn[i];
             }
             else if ( changeColumn[i] <= -GlobalConfiguration::PIVOT_CHANGE_COLUMN_TOLERANCE )
             {
@@ -1433,17 +1394,17 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 if ( isOptimizing() )
                 {
                     ASSERT( !existsBasicOutOfBounds() );
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
                 }
                 else if ( basicCost > 0 )
                     continue;
                 else if ( basicCost < 0 )
-                    actualUpperBound = _lowerBounds[basic];
+                    actualUpperBound = getLowerBound( basic );
                 else
-                    actualUpperBound = _upperBounds[basic];
+                    actualUpperBound = getUpperBound( basic );
 
-                ratioConstraintPerBasic = - ( actualUpperBound - _basicAssignment[i] ) / changeColumn[i];
-
+                ratioConstraintPerBasic =
+                    -( actualUpperBound - _basicAssignment[i] ) / changeColumn[i];
             }
             else
             {
@@ -1468,7 +1429,8 @@ void Tableau::harrisRatioTest( double *changeColumn )
                 largestPivot = pivot;
                 _leavingVariable = i;
                 _changeRatio = ratioConstraintPerBasic;
-                _leavingVariableIncreases = FloatUtils::isNegative( changeColumn[_leavingVariable] );
+                _leavingVariableIncreases =
+                    FloatUtils::isNegative( changeColumn[_leavingVariable] );
             }
         }
     }
@@ -1501,7 +1463,7 @@ const double *Tableau::getChangeColumn() const
 
 void Tableau::setChangeColumn( const double *column )
 {
-    memcpy( _changeColumn, column, _m * sizeof(double) );
+    memcpy( _changeColumn, column, _m * sizeof( double ) );
 }
 
 void Tableau::computePivotRow()
@@ -1558,15 +1520,18 @@ void Tableau::dumpAssignment()
     for ( unsigned i = 0; i < _n; ++i )
     {
         bool basic = _basicVariables.exists( i );
-        printf( "\tx%u (index: %u)  -->  %.5lf [%s]. ", i, _variableToIndex[i],
-                getValue( i ), basic ? "B" : "NB" );
-        if ( _lowerBounds[i] != FloatUtils::negativeInfinity() )
-            printf( "Range: [ %.5lf, ", _lowerBounds[i] );
+        printf( "\tx%u (index: %u)  -->  %.5lf [%s]. ",
+                i,
+                _variableToIndex[i],
+                getValue( i ),
+                basic ? "B" : "NB" );
+        if ( getLowerBound( i ) != FloatUtils::negativeInfinity() )
+            printf( "Range: [ %.5lf, ", getLowerBound( i ) );
         else
             printf( "Range: [ -INFTY, " );
 
-        if ( _upperBounds[i] != FloatUtils::infinity() )
-            printf( "%.5lf ] ", _upperBounds[i] );
+        if ( getUpperBound( i ) != FloatUtils::infinity() )
+            printf( "%.5lf ] ", getUpperBound( i ) );
         else
             printf( "INFTY ] " );
 
@@ -1687,14 +1652,9 @@ void Tableau::dumpEquations()
 
 void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) const
 {
-    // Store the bounds
     if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
          _lpSolverType != LPSolverType::NATIVE )
     {
-        state.initializeBounds( _n );
-        memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
-        memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
-        state._boundsValid = _boundsValid;
     }
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
@@ -1707,33 +1667,28 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
             _sparseColumnsOfA[i]->storeIntoOther( state._sparseColumnsOfA[i] );
         for ( unsigned i = 0; i < _m; ++i )
             _sparseRowsOfA[i]->storeIntoOther( state._sparseRowsOfA[i] );
-        memcpy( state._denseA, _denseA, sizeof(double) * _m * _n );
+        memcpy( state._denseA, _denseA, sizeof( double ) * _m * _n );
 
         // Store right hand side vector _b
-        memcpy( state._b, _b, sizeof(double) * _m );
-
-        // Store the bounds
-        memcpy( state._lowerBounds, _lowerBounds, sizeof(double) *_n );
-        memcpy( state._upperBounds, _upperBounds, sizeof(double) *_n );
+        memcpy( state._b, _b, sizeof( double ) * _m );
 
         // Basic variables
         state._basicVariables = _basicVariables;
 
         // Store the assignments
-        memcpy( state._basicAssignment, _basicAssignment, sizeof(double) *_m );
-        memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof(double) * ( _n - _m ) );
+        memcpy( state._basicAssignment, _basicAssignment, sizeof( double ) * _m );
+        memcpy( state._nonBasicAssignment, _nonBasicAssignment, sizeof( double ) * ( _n - _m ) );
         state._basicAssignmentStatus = _basicAssignmentStatus;
 
         // Store the indices
-        memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof(unsigned) * _m );
-        memcpy( state._nonBasicIndexToVariable, _nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
-        memcpy( state._variableToIndex, _variableToIndex, sizeof(unsigned) * _n );
+        memcpy( state._basicIndexToVariable, _basicIndexToVariable, sizeof( unsigned ) * _m );
+        memcpy( state._nonBasicIndexToVariable,
+                _nonBasicIndexToVariable,
+                sizeof( unsigned ) * ( _n - _m ) );
+        memcpy( state._variableToIndex, _variableToIndex, sizeof( unsigned ) * _n );
 
         // Store the basis factorization
         _basisFactorization->storeFactorization( state._basisFactorization );
-
-        // Store the _boundsValid indicator
-        state._boundsValid = _boundsValid;
 
         // Store the merged variables
         state._mergedVariables = _mergedVariables;
@@ -1745,32 +1700,27 @@ void Tableau::storeState( TableauState &state, TableauStateStorageLevel level ) 
     }
 }
 
-void Tableau::restoreState( const TableauState &state,
-                            TableauStateStorageLevel level )
+void Tableau::updateVariablesToComplyWithBounds()
 {
-    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY
-          || _lpSolverType != LPSolverType::NATIVE )
+    if ( _lpSolverType == LPSolverType::NATIVE )
     {
-        // Store the bounds
-        memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
-        memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
-
-        _boundsValid = state._boundsValid;
-
-        if ( _lpSolverType == LPSolverType::NATIVE )
+        // The bounds might be invalid in the state from which we backtrack,
+        // This means we might need to fix the non-basic variable assignments
+        for ( unsigned i = 0; i < _n - _m; ++i )
         {
-            // The bounds might be invalid in the state from which we backtrack,
-            // This means we might need to fix the non-basic variable assignments
-            for ( unsigned i = 0; i < _n - _m; ++i )
-            {
-                unsigned variable = _nonBasicIndexToVariable[i];
-                updateVariableToComplyWithLowerBoundUpdate( variable,
-                                                            _lowerBounds[variable] );
-                updateVariableToComplyWithUpperBoundUpdate( variable,
-                                                            _upperBounds[variable] );
-            }
-            computeBasicStatus();
+            unsigned variable = _nonBasicIndexToVariable[i];
+            updateVariableToComplyWithLowerBoundUpdate( variable, getLowerBound( variable ) );
+            updateVariableToComplyWithUpperBoundUpdate( variable, getUpperBound( variable ) );
         }
+        computeBasicStatus();
+    }
+}
+
+void Tableau::restoreState( const TableauState &state, TableauStateStorageLevel level )
+{
+    if ( level == TableauStateStorageLevel::STORE_BOUNDS_ONLY ||
+         _lpSolverType != LPSolverType::NATIVE )
+    {
     }
     else if ( level == TableauStateStorageLevel::STORE_ENTIRE_TABLEAU_STATE )
     {
@@ -1784,36 +1734,30 @@ void Tableau::restoreState( const TableauState &state,
             state._sparseColumnsOfA[i]->storeIntoOther( _sparseColumnsOfA[i] );
         for ( unsigned i = 0; i < _m; ++i )
             state._sparseRowsOfA[i]->storeIntoOther( _sparseRowsOfA[i] );
-        memcpy( _denseA, state._denseA, sizeof(double) * _m * _n );
+        memcpy( _denseA, state._denseA, sizeof( double ) * _m * _n );
 
         // Restore right hand side vector _b
-        memcpy( _b, state._b, sizeof(double) * _m );
-
-        // Restore the bounds and valid status
-        // TODO: should notify all the constraints.
-        memcpy( _lowerBounds, state._lowerBounds, sizeof(double) *_n );
-        memcpy( _upperBounds, state._upperBounds, sizeof(double) *_n );
+        memcpy( _b, state._b, sizeof( double ) * _m );
 
         // Basic variables
         _basicVariables = state._basicVariables;
 
         // Restore the assignments
-        memcpy( _basicAssignment, state._basicAssignment, sizeof(double) *_m );
-        memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof(double) * ( _n - _m  ) );
+        memcpy( _basicAssignment, state._basicAssignment, sizeof( double ) * _m );
+        memcpy( _nonBasicAssignment, state._nonBasicAssignment, sizeof( double ) * ( _n - _m ) );
         _basicAssignmentStatus = state._basicAssignmentStatus;
 
         // Restore the indices
-        memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof(unsigned) * _m );
-        memcpy( _nonBasicIndexToVariable, state._nonBasicIndexToVariable, sizeof(unsigned) * ( _n - _m ) );
-        memcpy( _variableToIndex, state._variableToIndex, sizeof(unsigned) * _n );
+        memcpy( _basicIndexToVariable, state._basicIndexToVariable, sizeof( unsigned ) * _m );
+        memcpy( _nonBasicIndexToVariable,
+                state._nonBasicIndexToVariable,
+                sizeof( unsigned ) * ( _n - _m ) );
+        memcpy( _variableToIndex, state._variableToIndex, sizeof( unsigned ) * _n );
 
         // Restore the basis factorization
         _basisFactorization->restoreFactorization( state._basisFactorization );
 
-        // Restore the _boundsValid indicator
-        _boundsValid = state._boundsValid;
-
-        // Restore the merged varaibles
+        // Restore the merged variables
         _mergedVariables = state._mergedVariables;
 
         computeAssignment();
@@ -1833,35 +1777,16 @@ void Tableau::restoreState( const TableauState &state,
     }
 }
 
-void Tableau::checkBoundsValid()
-{
-    _boundsValid = true;
-    for ( unsigned i = 0; i < _n ; ++i )
-    {
-        checkBoundsValid( i );
-        if ( !_boundsValid )
-            return;
-    }
-}
-
-void Tableau::checkBoundsValid( unsigned variable )
-{
-    ASSERT( variable < _n );
-    if ( !FloatUtils::lte( _lowerBounds[variable], _upperBounds[variable] ) )
-    {
-        _boundsValid = false;
-        return;
-    }
-}
-
 bool Tableau::allBoundsValid() const
 {
-    return _boundsValid;
+    return _boundManager.consistentBounds();
 }
-
 
 void Tableau::updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value )
 {
+    if ( _lpSolverType == LPSolverType::GUROBI )
+        return;
+
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
     {
@@ -1881,6 +1806,9 @@ void Tableau::updateVariableToComplyWithLowerBoundUpdate( unsigned variable, dou
 
 void Tableau::updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value )
 {
+    if ( _lpSolverType == LPSolverType::GUROBI )
+        return;
+
     unsigned index = _variableToIndex[variable];
     if ( !_basicVariables.exists( variable ) )
     {
@@ -1902,7 +1830,7 @@ void Tableau::tightenLowerBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
-    if ( !FloatUtils::gt( value, _lowerBounds[variable] ) )
+    if ( !FloatUtils::gt( value, getLowerBound( variable ) ) )
         return;
 
     if ( _statistics )
@@ -1918,7 +1846,7 @@ void Tableau::tightenUpperBound( unsigned variable, double value )
 {
     ASSERT( variable < _n );
 
-    if ( !FloatUtils::lt( value, _upperBounds[variable] ) )
+    if ( !FloatUtils::lt( value, getUpperBound( variable ) ) )
         return;
 
     if ( _statistics )
@@ -1948,13 +1876,13 @@ unsigned Tableau::addEquation( const Equation &equation )
         _workN[addend._variable] = addend._coefficient;
         _sparseColumnsOfA[addend._variable]->set( _m - 1, addend._coefficient );
         _sparseRowsOfA[_m - 1]->set( addend._variable, addend._coefficient );
-        _denseA[(addend._variable * _m) + _m - 1] = addend._coefficient;
+        _denseA[( addend._variable * _m ) + _m - 1] = addend._coefficient;
     }
 
     _workN[auxVariable] = 1;
     _sparseColumnsOfA[auxVariable]->set( _m - 1, 1 );
     _sparseRowsOfA[_m - 1]->set( auxVariable, 1 );
-    _denseA[(auxVariable * _m) + _m - 1] = 1;
+    _denseA[( auxVariable * _m ) + _m - 1] = 1;
     _A->addLastRow( _workN );
 
     // Invalidate the cost function, so that it is recomputed in the next iteration.
@@ -1972,13 +1900,13 @@ unsigned Tableau::addEquation( const Equation &equation )
 
         if ( FloatUtils::isPositive( coefficient ) )
         {
-            lb -= coefficient * _upperBounds[variable];
-            ub -= coefficient * _lowerBounds[variable];
+            lb -= coefficient * getUpperBound( variable );
+            ub -= coefficient * getLowerBound( variable );
         }
         else
         {
-            lb -= coefficient * _lowerBounds[variable];
-            ub -= coefficient * _upperBounds[variable];
+            lb -= coefficient * getLowerBound( variable );
+            ub -= coefficient * getUpperBound( variable );
         }
     }
 
@@ -2076,7 +2004,8 @@ void Tableau::addRow()
 
     newSparseColumnsOfA[newN - 1] = new SparseUnsortedList( newM );
     if ( !newSparseColumnsOfA[newN - 1] )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newSparseColumnsOfA[newN-1]" );
+        throw MarabouError( MarabouError::ALLOCATION_FAILED,
+                            "Tableau::newSparseColumnsOfA[newN-1]" );
 
     delete[] _sparseColumnsOfA;
     _sparseColumnsOfA = newSparseColumnsOfA;
@@ -2106,8 +2035,8 @@ void Tableau::addRow()
 
     for ( unsigned column = 0; column < _n; ++column )
     {
-        memcpy( newDenseA + ( column * newM ), _denseA + ( column * _m ), sizeof(double) * _m );
-        newDenseA[column*newM + newM - 1] = 0.0;
+        memcpy( newDenseA + ( column * newM ), _denseA + ( column * _m ), sizeof( double ) * _m );
+        newDenseA[column * newM + newM - 1] = 0.0;
     }
     std::fill_n( newDenseA + ( newN - 1 ) * newM, newM, 0.0 );
 
@@ -2126,7 +2055,7 @@ void Tableau::addRow()
     if ( !newB )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newB" );
     std::fill( newB + _m, newB + newM, 0.0 );
-    memcpy( newB, _b, _m * sizeof(double) );
+    memcpy( newB, _b, _m * sizeof( double ) );
     delete[] _b;
     _b = newB;
 
@@ -2148,14 +2077,14 @@ void Tableau::addRow()
     unsigned *newBasicIndexToVariable = new unsigned[newM];
     if ( !newBasicIndexToVariable )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newBasicIndexToVariable" );
-    memcpy( newBasicIndexToVariable, _basicIndexToVariable, _m * sizeof(unsigned) );
+    memcpy( newBasicIndexToVariable, _basicIndexToVariable, _m * sizeof( unsigned ) );
     delete[] _basicIndexToVariable;
     _basicIndexToVariable = newBasicIndexToVariable;
 
     unsigned *newVariableToIndex = new unsigned[newN];
     if ( !newVariableToIndex )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newVariableToIndex" );
-    memcpy( newVariableToIndex, _variableToIndex, _n * sizeof(unsigned) );
+    memcpy( newVariableToIndex, _variableToIndex, _n * sizeof( unsigned ) );
     delete[] _variableToIndex;
     _variableToIndex = newVariableToIndex;
 
@@ -2163,35 +2092,19 @@ void Tableau::addRow()
     double *newBasicAssignment = new double[newM];
     if ( !newBasicAssignment )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newAssignment" );
-    memcpy( newBasicAssignment, _basicAssignment, sizeof(double) * _m );
+    memcpy( newBasicAssignment, _basicAssignment, sizeof( double ) * _m );
     delete[] _basicAssignment;
     _basicAssignment = newBasicAssignment;
 
     unsigned *newBasicStatus = new unsigned[newM];
     if ( !newBasicStatus )
         throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newBasicStatus" );
-    memcpy( newBasicStatus, _basicStatus, sizeof(unsigned) * _m );
+    memcpy( newBasicStatus, _basicStatus, sizeof( unsigned ) * _m );
     delete[] _basicStatus;
     _basicStatus = newBasicStatus;
 
-    // Allocate new lower and upper bound arrays, and copy old values
-    double *newLowerBounds = new double[newN];
-    if ( !newLowerBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newLowerBounds" );
-    memcpy( newLowerBounds, _lowerBounds, _n * sizeof(double) );
-    delete[] _lowerBounds;
-    _lowerBounds = newLowerBounds;
-
-    double *newUpperBounds = new double[newN];
-    if ( !newUpperBounds )
-        throw MarabouError( MarabouError::ALLOCATION_FAILED, "Tableau::newUpperBounds" );
-    memcpy( newUpperBounds, _upperBounds, _n * sizeof(double) );
-    delete[] _upperBounds;
-    _upperBounds = newUpperBounds;
-
-    // Mark the new variable as unbounded
-    _lowerBounds[_n] = FloatUtils::negativeInfinity();
-    _upperBounds[_n] = FloatUtils::infinity();
+    // // Mark the new variable as unbounded
+    _boundManager.registerNewVariable();
 
     // Allocate a larger basis factorization
     IBasisFactorization *newBasisFactorization =
@@ -2295,9 +2208,9 @@ double Tableau::getSumOfInfeasibilities() const
     for ( unsigned i = 0; i < _m; ++i )
     {
         if ( basicTooLow( i ) )
-            result += _lowerBounds[_basicIndexToVariable[i]] - _basicAssignment[i];
+            result += getLowerBound( _basicIndexToVariable[i] ) - _basicAssignment[i];
         else if ( basicTooHigh( i ) )
-            result += _basicAssignment[i] - _upperBounds[_basicIndexToVariable[i]];
+            result += _basicAssignment[i] - getUpperBound( _basicIndexToVariable[i] );
     }
 
     return result;
@@ -2338,8 +2251,8 @@ void Tableau::verifyInvariants()
                     _basicIndexToVariable[i],
                     i,
                     _basicAssignment[i],
-                    _lowerBounds[_basicIndexToVariable[i]],
-                    _upperBounds[_basicIndexToVariable[i]] );
+                    getLowerBound( _basicIndexToVariable[i] ),
+                    getUpperBound( _basicIndexToVariable[i] ) );
             exit( 1 );
         }
     }
@@ -2359,29 +2272,31 @@ void Tableau::verifyInvariants()
         unsigned variable = _nonBasicIndexToVariable[i];
         double value = _nonBasicAssignment[i];
 
-        double lb = _lowerBounds[variable];
-        double relaxedLb =
-            lb -
-            ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
-              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( lb ) );
+        double lb = getLowerBound( variable );
+        double relaxedLb = lb - ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+                                  GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE *
+                                      FloatUtils::abs( lb ) );
 
-        double ub = _upperBounds[variable];
-        double relaxedUb =
-            ub +
-            ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
-              GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE * FloatUtils::abs( ub ) );
+        double ub = getUpperBound( variable );
+        double relaxedUb = ub + ( GlobalConfiguration::BOUND_COMPARISON_ADDITIVE_TOLERANCE +
+                                  GlobalConfiguration::BOUND_COMPARISON_MULTIPLICATIVE_TOLERANCE *
+                                      FloatUtils::abs( ub ) );
 
         if ( !( ( relaxedLb <= value ) && ( value <= relaxedUb ) ) )
         {
             // This behavior is okay iff lb > ub, and this is going to be caught
             // soon anyway
 
-            if ( FloatUtils::gt( _lowerBounds[variable], _upperBounds[variable] ) )
+            if ( FloatUtils::gt( getLowerBound( variable ), getUpperBound( variable ) ) )
                 continue;
 
             printf( "Tableau test invariants: bound violation!\n" );
             printf( "Variable %u (non-basic #%u). Assignment: %.15lf. Range: [%.15lf, %.15lf]\n",
-                    variable, i, _nonBasicAssignment[i], _lowerBounds[variable], _upperBounds[variable] );
+                    variable,
+                    i,
+                    _nonBasicAssignment[i],
+                    getLowerBound( variable ),
+                    getUpperBound( variable ) );
             printf( "RelaxedLB = %.15lf. RelaxedUB = %.15lf\n", relaxedLb, relaxedUb );
 
             exit( 1 );
@@ -2402,8 +2317,8 @@ void Tableau::verifyInvariants()
                     _basicIndexToVariable[i],
                     i,
                     _basicAssignment[i],
-                    _lowerBounds[_basicIndexToVariable[i]],
-                    _upperBounds[_basicIndexToVariable[i]] );
+                    getLowerBound( _basicIndexToVariable[i] ),
+                    getUpperBound( _basicIndexToVariable[i] ) );
 
             exit( 1 );
         }
@@ -2462,28 +2377,30 @@ void Tableau::updateAssignmentForPivot()
         // A non-basic is hopping from one bound to the other.
 
         double enteringReducedCost = _costFunctionManager->getCostFunction()[_enteringVariable];
-        bool nonBasicDecreases = ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
+        bool nonBasicDecreases =
+            ( enteringReducedCost >= +GlobalConfiguration::ENTRY_ELIGIBILITY_TOLERANCE );
 
         unsigned nonBasic = _nonBasicIndexToVariable[_enteringVariable];
 
         double nonBasicDelta;
         if ( nonBasicDecreases )
-            nonBasicDelta = _lowerBounds[nonBasic] - _nonBasicAssignment[_enteringVariable];
+            nonBasicDelta = getLowerBound( nonBasic ) - _nonBasicAssignment[_enteringVariable];
         else
-            nonBasicDelta = _upperBounds[nonBasic] - _nonBasicAssignment[_enteringVariable];
+            nonBasicDelta = getUpperBound( nonBasic ) - _nonBasicAssignment[_enteringVariable];
 
         // Update all the affected basic variables
         for ( unsigned i = 0; i < _m; ++i )
         {
             if ( FloatUtils::isZero( _changeColumn[i] ) )
-                 continue;
+                continue;
 
             _basicAssignment[i] -= _changeColumn[i] * nonBasicDelta;
             computeBasicStatus( i );
         }
 
         // Update the assignment for the non-basic variable
-        _nonBasicAssignment[_enteringVariable] = nonBasicDecreases ? _lowerBounds[nonBasic] : _upperBounds[nonBasic];
+        _nonBasicAssignment[_enteringVariable] =
+            nonBasicDecreases ? getLowerBound( nonBasic ) : getUpperBound( nonBasic );
     }
     else
     {
@@ -2511,9 +2428,9 @@ void Tableau::updateAssignmentForPivot()
         }
 
         if ( basicGoingToUpperBound )
-            basicDelta = _upperBounds[currentBasic] - currentBasicValue;
+            basicDelta = getUpperBound( currentBasic ) - currentBasicValue;
         else
-            basicDelta = _lowerBounds[currentBasic] - currentBasicValue;
+            basicDelta = getLowerBound( currentBasic ) - currentBasicValue;
 
         // Now that we know by how much the leaving variable changes,
         // we can calculate by how much the entering variable is going
@@ -2535,7 +2452,7 @@ void Tableau::updateAssignmentForPivot()
 
         // Update the assignment for the leaving variable
         _nonBasicAssignment[_enteringVariable] =
-            basicGoingToUpperBound ? _upperBounds[currentBasic] : _lowerBounds[currentBasic];
+            basicGoingToUpperBound ? getUpperBound( currentBasic ) : getLowerBound( currentBasic );
     }
 }
 
@@ -2546,11 +2463,8 @@ void Tableau::updateCostFunctionForPivot()
         return;
 
     double pivotElement = -_changeColumn[_leavingVariable];
-    double normalizedError = _costFunctionManager->updateCostFunctionForPivot( _enteringVariable,
-                                                                               _leavingVariable,
-                                                                               pivotElement,
-                                                                               _pivotRow,
-                                                                               _changeColumn );
+    double normalizedError = _costFunctionManager->updateCostFunctionForPivot(
+        _enteringVariable, _leavingVariable, pivotElement, _pivotRow, _changeColumn );
 
     if ( FloatUtils::gt( normalizedError, GlobalConfiguration::COST_FUNCTION_ERROR_THRESHOLD ) )
         _costFunctionManager->invalidateCostFunction();
@@ -2637,6 +2551,11 @@ unsigned Tableau::getVariableAfterMerging( unsigned variable ) const
     return answer;
 }
 
+void Tableau::postContextPopHook()
+{
+    updateVariablesToComplyWithBounds();
+}
+
 void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 {
     ASSERT( !isBasic( x1 ) );
@@ -2646,10 +2565,10 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
       If x2 has tighter bounds than x1, adjust the bounds
       for x1.
     */
-    if ( FloatUtils::lt( _upperBounds[x2], _upperBounds[x1] ) )
-        tightenUpperBound( x1, _upperBounds[x2] );
-    if ( FloatUtils::gt( _lowerBounds[x2], _lowerBounds[x1] ) )
-        tightenLowerBound( x1, _lowerBounds[x2] );
+    if ( FloatUtils::lt( getUpperBound( x2 ), getUpperBound( x1 ) ) )
+        tightenUpperBound( x1, getUpperBound( x2 ) );
+    if ( FloatUtils::gt( getLowerBound( x2 ), getLowerBound( x1 ) ) )
+        tightenLowerBound( x1, getLowerBound( x2 ) );
 
     /*
       Merge column x2 of the constraint matrix into x1
@@ -2667,7 +2586,7 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
 
     // And the dense ones, too
     for ( unsigned i = 0; i < _m; ++i )
-        _denseA[x1*_m + i] += _denseA[x2*_m + i];
+        _denseA[x1 * _m + i] += _denseA[x2 * _m + i];
     std::fill_n( _denseA + x2 * _m, _m, 0 );
 
     computeAssignment();
@@ -2677,7 +2596,10 @@ void Tableau::mergeColumns( unsigned x1, unsigned x2 )
         _statistics->incLongAttribute( Statistics::NUM_MERGED_COLUMNS );
 }
 
-bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient )
+bool Tableau::areLinearlyDependent( unsigned x1,
+                                    unsigned x2,
+                                    double &coefficient,
+                                    double &inverseCoefficient )
 {
     bool oneIsBasic = isBasic( x1 );
     bool twoIsBasic = isBasic( x2 );
@@ -2725,4 +2647,36 @@ bool Tableau::areLinearlyDependent( unsigned x1, unsigned x2, double &coefficien
         inverseCoefficient = 1 / coefficient;
 
     return true;
+}
+
+void Tableau::setBoundsPointers( const double *lower, const double *upper )
+{
+    _lowerBounds = lower;
+    _upperBounds = upper;
+}
+
+void Tableau::tightenUpperBoundNaively( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+
+    if ( _statistics )
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENED_BOUNDS );
+
+    _boundManager.setUpperBound( variable, value );
+
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        updateVariableToComplyWithUpperBoundUpdate( variable, value );
+}
+
+void Tableau::tightenLowerBoundNaively( unsigned variable, double value )
+{
+    ASSERT( variable < _n );
+
+    if ( _statistics )
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENED_BOUNDS );
+
+    _boundManager.setLowerBound( variable, value );
+
+    if ( _lpSolverType == LPSolverType::NATIVE )
+        updateVariableToComplyWithLowerBoundUpdate( variable, value );
 }

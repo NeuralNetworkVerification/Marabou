@@ -2,7 +2,7 @@
 /*! \file Preprocessor.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz, Derek Huang, Shantanu Thakoor
+ **   Guy Katz, Derek Huang, Shantanu Thakoor, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,6 +18,7 @@
 
 #include "Equation.h"
 #include "InputQuery.h"
+#include "LinearExpression.h"
 #include "List.h"
 #include "Map.h"
 #include "PiecewiseLinearConstraint.h"
@@ -33,7 +34,8 @@ public:
     /*
       Main method of this class: preprocess the input query
     */
-    InputQuery preprocess( const InputQuery &query, bool attemptVariableElimination = true );
+    std::unique_ptr<InputQuery> preprocess( const InputQuery &query,
+                                            bool attemptVariableElimination = true );
 
     /*
       Have the preprocessor start reporting statistics.
@@ -57,8 +59,14 @@ public:
     */
     unsigned getNewIndex( unsigned oldIndex ) const;
 
-private:
+    /*
+      Given an inputQuery with all variable assignment other than ones for
+      variables corresponding to eliminated neurons, compute the full
+      assignment.
+    */
+    void setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery );
 
+private:
     void freeMemoryIfNeeded();
 
     inline double getLowerBound( unsigned var )
@@ -80,6 +88,12 @@ private:
     {
         _upperBounds[var] = value;
     }
+
+    /*
+      Transform each equation so that any two addends have different variables
+      and no addends have zero coefficients
+    */
+    void removeRedundantAddendsInAllEquations();
 
     /*
       Transform the piecewise linear constraints if needed. For instance, this
@@ -105,7 +119,7 @@ private:
     bool processEquations();
 
     /*
-      Tighten the bounds using the piecewise linear and transcendental constraints
+      Tighten the bounds using the piecewise linear and nonlinear constraints
     */
     bool processConstraints();
 
@@ -135,12 +149,12 @@ private:
     /*
       All input/output variables
     */
-    Set<unsigned> _inputOutputVariables;
+    Set<unsigned> _uneliminableVariables;
 
     /*
       The preprocessed query
     */
-    InputQuery _preprocessed;
+    std::unique_ptr<InputQuery> _preprocessed;
 
     /*
       Statistics collection
@@ -164,6 +178,14 @@ private:
       equations of the form x1 = x2
     */
     Map<unsigned, unsigned> _mergedVariables;
+
+    /*
+      Variables that have been eliminated due to the merge of weighted
+      sum layers. These variables are symbolically fixed (as a weighted
+      sum of other variables), not needed for solving, but need to be
+      tracked here for reconstruction of the full assignment.
+    */
+    Map<unsigned, LinearExpression> _unusedSymbolicallyFixedVariables;
 
     /*
       Mapping of old variable indices to new varibale indices, if

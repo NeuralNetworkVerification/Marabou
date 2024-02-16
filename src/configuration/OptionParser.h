@@ -57,7 +57,12 @@ public:
 private:
     boost::program_options::variables_map _variableMap;
     boost::program_options::options_description _optionDescription;
+    boost::program_options::options_description _positional;
+    boost::program_options::options_description _common;
+    boost::program_options::options_description _other;
+    boost::program_options::options_description _expert;
     boost::program_options::positional_options_description _positionalOptions;
+
 
     Map<unsigned, bool> *_boolOptions;
     Map<unsigned, int> *_intOptions;

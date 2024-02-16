@@ -14,6 +14,7 @@
  **/
 
 #include "Equation.h"
+
 #include "FloatUtils.h"
 #include "MStringf.h"
 #include "Map.h"
@@ -89,10 +90,8 @@ void Equation::updateVariableIndex( unsigned oldVar, unsigned newVar )
 
 bool Equation::operator==( const Equation &other ) const
 {
-    return
-        ( _addends == other._addends ) &&
-        ( _scalar == other._scalar ) &&
-        ( _type == other._type );
+    return ( _addends == other._addends ) && ( _scalar == other._scalar ) &&
+           ( _type == other._type );
 }
 
 bool Equation::equivalent( const Equation &other ) const
@@ -210,10 +209,47 @@ double Equation::getCoefficient( unsigned variable ) const
     return 0;
 }
 
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+void Equation::setCoefficient( unsigned variable, double newCoefficient )
+{
+    for ( auto &addend : _addends )
+    {
+        if ( addend._variable == variable )
+        {
+            addend._coefficient = newCoefficient;
+            return;
+        }
+    }
+
+    addAddend( newCoefficient, variable );
+}
+
+void Equation::removeRedundantAddends()
+{
+    Map<unsigned, double> addends;
+    for ( auto &addend : _addends )
+    {
+        if ( addends.exists( addend._variable ) )
+            addends[addend._variable] += addend._coefficient;
+        else
+            addends[addend._variable] = addend._coefficient;
+    }
+
+    _addends.clear();
+    for ( const auto &pair : addends )
+    {
+        if ( !FloatUtils::isZero( pair.second ) )
+            addAddend( pair.second, pair.first );
+    }
+}
+
+bool Equation::containsRedundantAddends() const
+{
+    Set<unsigned> addends;
+    for ( auto &addend : _addends )
+    {
+        if ( addends.exists( addend._variable ) || FloatUtils::isZero( addend._coefficient ) )
+            return true;
+        addends.insert( addend._variable );
+    }
+    return false;
+}

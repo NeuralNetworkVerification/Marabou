@@ -77,7 +77,11 @@ def createQuery(args):
         encode_cifar10_linf(network, args.index, args.epsilon, args.target_label)
         return network.getMarabouQuery(), network
     else:
-        print("No property encoded! The dataset must be taxi or mnist or cifar10.")
+        """
+        ENCODE YOUR CUSTOMIZED PROPERTY HERE!
+        """
+        print("No property encoded!")
+
         return network.getMarabouQuery(), network
 
 def encode_mnist_linf(network, index, epsilon, target_label):
@@ -91,7 +95,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     if target_label == -1:
         print("No output constraint!")
     else:
-        outputVars = network.outputVars.flatten()
+        outputVars = network.outputVars[0].flatten()
         for i in range(10):
             if i != target_label:
                 network.addInequality([outputVars[i],
@@ -125,8 +129,8 @@ def encode_cifar10_linf(network, index, epsilon, target_label):
             network.setUpperBound(i, ub[i])
         for i in range(10):
             if i != target_label:
-                network.addInequality([network.outputVars[0][i],
-                                       network.outputVars[0][target_label]],
+                network.addInequality([network.outputVars[0][0][i],
+                                       network.outputVars[0][0][target_label]],
                                       [1, -1], 0)
     return
 

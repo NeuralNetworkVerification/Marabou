@@ -14,11 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MString.h"
 #include "MockErrno.h"
 #include "Vector.h"
+
+#include <cxxtest/TestSuite.h>
 
 class VectorTestSuite : public CxxTest::TestSuite
 {
@@ -297,10 +297,8 @@ public:
     {
         Vector<int> vector;
 
-        TS_ASSERT_THROWS_EQUALS( vector.first(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VECTOR_OUT_OF_BOUNDS );
+        TS_ASSERT_THROWS_EQUALS(
+            vector.first(), const CommonError &e, e.getCode(), CommonError::VECTOR_OUT_OF_BOUNDS );
 
         vector.append( 1 );
         TS_ASSERT_EQUALS( vector.first(), 1 );
@@ -319,10 +317,8 @@ public:
     {
         Vector<int> vector;
 
-        TS_ASSERT_THROWS_EQUALS( vector.last(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::VECTOR_OUT_OF_BOUNDS );
+        TS_ASSERT_THROWS_EQUALS(
+            vector.last(), const CommonError &e, e.getCode(), CommonError::VECTOR_OUT_OF_BOUNDS );
 
         vector.append( 1 );
         TS_ASSERT_EQUALS( vector.last(), 1 );
@@ -466,7 +462,7 @@ public:
 
     void test_assignemnt()
     {
-        Vector<int> a,b;
+        Vector<int> a, b;
 
         a.append( 1 );
         a.append( 2 );
@@ -500,6 +496,30 @@ public:
 
         TS_ASSERT_EQUALS( a.get( 0 ), 13 );
         TS_ASSERT_EQUALS( a.get( 0 ), a[0] );
+    }
+
+    void test_const_random_access()
+    {
+        const Vector<int> a = { 1, 2, 3 };
+
+        TS_ASSERT_EQUALS( a[0], 1 );
+        TS_ASSERT_EQUALS( a[1], 2 );
+        TS_ASSERT_EQUALS( a[2], 3 );
+    }
+
+    void test_data_access()
+    {
+        Vector<int> a = { 1, 2, 3 };
+        const int *constData = a.data();
+        int *data = a.data();
+
+        TS_ASSERT_EQUALS( data[0], 1 );
+        TS_ASSERT_EQUALS( data[1], 2 );
+        TS_ASSERT_EQUALS( data[2], 3 );
+
+        TS_ASSERT_EQUALS( constData[0], 1 );
+        TS_ASSERT_EQUALS( constData[1], 2 );
+        TS_ASSERT_EQUALS( constData[2], 3 );
     }
 };
 

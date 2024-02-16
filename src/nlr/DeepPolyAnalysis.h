@@ -20,6 +20,7 @@
 #include "Layer.h"
 #include "LayerOwner.h"
 #include "Map.h"
+
 #include <climits>
 
 namespace NLR {
@@ -27,7 +28,6 @@ namespace NLR {
 class DeepPolyAnalysis
 {
 public:
-
     DeepPolyAnalysis( LayerOwner *layerOwner );
     ~DeepPolyAnalysis();
 
@@ -44,14 +44,16 @@ private:
     /*
       Working memory for the abstract elements to execute
     */
-    double * _work1SymbolicLb;
-    double * _work1SymbolicUb;
-    double * _work2SymbolicLb;
-    double * _work2SymbolicUb;
-    double * _workSymbolicLowerBias;
-    double * _workSymbolicUpperBias;
+    double *_work1SymbolicLb;
+    double *_work1SymbolicUb;
+    double *_work2SymbolicLb;
+    double *_work2SymbolicUb;
+    double *_workSymbolicLowerBias;
+    double *_workSymbolicUpperBias;
 
-    void allocateMemory( const Map<unsigned, Layer *> &layers );
+    unsigned _maxLayerSize;
+
+    void allocateMemory();
     void freeMemoryIfNeeded();
 
     DeepPolyElement *createDeepPolyElement( Layer *layer );

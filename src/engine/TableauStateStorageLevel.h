@@ -16,8 +16,7 @@
 #ifndef __TableauStateStorageLevel_h__
 #define __TableauStateStorageLevel_h__
 
-enum class TableauStateStorageLevel
-{
+enum class TableauStateStorageLevel {
     STORE_NONE = 0,
     STORE_BOUNDS_ONLY = 1,
     STORE_ENTIRE_TABLEAU_STATE = 2,

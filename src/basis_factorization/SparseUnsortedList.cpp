@@ -13,10 +13,11 @@
 
  **/
 
+#include "SparseUnsortedList.h"
+
 #include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "SparseUnsortedList.h"
 
 SparseUnsortedList::SparseUnsortedList()
     : _size( 0 )
@@ -26,6 +27,11 @@ SparseUnsortedList::SparseUnsortedList()
 SparseUnsortedList::SparseUnsortedList( unsigned size )
     : _size( size )
 {
+}
+
+SparseUnsortedList::SparseUnsortedList( const SparseUnsortedList &other )
+{
+    *this = other;
 }
 
 SparseUnsortedList::SparseUnsortedList( const double *V, unsigned size )
@@ -50,6 +56,12 @@ void SparseUnsortedList::initialize( const double *V, unsigned size )
 
         _list.append( Entry( i, V[i] ) );
     }
+}
+
+void SparseUnsortedList::initializeToEmpty()
+{
+    _size = 0;
+    _list.clear();
 }
 
 void SparseUnsortedList::clear()
@@ -217,10 +229,11 @@ void SparseUnsortedList::mergeEntries( unsigned source, unsigned target )
 
     _list.erase( sourceIt );
     if ( FloatUtils::isZero( targetIt->_value ) )
-         _list.erase( targetIt );
+        _list.erase( targetIt );
 }
 
-List<SparseUnsortedList::Entry>::iterator SparseUnsortedList::erase( List<SparseUnsortedList::Entry>::iterator it )
+List<SparseUnsortedList::Entry>::iterator
+SparseUnsortedList::erase( List<SparseUnsortedList::Entry>::iterator it )
 {
     return _list.erase( it );
 }

@@ -13,14 +13,14 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "AbsoluteValueConstraint.h"
 #include "InputQuery.h"
 #include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockTableau.h"
 #include "PiecewiseLinearCaseSplit.h"
+
+#include <cxxtest/TestSuite.h>
 #include <iostream>
 #include <string.h>
 
@@ -37,7 +37,8 @@ class TestAbsConstraint : public AbsoluteValueConstraint
 public:
     TestAbsConstraint( unsigned b, unsigned f )
         : AbsoluteValueConstraint( b, f )
-    {}
+    {
+    }
 
     using AbsoluteValueConstraint::getPhaseStatus;
 };
@@ -364,7 +365,7 @@ public:
             assert_lower_upper_bound( f, b, 5, 3, 6, 5, entailedTightenings );
         }
 
-        {   // With BoundManager
+        { // With BoundManager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -394,9 +395,10 @@ public:
             abs.notifyLowerBound( f, 3 );
             abs.notifyUpperBound( b, 6 );
             // 3 < x_b < 6 , 3 < x_f < 7
+            // --> x_f < 6
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 3, 3, 6, 7, entailedTightenings );
+            assert_lower_upper_bound( f, b, 3, 3, 6, 6, entailedTightenings );
 
             abs.notifyUpperBound( f, 6 );
             abs.notifyUpperBound( b, 7 );
@@ -416,9 +418,10 @@ public:
             abs.notifyLowerBound( b, 5 );
             abs.notifyUpperBound( f, 5 );
             // 5 < x_b < 6 , 3 < x_f < 5
+            // --> x_b < 5
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 5, 3, 6, 5, entailedTightenings );
+            assert_lower_upper_bound( f, b, 5, 3, 5, 5, entailedTightenings );
         }
     }
 
@@ -440,7 +443,7 @@ public:
             assert_lower_upper_bound( f, b, 8, 48, 18, 64, entailedTightenings );
         }
 
-        {   //With BoundManage
+        { // With BoundManage
             unsigned b = 1;
             unsigned f = 4;
 
@@ -481,7 +484,7 @@ public:
             assert_lower_upper_bound( f, b, 3, 1, 4, 2, entailedTightenings );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -495,12 +498,13 @@ public:
             List<Tightening> entailedTightenings;
 
             // 3 < b < 4, 1 < f < 2
+            // --> b < 2
             abs.notifyUpperBound( b, 4 );
             abs.notifyUpperBound( f, 2 );
             abs.notifyLowerBound( b, 3 );
             abs.notifyLowerBound( f, 1 );
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 3, 1, 4, 2, entailedTightenings );
+            assert_lower_upper_bound( f, b, 3, 1, 2, 2, entailedTightenings );
         }
     }
 
@@ -552,7 +556,7 @@ public:
             assert_lower_upper_bound( f, b, 3, 0, 5, 2, entailedTightenings );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -571,36 +575,40 @@ public:
             abs.notifyLowerBound( f, 0 );
 
             // 0 < x_b < 7 ,0 < x_f < 6
+            // --> x_b < 6
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 0, 0, 7, 6, entailedTightenings );
+            assert_lower_upper_bound( f, b, 0, 0, 6, 6, entailedTightenings );
 
             abs.notifyUpperBound( b, 5 );
             // 0 < x_b < 5 ,0 < x_f < 6
+            // --> x_f < 5
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 0, 0, 5, 6, entailedTightenings );
+            assert_lower_upper_bound( f, b, 0, 0, 5, 5, entailedTightenings );
 
             abs.notifyLowerBound( b, 1 );
-            // 1 < x_b < 5 ,0 < x_f < 6
+            // 1 < x_b < 5 ,0 < x_f < 5
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 1, 0, 5, 6, entailedTightenings );
+            assert_lower_upper_bound( f, b, 1, 0, 5, 5, entailedTightenings );
 
             abs.notifyUpperBound( f, 4 );
             // 1 < x_b < 5 ,0 < x_f < 4
+            // --> x_b < 4
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 1, 0, 5, 4, entailedTightenings );
+            assert_lower_upper_bound( f, b, 1, 0, 4, 4, entailedTightenings );
 
             // Non overlap
             abs.notifyUpperBound( f, 2 );
             abs.notifyLowerBound( b, 3 );
 
             // 3 < x_b < 5 ,0 < x_f < 2
+            // --> x_b < 2 ( i.e. bounds not valid )
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
             TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-            assert_lower_upper_bound( f, b, 3, 0, 5, 2, entailedTightenings );
+            assert_lower_upper_bound( f, b, 3, 0, 2, 2, entailedTightenings );
         }
     }
 
@@ -624,7 +632,7 @@ public:
             assert_lower_upper_bound( f, b, 4, 3, 6, 5, entailedTightenings );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -642,9 +650,10 @@ public:
             abs.notifyLowerBound( f, 3 );
 
             // 4 < x_b < 6 ,3 < x_f < 5
+            // --> x_b < 5
             entailedTightenings.clear();
             abs.getEntailedTightenings( entailedTightenings );
-            assert_lower_upper_bound( f, b, 4, 3, 6, 5, entailedTightenings );
+            assert_lower_upper_bound( f, b, 4, 3, 5, 5, entailedTightenings );
         }
     }
 
@@ -677,7 +686,7 @@ public:
                                       } ) );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -700,8 +709,6 @@ public:
 
             assert_tightenings_match( entailedTightenings,
                                       List<Tightening>( {
-                                          Tightening( f, 0, Tightening::LB ),
-
                                           Tightening( b, 0, Tightening::LB ),
                                           Tightening( b, 10, Tightening::UB ),
                                           Tightening( f, 5, Tightening::LB ),
@@ -712,288 +719,136 @@ public:
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_strictly_positive()
     {
-        {
-            unsigned b = 1;
-            unsigned f = 4;
+        unsigned b = 1;
+        unsigned f = 4;
 
-            AbsoluteValueConstraint abs( b, f );
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
+        AbsoluteValueConstraint abs( b, f );
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
 
-            abs.notifyLowerBound( b, -6 );
-            abs.notifyUpperBound( b, 3 );
-            abs.notifyLowerBound( f, 2 );
-            abs.notifyUpperBound( f, 4 );
+        abs.notifyLowerBound( b, -6 );
+        abs.notifyUpperBound( b, 3 );
+        abs.notifyLowerBound( f, 2 );
+        abs.notifyUpperBound( f, 4 );
 
-            // -6 < x_b < 3 ,2 < x_f < 4
-            abs.getEntailedTightenings( entailedTightenings );
+        // -6 < x_b < 3 ,2 < x_f < 4
+        abs.getEntailedTightenings( entailedTightenings );
 
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 6, Tightening::UB ),
-                                      } ) );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -4, Tightening::LB ),
+                                      Tightening( b, 4, Tightening::UB ),
+                                      Tightening( f, 6, Tightening::UB ),
+                                  } ) );
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -6 < x_b < 2 ,2 < x_f < 4
-            abs.notifyUpperBound( b, 2 );
-            abs.getEntailedTightenings( entailedTightenings );
+        // -6 < x_b < 2 ,2 < x_f < 4
+        abs.notifyUpperBound( b, 2 );
+        abs.getEntailedTightenings( entailedTightenings );
 
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 6, Tightening::UB ),
-                                      } ) );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -4, Tightening::LB ),
+                                      Tightening( b, 4, Tightening::UB ),
+                                      Tightening( f, 6, Tightening::UB ),
+                                  } ) );
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -6 < x_b < 1 ,2 < x_f < 4, now stuck in negative phase
-            abs.notifyUpperBound( b, 1 );
-            abs.getEntailedTightenings( entailedTightenings );
+        // -6 < x_b < 1 ,2 < x_f < 4, now stuck in negative phase
+        abs.notifyUpperBound( b, 1 );
+        abs.getEntailedTightenings( entailedTightenings );
 
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 6, Tightening::UB ),
-                                          Tightening( b, -2, Tightening::UB ),
-                                      } ) );
-        }
-
-        { // With Bound Manager
-            unsigned b = 1;
-            unsigned f = 4;
-
-            AbsoluteValueConstraint abs( b, f );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 5 );
-            abs.registerBoundManager( &boundManager );
-
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
-
-            abs.notifyLowerBound( b, -6 );
-            abs.notifyUpperBound( b, 3 );
-            abs.notifyLowerBound( f, 2 );
-            abs.notifyUpperBound( f, 4 );
-
-            // -6 < x_b < 3 ,2 < x_f < 4
-            abs.getEntailedTightenings( entailedTightenings );
-
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 6, Tightening::UB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-
-            // -6 < x_b < 2 ,2 < x_f < 4
-            abs.notifyUpperBound( b, 2 );
-            abs.getEntailedTightenings( entailedTightenings );
-
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 6, Tightening::UB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-
-            // -6 < x_b < 1 ,2 < x_f < 4, now stuck in negative phase
-            abs.notifyUpperBound( b, 1 );
-            abs.getEntailedTightenings( entailedTightenings );
-
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 6, Tightening::UB ),
-                                          Tightening( b, -2, Tightening::UB ),
-                                      } ) );
-        }
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -4, Tightening::LB ),
+                                      Tightening( b, 4, Tightening::UB ),
+                                      Tightening( f, 6, Tightening::UB ),
+                                      Tightening( b, -2, Tightening::UB ),
+                                  } ) );
     }
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_strictly_positive_2()
     {
-        {
-            unsigned b = 1;
-            unsigned f = 4;
+        unsigned b = 1;
+        unsigned f = 4;
 
-            AbsoluteValueConstraint abs( b, f );
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
+        AbsoluteValueConstraint abs( b, f );
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
 
-            abs.notifyLowerBound( b, -5 );
-            abs.notifyUpperBound( b, 10 );
-            abs.notifyLowerBound( f, 3 );
-            abs.notifyUpperBound( f, 7 );
+        abs.notifyLowerBound( b, -5 );
+        abs.notifyUpperBound( b, 10 );
+        abs.notifyLowerBound( f, 3 );
+        abs.notifyUpperBound( f, 7 );
 
-            // -5 < x_b < 10 ,3 < x_f < 7
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -7, Tightening::LB ),
-                                          Tightening( b, 7, Tightening::UB ),
-                                          Tightening( f, 10, Tightening::UB ),
-                                      } ) );
+        // -5 < x_b < 10 ,3 < x_f < 7
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -7, Tightening::LB ),
+                                      Tightening( b, 7, Tightening::UB ),
+                                      Tightening( f, 10, Tightening::UB ),
+                                  } ) );
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -5 < x_b < 10 ,6 < x_f < 7, positive phase
-            abs.notifyLowerBound( f, 6 );
+        // -5 < x_b < 10 ,6 < x_f < 7, positive phase
+        abs.notifyLowerBound( f, 6 );
 
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -7, Tightening::LB ),
-                                          Tightening( b, 7, Tightening::UB ),
-                                          Tightening( f, 10, Tightening::UB ),
-                                          Tightening( b, 6, Tightening::LB ),
-                                      } ) );
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -7, Tightening::LB ),
+                                      Tightening( b, 7, Tightening::UB ),
+                                      Tightening( f, 10, Tightening::UB ),
+                                      Tightening( b, 6, Tightening::LB ),
+                                  } ) );
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -5 < x_b < 3 ,6 < x_f < 7
+        // -5 < x_b < 3 ,6 < x_f < 7
 
-            // Extreme case, disjoint ranges
+        // Extreme case, disjoint ranges
 
-            abs.notifyUpperBound( b, 3 );
+        abs.notifyUpperBound( b, 3 );
 
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -7, Tightening::LB ),
-                                          Tightening( b, 7, Tightening::UB ),
-                                          Tightening( f, 5, Tightening::UB ),
-                                          Tightening( b, 6, Tightening::LB ),
-                                          Tightening( b, -6, Tightening::UB ),
-                                      } ) );
-        }
-
-        { // With Bound Manager
-            unsigned b = 1;
-            unsigned f = 4;
-
-            AbsoluteValueConstraint abs( b, f );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 5 );
-            abs.registerBoundManager( &boundManager );
-
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
-
-            abs.notifyLowerBound( b, -5 );
-            abs.notifyUpperBound( b, 10 );
-            abs.notifyLowerBound( f, 3 );
-            abs.notifyUpperBound( f, 7 );
-
-            // -5 < x_b < 10 ,3 < x_f < 7
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -7, Tightening::LB ),
-                                          Tightening( b, 7, Tightening::UB ),
-                                          Tightening( f, 10, Tightening::UB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-
-            // -5 < x_b < 10 ,6 < x_f < 7, positive phase
-            abs.notifyLowerBound( f, 6 );
-
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -7, Tightening::LB ),
-                                          Tightening( b, 7, Tightening::UB ),
-                                          Tightening( f, 10, Tightening::UB ),
-                                          Tightening( b, 6, Tightening::LB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-
-            // -5 < x_b < 3 ,6 < x_f < 7
-
-            // Extreme case, disjoint ranges
-
-            abs.notifyUpperBound( b, 3 );
-
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -7, Tightening::LB ),
-                                          Tightening( b, 7, Tightening::UB ),
-                                          Tightening( f, 5, Tightening::UB ),
-                                          Tightening( b, 6, Tightening::LB ),
-                                          Tightening( b, -6, Tightening::UB ),
-                                      } ) );
-        }
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -7, Tightening::LB ),
+                                      Tightening( b, 7, Tightening::UB ),
+                                      Tightening( f, 5, Tightening::UB ),
+                                      Tightening( b, 6, Tightening::LB ),
+                                      Tightening( b, -6, Tightening::UB ),
+                                  } ) );
     }
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_strictly_positive_3()
     {
-        {
-            unsigned b = 1;
-            unsigned f = 4;
+        unsigned b = 1;
+        unsigned f = 4;
 
-            AbsoluteValueConstraint abs( b, f );
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
+        AbsoluteValueConstraint abs( b, f );
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
 
-            abs.notifyLowerBound( b, -1 );
-            abs.notifyUpperBound( b, 1 );
-            abs.notifyLowerBound( f, 2 );
-            abs.notifyUpperBound( f, 4 );
+        abs.notifyLowerBound( b, -1 );
+        abs.notifyUpperBound( b, 1 );
+        abs.notifyLowerBound( f, 2 );
+        abs.notifyUpperBound( f, 4 );
 
-            // -1 < x_b < 1 ,2 < x_f < 4
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 1, Tightening::UB ),
-                                          Tightening( b, 2, Tightening::LB ),
-                                          Tightening( b, -2, Tightening::UB ),
-                                      } ) );
-        }
-
-        { // With Bound Manager
-            unsigned b = 1;
-            unsigned f = 4;
-
-            AbsoluteValueConstraint abs( b, f );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 5 );
-            abs.registerBoundManager( &boundManager );
-
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
-
-            abs.notifyLowerBound( b, -1 );
-            abs.notifyUpperBound( b, 1 );
-            abs.notifyLowerBound( f, 2 );
-            abs.notifyUpperBound( f, 4 );
-
-            // -1 < x_b < 1 ,2 < x_f < 4
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -4, Tightening::LB ),
-                                          Tightening( b, 4, Tightening::UB ),
-                                          Tightening( f, 1, Tightening::UB ),
-                                          Tightening( b, 2, Tightening::LB ),
-                                          Tightening( b, -2, Tightening::UB ),
-                                      } ) );
-        }
+        // -1 < x_b < 1 ,2 < x_f < 4
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -4, Tightening::LB ),
+                                      Tightening( b, 4, Tightening::UB ),
+                                      Tightening( f, 1, Tightening::UB ),
+                                      Tightening( b, 2, Tightening::LB ),
+                                      Tightening( b, -2, Tightening::UB ),
+                                  } ) );
     }
 
     void test_abs_entailed_tightenings_phase_not_fixed_f_non_negative()
@@ -1120,207 +975,71 @@ public:
                                           Tightening( f, 5, Tightening::UB ),
                                       } ) );
         }
-        { // With Bound Manager
-            unsigned b = 1;
-            unsigned f = 4;
-
-            AbsoluteValueConstraint abs( b, f );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 5 );
-            abs.registerBoundManager( &boundManager );
-
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
-
-            abs.notifyLowerBound( b, -7 );
-            abs.notifyUpperBound( b, 7 );
-            abs.notifyLowerBound( f, 0 );
-            abs.notifyUpperBound( f, 6 );
-
-            // -7 < x_b < 7 ,0 < x_f < 6
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -6, Tightening::LB ),
-                                          Tightening( b, 6, Tightening::UB ),
-                                          Tightening( f, 7, Tightening::UB ),
-                                      } ) );
-
-
-            entailedTightenings.clear();
-
-            // -7 < x_b < 5 ,0 < x_f < 6
-            abs.notifyUpperBound( b, 5 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -6, Tightening::LB ),
-                                          Tightening( b, 6, Tightening::UB ),
-                                          Tightening( f, 7, Tightening::UB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-            // 0 < x_b < 5 ,0 < x_f < 6
-            abs.notifyLowerBound( b, 0 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, 0, Tightening::LB ),
-                                          Tightening( b, 6, Tightening::UB ),
-                                          Tightening( f, 0, Tightening::LB ),
-                                          Tightening( f, 5, Tightening::UB ),
-                                      } ) );
-
-
-            entailedTightenings.clear();
-
-            // 3 < x_b < 5 ,0 < x_f < 6
-            abs.notifyLowerBound( b, 3 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, 0, Tightening::LB ),
-                                          Tightening( b, 6, Tightening::UB ),
-                                          Tightening( f, 3, Tightening::LB ),
-                                          Tightening( f, 5, Tightening::UB ),
-                                      } ) );
-        }
     }
 
     void test_abs_entailed_tightenings_negative_phase()
     {
-        {
-            unsigned b = 1;
-            unsigned f = 4;
+        unsigned b = 1;
+        unsigned f = 4;
 
-            AbsoluteValueConstraint abs( b, f );
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
+        AbsoluteValueConstraint abs( b, f );
+        List<Tightening> entailedTightenings;
+        List<Tightening>::iterator it;
 
-            abs.notifyLowerBound( b, -20 );
-            abs.notifyUpperBound( b, -2 );
-            abs.notifyLowerBound( f, 0 );
-            abs.notifyUpperBound( f, 15 );
+        abs.notifyLowerBound( b, -20 );
+        abs.notifyUpperBound( b, -2 );
+        abs.notifyLowerBound( f, 0 );
+        abs.notifyUpperBound( f, 15 );
 
-            // -20 < x_b < -2 ,0 < x_f < 15
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, 0, Tightening::UB ),
-                                          Tightening( f, 2, Tightening::LB ),
-                                          Tightening( f, 20, Tightening::UB ),
-                                      } ) );
-
-
-            entailedTightenings.clear();
-
-            // -20 < x_b < -2 ,7 < x_f < 15
-            abs.notifyLowerBound( f, 7 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, -7, Tightening::UB ),
-                                          Tightening( f, 2, Tightening::LB ),
-                                          Tightening( f, 20, Tightening::UB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-
-            // -12 < x_b < -2 ,7 < x_f < 15
-            abs.notifyLowerBound( b, -12 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, -7, Tightening::UB ),
-                                          Tightening( f, 2, Tightening::LB ),
-                                          Tightening( f, 12, Tightening::UB ),
-                                      } ) );
-
-            entailedTightenings.clear();
-
-            // -12 < x_b < -8 ,7 < x_f < 15
-            abs.notifyUpperBound( b, -8 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, -7, Tightening::UB ),
-                                          Tightening( f, 8, Tightening::LB ),
-                                          Tightening( f, 12, Tightening::UB ),
-                                      } ) );
-        }
-        {   // With Bound Manager
-            unsigned b = 1;
-            unsigned f = 4;
-
-            AbsoluteValueConstraint abs( b, f );
-            Context context;
-            BoundManager boundManager( context );
-            boundManager.initialize( 5 );
-            abs.registerBoundManager( &boundManager );
-
-            List<Tightening> entailedTightenings;
-            List<Tightening>::iterator it;
-
-            abs.notifyLowerBound( b, -20 );
-            abs.notifyUpperBound( b, -2 );
-            abs.notifyLowerBound( f, 0 );
-            abs.notifyUpperBound( f, 15 );
-
-            // -20 < x_b < -2 ,0 < x_f < 15
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, 0, Tightening::UB ),
-                                          Tightening( f, 2, Tightening::LB ),
-                                          Tightening( f, 20, Tightening::UB ),
-                                      } ) );
+        // -20 < x_b < -2 ,0 < x_f < 15
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -15, Tightening::LB ),
+                                      Tightening( b, 0, Tightening::UB ),
+                                      Tightening( f, 2, Tightening::LB ),
+                                      Tightening( f, 20, Tightening::UB ),
+                                  } ) );
 
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -20 < x_b < -2 ,7 < x_f < 15
-            abs.notifyLowerBound( f, 7 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, -7, Tightening::UB ),
-                                          Tightening( f, 2, Tightening::LB ),
-                                          Tightening( f, 20, Tightening::UB ),
-                                      } ) );
+        // -20 < x_b < -2 ,7 < x_f < 15
+        abs.notifyLowerBound( f, 7 );
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -15, Tightening::LB ),
+                                      Tightening( b, -7, Tightening::UB ),
+                                      Tightening( f, 2, Tightening::LB ),
+                                      Tightening( f, 20, Tightening::UB ),
+                                  } ) );
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -12 < x_b < -2 ,7 < x_f < 15
-            abs.notifyLowerBound( b, -12 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, -7, Tightening::UB ),
-                                          Tightening( f, 2, Tightening::LB ),
-                                          Tightening( f, 12, Tightening::UB ),
-                                      } ) );
+        // -12 < x_b < -2 ,7 < x_f < 15
+        abs.notifyLowerBound( b, -12 );
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -15, Tightening::LB ),
+                                      Tightening( b, -7, Tightening::UB ),
+                                      Tightening( f, 2, Tightening::LB ),
+                                      Tightening( f, 12, Tightening::UB ),
+                                  } ) );
 
-            entailedTightenings.clear();
+        entailedTightenings.clear();
 
-            // -12 < x_b < -8 ,7 < x_f < 15
-            abs.notifyUpperBound( b, -8 );
-            abs.getEntailedTightenings( entailedTightenings );
-            assert_tightenings_match( entailedTightenings,
-                                      List<Tightening>( {
-                                          Tightening( b, -15, Tightening::LB ),
-                                          Tightening( b, -7, Tightening::UB ),
-                                          Tightening( f, 8, Tightening::LB ),
-                                          Tightening( f, 12, Tightening::UB ),
-                                      } ) );
-        }
+        // -12 < x_b < -8 ,7 < x_f < 15
+        abs.notifyUpperBound( b, -8 );
+        abs.getEntailedTightenings( entailedTightenings );
+        assert_tightenings_match( entailedTightenings,
+                                  List<Tightening>( {
+                                      Tightening( b, -15, Tightening::LB ),
+                                      Tightening( b, -7, Tightening::UB ),
+                                      Tightening( f, 8, Tightening::LB ),
+                                      Tightening( f, 12, Tightening::UB ),
+                                  } ) );
     }
 
     void test_abs_entailed_tightenings_negative_phase_2()
@@ -1349,7 +1068,7 @@ public:
                                       } ) );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -1636,25 +1355,26 @@ public:
                                    double bUpper,
                                    List<Tightening> entailedTightenings )
     {
-        List<Tightening>::iterator it;
-        it = entailedTightenings.begin();
-
         TS_ASSERT_EQUALS( entailedTightenings.size(), 4U );
-        TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, fLower );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, bLower );
-        TS_ASSERT_EQUALS( it->_type, Tightening::LB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, f );
-        TS_ASSERT_EQUALS( it->_value, fUpper );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
-        it++;
-        TS_ASSERT_EQUALS( it->_variable, b );
-        TS_ASSERT_EQUALS( it->_value, bUpper );
-        TS_ASSERT_EQUALS( it->_type, Tightening::UB );
+
+        Tightening f_lower( f, fLower, Tightening::LB );
+        Tightening f_upper( f, fUpper, Tightening::UB );
+        Tightening b_lower( b, bLower, Tightening::LB );
+        Tightening b_upper( b, bUpper, Tightening::UB );
+        for ( const auto &t : { f_lower, f_upper, b_lower, b_upper } )
+        {
+            TS_ASSERT( entailedTightenings.exists( t ) );
+            if ( !entailedTightenings.exists( t ) )
+            {
+                std::cout << " Cannot find tightening (" << fLower << bLower << fUpper << bUpper
+                          << ") : " << std::endl;
+                t.dump();
+
+                std::cout << "Entailed tightenings: " << std::endl;
+                for ( auto ent : entailedTightenings )
+                    ent.dump();
+            }
+        }
     }
 
     void assert_tightenings_match( List<Tightening> a, List<Tightening> b )
@@ -1662,7 +1382,22 @@ public:
         TS_ASSERT_EQUALS( a.size(), b.size() );
 
         for ( const auto &it : a )
+        {
             TS_ASSERT( b.exists( it ) );
+            if ( !b.exists( it ) )
+            {
+                std::cout << " Cannot find tightening " << std::endl;
+                it.dump();
+
+                std::cout << "Entailed tightenings: " << std::endl;
+                for ( auto ent : a )
+                    ent.dump();
+
+                std::cout << "Expected tightenings: " << std::endl;
+                for ( auto ent : b )
+                    ent.dump();
+            }
+        }
     }
 
     void test_serialize_and_unserialize()
@@ -1678,8 +1413,7 @@ public:
         String originalSerialized = originalAbs.serializeToString();
         AbsoluteValueConstraint recoveredAbs( originalSerialized );
 
-        TS_ASSERT_EQUALS( originalAbs.serializeToString(),
-                          recoveredAbs.serializeToString() );
+        TS_ASSERT_EQUALS( originalAbs.serializeToString(), recoveredAbs.serializeToString() );
 
         TS_ASSERT_EQUALS( originalSerialized, "absoluteValue,7,42" );
     }
@@ -1705,8 +1439,7 @@ public:
             TS_ASSERT( !abs.participatingVariable( posAux ) );
             TS_ASSERT( !abs.participatingVariable( negAux ) );
 
-            TS_ASSERT_THROWS_NOTHING( abs.transformToUseAuxVariables
-                                      ( ipq ) );
+            TS_ASSERT_THROWS_NOTHING( abs.transformToUseAuxVariables( ipq ) );
 
             TS_ASSERT_EQUALS( abs.getParticipatingVariables(),
                               List<unsigned>( { b, f, posAux, negAux } ) );
@@ -1757,7 +1490,7 @@ public:
                               Tightening( posAux, 0, Tightening::UB ) );
         }
 
-        {   // With Bound Manager
+        { // With Bound Manager
             unsigned b = 1;
             unsigned f = 4;
 
@@ -1837,15 +1570,17 @@ public:
         Context context;
         AbsoluteValueConstraint *abs1 = new AbsoluteValueConstraint( 4, 6 );
 
-        TS_ASSERT_EQUALS( abs1->getContext(), static_cast<Context*>( nullptr ) );
-        TS_ASSERT_EQUALS( abs1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_EQUALS( abs1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_EQUALS( abs1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getContext(), static_cast<Context *>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_EQUALS( abs1->getInfeasibleCasesCDList(),
+                          static_cast<CDList<PhaseStatus> *>( nullptr ) );
         TS_ASSERT_THROWS_NOTHING( abs1->initializeCDOs( &context ) );
         TS_ASSERT_EQUALS( abs1->getContext(), &context );
-        TS_ASSERT_DIFFERS( abs1->getActiveStatusCDO(), static_cast<CDO<bool>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( abs1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus>*>( nullptr ) );
-        TS_ASSERT_DIFFERS( abs1->getInfeasibleCasesCDList(), static_cast<CDList<PhaseStatus>*>( nullptr ) );
+        TS_ASSERT_DIFFERS( abs1->getActiveStatusCDO(), static_cast<CDO<bool> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( abs1->getPhaseStatusCDO(), static_cast<CDO<PhaseStatus> *>( nullptr ) );
+        TS_ASSERT_DIFFERS( abs1->getInfeasibleCasesCDList(),
+                           static_cast<CDList<PhaseStatus> *>( nullptr ) );
 
         bool active = false;
         TS_ASSERT_THROWS_NOTHING( active = abs1->isActive() );
@@ -2012,12 +1747,9 @@ public:
 
         Map<unsigned, double> assignment;
         assignment[0] = -1;
-        TS_ASSERT_EQUALS( abs.getPhaseStatusInAssignment( assignment ),
-                          ABS_PHASE_NEGATIVE );
+        TS_ASSERT_EQUALS( abs.getPhaseStatusInAssignment( assignment ), ABS_PHASE_NEGATIVE );
 
         assignment[0] = 15;
-        TS_ASSERT_EQUALS( abs.getPhaseStatusInAssignment( assignment ),
-                          ABS_PHASE_POSITIVE );
+        TS_ASSERT_EQUALS( abs.getPhaseStatusInAssignment( assignment ), ABS_PHASE_POSITIVE );
     }
-
 };

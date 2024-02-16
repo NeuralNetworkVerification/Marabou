@@ -50,8 +50,7 @@ public:
       Directly compute the given heuristicCost with respect to the current
       assignment in the tableau.
     */
-    double computeGivenCostFunctionDirectly( const Map<unsigned, double>
-                                             &heuristicCost );
+    double computeGivenCostFunctionDirectly( const Map<unsigned, double> &heuristicCost );
 
     /*
       Get the current cost function.
@@ -92,6 +91,12 @@ public:
       For debugging purposes: dump the cost function.
     */
     void dumpCostFunction() const;
+
+    /*
+      Returns the cost function as a SparseUnsortedList object, so it can be viewed as a Tableau
+      row.
+    */
+    const SparseUnsortedList *createRowOfCostFunction() const;
 
 private:
     /*

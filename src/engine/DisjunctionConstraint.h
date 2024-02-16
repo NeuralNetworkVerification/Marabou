@@ -28,13 +28,13 @@
 #ifndef __DisjunctionConstraint_h__
 #define __DisjunctionConstraint_h__
 
-#include "Vector.h"
 #include "PiecewiseLinearConstraint.h"
+#include "Vector.h"
 
 class DisjunctionConstraint : public PiecewiseLinearConstraint
 {
 public:
-    ~DisjunctionConstraint() {};
+    ~DisjunctionConstraint(){};
     DisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const Vector<PiecewiseLinearCaseSplit> &disjuncts );
     DisjunctionConstraint( const String &serializedDisjunction );
@@ -151,6 +151,11 @@ public:
         return false;
     }
 
+    virtual bool supportVariableElimination() const override
+    {
+        return false;
+    }
+
     /*
       Transform the disjunction into a disjunction where each disjunct only
       contains variable bounds.
@@ -166,6 +171,23 @@ public:
       Returns string with shape: disjunction, _f, _b
     */
     String serializeToString() const override;
+
+    /*
+      Returns the list of feasible disjuncts
+    */
+    List<PiecewiseLinearCaseSplit> getFeasibleDisjuncts() const;
+
+    /*
+      Removes a disjunct from the list of feasible disjuncts
+      Returns true iff disjunct was found.
+    */
+    bool removeFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
+
+    /*
+      Adds a disjunct from the list of feasible disjuncts
+      Returns true iff disjunct was found.
+    */
+    bool addFeasibleDisjunct( const PiecewiseLinearCaseSplit &disjunct );
 
 private:
     /*
@@ -202,7 +224,7 @@ private:
     */
     void updateFeasibleDisjuncts();
     bool disjunctIsFeasible( unsigned ind ) const;
-    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit & caseSplit ) const;
+    bool caseSplitIsFeasible( const PiecewiseLinearCaseSplit &caseSplit ) const;
 
     inline PhaseStatus indToPhaseStatus( unsigned ind ) const
     {
@@ -211,9 +233,18 @@ private:
 
     inline unsigned phaseStatusToInd( PhaseStatus phase ) const
     {
-        //ASSERT( phase != PHASE_NOT_FIXED );
+        // ASSERT( phase != PHASE_NOT_FIXED );
         return static_cast<unsigned>( phase ) - 1;
     }
+
+    void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
+
+    /*
+      Get the minimal lower bound and maximal upper bound for the given variable,
+      across all disjuncts. If some disjunct does not contain a bound, return infinity.
+    */
+    double getMinLowerBound( unsigned int var ) const;
+    double getMaxUpperBound( unsigned int var ) const;
 };
 
 #endif // __DisjunctionConstraint_h__

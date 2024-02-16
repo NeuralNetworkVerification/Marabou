@@ -17,7 +17,7 @@
 #define __ITableau_h__
 
 
-#include "BoundManager.h"
+#include "IBoundManager.h"
 #include "List.h"
 #include "Set.h"
 #include "TableauStateStorageLevel.h"
@@ -67,8 +67,12 @@ public:
           These callbacks will be invoked when the variable's
           lower/upper bounds change.
         */
-        virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-        virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+        virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ )
+        {
+        }
+        virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ )
+        {
+        }
     };
 
     class ResizeWatcher
@@ -78,7 +82,9 @@ public:
           This callback will be invoked when the tableau size changes,
           typically when new variables are added.
         */
-        virtual void notifyDimensionChange( unsigned /* m */, unsigned /* n */ ) {}
+        virtual void notifyDimensionChange( unsigned /* m */, unsigned /* n */ )
+        {
+        }
     };
 
     virtual void registerToWatchAllVariables( VariableWatcher *watcher ) = 0;
@@ -89,10 +95,9 @@ public:
 
     virtual void registerCostFunctionManager( ICostFunctionManager *costFunctionManager ) = 0;
 
-    virtual ~ITableau() {};
+    virtual ~ITableau(){};
 
     virtual void setDimensions( unsigned m, unsigned n ) = 0;
-    virtual void setBoundDimension( unsigned n ) = 0;
     virtual void setConstraintMatrix( const double *A ) = 0;
     virtual void setRightHandSide( const double *b ) = 0;
     virtual void setRightHandSide( unsigned index, double value ) = 0;
@@ -103,12 +108,16 @@ public:
     virtual bool allBoundsValid() const = 0;
     virtual double getLowerBound( unsigned variable ) const = 0;
     virtual double getUpperBound( unsigned variable ) const = 0;
-    virtual const double *getLowerBounds() const = 0;
-    virtual const double *getUpperBounds() const = 0;
     virtual void setLowerBound( unsigned variable, double value ) = 0;
     virtual void setUpperBound( unsigned variable, double value ) = 0;
+    virtual void setBoundsPointers( const double *lower, const double *upper ) = 0;
     virtual void tightenLowerBound( unsigned variable, double value ) = 0;
     virtual void tightenUpperBound( unsigned variable, double value ) = 0;
+    virtual void notifyLowerBound( unsigned variable, double bound ) = 0;
+    virtual void notifyUpperBound( unsigned variable, double bound ) = 0;
+    virtual void updateVariablesToComplyWithBounds() = 0;
+    virtual void updateVariableToComplyWithLowerBoundUpdate( unsigned variable, double value ) = 0;
+    virtual void updateVariableToComplyWithUpperBoundUpdate( unsigned variable, double value ) = 0;
     virtual unsigned getBasicStatus( unsigned basic ) = 0;
     virtual unsigned getBasicStatusByIndex( unsigned basicIndex ) = 0;
     virtual bool existsBasicOutOfBounds() const = 0;
@@ -128,7 +137,8 @@ public:
     virtual void setChangeRatio( double changeRatio ) = 0;
     virtual bool performingFakePivot() const = 0;
     virtual void performPivot() = 0;
-    virtual double ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
+    virtual double
+    ratioConstraintPerBasic( unsigned basicIndex, double coefficient, bool decrease ) = 0;
     virtual bool isBasic( unsigned variable ) const = 0;
     virtual void setNonBasicAssignment( unsigned variable, double value, bool updateBasics ) = 0;
     virtual void computeCostFunction() = 0;
@@ -178,10 +188,13 @@ public:
     virtual double *getInverseBasisMatrix() const = 0;
     virtual void refreshBasisFactorization() = 0;
     virtual void mergeColumns( unsigned x1, unsigned x2 ) = 0;
-    virtual bool areLinearlyDependent( unsigned x1, unsigned x2, double &coefficient, double &inverseCoefficient ) = 0;
+    virtual bool areLinearlyDependent( unsigned x1,
+                                       unsigned x2,
+                                       double &coefficient,
+                                       double &inverseCoefficient ) = 0;
     virtual unsigned getVariableAfterMerging( unsigned variable ) const = 0;
     virtual void postContextPopHook() = 0;
-    virtual BoundManager &getBoundManager() const = 0;
+    virtual IBoundManager &getBoundManager() const = 0;
 
     bool isOptimizing() const
     {
@@ -192,6 +205,9 @@ public:
     {
         _optimizing = optimizing;
     }
+
+    virtual void tightenUpperBoundNaively( unsigned variable, double value ) = 0;
+    virtual void tightenLowerBoundNaively( unsigned variable, double value ) = 0;
 
 protected:
     bool _optimizing = false;

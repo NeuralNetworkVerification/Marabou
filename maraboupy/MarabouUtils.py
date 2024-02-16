@@ -3,6 +3,7 @@ Top contributors (to current version):
     - Christopher Lazarus
     - Shantanu Thakoor
     - Kyle Julian
+    - Min Wu
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -47,3 +48,13 @@ class Equation:
         """
         self.addendList += [(c, x)]
 
+    def isEqualTo(self, equation):
+        """
+        Add a comparison between two equations.
+
+        :param equation: the other equation to be compared with.
+        :return: True if these two equations are identical; False if not.
+        """
+        return self.addendList == equation.addendList \
+               and self.scalar == equation.scalar \
+               and self.EquationType == equation.EquationType

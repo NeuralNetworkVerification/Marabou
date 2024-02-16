@@ -24,13 +24,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "MarabouMain.h"
 #include "AcasParser.h"
+#include "BilinearConstraint.h"
 #include "CommonError.h"
 #include "DnCManager.h"
 #include "DisjunctionConstraint.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "LeakyReluConstraint.h"
 #include "MarabouError.h"
 #include "InputParserError.h"
 #include "MString.h"
@@ -38,13 +41,16 @@
 #include "Options.h"
 #include "PiecewiseLinearConstraint.h"
 #include "PropertyParser.h"
+#include "VnnLibParser.h"
 #include "QueryLoader.h"
 #include "ReluConstraint.h"
+#include "RoundConstraint.h"
 #include "Set.h"
+#include "SoftmaxConstraint.h"
 #include "SnCDivideStrategy.h"
 #include "SigmoidConstraint.h"
 #include "SignConstraint.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 #ifdef _WIN32
 #define STDOUT_FILENO 1
@@ -53,6 +59,15 @@
 #endif
 
 namespace py = pybind11;
+
+int maraboupyMain(std::vector<std::string> args){
+    int argc = args.size();
+    char ** argv = new char*[args.size()];
+    for (int index = 0; index < args.size(); ++index){
+        argv[index] = (char *) args[index].c_str();
+    }
+    return marabouMain(argc, argv);
+}
 
 int redirectOutputToFile(std::string outputFilePath){
     // Redirect standard output to a file
@@ -91,14 +106,34 @@ void restoreOutputStream(int outputStream)
     close(outputStream);
 }
 
+void addClipConstraint( InputQuery& ipq, unsigned var1, unsigned var2, double floor, double ceiling ){
+    ipq.addClipConstraint( var1, var2, floor, ceiling );
+}
+
+void addLeakyReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2, double slope){
+    PiecewiseLinearConstraint* r = new LeakyReluConstraint(var1, var2, slope);
+    ipq.addPiecewiseLinearConstraint(r);
+}
+
 void addReluConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
     PiecewiseLinearConstraint* r = new ReluConstraint(var1, var2);
     ipq.addPiecewiseLinearConstraint(r);
 }
 
+void addRoundConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
+    NonlinearConstraint* r = new RoundConstraint(var1, var2);
+    ipq.addNonlinearConstraint(r);
+}
+
+void addBilinearConstraint(InputQuery& ipq, unsigned var1, unsigned var2,
+                           unsigned var3){
+    NonlinearConstraint* r = new BilinearConstraint(var1, var2, var3);
+    ipq.addNonlinearConstraint(r);
+}
+
 void addSigmoidConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
-    TranscendentalConstraint* s = new SigmoidConstraint(var1, var2);
-    ipq.addTranscendentalConstraint(s);
+    NonlinearConstraint* s = new SigmoidConstraint(var1, var2);
+    ipq.addNonlinearConstraint(s);
 }
 
 void addSignConstraint(InputQuery& ipq, unsigned var1, unsigned var2){
@@ -114,6 +149,20 @@ void addMaxConstraint(InputQuery& ipq, std::set<unsigned> elements, unsigned v){
     ipq.addPiecewiseLinearConstraint(m);
 }
 
+void addSoftmaxConstraint( InputQuery& ipq, std::list<unsigned> inputs,
+                           std::list<unsigned> outputs ){
+    Vector<unsigned> inputList;
+    for ( const auto &e :inputs )
+        inputList.append(e);
+
+    Vector<unsigned> outputList;
+    for ( const auto &e :outputs )
+        outputList.append(e);
+
+    SoftmaxConstraint *s = new SoftmaxConstraint(inputList, outputList);
+    ipq.addNonlinearConstraint(s);
+}
+
 void addAbsConstraint(InputQuery& ipq, unsigned b, unsigned f){
     ipq.addPiecewiseLinearConstraint(new AbsoluteValueConstraint(b, f));
 }
@@ -124,7 +173,14 @@ void loadProperty(InputQuery &inputQuery, std::string propertyFilePath)
     if ( propertyFilePath != "" )
     {
         printf( "Property: %s\n", propertyFilePathM.ascii() );
-        PropertyParser().parse( propertyFilePathM, inputQuery );
+        if ( propertyFilePathM.endsWith( ".vnnlib" ) )
+        {
+            VnnLibParser().parse( propertyFilePathM, inputQuery );
+        }
+        else
+        {
+            PropertyParser().parse( propertyFilePathM, inputQuery );
+        }
     }
     else
         printf( "Property: None\n" );
@@ -135,17 +191,18 @@ bool createInputQuery(InputQuery &inputQuery, std::string networkFilePath, std::
     AcasParser* acasParser = new AcasParser( String(networkFilePath) );
     acasParser->generateQuery( inputQuery );
 
-    bool success = inputQuery.constructNetworkLevelReasoner();
-    if ( success )
-      printf("Successfully created a network level reasoner.\n");
-    else
-      printf("Warning: network level reasoner construction failed.\n");
-
     String propertyFilePathM = String(propertyFilePath);
     if ( propertyFilePath != "" )
       {
         printf( "Property: %s\n", propertyFilePathM.ascii() );
-        PropertyParser().parse( propertyFilePathM, inputQuery );
+          if ( propertyFilePathM.endsWith( ".vnnlib" ) )
+          {
+              VnnLibParser().parse( propertyFilePathM, inputQuery );
+          }
+          else
+          {
+              PropertyParser().parse( propertyFilePathM, inputQuery );
+          }
       }
     else
       printf( "Property: None\n" );
@@ -169,7 +226,7 @@ void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equatio
             {
                 // Add bounds as tightenings
                 unsigned var = eq._addends.front()._variable;
-                unsigned coeff = eq._addends.front()._coefficient;
+                double coeff = eq._addends.front()._coefficient;
                 if ( coeff == 0 )
                     throw CommonError( CommonError::DIVISION_BY_ZERO,
                                        "AddDisjunctionConstraint: zero coefficient encountered" );
@@ -181,9 +238,10 @@ void addDisjunctionConstraint(InputQuery& ipq, const std::list<std::list<Equatio
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
                 }
-                else if ( type == Equation::GE || coeff < 0 )
+                else if ( ( type == Equation::GE && coeff > 0 ) ||
+                          ( type == Equation::LE && coeff < 0 ) )
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::LB ) );
-                else if ( type == Equation::LE || coeff < 0 )
+                else
                     split.storeBoundTightening( Tightening( var, scalar, Tightening::UB ) );
             }
             else
@@ -220,7 +278,7 @@ struct MarabouOptions {
         , _tighteningStrategyString( Options::get()->getString( Options::SYMBOLIC_BOUND_TIGHTENING_TYPE ).ascii() )
         , _milpTighteningString( Options::get()->getString( Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE ).ascii() )
         , _lpSolverString( Options::get()->getString( Options::LP_SOLVER ).ascii() )
-        , _numIncrementalLinearizations( Options::get()->getInt( Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS ) )
+        , _produceProofs( Options::get()->getBool( Options::PRODUCE_PROOFS ) )
     {};
 
   void setOptions()
@@ -231,6 +289,7 @@ struct MarabouOptions {
     Options::get()->setBool( Options::SOLVE_WITH_MILP, _solveWithMILP );
     Options::get()->setBool( Options::DUMP_BOUNDS, _dumpBounds );
     Options::get()->setBool( Options::PERFORM_LP_TIGHTENING_AFTER_SPLIT, _performLpTighteningAfterSplit );
+    Options::get()->setBool( Options::PRODUCE_PROOFS, _produceProofs );
 
     // int options
     Options::get()->setInt( Options::NUM_WORKERS, _numWorkers );
@@ -241,7 +300,6 @@ struct MarabouOptions {
     Options::get()->setInt( Options::VERBOSITY, _verbosity );
     Options::get()->setInt( Options::TIMEOUT, _timeoutInSeconds );
     Options::get()->setInt( Options::CONSTRAINT_VIOLATION_THRESHOLD, _splitThreshold );
-    Options::get()->setInt( Options::NUMBER_OF_INCREMENTAL_LINEARIZATIONS, _numIncrementalLinearizations );
 
     // float options
     Options::get()->setFloat( Options::TIMEOUT_FACTOR, _timeoutFactor );
@@ -261,6 +319,7 @@ struct MarabouOptions {
     bool _solveWithMILP;
     bool _dumpBounds;
     bool _performLpTighteningAfterSplit;
+    bool _produceProofs;
     unsigned _numWorkers;
     unsigned _numBlasThreads;
     unsigned _initialTimeout;
@@ -270,7 +329,6 @@ struct MarabouOptions {
     unsigned _timeoutInSeconds;
     unsigned _splitThreshold;
     unsigned _numSimulations;
-    unsigned _numIncrementalLinearizations;
     float _timeoutFactor;
     float _preprocessorBoundTolerance;
     float _milpSolverTimeout;
@@ -284,17 +342,20 @@ struct MarabouOptions {
 
 /* The default parameters here are just for readability, you should specify
  * them to make them work*/
-InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::string redirect=""){
+InputQuery preprocess(
+    InputQuery &inputQuery, MarabouOptions &options, std::string redirect="", bool returnFullyProcessedQuery = false
+){
     // Preprocess the input inquery (e.g., one can use it to just compute the gurobi bounds)
     // Arguments: InputQuery object, filename to redirect output
+    //            whether to return the fully processed query (symbolic and more), or just the initially processed query
     // Returns: Preprocessed input query
 
+    options.setOptions();
     Engine engine;
     int output=-1;
     if(redirect.length()>0)
         output=redirectOutputToFile(redirect);
     try{
-        options.setOptions();
         engine.processInputQuery(inputQuery);
     }
     catch(const MarabouError &e){
@@ -304,7 +365,10 @@ InputQuery preprocess(InputQuery &inputQuery, MarabouOptions &options, std::stri
     if(output != -1)
         restoreOutputStream(output);
 
-    return *(engine.getInputQuery());
+    if (returnFullyProcessedQuery)
+        return engine.buildQueryFromCurrentState();
+    else
+        return *engine.getInputQuery();
 }
 
 std::string exitCodeToString( IEngine::ExitCode code )
@@ -393,6 +457,49 @@ std::tuple<std::string, std::map<int, double>, Statistics>
         }
     }
     catch(const MarabouError &e){
+        fprintf( stderr, "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
+        return std::make_tuple
+            ("ERROR",
+             ret, retStats);
+    }
+    if(output != -1)
+        restoreOutputStream(output);
+    return std::make_tuple(resultString, ret, retStats);
+}
+
+std::tuple<std::string, std::map<int, std::tuple<double, double>>, Statistics>
+    calculateBounds(InputQuery &inputQuery, MarabouOptions &options,
+          std::string redirect="")
+{
+    // Arguments: InputQuery object, filename to redirect output
+    // Returns: map from variable number to value
+    std::string resultString = "";
+    std::map<int, std::tuple<double, double>> ret;
+    Statistics retStats;
+    int output=-1;
+    if(redirect.length()>0)
+        output=redirectOutputToFile(redirect);
+    try{
+        options.setOptions();
+
+        bool dnc = Options::get()->getBool( Options::DNC_MODE );
+
+        Engine engine;
+
+        if(!engine.calculateBounds(inputQuery)) {
+            std::string exitCode = exitCodeToString(engine.getExitCode());
+            return std::make_tuple(exitCode, ret, *(engine.getStatistics()));
+        }
+
+        // Extract bounds
+        engine.extractBounds(inputQuery);
+        for(unsigned int i=0; i<inputQuery.getNumberOfVariables(); ++i) {
+            // set lower bound and upper bound in tuple
+            ret[i] = std::make_tuple(inputQuery.getLowerBounds()[i], inputQuery.getUpperBounds()[i]);
+        }
+
+    }
+    catch(const MarabouError &e){
         printf( "Caught a MarabouError. Code: %u. Message: %s\n", e.getCode(), e.getUserMessage() );
         return std::make_tuple
             ("ERROR",
@@ -439,7 +546,8 @@ PYBIND11_MODULE(MarabouCore, m) {
         .def_readwrite("_lpSolver", &MarabouOptions::_lpSolverString)
         .def_readwrite("_numSimulations", &MarabouOptions::_numSimulations)
         .def_readwrite("_performLpTighteningAfterSplit", &MarabouOptions::_performLpTighteningAfterSplit)
-        .def_readwrite("_numIncrementalLinearizations", &MarabouOptions::_numIncrementalLinearizations);
+        .def_readwrite("_produceProofs", &MarabouOptions::_produceProofs);
+    m.def("maraboupyMain", &maraboupyMain, "Run the Marabou command-line interface");
     m.def("loadProperty", &loadProperty, "Load a property file into a input query");
     m.def("createInputQuery", &createInputQuery, "Create input query from network and property file");
     m.def("preprocess", &preprocess, R"pbdoc(
@@ -449,11 +557,12 @@ PYBIND11_MODULE(MarabouCore, m) {
              inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be preproccessed
              options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
              redirect (str, optional): Filepath to direct standard output, defaults to ""
+             returnFullyProcessedQuery (bool, optional): whether to return the fully processed query (symbolic and more), or just the initially processed query, default to False.
 
          Returns:
                  InputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): the preprocessed input query
          )pbdoc",
-         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "", py::arg("returnFullyProcessedQuery") = false);
     m.def("solve", &solve, R"pbdoc(
         Takes in a description of the InputQuery and returns the solution
 
@@ -466,6 +575,21 @@ PYBIND11_MODULE(MarabouCore, m) {
             (tuple): tuple containing:
                 - exitCode (str): A string representing the exit code (sat/unsat/TIMEOUT/ERROR/UNKNOWN/QUIT_REQUESTED).
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
+                - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
+        )pbdoc",
+        py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
+    m.def("calculateBounds", &calculateBounds, R"pbdoc(
+        Takes in a description of the InputQuery and returns the bounds
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query which bounds are calculated
+            options (class:`~maraboupy.MarabouCore.Options`): Object defining the options used for Marabou
+            redirect (str, optional): Filepath to direct standard output, defaults to ""
+
+        Returns:
+            (tuple): tuple containing:
+                - exitCode (str): A string representing the exit code. Only unsat can be returned
+                - vals (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         )pbdoc",
         py::arg("inputQuery"), py::arg("options"), py::arg("redirect") = "");
@@ -487,6 +611,27 @@ PYBIND11_MODULE(MarabouCore, m) {
             :class:`~maraboupy.MarabouCore.InputQuery`
         )pbdoc",
         py::arg("filename"));
+    m.def("addClipConstraint", &addClipConstraint, R"pbdoc(
+        Add a Clip constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Clip constraint
+            var2 (int): Output variable to Clip constraint
+            lb (double): Floor
+            ub (double): Ceiling
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("floor"), py::arg("ceiling"));
+    m.def("addLeakyReluConstraint", &addLeakyReluConstraint, R"pbdoc(
+        Add a LeakyRelu constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Leaky ReLU constraint
+            var2 (int): Output variable to Leaky ReLU constraint
+            slope (float): Slope of the Leaky ReLU constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("slope"));
     m.def("addReluConstraint", &addReluConstraint, R"pbdoc(
         Add a Relu constraint to the InputQuery
 
@@ -496,6 +641,24 @@ PYBIND11_MODULE(MarabouCore, m) {
             var2 (int): Output variable to Relu constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addRoundConstraint", &addRoundConstraint, R"pbdoc(
+        Add a Round constraint to the InputQuery
+
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to round constraint
+            var2 (int): Output variable to round constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"));
+    m.def("addBilinearConstraint", &addBilinearConstraint, R"pbdoc(
+        Add a Bilinear constraint to the InputQuery
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            var1 (int): Input variable to Bilinear constraint
+            var2 (int): Input variable to Bilinear constraint
+            var3 (int): Output variable to Bilinear constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("var1"), py::arg("var2"), py::arg("var3"));
     m.def("addSigmoidConstraint", &addSigmoidConstraint, R"pbdoc(
         Add a Sigmoid constraint to the InputQuery
 
@@ -523,6 +686,14 @@ PYBIND11_MODULE(MarabouCore, m) {
             v (int): Output variable from max constraint
         )pbdoc",
         py::arg("inputQuery"), py::arg("elements"), py::arg("v"));
+    m.def("addSoftmaxConstraint", &addSoftmaxConstraint, R"pbdoc(
+        Add a Softmax constraint to the InputQuery
+        Args:
+            inputQuery (:class:`~maraboupy.MarabouCore.InputQuery`): Marabou input query to be solved
+            inputs (list of int): Input variables to softmax constraint
+            outputs (list of int): Output variables from softmax constraint
+        )pbdoc",
+          py::arg("inputQuery"), py::arg("inputs"), py::arg("outputs"));
     m.def("addAbsConstraint", &addAbsConstraint, R"pbdoc(
         Add an Abs constraint to the InputQuery
 

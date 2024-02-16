@@ -14,11 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "CommonError.h"
 #include "MockErrno.h"
 #include "Stack.h"
+
+#include <cxxtest/TestSuite.h>
 
 class StackTestSuite : public CxxTest::TestSuite
 {
@@ -74,15 +74,11 @@ public:
 
         TS_ASSERT( q.empty() );
 
-        TS_ASSERT_THROWS_EQUALS( q.top(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::STACK_IS_EMPTY );
+        TS_ASSERT_THROWS_EQUALS(
+            q.top(), const CommonError &e, e.getCode(), CommonError::STACK_IS_EMPTY );
 
-        TS_ASSERT_THROWS_EQUALS( q.pop(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::STACK_IS_EMPTY );
+        TS_ASSERT_THROWS_EQUALS(
+            q.pop(), const CommonError &e, e.getCode(), CommonError::STACK_IS_EMPTY );
     }
 };
 

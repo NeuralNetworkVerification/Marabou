@@ -21,9 +21,9 @@
 class Tightening
 {
 public:
-	enum BoundType {
-		LB = 0,
-		UB = 1,
+    enum BoundType {
+        LB = 0,
+        UB = 1,
     };
 
     Tightening( unsigned variable, double value, BoundType type )
@@ -33,20 +33,20 @@ public:
     {
     }
 
-	/*
-	  The variable to tighten.
-	*/
-	unsigned _variable;
+    /*
+      The variable to tighten.
+    */
+    unsigned _variable;
 
-	/*
-	  Its new value.
-	*/
-	double _value;
+    /*
+      Its new value.
+    */
+    double _value;
 
-	/*
-	  Whether the tightening tightens the
-	  lower bound or the upper bound.
-	*/
+    /*
+      Whether the tightening tightens the
+      lower bound or the upper bound.
+    */
     BoundType _type;
 
     /*
@@ -54,18 +54,13 @@ public:
     */
     bool operator==( const Tightening &other ) const
     {
-        return
-            ( _variable == other._variable ) &&
-            ( _value == other._value ) &&
-            ( _type == other._type );
+        return ( _variable == other._variable ) && ( _value == other._value ) &&
+               ( _type == other._type );
     }
 
     void dump() const
     {
-        printf( "Tightening: x%u %s %.2lf\n",
-                _variable,
-                _type == LB ? ">=" : "<=",
-                _value );
+        printf( "Tightening: x%u %s %.2lf\n", _variable, _type == LB ? ">=" : "<=", _value );
     }
 };
 

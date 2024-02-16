@@ -19,32 +19,32 @@
 #include "MockCostFunctionManager.h"
 #include "T/CostFunctionManagerFactory.h"
 
-class MockCostFunctionManagerFactory :
-	public T::Base_createCostFunctionManager,
-	public T::Base_discardCostFunctionManager
+class MockCostFunctionManagerFactory
+    : public T::Base_createCostFunctionManager
+    , public T::Base_discardCostFunctionManager
 {
 public:
-	MockCostFunctionManager mockCostFunctionManager;
+    MockCostFunctionManager mockCostFunctionManager;
 
-	~MockCostFunctionManagerFactory()
-	{
-		if ( mockCostFunctionManager.wasCreated )
-		{
-			TS_ASSERT( mockCostFunctionManager.wasDiscarded );
-		}
-	}
+    ~MockCostFunctionManagerFactory()
+    {
+        if ( mockCostFunctionManager.wasCreated )
+        {
+            TS_ASSERT( mockCostFunctionManager.wasDiscarded );
+        }
+    }
 
-	ICostFunctionManager *createCostFunctionManager( ITableau *tableau )
-	{
-		mockCostFunctionManager.mockConstructor( tableau );
-		return &mockCostFunctionManager;
-	}
+    ICostFunctionManager *createCostFunctionManager( ITableau *tableau )
+    {
+        mockCostFunctionManager.mockConstructor( tableau );
+        return &mockCostFunctionManager;
+    }
 
-	void discardCostFunctionManager( ICostFunctionManager *costFunctionManager )
-	{
-		TS_ASSERT_EQUALS( costFunctionManager, &mockCostFunctionManager );
-		mockCostFunctionManager.mockDestructor();
-	}
+    void discardCostFunctionManager( ICostFunctionManager *costFunctionManager )
+    {
+        TS_ASSERT_EQUALS( costFunctionManager, &mockCostFunctionManager );
+        mockCostFunctionManager.mockDestructor();
+    }
 };
 
 #endif // __MockCostFunctionManagerFactory_h__

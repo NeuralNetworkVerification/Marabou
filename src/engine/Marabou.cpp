@@ -14,15 +14,19 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "AcasParser.h"
-#include "GlobalConfiguration.h"
-#include "File.h"
-#include "MStringf.h"
 #include "Marabou.h"
+
+#include "AcasParser.h"
+#include "AutoFile.h"
+#include "File.h"
+#include "GlobalConfiguration.h"
+#include "MStringf.h"
+#include "MarabouError.h"
+#include "OnnxParser.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "MarabouError.h"
 #include "QueryLoader.h"
+#include "VnnLibParser.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -30,6 +34,7 @@
 
 Marabou::Marabou()
     : _acasParser( NULL )
+    , _onnxParser( NULL )
     , _engine()
 {
 }
@@ -40,6 +45,12 @@ Marabou::~Marabou()
     {
         delete _acasParser;
         _acasParser = NULL;
+    }
+
+    if ( _onnxParser )
+    {
+        delete _onnxParser;
+        _onnxParser = NULL;
     }
 }
 
@@ -54,6 +65,9 @@ void Marabou::run()
 
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
+
+    if ( Options::get()->getBool( Options::EXPORT_ASSIGNMENT ) )
+        exportAssignment();
 }
 
 void Marabou::prepareInputQuery()
@@ -66,13 +80,13 @@ void Marabou::prepareInputQuery()
         */
         if ( !File::exists( inputQueryFilePath ) )
         {
-            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
+            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n",
+                    inputQueryFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
 
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
-        _inputQuery.constructNetworkLevelReasoner();
     }
     else
     {
@@ -80,17 +94,31 @@ void Marabou::prepareInputQuery()
           Step 1: extract the network
         */
         String networkFilePath = Options::get()->getString( Options::INPUT_FILE_PATH );
+
+        if ( networkFilePath.length() == 0 )
+        {
+            printf( "Error: no network file provided!\n" );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
+        }
+
         if ( !File::exists( networkFilePath ) )
         {
-            printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
+            printf( "Error: the specified network file (%s) doesn't exist!\n",
+                    networkFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
-        // For now, assume the network is given in ACAS format
-        _acasParser = new AcasParser( networkFilePath );
-        _acasParser->generateQuery( _inputQuery );
-        _inputQuery.constructNetworkLevelReasoner();
+        if ( ( (String)networkFilePath ).endsWith( ".onnx" ) )
+        {
+            _onnxParser = new OnnxParser( networkFilePath );
+            _onnxParser->generateQuery( _inputQuery );
+        }
+        else
+        {
+            _acasParser = new AcasParser( networkFilePath );
+            _acasParser->generateQuery( _inputQuery );
+        }
 
         /*
           Step 2: extract the property in question
@@ -99,13 +127,23 @@ void Marabou::prepareInputQuery()
         if ( propertyFilePath != "" )
         {
             printf( "Property: %s\n", propertyFilePath.ascii() );
-            PropertyParser().parse( propertyFilePath, _inputQuery );
+            if ( propertyFilePath.endsWith( ".vnnlib" ) )
+            {
+                VnnLibParser().parse( propertyFilePath, _inputQuery );
+            }
+            else
+            {
+                PropertyParser().parse( propertyFilePath, _inputQuery );
+            }
         }
         else
             printf( "Property: None\n" );
 
         printf( "\n" );
     }
+
+    if ( Options::get()->getBool( Options::DEBUG_ASSIGNMENT ) )
+        importDebuggingSolution();
 
     String queryDumpFilePath = Options::get()->getString( Options::QUERY_DUMP_FILE );
     if ( queryDumpFilePath.length() > 0 )
@@ -116,10 +154,69 @@ void Marabou::prepareInputQuery()
     }
 }
 
+void Marabou::importDebuggingSolution()
+{
+    String fileName = Options::get()->getString( Options::IMPORT_ASSIGNMENT_FILE_PATH );
+    AutoFile input( fileName );
+
+    if ( !IFile::exists( fileName ) )
+    {
+        throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST,
+                            Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
+    }
+
+    input->open( IFile::MODE_READ );
+
+    unsigned numVars = atoi( input->readLine().trim().ascii() );
+    ASSERT( numVars == _inputQuery.getNumberOfVariables() );
+
+    unsigned var;
+    double value;
+    String line;
+
+    // Import each assignment
+    for ( unsigned i = 0; i < numVars; ++i )
+    {
+        line = input->readLine();
+        List<String> tokens = line.tokenize( "," );
+        auto it = tokens.begin();
+        var = atoi( it->ascii() );
+        ASSERT( var == i );
+        it++;
+        value = atof( it->ascii() );
+        it++;
+        ASSERT( it == tokens.end() );
+        _inputQuery.storeDebuggingSolution( var, value );
+    }
+
+    input->close();
+}
+
+void Marabou::exportAssignment() const
+{
+    String assignmentFileName = "assignment.txt";
+    AutoFile exportFile( assignmentFileName );
+    exportFile->open( IFile::MODE_WRITE_TRUNCATE );
+
+    unsigned numberOfVariables = _inputQuery.getNumberOfVariables();
+    // Number of Variables
+    exportFile->write( Stringf( "%u\n", numberOfVariables ) );
+
+    // Export each assignment
+    for ( unsigned var = 0; var < numberOfVariables; ++var )
+        exportFile->write( Stringf( "%u, %f\n", var, _inputQuery.getSolutionValue( var ) ) );
+
+    exportFile->close();
+}
+
 void Marabou::solveQuery()
 {
     if ( _engine.processInputQuery( _inputQuery ) )
+    {
         _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
+        if ( _engine.shouldProduceProofs() && _engine.getExitCode() == Engine::UNSAT )
+            _engine.certifyUNSATCertificate();
+    }
 
     if ( _engine.getExitCode() == Engine::SAT )
         _engine.extractSolution( _inputQuery );
@@ -142,7 +239,9 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+            printf( "\tx%u = %lf\n",
+                    i,
+                    _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
         if ( _inputQuery._networkLevelReasoner )
         {
@@ -169,7 +268,9 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
             printf( "\n" );
             printf( "Output:\n" );
             for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-                printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+                printf( "\ty%u = %lf\n",
+                        i,
+                        _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
             printf( "\n" );
         }
     }
@@ -204,13 +305,11 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",
-                                    _engine.getStatistics()->
-                                    getUnsignedAttribute
-                                    ( Statistics::NUM_VISITED_TREE_STATES ) ) );
+                                    _engine.getStatistics()->getUnsignedAttribute(
+                                        Statistics::NUM_VISITED_TREE_STATES ) ) );
 
         // Field #4: average pivot time in micro seconds
-        summaryFile.write( Stringf( "%u",
-                                    _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
+        summaryFile.write( Stringf( "%u", _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
 
         summaryFile.write( "\n" );
     }

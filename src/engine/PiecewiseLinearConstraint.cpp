@@ -14,6 +14,7 @@
 **/
 
 #include "PiecewiseLinearConstraint.h"
+
 #include "Statistics.h"
 
 PiecewiseLinearConstraint::PiecewiseLinearConstraint()
@@ -21,15 +22,15 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint()
     , _constraintActive( true )
     , _phaseStatus( PHASE_NOT_FIXED )
     , _boundManager( nullptr )
+    , _tableau( nullptr )
     , _context( nullptr )
     , _cdConstraintActive( nullptr )
     , _cdPhaseStatus( nullptr )
     , _cdInfeasibleCases( nullptr )
     , _score( FloatUtils::negativeInfinity() )
-    , _tableau( NULL )
-    , _constraintBoundTightener( NULL )
     , _statistics( NULL )
     , _gurobi( NULL )
+    , _tableauAuxVars()
 {
 }
 
@@ -38,13 +39,12 @@ PiecewiseLinearConstraint::PiecewiseLinearConstraint( unsigned numCases )
     , _constraintActive( true )
     , _phaseStatus( PHASE_NOT_FIXED )
     , _boundManager( nullptr )
+    , _tableau( nullptr )
     , _context( nullptr )
     , _cdConstraintActive( nullptr )
     , _cdPhaseStatus( nullptr )
     , _cdInfeasibleCases( nullptr )
     , _score( FloatUtils::negativeInfinity() )
-    , _tableau( NULL )
-    , _constraintBoundTightener( NULL )
     , _statistics( NULL )
     , _gurobi( NULL )
 {
@@ -66,15 +66,13 @@ bool PiecewiseLinearConstraint::isActive() const
         return _constraintActive;
 }
 
-void PiecewiseLinearConstraint::registerBoundManager(
-    BoundManager *boundManager )
+void PiecewiseLinearConstraint::registerBoundManager( IBoundManager *boundManager )
 {
     ASSERT( _boundManager == nullptr );
     _boundManager = boundManager;
 }
 
-void PiecewiseLinearConstraint::initializeCDOs(
-    CVC4::context::Context *context )
+void PiecewiseLinearConstraint::initializeCDOs( CVC4::context::Context *context )
 {
     ASSERT( _context == nullptr );
     _context = context;
@@ -102,8 +100,7 @@ void PiecewiseLinearConstraint::initializeCDPhaseStatus()
 {
     ASSERT( _context != nullptr );
     ASSERT( _cdPhaseStatus == nullptr );
-    _cdPhaseStatus =
-        new ( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
+    _cdPhaseStatus = new ( true ) CVC4::context::CDO<PhaseStatus>( _context, _phaseStatus );
 }
 
 void PiecewiseLinearConstraint::cdoCleanup()
@@ -142,8 +139,7 @@ void PiecewiseLinearConstraint::setPhaseStatus( PhaseStatus phaseStatus )
         _phaseStatus = phaseStatus;
 }
 
-void PiecewiseLinearConstraint::initializeDuplicateCDOs(
-    PiecewiseLinearConstraint *clone ) const
+void PiecewiseLinearConstraint::initializeDuplicateCDOs( PiecewiseLinearConstraint *clone ) const
 {
     if ( clone->_context != nullptr )
     {
@@ -164,8 +160,7 @@ void PiecewiseLinearConstraint::initializeDuplicateCDOs(
     }
 }
 
-void PiecewiseLinearConstraint::markInfeasible(
-    PhaseStatus infeasibleCase )
+void PiecewiseLinearConstraint::markInfeasible( PhaseStatus infeasibleCase )
 {
     _cdInfeasibleCases->push_back( infeasibleCase );
 }
@@ -180,8 +175,7 @@ PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase()
     List<PhaseStatus> allCases = getAllCases();
     for ( PhaseStatus thisCase : allCases )
     {
-        auto loc =
-            std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), thisCase );
+        auto loc = std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), thisCase );
 
         // Case is not infeasible, return it as feasible
         if ( loc == _cdInfeasibleCases->end() )
@@ -196,22 +190,11 @@ PhaseStatus PiecewiseLinearConstraint::nextFeasibleCase()
 bool PiecewiseLinearConstraint::isCaseInfeasible( PhaseStatus phase ) const
 {
     ASSERT( _cdInfeasibleCases );
-    return std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), phase ) != _cdInfeasibleCases->end();
+    return std::find( _cdInfeasibleCases->begin(), _cdInfeasibleCases->end(), phase ) !=
+           _cdInfeasibleCases->end();
 }
+
 void PiecewiseLinearConstraint::setStatistics( Statistics *statistics )
 {
     _statistics = statistics;
 }
-
-void PiecewiseLinearConstraint::registerConstraintBoundTightener( IConstraintBoundTightener *tightener )
-{
-    _constraintBoundTightener = tightener;
-}
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

@@ -81,6 +81,27 @@ public:
       Retrieve the coefficient of a variable
     */
     double getCoefficient( unsigned variable ) const;
+    /*
+     Set the coefficient of a variable
+    */
+    void setCoefficient( unsigned variable, double newCoefficient );
+
+    /*
+      Transform the equation so that any two addends have different variables
+      and no addends have zero coefficients
+
+      CAUTION: the method is rather inefficient so try to avoid invoking this
+      if possible.
+    */
+    void removeRedundantAddends();
+
+    /*
+      Returns true if two addends have the same variables or some addend
+      has zero coefficients
+
+      NOTE: for debug only
+    */
+    bool containsRedundantAddends() const;
 
     List<Addend> _addends;
     double _scalar;

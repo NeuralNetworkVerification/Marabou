@@ -20,6 +20,7 @@
 #include "List.h"
 #include "PiecewiseLinearCaseSplit.h"
 #include "PiecewiseLinearConstraint.h"
+#include "context/context.h"
 
 class String;
 
@@ -38,21 +39,21 @@ public:
     {
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     struct Bound
     {
@@ -91,7 +92,8 @@ public:
         }
     }
 
-    void postContextPopHook() {};
+    void postContextPopHook(){};
+    void preContextPushHook(){};
 
     mutable EngineState *lastStoredState;
     void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
@@ -175,7 +177,7 @@ public:
     {
         if ( !_constraintsToSplit.empty() )
         {
-            PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+            PiecewiseLinearConstraint *ptr = *_constraintsToSplit.begin();
             _constraintsToSplit.erase( ptr );
             return ptr;
         }
@@ -186,22 +188,104 @@ public:
     PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
     {
         if ( !_constraintsToSplit.empty() )
-            {
-                PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
-                _constraintsToSplit.erase( ptr );
-                return ptr;
-            }
+        {
+            PiecewiseLinearConstraint *ptr = *_constraintsToSplit.begin();
+            _constraintsToSplit.erase( ptr );
+            return ptr;
+        }
         else
             return NULL;
     }
 
-    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
+    bool _snc;
+    CVC4::context::Context _context;
+
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ )
+    {
+        _snc = true;
+        _context.push();
+    }
+
+    bool inSnCMode() const
+    {
+        return _snc;
+    }
+
+    void applyAllBoundTightenings(){};
+
+    bool applyAllValidConstraintCaseSplits()
+    {
+        return false;
+    };
+
+    CVC4::context::Context &getContext()
+    {
+        return _context;
+    }
+
+    bool consistentBounds() const
+    {
+        return true;
+    }
+
+    double explainBound( unsigned /* var */, bool /* isUpper */ ) const
+    {
+        return 0.0;
+    }
+
+    void updateGroundUpperBound( unsigned /* var */, double /* value */ )
     {
     }
 
-    void applyAllBoundTightenings() {};
+    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ )
+    {
+    }
 
-    bool applyAllValidConstraintCaseSplits() { return false; };
+    double getGroundBound( unsigned /*var*/, bool /*isUpper*/ ) const
+    {
+        return 0;
+    }
+
+    UnsatCertificateNode *getUNSATCertificateCurrentPointer() const
+    {
+        return NULL;
+    }
+
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ )
+    {
+    }
+
+    const UnsatCertificateNode *getUNSATCertificateRoot() const
+    {
+        return NULL;
+    }
+
+    bool certifyUNSATCertificate()
+    {
+        return true;
+    }
+
+    void explainSimplexFailure()
+    {
+    }
+
+    const BoundExplainer *getBoundExplainer() const
+    {
+        return NULL;
+    }
+
+    void setBoundExplainerContent( BoundExplainer * /*boundExplainer */ )
+    {
+    }
+
+    void propagateBoundManagerTightenings()
+    {
+    }
+
+    bool shouldProduceProofs() const
+    {
+        return true;
+    }
 };
 
 #endif // __MockEngine_h__

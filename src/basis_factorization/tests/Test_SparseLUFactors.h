@@ -13,11 +13,11 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "FloatUtils.h"
-#include "SparseLUFactors.h"
 #include "MString.h"
+#include "SparseLUFactors.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForSparseLUFactors
 {
@@ -36,7 +36,7 @@ public:
         {
             for ( unsigned j = 0; j < dim; ++j )
             {
-                At[i*dim + j] = A[j*dim + i];
+                At[i * dim + j] = A[j * dim + i];
             }
         }
     }
@@ -74,13 +74,12 @@ public:
            Recall that F's 1-diagonal is IMPLICIT
         */
 
-        double F[16] =
-            {
-                0, 0, 2, 0,
-                -2, 0, 4, 5,
-                0, 0, 0, 0,
-                0, 0, 3, 0,
-            };
+        double F[16] = {
+            0,  0, 2, 0, //
+            -2, 0, 4, 5, //
+            0,  0, 0, 0, //
+            0,  0, 3, 0, //
+        };
 
         lu->_F->initialize( F, 4, 4 );
 
@@ -113,13 +112,12 @@ public:
         */
 
 
-        double V[16] =
-            {
-                0, 1, 5, 2,
-                0, 7, 0, 0,
-                1, -3, -2, 3,
-                0, 2, -2, 0,
-            };
+        double V[16] = {
+            0, 1,  5,  2, //
+            0, 7,  0,  0, //
+            1, -3, -2, 3, //
+            0, 2,  -2, 0, //
+        };
 
         lu->_V->initialize( V, 4, 4 );
 
@@ -237,7 +235,7 @@ public:
 
         double y1[] = { 1, 2, 3, 4 };
         double x1[] = { 0, 0, 0, 0 };
-        double expected1[] = { -27.0/2, 2.0/7, -12.0/7, 65.0/14 };
+        double expected1[] = { -27.0 / 2, 2.0 / 7, -12.0 / 7, 65.0 / 14 };
 
         TS_ASSERT_THROWS_NOTHING( lu->vForwardTransformation( y1, x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -245,7 +243,7 @@ public:
 
         double y2[] = { 2, 0, -3, 1 };
         double x2[] = { 0, 0, 0, 0 };
-        double expected2[] = { -43.0/4, 0, -1.0/2, 9.0/4 };
+        double expected2[] = { -43.0 / 4, 0, -1.0 / 2, 9.0 / 4 };
 
         TS_ASSERT_THROWS_NOTHING( lu->vForwardTransformation( y2, x2 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -271,7 +269,7 @@ public:
 
         double y1[] = { 1, 2, 3, 4 };
         double x1[] = { 0, 0, 0, 0 };
-        double expected1[] = { 1.0/2, 1, 1, -5.0/4 };
+        double expected1[] = { 1.0 / 2, 1, 1, -5.0 / 4 };
 
         TS_ASSERT_THROWS_NOTHING( lu->vBackwardTransformation( y1, x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -279,7 +277,7 @@ public:
 
         double y2[] = { 2, 0, -3, 1 };
         double x2[] = { 0, 0, 0, 0 };
-        double expected2[] = { -5.0/2, 22.0/7, 2, -27.0/4 };
+        double expected2[] = { -5.0 / 2, 22.0 / 7, 2, -27.0 / 4 };
 
         TS_ASSERT_THROWS_NOTHING( lu->vBackwardTransformation( y2, x2 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -305,7 +303,7 @@ public:
 
         double y1[] = { 1, 2, 3, 4 };
         double x1[] = { 0, 0, 0, 0 };
-        double expected1[] = { 177.0/4, 5.0/7, 45.0/14, -305.0/28 };
+        double expected1[] = { 177.0 / 4, 5.0 / 7, 45.0 / 14, -305.0 / 28 };
 
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y1, x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -313,7 +311,7 @@ public:
 
         double y2[] = { 2, 0, -3, 1 };
         double x2[] = { 0, 0, 0, 0 };
-        double expected2[] = { -213.0/2, -22.0/7, -57.0/7, 363.0/14 };
+        double expected2[] = { -213.0 / 2, -22.0 / 7, -57.0 / 7, 363.0 / 14 };
 
         TS_ASSERT_THROWS_NOTHING( lu->forwardTransformation( y2, x2 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -339,7 +337,7 @@ public:
 
         double y1[] = { 1, 2, 3, 4 };
         double x1[] = { 0, 0, 0, 0 };
-        double expected1[] = { 5.0/2, 1, 43.0/4, -25.0/4 };
+        double expected1[] = { 5.0 / 2, 1, 43.0 / 4, -25.0 / 4 };
 
         TS_ASSERT_THROWS_NOTHING( lu->backwardTransformation( y1, x1 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -347,7 +345,7 @@ public:
 
         double y2[] = { 2, 0, -3, 1 };
         double x2[] = { 0, 0, 0, 0 };
-        double expected2[] = { 53.0/14, 22.0/7, 197.0/4, -629.0/28 };
+        double expected2[] = { 53.0 / 14, 22.0 / 7, 197.0 / 4, -629.0 / 28 };
 
         TS_ASSERT_THROWS_NOTHING( lu->backwardTransformation( y2, x2 ) );
         for ( unsigned i = 0; i < 4; ++i )
@@ -368,10 +366,10 @@ public:
                         | -5/14 -3/7 -31/4  95/28 |
         */
         double expectedInverse[] = {
-              5.0/2,      2, 129.0/4,  -59.0/4,
-              2.0/7,  1.0/7,       1,   -5.0/7,
-              2.0/7,  1.0/7,   5.0/2, -17.0/14,
-            -5.0/14, -3.0/7, -31.0/4,  95.0/28,
+            5.0 / 2,   2,        129.0 / 4, -59.0 / 4,  //
+            2.0 / 7,   1.0 / 7,  1,         -5.0 / 7,   //
+            2.0 / 7,   1.0 / 7,  5.0 / 2,   -17.0 / 14, //
+            -5.0 / 14, -3.0 / 7, -31.0 / 4, 95.0 / 28,  //
         };
 
         double result[16];

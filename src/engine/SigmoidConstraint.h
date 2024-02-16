@@ -2,7 +2,7 @@
 /*! \file SigmoidConstraint.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Teruhiro Tagomori
+ **   Teruhiro Tagomori, Haoze Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,11 +18,11 @@
 
 #include "List.h"
 #include "Map.h"
-#include "TranscendentalConstraint.h"
+#include "NonlinearConstraint.h"
 
 #include <cmath>
 
-class SigmoidConstraint : public TranscendentalConstraint
+class SigmoidConstraint : public NonlinearConstraint
 {
 public:
     SigmoidConstraint( unsigned b, unsigned f );
@@ -31,17 +31,17 @@ public:
     /*
       Get the type of this constraint.
     */
-    TranscendentalFunctionType getType() const override;
+    NonlinearFunctionType getType() const override;
 
     /*
       Return a clone of the constraint.
     */
-    TranscendentalConstraint *duplicateConstraint() const override;
+    NonlinearConstraint *duplicateConstraint() const override;
 
     /*
       Restore the state of this constraint from the given one.
     */
-    void restoreState( const TranscendentalConstraint *state ) override; 
+    void restoreState( const NonlinearConstraint *state ) override;
 
     /*
       Register/unregister the constraint with a talbeau.
@@ -57,7 +57,7 @@ public:
     void notifyUpperBound( unsigned variable, double bound ) override;
 
     /*
-      Returns true iff the variable participates in this transcendental constraint
+      Returns true iff the variable participates in this nonlinear constraint
     */
     bool participatingVariable( unsigned variable ) const override;
 
@@ -77,10 +77,20 @@ public:
     void updateVariableIndex( unsigned oldIndex, unsigned newIndex ) override;
     bool constraintObsolete() const override;
 
+    bool supportVariableElimination() const override
+    {
+        return true;
+    };
+
     /*
       Get the tightenings entailed by the constraint.
     */
     void getEntailedTightenings( List<Tightening> &tightenings ) const override;
+
+    /*
+      Returns true iff the assignment satisfies the constraint.
+    */
+    bool satisfied() const override;
 
     /*
       Dump the current state of the constraint.
@@ -95,15 +105,8 @@ public:
     /*
       Get the index of the B and F variables.
     */
-    inline unsigned getB() const
-    {
-      return _b;
-    }
-
-    inline unsigned getF() const
-    {
-      return _f;
-    }
+    unsigned getB() const;
+    unsigned getF() const;
 
     /*
       Compute the sigmoid function.
@@ -120,22 +123,9 @@ public:
     */
     static double sigmoidDerivative( double x );
 
-    /*
-      Set the binVarName
-    */
-    void setBinVarName( String binVarName );
-
-    /*
-      Get the binVarName
-    */
-    String getBinVarName();
-
 private:
-    unsigned _b, _f; 
+    unsigned _b, _f;
     bool _haveEliminatedVariables;
-  
-    // Binary var name for Gurobi's indicator constraint
-    String _binVarName;
 };
 
 #endif // __SigmoidConstraint_h__

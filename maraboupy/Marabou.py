@@ -28,7 +28,7 @@ except ImportError:
 try:
     from maraboupy.MarabouNetworkONNX import *
 except ImportError:
-    warnings.warn("ONNX parser is unavailable because onnx or onnxruntime packages are not installed")
+    warnings.warn("ONNX parser is unavailable because onnx or onnxruntime or torch packages are not installed")
 
 def read_nnet(filename, normalize=False):
     """Constructs a MarabouNetworkNnet object from a .nnet file
@@ -44,13 +44,13 @@ def read_nnet(filename, normalize=False):
     return MarabouNetworkNNet(filename, normalize=normalize)
 
 
-def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", savedModelTags=[]):
+def read_tf(filename, inputNames=None, outputNames=None, modelType="frozen", savedModelTags=[]):
     """Constructs a MarabouNetworkTF object from a frozen Tensorflow protobuf
 
     Args:
         filename (str): Path to tensorflow network
         inputNames (list of str, optional): List of operation names corresponding to inputs
-        outputName (str, optional): Name of operation corresponding to output
+        outputNames (list of str, optional): List of operation names corresponding to outputs
         modelType (str, optional): Type of model to read. The default is "frozen" for a frozen graph.
                             Can also use "savedModel_v1" or "savedModel_v2" for the SavedModel format
                             created from either tensorflow versions 1.X or 2.X respectively.
@@ -59,20 +59,21 @@ def read_tf(filename, inputNames=None, outputName=None, modelType="frozen", save
     Returns:
         :class:`~maraboupy.MarabouNetworkTF.MarabouNetworkTF`
     """
-    return MarabouNetworkTF(filename, inputNames, outputName, modelType, savedModelTags)
+    return MarabouNetworkTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
-def read_onnx(filename, inputNames=None, outputName=None):
+def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=False):
     """Constructs a MarabouNetworkONNX object from an ONNX file
 
     Args:
         filename (str): Path to the ONNX file
         inputNames (list of str, optional): List of node names corresponding to inputs
-        outputName (str, optional): Name of node corresponding to output
+        outputNames (list of str, optional): List of node names corresponding to outputs
+        reindexOutputVars (bool): Reindex the variables so that the output variables are immediate after input variables
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
-    return MarabouNetworkONNX(filename, inputNames, outputName)
+    return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
@@ -85,7 +86,7 @@ def load_query(filename):
     """
     return MarabouCore.loadQuery(filename)
 
-def solve_query(ipq, filename="", verbose=True, options=None):
+def solve_query(ipq, filename="", verbose=True, options=None, propertyFilename=""):
     """Function to solve query represented by this network
 
     Args:
@@ -94,6 +95,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
         filename (str, optional): Path to redirect output to, defaults to ""
         verbose (bool, optional): Whether to print out solution after solve finishes, defaults to True
         options: (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options
+        propertyFilename (str, optional): Path to property file
 
     Returns:
         (tuple): tuple containing:
@@ -101,6 +103,8 @@ def solve_query(ipq, filename="", verbose=True, options=None):
             - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
             - stats (:class:`~maraboupy.MarabouCore.Statistics`, optional): A Statistics object to how Marabou performed
     """
+    if propertyFilename:
+        MarabouCore.loadProperty(ipq, propertyFilename)
     if options is None:
         options = createOptions()
     exitCode, vals, stats = MarabouCore.solve(ipq, options, filename)
@@ -125,7 +129,7 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
                   preprocessorBoundTolerance=0.0000000001, dumpBounds=False,
                   tighteningStrategy="deeppoly", milpTightening="none", milpSolverTimeout=0,
                   numSimulations=10, numBlasThreads=1, performLpTighteningAfterSplit=False,
-                  lpSolver="", numIncrementalLinearizations=1):
+                  lpSolver="", produceProofs=False):
     """Create an options object for how Marabou should solve the query
 
     Args:
@@ -152,7 +156,6 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
         numBlasThreads (int, optional): Number of threads to use when using OpenBLAS matrix multiplication (e.g., for DeepPoly analysis), defaults to 1
         performLpTighteningAfterSplit (bool, optional): Whether to perform a LP tightening after a case split, defaults to False
         lpSolver (string, optional): the engine for solving LP (native/gurobi).
-        numIncrementalLinearizations (int, optional): Number of incremental linearizations, defaults to 1
     Returns:
         :class:`~maraboupy.MarabouCore.Options`
     """
@@ -179,5 +182,5 @@ def createOptions(numWorkers=1, initialTimeout=5, initialSplits=0, onlineSplits=
     options._numBlasThreads = numBlasThreads
     options._performLpTighteningAfterSplit = performLpTighteningAfterSplit
     options._lpSolver = lpSolver
-    options._numIncrementalLinearizations = numIncrementalLinearizations
+    options._produceProofs = produceProofs
     return options

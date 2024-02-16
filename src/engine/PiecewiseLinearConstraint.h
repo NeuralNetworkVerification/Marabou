@@ -47,9 +47,9 @@
 #ifndef __PiecewiseLinearConstraint_h__
 #define __PiecewiseLinearConstraint_h__
 
-#include "BoundManager.h"
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
+#include "IBoundManager.h"
 #include "ITableau.h"
 #include "LinearExpression.h"
 #include "List.h"
@@ -64,7 +64,7 @@
 #include "context/context.h"
 
 class Equation;
-class IConstraintBoundTightener;
+class BoundManager;
 class ITableau;
 class InputQuery;
 class String;
@@ -104,9 +104,7 @@ public:
 
         bool operator==( const Fix &other ) const
         {
-            return
-                _variable == other._variable &&
-                FloatUtils::areEqual( _value, other._value );
+            return _variable == other._variable && FloatUtils::areEqual( _value, other._value );
         }
 
         unsigned _variable;
@@ -151,8 +149,12 @@ public:
     /*
       The variable watcher notifcation callbacks, about a change in a variable's value or bounds.
     */
-    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
+    virtual void notifyLowerBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
+    virtual void notifyUpperBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
 
     /*
       Turn the constraint on/off.
@@ -223,7 +225,9 @@ public:
     /*
       Dump the current state of the constraint.
     */
-    virtual void dump( String & ) const {}
+    virtual void dump( String & ) const
+    {
+    }
 
     /*
       Preprocessing related functions, to inform that a variable has been eliminated completely
@@ -244,7 +248,7 @@ public:
       Transform the piecewise linear constraint so that each disjunct contains
       only bound constraints.
     */
-    virtual void transformToUseAuxVariables( InputQuery & ) {};
+    virtual void transformToUseAuxVariables( InputQuery & ){};
 
     void setStatistics( Statistics *statistics );
 
@@ -252,13 +256,22 @@ public:
       Before solving: get additional auxiliary euqations (typically bound-dependent)
       that this constraint would like to add to the equation pool.
     */
-    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery
-                                                          &/* inputQuery */ ) {}
+    virtual void addAuxiliaryEquationsAfterPreprocessing( InputQuery & /* inputQuery */ )
+    {
+    }
 
     /*
       Whether the constraint can contribute the SoI cost function.
     */
-    virtual bool supportSoI() const { return false; };
+    virtual bool supportSoI() const
+    {
+        return false;
+    };
+
+    virtual bool supportVariableElimination() const
+    {
+        return true;
+    };
 
     /*
       Ask the piecewise linear constraint to add its cost term corresponding to
@@ -267,17 +280,19 @@ public:
       Minimizing the added term should lead to the constraint being
       "closer to satisfied" in the given phase status.
     */
-    virtual void getCostFunctionComponent( LinearExpression &/* cost */,
-                                           PhaseStatus /* phase */ ) const {}
+    virtual void getCostFunctionComponent( LinearExpression & /* cost */,
+                                           PhaseStatus /* phase */ ) const
+    {
+    }
 
     /*
       Return the phase status corresponding to the values of the input
       variables in the given assignment. For instance, for ReLU, if the input
-      variable's assignment is positive, then the method returns 
+      variable's assignment is positive, then the method returns
       RELU_PHASE_ACTIVE. Otherwise, it returns RELU_PHASE_INACTIVE.
     */
-    virtual PhaseStatus getPhaseStatusInAssignment( const Map<unsigned, double>
-                                                    &/* assignment */ ) const
+    virtual PhaseStatus
+    getPhaseStatusInAssignment( const Map<unsigned, double> & /* assignment */ ) const
     {
         throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
     }
@@ -290,18 +305,6 @@ public:
       (ie. "relu", "max", etc)
     */
     virtual String serializeToString() const = 0;
-
-    inline void registerTableau( ITableau *tableau )
-    {
-        _tableau = tableau;
-    }
-
-    /*
-      Register a constraint bound tightener. If a tightener is registered,
-      this piecewise linear constraint will inform the tightener whenever
-      it discovers a tighter (entailed) bound.
-    */
-    void registerConstraintBoundTightener( IConstraintBoundTightener *tightener );
 
     /*
       Return true if and only if this piecewise linear constraint supports
@@ -345,16 +348,32 @@ public:
         _gurobi = gurobi;
     }
 
+    inline void registerTableau( ITableau *tableau )
+    {
+        _tableau = tableau;
+    }
+    /*
+      Method to set PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
+     */
+    void setPhaseStatus( PhaseStatus phaseStatus );
+
+    /*
+      Method to get PhaseStatus of the constraint. Encapsulates both context
+      dependent and context-less behavior.
+    */
+    PhaseStatus getPhaseStatus() const;
+
     /**********************************************************************/
     /*          Context-dependent Members Initialization and Cleanup      */
     /**********************************************************************/
 
     /*
       Register a bound manager. If a bound manager is registered,
-      this piecewise linear constraint will inform the tightener whenever
+      the piecewise linear constraint will inform the manager whenever
       it discovers a tighter (entailed) bound.
     */
-    void registerBoundManager( BoundManager *boundManager );
+    void registerBoundManager( IBoundManager *boundManager );
 
     /*
        Register context object. Necessary for lazy backtracking features - such
@@ -447,6 +466,28 @@ public:
         return _cdInfeasibleCases;
     }
 
+    /*
+      Add a variable to the list of aux vars designated in the Tableau, add connect it to the
+      constraintAuxVariable
+    */
+    virtual void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) = 0;
+
+    /*
+      Get the native auxiliary vars
+    */
+    virtual const List<unsigned> getNativeAuxVars() const
+    {
+        return {};
+    }
+
+    /*
+      Get the tableau auxiliary vars
+    */
+    virtual const List<unsigned> &getTableauAuxVars() const
+    {
+        return _tableauAuxVars;
+    }
+
 protected:
     unsigned _numCases; // Number of possible cases/phases for this constraint
                         // (e.g. 2 for ReLU, ABS, SIGN; >=2 for Max and Disjunction )
@@ -456,7 +497,9 @@ protected:
     Map<unsigned, double> _lowerBounds;
     Map<unsigned, double> _upperBounds;
 
-    BoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    IBoundManager *_boundManager; // Pointer to a centralized object to store bounds.
+    ITableau *_tableau; // Pointer to tableau which simulates CBT until we switch to CDSmtCore
+
     CVC4::context::Context *_context;
     CVC4::context::CDO<bool> *_cdConstraintActive;
 
@@ -477,10 +520,6 @@ protected:
       We pick the PL constraint with the highest score to branch.
      */
     double _score;
-
-    ITableau *_tableau;
-
-    IConstraintBoundTightener *_constraintBoundTightener;
 
     /*
       Statistics collection
@@ -509,18 +548,6 @@ protected:
        Check whether a case is marked as infeasible under current search prefix.
      */
     bool isCaseInfeasible( PhaseStatus phase ) const;
-
-    /*
-       Method to set PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior. Initialized to PHASE_NOT_FIXED.
-     */
-    void setPhaseStatus( PhaseStatus phaseStatus );
-
-    /*
-       Method to get PhaseStatus of the constraint. Encapsulates both context
-       dependent and context-less behavior.
-    */
-    PhaseStatus getPhaseStatus() const;
 
     /**********************************************************************/
     /*                         BOUND WRAPPER METHODS                      */
@@ -605,6 +632,8 @@ protected:
         else
             return _gurobi->getAssignment( Stringf( "x%u", variable ) );
     }
+
+    List<unsigned> _tableauAuxVars;
 };
 
 #endif // __PiecewiseLinearConstraint_h__

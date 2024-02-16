@@ -14,9 +14,11 @@
 **/
 
 #include "MString.h"
+
 #include "Vector.h"
 
-String::String( Super super ) : _super( super )
+String::String( Super super )
+    : _super( super )
 {
 }
 
@@ -24,11 +26,13 @@ String::String()
 {
 }
 
-String::String( const char *string, unsigned length ) : _super( string, length )
+String::String( const char *string, unsigned length )
+    : _super( string, length )
 {
 }
 
-String::String( const char *string ) : _super( string )
+String::String( const char *string )
+    : _super( string )
 {
 }
 
@@ -110,7 +114,7 @@ List<String> String::tokenize( String delimiter ) const
 
     Vector<char> copyVector( length() + 1 );
     char *copy( copyVector.data() );
-    memcpy( copy, ascii(), sizeof(char) * ( length() + 1 ) );
+    memcpy( copy, ascii(), sizeof( char ) * ( length() + 1 ) );
 
     char *token = strtok( copy, delimiter.ascii() );
 
@@ -155,13 +159,14 @@ String String::trim() const
 
     for ( unsigned i = 0; i < length(); ++i )
     {
-        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) && ( _super[i] != '\n' ) )
+        if ( ( !firstNonSpaceFound ) && ( _super[i] != ' ' ) && ( _super[i] != '\n' ) &&
+             ( _super[i] != '\r' ) )
         {
             firstNonSpace = i;
             firstNonSpaceFound = true;
         }
 
-        if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) )
+        if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) && ( _super[i] != '\r' ) )
         {
             lastNonSpace = i;
         }
@@ -175,10 +180,40 @@ String String::trim() const
     return substring( firstNonSpace, lastNonSpace - firstNonSpace + 1 );
 }
 
+String String::trimZerosFromRight() const
+{
+    if ( !contains( "." ) )
+        return _super;
+
+    int lastNonZero = length() - 1;
+
+    for ( int i = length() - 1; i >= 0; --i )
+        if ( ( _super[i] != ' ' ) && ( _super[i] != '\n' ) && ( _super[i] != '0' ) )
+        {
+            lastNonZero = i;
+            break;
+        }
+
+    if ( _super[lastNonZero] == '.' )
+        --lastNonZero;
+
+    if ( lastNonZero < 0 )
+        return "0";
+
+    return substring( 0, lastNonZero + 1 );
+}
+
 void String::replaceAll( const String &toReplace, const String &replaceWith )
 {
     while ( find( toReplace ) != Super::npos )
         _super.replace( find( toReplace ), toReplace.length(), replaceWith._super );
+}
+
+bool String::endsWith( const String &suffix )
+{
+    unsigned int l1 = length();
+    unsigned int l2 = suffix.length();
+    return l1 >= l2 && _super.compare( l1 - l2, l2, suffix._super ) == 0;
 }
 
 std::ostream &operator<<( std::ostream &stream, const String &string );

@@ -13,8 +13,6 @@
 
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "InputQuery.h"
 #include "MockEngine.h"
 #include "MockErrno.h"
@@ -23,6 +21,7 @@
 #include "ReluConstraint.h"
 #include "SmtCore.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForSmtCore
@@ -55,7 +54,7 @@ public:
             return NULL;
         }
 
-        void restoreState( const PiecewiseLinearConstraint */* state */ )
+        void restoreState( const PiecewiseLinearConstraint * /* state */ )
         {
         }
 
@@ -161,13 +160,21 @@ public:
         {
         }
 
-        void getAuxiliaryEquations( List<Equation> &/* newEquations */ ) const
+        void getAuxiliaryEquations( List<Equation> & /* newEquations */ ) const
         {
         }
 
         String serializeToString() const
         {
             return "";
+        }
+
+        void initTighteningRow( const unsigned /*counterpart*/ )
+        {
+        }
+
+        void addTableauAuxVar( unsigned /*tableauAuxVar*/, unsigned /*constraintAuxVar*/ )
+        {
         }
     };
 
@@ -190,7 +197,9 @@ public:
 
         SmtCore smtCore( engine );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) - 1; ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ) - 1;
+              ++i )
         {
             smtCore.reportViolatedConstraint( &constraint1 );
             TS_ASSERT( !smtCore.needToSplit() );
@@ -235,7 +244,9 @@ public:
         constraint.nextSplits.append( split2 );
         constraint.nextSplits.append( split3 );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
+              ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         engine->lastStoredState = NULL;
@@ -351,7 +362,9 @@ public:
         constraint.nextSplits.append( split2 );
         constraint.nextSplits.append( split3 );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
+              ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = false;
@@ -394,7 +407,9 @@ public:
         constraint.nextSplits.append( split1 );
         constraint.nextSplits.append( split2 );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
+              ++i )
             smtCore.reportViolatedConstraint( &constraint );
 
         constraint.nextIsActive = true;
@@ -427,7 +442,9 @@ public:
         constraint2.nextSplits.append( split4 );
         constraint2.nextSplits.append( split5 );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
+              ++i )
             smtCore.reportViolatedConstraint( &constraint2 );
 
         constraint2.nextIsActive = true;
@@ -474,7 +491,9 @@ public:
         split1.storeBoundTightening( bound1 );
         TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split1 ) );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
+              ++i )
             smtCore.reportViolatedConstraint( &relu1 );
 
         TS_ASSERT( smtCore.needToSplit() );
@@ -486,7 +505,9 @@ public:
         split2.storeBoundTightening( bound2 );
         TS_ASSERT_THROWS_NOTHING( smtCore.recordImpliedValidSplit( split2 ) );
 
-        for ( unsigned i = 0; i < ( unsigned ) Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD ); ++i )
+        for ( unsigned i = 0;
+              i < (unsigned)Options::get()->getInt( Options::CONSTRAINT_VIOLATION_THRESHOLD );
+              ++i )
             smtCore.reportViolatedConstraint( &relu2 );
 
         TS_ASSERT( smtCore.needToSplit() );
@@ -502,13 +523,15 @@ public:
         // Examine the first stackEntry
         SmtStackEntry *stackEntry = *( smtState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
-        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
+        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) ==
+                   *( ++relu1.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
         TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
         // Examine the second stackEntry
         stackEntry = *( ++smtState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( relu2.getCaseSplits().begin() ) );
-        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu2.getCaseSplits().begin() ) );
+        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) ==
+                   *( ++relu2.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 0 );
 
         clearSmtState( smtState );
@@ -523,7 +546,8 @@ public:
         // Examine the first stackEntry
         stackEntry = *( smtState._stack.begin() );
         TS_ASSERT( stackEntry->_activeSplit == *( relu1.getCaseSplits().begin() ) );
-        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) == *( ++relu1.getCaseSplits().begin() ) );
+        TS_ASSERT( *( stackEntry->_alternativeSplits.begin() ) ==
+                   *( ++relu1.getCaseSplits().begin() ) );
         TS_ASSERT( stackEntry->_impliedValidSplits.size() == 1 );
         TS_ASSERT( *( stackEntry->_impliedValidSplits.begin() ) == split2 );
         // Examine the second stackEntry
