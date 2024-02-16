@@ -253,7 +253,7 @@ class InputQueryBuilder(ABC):
                 self.addInequality(vars, coeffs, - constraint.combination.scalar)
 
     def getInputQuery(self):
-        """Function to convert network into Marabou InputQuery
+        """Constructs the `InputQuery` object from the current set of constraints.
 
         Returns:
             :class:`~maraboupy.MarabouCore.InputQuery`
