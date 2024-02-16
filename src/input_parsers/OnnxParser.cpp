@@ -270,7 +270,7 @@ TensorShape shapeOfConstant( const onnx::TensorProto &constant )
  * @return
  */
 TensorShape
-instantiateReshapeTemplate( TensorShape oldShape, Vector<int> newShapeTemplate, bool allowZero )
+instantiateReshapeTemplate( TensorShape oldShape, Vector<int64_t> newShapeTemplate, bool allowZero )
 {
     TensorShape newShape;
     int inferredIndex = -1;
@@ -462,19 +462,19 @@ Vector<double> getTensorFloatValues( const onnx::TensorProto &tensor, const Tens
     return result;
 }
 
-Vector<int> getTensorIntValues( const onnx::TensorProto &tensor, const TensorShape shape )
+Vector<int64_t> getTensorIntValues( const onnx::TensorProto &tensor, const TensorShape shape )
 {
     int size = tensorSize( shape );
     std::string raw_data = tensor.raw_data();
-    Vector<int> result;
+    Vector<int64_t> result;
     if ( raw_data.size() != 0 )
     {
         checkEndianness();
         const char *bytes = raw_data.c_str();
-        const int *ints = reinterpret_cast<const int *>( bytes );
+        const int64_t *ints = reinterpret_cast<const int64_t *>( bytes );
         for ( int i = 0; i < size; i++ )
         {
-            int value = *( ints + i );
+            int64_t value = *( ints + i );
             result.append( value );
         }
     }
@@ -967,7 +967,7 @@ void OnnxParser::cast( onnx::NodeProto &node )
 
     if ( _constantIntTensors.exists( inputNodeName ) )
     {
-        Vector<int> tensor = _constantIntTensors[inputNodeName];
+        Vector<int64_t> tensor = _constantIntTensors[inputNodeName];
         if ( to == onnx::TensorProto_DataType_INT64 )
         {
             _constantIntTensors.insert( outputNodeName, tensor );
@@ -991,10 +991,10 @@ void OnnxParser::cast( onnx::NodeProto &node )
         Vector<double> tensor = _constantFloatTensors[inputNodeName];
         if ( to == onnx::TensorProto_DataType_INT64 )
         {
-            Vector<int> castTensor = Vector<int>( tensor.size() );
+            Vector<int64_t> castTensor = Vector<int64_t>( tensor.size() );
             for ( PackedTensorIndices i = 0; i < tensor.size(); i++ )
             {
-                castTensor[i] = static_cast<int>( tensor[i] );
+                castTensor[i] = static_cast<int64_t>( tensor[i] );
             }
             _constantIntTensors.insert( outputNodeName, castTensor );
         }
@@ -1030,7 +1030,7 @@ void OnnxParser::reshape( onnx::NodeProto &node )
     bool allowZeroes = getIntAttribute( node, "allowzero", 0 ) != 0;
 
     TensorShape oldShape = _shapeMap[inputNodeName];
-    Vector<int> newShapeTemplate = _constantIntTensors[shapeNodeName];
+    Vector<int64_t> newShapeTemplate = _constantIntTensors[shapeNodeName];
     TensorShape newShape = instantiateReshapeTemplate( oldShape, newShapeTemplate, allowZeroes );
     _shapeMap[outputNodeName] = newShape;
 
@@ -1102,7 +1102,7 @@ void OnnxParser::transpose( onnx::NodeProto &node )
     }
     else if ( _constantIntTensors.exists( inputNodeName ) )
     {
-        Vector<int> inputConstant = _constantIntTensors[inputNodeName];
+        Vector<int64_t> inputConstant = _constantIntTensors[inputNodeName];
         _constantIntTensors.insert( outputNodeName,
                                     transposeTensor( inputConstant, inputShape, perm ) );
     }
@@ -1152,7 +1152,10 @@ void OnnxParser::squeeze( onnx::NodeProto &node )
         {
             missingNodeError( axisName );
         }
-        axes = _constantIntTensors[axisName];
+        for ( int64_t axis : _constantIntTensors[axisName] )
+        {
+            axes.append( static_cast<int>( axis ) );
+        }
     }
     else
     {
