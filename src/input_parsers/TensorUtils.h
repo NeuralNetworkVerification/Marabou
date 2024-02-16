@@ -78,13 +78,13 @@ Vector<T> transposeTensor( Vector<T> tensor, TensorShape shape, Permutation perm
     // switch to a similar implementation as NumPy arrays with internal strides etc.
     ASSERT( shape.size() == permutation.size() );
     TensorShape transposedShape = transposeVector( shape, permutation );
-    Vector<T> result;
+    Vector<T> result( tensor.size() );
     for ( PackedTensorIndices rawOutputIndex = 0; rawOutputIndex < tensor.size(); rawOutputIndex++ )
     {
         TensorIndices outputIndex = unpackIndex( transposedShape, rawOutputIndex );
         TensorIndices inputIndex = transposeVector( outputIndex, permutation );
         T value = tensorLookup( tensor, shape, inputIndex );
-        result.append( value );
+        result[rawOutputIndex] = value;
     }
     return result;
 }
