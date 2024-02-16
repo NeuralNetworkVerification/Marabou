@@ -1150,7 +1150,7 @@ void OnnxParser::squeeze( onnx::NodeProto &node )
         }
         for ( int64_t axis : _constantIntTensors[axisName] )
         {
-            axes.append( static_cast<int>( axis ));
+            axes.append( static_cast<int>( axis ) );
         }
     }
     else
