@@ -68,7 +68,7 @@ class MarabouNetwork(InputQueryBuilder):
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
         if propertyFilename:
             MarabouCore.loadProperty(ipq, propertyFilename)
         if options == None:
@@ -102,7 +102,7 @@ class MarabouNetwork(InputQueryBuilder):
                 - bounds (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for output variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
         if options == None:
             options = MarabouCore.Options()
         exitCode, bounds, stats = MarabouCore.calculateBounds(ipq, options, str(filename))
@@ -230,7 +230,7 @@ class MarabouNetwork(InputQueryBuilder):
         for x in assignList:
             inputDict[x[0]] = x[1]
 
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
         for k in inputDict:
             ipq.setLowerBound(k, inputDict[k])
             ipq.setUpperBound(k, inputDict[k])
@@ -283,22 +283,3 @@ class MarabouNetwork(InputQueryBuilder):
         assert len(outMar) == len(outNotMar)
         err = [np.abs(outMar[i] - outNotMar[i]) for i in range(len(outMar))]
         return err
-
-    def addConstraint(self, constraint: VarConstraint):
-        """
-        Support the Pythonic API to add constraints to the neurons in the Marabou network.
-
-        :param constraint: an instance of the VarConstraint class, which comprises various neuron constraints.
-        :return: delegate various constraints into lower/upper bounds and equality/inequality.
-        """
-        vars = list(constraint.combination.varCoeffs)
-        coeffs = [constraint.combination.varCoeffs[i] for i in vars]
-        if constraint.lowerBound is not None:
-            self.setLowerBound(vars[0], constraint.lowerBound)
-        elif constraint.upperBound is not None:
-            self.setUpperBound(vars[0], constraint.upperBound)
-        else:
-            if constraint.isEquality:
-                self.addEquality(vars, coeffs, - constraint.combination.scalar)
-            else:
-                self.addInequality(vars, coeffs, - constraint.combination.scalar)

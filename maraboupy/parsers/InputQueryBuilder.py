@@ -233,7 +233,26 @@ class InputQueryBuilder(ABC):
         e.setScalar(scalar)
         self.addEquation(e, isProperty)
 
-    def getMarabouQuery(self):
+    def addConstraint(self, constraint: VarConstraint):
+        """
+        Support the Pythonic API to add constraints to the neurons in the Marabou network.
+
+        :param constraint: an instance of the VarConstraint class, which comprises various neuron constraints.
+        :return: delegate various constraints into lower/upper bounds and equality/inequality.
+        """
+        vars = list(constraint.combination.varCoeffs)
+        coeffs = [constraint.combination.varCoeffs[i] for i in vars]
+        if constraint.lowerBound is not None:
+            self.setLowerBound(vars[0], constraint.lowerBound)
+        elif constraint.upperBound is not None:
+            self.setUpperBound(vars[0], constraint.upperBound)
+        else:
+            if constraint.isEquality:
+                self.addEquality(vars, coeffs, - constraint.combination.scalar)
+            else:
+                self.addInequality(vars, coeffs, - constraint.combination.scalar)
+
+    def getInputQuery(self):
         """Function to convert network into Marabou InputQuery
 
         Returns:
@@ -336,7 +355,7 @@ class InputQueryBuilder(ABC):
         Args:
             filename: (string) file to write serialized inputQuery
         """
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
         MarabouCore.saveQuery(ipq, str(filename))
 
     def isEqualTo(self, network):
