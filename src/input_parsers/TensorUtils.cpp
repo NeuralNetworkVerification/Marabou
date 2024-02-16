@@ -117,7 +117,7 @@ TensorIndices broadcastIndex( TensorShape currentShape,
     return result;
 }
 
-TensorIndex unsignIndex ( unsigned int size, SignedTensorIndex signedIndex )
+TensorIndex unsignIndex( unsigned int size, SignedTensorIndex signedIndex )
 {
     if ( signedIndex >= 0 )
     {

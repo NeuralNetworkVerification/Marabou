@@ -1188,7 +1188,7 @@ void OnnxParser::squeeze( onnx::NodeProto &node )
  *
  * @param node The ONNX node
  */
-void OnnxParser::unsqueeze( onnx::NodeProto& node )
+void OnnxParser::unsqueeze( onnx::NodeProto &node )
 {
     String inputNodeName = node.input()[0];
     String outputNodeName = node.output()[0];

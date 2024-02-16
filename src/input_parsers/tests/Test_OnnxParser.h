@@ -190,14 +190,8 @@ public:
 
     void test_unsqueeze()
     {
-        Vector<double> input = {
-            0, 1, -2,
-            0.5, 1.5, -3
-        };
-        Vector<double> output = {
-            0, 1, -2,
-            0.5, 1.5, -3
-        };
+        Vector<double> input = { 0, 1, -2, 0.5, 1.5, -3 };
+        Vector<double> output = { 0, 1, -2, 0.5, 1.5, -3 };
         run_test( "unsqueeze", input, output );
     }
 
