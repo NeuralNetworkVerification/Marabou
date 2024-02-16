@@ -74,16 +74,17 @@ void IncrementalLinearization::solve()
         // Solve the refined abstraction
         if ( _engine->processInputQuery( _inputQuery ) )
         {
-            double timeoutInSeconds = static_cast<long double>( _timeoutInMicroSeconds ) /
-                MICROSECONDS_TO_SECONDS;
-            INCREMENTAL_LINEARIZATION_LOG( Stringf( "Solving with timeout %.2f seconds",
-                                                    timeoutInSeconds ).ascii() );
+            double timeoutInSeconds =
+                static_cast<long double>( _timeoutInMicroSeconds ) / MICROSECONDS_TO_SECONDS;
+            INCREMENTAL_LINEARIZATION_LOG(
+                Stringf( "Solving with timeout %.2f seconds", timeoutInSeconds ).ascii() );
             _engine->solve( timeoutInSeconds );
         }
 
         if ( _engine->getExitCode() == IEngine::UNKNOWN )
         {
-            unsigned long long timePassed = TimeUtils::timePassed( start, TimeUtils::sampleMicro() );
+            unsigned long long timePassed =
+                TimeUtils::timePassed( start, TimeUtils::sampleMicro() );
             if ( timePassed >= _timeoutInMicroSeconds )
             {
                 // Enter another round but should quit immediately.
