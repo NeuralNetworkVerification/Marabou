@@ -17,7 +17,6 @@ MarabouNetwork defines an abstract class that represents neural networks with pi
 '''
 
 from maraboupy import MarabouCore
-from maraboupy.MarabouPythonic import *
 from maraboupy.parsers.InputQueryBuilder import InputQueryBuilder
 import numpy as np
 
