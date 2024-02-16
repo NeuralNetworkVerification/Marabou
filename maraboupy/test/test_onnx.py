@@ -73,6 +73,13 @@ def test_softmax():
     filename =  "softmax-last-layer.onnx"
     evaluateFile(filename)
 
+def test_sigmoid():
+    """
+    Test loading network with sigmoid activations
+    """
+    filename =  "mnist2x5_sigmoid.onnx"
+    evaluateFile(filename)
+
 def test_gtsrb():
     """
     Test a convolutional network, exported from tensorflow

@@ -2,7 +2,7 @@
 /*! \file Marabou.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -35,7 +35,8 @@
 Marabou::Marabou()
     : _acasParser( NULL )
     , _onnxParser( NULL )
-    , _engine()
+    , _cegarSolver( NULL )
+    , _engine( std::unique_ptr<Engine>( new Engine() ) )
 {
 }
 
@@ -211,20 +212,44 @@ void Marabou::exportAssignment() const
 
 void Marabou::solveQuery()
 {
-    if ( _engine.processInputQuery( _inputQuery ) )
+    enum {
+        MICROSECONDS_IN_SECOND = 1000000
+    };
+
+    struct timespec start = TimeUtils::sampleMicro();
+    unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
+    if ( _engine->processInputQuery( _inputQuery ) )
     {
-        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
-        if ( _engine.shouldProduceProofs() && _engine.getExitCode() == Engine::UNSAT )
-            _engine.certifyUNSATCertificate();
+        _engine->solve( timeoutInSeconds );
+        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
+            _engine->certifyUNSATCertificate();
     }
 
-    if ( _engine.getExitCode() == Engine::SAT )
-        _engine.extractSolution( _inputQuery );
+    if ( _engine->getExitCode() == Engine::UNKNOWN )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+        if ( timeoutInSeconds == 0 || totalElapsed < timeoutInSeconds * MICROSECONDS_IN_SECOND )
+        {
+            _cegarSolver = new CEGAR::IncrementalLinearization( _inputQuery, _engine.release() );
+            unsigned long long timeoutInMicroSeconds =
+                ( timeoutInSeconds == 0
+                      ? 0
+                      : timeoutInSeconds * MICROSECONDS_IN_SECOND - totalElapsed );
+            _cegarSolver->setInitialTimeoutInMicroSeconds( timeoutInMicroSeconds );
+            _cegarSolver->solve();
+            _engine = std::unique_ptr<Engine>( _cegarSolver->releaseEngine() );
+        }
+    }
+
+
+    if ( _engine->getExitCode() == Engine::SAT )
+        _engine->extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    Engine::ExitCode result = _engine.getExitCode();
+    Engine::ExitCode result = _engine->getExitCode();
     String resultString;
 
     if ( result == Engine::UNSAT )
@@ -284,10 +309,15 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
         resultString = "ERROR";
         printf( "Error\n" );
     }
-    else
+    else if ( result == Engine::UNKNOWN )
     {
         resultString = "UNKNOWN";
-        printf( "UNKNOWN EXIT CODE! (this should not happen)" );
+        printf( "UNKNOWN\n" );
+    }
+    else
+    {
+        resultString = "NOT_DONE";
+        printf( "Unexpected exit code! (this should not happen)" );
     }
 
     // Create a summary file, if requested
@@ -305,11 +335,12 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",
-                                    _engine.getStatistics()->getUnsignedAttribute(
+                                    _engine->getStatistics()->getUnsignedAttribute(
                                         Statistics::NUM_VISITED_TREE_STATES ) ) );
 
         // Field #4: average pivot time in micro seconds
-        summaryFile.write( Stringf( "%u", _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
+        summaryFile.write(
+            Stringf( "%u", _engine->getStatistics()->getAveragePivotTimeInMicro() ) );
 
         summaryFile.write( "\n" );
     }

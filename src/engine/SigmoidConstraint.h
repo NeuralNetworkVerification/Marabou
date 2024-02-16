@@ -123,9 +123,13 @@ public:
     */
     static double sigmoidDerivative( double x );
 
+    virtual bool attemptToRefine( InputQuery &inputQuery ) const override;
+
 private:
     unsigned _b, _f;
     bool _haveEliminatedVariables;
+
+    static constexpr double INFLECTION_POINT = 0;
 };
 
 #endif // __SigmoidConstraint_h__

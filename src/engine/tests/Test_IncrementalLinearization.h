@@ -13,21 +13,19 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
+#include "FloatUtils.h"
+#include "IncrementalLinearization.h"
+#include "InputQuery.h"
 #include "MILPEncoder.h"
 #include "MarabouError.h"
 #include "MockTableau.h"
-#include "IncrementalLinearization.h"
-#include "InputQuery.h"
-#include "FloatUtils.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class IncrementalLinearizationTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -42,7 +40,7 @@ public:
 
         /*
          * Unknown case
-        */
+         */
         GurobiWrapper gurobi1;
 
         InputQuery inputQuery1 = InputQuery();
@@ -71,7 +69,7 @@ public:
         TS_ASSERT_THROWS_NOTHING( gurobi1.solve() );
 
         TS_ASSERT( gurobi1.haveFeasibleSolution() );
-    
+
         Map<String, double> solution1;
         double costValue1;
 
@@ -81,10 +79,11 @@ public:
         TS_ASSERT( solution1.exists( "x1" ) );
 
         IncrementalLinearization *incrLinear = new IncrementalLinearization( milp1 );
-        IEngine::ExitCode exitCode = incrLinear->solveWithIncrementalLinearization( gurobi1, inputQuery1.getTranscendentalConstraints(), 1000000000000 );
+        IEngine::ExitCode exitCode = incrLinear->solveWithIncrementalLinearization(
+            gurobi1, inputQuery1.getTranscendentalConstraints(), 1000000000000 );
         ASSERT( exitCode == IEngine::UNKNOWN );
 #else
         TS_ASSERT( true );
 #endif // ENABLE_GUROBI
-	}
+    }
 };

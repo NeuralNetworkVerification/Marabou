@@ -468,15 +468,7 @@ void MILPEncoder::encodeSigmoidConstraint( GurobiWrapper &gurobi, SigmoidConstra
 
     if ( sourceLb == sourceUb )
     {
-        // tangent line: x_f = tangentSlope * (x_b - tangentPoint) + yAtTangentPoint
-        // In this case, tangentePoint is equal to sourceLb or sourceUb
-        double yAtTangentPoint = sigmoid->sigmoid( sourceLb );
-        double tangentSlope = sigmoid->sigmoidDerivative( sourceLb );
-
-        List<GurobiWrapper::Term> terms;
-        terms.append( GurobiWrapper::Term( 1, Stringf( "x%u", targetVariable ) ) );
-        terms.append( GurobiWrapper::Term( -tangentSlope, Stringf( "x%u", sourceVariable ) ) );
-        gurobi.addEqConstraint( terms, -tangentSlope * sourceLb + yAtTangentPoint );
+        return;
     }
     else if ( FloatUtils::lt( sourceLb, 0 ) && FloatUtils::gt( sourceUb, 0 ) )
     {

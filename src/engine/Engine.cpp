@@ -187,7 +187,7 @@ void Engine::exportInputQueryWithError( String errorMessage )
             ipqFileName.ascii() );
 }
 
-bool Engine::solve( unsigned timeoutInSeconds )
+bool Engine::solve( double timeoutInSeconds )
 {
     SignalHandler::getInstance()->initialize();
     SignalHandler::getInstance()->registerClient( this );
@@ -324,28 +324,53 @@ bool Engine::solve( unsigned timeoutInSeconds )
                 bool solutionFound = adjustAssignmentToSatisfyNonLinearConstraints();
                 if ( solutionFound )
                 {
-                    mainLoopEnd = TimeUtils::sampleMicro();
-                    _statistics.incLongAttribute(
-                        Statistics::TIME_MAIN_LOOP_MICRO,
-                        TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
-                    if ( _verbosity > 0 )
+                    if ( allNonlinearConstraintsHold() )
                     {
-                        printf( "\nEngine::solve: sat assignment found\n" );
-                        _statistics.print();
-                    }
+                        mainLoopEnd = TimeUtils::sampleMicro();
+                        _statistics.incLongAttribute(
+                            Statistics::TIME_MAIN_LOOP_MICRO,
+                            TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "\nEngine::solve: sat assignment found\n" );
+                            _statistics.print();
+                        }
 
-                    // Allows checking proofs produced for UNSAT leaves of satisfiable query search
-                    // tree
-                    if ( _produceUNSATProofs )
-                    {
-                        ASSERT( _UNSATCertificateCurrentPointer );
-                        ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
+                        // Allows checking proofs produced for UNSAT leaves of satisfiable query
+                        // search tree
+                        if ( _produceUNSATProofs )
+                        {
+                            ASSERT( _UNSATCertificateCurrentPointer );
+                            ( **_UNSATCertificateCurrentPointer ).setSATSolutionFlag();
+                        }
+                        _exitCode = Engine::SAT;
+                        return true;
                     }
-                    _exitCode = Engine::SAT;
-                    return true;
+                    else if ( !hasBranchingCandidate() )
+                    {
+                        mainLoopEnd = TimeUtils::sampleMicro();
+                        _statistics.incLongAttribute(
+                            Statistics::TIME_MAIN_LOOP_MICRO,
+                            TimeUtils::timePassed( mainLoopStart, mainLoopEnd ) );
+                        if ( _verbosity > 0 )
+                        {
+                            printf( "\nEngine::solve: at leaf node but solving inconclusive\n" );
+                            _statistics.print();
+                        }
+                        _exitCode = Engine::UNKNOWN;
+                        return false;
+                    }
+                    else
+                    {
+                        while ( !_smtCore.needToSplit() )
+                            _smtCore.reportRejectedPhasePatternProposal();
+                        continue;
+                    }
                 }
                 else
+                {
                     continue;
+                }
             }
 
             // We have out-of-bounds variables.
@@ -475,7 +500,7 @@ bool Engine::adjustAssignmentToSatisfyNonLinearConstraints()
     collectViolatedPlConstraints();
 
     // If all constraints are satisfied, we are possibly done
-    if ( allPlConstraintsHold() && allNonlinearConstraintsHold() )
+    if ( allPlConstraintsHold() )
     {
         if ( _lpSolverType == LPSolverType::NATIVE &&
              _tableau->getBasicAssignmentStatus() != ITableau::BASIC_ASSIGNMENT_JUST_COMPUTED )
@@ -906,7 +931,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
     {
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, true );
-        if ( _verbosity > 0 )
+        if ( _verbosity > 1 )
             printInputBounds( inputQuery );
 
         initializeNetworkLevelReasoning();
@@ -1408,9 +1433,8 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
     {
         informConstraintsOfInitialBounds( inputQuery );
         invokePreprocessor( inputQuery, preprocess );
-        if ( _verbosity > 0 )
+        if ( _verbosity > 1 )
             printInputBounds( inputQuery );
-
         initializeNetworkLevelReasoning();
         if ( preprocess )
         {
@@ -1686,6 +1710,10 @@ void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor
     {
         if ( preprocessorInUse )
         {
+            // Symbolically fixed variables are skipped. They will be re-constructed in the end.
+            if ( preprocessorInUse->variableIsUnusedAndSymbolicallyFixed( i ) )
+                continue;
+
             // Has the variable been merged into another?
             unsigned variable = i;
             while ( preprocessorInUse->variableIsMerged( variable ) )
@@ -1695,8 +1723,6 @@ void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor
             if ( preprocessorInUse->variableIsFixed( variable ) )
             {
                 inputQuery.setSolutionValue( i, preprocessorInUse->getFixedValue( variable ) );
-                inputQuery.setLowerBound( i, preprocessorInUse->getFixedValue( variable ) );
-                inputQuery.setUpperBound( i, preprocessorInUse->getFixedValue( variable ) );
                 continue;
             }
 
@@ -1706,14 +1732,10 @@ void Engine::extractSolution( InputQuery &inputQuery, Preprocessor *preprocessor
 
             // Finally, set the assigned value
             inputQuery.setSolutionValue( i, _tableau->getValue( variable ) );
-            inputQuery.setLowerBound( i, _tableau->getLowerBound( variable ) );
-            inputQuery.setUpperBound( i, _tableau->getUpperBound( variable ) );
         }
         else
         {
             inputQuery.setSolutionValue( i, _tableau->getValue( i ) );
-            inputQuery.setLowerBound( i, _tableau->getLowerBound( i ) );
-            inputQuery.setUpperBound( i, _tableau->getUpperBound( i ) );
         }
     }
 
@@ -1760,6 +1782,16 @@ bool Engine::allNonlinearConstraintsHold()
             return false;
     }
     return true;
+}
+
+bool Engine::hasBranchingCandidate()
+{
+    for ( const auto &constraint : _plConstraints )
+    {
+        if ( constraint->isActive() && !constraint->phaseFixed() )
+            return true;
+    }
+    return false;
 }
 
 void Engine::selectViolatedPlConstraint()
@@ -2461,13 +2493,14 @@ void Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
                                   numTightenedBounds );
 }
 
-bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
+bool Engine::shouldExitDueToTimeout( double timeout ) const
 {
     // A timeout value of 0 means no time limit
     if ( timeout == 0 )
         return false;
 
-    return _statistics.getTotalTimeInMicro() / MICROSECONDS_TO_SECONDS > timeout;
+    return static_cast<long double>( _statistics.getTotalTimeInMicro() ) / MICROSECONDS_TO_SECONDS >
+           timeout;
 }
 
 void Engine::preContextPushHook()
@@ -2636,8 +2669,9 @@ void Engine::decideBranchingHeuristics()
     DivideStrategy divideStrategy = Options::get()->getDivideStrategy();
     if ( divideStrategy == DivideStrategy::Auto )
     {
-        if ( _preprocessedQuery->getInputVariables().size() <
-             GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+        if ( !_preprocessedQuery->getInputVariables().empty() &&
+             _preprocessedQuery->getInputVariables().size() <
+                 GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
         {
             divideStrategy = DivideStrategy::LargestInterval;
             if ( _verbosity >= 2 )
@@ -2669,7 +2703,7 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraintBasedOnPolarity()
     ENGINE_LOG( Stringf( "Using Polarity-based heuristics..." ).ascii() );
 
     if ( !_networkLevelReasoner )
-        throw MarabouError( MarabouError::NETWORK_LEVEL_REASONER_NOT_AVAILABLE );
+        return NULL;
 
     List<PiecewiseLinearConstraint *> constraints =
         _networkLevelReasoner->getConstraintsInTopologicalOrder();
@@ -2764,11 +2798,16 @@ PiecewiseLinearConstraint *Engine::pickSplitPLConstraint( DivideStrategy strateg
     {
         if ( _smtCore.getStackDepth() > 3 )
             candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
-        else if ( _preprocessedQuery->getInputVariables().size() <
-                  GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
+        else if ( !_preprocessedQuery->getInputVariables().empty() &&
+                  _preprocessedQuery->getInputVariables().size() <
+                      GlobalConfiguration::INTERVAL_SPLITTING_THRESHOLD )
             candidatePLConstraint = pickSplitPLConstraintBasedOnIntervalWidth();
         else
+        {
             candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
+            if ( candidatePLConstraint == NULL )
+                candidatePLConstraint = _smtCore.getConstraintsWithHighestScore();
+        }
     }
     else if ( strategy == DivideStrategy::Polarity )
         candidatePLConstraint = pickSplitPLConstraintBasedOnPolarity();
@@ -2869,7 +2908,7 @@ void Engine::storeSmtState( SmtState &smtState )
     _smtCore.storeSmtState( smtState );
 }
 
-bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
+bool Engine::solveWithMILPEncoding( double timeoutInSeconds )
 {
     try
     {
@@ -2903,7 +2942,7 @@ bool Engine::solveWithMILPEncoding( unsigned timeoutInSeconds )
     _gurobi->setTimeLimit( timeoutForGurobi );
     if ( !_sncMode )
         _gurobi->setNumberOfThreads( Options::get()->getInt( Options::NUM_WORKERS ) );
-    _gurobi->setVerbosity( _verbosity > 1 );
+    _gurobi->setVerbosity( _verbosity > 0 );
     _gurobi->solve();
 
     if ( _gurobi->haveFeasibleSolution() )
@@ -2952,8 +2991,9 @@ bool Engine::performDeepSoILocalSearch()
 
     if ( initialPhasePattern.isZero() )
     {
-        while ( !_smtCore.needToSplit() )
-            _smtCore.reportRejectedPhasePatternProposal();
+        if ( hasBranchingCandidate() )
+            while ( !_smtCore.needToSplit() )
+                _smtCore.reportRejectedPhasePatternProposal();
         return false;
     }
 
@@ -2987,7 +3027,7 @@ bool Engine::performDeepSoILocalSearch()
               The overhead is low anyway.
             */
             collectViolatedPlConstraints();
-            if ( allPlConstraintsHold() && allNonlinearConstraintsHold() )
+            if ( allPlConstraintsHold() )
             {
                 if ( _lpSolverType == LPSolverType::NATIVE &&
                      _tableau->getBasicAssignmentStatus() !=
@@ -3004,7 +3044,7 @@ bool Engine::performDeepSoILocalSearch()
                 }
                 else
                 {
-                    ENGINE_LOG( "Performing local search - done" );
+                    ENGINE_LOG( "Performing local search - done." );
                     return true;
                 }
             }
@@ -3015,8 +3055,9 @@ bool Engine::performDeepSoILocalSearch()
                 // In this case, we bump up the score of PLConstraints not in
                 // the SoI with the hope to branch on them early.
                 bumpUpPseudoImpactOfPLConstraintsNotInSoI();
-                while ( !_smtCore.needToSplit() )
-                    _smtCore.reportRejectedPhasePatternProposal();
+                if ( hasBranchingCandidate() )
+                    while ( !_smtCore.needToSplit() )
+                        _smtCore.reportRejectedPhasePatternProposal();
                 return false;
             }
         }
@@ -3713,6 +3754,14 @@ void Engine::extractBounds( InputQuery &inputQuery )
             unsigned variable = i;
             while ( _preprocessor.variableIsMerged( variable ) )
                 variable = _preprocessor.getMergedIndex( variable );
+
+            // Symbolically fixed variables are ignored
+            if ( _preprocessor.variableIsUnusedAndSymbolicallyFixed( i ) )
+            {
+                inputQuery.setLowerBound( i, FloatUtils::negativeInfinity() );
+                inputQuery.setUpperBound( i, FloatUtils::infinity() );
+                continue;
+            }
 
             // Fixed variables are easy: return the value they've been fixed to.
             if ( _preprocessor.variableIsFixed( variable ) )

@@ -93,6 +93,17 @@ public:
     virtual bool satisfied() const = 0;
 
     /*
+      Given a set of constraints and a solution, both stored in the given
+      InputQuery, check  if the current solution violates the current constraint.
+      If so, add additional constraints (equations or PLConstraints)
+      to exclude the violation. Return true if new constraints are added.
+    */
+    virtual bool attemptToRefine( InputQuery & /*inputQuery*/ ) const
+    {
+        return false;
+    };
+
+    /*
       Dump the current state of the constraint.
     */
     virtual void dump( String & ) const

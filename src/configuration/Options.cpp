@@ -70,7 +70,7 @@ void Options::initializeDefaultValues()
     _intOptions[NUMBER_OF_SIMULATIONS] = 100;
     _intOptions[SEED] = 1;
     _intOptions[NUM_BLAS_THREADS] = 1;
-    _intOptions[NUMBER_OF_INCREMENTAL_LINEARIZATIONS] = 1;
+    _intOptions[NUM_CONSTRAINTS_TO_REFINE_INC_LIN] = 30;
 
     /*
       Float options
@@ -80,6 +80,7 @@ void Options::initializeDefaultValues()
     _floatOptions[PREPROCESSOR_BOUND_TOLERANCE] =
         GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS;
     _floatOptions[PROBABILITY_DENSITY_PARAMETER] = 10;
+    _floatOptions[REFINEMENT_SCALING_FACTOR_INC_LIN] = 2;
 
     /*
       String options

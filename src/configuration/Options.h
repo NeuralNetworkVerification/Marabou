@@ -113,8 +113,8 @@ public:
         // The number of threads to use for OpenBLAS matrix multiplication.
         NUM_BLAS_THREADS,
 
-        // The number of incremental linearizations
-        NUMBER_OF_INCREMENTAL_LINEARIZATIONS,
+        // Maximal number of constraints to refine in incremental linearization
+        NUM_CONSTRAINTS_TO_REFINE_INC_LIN,
     };
 
     enum FloatOptions {
@@ -129,6 +129,10 @@ public:
 
         // The beta parameter used in converting the soi f to a probability
         PROBABILITY_DENSITY_PARAMETER,
+
+        // In each iteration of incremental linearization, scale the maximal
+        // number of constraints to refine by this number
+        REFINEMENT_SCALING_FACTOR_INC_LIN,
     };
 
     enum StringOptions {
