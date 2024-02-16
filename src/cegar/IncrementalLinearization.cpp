@@ -105,8 +105,6 @@ unsigned IncrementalLinearization::refine( InputQuery &refinement )
 {
     INCREMENTAL_LINEARIZATION_LOG( "Performing abstraction refinement..." );
 
-    _nlConstraints.shuffle();
-
     unsigned numRefined = 0;
     for ( const auto &nlc : _nlConstraints )
     {
