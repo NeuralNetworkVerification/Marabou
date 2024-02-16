@@ -109,7 +109,7 @@ def test_get_marabou_query(tmpdir):
     Marabou from the same network file (relies on saveQuery, compares the output of saveQuery on the two queries).
     '''
     network = load_acas_network()
-    ipq1 = network.getMarabouQuery()
+    ipq1 = network.getInputQuery()
 
     ipq2 = MarabouCore.InputQuery()
     network_filename = os.path.join(os.path.dirname(__file__), ACAS_FILE)
