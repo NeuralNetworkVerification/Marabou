@@ -13,10 +13,10 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "MockTableau.h"
 #include "ProjectedSteepestEdge.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForProjectedSteepestEdge
 {
@@ -63,7 +63,7 @@ public:
         List<unsigned> candidates = { 0, 1, 2 };
         double costFunction[] = { -5.0, -3.0, -7.0 };
 
-        memcpy( tableau.nextCostFunction, costFunction, sizeof(costFunction) );
+        memcpy( tableau.nextCostFunction, costFunction, sizeof( costFunction ) );
 
         TS_ASSERT_THROWS_NOTHING( pse.select( tableau, candidates, excluded ) );
 
@@ -122,7 +122,7 @@ public:
         tableau.nextChangeColumn = changeColumn;
         double initialU[] = { 0, 0 };
         double finalU[] = { 0, 0 };
-        memcpy( tableau.nextBtranOutput, finalU, sizeof(double) * 2 );
+        memcpy( tableau.nextBtranOutput, finalU, sizeof( double ) * 2 );
 
         TableauRow pivotRow( 3 );
         pivotRow._row[0]._coefficient = 3;
@@ -146,7 +146,7 @@ public:
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 1 ), 1.0 ) );
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 2 ), 2.0 ) );
 
-        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, initialU, sizeof(double) * 2 );
+        TS_ASSERT_SAME_DATA( tableau.lastBtranInput, initialU, sizeof( double ) * 2 );
 
         TS_ASSERT_THROWS_NOTHING( pse.postPivotHook( tableau, fakePivot ) );
         TS_ASSERT( FloatUtils::areEqual( pse.getGamma( 0 ), 10.0 ) );
@@ -158,8 +158,10 @@ public:
         candidates.append( 0 );
         candidates.append( 1 );
 
-        costFunction[0] = 4.0; costFunction[1] = -2.0; costFunction[2] = -4.0;
-        memcpy( tableau.nextCostFunction, costFunction, sizeof(costFunction) );
+        costFunction[0] = 4.0;
+        costFunction[1] = -2.0;
+        costFunction[2] = -4.0;
+        memcpy( tableau.nextCostFunction, costFunction, sizeof( costFunction ) );
 
         TS_ASSERT_THROWS_NOTHING( pse.select( tableau, candidates, excluded ) );
         TS_ASSERT_EQUALS( tableau.mockEnteringVariable, 1U );
@@ -175,18 +177,22 @@ public:
         tableau.nextBasicIndexToVariable[1] = 4;
 
         // Prepare the information that pse needs for updating gamme
-        changeColumn[0] = 1; changeColumn[1] = 2;
+        changeColumn[0] = 1;
+        changeColumn[1] = 2;
         tableau.nextChangeColumn = changeColumn;
-        initialU[0] = 1; initialU[1] = 0;
-        finalU[0] = -1; finalU[1] = 0;
-        memcpy( tableau.nextBtranOutput, finalU, sizeof(double) * 2 );
+        initialU[0] = 1;
+        initialU[1] = 0;
+        finalU[0] = -1;
+        finalU[1] = 0;
+        memcpy( tableau.nextBtranOutput, finalU, sizeof( double ) * 2 );
 
         pivotRow._row[0]._coefficient = -4;
         pivotRow._row[1]._coefficient = 2;
         pivotRow._row[2]._coefficient = 4;
         tableau.nextPivotRow = &pivotRow;
 
-        nextAColumn1[0] = 1; nextAColumn1[1] = 0;
+        nextAColumn1[0] = 1;
+        nextAColumn1[1] = 0;
 
         // Check that the gamma values reflect the recent (real) pivot
         fakePivot = false;
@@ -207,7 +213,8 @@ public:
 
     void test_todo()
     {
-        TS_TRACE( "Move 'excluded' computation out to the Engine instead of repeating it in every invocation of PSE.select()" );
+        TS_TRACE( "Move 'excluded' computation out to the Engine instead of repeating it in every "
+                  "invocation of PSE.select()" );
     }
 };
 

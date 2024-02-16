@@ -14,11 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
-#include "InputQuery.h"
 #include "DegradationChecker.h"
+#include "InputQuery.h"
 #include "MockTableau.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MockForDegradationChecker
 {
@@ -28,20 +28,20 @@ public:
 class DegradationCheckerTestSuite : public CxxTest::TestSuite
 {
 public:
-	MockForDegradationChecker *mock;
+    MockForDegradationChecker *mock;
     MockTableau *tableau;
 
-	void setUp()
-	{
-		TS_ASSERT( mock = new MockForDegradationChecker );
+    void setUp()
+    {
+        TS_ASSERT( mock = new MockForDegradationChecker );
         TS_ASSERT( tableau = new MockTableau );
-	}
+    }
 
-	void tearDown()
-	{
-		TS_ASSERT_THROWS_NOTHING( delete tableau );
-		TS_ASSERT_THROWS_NOTHING( delete mock );
-	}
+    void tearDown()
+    {
+        TS_ASSERT_THROWS_NOTHING( delete tableau );
+        TS_ASSERT_THROWS_NOTHING( delete mock );
+    }
 
     void test_single_equation()
     {

@@ -13,8 +13,8 @@
 
 **/
 
-#include "GlobalConfiguration.h"
 #include "FloatUtils.h"
+#include "GlobalConfiguration.h"
 #include "InputQuery.h"
 #include "MILPEncoder.h"
 #include "MarabouError.h"
@@ -365,7 +365,7 @@ public:
 #else
         TS_ASSERT( true );
 #endif // ENABLE_GUROBI
-	}
+    }
 
     void test_eoncode_leaky_relu_constraint()
     {
@@ -416,9 +416,9 @@ public:
         tableau1.setUpperBound( 4, 1 );
 
         Equation eq;
-        eq.addAddend(1, 2);
-        eq.addAddend(1, 3);
-        eq.addAddend(-1, 4);
+        eq.addAddend( 1, 2 );
+        eq.addAddend( 1, 3 );
+        eq.addAddend( -1, 4 );
         inputQuery1.addEquation( eq );
 
         double slope = 0.2;
@@ -435,8 +435,8 @@ public:
         InputQuery inputQuery2 = inputQuery1;
 
         Equation eq1;
-        eq1.addAddend(1, 4);
-        eq1.setScalar(slope * -1 + 1);
+        eq1.addAddend( 1, 4 );
+        eq1.setScalar( slope * -1 + 1 );
         inputQuery2.addEquation( eq1 );
 
         GurobiWrapper gurobi2;
@@ -446,13 +446,13 @@ public:
         TS_ASSERT( gurobi2.haveFeasibleSolution() );
         Map<String, double> values;
         double dontcare;
-        TS_ASSERT_THROWS_NOTHING( gurobi2.extractSolution(values, dontcare ) );
-        TS_ASSERT( FloatUtils::areEqual( values[Stringf("x%u", 0)], 1 ) );
-        TS_ASSERT( FloatUtils::areEqual( values[Stringf("x%u", 1)], -1 ) );
+        TS_ASSERT_THROWS_NOTHING( gurobi2.extractSolution( values, dontcare ) );
+        TS_ASSERT( FloatUtils::areEqual( values[Stringf( "x%u", 0 )], 1 ) );
+        TS_ASSERT( FloatUtils::areEqual( values[Stringf( "x%u", 1 )], -1 ) );
 #else
         TS_ASSERT( true );
 #endif // ENABLE_GUROBI
-	}
+    }
 
     void test_eoncode_leaky_relu_constraint_relax()
     {
@@ -503,9 +503,9 @@ public:
         tableau1.setUpperBound( 4, 1 );
 
         Equation eq;
-        eq.addAddend(1, 2);
-        eq.addAddend(1, 3);
-        eq.addAddend(-1, 4);
+        eq.addAddend( 1, 2 );
+        eq.addAddend( 1, 3 );
+        eq.addAddend( -1, 4 );
         inputQuery1.addEquation( eq );
 
         double slope = 0.2;
@@ -522,8 +522,8 @@ public:
         InputQuery inputQuery2 = inputQuery1;
 
         Equation eq1;
-        eq1.addAddend(1, 4);
-        eq1.setScalar(slope * -1 + 1);
+        eq1.addAddend( 1, 4 );
+        eq1.setScalar( slope * -1 + 1 );
         inputQuery2.addEquation( eq1 );
 
         GurobiWrapper gurobi2;
@@ -534,7 +534,7 @@ public:
 #else
         TS_ASSERT( true );
 #endif // ENABLE_GUROBI
-	}
+    }
 
     void test_encode_sigmoid_constraint_sat()
     {
@@ -1193,7 +1193,7 @@ public:
         InputQuery inputQuery = InputQuery();
         inputQuery.setNumberOfVariables( 4 );
 
-        SoftmaxConstraint *softmax = new SoftmaxConstraint( {0, 1}, {2, 3} );
+        SoftmaxConstraint *softmax = new SoftmaxConstraint( { 0, 1 }, { 2, 3 } );
         softmax->notifyLowerBound( 0, 1.5 );
         softmax->notifyUpperBound( 0, 2 );
         softmax->notifyLowerBound( 1, 0 );
@@ -1758,7 +1758,7 @@ public:
 
         Map<String, double> solution;
         double costValue;
-	// NOTE: the encoding for Round is sound but incomplete.
+        // NOTE: the encoding for Round is sound but incomplete.
         TS_ASSERT_THROWS_NOTHING( gurobi.extractSolution( solution, costValue ) );
         TS_ASSERT( FloatUtils::areEqual( solution["x1"], 1 ) ||
                    FloatUtils::areEqual( solution["x1"], 2 ) ||

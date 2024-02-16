@@ -13,17 +13,16 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "InputQuery.h"
-#include "MpsParser.h"
 #include "MString.h"
+#include "MpsParser.h"
+
+#include <cxxtest/TestSuite.h>
 
 class MpsTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -32,9 +31,9 @@ public:
     {
     }
 
-    void test_infesiable() 
+    void test_infesiable()
     {
-        const String filename = RESOURCES_DIR  "/mps/lp_infeasible_1.mps";
+        const String filename = RESOURCES_DIR "/mps/lp_infeasible_1.mps";
 
         // Extract an input query from the network
         InputQuery inputQuery;
@@ -47,13 +46,14 @@ public:
             // Got infeasible in preprocess stage
             TS_ASSERT( 1 );
         }
-        else {
+        else
+        {
             bool result = engine.solve();
-            TS_ASSERT ( !result );
+            TS_ASSERT( !result );
         }
     }
 
-    void test_fesiable() 
+    void test_fesiable()
     {
         const char *filename = RESOURCES_DIR "/mps/lp_feasible_1.mps";
 
@@ -63,8 +63,8 @@ public:
         MpsParser mpsParser( filename );
         mpsParser.generateQuery( inputQuery );
         Engine engine;
-        TS_ASSERT_THROWS_NOTHING ( engine.processInputQuery( inputQuery ) );
-        TS_ASSERT_THROWS_NOTHING ( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
         engine.extractSolution( inputQuery );
 
         // Sanity test
@@ -74,18 +74,18 @@ public:
         double value1 = inputQuery.getSolutionValue( 1 );
         double value2 = inputQuery.getSolutionValue( 2 );
 
-        value += 1  * value0;
-        value += 2  * value1;
+        value += 1 * value0;
+        value += 2 * value1;
         value += -1 * value2;
 
         TS_ASSERT( FloatUtils::lte( value, 11 ) )
 
-        TS_ASSERT( value0 >= 0 ); 
-        TS_ASSERT( value0 <= 2 ); 
-        TS_ASSERT( value1 >= -3 ); 
-        TS_ASSERT( value1 <= 3 ); 
-        TS_ASSERT( value2 >= 4 ); 
-        TS_ASSERT( value2 <= 6 ); 
+        TS_ASSERT( value0 >= 0 );
+        TS_ASSERT( value0 <= 2 );
+        TS_ASSERT( value1 >= -3 );
+        TS_ASSERT( value1 <= 3 );
+        TS_ASSERT( value2 >= 4 );
+        TS_ASSERT( value2 <= 6 );
     }
 };
 

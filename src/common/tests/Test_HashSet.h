@@ -14,13 +14,12 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "HashSet.h"
+#include "MockErrno.h"
+
 #include <cxxtest/TestSuite.h>
 
-#include "MockErrno.h"
-#include "HashSet.h"
-
-class MockForHashSet :
-    public MockErrno
+class MockForHashSet : public MockErrno
 {
 public:
 };
@@ -42,7 +41,7 @@ public:
 
     void test_initializer_list()
     {
-        HashSet<int> hashSet { 1, 2, 3 };
+        HashSet<int> hashSet{ 1, 2, 3 };
 
         TS_ASSERT_EQUALS( hashSet.size(), 3U );
 

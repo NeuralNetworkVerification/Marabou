@@ -13,12 +13,12 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
-#include "Engine.h"
-#include "InputQuery.h"
-#include "FloatUtils.h"
 #include "DisjunctionConstraint.h"
+#include "Engine.h"
+#include "FloatUtils.h"
+#include "InputQuery.h"
+
+#include <cxxtest/TestSuite.h>
 
 class DisjunctionTestSuite : public CxxTest::TestSuite
 {

@@ -21,8 +21,7 @@ void PLConstraintScoreTracker::reset()
     _plConstraintToScore.clear();
 }
 
-void PLConstraintScoreTracker::initialize( const List<PiecewiseLinearConstraint *>
-                                           &plConstraints )
+void PLConstraintScoreTracker::initialize( const List<PiecewiseLinearConstraint *> &plConstraints )
 {
     reset();
     for ( const auto &constraint : plConstraints )
@@ -32,8 +31,7 @@ void PLConstraintScoreTracker::initialize( const List<PiecewiseLinearConstraint 
     }
 }
 
-void PLConstraintScoreTracker::setScore( PiecewiseLinearConstraint *constraint,
-                                         double score )
+void PLConstraintScoreTracker::setScore( PiecewiseLinearConstraint *constraint, double score )
 {
     ASSERT( _plConstraintToScore.exists( constraint ) );
 
@@ -52,8 +50,8 @@ PiecewiseLinearConstraint *PLConstraintScoreTracker::topUnfixed()
     {
         if ( entry._constraint->isActive() && !entry._constraint->phaseFixed() )
         {
-            SCORE_TRACKER_LOG( Stringf( "Score of top unfixed plConstraint: %.2f",
-                                        entry._score ).ascii() );
+            SCORE_TRACKER_LOG(
+                Stringf( "Score of top unfixed plConstraint: %.2f", entry._score ).ascii() );
             return entry._constraint;
         }
     }

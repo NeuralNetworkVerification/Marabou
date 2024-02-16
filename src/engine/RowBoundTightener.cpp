@@ -13,10 +13,11 @@
 
  **/
 
+#include "RowBoundTightener.h"
+
 #include "Debug.h"
 #include "InfeasibleQueryException.h"
 #include "MarabouError.h"
-#include "RowBoundTightener.h"
 #include "SparseUnsortedList.h"
 #include "Statistics.h"
 
@@ -138,8 +139,8 @@ void RowBoundTightener::examineImplicitInvertedBasisMatrix( bool untilSaturation
     // The tightening procedure may throw an exception, in which case we need
     // to release the rows.
     unsigned newBoundsLearned;
-    unsigned maxNumberOfIterations = untilSaturation ?
-        GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
+    unsigned maxNumberOfIterations =
+        untilSaturation ? GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverInvertedBasisRows();
@@ -188,7 +189,7 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
                 row->_row[j]._coefficient = 0;
 
                 for ( const auto &entry : *column )
-                    row->_row[j]._coefficient -= invB[i*_m + entry._index] * entry._value;
+                    row->_row[j]._coefficient -= invB[i * _m + entry._index] * entry._value;
             }
 
             // Store the lhs variable
@@ -200,16 +201,15 @@ void RowBoundTightener::examineInvertedBasisMatrix( bool untilSaturation )
         // to release the rows.
 
         unsigned newBoundsLearned;
-        unsigned maxNumberOfIterations = untilSaturation ?
-            GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
+        unsigned maxNumberOfIterations =
+            untilSaturation ? GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
         do
         {
             newBoundsLearned = onePassOverInvertedBasisRows();
 
             if ( _statistics && ( newBoundsLearned > 0 ) )
-                _statistics->
-                    incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
-                                      newBoundsLearned );
+                _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_EXPLICIT_BASIS,
+                                               newBoundsLearned );
 
             --maxNumberOfIterations;
         }
@@ -236,7 +236,7 @@ unsigned RowBoundTightener::onePassOverInvertedBasisRows()
 
 unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &row )
 {
-	/*
+    /*
       A row is of the form
 
          y = sum ci xi + b
@@ -296,11 +296,18 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
         }
     }
 
-    result += registerTighterLowerBound( y, lowerBound - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
-    result += registerTighterUpperBound( y, upperBound + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
+    result += registerTighterLowerBound(
+        y,
+        lowerBound - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT,
+        row );
+    result += registerTighterUpperBound(
+        y,
+        upperBound + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT,
+        row );
     if ( FloatUtils::gt( getLowerBound( y ), getUpperBound( y ) ) )
     {
-        ASSERT( FloatUtils::gt( _boundManager.getLowerBound( y ), _boundManager.getUpperBound( y ) ) );
+        ASSERT(
+            FloatUtils::gt( _boundManager.getLowerBound( y ), _boundManager.getUpperBound( y ) ) );
         throw InfeasibleQueryException();
     }
 
@@ -341,7 +348,9 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
     for ( unsigned i = 0; i < n - m; ++i )
     {
         // If ci = 0, nothing to do.
-        if ( _ciSign[i] == ZERO || FloatUtils::lt( abs( row[i] ), GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
+        if ( _ciSign[i] == ZERO ||
+             FloatUtils::lt( abs( row[i] ),
+                             GlobalConfiguration::MINIMAL_COEFFICIENT_FOR_TIGHTENING ) )
             continue;
 
         lowerBound = auxLb;
@@ -373,11 +382,18 @@ unsigned RowBoundTightener::tightenOnSingleInvertedBasisRow( const TableauRow &r
 
         // If a tighter bound is found, store it
         xi = row._row[i]._var;
-        result += registerTighterLowerBound( xi, lowerBound - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
-        result += registerTighterUpperBound( xi, upperBound + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT, row );
+        result += registerTighterLowerBound(
+            xi,
+            lowerBound - GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT,
+            row );
+        result += registerTighterUpperBound(
+            xi,
+            upperBound + GlobalConfiguration::EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT,
+            row );
         if ( FloatUtils::gt( getLowerBound( xi ), getUpperBound( xi ) ) )
         {
-            ASSERT( FloatUtils::gt( _boundManager.getLowerBound( xi ), _boundManager.getUpperBound( xi ) ) );
+            ASSERT( FloatUtils::gt( _boundManager.getLowerBound( xi ),
+                                    _boundManager.getUpperBound( xi ) ) );
             throw InfeasibleQueryException();
         }
     }
@@ -393,16 +409,15 @@ void RowBoundTightener::examineConstraintMatrix( bool untilSaturation )
       If working until saturation, do single passes over the matrix until no new bounds
       are learned. Otherwise, just do a single pass.
     */
-    unsigned maxNumberOfIterations = untilSaturation ?
-        GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
+    unsigned maxNumberOfIterations =
+        untilSaturation ? GlobalConfiguration::ROW_BOUND_TIGHTENER_SATURATION_ITERATIONS : 1;
     do
     {
         newBoundsLearned = onePassOverConstraintMatrix();
 
         if ( _statistics && ( newBoundsLearned > 0 ) )
-            _statistics->
-                incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX,
-                                  newBoundsLearned );
+            _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_CONSTRAINT_MATRIX,
+                                           newBoundsLearned );
 
         --maxNumberOfIterations;
     }
@@ -550,15 +565,14 @@ unsigned RowBoundTightener::tightenOnSingleConstraintRow( unsigned row )
 
 void RowBoundTightener::examinePivotRow()
 {
-	if ( _statistics )
+    if ( _statistics )
         _statistics->incLongAttribute( Statistics::NUM_ROWS_EXAMINED_BY_ROW_TIGHTENER );
 
     const TableauRow &row( *_tableau.getPivotRow() );
     unsigned newBoundsLearned = tightenOnSingleInvertedBasisRow( row );
 
     if ( _statistics && ( newBoundsLearned > 0 ) )
-        _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_ROWS,
-                                       newBoundsLearned );
+        _statistics->incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_ROWS, newBoundsLearned );
 }
 
 void RowBoundTightener::getRowTightenings( List<Tightening> &tightenings ) const

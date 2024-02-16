@@ -25,7 +25,9 @@ class Layer;
 class LayerOwner
 {
 public:
-    virtual ~LayerOwner() {}
+    virtual ~LayerOwner()
+    {
+    }
     virtual const Layer *getLayer( unsigned index ) const = 0;
     virtual const Map<unsigned, Layer *> &getLayerIndexToLayer() const = 0;
     virtual unsigned getMaxLayerSize() const = 0;

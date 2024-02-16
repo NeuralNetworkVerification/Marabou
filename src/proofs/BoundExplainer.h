@@ -15,11 +15,11 @@
 #ifndef __BoundsExplainer_h__
 #define __BoundsExplainer_h__
 
-#include "context/cdo.h"
-#include "context/context.h"
 #include "SparseUnsortedList.h"
 #include "TableauRow.h"
 #include "Vector.h"
+#include "context/cdo.h"
+#include "context/context.h"
 
 /*
   A class which encapsulates bounds explanations of all variables of a tableau
@@ -27,7 +27,9 @@
 class BoundExplainer
 {
 public:
-    BoundExplainer( unsigned numberOfVariables, unsigned numberOfRows, CVC4::context::Context &ctx );
+    BoundExplainer( unsigned numberOfVariables,
+                    unsigned numberOfRows,
+                    CVC4::context::Context &ctx );
     ~BoundExplainer();
 
     BoundExplainer &operator=( const BoundExplainer &other );
@@ -57,7 +59,8 @@ public:
     void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned var );
 
     /*
-      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row
+      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var
+      according to the row
     */
     void updateBoundExplanationSparse( const SparseUnsortedList &row, bool isUpper, unsigned var );
 
@@ -98,24 +101,28 @@ private:
     /*
       Adds a multiplication of an array by scalar to another array
     */
-    void addVecTimesScalar( Vector<double> &sum, const SparseUnsortedList &input, double scalar ) const;
+    void
+    addVecTimesScalar( Vector<double> &sum, const SparseUnsortedList &input, double scalar ) const;
 
     void addVecTimesScalar( Vector<double> &sum, const Vector<double> &input, double scalar ) const;
 
     /*
-      Upon receiving a row, extract coefficients of the original tableau's equations that create the row
-      Equivalently, extract the coefficients of the slack variables.
-      Assumption - the slack variables indices are always the last m.
-      All coefficients are divided by ci, the coefficient of the explained var, for normalization.
+      Upon receiving a row, extract coefficients of the original tableau's equations that create the
+      row Equivalently, extract the coefficients of the slack variables. Assumption - the slack
+      variables indices are always the last m. All coefficients are divided by ci, the coefficient
+      of the explained var, for normalization.
     */
-    void extractRowCoefficients( const TableauRow &row, Vector<double> &coefficients, double ci ) const;
+    void
+    extractRowCoefficients( const TableauRow &row, Vector<double> &coefficients, double ci ) const;
 
     /*
-      Upon receiving a row given as a SparseUnsortedList, extract coefficients of the original tableau's equations that create the row
-      Equivalently, extract the coefficients of the slack variables.
-      Assumption - the slack variables indices are always the last m.
-      All coefficients are divided by ci, the coefficient of the explained var, for normalization.
+      Upon receiving a row given as a SparseUnsortedList, extract coefficients of the original
+      tableau's equations that create the row Equivalently, extract the coefficients of the slack
+      variables. Assumption - the slack variables indices are always the last m. All coefficients
+      are divided by ci, the coefficient of the explained var, for normalization.
     */
-    void extractSparseRowCoefficients( const SparseUnsortedList &row, Vector<double> &coefficients, double ci ) const;
+    void extractSparseRowCoefficients( const SparseUnsortedList &row,
+                                       Vector<double> &coefficients,
+                                       double ci ) const;
 };
 #endif // __BoundsExplainer_h__

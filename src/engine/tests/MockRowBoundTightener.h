@@ -21,10 +21,10 @@
 class MockRowBoundTightener : public IRowBoundTightener
 {
 public:
-	MockRowBoundTightener()
-	{
-		wasCreated = false;
-		wasDiscarded = false;
+    MockRowBoundTightener()
+    {
+        wasCreated = false;
+        wasDiscarded = false;
 
         setDimensionsWasCalled = false;
     }
@@ -33,23 +33,23 @@ public:
     {
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
     const ITableau *lastTableau;
 
-	void mockConstructor( const ITableau &tableau )
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
+    void mockConstructor( const ITableau &tableau )
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
         lastTableau = &tableau;
-	}
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     bool setDimensionsWasCalled;
     void setDimensions()
@@ -61,16 +61,36 @@ public:
     {
     }
 
-    void clear() {}
-    void notifyLowerBound( unsigned /* variable */, double /* bound */ ) {}
-    void notifyUpperBound( unsigned /* variable */, double /* bound */ ) {}
-    void examineInvertedBasisMatrix( bool /* untilSaturation */ ) {}
-    void examineConstraintMatrix( bool /* untilSaturation */ ) {}
-    void examinePivotRow() {}
-    void getRowTightenings( List<Tightening> &/* tightenings */ ) const {}
-    void setStatistics( Statistics */* statistics */ ) {}
-    void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ ) {}
-    void setBoundsPointers( const double */* lower */, const double */* upper */ ) {}
+    void clear()
+    {
+    }
+    void notifyLowerBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
+    void notifyUpperBound( unsigned /* variable */, double /* bound */ )
+    {
+    }
+    void examineInvertedBasisMatrix( bool /* untilSaturation */ )
+    {
+    }
+    void examineConstraintMatrix( bool /* untilSaturation */ )
+    {
+    }
+    void examinePivotRow()
+    {
+    }
+    void getRowTightenings( List<Tightening> & /* tightenings */ ) const
+    {
+    }
+    void setStatistics( Statistics * /* statistics */ )
+    {
+    }
+    void examineImplicitInvertedBasisMatrix( bool /* untilSaturation */ )
+    {
+    }
+    void setBoundsPointers( const double * /* lower */, const double * /* upper */ )
+    {
+    }
 };
 
 #endif // __MockRowBoundTightener_h__

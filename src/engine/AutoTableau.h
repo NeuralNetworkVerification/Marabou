@@ -17,7 +17,6 @@
 #define __AutoTableau_h__
 
 #include "BoundManager.h"
-
 #include "ITableau.h"
 #include "T/TableauFactory.h"
 

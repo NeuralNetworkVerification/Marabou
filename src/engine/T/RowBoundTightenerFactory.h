@@ -22,24 +22,23 @@ class IRowBoundTightener;
 class ITableau;
 
 
-namespace T
-{
-	IRowBoundTightener *createRowBoundTightener( const ITableau &tableau );
-	void discardRowBoundTightener( IRowBoundTightener *rowBoundTightener );
-}
+namespace T {
+IRowBoundTightener *createRowBoundTightener( const ITableau &tableau );
+void discardRowBoundTightener( IRowBoundTightener *rowBoundTightener );
+} // namespace T
 
 CXXTEST_SUPPLY( createRowBoundTightener,
-				IRowBoundTightener *,
-				createRowBoundTightener,
-				( const ITableau &tableau ),
-				T::createRowBoundTightener,
-				( tableau ) );
+                IRowBoundTightener *,
+                createRowBoundTightener,
+                ( const ITableau &tableau ),
+                T::createRowBoundTightener,
+                ( tableau ) );
 
 CXXTEST_SUPPLY_VOID( discardRowBoundTightener,
-					 discardRowBoundTightener,
-					 ( IRowBoundTightener *rowBoundTightener ),
-					 T::discardRowBoundTightener,
-					 ( rowBoundTightener ) );
+                     discardRowBoundTightener,
+                     ( IRowBoundTightener * rowBoundTightener ),
+                     T::discardRowBoundTightener,
+                     ( rowBoundTightener ) );
 
 #endif // __T__RowBoundTightenerFactory_h__
 

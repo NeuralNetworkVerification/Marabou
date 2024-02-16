@@ -13,9 +13,11 @@
 
  **/
 
+#include "PermutationMatrix.h"
+
 #include "BasisFactorizationError.h"
 #include "Debug.h"
-#include "PermutationMatrix.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -77,8 +79,8 @@ PermutationMatrix &PermutationMatrix::operator=( const PermutationMatrix &other 
         _columnOrdering = new unsigned[_m];
     }
 
-    memcpy( _rowOrdering, other._rowOrdering, sizeof(unsigned) * _m );
-    memcpy( _columnOrdering, other._columnOrdering, sizeof(unsigned) * _m );
+    memcpy( _rowOrdering, other._rowOrdering, sizeof( unsigned ) * _m );
+    memcpy( _columnOrdering, other._columnOrdering, sizeof( unsigned ) * _m );
 
     return *this;
 }
@@ -182,8 +184,8 @@ void PermutationMatrix::storeToOther( PermutationMatrix *other ) const
 {
     ASSERT( _m == other->_m );
 
-    memcpy( other->_rowOrdering, _rowOrdering, sizeof(unsigned) * _m );
-    memcpy( other->_columnOrdering, _columnOrdering, sizeof(unsigned) * _m );
+    memcpy( other->_rowOrdering, _rowOrdering, sizeof( unsigned ) * _m );
+    memcpy( other->_columnOrdering, _columnOrdering, sizeof( unsigned ) * _m );
 }
 
 //

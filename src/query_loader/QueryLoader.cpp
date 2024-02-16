@@ -14,7 +14,10 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "QueryLoader.h"
+
 #include "AutoFile.h"
+#include "BilinearConstraint.h"
 #include "Debug.h"
 #include "DisjunctionConstraint.h"
 #include "Equation.h"
@@ -24,8 +27,6 @@
 #include "MStringf.h"
 #include "MarabouError.h"
 #include "MaxConstraint.h"
-#include "BilinearConstraint.h"
-#include "QueryLoader.h"
 #include "ReluConstraint.h"
 #include "RoundConstraint.h"
 #include "SignConstraint.h"
@@ -35,7 +36,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 {
     if ( !IFile::exists( fileName ) )
     {
-        throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
+        throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST,
+                            Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
     }
 
     InputQuery inputQuery;
@@ -127,7 +129,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
     }
 
     // Equations
-    for( unsigned i = 0; i < numEquations; ++i )
+    for ( unsigned i = 0; i < numEquations; ++i )
     {
         QL_LOG( Stringf( "Equation: %u ", i ).ascii() );
         String line = input->readLine();
@@ -140,7 +142,7 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         // Skip equation number
         ++it;
         int eqType = atoi( it->ascii() );
-        QL_LOG( Stringf("Type: %u ", eqType ).ascii() );
+        QL_LOG( Stringf( "Type: %u ", eqType ).ascii() );
         ++it;
         double eqScalar = atof( it->ascii() );
         QL_LOG( Stringf( "Scalar: %f\n", eqScalar ).ascii() );
@@ -163,7 +165,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
 
         default:
             // Throw exception
-            throw MarabouError( MarabouError::INVALID_EQUATION_TYPE, Stringf( "Invalid Equation Type\n" ).ascii() );
+            throw MarabouError( MarabouError::INVALID_EQUATION_TYPE,
+                                Stringf( "Invalid Equation Type\n" ).ascii() );
             break;
         }
 
@@ -198,7 +201,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         String coType = *it;
         String serializeConstraint;
         // include type in serializeConstraint as well
-        while ( it != tokens.end() ) {
+        while ( it != tokens.end() )
+        {
             serializeConstraint += *it + String( "," );
             it++;
         }
@@ -212,7 +216,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else if ( coType == "leaky_relu" )
         {
-            inputQuery.addPiecewiseLinearConstraint( new LeakyReluConstraint( serializeConstraint ) );
+            inputQuery.addPiecewiseLinearConstraint(
+                new LeakyReluConstraint( serializeConstraint ) );
         }
         else if ( coType == "max" )
         {
@@ -220,7 +225,8 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else if ( coType == "absoluteValue" )
         {
-            inputQuery.addPiecewiseLinearConstraint( new AbsoluteValueConstraint( serializeConstraint ) );
+            inputQuery.addPiecewiseLinearConstraint(
+                new AbsoluteValueConstraint( serializeConstraint ) );
         }
         else if ( coType == "sign" )
         {
@@ -228,26 +234,27 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else if ( coType == "disj" )
         {
-            inputQuery.addPiecewiseLinearConstraint( new DisjunctionConstraint( serializeConstraint ) );
+            inputQuery.addPiecewiseLinearConstraint(
+                new DisjunctionConstraint( serializeConstraint ) );
         }
-        else if ( coType == "sigmoid")
+        else if ( coType == "sigmoid" )
         {
             inputQuery.addNonlinearConstraint( new SigmoidConstraint( serializeConstraint ) );
         }
-        else if ( coType == "softmax")
+        else if ( coType == "softmax" )
         {
             SoftmaxConstraint *softmax = new SoftmaxConstraint( serializeConstraint );
-            inputQuery.addNonlinearConstraint(softmax);
+            inputQuery.addNonlinearConstraint( softmax );
             Equation eq;
             for ( const auto &output : softmax->getOutputs() )
-                eq.addAddend(1, output);
-            eq.setScalar(1);
-            inputQuery.addEquation(eq);
+                eq.addAddend( 1, output );
+            eq.setScalar( 1 );
+            inputQuery.addEquation( eq );
         }
-        else if ( coType == "bilinear")
+        else if ( coType == "bilinear" )
         {
             BilinearConstraint *bilinear = new BilinearConstraint( serializeConstraint );
-            inputQuery.addNonlinearConstraint(bilinear);
+            inputQuery.addNonlinearConstraint( bilinear );
         }
         else if ( coType == "round" )
         {
@@ -255,7 +262,9 @@ InputQuery QueryLoader::loadQuery( const String &fileName )
         }
         else
         {
-            throw MarabouError( MarabouError::UNSUPPORTED_NON_LINEAR_CONSTRAINT, Stringf( "Unsupported non-linear constraint: %s\n", coType.ascii() ).ascii() );
+            throw MarabouError(
+                MarabouError::UNSUPPORTED_NON_LINEAR_CONSTRAINT,
+                Stringf( "Unsupported non-linear constraint: %s\n", coType.ascii() ).ascii() );
         }
     }
 

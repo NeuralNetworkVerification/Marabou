@@ -13,10 +13,12 @@
 
  **/
 
+#include "SparseUnsortedArrays.h"
+
 #include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "FloatUtils.h"
-#include "SparseUnsortedArrays.h"
+
 #include <cstring>
 
 SparseUnsortedArrays::SparseUnsortedArrays()
@@ -58,13 +60,15 @@ void SparseUnsortedArrays::initialize( const double *M, unsigned m, unsigned n )
 
     _rows = new SparseUnsortedArray *[_m];
     if ( !_rows )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::rows" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseUnsortedArrays::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
         _rows[i] = new SparseUnsortedArray;
         if ( !_rows[i] )
-            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::rows[i]" );
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                           "SparseUnsortedArrays::rows[i]" );
 
         _rows[i]->initialize( M + ( i * n ), n );
     }
@@ -79,13 +83,15 @@ void SparseUnsortedArrays::initialize( const SparseUnsortedArray **V, unsigned m
 
     _rows = new SparseUnsortedArray *[_m];
     if ( !_rows )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::rows" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseUnsortedArrays::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
         _rows[i] = new SparseUnsortedArray;
         if ( !_rows[i] )
-            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::rows[i]" );
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                           "SparseUnsortedArrays::rows[i]" );
 
         V[i]->storeIntoOther( _rows[i] );
     }
@@ -100,13 +106,15 @@ void SparseUnsortedArrays::initialize( const SparseUnsortedList **V, unsigned m,
 
     _rows = new SparseUnsortedArray *[_m];
     if ( !_rows )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedLists::rows" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseUnsortedLists::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
         _rows[i] = new SparseUnsortedArray;
         if ( !_rows[i] )
-            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedLists::rows[i]" );
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                           "SparseUnsortedLists::rows[i]" );
 
         _rows[i]->initializeFromList( V[i] );
     }
@@ -121,13 +129,15 @@ void SparseUnsortedArrays::initializeToEmpty( unsigned m, unsigned n )
 
     _rows = new SparseUnsortedArray *[_m];
     if ( !_rows )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::rows" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseUnsortedArrays::rows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
         _rows[i] = new SparseUnsortedArray( _n );
         if ( !_rows[i] )
-            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::rows[i]" );
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                           "SparseUnsortedArrays::rows[i]" );
     }
 }
 
@@ -179,13 +189,15 @@ void SparseUnsortedArrays::addLastRow( const double *row )
 {
     SparseUnsortedArray **newRows = new SparseUnsortedArray *[_m + 1];
     if ( !newRows )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::newRows" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseUnsortedArrays::newRows" );
 
-    memcpy( newRows, _rows, sizeof(SparseUnsortedArray *) * _m );
+    memcpy( newRows, _rows, sizeof( SparseUnsortedArray * ) * _m );
 
     newRows[_m] = new SparseUnsortedArray;
     if ( !newRows[_m] )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "ArrayOfCSRUnsortedLists::newRows[_m]" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "ArrayOfCSRUnsortedLists::newRows[_m]" );
 
     newRows[_m]->initialize( row, _n );
 
@@ -273,13 +285,15 @@ void SparseUnsortedArrays::storeIntoOther( SparseUnsortedArrays *other ) const
 
     other->_rows = new SparseUnsortedArray *[_m];
     if ( !other->_rows )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::otherRows" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "SparseUnsortedArrays::otherRows" );
 
     for ( unsigned i = 0; i < _m; ++i )
     {
         other->_rows[i] = new SparseUnsortedArray;
         if ( !other->_rows[i] )
-            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "SparseUnsortedArrays::otherRows[i]" );
+            throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                           "SparseUnsortedArrays::otherRows[i]" );
 
         _rows[i]->storeIntoOther( other->_rows[i] );
     }

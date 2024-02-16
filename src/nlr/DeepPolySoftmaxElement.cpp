@@ -509,8 +509,7 @@ double DeepPolySoftmaxElement::LSEUpperBound( const Vector<double> &inputs,
     Vector<double> inputTilda;
     SoftmaxConstraint::xTilda( inputs, inputs[i], inputTilda );
 
-    return ( ( li * std::log( ui ) - ui * std::log( li ) ) /
-                 ( std::log( ui ) - std::log( li ) ) -
+    return ( ( li * std::log( ui ) - ui * std::log( li ) ) / ( std::log( ui ) - std::log( li ) ) -
              ( ui - li ) / ( std::log( ui ) - std::log( li ) ) *
                  SoftmaxConstraint::logSumOfExponential( inputTilda ) );
 }

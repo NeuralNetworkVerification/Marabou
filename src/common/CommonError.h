@@ -21,7 +21,7 @@
 class CommonError : public Error
 {
 public:
-	enum Code {
+    enum Code {
         QUEUE_IS_EMPTY = 0,
         VALUE_DOESNT_EXIST_IN_VECTOR = 1,
         VECTOR_OUT_OF_BOUNDS = 2,
@@ -41,11 +41,13 @@ public:
         UNEXPECTED_GUROBI_STATUS = 16,
     };
 
-    CommonError( CommonError::Code code ) : Error( "CommonError", (int)code )
-	{
-	}
+    CommonError( CommonError::Code code )
+        : Error( "CommonError", (int)code )
+    {
+    }
 
-    CommonError( CommonError::Code code, const char *userMessage ) : Error( "CommonError", (int)code, userMessage )
+    CommonError( CommonError::Code code, const char *userMessage )
+        : Error( "CommonError", (int)code, userMessage )
     {
     }
 };

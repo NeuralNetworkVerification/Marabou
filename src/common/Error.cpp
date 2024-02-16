@@ -14,23 +14,27 @@
 **/
 
 #include "Error.h"
+
 #include "T/Errno.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-Error::Error( const char *errorClass, int code ) : _code( code )
+Error::Error( const char *errorClass, int code )
+    : _code( code )
 {
-    memset( _errorClass, 0, sizeof(_userMessage) );
-    memset( _userMessage, 0, sizeof(_userMessage) );
+    memset( _errorClass, 0, sizeof( _userMessage ) );
+    memset( _userMessage, 0, sizeof( _userMessage ) );
 
     strncpy( _errorClass, errorClass, BUFFER_SIZE - 1 );
     _errno = T::errorNumber();
 }
 
-Error::Error( const char *errorClass, int code, const char *userMessage ) : _code( code )
+Error::Error( const char *errorClass, int code, const char *userMessage )
+    : _code( code )
 {
-    memset( _errorClass, 0, sizeof(_userMessage) );
-    memset( _userMessage, 0, sizeof(_userMessage) );
+    memset( _errorClass, 0, sizeof( _userMessage ) );
+    memset( _userMessage, 0, sizeof( _userMessage ) );
 
     strncpy( _errorClass, errorClass, BUFFER_SIZE - 1 );
     setUserMessage( userMessage );

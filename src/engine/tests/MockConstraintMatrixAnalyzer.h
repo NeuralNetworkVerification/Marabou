@@ -21,37 +21,37 @@
 class MockConstraintMatrixAnalyzer : public IConstraintMatrixAnalyzer
 {
 public:
-	MockConstraintMatrixAnalyzer()
-	{
-		wasCreated = false;
-		wasDiscarded = false;
+    MockConstraintMatrixAnalyzer()
+    {
+        wasCreated = false;
+        wasDiscarded = false;
     }
 
     ~MockConstraintMatrixAnalyzer()
     {
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
-    void analyze( const double */* matrix */, unsigned /* m */, unsigned /* n */ )
+    void analyze( const double * /* matrix */, unsigned /* m */, unsigned /* n */ )
     {
     }
 
-    void analyze( const SparseUnsortedList **/* matrix */, unsigned /* m */, unsigned /* n */ )
+    void analyze( const SparseUnsortedList ** /* matrix */, unsigned /* m */, unsigned /* n */ )
     {
     }
 

@@ -22,39 +22,39 @@
 class AutoCostFunctionManager
 {
 public:
-	AutoCostFunctionManager( ITableau *tableau )
-	{
-		_costFunctionManager = T::createCostFunctionManager( tableau );
-	}
+    AutoCostFunctionManager( ITableau *tableau )
+    {
+        _costFunctionManager = T::createCostFunctionManager( tableau );
+    }
 
-	~AutoCostFunctionManager()
-	{
-		T::discardCostFunctionManager( _costFunctionManager );
-		_costFunctionManager = 0;
-	}
+    ~AutoCostFunctionManager()
+    {
+        T::discardCostFunctionManager( _costFunctionManager );
+        _costFunctionManager = 0;
+    }
 
-	operator ICostFunctionManager &()
-	{
-		return *_costFunctionManager;
-	}
+    operator ICostFunctionManager &()
+    {
+        return *_costFunctionManager;
+    }
 
-	operator ICostFunctionManager *()
-	{
-		return _costFunctionManager;
-	}
+    operator ICostFunctionManager *()
+    {
+        return _costFunctionManager;
+    }
 
-	ICostFunctionManager *operator->()
-	{
-		return _costFunctionManager;
-	}
+    ICostFunctionManager *operator->()
+    {
+        return _costFunctionManager;
+    }
 
-	const ICostFunctionManager *operator->() const
-	{
-		return _costFunctionManager;
-	}
+    const ICostFunctionManager *operator->() const
+    {
+        return _costFunctionManager;
+    }
 
 private:
-	ICostFunctionManager *_costFunctionManager;
+    ICostFunctionManager *_costFunctionManager;
 };
 
 #endif // __AutoCostFunctionManager_h__

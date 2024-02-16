@@ -13,22 +13,21 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
-#include "MockEngine.h"
 #include "InputQuery.h"
-#include "PiecewiseLinearConstraint.h"
-#include "PolarityBasedDivider.h"
 #include "List.h"
 #include "MStringf.h"
+#include "MockEngine.h"
+#include "PiecewiseLinearConstraint.h"
+#include "PolarityBasedDivider.h"
 #include "ReluConstraint.h"
 #include "SubQuery.h"
 #include "Vector.h"
 
+#include <cxxtest/TestSuite.h>
+
 class PolarityBasedDividerTestSuite : public CxxTest::TestSuite
 {
 public:
-
     std::shared_ptr<MockEngine> engine;
     void setUp()
     {
@@ -57,8 +56,8 @@ public:
         engine->setSplitPLConstraint( relu2 );
 
         // Initiate the divider
-        auto queryDivider = std::unique_ptr<PolarityBasedDivider>
-            ( new PolarityBasedDivider( engine ) );
+        auto queryDivider =
+            std::unique_ptr<PolarityBasedDivider>( new PolarityBasedDivider( engine ) );
         double timeoutFactor = 1.5;
 
         // Use the divider to create 4 subqueries
@@ -66,14 +65,16 @@ public:
         unsigned numNewSubQueries = 4;
         String queryId = "mock";
         unsigned timeoutInSeconds = 5;
-        auto previousSplit = std::unique_ptr<PiecewiseLinearCaseSplit>
-            ( new PiecewiseLinearCaseSplit );
+        auto previousSplit =
+            std::unique_ptr<PiecewiseLinearCaseSplit>( new PiecewiseLinearCaseSplit );
 
         // Divide the previousSplit
         SubQueries subQueries;
-        queryDivider->createSubQueries( numNewSubQueries, queryId, 0,
-                                        *previousSplit, (unsigned)
-                                        timeoutInSeconds * timeoutFactor,
+        queryDivider->createSubQueries( numNewSubQueries,
+                                        queryId,
+                                        0,
+                                        *previousSplit,
+                                        (unsigned)timeoutInSeconds * timeoutFactor,
                                         subQueries );
         TS_ASSERT_EQUALS( subQueries.size(), numNewSubQueries );
 
@@ -89,20 +90,20 @@ public:
         auto split2_2 = *splits2.rbegin();
 
         PiecewiseLinearCaseSplit split_act_act;
-        add_to_split( split_act_act, split1_1);
-        add_to_split( split_act_act, split2_1);
+        add_to_split( split_act_act, split1_1 );
+        add_to_split( split_act_act, split2_1 );
 
         PiecewiseLinearCaseSplit split_act_inact;
-        add_to_split( split_act_inact, split1_1);
-        add_to_split( split_act_inact, split2_2);
+        add_to_split( split_act_inact, split1_1 );
+        add_to_split( split_act_inact, split2_2 );
 
         PiecewiseLinearCaseSplit split_inact_act;
-        add_to_split( split_inact_act, split1_2);
-        add_to_split( split_inact_act, split2_1);
+        add_to_split( split_inact_act, split1_2 );
+        add_to_split( split_inact_act, split2_1 );
 
         PiecewiseLinearCaseSplit split_inact_inact;
-        add_to_split( split_inact_inact, split1_2);
-        add_to_split( split_inact_inact, split2_2);
+        add_to_split( split_inact_inact, split1_2 );
+        add_to_split( split_inact_inact, split2_2 );
 
         // The following four splits should be created by the queryDivider
         Vector<PiecewiseLinearCaseSplit> newSplits;
@@ -111,15 +112,13 @@ public:
         newSplits.append( split_inact_act );
         newSplits.append( split_inact_inact );
 
-        unsigned correctTimeoutInSeconds = (unsigned) ( timeoutInSeconds *
-                                                        timeoutFactor );
+        unsigned correctTimeoutInSeconds = (unsigned)( timeoutInSeconds * timeoutFactor );
         unsigned index = 0;
         for ( const auto &subQuery : subQueries )
         {
-            TS_ASSERT( subQuery->_queryId == queryId +
-                       Stringf( "-%u", index + 1 ) );
+            TS_ASSERT( subQuery->_queryId == queryId + Stringf( "-%u", index + 1 ) );
             TS_ASSERT( subQuery->_depth == 1 );
-            TS_ASSERT( *(subQuery->_split) == newSplits[index] );
+            TS_ASSERT( *( subQuery->_split ) == newSplits[index] );
             TS_ASSERT( subQuery->_timeoutInSeconds == correctTimeoutInSeconds );
             ++index;
 

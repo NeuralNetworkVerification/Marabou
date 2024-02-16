@@ -29,7 +29,7 @@ public:
         Map<unsigned, double> _upperBounds;
     };
 
-    virtual ~QueryDivider() {};
+    virtual ~QueryDivider(){};
 
     /*
       Divide the previousSubquery into |numNewSubQueries| new subqueries and

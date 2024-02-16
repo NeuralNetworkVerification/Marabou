@@ -72,7 +72,7 @@ public:
     /*
       Perform an evaluation of the network for a specific input.
     */
-    void evaluate( double *input , double *output );
+    void evaluate( double *input, double *output );
 
     /*
       Perform an evaluation of the network for the current input variable
@@ -83,7 +83,7 @@ public:
     /*
       Perform a simulation of the network for a specific input
     */
-   void simulate( Vector<Vector<double>> *input );
+    void simulate( Vector<Vector<double>> *input );
 
     /*
       Bound propagation methods:
@@ -136,7 +136,7 @@ public:
     /*
       For debugging purposes: dump the network topology
     */
-    void dumpTopology( bool dumpLayerDetails=true ) const;
+    void dumpTopology( bool dumpLayerDetails = true ) const;
 
     /*
       Duplicate the reasoner
@@ -194,7 +194,6 @@ public:
     const Map<unsigned, Layer *> &getLayerIndexToLayer() const;
 
 private:
-
     Map<unsigned, Layer *> _layerIndexToLayer;
     const ITableau *_tableau;
 
@@ -209,9 +208,9 @@ private:
     List<PiecewiseLinearConstraint *> _constraintsInTopologicalOrder;
 
     // Map each neuron to a linear expression representing its weighted sum
-    void generateLinearExpressionForWeightedSumLayer( Map<unsigned, LinearExpression>
-                                                      &variableToExpression,
-                                                      const Layer &layer );
+    void generateLinearExpressionForWeightedSumLayer(
+        Map<unsigned, LinearExpression> &variableToExpression,
+        const Layer &layer );
 
     // Helper functions for generating an input query
     void generateInputQueryForLayer( InputQuery &inputQuery, const Layer &layer );
