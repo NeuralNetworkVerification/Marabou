@@ -361,15 +361,11 @@ public:
 
     void test_sigmoid()
     {
-        Vector<double> input = {
-            -2, 0,
-            1, 3.5
-        };
+        Vector<double> input = { -2, 0, 1, 3.5 };
         Vector<double> output = {
-            sigmoid_fn(-2), sigmoid_fn(0),
-            sigmoid_fn(1), sigmoid_fn(3.5)
+            sigmoid_fn( -2 ), sigmoid_fn( 0 ), sigmoid_fn( 1 ), sigmoid_fn( 3.5 )
         };
-        run_test("sigmoid", input, output);
+        run_test( "sigmoid", input, output );
     }
 
     double tanh_fn( double value )
@@ -379,15 +375,9 @@ public:
 
     void test_tanh()
     {
-        Vector<double> input = {
-            -2, 0,
-            1, 3.5
-        };
-        Vector<double> output = {
-            tanh_fn(-2), tanh_fn(0),
-            tanh_fn(1), tanh_fn(3.5)
-        };
-        run_test("tanh", input, output);
+        Vector<double> input = { -2, 0, 1, 3.5 };
+        Vector<double> output = { tanh_fn( -2 ), tanh_fn( 0 ), tanh_fn( 1 ), tanh_fn( 3.5 ) };
+        run_test( "tanh", input, output );
     }
 
     void test_cast_int_to_float()
