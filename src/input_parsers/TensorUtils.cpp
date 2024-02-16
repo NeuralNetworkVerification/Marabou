@@ -117,13 +117,18 @@ TensorIndices broadcastIndex( TensorShape currentShape,
     return result;
 }
 
-TensorIndex unsignIndex( TensorShape shape, SignedTensorIndex signedIndex )
+TensorIndex unsignIndex( unsigned int size, SignedTensorIndex signedIndex )
 {
     if ( signedIndex >= 0 )
     {
-        return static_cast<unsigned int>( signedIndex );
+        TensorIndex result = static_cast<unsigned int>( signedIndex );
+        ASSERT( result < size );
+        return result;
     }
-    return shape.size() - static_cast<unsigned int>( -signedIndex );
+
+    unsigned int result = static_cast<unsigned int>( -signedIndex );
+    ASSERT( result <= size );
+    return size - result;
 }
 
 Padding::Padding( int padFront, int padBack )

@@ -14,7 +14,7 @@
 * Changes to command-line ONNX support:
   - Fixed bug with variable lower bounds not being set correctly.
   - Fixed bug with sigmoid operators not being parsed correctly.
-  - Added support for `Tanh`, `Squeeze`, `LeakyRelu` and `Cast` operators.
+  - Added support for `Tanh`, `Unsqueeze`, `Squeeze`, `LeakyRelu` and `Cast` operators.
   - Added support for networks with multiple outputs
 
 * Added command-line support for properties in the VNNLIB format.
