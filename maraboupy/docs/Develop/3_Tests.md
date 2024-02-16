@@ -16,6 +16,10 @@ directory. When adding new tests or test files, try to follow the syntax of othe
 This page covers some basic information about how to write these tests. More information can be found in the
 [pytest](https://docs.pytest.org/en/stable/) documentation.
 
+## Running tests
+
+Tests can be run by navigating to the `maraboupy` folder and running the command `pytest`.
+
 ## Writing a test
 When writing a test, make sure that pytest has been imported. Also, relative imports are used to import Marabou
 so that the tests can be run from any directory regardless of if PYTHONPATH points to the Marabou directory.

@@ -66,23 +66,23 @@ def createQuery(args):
         return None, None
 
     if  args.prop != None:
-        query = network.getMarabouQuery()
+        query = network.getInputQuery()
         MarabouCore.loadProperty(query, args.prop)
         return query, network
 
     if args.dataset == 'mnist':
         encode_mnist_linf(network, args.index, args.epsilon, args.target_label)
-        return network.getMarabouQuery(), network
+        return network.getInputQuery(), network
     elif args.dataset == 'cifar10':
         encode_cifar10_linf(network, args.index, args.epsilon, args.target_label)
-        return network.getMarabouQuery(), network
+        return network.getInputQuery(), network
     else:
         """
         ENCODE YOUR CUSTOMIZED PROPERTY HERE!
         """
         print("No property encoded!")
 
-        return network.getMarabouQuery(), network
+        return network.getInputQuery(), network
 
 def encode_mnist_linf(network, index, epsilon, target_label):
     from tensorflow.keras.datasets import mnist
