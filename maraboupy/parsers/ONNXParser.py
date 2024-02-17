@@ -32,7 +32,7 @@ class ONNXParser:
     """
 
     @staticmethod
-    def parse(query:InputQueryBuilder, graph, inputNames:List[str], outputNames:List[str], reindexOutputVars=True):
+    def parse(query:InputQueryBuilder, graph, inputNames:List[str], outputNames:List[str]):
         """
         Parses the provided ONNX graph into constraints which are stored in the query argument.
 
@@ -46,12 +46,14 @@ class ONNXParser:
             :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
         """
         parser = ONNXParser(query, graph, inputNames, outputNames)
-        parser.parseGraph(reindexOutputVars=reindexOutputVars)
+        parser.parseGraph()
 
 
     def __init__(self, query:InputQueryBuilder, graph, inputNames, outputNames):
         """
         Should not be called directly. Use `ONNXParser.parse` instead.
+
+        :meta private:
         """
         super().__init__()
         self.query = query
@@ -65,10 +67,8 @@ class ONNXParser:
         self.shapeMap = dict()
 
 
-    def parseGraph(self, reindexOutputVars=True):
+    def parseGraph(self):
         """Read an ONNX file and create a MarabouNetworkONNX object
-        Args:
-            reindexOutputVars: (bool): Reindex the variables so that the output variables are immediate after input variables.
 
         :meta private:
         """
@@ -81,16 +81,10 @@ class ONNXParser:
         # shape information saved not relevant to the portion of the network. Remove extra shapes.
         self.cleanShapes()
 
-        if reindexOutputVars:
-            # Other Marabou input parsers assign output variables immediately after input variables and before any
-            # intermediate variables. This function reassigns variable numbering to match other parsers.
-            # If this is skipped, the output variables will be the last variables defined.
-            self.reassignOutputVariables()
-        else:
-            for outputName in self.outputNames:
-                if outputName in self.constantMap:
-                    raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
-            self.query.outputVars.extend([self.varMap[outputName] for outputName in self.outputNames])
+        for outputName in self.outputNames:
+            if outputName in self.constantMap:
+                raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
+        self.query.outputVars.extend([self.varMap[outputName] for outputName in self.outputNames])
 
     def processGraph(self):
         """Processes the ONNX graph to produce Marabou equations
@@ -1320,109 +1314,6 @@ class ONNXParser:
         for nodeName in [name for name in self.shapeMap]:
             if nodeName not in self.varMap and nodeName not in self.constantMap:
                 self.shapeMap.pop(nodeName)
-
-    def reassignVariable(self, var, numInVars, outVars, newOutVars):
-        """Reassign output variable so that output variables follow input variables
-
-        This function computes what the given variable should be when the output variables are
-        moved to come after the input variables.
-
-        Args:
-            var (int): Original variable number
-            numInVars (int): Number of input variables
-            outVars (numpy array of int): Original output variables
-            newOutVars (numpy array of int): New output variables
-
-        Returns:
-            (int): New variable assignment
-
-        :meta private:
-        """
-        if var < numInVars:
-            return var
-        if var in outVars:
-            ind = np.where(var == outVars)[0][0]
-            return newOutVars[ind]
-        return var + len([outVar for outVar in outVars if outVar > var])
-
-    def reassignOutputVariables(self):
-        """Reassign output variables so output variable numbers follow input variable numbers
-
-        Other input parsers assign output variables after input variables and before any intermediate variables.
-        This function reassigns the numbers for the output variables and shifts all other variables up to make space.
-
-        :meta private:
-        """
-        for outputName in self.outputNames:
-            if outputName in self.constantMap:
-                raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
-        outVars = np.concatenate([self.varMap[outputName].reshape(-1) for outputName in self.outputNames])
-        numInVars = np.sum([np.prod(self.shapeMap[inputName]) for inputName in self.inputNames])
-        numOutVars = len(outVars)
-        newOutVars = np.array(range(numInVars, numInVars+numOutVars))
-
-        # Adjust equation variables
-        for eq in self.query.equList:
-            for i, (c,var) in enumerate(eq.addendList):
-                eq.addendList[i] = (c, self.reassignVariable(var, numInVars, outVars, newOutVars))
-
-        # Adjust equation variables
-        for eq in self.query.additionalEquList:
-            for i, (c,var) in enumerate(eq.addendList):
-                eq.addendList[i] = (c, self.reassignVariable(var, numInVars, outVars, newOutVars))
-
-        # Adjust relu list
-        for i, variables in enumerate(self.query.reluList):
-            self.query.reluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
-
-        # Adjust relu list
-        for i, variables in enumerate(self.query.leakyReluList):
-            self.query.leakyReluList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
-
-        # Adjust sigmoid list
-        for i, variables in enumerate(self.query.sigmoidList):
-            self.query.sigmoidList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
-
-        # Adjust bilinear list
-        for i, variables in enumerate(self.query.bilinearList):
-            self.query.bilinearList[i] = tuple([self.reassignVariable(var, numInVars, outVars, newOutVars) for var in variables])
-
-        # Adjust softmax list
-        for i, (inputs, outputs) in enumerate(self.query.softmaxList):
-            newInputs = []
-            for var in inputs:
-                newInputs.append(self.reassignVariable(var, numInVars, outVars, newOutVars))
-            newOutputs = []
-            for var in outputs:
-                newOutputs.append(self.reassignVariable(var, numInVars, outVars, newOutVars))
-
-            self.query.softmaxList[i] = (newInputs, newOutputs)
-
-        # Adjust max pool list
-        for i, (elements, outVar) in enumerate(self.query.maxList):
-            newOutVar = self.reassignVariable(outVar, numInVars, outVars, newOutVars)
-            newElements = set()
-            for var in elements:
-                newElements.add(self.reassignVariable(var, numInVars, outVars, newOutVars))
-            self.query.maxList[i] = (newElements, newOutVar)
-
-        # Adjust upper/lower bounds
-        newLowerBounds = dict()
-        newUpperBounds = dict()
-        for var in self.query.lowerBounds:
-            newLowerBounds[self.reassignVariable(var, numInVars, outVars, newOutVars)] = self.query.lowerBounds[var]
-        for var in self.query.upperBounds:
-            newUpperBounds[self.reassignVariable(var, numInVars, outVars, newOutVars)] = self.query.upperBounds[var]
-        self.query.lowerBounds = newLowerBounds
-        self.query.upperBounds = newUpperBounds
-
-        # Assign output variables to the new array
-        for outputName in self.outputNames:
-            numVars = len(self.varMap[outputName].reshape(-1))
-            self.varMap[outputName] = newOutVars[:numVars].reshape(self.shapeMap[outputName])
-            newOutVars = newOutVars[numVars:]
-
-        self.query.outputVars = [self.varMap[outputName] for outputName in self.outputNames]
 
 def getBroadcastShape(shape1, shape2):
     """Helper function to get the shape that results from broadcasting these shapes together
