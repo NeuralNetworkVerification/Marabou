@@ -27,7 +27,6 @@ public:
     void run_test( String name, Vector<double> inputValues, Vector<double> expectedOutputValues )
     {
         // Extract an input query from the network
-        InputQuery inputQuery;
 
         String networkPath = Stringf( "%s/%s.onnx", RESOURCES_DIR "/onnx/layer-zoo", name.ascii() );
         if ( !File::exists( networkPath ) )
@@ -37,8 +36,11 @@ public:
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkPath.ascii() );
         }
 
-        OnnxParser onnxParser( networkPath );
-        TS_ASSERT_THROWS_NOTHING( onnxParser.generateQuery( inputQuery ) );
+        InputQueryBuilder queryBuilder;
+        TS_ASSERT_THROWS_NOTHING( OnnxParser::parse( queryBuilder, networkPath, {}, {} ) );
+
+        InputQuery inputQuery;
+        queryBuilder.generateQuery( inputQuery );
 
         TS_ASSERT( inputValues.size() == inputQuery.getNumInputVariables() );
         TS_ASSERT( expectedOutputValues.size() == inputQuery.getNumOutputVariables() );
