@@ -23,25 +23,41 @@
 class VnnLibParserTestSuite : public CxxTest::TestSuite
 {
 public:
+    InputQuery *inputQuery;
+
+    void setUp()
+    {
+        inputQuery = new InputQuery();
+    }
+
+    void tearDown()
+    {
+        delete inputQuery;
+    }
+
+    void parse( String vnnlibFile, String onnxFile )
+    {
+        String queryPath = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib", vnnlibFile.ascii() );
+        String onnxPath = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib", onnxFile.ascii() );
+
+        InputQueryBuilder queryBuilder;
+
+        printf( "%s\n", onnxPath.ascii() );
+
+        TS_ASSERT_THROWS_NOTHING( OnnxParser::parse( queryBuilder, onnxPath, {}, {} ) );
+        queryBuilder.generateQuery( *inputQuery );
+        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( queryPath, *inputQuery ) );
+    }
+
     void test_nano_vnncomp()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        parse( "test_nano_vnncomp.vnnlib", "test_nano_vnncomp.onnx" );
 
-        InputQuery inputQuery;
+        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
+        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
-
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == -1 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )
@@ -50,23 +66,13 @@ public:
 
     void test_tiny_vnncomp()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_tiny_vnncomp.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_tiny_vnncomp.onnx" );
+        parse( "test_tiny_vnncomp.vnnlib", "test_tiny_vnncomp.onnx" );
 
-        InputQuery inputQuery;
-
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
-
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
+        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
+        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
 
         auto *disjunction =
-            (DisjunctionConstraint *)( inputQuery.getPiecewiseLinearConstraints().back() );
+            (DisjunctionConstraint *)( inputQuery->getPiecewiseLinearConstraints().back() );
         const auto &caseSplits = disjunction->getCaseSplits();
         const auto &caseSplitsIter = caseSplits.begin();
         auto boundsIter = ( *caseSplitsIter ).getBoundTightenings().begin();
@@ -85,24 +91,13 @@ public:
 
     void test_small_vnncomp()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_small_vnncomp.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_small_vnncomp.onnx" );
+        parse( "test_small_vnncomp.vnnlib", "test_small_vnncomp.onnx" );
 
-        InputQuery inputQuery;
-        Equation testEq = Equation( Equation::EquationType::LE );
-
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
-
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
+        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
+        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
 
         auto *disjunction =
-            (DisjunctionConstraint *)( inputQuery.getPiecewiseLinearConstraints().back() );
+            (DisjunctionConstraint *)( inputQuery->getPiecewiseLinearConstraints().back() );
         const auto &caseSplits = disjunction->getCaseSplits();
         const auto &caseSplitsIter = caseSplits.begin();
         auto boundsIter = ( *caseSplitsIter ).getBoundTightenings().begin();
@@ -121,27 +116,17 @@ public:
 
     void test_sat_vnncomp()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_prop_vnncomp.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
-
-        InputQuery inputQuery;
+        parse( "test_prop_vnncomp.vnnlib", "test_sat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
-
-        unsigned int input0 = inputQuery.inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery.inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery.inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
+        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
+        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
+        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
+        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
+        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -163,68 +148,58 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        auto eqIter = inputQuery.getEquations().rbegin();
+        auto eqIter = inputQuery->getEquations().rbegin();
 
         Equation &eq = *eqIter;
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 4 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 4 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 3 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 3 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 2 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 2 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 1 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 1 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         Engine engine;
         engine.setVerbosity( 0 );
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == Engine::ExitCode::SAT )
     }
 
     void test_unsat_vnncomp()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_prop_vnncomp.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_unsat_vnncomp.onnx" );
-
-        InputQuery inputQuery;
+        parse( "test_prop_vnncomp.vnnlib", "test_unsat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
-
-        unsigned int input0 = inputQuery.inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery.inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery.inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
+        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
+        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
+        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
+        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
+        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -246,65 +221,54 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        auto eqIter = inputQuery.getEquations().rbegin();
+        auto eqIter = inputQuery->getEquations().rbegin();
 
         Equation &eq = *eqIter;
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 4 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 4 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 3 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 3 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 2 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 2 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         eqIter++;
         eq = *eqIter;
         testEq = Equation( Equation::EquationType::LE );
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 1 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 1 ) );
         testEq.setScalar( 0 );
         TS_ASSERT( eq.equivalent( testEq ) )
 
         Engine engine;
         engine.setVerbosity( 0 );
-        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery ) );
+        TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( *inputQuery ) );
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
         TS_ASSERT( engine.getExitCode() == Engine::ExitCode::UNSAT )
     }
 
     void test_add_const()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_add_const.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        parse( "test_add_const.vnnlib", "test_nano_vnncomp.onnx" );
 
-        InputQuery inputQuery;
-        Equation testEq = Equation( Equation::EquationType::LE );
+        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
+        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
-
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 0 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )
@@ -313,26 +277,17 @@ public:
 
     void test_add_var()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_add_var.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
-
-        InputQuery inputQuery;
+        parse( "test_add_var.vnnlib", "test_sat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
-
-        unsigned int input0 = inputQuery.inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery.inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery.inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
+        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
+        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
+        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
+        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
+        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -354,15 +309,15 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        unsigned int output0 = inputQuery.outputVariableByIndex( 0 );
-        unsigned int output1 = inputQuery.outputVariableByIndex( 1 );
-        unsigned int output2 = inputQuery.outputVariableByIndex( 2 );
+        unsigned int output0 = inputQuery->outputVariableByIndex( 0 );
+        unsigned int output1 = inputQuery->outputVariableByIndex( 1 );
+        unsigned int output2 = inputQuery->outputVariableByIndex( 2 );
 
         TS_ASSERT( lowerBounds.exists( output0 ) && lowerBounds.get( output0 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output1 ) && lowerBounds.get( output1 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output2 ) && lowerBounds.get( output2 ) == 0 )
 
-        auto eqIter = inputQuery.getEquations().rbegin();
+        auto eqIter = inputQuery->getEquations().rbegin();
 
         Equation &eq = *eqIter;
         testEq.addAddend( 1, output0 );
@@ -373,24 +328,13 @@ public:
 
     void test_sub_const()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sub_const.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        parse( "test_sub_const.vnnlib", "test_nano_vnncomp.onnx" );
 
-        InputQuery inputQuery;
-        Equation testEq = Equation( Equation::EquationType::LE );
+        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
+        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
-
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 2 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 3 )
@@ -399,26 +343,17 @@ public:
 
     void test_sub_var()
     {
-        String filename = Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sub_var.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_sat_vnncomp.onnx" );
-
-        InputQuery inputQuery;
+        parse( "test_sub_var.vnnlib", "test_sat_vnncomp.onnx" );
         Equation testEq = Equation( Equation::EquationType::LE );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
-
-        unsigned int input0 = inputQuery.inputVariableByIndex( 0 );
-        unsigned int input1 = inputQuery.inputVariableByIndex( 1 );
-        unsigned int input2 = inputQuery.inputVariableByIndex( 2 );
-        unsigned int input3 = inputQuery.inputVariableByIndex( 3 );
-        unsigned int input4 = inputQuery.inputVariableByIndex( 4 );
+        unsigned int input0 = inputQuery->inputVariableByIndex( 0 );
+        unsigned int input1 = inputQuery->inputVariableByIndex( 1 );
+        unsigned int input2 = inputQuery->inputVariableByIndex( 2 );
+        unsigned int input3 = inputQuery->inputVariableByIndex( 3 );
+        unsigned int input4 = inputQuery->inputVariableByIndex( 4 );
 
         TS_ASSERT( lowerBounds.exists( input0 ) &&
                    lowerBounds.get( input0 ) == -0.30353115613746867 )
@@ -440,43 +375,32 @@ public:
         TS_ASSERT( lowerBounds.exists( input4 ) && lowerBounds.get( input4 ) == 0.3 )
         TS_ASSERT( upperBounds.exists( input4 ) && upperBounds.get( input4 ) == 0.5 )
 
-        unsigned int output0 = inputQuery.outputVariableByIndex( 0 );
-        unsigned int output1 = inputQuery.outputVariableByIndex( 1 );
-        unsigned int output2 = inputQuery.outputVariableByIndex( 2 );
+        unsigned int output0 = inputQuery->outputVariableByIndex( 0 );
+        unsigned int output1 = inputQuery->outputVariableByIndex( 1 );
+        unsigned int output2 = inputQuery->outputVariableByIndex( 2 );
 
         TS_ASSERT( lowerBounds.exists( output0 ) && lowerBounds.get( output0 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output1 ) && lowerBounds.get( output1 ) == 0 )
         TS_ASSERT( lowerBounds.exists( output2 ) && lowerBounds.get( output2 ) == 0 )
 
-        auto eqIter = inputQuery.getEquations().rbegin();
+        auto eqIter = inputQuery->getEquations().rbegin();
 
         Equation &eq = *eqIter;
-        testEq.addAddend( 1, inputQuery.outputVariableByIndex( 0 ) );
-        testEq.addAddend( -1, inputQuery.outputVariableByIndex( 1 ) );
+        testEq.addAddend( 1, inputQuery->outputVariableByIndex( 0 ) );
+        testEq.addAddend( -1, inputQuery->outputVariableByIndex( 1 ) );
         testEq.setScalar( 1 );
         TS_ASSERT( eq.equivalent( testEq ) )
     }
 
     void test_mul_var_const()
     {
-        String filename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_mul_var_const.vnnlib" );
-        String onnxFilename =
-            Stringf( "%s/%s", RESOURCES_DIR "/onnx/vnnlib/", "test_nano_vnncomp.onnx" );
+        parse( "test_mul_var_const.vnnlib", "test_nano_vnncomp.onnx" );
 
-        InputQuery inputQuery;
-        Equation testEq = Equation( Equation::EquationType::LE );
+        unsigned int inputVar = inputQuery->inputVariableByIndex( 0 );
+        unsigned int outputVar = inputQuery->outputVariableByIndex( 0 );
 
-        OnnxParser onnxParser( onnxFilename );
-        onnxParser.generateQuery( inputQuery );
-
-        TS_ASSERT_THROWS_NOTHING( VnnLibParser().parse( filename, inputQuery ) );
-
-        unsigned int inputVar = inputQuery.inputVariableByIndex( 0 );
-        unsigned int outputVar = inputQuery.outputVariableByIndex( 0 );
-
-        const auto &lowerBounds = inputQuery.getLowerBounds();
-        const auto &upperBounds = inputQuery.getUpperBounds();
+        const auto &lowerBounds = inputQuery->getLowerBounds();
+        const auto &upperBounds = inputQuery->getUpperBounds();
 
         TS_ASSERT( lowerBounds.exists( inputVar ) && lowerBounds.get( inputVar ) == 0 )
         TS_ASSERT( upperBounds.exists( inputVar ) && upperBounds.get( inputVar ) == 1 )

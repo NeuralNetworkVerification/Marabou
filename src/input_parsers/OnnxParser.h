@@ -16,10 +16,10 @@
 #define __OnnxParser_h__
 
 #include "InputQuery.h"
+#include "InputQueryBuilder.h"
 #include "List.h"
 #include "MString.h"
 #include "Map.h"
-#include "NetworkParser.h"
 #include "Set.h"
 #include "TensorUtils.h"
 #include "Vector.h"
@@ -28,20 +28,23 @@
 #define ONNX_LOG( x, ... ) LOG( GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x )
 
 
-class OnnxParser : public NetworkParser
+class OnnxParser
 {
 public:
-    OnnxParser( const String &path );
-
-    void generateQuery( InputQuery &inputQuery );
-    void generatePartialQuery( InputQuery &inputQuery,
-                               Set<String> &inputNames,
-                               Set<String> &terminalNames );
+    static void parse( InputQueryBuilder &query,
+                       const String &path,
+                       const Set<String> inputNames,
+                       const Set<String> outputNames );
 
 
 private:
     // Settings //
+    OnnxParser( InputQueryBuilder &query,
+                const String &path,
+                const Set<String> inputNames,
+                const Set<String> terminalNames );
 
+    InputQueryBuilder &_query;
     onnx::GraphProto _network;
     Set<String> _inputNames;
 
@@ -62,16 +65,16 @@ private:
 
     // Methods //
 
+    const Set<String> readInputNames();
+    const Set<String> readOutputNames();
+    void validateUserInputNames( const Set<String> &inputNames );
+    void validateUserTerminalNames( const Set<String> &terminalNames );
+
     void readNetwork( const String &path );
-    Set<String> readInputNames();
-    Set<String> readOutputNames();
     void initializeShapeAndConstantMaps();
-    void validateUserInputNames( Set<String> &inputNames );
-    void validateUserTerminalNames( Set<String> &terminalNames );
     void validateAllInputsAndOutputsFound();
 
-    void
-    processGraph( Set<String> &inputNames, Set<String> &terminalNames, InputQuery &inputQuery );
+    void processGraph();
     void processNode( String &nodeName, bool makeEquations );
     void makeMarabouEquations( onnx::NodeProto &node, bool makeEquations );
     Set<String> getInputsToNode( onnx::NodeProto &node );
