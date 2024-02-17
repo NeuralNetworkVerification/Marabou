@@ -1,0 +1,16 @@
+# pre-commit configuration file
+#
+# TL;DR
+#   pre-commit runs a series of formatters and linters on every commit.
+#   If throws an error, it's usually already fixed the problem and just
+#   wants you to have a look at the changes it made.
+#   To setup the pre-commit hooks, you'll need pre-commit, and install the
+#   hooks by running `pre-commit install` from the repository root.
+#
+# See: https://pre-commit.com
+
+repos:
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v14.0.6
+  hooks:
+  - id: clang-format

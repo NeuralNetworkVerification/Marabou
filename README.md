@@ -1,4 +1,7 @@
-#  Marabou [![Marabou](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml/badge.svg)](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml) [![codecov.io](https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
+#  Marabou
+[![Marabou](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml/badge.svg)](https://github.com/NeuralNetworkVerification/Marabou/actions/workflows/ci.yml)
+[![codecov.io](https://codecov.io/github/NeuralNetworkVerification/Marabou/coverage.svg?branch=master)](https://codecov.io/github/NeuralNetworkVerification/Marabou?branch=master)
+
 Deep neural networks are revolutionizing the way complex systems are designed.
 Instead of spending long hours hand-crafting complex software, many engineers
 now opt to use deep neural networks (DNNs) - machine learning models, created by
@@ -40,73 +43,96 @@ For more information about the input formats please check the
 
 A guide to Split and Conquer mode is available in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb). The Jupyter Notebook gives on overview of SnC's parameters, discusses several runtime examples and a few rules of thumb to choose parameter values.
 
-Research
-------------------------------------------------------------------------------
+## Research
+
 More information about publications involving Marabou can be found
 [here](https://neuralnetworkverification.github.io/).
 
-Download
-------------------------------------------------------------------------------
-The latest version of Marabou is available on https://github.com/NeuralNetworkVerification/Marabou.
+## Installation
 
-Build and Dependencies
-------------------------------------------------------------------------------
+### Installing via Pip
 
-Marabou depends on the Boost library,
-which is automatically downloaded and built when you run make. Library CXXTEST
-comes included in the repository.
+The recommended way to install Marabou is via `pip` using the command
+```bash
+pip install maraboupy
+```
+which will install both the `Marabou` executable on your path and the Python bindings.
+The Python interface currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
-The marabou build process uses CMake version 3.12 (or later).
+### Building from source
+
+The current version of Marabou can be built for Linux or MacOS machines.
+
+#### Build dependencies
+
+The build process uses CMake version 3.16 (or later).
 You can get CMake [here](https://cmake.org/download/).
 
-Marabou can be built for Linux, MacOS, or Windows machines.
+Marabou depends on the Boost library, which is automatically downloaded
+and built when you run make.
+Library CXXTEST comes included in the repository.
 
-### Build Instructions for Linux or MacOS
+#### Build Instructions for Linux or MacOS
 
 To build marabou using CMake run:
-```
+```bash
 cd path/to/marabou/repo/folder
 mkdir build 
 cd build
 cmake ..
 ```
 For configuring to build a static Marabou binary, use the following flag
-```
+```bash
 cmake .. -DBUILD_STATIC_MARABOU=ON
 ```
 To build, run the following:
-```
+```bash
 cmake --build .
 ```
 To enable multiprocess build change the last command to:
-```
+```bash
 cmake --build . -j PROC_NUM
 ```
 To compile in debug mode (default is release)
-```
+```bash
 cmake .. -DCMAKE_BUILD_TYPE=Debug
 cmake --build .
 ```
-
-The compiled binary will be in the *build* directory, named _Marabou_
+After building Marabou, the compiled binary is located at `build/Marabou`.
 
 To run tests we use [ctest](https://cmake.org/cmake/help/v3.15/manual/ctest.1.html).
 The tests have labels according to level (unit/system/regress0/regress1...), and the code they are testing (engine/common etc...).  
 For example to run all unit tests execute in the build directory:
-```
+```bash
 ctest -L unit
 ```
 On every build we run the unit tests, and on every pull request we run unit,
 system, regress0 and regress1.
 
 Another option to build and run all of the tests is: 
-```
+```bash
 cd path/to/marabou/repo/folder
 mkdir build 
 cd build
 cmake ..
 make check -j PROC_NUM
 ```
+
+The Python bindings for Marabou are built automatically (controllable via the `BUILD_PYTHON` CMake flag).
+This process will produce the binary file and the shared library for the Python API,
+which is created in the `maraboupy` folder.
+Building the Python interface requires *pybind11* (which is automatically downloaded).
+
+It may be useful to set up a Python virtual environment, see
+[here](https://docs.python.org/3/tutorial/venv.html) for more information.
+
+Export `maraboupy` folder to Python and Jupyter paths:
+```
+PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
+JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
+```
+and the built `maraboupy` is ready to be used from a Python or a Jupyter script.
+
 ### Build Instructions for Windows using Visual Studio
 
 We no longer provide Windows support. The below instructions apply to commits up
@@ -127,75 +153,48 @@ This process builds Marabou using the generator "Visual Studio 15 2017 Win64".
 For 32-bit machines, omit Win64. Other generators and older versions of Visual Studio can likely be used as well, 
 but only "Visual Studio 15 2017 Win64" has been tested.
 
-The Marabou executable file will be written to the build/Release folder. To build in 
+The Marabou executable file will be written to `build\Release\Marabou.exe`. To build in
 Debug mode, simply run "cmake --build . --config Debug", and the executables will be 
 written to build/Debug.
 
-### Python API
-It may be useful to set up a Python virtual environment, see
-[here](https://docs.python.org/3/tutorial/venv.html) for more information.
-
-The python interface was tested only on versions >=3.8.
-The Python interface requires *pybind11* (which is automatically downloaded). 
-By default Marabou builds also the python API, the BUILD_PYTHON variable
-controls that.
-This process will produce the binary file and the shared library for the Python 
-API. The shared library will be in the maraboupy folder for Linux and MacOS. 
-On Windows, the shared library is written to a Release subfolder in maraboupy, 
-so you will need to move the Release/\*pyd file to the maraboupy folder:
-```
+On Windows, the shared library for the Python API is written to a `Release` subfolder in `maraboupy`,
+so you will need to move the `Release/\*pyd` file to the maraboupy folder:
+```bash
 cd path\to\marabou\repo\folder\maraboupy
 move Release\*pyd .
 ```
-
-Export maraboupy folder to Python and Jupyter paths:
-```
-PYTHONPATH=PYTHONPATH:/path/to/marabou/folder
-JUPYTER_PATH=JUPYTER_PATH:/path/to/marabou/folder
-```
-and Marabou is ready to be used from a Python or a Jupyter script. On Windows, 
-edit your environmental variables so PYTHONPATH includes the marabou folder.
+You will also need to edit your environmental variables so PYTHONPATH includes the marabou folder.
 
 #### Troubleshooting
 
 - On Windows - Make sure the detected python ("Found PythonInterp: ....") is a windows python and not cygwin or something like that (if it is cygwin, use -DPYTHON_EXECUTABLE flag to override the default python, or manuialy download the linux pybind and locate it in the tools directory)
 
 - 32bit Python - By default we install a 64bit Marabou and consequently a 64bit
-  python interface, the maraboupy/build_python_x86.sh file builds a 32bit
+  Python interface, the `maraboupy/build_python_x86.sh` file builds a 32bit
   version.
 
+## Running Marabou
 
+### Run from the Command line
 
-Getting Started
------------------------------------------------------------------------------
-### To run Marabou from Command line 
-After building Marabou the binary is located at *build/Marabou* (or *build\Release\Marabou.exe* for Windows). The
-repository contains sample networks and properties in the *resources* folder.
+The `Marabou` executable can be called directly from the command line.
+It takes as arguments the network to verified and the property.
+
+The repository contains sample networks and properties in the *resources* folder.
 For more information see [resources/README.md](resources/README.md).
 
-To run Marabou, execute from the repo directory, for example:
+To run Marabou on Linux or MacOS on such an example, you can execute the following command
+from the repo directory:
+```bash
+Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
 ```
-./build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/properties/acas_property_3.txt
-```
-on Linux or MacOS, or 
-```
-build\Release\Marabou.exe resources\nnet\acasxu\ACASXU_experimental_v2a_2_7.nnet resources\properties\acas_property_3.txt
-```
-on Windows.
+(if built from source, then you will need to replace `Marabou` with the path to the built executable
+i.e. `build/Marabou`).
 
-### Using Python interface 
+### Run using Python
+
 Please see our [documentation](https://neuralnetworkverification.github.io/Marabou/)
 for the python interface, which contains examples, API documentation, and a developer's guide.
-
-#### Using ONNX networks with properties encoded in VNN-LIB format
-You can use Marabou to verify your own properties encoded in VNN-LIB format, when using ONNX networks.
-See the following example for providing an ONNX network and a property encoded inside a vnnlib file:
-
-```
-from maraboupy import Marabou
-
-network = Marabou.read_onnx("/path/to/network/file.onnx", vnnlibFilename="/path/to/property/file.vnnlib")
-```
 
 ### Using the run script (*Recommended*)
 For ease of use, we also provide a example python script (resources/runMarabou.py). The script can take the same arguments
@@ -204,7 +203,9 @@ as the Marabou binary. The difference is that the python script also supports ne
 Moreover, instead of passing in a property file, you could define your property with the Python API
 calls [here](https://github.com/NeuralNetworkVerification/Marabou/blob/master/resources/runMarabou.py#L80-L81).
 
-### Choice of solver configurations
+### Advanced configuration
+
+#### Choice of solver configurations
 
 Currently the default configuration of Marabou is a *single-threaded* one that
 uses DeepPoly analysis for bound tightening, and the DeepSoI procedure during the complete search.
@@ -221,7 +222,8 @@ For example to solve a query using this mode with 4 threads spawned:
 
 If you have access to a large number of threads, you could also consider the Split-and-Conquer mode (see below).
 
-### Using the Split and Conquer (SNC) mode
+#### Using the Split and Conquer (SNC) mode
+
 In the SNC mode, activated by *--snc* Marabou decomposes the problem into *2^n0*
 sub-problems, specified by *--initial-divides=n0*. Each sub-problem will be
 solved with initial timeout of *t0*, supplied by *--initial-timeout=t0*. Every
@@ -237,15 +239,16 @@ build/Marabou resources/nnet/acasxu/ACASXU_experimental_v2a_2_7.nnet resources/p
 
 A guide to Split and Conquer is available as a Jupyter Notebook in [resources/SplitAndConquerGuide.ipynb](resources/SplitAndConquerGuide.ipynb).
 
-### Use LP Relaxation
+#### Use LP Relaxation
+
 Marabou has an option to use LP relaxation for bound tightening.
 For now we use Gurobi as an LP solver. Gurobi requires a license (a free
 academic license is available), after getting one the software can be downloaded
 [here](https://www.gurobi.com/downloads/gurobi-optimizer-eula/) and [here](https://www.gurobi.com/documentation/9.5/quickstart_linux/software_installation_guid.html#section:Installation) are
-installation steps, there is a [compatibility
-issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-on-Linux) that should be addressed.
+installation steps, there is a [compatibility issue](https://support.gurobi.com/hc/en-us/articles/360039093112-C-compilation-on-Linux)
+that should be addressed.
 A quick installation reference:
-```
+```bash
 export INSTALL_DIR=/opt
 sudo tar xvfz gurobi9.5.1_linux64.tar.gz -C $INSTALL_DIR
 cd $INSTALL_DIR/gurobi951/linux64/src/build
@@ -253,39 +256,56 @@ sudo make
 sudo cp libgurobi_c++.a ../../lib/
 ```
 Next it is recommended to add the following to the .bashrc (but not necessary) 
-```
+```bash
 export GUROBI_HOME="/opt/gurobi951/linux64"
 export PATH="${PATH}:${GUROBI_HOME}/bin"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
-
 ```
 
 After installing Gurobi compile marabou as follows:
-```
+```bash
 cmake .. -DENABLE_GUROBI=ON
 cmake --build . 
 ```
 If you did not set the GUROBI_HOME environment variable, then use the following:
-```
+```bash
 cmake .. -DENABLE_GUROBI=ON -DGUROBI_DIR=<PATH_TO_GUROBI>
 ```
 
+## Developing Marabou
+
+### Setting up your development environment
+
+1. Install `pre-commit` which manages the pre-commit hooks and use it to install the hooks, e.g.
+```bash
+pip install pre-commit
+pre-commit install
+```
+This guarantees automatic formatting of your C++ code whenever you commit.
+
 ### Tests
-We have three types of tests:  
-* unit tests - test specific small components, the tests are located alongside the code in a _tests_ folder (for example: _src/engine/tests_), to add a new set of tests, add a file named *Test_FILENAME* (where *FILENAME* is what you want to test), and add it to the CMakeLists.txt file (for example src/engine/CMakeLists.txt)
-* system tests - test an end to end use case but still have access to internal functionality. Those tests are located in _src/system_tests_. To add new set of tests create a file named *Test_FILENAME*, and add it also to _src/system_tests/CMakeLists.txt_.
-* regression tests - test end to end functionality thorugh the API, each test is defined by:  
+
+We have three types of tests:
+
+1. Unit tests - test specific small components, the tests are located alongside the code in a _tests_ folder (for example: `src/engine/tests`), to add a new set of tests, add a file named *Test_FILENAME* (where *FILENAME* is what you want to test), and add it to the `CMakeLists.txt` file (for example `src/engine/CMakeLists.txt`)
+
+2. System tests - test an end to end use case but still have access to internal functionality. Those tests are located in `src/system_tests`. To add new set of tests create a file named *Test_FILENAME*, and add it also to `src/system_tests/CMakeLists.txt`.
+
+3. Regression tests - test end to end functionality thorugh the API, each test is defined by:
   * network_file - description of the "neural network" supporting nnet and mps formats (using the extension to decdie on the format)  
   * property_file - optional, constraint on the input and output variables  
   * expected_result - sat/unsat  
-
-The tests are divided into 5 levels to allow variability in running time, to add a new regression tests: 
+  The regression tests are divided into 5 levels to allow variability in running time.
+  To add a new regression tests:
   * add the description of the network and property to the _resources_ sub-folder 
   * add the test to: _regress/regressLEVEL/CMakeLists.txt_ (where LEVEL is within 0-5) 
-In each build we run unit_tests and system_tests, on pull request we run regression 0 & 1, in the future we will run other levels of regression weekly / monthly. 
 
-Acknowledgments
------------------------------------------------------------------------------
+4. Python tests - test the `maraboupy` package.
+
+In each build we run unit and system tests, and on pull request we also run the Python tests and levels 0 & 1 of the regression tests.
+In the future we will run other levels of regression weekly / monthly.
+
+## Acknowledgments
 
 The Marabou project is partially supported by grants from the Binational Science
 Foundation (2017662), the Defense Advanced Research Projects Agency
@@ -298,8 +318,6 @@ DGE-1656518), Siemens Corporation, General Electric, and the Stanford CURIS prog
 Marabou is used in a number of flagship projects at [Stanford's AISafety
 center](http://aisafety.stanford.edu).
 
+## People
 
-
-People
------------------------------------------------------------------------------
 Authors and contributors to the Marabou project can be found in AUTHORS and THANKS files, respectively.
