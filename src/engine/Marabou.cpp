@@ -111,8 +111,9 @@ void Marabou::prepareInputQuery()
 
         if ( ( (String)networkFilePath ).endsWith( ".onnx" ) )
         {
-            _onnxParser = new OnnxParser( networkFilePath );
-            _onnxParser->generateQuery( _inputQuery );
+            InputQueryBuilder queryBuilder;
+            OnnxParser::parse( queryBuilder, networkFilePath, {}, {} );
+            queryBuilder.generateQuery( _inputQuery );
         }
         else
         {
