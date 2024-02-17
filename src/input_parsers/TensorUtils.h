@@ -34,7 +34,7 @@ typedef unsigned int TensorIndex;
  * @brief A single index into a one dimension of a tensor.
  * Can be negative in which case it counts from the end.
  */
-typedef int SignedTensorIndex;
+typedef long int SignedTensorIndex;
 
 /**
  * @brief A n-dimensional index into an n-dimensional tensor,
