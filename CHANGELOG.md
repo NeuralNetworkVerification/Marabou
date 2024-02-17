@@ -4,7 +4,7 @@
 
 * Dependency changes:
   - Dropped support for Python 3.7
-  - Now use ONNX 1.15.0 (up from 0.12.0) in both C++ and Python backends.
+  - Now use ONNX 1.15.0 (up from 1.12.0) in both C++ and Python backends.
   - The class `MarabouONNXNetwork` no longer depends on `torch` in Python backend.
 
 * Marabou now prints errors on `stderr` rather than `stdout`
@@ -26,7 +26,9 @@
   - `MarabouONNXNetwork` no longer has a `shallowCopy` method. Instead of calling this method,
     you should set the new parameter `preserveExistingConstraints` in the method `readONNX` to
     `True` which has the same effect.
-  - The method `getMarabouQuery` on `MarabouNetwork` has been renamed `getInputQuery`.
+  - The constructor `MarabouONNXNetwork()` and method `MarabouNetwork.readONNX` no longer take
+    a `reindexOutputVars` parameter (was intended to be used for internal testing purposes only).
+  - The method `MarabouNetwork.getMarabouQuery` has been renamed `getInputQuery`.
 
 * Added support for creating constraints using the overloaded syntax `<=`, `==` etc. in
   the Python backend. See `maraboupy/examples/7_PythonicAPI.py` for details.

@@ -31,11 +31,11 @@ class MarabouNetworkONNX(MarabouNetwork):
     Returns:
         :class:`~maraboupy.Marabou.marabouNetworkONNX.marabouNetworkONNX`
     """
-    def __init__(self, filename, inputNames=None, outputNames=None, reindexOutputVars=False):
+    def __init__(self, filename, inputNames=None, outputNames=None):
         super().__init__()
-        self.readONNX(filename, inputNames, outputNames, reindexOutputVars)
+        self.readONNX(filename, inputNames, outputNames)
 
-    def readONNX(self, filename, inputNames=None, outputNames=None, reindexOutputVars=True, preserveExistingConstraints=False):
+    def readONNX(self, filename, inputNames=None, outputNames=None, preserveExistingConstraints=False):
         if not preserveExistingConstraints:
             self.clear()
 
@@ -71,7 +71,7 @@ class MarabouNetworkONNX(MarabouNetwork):
             initNames = [node.name for node in self.graph.initializer]
             self.outputNames = [out.name for out in self.graph.output if out.name not in initNames]
 
-        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames, reindexOutputVars=reindexOutputVars)
+        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames)
 
     def getNode(self, nodeName):
         """Find the node in the graph corresponding to the given name
