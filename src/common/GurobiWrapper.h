@@ -148,6 +148,11 @@ public:
         _model->getEnv().set( GRB_IntParam_OutputFlag, verbosity );
     }
 
+    inline bool containsVariable( String name ) const
+    {
+        return _nameToVariable.exists( name );
+    }
+
     // Set number of threads
     inline void setNumberOfThreads( unsigned threads )
     {
@@ -345,6 +350,10 @@ public:
     };
     void setTimeLimit( double ){};
     void setVerbosity( unsigned ){};
+    bool containsVariable( String /*name*/ ) const
+    {
+        return false;
+    };
     void setNumberOfThreads( unsigned ){};
     void nonConvex(){};
     double getObjectiveBound()

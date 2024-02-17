@@ -255,7 +255,8 @@ void OptionParser::initialize()
             boost::program_options::value<std::string>(
                 &( ( *_stringOptions )[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE] ) )
                 ->default_value( ( *_stringOptions )[Options::MILP_SOLVER_BOUND_TIGHTENING_TYPE] ),
-            "The MILP solver bound tightening type: lp/lp-inc/milp/milp-inc/iter-prop/none." )
+            "The MILP solver bound tightening type: "
+            "lp/fb-once/fb-converge/lp-inc/milp/milp-inc/iter-prop/none." )
 #endif
         ;
 

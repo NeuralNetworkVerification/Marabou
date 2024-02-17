@@ -68,7 +68,7 @@ void MILPFormulator::optimizeBoundsWithIncrementalMILPEncoding(
         */
         ASSERT( layers.exists( i ) );
         Layer *layer = layers[i];
-        _lpFormulator.addLayerToModel( gurobi, layer );
+        _lpFormulator.addLayerToModel( gurobi, layer, false );
 
         /*
           The optimiziation is performed layer by layer, and for each
