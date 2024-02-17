@@ -216,6 +216,9 @@ bool Engine::solve( unsigned timeoutInSeconds )
     for ( auto &nlConstraint : _nlConstraints )
         nlConstraint->registerBoundManager( &_boundManager );
 
+    // Before encoding, make sure all valid constraints are applied.
+    applyAllValidConstraintCaseSplits();
+
     if ( _solveWithMILP )
         return solveWithMILPEncoding( timeoutInSeconds );
 
@@ -240,8 +243,6 @@ bool Engine::solve( unsigned timeoutInSeconds )
         _statistics.print();
         printf( "\n---\n" );
     }
-
-    applyAllValidConstraintCaseSplits();
 
     bool splitJustPerformed = true;
     struct timespec mainLoopStart = TimeUtils::sampleMicro();
@@ -932,6 +933,7 @@ bool Engine::calculateBounds( InputQuery &inputQuery )
         performSymbolicBoundTightening( &( *_preprocessedQuery ) );
         performSimulation();
         performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
+        performAdditionalBackwardAnalysisIfNeeded();
 
         if ( _networkLevelReasoner && Options::get()->getBool( Options::DUMP_BOUNDS ) )
             _networkLevelReasoner->dumpBounds();
@@ -1408,6 +1410,7 @@ void Engine::initializeNetworkLevelReasoning()
 
     if ( _networkLevelReasoner )
     {
+        _networkLevelReasoner->computeSuccessorLayers();
         _networkLevelReasoner->setTableau( _tableau );
         if ( Options::get()->getBool( Options::DUMP_TOPOLOGY ) )
         {
@@ -1435,6 +1438,7 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
             performSymbolicBoundTightening( &( *_preprocessedQuery ) );
             performSimulation();
             performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
+            performAdditionalBackwardAnalysisIfNeeded();
         }
 
         if ( GlobalConfiguration::PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING )
@@ -1594,19 +1598,19 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 
         // TODO: Remove this block after getting ready to support sigmoid with MILP Bound
         // Tightening.
-        if ( Options::get()->getMILPSolverBoundTighteningType() !=
-                 MILPSolverBoundTighteningType::NONE &&
+        if ( _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE &&
              _preprocessedQuery->getNonlinearConstraints().size() > 0 )
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED,
                                 "Marabou doesn't support sigmoid with MILP Bound Tightening" );
 
-        switch ( Options::get()->getMILPSolverBoundTighteningType() )
+        switch ( _milpSolverBoundTighteningType )
         {
         case MILPSolverBoundTighteningType::LP_RELAXATION:
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
             _networkLevelReasoner->lpRelaxationPropagation();
             break;
-
         case MILPSolverBoundTighteningType::MILP_ENCODING:
         case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
             _networkLevelReasoner->MILPPropagation();
@@ -1649,12 +1653,34 @@ void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
     }
 }
 
+void Engine::performAdditionalBackwardAnalysisIfNeeded()
+{
+    if ( _milpSolverBoundTighteningType == MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE ||
+         _milpSolverBoundTighteningType ==
+             MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
+    {
+        unsigned tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+        if ( _verbosity > 0 )
+            printf( "Backward analysis tightened %u bounds\n", tightened );
+        while ( tightened &&
+                _milpSolverBoundTighteningType ==
+                    MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE &&
+                GlobalConfiguration::MAX_ROUNDS_OF_BACKWARD_ANALYSIS )
+        {
+            performMILPSolverBoundedTightening( &( *_preprocessedQuery ) );
+            tightened = performSymbolicBoundTightening( &( *_preprocessedQuery ) );
+            if ( _verbosity > 0 )
+                printf( "Backward analysis tightened %u bounds\n", tightened );
+        }
+    }
+}
+
 void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIndex )
 {
     if ( _produceUNSATProofs )
         return;
 
-    if ( _networkLevelReasoner && _isGurobyEnabled && !_performLpTighteningAfterSplit &&
+    if ( _networkLevelReasoner && _isGurobyEnabled && _performLpTighteningAfterSplit &&
          _milpSolverBoundTighteningType != MILPSolverBoundTighteningType::NONE )
     {
         _networkLevelReasoner->obtainCurrentBounds();
@@ -1667,13 +1693,13 @@ void Engine::performMILPSolverBoundedTighteningForSingleLayer( unsigned targetIn
             break;
         case MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL:
             return;
-
         case MILPSolverBoundTighteningType::MILP_ENCODING:
             _networkLevelReasoner->MILPTighteningForOneLayer( targetIndex );
             break;
         case MILPSolverBoundTighteningType::MILP_ENCODING_INCREMENTAL:
             return;
-
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE:
+        case MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE:
         case MILPSolverBoundTighteningType::ITERATIVE_PROPAGATION:
         case MILPSolverBoundTighteningType::NONE:
             return;
@@ -2397,11 +2423,11 @@ void Engine::performSimulation()
     _networkLevelReasoner->simulate( &simulations );
 }
 
-void Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
+unsigned Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
 {
     if ( _symbolicBoundTighteningType == SymbolicBoundTighteningType::NONE ||
          ( !_networkLevelReasoner ) || _produceUNSATProofs )
-        return;
+        return 0;
 
     struct timespec start = TimeUtils::sampleMicro();
 
@@ -2477,6 +2503,7 @@ void Engine::performSymbolicBoundTightening( InputQuery *inputQuery )
                                   TimeUtils::timePassed( start, end ) );
     _statistics.incLongAttribute( Statistics::NUM_TIGHTENINGS_FROM_SYMBOLIC_BOUND_TIGHTENING,
                                   numTightenedBounds );
+    return numTightenedBounds;
 }
 
 bool Engine::shouldExitDueToTimeout( unsigned timeout ) const
