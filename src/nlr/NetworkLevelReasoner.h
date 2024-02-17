@@ -49,6 +49,7 @@ public:
     */
     void addLayer( unsigned layerIndex, Layer::Type type, unsigned layerSize );
     void addLayerDependency( unsigned sourceLayer, unsigned targetLayer );
+    void computeSuccessorLayers();
     void setWeight( unsigned sourceLayer,
                     unsigned sourceNeuron,
                     unsigned targetLayer,

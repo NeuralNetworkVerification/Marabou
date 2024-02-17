@@ -61,8 +61,10 @@ public:
 
     void setLayerOwner( LayerOwner *layerOwner );
     void addSourceLayer( unsigned layerNumber, unsigned layerSize );
+    void addSuccessorLayer( unsigned layerNumber );
     void removeSourceLayer( unsigned sourceLayer );
     const Map<unsigned, unsigned> &getSourceLayers() const;
+    const Set<unsigned> &getSuccessorLayers() const;
     const double *getWeightMatrix( unsigned sourceLayer ) const;
 
     /*
@@ -168,6 +170,7 @@ private:
     LayerOwner *_layerOwner;
 
     Map<unsigned, unsigned> _sourceLayers;
+    Set<unsigned> _successorLayers;
 
     Map<unsigned, double *> _layerToWeights;
     Map<unsigned, double *> _layerToPositiveWeights;

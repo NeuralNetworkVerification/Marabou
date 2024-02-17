@@ -321,6 +321,14 @@ public:
 
         TS_ASSERT_THROWS_NOTHING( nlr.evaluate( input, &output ) );
         TS_ASSERT( FloatUtils::areEqual( output, 0 ) );
+
+        TS_ASSERT_THROWS_NOTHING( nlr.computeSuccessorLayers() );
+
+        TS_ASSERT_EQUALS( nlr.getLayer( 0 )->getSuccessorLayers(), Set<unsigned>( { 1, 3, 4 } ) );
+        TS_ASSERT_EQUALS( nlr.getLayer( 1 )->getSuccessorLayers(), Set<unsigned>( { 2 } ) );
+        TS_ASSERT_EQUALS( nlr.getLayer( 2 )->getSuccessorLayers(), Set<unsigned>( { 3 } ) );
+        TS_ASSERT_EQUALS( nlr.getLayer( 3 )->getSuccessorLayers(), Set<unsigned>( { 4 } ) );
+        TS_ASSERT_EQUALS( nlr.getLayer( 4 )->getSuccessorLayers(), Set<unsigned>( { 5 } ) );
     }
 
     void test_evaluate_relus_and_abs()

@@ -51,7 +51,8 @@ public:
       LP model is adjusted from the previous call, instead of being
       constructed from scratch
     */
-    void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
+    void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
+                                         bool backward = false );
     void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
                                                    unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
@@ -72,14 +73,16 @@ public:
     void createLPRelaxation( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
                              unsigned lastLayer = UINT_MAX );
-
+    void createLPRelaxationAfter( const Map<unsigned, Layer *> &layers,
+                                  GurobiWrapper &gurobi,
+                                  unsigned firstLayer );
     double solveLPRelaxation( GurobiWrapper &gurobi,
                               const Map<unsigned, Layer *> &layers,
                               MinOrMax minOrMax,
                               String variableName,
                               unsigned lastLayer = UINT_MAX );
 
-    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
+    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
 private:
     LayerOwner *_layerOwner;
@@ -88,15 +91,24 @@ private:
 
     void addInputLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
 
-    void addReluLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
+    void
+    addReluLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
-    void addSignLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
+    void addLeakyReluLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                          const Layer *layer,
+                                          bool createVariables );
 
-    void addMaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
+    void
+    addSignLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
-    void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
+    void
+    addMaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
-    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args );
+    void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                            const Layer *layer,
+                                            bool createVariables );
+
+    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args, bool backward );
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints

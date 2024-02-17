@@ -441,6 +441,16 @@ const Map<unsigned, unsigned> &Layer::getSourceLayers() const
     return _sourceLayers;
 }
 
+void Layer::addSuccessorLayer( unsigned layerNumber )
+{
+    _successorLayers.insert( layerNumber );
+}
+
+const Set<unsigned> &Layer::getSuccessorLayers() const
+{
+    return _successorLayers;
+}
+
 const double *Layer::getWeightMatrix( unsigned sourceLayer ) const
 {
     ASSERT( _layerToWeights.exists( sourceLayer ) );
@@ -1721,6 +1731,8 @@ Layer::Layer( const Layer *other )
                     other->_layerToNegativeWeights[sourceLayerEntry.first],
                     sizeof( double ) * sourceLayerEntry.second * _size );
     }
+
+    _successorLayers = other->_successorLayers;
 
     if ( other->_bias )
         memcpy( _bias, other->_bias, sizeof( double ) * _size );

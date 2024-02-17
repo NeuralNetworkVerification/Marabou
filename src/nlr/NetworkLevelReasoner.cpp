@@ -75,6 +75,17 @@ void NetworkLevelReasoner::addLayerDependency( unsigned sourceLayer, unsigned ta
                                                      _layerIndexToLayer[sourceLayer]->getSize() );
 }
 
+void NetworkLevelReasoner::computeSuccessorLayers()
+{
+    for ( unsigned i = 0; i < _layerIndexToLayer.size(); ++i )
+    {
+        for ( const auto &pair : _layerIndexToLayer[i]->getSourceLayers() )
+        {
+            _layerIndexToLayer[pair.first]->addSuccessorLayer( i );
+        }
+    }
+}
+
 void NetworkLevelReasoner::setWeight( unsigned sourceLayer,
                                       unsigned sourceNeuron,
                                       unsigned targetLayer,
@@ -206,7 +217,12 @@ void NetworkLevelReasoner::lpRelaxationPropagation()
     lpFormulator.setCutoff( 0 );
 
     if ( Options::get()->getMILPSolverBoundTighteningType() ==
-         MILPSolverBoundTighteningType::LP_RELAXATION )
+             MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE ||
+         Options::get()->getMILPSolverBoundTighteningType() ==
+             MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE )
+        lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer, true );
+    else if ( Options::get()->getMILPSolverBoundTighteningType() ==
+              MILPSolverBoundTighteningType::LP_RELAXATION )
         lpFormulator.optimizeBoundsWithLpRelaxation( _layerIndexToLayer );
     else if ( Options::get()->getMILPSolverBoundTighteningType() ==
               MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL )

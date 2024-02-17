@@ -201,6 +201,10 @@ MILPSolverBoundTighteningType Options::getMILPSolverBoundTighteningType() const
             return MILPSolverBoundTighteningType::LP_RELAXATION;
         else if ( strategyString == "lp-inc" )
             return MILPSolverBoundTighteningType::LP_RELAXATION_INCREMENTAL;
+        if ( strategyString == "backward-once" )
+            return MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_ONCE;
+        if ( strategyString == "backward-converge" )
+            return MILPSolverBoundTighteningType::BACKWARD_ANALYSIS_CONVERGE;
         else if ( strategyString == "milp" )
             return MILPSolverBoundTighteningType::MILP_ENCODING;
         else if ( strategyString == "milp-inc" )

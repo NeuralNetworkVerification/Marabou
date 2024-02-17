@@ -1205,7 +1205,7 @@ void OnnxParser::unsqueeze( onnx::NodeProto &node )
     {
         missingNodeError( axisName );
     }
-    Vector<SignedTensorIndex> axes = _constantIntTensors[axisName];
+    Vector<int64_t> axes = _constantIntTensors[axisName];
 
     // Calculate a sorted list of unsigned indices
     unsigned int outputShapeSize = inputShape.size() + axes.size();

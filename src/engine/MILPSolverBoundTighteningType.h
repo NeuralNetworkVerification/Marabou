@@ -31,8 +31,11 @@ enum class MILPSolverBoundTighteningType {
     MILP_ENCODING_INCREMENTAL = 3,
     // Encode full queries and tries to fix relus until fix point
     ITERATIVE_PROPAGATION = 4,
+    // Perform backward analysis
+    BACKWARD_ANALYSIS_ONCE = 5,
+    BACKWARD_ANALYSIS_CONVERGE = 6,
     // Option to have no MILP bound tightening performed
-    NONE = 5,
+    NONE = 10,
 };
 
 #endif // __MILPSolverBoundTighteningType_h__
