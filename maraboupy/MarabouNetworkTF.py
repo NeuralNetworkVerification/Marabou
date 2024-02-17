@@ -191,11 +191,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
         # Set output variables
         self.outputVars = [self.varMap[outputOp].reshape(self.outputShapes[outputOp]) for outputOp in self.outputOps]
 
-        # This function changes all of the variables assignments so that the output variables
-        # come immediately after input variables (Marabou convention).
-        # This feature is optional, and can be disabled by commenting this line out
-        self.reassignOutputVariables()
-
     def findPlaceholders(self, op, returnOps):
         """Function that recursively finds the placeholder operations that contribute to a given operation
 
@@ -819,89 +814,6 @@ class MarabouNetworkTF(MarabouNetwork.MarabouNetwork):
             self.setLowerBound(outVar, -1.0)
             self.setUpperBound(outVar, 1.0)
 
-    def reassignVariable(self, var, numInVars, outVars, newOutVars):
-        """ Reassign variable number so output variables follow input variables
-
-        Args:
-            var: (int) Original variable number
-            numInVars: (int) Number of input variables
-            outVars: (array of int) Original output variables
-            newOutVars: (array of int) New output variables
-
-        Returns:
-            (int) New variable assignment
-
-        :meta private:
-        """
-        # Do not change input variables
-        if var < numInVars:
-            return var
-        
-        # Map output variables to new values
-        if var in outVars:
-            ind = np.where(var == outVars)[0][0]
-            return newOutVars[ind]
-        
-        # Adjust other variables as needed to make room for output variables
-        return var + newOutVars.size - np.sum([outVar < var for outVar in outVars])
-    
-    def reassignOutputVariables(self):
-        """Reassign all variables so that output variables follow input variables
-
-        Other input parsers assign output variables after input variables and before any intermediate variables.
-        This function reassigns the numbers for the output variables and shifts all other variables up to make space.
-
-        :meta private:
-        """
-        outVars = np.concatenate([outputVars.flatten() for outputVars in self.outputVars])
-        numInVars = np.sum([inVar.size for inVar in self.inputVars])
-        numOutVars = outVars.size
-        newOutVars = np.array(range(numInVars,numInVars+numOutVars))
-        
-        # Build dictionary mapping old variable assignments to their new assignment
-        reassignMap = dict()
-        for var in range(self.numVars):
-            reassignMap[var] = self.reassignVariable(var, numInVars, outVars, newOutVars)
-        
-        # Adjust equation variables
-        for eq in self.equList:
-            for i, (c,var) in enumerate(eq.addendList):
-                eq.addendList[i] = (c, reassignMap[var])
-                
-        # Adjust relu list
-        for i, variables in enumerate(self.reluList):
-            self.reluList[i] = tuple([reassignMap[var] for var in variables])
-        
-        # Adjust sign list
-        for i, variables in enumerate(self.signList):
-            self.signList[i] = tuple([reassignMap[var] for var in variables])
-
-        # Adjust maxpool list
-        for i, (elements, outVar) in enumerate(self.maxList):
-            newOutVar = reassignMap[outVar]
-            newElements = set()
-            for var in elements:
-                newElements.add(reassignMap[var])
-            self.maxList[i] = (newElements, newOutVar)
-            
-        # Adjust upper/lower bounds
-        newLowerBounds = dict()
-        newUpperBounds = dict()
-        for var in self.lowerBounds:
-            newLowerBounds[reassignMap[var]] = self.lowerBounds[var]
-        for var in self.upperBounds:
-            newUpperBounds[reassignMap[var]] = self.upperBounds[var]
-        self.lowerBounds = newLowerBounds
-        self.upperBounds = newUpperBounds
-
-        # Assign output variables to the new array
-        self.outputVars = []
-        for outputOp in self.outputOps:
-            size = np.prod(self.outputShapes[outputOp])
-            self.outputVars.append(newOutVars[:size].reshape(self.outputShapes[outputOp]))
-            self.varMap[outputOp] = self.outputVars[-1]
-            newOutVars = newOutVars[size:]
-        
     def makeEquations(self, op):
         """Function to generate equations corresponding to given operation
 

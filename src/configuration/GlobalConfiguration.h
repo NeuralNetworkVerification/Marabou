@@ -249,6 +249,14 @@ public:
      */
     static const bool WRITE_JSON_PROOF;
 
+    /* How many layers after the current layer do we encode in backward analysis.
+     */
+    static const unsigned BACKWARD_BOUND_PROPAGATION_DEPTH;
+
+    /* How many rounds of backward analysis to perform?
+     */
+    static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
+
 #ifdef ENABLE_GUROBI
     /*
       The number of threads Gurobi spawns
