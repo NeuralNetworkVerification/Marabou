@@ -40,54 +40,27 @@
  * Public methods *
  ******************/
 
-OnnxParser::OnnxParser( const String &path )
-{
-    // open file and move current position in file to the end
-    std::ifstream input( path.ascii(), std::ios::ate | std::ios::binary );
-    // get current position in file
-    std::streamsize size = input.tellg();
-    // move to start of file
-    input.seekg( 0, std::ios::beg );
-
-    // read raw data
-    Vector<char> buffer( size );
-    input.read( buffer.data(), size );
-
-    // parse protobuf
-    onnx::ModelProto model;
-    model.ParseFromArray( buffer.data(), size );
-    _network = model.graph();
-}
-
-/**
- * @brief Generates the variables for a query over the whole network.
- *
- * @param query The query object to be populated.
- */
-void OnnxParser::generateQuery( InputQuery &query )
-{
-    Set<String> inputNames = readInputNames();
-    Set<String> terminalNames = readOutputNames();
-    processGraph( inputNames, terminalNames, query );
-}
-
 /**
  * @brief Generates the variables for a query over only a subset of the network.
  *
- * @param query The query object to be populated
- * @param inputNames The set of input nodes. Note these don't have to be an actual input to the
- * network, they can be intermediate nodes.
- * @param terminalNames The set of terminal nodes. Note that these doesn't have to be outputs of
- * the network, they can be intermediate nodes.
+ * @param query The object to which to add the generated constraints to.
+ * @param path The path to the ONNX neural network file.
+ * @param initialNodeNames The set of initial nodes. Note these don't have to be an actual input to
+ * the network, they can be intermediate nodes. If empty, then defaults to the network's input
+ * nodes.
+ * @param terminalNodeNames The set of terminal nodes. Note that these doesn't have to be outputs of
+ * the network, they can be intermediate nodes. If empty, then defaults to the network's output
+ * nodes.
  */
-void OnnxParser::generatePartialQuery( InputQuery &query,
-                                       Set<String> &inputNames,
-                                       Set<String> &terminalNames )
+void OnnxParser::parse( InputQueryBuilder &query,
+                        const String &path,
+                        const Set<String> initialNodeNames,
+                        const Set<String> terminalNodeNames )
 {
-    validateUserInputNames( inputNames );
-    validateUserTerminalNames( terminalNames );
-    processGraph( inputNames, terminalNames, query );
+    OnnxParser parser = OnnxParser( query, path, initialNodeNames, terminalNodeNames );
+    parser.processGraph();
 }
+
 
 /*************
  * Utilities *
@@ -540,7 +513,53 @@ void OnnxParser::transferValues( String oldName, String newName )
  * Private methods *
  *******************/
 
-void OnnxParser::validateUserInputNames( Set<String> &inputNames )
+OnnxParser::OnnxParser( InputQueryBuilder &query,
+                        const String &path,
+                        const Set<String> inputNames,
+                        const Set<String> terminalNames )
+    : _query( query )
+{
+    // open file and move current position in file to the end
+    std::ifstream input( path.ascii(), std::ios::ate | std::ios::binary );
+    // get current position in file
+    std::streamsize size = input.tellg();
+    // move to start of file
+    input.seekg( 0, std::ios::beg );
+
+    // read raw data
+    Vector<char> buffer( size );
+    input.read( buffer.data(), size );
+
+    // parse protobuf
+    onnx::ModelProto model;
+    model.ParseFromArray( buffer.data(), size );
+    _network = model.graph();
+
+    _numberOfFoundInputs = 0;
+
+
+    if ( inputNames.empty() )
+    {
+        _inputNames = readInputNames();
+    }
+    else
+    {
+        validateUserInputNames( inputNames );
+        _inputNames = inputNames;
+    }
+
+    if ( terminalNames.empty() )
+    {
+        _terminalNames = readOutputNames();
+    }
+    else
+    {
+        validateUserTerminalNames( terminalNames );
+        _terminalNames = terminalNames;
+    }
+}
+
+void OnnxParser::validateUserInputNames( const Set<String> &inputNames )
 {
     // Collate all input nodes
     Set<String> allInputNames;
@@ -574,7 +593,7 @@ void OnnxParser::validateUserInputNames( Set<String> &inputNames )
     }
 }
 
-void OnnxParser::validateUserTerminalNames( Set<String> &terminalNames )
+void OnnxParser::validateUserTerminalNames( const Set<String> &terminalNames )
 {
     for ( String terminalName : terminalNames )
     {
@@ -592,7 +611,7 @@ void OnnxParser::validateUserTerminalNames( Set<String> &terminalNames )
     }
 }
 
-Set<String> OnnxParser::readInputNames()
+const Set<String> OnnxParser::readInputNames()
 {
     ASSERT( _network.input().size() >= 1 );
 
@@ -613,7 +632,7 @@ Set<String> OnnxParser::readInputNames()
     return Set<String>::difference( inputNames, initializerNames );
 }
 
-Set<String> OnnxParser::readOutputNames()
+const Set<String> OnnxParser::readOutputNames()
 {
     Set<String> outputNames;
     for ( auto &outputNode : _network.output() )
@@ -684,7 +703,7 @@ void OnnxParser::validateAllInputsAndOutputsFound()
     {
         for ( Variable var : _varMap[terminalName] )
         {
-            _outputVars.append( var );
+            _query.markOutputVariable( var );
         }
     }
 }
@@ -697,21 +716,14 @@ void OnnxParser::validateAllInputsAndOutputsFound()
  * @param terminalNames The names of the output node to end at.
  * @param query The query in which to store the generated constraints.
  */
-void OnnxParser::processGraph( Set<String> &inputNames,
-                               Set<String> &terminalNames,
-                               InputQuery &query )
+void OnnxParser::processGraph()
 {
-    _inputNames = inputNames;
-    _terminalNames = terminalNames;
-    _numberOfFoundInputs = 0;
-
     initializeShapeAndConstantMaps();
-    for ( String terminalName : terminalNames )
+    for ( String terminalName : _terminalNames )
     {
         processNode( terminalName, true );
     }
     validateAllInputsAndOutputsFound();
-    getMarabouQuery( query );
 }
 
 /**
@@ -771,11 +783,11 @@ Vector<Variable> OnnxParser::makeNodeVariables( String &nodeName, bool isInput )
     Vector<Variable> variables;
     for ( int i = 0; i < size; i++ )
     {
-        Variable variable = getNewVariable();
+        Variable variable = _query.getNewVariable();
         variables.append( variable );
         if ( isInput )
         {
-            _inputVars.append( variable );
+            _query.markInputVariable( variable );
         }
     }
     _varMap.insert( nodeName, variables );
@@ -1205,14 +1217,15 @@ void OnnxParser::unsqueeze( onnx::NodeProto &node )
     {
         missingNodeError( axisName );
     }
-    Vector<SignedTensorIndex> axes = _constantIntTensors[axisName];
+    Vector<int64_t> axes = _constantIntTensors[axisName];
 
     // Calculate a sorted list of unsigned indices
     unsigned int outputShapeSize = inputShape.size() + axes.size();
     Vector<TensorIndex> unsignedAxes;
-    for ( SignedTensorIndex index : axes )
+    for ( int64_t index : axes )
     {
-        unsignedAxes.append( unsignIndex( outputShapeSize, index ) );
+        SignedTensorIndex signedIndex = static_cast<int>( index );
+        unsignedAxes.append( unsignIndex( outputShapeSize, signedIndex ) );
     }
     unsignedAxes.sort();
 
@@ -1287,7 +1300,7 @@ void OnnxParser::batchNormEquations( onnx::NodeProto &node, bool makeEquations )
         e.addAddend( -1, outputVars[i] );
         e.addAddend( 1 / sqrt( inputVariance + epsilon ) * scale, inputVars[i] );
         e.setScalar( inputMean / sqrt( inputVariance + epsilon ) * scale - bias );
-        addEquation( e );
+        _query.addEquation( e );
     }
 }
 
@@ -1428,7 +1441,7 @@ void OnnxParser::maxPoolEquations( onnx::NodeProto &node, [[maybe_unused]] bool 
                         maxInputVars.insert( maxInputVar );
                     }
                 }
-                addMaxConstraint( outputVar, maxInputVars );
+                _query.addMaxConstraint( outputVar, maxInputVars );
             }
         }
     }
@@ -1610,7 +1623,7 @@ void OnnxParser::convEquations( onnx::NodeProto &node, [[maybe_unused]] bool mak
                 Variable outputVar = tensorLookup( outputVars, outputShape, outputVarIndices );
                 e.addAddend( -1, outputVar );
                 e.setScalar( -biases[k] );
-                addEquation( e );
+                _query.addEquation( e );
             }
         }
     }
@@ -1699,7 +1712,7 @@ void OnnxParser::gemmEquations( onnx::NodeProto &node, bool makeEquations )
             // Put output variable as the last addend
             Variable outputVariable = tensorLookup( outputVariables, outputShape, { i, j } );
             e.addAddend( -1, outputVariable );
-            addEquation( e );
+            _query.addEquation( e );
         }
     }
 }
@@ -1730,7 +1743,7 @@ void OnnxParser::reluEquations( onnx::NodeProto &node, bool makeEquations )
     {
         int inputVar = inputVars[i];
         int outputVar = outputVars[i];
-        addRelu( inputVar, outputVar );
+        _query.addRelu( inputVar, outputVar );
     }
 }
 
@@ -1761,7 +1774,7 @@ void OnnxParser::leakyReluEquations( onnx::NodeProto &node, bool makeEquations )
     // Generate equations
     for ( PackedTensorIndices i = 0; i < inputVars.size(); i++ )
     {
-        addLeakyRelu( inputVars[i], outputVars[i], alpha );
+        _query.addLeakyRelu( inputVars[i], outputVars[i], alpha );
     }
 }
 
@@ -1827,7 +1840,7 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto &node,
             e.addAddend( coefficient2, input2Variables[i] );
             e.addAddend( -1, outputVariables[i] );
             e.setScalar( 0.0 );
-            addEquation( e );
+            _query.addEquation( e );
         }
         return;
     }
@@ -1859,20 +1872,18 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto &node,
         Variable inputVariable =
             tensorLookup( inputVariables, inputVariablesShape, inputVariableIndices );
 
-        int equationIndex = findEquationWithOutputVariable( inputVariable );
-        if ( equationIndex != -1 )
+        Equation *equation = _query.findEquationWithOutputVariable( inputVariable );
+        if ( equation )
         {
             TensorIndices inputConstantIndices =
                 broadcastIndex( inputConstantsShape, outputShape, outputIndices );
             double inputConstant =
                 tensorLookup( inputConstants, inputConstantsShape, inputConstantIndices );
 
-            Equation equation = _equationList[equationIndex];
-            double currentVariableCoefficient = equation.getCoefficient( inputVariable );
-            equation.setCoefficient( inputVariable,
-                                     variableCoefficient * currentVariableCoefficient );
-            equation.setScalar( equation._scalar - constantCoefficient * inputConstant );
-            _equationList[equationIndex] = equation;
+            double currentVariableCoefficient = equation->getCoefficient( inputVariable );
+            equation->setCoefficient( inputVariable,
+                                      variableCoefficient * currentVariableCoefficient );
+            equation->setScalar( equation->_scalar - constantCoefficient * inputConstant );
 
             numberOfEquationsChanged += 1;
         }
@@ -1896,7 +1907,7 @@ void OnnxParser::scaleAndAddEquations( onnx::NodeProto &node,
             e.addAddend( variableCoefficient, inputVariables[i] );
             e.addAddend( -1, outputVariables[i] );
             e.setScalar( -constantCoefficient * inputConstants[i] );
-            addEquation( e );
+            _query.addEquation( e );
         }
     }
 }
@@ -2008,7 +2019,7 @@ void OnnxParser::matMulEquations( onnx::NodeProto &node, bool makeEquations )
                 Variable outputVariable = tensorLookup( outputVariables, outputShape, { i, j } );
                 e.addAddend( -1, outputVariable );
                 e.setScalar( 0.0 );
-                addEquation( e );
+                _query.addEquation( e );
             }
         }
         else
@@ -2035,7 +2046,7 @@ void OnnxParser::matMulEquations( onnx::NodeProto &node, bool makeEquations )
             Variable outputVariable = outputVariables[i];
             e.addAddend( -1, outputVariable );
             e.setScalar( 0.0 );
-            addEquation( e );
+            _query.addEquation( e );
         }
     }
 }
@@ -2066,7 +2077,7 @@ void OnnxParser::sigmoidEquations( onnx::NodeProto &node, bool makeEquations )
     {
         Variable inputVar = inputVars[i];
         Variable outputVar = outputVars[i];
-        addSigmoid( inputVar, outputVar );
+        _query.addSigmoid( inputVar, outputVar );
     }
 }
 
@@ -2095,6 +2106,6 @@ void OnnxParser::tanhEquations( onnx::NodeProto &node, bool makeEquations )
     // Generate equations
     for ( uint i = 0; i < outputVars.size(); i++ )
     {
-        addTanh( inputVars[i], outputVars[i] );
+        _query.addTanh( inputVars[i], outputVars[i] );
     }
 }

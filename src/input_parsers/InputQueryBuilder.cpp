@@ -1,5 +1,5 @@
 /*********************                                                        */
-/*! \file NetworkParser.cpp
+/*! \file InputQueryBuilder.cpp
  ** \verbatim
  ** Top contributors (to current version):
  **   Matthew Daggitt, Luca Arnaboldi
@@ -16,7 +16,7 @@
  ** Future parsers for individual network formats should extend this interface.
  **/
 
-#include "NetworkParser.h"
+#include "InputQueryBuilder.h"
 
 #include "Debug.h"
 #include "FloatUtils.h"
@@ -30,51 +30,61 @@
 
 #include <assert.h>
 
-NetworkParser::NetworkParser()
+InputQueryBuilder::InputQueryBuilder()
 {
     _numVars = 0;
 }
 
-Variable NetworkParser::getNewVariable()
+Variable InputQueryBuilder::getNewVariable()
 {
     _numVars += 1;
     return _numVars - 1;
 }
 
-void NetworkParser::addEquation( Equation &eq )
+void InputQueryBuilder::markInputVariable( Variable var )
+{
+    _inputVars.append( var );
+}
+
+void InputQueryBuilder::markOutputVariable( Variable var )
+{
+    _outputVars.append( var );
+}
+
+void InputQueryBuilder::addEquation( Equation &eq )
 {
     _equationList.append( eq );
 }
 
-void NetworkParser::setLowerBound( Variable var, float value )
+void InputQueryBuilder::setLowerBound( Variable var, float value )
 {
     _lowerBounds[var] = value;
 }
 
-void NetworkParser::setUpperBound( Variable var, float value )
+void InputQueryBuilder::setUpperBound( Variable var, float value )
 {
     _upperBounds[var] = value;
 }
 
-void NetworkParser::addRelu( Variable inputVar, Variable outputVar )
+void InputQueryBuilder::addRelu( Variable inputVar, Variable outputVar )
 {
     _reluList.append( new ReluConstraint( inputVar, outputVar ) );
     setLowerBound( outputVar, 0.0f );
 }
 
-void NetworkParser::addLeakyRelu( Variable inputVar, Variable outputVar, float alpha )
+void InputQueryBuilder::addLeakyRelu( Variable inputVar, Variable outputVar, float alpha )
 {
     _leakyReluList.append( new LeakyReluConstraint( inputVar, outputVar, alpha ) );
 }
 
-void NetworkParser::addSigmoid( Variable inputVar, Variable outputVar )
+void InputQueryBuilder::addSigmoid( Variable inputVar, Variable outputVar )
 {
     _sigmoidList.append( new SigmoidConstraint( inputVar, outputVar ) );
     setLowerBound( outputVar, 0.0 );
     setUpperBound( outputVar, 1.0 );
 }
 
-void NetworkParser::addTanh( Variable inputVar, Variable outputVar )
+void InputQueryBuilder::addTanh( Variable inputVar, Variable outputVar )
 {
     // Uses the identity `tanh(x) = 2 * sigmoid(2x) - 1` to implement
     // it terms of a sigmoid constraint.
@@ -98,22 +108,22 @@ void NetworkParser::addTanh( Variable inputVar, Variable outputVar )
     setUpperBound( outputVar, 1.0 );
 }
 
-void NetworkParser::addMaxConstraint( Variable var, Set<Variable> elements )
+void InputQueryBuilder::addMaxConstraint( Variable var, Set<Variable> elements )
 {
     _maxList.append( new MaxConstraint( var, elements ) );
 }
 
-void NetworkParser::addSignConstraint( Variable inputVar, Variable outputVar )
+void InputQueryBuilder::addSignConstraint( Variable inputVar, Variable outputVar )
 {
     _signList.append( new SignConstraint( inputVar, outputVar ) );
 }
 
-void NetworkParser::addAbsConstraint( Variable inputVar, Variable outputVar )
+void InputQueryBuilder::addAbsConstraint( Variable inputVar, Variable outputVar )
 {
     _absList.append( new AbsoluteValueConstraint( inputVar, outputVar ) );
 }
 
-void NetworkParser::getMarabouQuery( InputQuery &query )
+void InputQueryBuilder::generateQuery( InputQuery &query )
 {
     query.setNumberOfVariables( _numVars );
 
@@ -208,18 +218,16 @@ void NetworkParser::getMarabouQuery( InputQuery &query )
     }
 }
 
-int NetworkParser::findEquationWithOutputVariable( Variable variable )
+Equation *InputQueryBuilder::findEquationWithOutputVariable( Variable variable )
 {
-    int i = 0;
     for ( Equation &equation : _equationList )
     {
         Equation::Addend outputAddend = equation._addends.back();
         if ( variable == outputAddend._variable )
         {
             ASSERT( outputAddend._coefficient == -1 );
-            return i;
+            return &equation;
         }
-        i++;
     }
-    return -1;
+    return NULL;
 }
