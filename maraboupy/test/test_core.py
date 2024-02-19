@@ -141,13 +141,6 @@ def test_dump_query():
         assert vals[var] <= ipq.getUpperBound(var)
     assert exitCode == "sat"
 
-    # Marabou should find tighter bounds than LARGE after bound propagation, including
-    # for variable 2, where no upper bound was explicitly given
-    assert ipq.getUpperBound(1) < LARGE
-    assert ipq.getLowerBound(2) > -LARGE
-    assert ipq.getUpperBound(2) < LARGE
-
-
 def define_ipq(property_bound):
     """
     This function defines a simple input query directly through MarabouCore

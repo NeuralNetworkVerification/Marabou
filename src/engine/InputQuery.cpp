@@ -1124,7 +1124,7 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
     const List<PiecewiseLinearConstraint *> &plConstraints = getPiecewiseLinearConstraints();
 
     unsigned currentSourceLayer = 0;
-    double alpha = 0;
+    double alpha = -1;
     for ( const auto &plc : plConstraints )
     {
         if ( handledPLConstraints.exists( plc ) )
@@ -1143,6 +1143,13 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
                handledVariableToLayer[b] != currentSourceLayer ) )
             continue;
 
+        // Is the slope uniform?
+        double alphaTemp = leakyRelu->getSlope();
+        if ( alpha != -1 && alpha != alphaTemp )
+        {
+            continue;
+        }
+
         // If the f variable has also been handled, ignore this constraint
         unsigned f = leakyRelu->getF();
         if ( handledVariableToLayer.exists( f ) )
@@ -1150,16 +1157,11 @@ bool InputQuery::constructLeakyReluLayer( NLR::NetworkLevelReasoner *nlr,
         // B has been handled, f hasn't. Add f
         if ( _ensureSameSourceLayerInNLR && newNeurons.empty() )
             currentSourceLayer = handledVariableToLayer[b];
+        if ( alpha == -1 )
+            alpha = alphaTemp;
         newNeurons.append( NeuronInformation( f, newNeurons.size(), b ) );
         nlr->addConstraintInTopologicalOrder( plc );
         handledPLConstraints.insert( plc );
-        double alphaTemp = leakyRelu->getSlope();
-        ASSERT( alphaTemp > 0 );
-        if ( alpha != 0 && alpha != alphaTemp )
-        {
-            throw NLRError( NLRError::LEAKY_RELU_SLOPES_NOT_UNIFORM );
-        }
-        alpha = alphaTemp;
     }
 
     // No neurons found for the new layer

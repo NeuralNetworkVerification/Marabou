@@ -229,6 +229,11 @@ public:
         _container.clear();
     }
 
+    void shuffle()
+    {
+        std::random_shuffle( _container.begin(), _container.end() );
+    }
+
     Vector<T> operator+( const Vector<T> &other )
     {
         Vector<T> output;
