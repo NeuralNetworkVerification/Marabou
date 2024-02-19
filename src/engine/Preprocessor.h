@@ -55,6 +55,11 @@ public:
     unsigned getMergedIndex( unsigned index ) const;
 
     /*
+      Check whether a variable is unused by symbolically fixed.
+    */
+    bool variableIsUnusedAndSymbolicallyFixed( unsigned index ) const;
+
+    /*
       Obtain the new index of a variable.
     */
     unsigned getNewIndex( unsigned oldIndex ) const;

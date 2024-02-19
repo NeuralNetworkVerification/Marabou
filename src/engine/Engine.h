@@ -86,7 +86,7 @@ public:
       Attempt to find a feasible solution for the input within a time limit
       (a timeout of 0 means no time limit). Returns true if found, false if infeasible.
     */
-    bool solve( unsigned timeoutInSeconds = 0 );
+    bool solve( double timeoutInSeconds = 0 );
 
     /*
       Minimize the cost function with respect to the current set of linear constraints.
@@ -586,6 +586,11 @@ private:
     bool allNonlinearConstraintsHold();
 
     /*
+      Return true iff there are active unfixed constraints
+    */
+    bool hasBranchingCandidate();
+
+    /*
       Select a currently-violated LP constraint for fixing
     */
     void selectViolatedPlConstraint();
@@ -698,7 +703,7 @@ private:
     /*
       Check whether a timeout value has been provided and exceeded.
     */
-    bool shouldExitDueToTimeout( unsigned timeout ) const;
+    bool shouldExitDueToTimeout( double timeout ) const;
 
     /*
       Evaluate the network on legal inputs; obtain the assignment
@@ -770,7 +775,7 @@ private:
     /*
       Solve the input query with a MILP solver (Gurobi)
     */
-    bool solveWithMILPEncoding( unsigned timeoutInSeconds );
+    bool solveWithMILPEncoding( double timeoutInSeconds );
 
     /*
       Perform SoI-based stochastic local search
