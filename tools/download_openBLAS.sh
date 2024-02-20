@@ -6,7 +6,7 @@ version=$1
 cd $mydir
 
 echo "Downloading openBLAS"
-wget -q https://github.com/xianyi/OpenBLAS/releases/download/v$version/OpenBLAS-$version.tar.gz -O OpenBLASv$version.tar.gz
+wget https://github.com/xianyi/OpenBLAS/releases/download/v$version/OpenBLAS-$version.tar.gz -O OpenBLASv$version.tar.gz  -q --show-progress --progress=bar:force:noscroll
 echo "Unzipping openBLAS"
 tar -xzf OpenBLASv$version.tar.gz >> /dev/null
 echo "Installing openBLAS"
