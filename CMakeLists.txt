@@ -70,6 +70,7 @@ endif()
 ##########
 
 set(CVC4_DIR "${DEPS_DIR}/CVC4")
+
 set(CONTEXT_DIR "${CVC4_DIR}/context")
 set(CVC4_BASE_DIR "${CVC4_DIR}/base")
 file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
@@ -144,6 +145,23 @@ if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
 endif()
 file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
 include_directories(SYSTEM ${ONNX_DIR})
+
+#############
+## Pytorch ##
+#############
+# Used currently for efficient tensor operations in the ONNX parser.
+
+set(PYTORCH_VERSION 2.2.0)
+set(PYTORCH_DIR "${TOOLS_DIR}/pytorch-${PYTORCH_VERSION}/libtorch")
+list(APPEND CMAKE_PREFIX_PATH ${PYTORCH_DIR})
+# if (NOT ${Torch_FOUND})
+if(NOT EXISTS "${PYTORCH_DIR}")
+    execute_process(COMMAND ${TOOLS_DIR}/download_pytorch.sh ${PYTORCH_VERSION})
+endif()
+find_package(Torch ${PYTORCH_VERSION} REQUIRED)
+# endif()
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+list(APPEND LIBS ${TORCH_LIBRARIES})
 
 ############
 ## Gurobi ##

@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 #include <math.h>
+#include <torch/torch.h>
 
 /******************
  * Public methods *
