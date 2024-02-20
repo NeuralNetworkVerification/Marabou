@@ -1,82 +1,94 @@
 cmake_minimum_required (VERSION 3.16)
 project(Marabou)
 
+set(MARABOU_VERSION 1.0.0)
+add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+##################
+## User options ##
+##################
+
 option(BUILD_STATIC_MARABOU "Build static Marabou binary" OFF)
 option(BUILD_PYTHON "Build Python" ON)
-option(FORCE_PYTHON_BUILD "Build python even if there is only python32" OFF)
-option(RUN_UNIT_TEST "run unit tests on build" ON)
-option(RUN_REGRESS_TEST "run regression tests on build" OFF)
-option(RUN_SYSTEM_TEST "run system tests on build" OFF)
-option(RUN_MEMORY_TEST "run cxxtest testing with ASAN ON" ON)
-option(RUN_PYTHON_TEST "run python API tests if building with python" OFF)
+option(FORCE_PYTHON_BUILD "Build Python even if there is only 32-bit Python" OFF)
+option(RUN_UNIT_TEST "Run unit tests on build" ON)
+option(RUN_REGRESS_TEST "Run regression tests on build" OFF)
+option(RUN_SYSTEM_TEST "Run system tests on build" OFF)
+option(RUN_MEMORY_TEST "Run cxxtest testing with ASAN ON" ON)
+option(RUN_PYTHON_TEST "Run Python API tests if building with Python" OFF)
 option(ENABLE_GUROBI "Enable use the Gurobi optimizer" OFF)
-option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on windows
-option(CODE_COVERAGE "add code coverage" OFF)  # Available only in debug mode
+option(ENABLE_OPENBLAS "Do symbolic bound tighting using blas" ON) # Not available on Windows
+option(CODE_COVERAGE "Add code coverage" OFF)  # Available only in debug mode
 
-set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
-set(PYTHON_VERSIONS_SUPPORTED 2 3)
-list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
-if(index EQUAL -1)
-    message(FATAL_ERROR "python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
-endif()
+###################
+## Git variables ##
+###################
+# Makes the current branch and commit hash accessible in C++ code.
 
-set(MARABOU_LIB MarabouHelper)
-set(MARABOU_TEST_LIB MarabouHelperTest)
-set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
-set(MARABOU_PY MarabouCore)
+# Get the name of the working branch
+execute_process(
+  COMMAND git rev-parse --abbrev-ref HEAD
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_BRANCH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
+
+# Get the latest abbreviated commit hash of the working branch
+execute_process(
+  COMMAND git log -1 --format=%h
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE GIT_COMMIT_HASH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+
+#########################
+## Basic configuration ##
+#########################
 
 set(DEPS_DIR "${PROJECT_SOURCE_DIR}/deps")
 set(TOOLS_DIR "${PROJECT_SOURCE_DIR}/tools")
 set(SRC_DIR "${PROJECT_SOURCE_DIR}/src")
-set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
-if (NOT PYTHON_LIBRARY_OUTPUT_DIRECTORY)
-    set(PYTHON_LIBRARY_OUTPUT_DIRECTORY "${PYTHON_API_DIR}")
-endif()
 set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 set(REGRESS_DIR "${PROJECT_SOURCE_DIR}/regress")
-
 set(ENGINE_DIR "${SRC_DIR}/engine")
-set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.10.4")
-set(BOOST_DIR "${TOOLS_DIR}/boost_1_80_0")
-set(ONNX_DIR "${TOOLS_DIR}/onnx-1.15.0")
-set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
-if (NOT OPENBLAS_DIR)
-    set(OPENBLAS_DIR ${OPENBLAS_DEFAULT_DIR})
-endif()
-set(PROTOBUF_DEFAULT_DIR "${TOOLS_DIR}/protobuf-3.19.2")
-if (NOT PROTOBUF_DIR)
-    set(PROTOBUF_DIR ${PROTOBUF_DEFAULT_DIR})
-endif()
 set(COMMON_DIR "${SRC_DIR}/common")
 set(BASIS_DIR "${SRC_DIR}/basis_factorization")
-set(CVC4_DIR "${DEPS_DIR}/CVC4")
 
-# CVC4
+if (MSVC)
+  set(SCRIPT_EXTENSION bat)
+else()
+  set(SCRIPT_EXTENSION sh)
+endif()
+
+##########
+## CVC4 ##
+##########
+
+set(CVC4_DIR "${DEPS_DIR}/CVC4")
 set(CONTEXT_DIR "${CVC4_DIR}/context")
 set(CVC4_BASE_DIR "${CVC4_DIR}/base")
 file(GLOB DEPS_CVC4_CONTEXT "${CONTEXT_DIR}/*.cpp")
 file(GLOB DEPS_CVC4_BASE "${CVC4_BASE_DIR}/*.cpp")
 include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 
-# Boost
+###########
+## Boost ##
+###########
+
+set(BOOST_DIR "${TOOLS_DIR}/boost_1_80_0")
 if (MSVC)
   set(BOOST_ROOT "${BOOST_DIR}/win_installed")
+  set(Boost_NAMESPACE libboost)
 elseif (${CMAKE_SIZEOF_VOID_P} EQUAL 4 AND NOT MSVC)
   set(BOOST_ROOT "${BOOST_DIR}/installed32")
 else()
   set(BOOST_ROOT "${BOOST_DIR}/installed")
 endif()
-
-if (MSVC)
-  set(SCRIPT_EXTENSION bat)
-  set(Boost_NAMESPACE libboost)
-else()
-  set(SCRIPT_EXTENSION sh)
-endif()
-
 
 set(Boost_USE_DEBUG_RUNTIME FALSE)
 find_package(Boost 1.80.0 COMPONENTS program_options timer chrono thread)
@@ -90,7 +102,16 @@ endif()
 set(LIBS_INCLUDES ${Boost_INCLUDE_DIRS})
 list(APPEND LIBS ${Boost_LIBRARIES})
 
-# Protobuf (needed to compile Onnx file below)
+##############
+## Protobuf ##
+##############
+# Protobuf is needed to compile ONNX
+
+set(PROTOBUF_DEFAULT_DIR "${TOOLS_DIR}/protobuf-3.19.2")
+if (NOT PROTOBUF_DIR)
+    set(PROTOBUF_DIR ${PROTOBUF_DEFAULT_DIR})
+endif()
+
 if(NOT EXISTS "${PROTOBUF_DIR}/installed/lib/libprotobuf.a")
     message("Can't find protobuf, installing. If protobuf is installed please use the PROTOBUF_DIR parameter to pass the path")
     if (${PROTOBUF_DIR} STREQUAL ${PROTOBUF_DEFAULT_DIR})
@@ -108,7 +129,12 @@ set_target_properties(${PROTOBUF_LIB} PROPERTIES IMPORTED_LOCATION ${PROTOBUF_DI
 target_include_directories(${PROTOBUF_LIB} INTERFACE ${PROTOBUF_DIR}/installed/include)
 list(APPEND LIBS ${PROTOBUF_LIB})
 
-# Onnx
+##########
+## ONNX ##
+##########
+
+set(ONNX_DIR "${TOOLS_DIR}/onnx-1.15.0")
+
 if(NOT EXISTS "${ONNX_DIR}/onnx.proto3.pb.h")
     message("generating ONNX protobuf file")
     execute_process(COMMAND ${TOOLS_DIR}/download_onnx.sh)
@@ -116,7 +142,74 @@ endif()
 file(GLOB DEPS_ONNX "${ONNX_DIR}/*.cc")
 include_directories(SYSTEM ${ONNX_DIR})
 
+############
+## Gurobi ##
+############
+
+if (${ENABLE_GUROBI})
+  message(STATUS "Using Gurobi for LP relaxation for bound tightening")
+  if (NOT DEFINED GUROBI_DIR)
+    set(GUROBI_DIR $ENV{GUROBI_HOME})
+  endif()
+  add_compile_definitions(ENABLE_GUROBI)
+
+  set(GUROBI_LIB1 "gurobi_c++")
+  set(GUROBI_LIB2 "gurobi95")
+
+  add_library(${GUROBI_LIB1} SHARED IMPORTED)
+  set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
+  list(APPEND LIBS ${GUROBI_LIB1})
+  target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
+
+  add_library(${GUROBI_LIB2} SHARED IMPORTED)
+
+  # MACOSx uses .dylib instead of .so for its Gurobi downloads.
+  if (APPLE)
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.dylib)
+  else()
+    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.so)
+  endif ()
+
+  list(APPEND LIBS ${GUROBI_LIB2})
+  target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
+endif()
+
+##############
+## OpenBLAS ##
+##############
+
 set(OPENBLAS_LIB openblas)
+set(OPENBLAS_DEFAULT_DIR "${TOOLS_DIR}/OpenBLAS-0.3.19")
+if (NOT OPENBLAS_DIR)
+    set(OPENBLAS_DIR ${OPENBLAS_DEFAULT_DIR})
+endif()
+
+if (NOT MSVC)
+  if (${ENABLE_OPENBLAS})
+    message(STATUS "Using OpenBLAS for matrix multiplication")
+    add_compile_definitions(ENABLE_OPENBLAS)
+    if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
+        message("Can't find OpenBLAS, installing. If OpenBLAS is installed please use the OPENBLAS_DIR parameter to pass the path")
+        if (${OPENBLAS_DIR} STREQUAL ${OPENBLAS_DEFAULT_DIR})
+            message("Installing OpenBLAS")
+            execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh)
+        else()
+            message(FATAL_ERROR "Can't find OpenBLAS in the supplied directory")
+        endif()
+    endif()
+
+    add_library(${OPENBLAS_LIB} SHARED IMPORTED)
+    set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
+    list(APPEND LIBS ${OPENBLAS_LIB})
+    target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
+  endif()
+endif()
+
+###########
+## Build ##
+###########
+
+set(MARABOU_LIB MarabouHelper)
 
 set(BIN_DIR "${CMAKE_BINARY_DIR}/bin")
 
@@ -171,28 +264,14 @@ endif()
 add_library(${MARABOU_LIB} ${DEPS_ONNX} ${DEPS_CVC4_CONTEXT} ${DEPS_CVC4_BASE} ${SRCS_COMMON_REAL} ${SRCS_ENGINE_REAL})
 target_include_directories(${MARABOU_LIB} PRIVATE SYSTEM)
 
+set(MARABOU_EXE Marabou${CMAKE_EXECUTABLE_SUFFIX})
+
 add_executable(${MARABOU_EXE} "${ENGINE_DIR}/main.cpp")
 set(MARABOU_EXE_PATH "${BIN_DIR}/${MARABOU_EXE}")
 add_custom_command(TARGET ${MARABOU_EXE} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${MARABOU_EXE}> ${MARABOU_EXE_PATH} )
 
 set(MPS_PARSER_PATH "${BIN_DIR}/${MPS_PARSER}")
-
-# Default value false
-set(PYTHON32 FALSE)
-if(${BUILD_PYTHON})
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-        "import struct; print(struct.calcsize('@P'));"
-    RESULT_VARIABLE _PYTHON_SUCCESS
-    OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P
-    ERROR_VARIABLE _PYTHON_ERROR_VALUE)
-    # message("PYTHON SIZEOF VOID p ${PYTHON_SIZEOF_VOID_P}")
-    if (PYTHON_SIZEOF_VOID_P EQUAL 4 AND NOT ${FORCE_PYTHON_BUILD})
-        set(PYTHON32 TRUE)
-        message(WARNING "Python version is 32bit, please use build_python.sh in
-        maraboupy folder")
-    endif()
-endif()
 
 if (NOT MSVC)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -225,62 +304,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CXXTEST_FLAGS ${CXXTEST_FLAGS} -Wno-terminate)
 endif()
 
-# Gurobi
-if (${ENABLE_GUROBI})
-  message(STATUS "Using Gurobi for LP relaxation for bound tightening")
-  if (NOT DEFINED GUROBI_DIR)
-    set(GUROBI_DIR $ENV{GUROBI_HOME})
-  endif()
-  add_compile_definitions(ENABLE_GUROBI)
-
-  set(GUROBI_LIB1 "gurobi_c++")
-  set(GUROBI_LIB2 "gurobi95")
-
-  add_library(${GUROBI_LIB1} SHARED IMPORTED)
-  set_target_properties(${GUROBI_LIB1} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi_c++.a)
-  list(APPEND LIBS ${GUROBI_LIB1})
-  target_include_directories(${GUROBI_LIB1} INTERFACE ${GUROBI_DIR}/include/)
-
-  add_library(${GUROBI_LIB2} SHARED IMPORTED)
-
-  # MACOSx uses .dylib instead of .so for its Gurobi downloads.
-  if (APPLE)
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.dylib)
-  else()
-    set_target_properties(${GUROBI_LIB2} PROPERTIES IMPORTED_LOCATION ${GUROBI_DIR}/lib/libgurobi95.so)
-  endif ()
-
-  list(APPEND LIBS ${GUROBI_LIB2})
-  target_include_directories(${GUROBI_LIB2} INTERFACE ${GUROBI_DIR}/include/)
-endif()
-
-#OpenBLAS
-if (NOT MSVC)
-if (${ENABLE_OPENBLAS})
-    message(STATUS "using openblas for matrix multiplication")
-    add_compile_definitions(ENABLE_OPENBLAS)
-    if(NOT EXISTS "${OPENBLAS_DIR}/installed/lib/libopenblas.a")
-        message("Can't find open blas, installing. If open blas is isntalled please use the OPENBLAS_DIR parameter to pass the path")
-        if (${OPENBLAS_DIR} STREQUAL ${OPENBLAS_DEFAULT_DIR})
-            message("installing openblas")
-            execute_process(COMMAND ${TOOLS_DIR}/download_openBLAS.sh)
-        else()
-            message(FATAL_ERROR "Can't find openblas in the supplied directory")
-        endif()
-    endif()
-
-    add_library(${OPENBLAS_LIB} SHARED IMPORTED)
-    set_target_properties(${OPENBLAS_LIB} PROPERTIES IMPORTED_LOCATION ${OPENBLAS_DIR}/installed/lib/libopenblas.a)
-    list(APPEND LIBS ${OPENBLAS_LIB})
-    target_include_directories(${OPENBLAS_LIB} INTERFACE ${OPENBLAS_DIR}/installed/include)
-endif()
-endif()
-
 # pthread
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 list(APPEND LIBS Threads::Threads)
-
 
 if (BUILD_STATIC_MARABOU)
   # build a static library
@@ -296,7 +323,37 @@ target_compile_options(${MARABOU_LIB} PRIVATE ${RELEASE_FLAGS})
 target_link_libraries(${MARABOU_EXE} ${MARABOU_LIB})
 target_include_directories(${MARABOU_EXE} PRIVATE ${LIBS_INCLUDES})
 
-# Build Python marabou
+######################
+## Build Python API ##
+######################
+
+set(DEFAULT_PYTHON_VERSION "3" CACHE STRING "Default Python version 2/3")
+set(PYTHON_VERSIONS_SUPPORTED 2 3)
+list(FIND PYTHON_VERSIONS_SUPPORTED ${DEFAULT_PYTHON_VERSION} index)
+if(index EQUAL -1)
+    message(FATAL_ERROR "Python version must be one of ${PYTHON_VERSIONS_SUPPORTED}")
+endif()
+
+set(PYTHON_API_DIR "${PROJECT_SOURCE_DIR}/maraboupy")
+if (NOT PYTHON_LIBRARY_OUTPUT_DIRECTORY)
+    set(PYTHON_LIBRARY_OUTPUT_DIRECTORY "${PYTHON_API_DIR}")
+endif()
+
+# Determine if we should build Python
+set(PYTHON32 FALSE)
+if(${BUILD_PYTHON})
+    execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+        "import struct; print(struct.calcsize('@P'));"
+    RESULT_VARIABLE _PYTHON_SUCCESS
+    OUTPUT_VARIABLE PYTHON_SIZEOF_VOID_P
+    ERROR_VARIABLE _PYTHON_ERROR_VALUE)
+    # message("PYTHON SIZEOF VOID p ${PYTHON_SIZEOF_VOID_P}")
+    if (PYTHON_SIZEOF_VOID_P EQUAL 4 AND NOT ${FORCE_PYTHON_BUILD})
+        set(PYTHON32 TRUE)
+        message(WARNING "Python version is 32-bit, please use build_python.sh in
+        maraboupy folder")
+    endif()
+endif()
 if (${FORCE_PYTHON_BUILD})
     set(BUILD_PYTHON ON)
 else()
@@ -307,8 +364,11 @@ else()
     endif()
 endif()
 
-if (${BUILD_PYTHON})
+set(MARABOU_PY MarabouCore)
+set(PYBIND11_DIR "${TOOLS_DIR}/pybind11-2.10.4")
 
+# Actually build Python
+if (${BUILD_PYTHON})
     # This is suppose to set the PYTHON_EXECUTABLE variable
     # First try to find the default python version
     find_package(PythonInterp ${DEFAULT_PYTHON_VERSION})
@@ -333,6 +393,12 @@ if (${BUILD_PYTHON})
         target_compile_options(${MARABOU_LIB} PRIVATE -fPIC ${RELEASE_FLAGS})
     endif()
 endif()
+
+#################
+## Build tests ##
+#################
+
+set(MARABOU_TEST_LIB MarabouHelperTest)
 
 add_library(${MARABOU_TEST_LIB})
 set (TEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests")
@@ -411,23 +477,3 @@ add_subdirectory(${SRC_DIR})
 add_subdirectory(${TOOLS_DIR})
 add_subdirectory(${REGRESS_DIR})
 
-
-execute_process(
-  COMMAND git rev-parse --abbrev-ref HEAD
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_BRANCH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-# Get the latest abbreviated commit hash of the working branch
-execute_process(
-  COMMAND git log -1 --format=%h
-  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  OUTPUT_VARIABLE GIT_COMMIT_HASH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-# Marabou Version
-set(MARABOU_VERSION 1.0.0)
-add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
-add_definitions("-DGIT_BRANCH=\"${GIT_BRANCH}\"")
-add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
