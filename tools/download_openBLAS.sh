@@ -1,15 +1,16 @@
 #!/bin/bash
 curdir=$pwd
 mydir="${0%/*}"
+version=$1
 
 cd $mydir
 
 echo "Downloading openBLAS"
-wget -q https://github.com/xianyi/OpenBLAS/releases/download/v0.3.19/OpenBLAS-0.3.19.tar.gz -O OpenBLASv0.3.19.tar.gz
+wget -q https://github.com/xianyi/OpenBLAS/releases/download/v$version/OpenBLAS-$version.tar.gz -O OpenBLASv$version.tar.gz
 echo "Unzipping openBLAS"
-tar -xzf OpenBLASv0.3.19.tar.gz >> /dev/null
+tar -xzf OpenBLASv$version.tar.gz >> /dev/null
 echo "Installing openBLAS"
-cd OpenBLAS-0.3.19
+cd OpenBLAS-$version
 
 if [[ $OSTYPE == 'darwin'* ]]; then
     export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
