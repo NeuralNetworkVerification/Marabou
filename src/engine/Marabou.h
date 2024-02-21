@@ -2,7 +2,7 @@
 /*! \file Marabou.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,6 +18,7 @@
 
 #include "AcasParser.h"
 #include "Engine.h"
+#include "IncrementalLinearization.h"
 #include "InputQuery.h"
 #include "OnnxParser.h"
 
@@ -73,9 +74,14 @@ private:
     OnnxParser *_onnxParser;
 
     /*
+      CEGAR solver
+    */
+    CEGAR::IncrementalLinearization *_cegarSolver;
+
+    /*
       The solver
     */
-    Engine _engine;
+    std::unique_ptr<Engine> _engine;
 };
 
 #endif // __Marabou_h__

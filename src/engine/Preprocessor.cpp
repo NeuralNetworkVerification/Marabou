@@ -1028,6 +1028,11 @@ unsigned Preprocessor::getMergedIndex( unsigned index ) const
     return _mergedVariables.at( index );
 }
 
+bool Preprocessor::variableIsUnusedAndSymbolicallyFixed( unsigned index ) const
+{
+    return _unusedSymbolicallyFixedVariables.exists( index );
+}
+
 unsigned Preprocessor::getNewIndex( unsigned oldIndex ) const
 {
     if ( _oldIndexToNewIndex.exists( oldIndex ) )
@@ -1050,12 +1055,15 @@ void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery 
             assignment[i] = inputQuery.getSolutionValue( i );
     }
 
+
+    Map<unsigned, LinearExpression> unusedSymbolicallyFixedVariables =
+        _unusedSymbolicallyFixedVariables;
     bool progressMade = true;
     List<unsigned> assignedVariables;
     while ( progressMade )
     {
         assignedVariables.clear();
-        for ( auto &variableToExpression : _unusedSymbolicallyFixedVariables )
+        for ( auto &variableToExpression : unusedSymbolicallyFixedVariables )
         {
             unsigned var = variableToExpression.first;
             ASSERT( !assignment.exists( var ) );
@@ -1070,11 +1078,11 @@ void Preprocessor::setSolutionValuesOfEliminatedNeurons( InputQuery &inputQuery 
             }
         }
         for ( const auto &var : assignedVariables )
-            _unusedSymbolicallyFixedVariables.erase( var );
+            unusedSymbolicallyFixedVariables.erase( var );
         progressMade = !assignedVariables.empty();
     }
 
-    if ( !_unusedSymbolicallyFixedVariables.empty() )
+    if ( !unusedSymbolicallyFixedVariables.empty() )
     {
         throw MarabouError( MarabouError::UNABLE_TO_RECONSTRUCT_SOLUTION_FOR_ELIMINATED_NEURONS );
     }

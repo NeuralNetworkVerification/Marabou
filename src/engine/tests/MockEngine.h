@@ -113,7 +113,7 @@ public:
 
     unsigned _timeToSolve;
     IEngine::ExitCode _exitCode;
-    bool solve( unsigned timeoutInSeconds )
+    bool solve( double timeoutInSeconds )
     {
         if ( timeoutInSeconds >= _timeToSolve )
             _exitCode = IEngine::TIMEOUT;
