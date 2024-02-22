@@ -7,7 +7,8 @@ get_abs_filename() {
 
 curdir=$pwd
 mydir="${0%/*}"
-installdir=$(get_abs_filename $mydir)/protobuf-3.19.2/installed
+version=$1
+installdir=$(get_abs_filename $mydir)/protobuf-$version/installed
 
 # Compatibility with MacOS
 if [[ $OSTYPE == 'darwin'* ]]; then
@@ -15,12 +16,14 @@ if [[ $OSTYPE == 'darwin'* ]]; then
 fi
 
 cd $mydir
-echo "downloading protobuf-3.19.2"
-wget -q https://github.com/protocolbuffers/protobuf/releases/download/v3.19.2/protobuf-cpp-3.19.2.tar.gz -O protobuf-cpp-3.19.2.tar.gz
-echo "unzipping protobuf-3.19.2"
-tar -xzf protobuf-cpp-3.19.2.tar.gz # >> /dev/null
-echo "installing protobuf-3.19.2"
-cd protobuf-3.19.2
+echo "Downloading protobuf-$version"
+wget -q https://github.com/protocolbuffers/protobuf/releases/download/v$version/protobuf-cpp-$version.tar.gz -O protobuf-cpp-$version.tar.gz
+
+echo "Unzipping protobuf-$version"
+tar -xzf protobuf-cpp-$version.tar.gz # >> /dev/null
+
+echo "Installing protobuf-$version"
+cd protobuf-$version
 mkdir -p $installdir
 ./configure CXXFLAGS=-fPIC --disable-shared --prefix=$installdir --enable-fast-install
 make
