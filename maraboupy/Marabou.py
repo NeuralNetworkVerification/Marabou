@@ -92,7 +92,7 @@ def read_onnx_with_threshold(filename, inputNames=None, outputNames=None, maxNum
         :class:`~maraboupy.MarabouNetworkComposition.MarabouNetworkComposition`
     """
     return MarabouNetworkComposition(filename, inputNames, outputNames,
-                                        maxNumberOfLinearEquations=maxNumberOfLinearEquations)
+                                     maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
 def load_query(filename):
     """Load the serialized inputQuery from the given filename
