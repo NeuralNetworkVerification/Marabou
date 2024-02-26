@@ -52,6 +52,34 @@ def test_split_onnx_error():
 
     os.remove(presplit_filename)
 
+def test_concat_network():
+    """
+    Test an onnx file that actually contains two disjoint network
+    """
+    filename =  "certificate_and_controller_mandal.onnx"
+    evaluateFile(filename)
+
+def test_transformer():
+    """
+    Test another transformer network
+    """
+    filename =  "self-attention-mnist-pgd-medium-sim.onnx"
+    evaluateFile(filename)
+
+def test_softmax():
+    """
+    Test loading network with softmax in the last layer
+    """
+    filename =  "softmax-last-layer.onnx"
+    evaluateFile(filename)
+
+def test_sigmoid():
+    """
+    Test loading network with sigmoid activations
+    """
+    filename =  "mnist2x5_sigmoid.onnx"
+    evaluateFile(filename)
+
 def test_gtsrb():
     """
     Test a convolutional network, exported from tensorflow
@@ -183,15 +211,14 @@ def test_multiOutput():
     filename = "conv_mp1_intermediateOutput.onnx"
     evaluateFile(filename)
 
-def test_shallow_clear():
+def test_preserve_existing_constraints_clear():
     filename = "tanh_test.onnx"
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
-    network = Marabou.read_onnx(filename, reindexOutputVars=False)
+    network = Marabou.read_onnx(filename)
     numVar1 = network.numVars
     numEq1 = len(network.equList)
     numSigmoid1 = len(network.sigmoidList)
-    network.shallowClear()
-    network.readONNX(filename, None, None, reindexOutputVars=False)
+    network.readONNX(filename, None, None, preserveExistingConstraints=True)
     numVar2 = network.numVars
     numEq2 = len(network.equList)
     numSigmoid2 = len(network.sigmoidList)
@@ -240,9 +267,48 @@ def test_resize():
     filename =  "resize/resize_4dims.onnx"
     evaluateFile(filename, inputNames = ['X'], outputNames = 'Y')
 
+def test_leaky_relu():
+    """
+    Test a network with Leaky ReLUs
+    """
+    filename = "mnist5x20_leaky_relu.onnx"
+    evaluateFile(filename)
+
 def test_errors():
     """
     This function tests that the ONNX parser catches errors.
+    """
+    filename =  "conv_mp1.onnx"
+    filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)
+
+    # Test that we catch if inputNames or outputNames are not in the model
+    with pytest.raises(RuntimeError, match=r"Input.*not found"):
+        Marabou.read_onnx(filename, inputNames = ['BAD_NAME'], outputNames = ['Y'])
+    with pytest.raises(RuntimeError, match=r"Output.*not found"):
+        Marabou.read_onnx(filename, outputNames = ['BAD_NAME'])
+
+    # The layer "12" is in the graph, but refers to a constant, so it should not be used
+    # as the network input or output.
+    with pytest.raises(RuntimeError, match=r"input variables could not be found"):
+        Marabou.read_onnx(filename, inputNames = ['12'], outputNames = ['Y'])
+    with pytest.raises(RuntimeError, match=r"Output variable.*is a constant"):
+        Marabou.read_onnx(filename, outputNames = ['12'])
+
+    # Evaluating with ONNX instead of Marabou gives errors when using a layer that is not already
+    # defined as part of the model inputs or outputs.
+    with pytest.raises(NotImplementedError, match=r"ONNX does not allow.*as inputs"):
+        network = Marabou.read_onnx(filename, inputNames = ['11'], outputNames = ['Y'])
+        network.evaluateWithoutMarabou([])
+    with pytest.raises(NotImplementedError, match=r"ONNX does not allow.*the output"):
+        network = Marabou.read_onnx(filename, inputNames = ['X'], outputNames = ['11'])
+        network.evaluateWithoutMarabou([])
+
+def test_errors_do_not_reindex():
+    """
+    This function tests that the ONNX parser catches errors when reindex flag is on.
+
+    NOTE: we plan to remove the reindexOuputVars feature in the long run.
+    This test can be removed at that point.
     """
     filename =  "conv_mp1.onnx"
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, filename)

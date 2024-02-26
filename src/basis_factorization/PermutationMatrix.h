@@ -23,6 +23,7 @@ class PermutationMatrix
     /*
       The identity matrix with its rows in a different order
     */
+
 public:
     PermutationMatrix( unsigned m );
     ~PermutationMatrix();

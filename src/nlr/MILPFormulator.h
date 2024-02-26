@@ -17,12 +17,12 @@
 #define __MILPFormulator_h__
 
 #include "GurobiWrapper.h"
-#include "LayerOwner.h"
 #include "LPFormulator.h"
+#include "LayerOwner.h"
 
 #include <atomic>
-#include <boost/lockfree/queue.hpp>
 #include <boost/chrono.hpp>
+#include <boost/lockfree/queue.hpp>
 #include <climits>
 #include <mutex>
 
@@ -40,7 +40,8 @@ public:
     ~MILPFormulator();
 
     void optimizeBoundsWithMILPEncoding( const Map<unsigned, Layer *> &layers );
-    void optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigned, Layer *> &layers, unsigned targetIndex );
+    void optimizeBoundsOfOneLayerWithMILPEncoding( const Map<unsigned, Layer *> &layers,
+                                                   unsigned targetIndex );
     void optimizeBoundsWithIncrementalMILPEncoding( const Map<unsigned, Layer *> &layers );
 
     /*
@@ -75,8 +76,8 @@ private:
                             unsigned variable,
                             double &currentUb );
 
-    static void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer,
-                                 LayerOwner *layerOwner );
+    static void
+    addLayerToModel( GurobiWrapper &gurobi, const Layer *layer, LayerOwner *layerOwner );
 
     static void addReluLayerToMILPFormulation( GurobiWrapper &gurobi,
                                                const Layer *layer,
@@ -91,19 +92,15 @@ private:
       Optimize for the min/max value of variableName with respect to the constraints
       encoded in gurobi. If the query is infeasible, *infeasible is set to true.
     */
-    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
-                                      String variableName, double cutoffValue,
+    static double optimizeWithGurobi( GurobiWrapper &gurobi,
+                                      MinOrMax minOrMax,
+                                      String variableName,
+                                      double cutoffValue,
                                       std::atomic_bool *infeasible = NULL );
 
-    void storeUbIfNeeded( Layer *layer,
-                          unsigned neuron,
-                          unsigned variable,
-                          double newUb );
+    void storeUbIfNeeded( Layer *layer, unsigned neuron, unsigned variable, double newUb );
 
-    void storeLbIfNeeded( Layer *layer,
-                          unsigned neuron,
-                          unsigned variable,
-                          double newLb );
+    void storeLbIfNeeded( Layer *layer, unsigned neuron, unsigned variable, double newLb );
 
     bool layerRequiresMILPEncoding( const Layer *layer );
 

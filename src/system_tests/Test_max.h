@@ -2,7 +2,7 @@
 /*! \file Test_max.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Derek Huang, Guy Katz, Duligur Ibeling	
+ **   Derek Huang, Guy Katz, Duligur Ibeling
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -12,18 +12,17 @@
 
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
 #include "MaxConstraint.h"
 
+#include <cxxtest/TestSuite.h>
+
 
 class MaxTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -32,13 +31,13 @@ public:
     {
     }
 
-    void test_max_infeasible() 
+    void test_max_infeasible()
     {
         double large = 1000;
 
         InputQuery inputQuery;
         inputQuery.setNumberOfVariables( 9 );
-        
+
         inputQuery.setLowerBound( 0, -large );
         inputQuery.setUpperBound( 0, 0 );
 
@@ -63,7 +62,7 @@ public:
         inputQuery.setUpperBound( 7, 0 );
         inputQuery.setLowerBound( 8, 0 );
         inputQuery.setUpperBound( 8, 0 );
-        
+
         Equation equation1;
         equation1.addAddend( 1, 0 );
         equation1.addAddend( -1, 1 );
@@ -89,8 +88,8 @@ public:
         MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
         MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
 
-		inputQuery.addPiecewiseLinearConstraint( max1 );
-		inputQuery.addPiecewiseLinearConstraint( max2 );
+        inputQuery.addPiecewiseLinearConstraint( max1 );
+        inputQuery.addPiecewiseLinearConstraint( max2 );
 
         Engine engine;
         if ( !engine.processInputQuery( inputQuery, true ) )
@@ -105,7 +104,7 @@ public:
         }
     }
 
-    void test_max_fesible() 
+    void test_max_fesible()
     {
         double large = 1000;
 
@@ -159,16 +158,16 @@ public:
         equation3.setScalar( 0 );
         inputQuery.addEquation( equation3 );
 
-		MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
-		MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
+        MaxConstraint *max1 = new MaxConstraint( 5, Set<unsigned>( { 0, 2, 3 } ) );
+        MaxConstraint *max2 = new MaxConstraint( 3, Set<unsigned>( { 0, 4 } ) );
 
-		inputQuery.addPiecewiseLinearConstraint( max1 );
-		inputQuery.addPiecewiseLinearConstraint( max2 );
+        inputQuery.addPiecewiseLinearConstraint( max1 );
+        inputQuery.addPiecewiseLinearConstraint( max2 );
 
         Engine engine;
         TS_ASSERT_THROWS_NOTHING( engine.processInputQuery( inputQuery, true ) )
 
-        TS_ASSERT_THROWS_NOTHING ( engine.solve() );
+        TS_ASSERT_THROWS_NOTHING( engine.solve() );
 
         engine.extractSolution( inputQuery );
 
@@ -188,19 +187,19 @@ public:
 
         TS_ASSERT( FloatUtils::areEqual( value_x3, value_x1f + value_x2f ) )
 
-        TS_ASSERT( !FloatUtils::lt( value_x0, 0 ) ) 
-        TS_ASSERT( !FloatUtils::gt( value_x0, 1 ) ) 
+        TS_ASSERT( !FloatUtils::lt( value_x0, 0 ) )
+        TS_ASSERT( !FloatUtils::gt( value_x0, 1 ) )
         TS_ASSERT( !FloatUtils::lt( value_x1f, 0 ) )
         TS_ASSERT( !FloatUtils::lt( value_x3, 0.5 ) )
         TS_ASSERT( !FloatUtils::gt( value_x3, 1 ) )
         TS_ASSERT( !FloatUtils::lt( value_x2f, 0.0 ) )
 
         double x2_relu = FloatUtils::max( value_x2b, FloatUtils::max( value_x0, value_x2f ) );
-       	TS_ASSERT( FloatUtils::areEqual( x2_relu, value_x2b ) )
+        TS_ASSERT( FloatUtils::areEqual( x2_relu, value_x2b ) )
 
-        double x1_relu = FloatUtils::max( value_x1b, FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) );
-		TS_ASSERT ( FloatUtils::areEqual( x1_relu, value_x3 ) )
-
+        double x1_relu = FloatUtils::max(
+            value_x1b, FloatUtils::max( value_x0, FloatUtils::max( value_x2b, value_x1f ) ) );
+        TS_ASSERT( FloatUtils::areEqual( x1_relu, value_x3 ) )
     }
 };
 

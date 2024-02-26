@@ -13,12 +13,11 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "DantzigsRule.h"
-#include "MockTableau.h"
 #include "MarabouError.h"
+#include "MockTableau.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForDantzigsRule
@@ -36,7 +35,6 @@ public:
     {
         TS_ASSERT( mock = new MockForDantzigsRule );
         TS_ASSERT( tableau = new MockTableau );
-
     }
 
     void tearDown()

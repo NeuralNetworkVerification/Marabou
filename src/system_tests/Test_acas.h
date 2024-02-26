@@ -13,8 +13,6 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
@@ -23,10 +21,11 @@
 #include "MarabouError.h"
 #include "Preprocessor.h"
 
+#include <cxxtest/TestSuite.h>
+
 class AcasTestSuite : public CxxTest::TestSuite
 {
 public:
-
     void setUp()
     {
     }
@@ -62,9 +61,10 @@ public:
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned variable = acasParser.getOutputVariable( i );
-            double newError = FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
+            double newError =
+                FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
             if ( FloatUtils::gt( newError, maxError ) )
-              maxError = newError;
+                maxError = newError;
         }
 
         TS_ASSERT( FloatUtils::lt( maxError, 0.00001 ) );
@@ -85,7 +85,7 @@ public:
         }
 
         Engine engine;
-        bool result = engine.processInputQuery( inputQuery ) ;
+        bool result = engine.processInputQuery( inputQuery );
         TS_ASSERT( result );
 
         TS_ASSERT_THROWS_NOTHING( engine.solve() );
@@ -106,9 +106,10 @@ public:
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned variable = acasParser.getOutputVariable( i );
-            double newError = FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
+            double newError =
+                FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
             if ( FloatUtils::gt( newError, maxError ) )
-              maxError = newError;
+                maxError = newError;
         }
 
         TS_ASSERT( FloatUtils::lt( maxError, 0.00001 ) );
@@ -149,13 +150,13 @@ public:
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned variable = acasParser.getOutputVariable( i );
-            double newError = FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
+            double newError =
+                FloatUtils::abs( outputs[i] - inputQuery.getSolutionValue( variable ) );
             if ( FloatUtils::gt( newError, maxError ) )
-              maxError = newError;
+                maxError = newError;
         }
 
         TS_ASSERT( FloatUtils::lt( maxError, 0.00001 ) );
-
     }
 };
 

@@ -14,6 +14,7 @@
 **/
 
 #include "BerkeleyNeuralNetwork.h"
+
 #include "CommonError.h"
 
 BerkeleyNeuralNetwork::Equation::Equation()
@@ -102,7 +103,10 @@ void BerkeleyNeuralNetwork::parseFile()
     }
 
     printf( "Max var: %u. Number of vars: %u. Number of LHS vars: %u. Number of equations: %u\n",
-            _maxVar, _allVars.size(), _allLhsVars.size(), _equations.size() );
+            _maxVar,
+            _allVars.size(),
+            _allLhsVars.size(),
+            _equations.size() );
 
     _inputVars = Set<unsigned>::difference( _allVars, _allLhsVars );
     _outputVars = Set<unsigned>::difference( _allVars, _allRhsVars );

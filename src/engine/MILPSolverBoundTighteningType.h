@@ -19,21 +19,23 @@
 /*
   MILP solver bound tightening options
 */
-enum class MILPSolverBoundTighteningType
-{
-     // Only encode pure linear constraints in the underlying
-     // solver, in a way that over-approximates the query
-     LP_RELAXATION = 0,
-     LP_RELAXATION_INCREMENTAL = 1,
-     // Encode linear and integer constraints in the underlying
-     // solver, in a way that completely captures the query but is
-     // more expensive to solve
-     MILP_ENCODING = 2,
-     MILP_ENCODING_INCREMENTAL = 3,
-     // Encode full queries and tries to fix relus until fix point
-     ITERATIVE_PROPAGATION = 4,
-     // Option to have no MILP bound tightening performed
-     NONE = 5,
+enum class MILPSolverBoundTighteningType {
+    // Only encode pure linear constraints in the underlying
+    // solver, in a way that over-approximates the query
+    LP_RELAXATION = 0,
+    LP_RELAXATION_INCREMENTAL = 1,
+    // Encode linear and integer constraints in the underlying
+    // solver, in a way that completely captures the query but is
+    // more expensive to solve
+    MILP_ENCODING = 2,
+    MILP_ENCODING_INCREMENTAL = 3,
+    // Encode full queries and tries to fix relus until fix point
+    ITERATIVE_PROPAGATION = 4,
+    // Perform backward analysis
+    BACKWARD_ANALYSIS_ONCE = 5,
+    BACKWARD_ANALYSIS_CONVERGE = 6,
+    // Option to have no MILP bound tightening performed
+    NONE = 10,
 };
 
 #endif // __MILPSolverBoundTighteningType_h__

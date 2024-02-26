@@ -21,24 +21,23 @@
 class ICostFunctionManager;
 class ITableau;
 
-namespace T
-{
-	ICostFunctionManager *createCostFunctionManager( ITableau *tableau );
-	void discardCostFunctionManager( ICostFunctionManager *costFunctionManager );
-}
+namespace T {
+ICostFunctionManager *createCostFunctionManager( ITableau *tableau );
+void discardCostFunctionManager( ICostFunctionManager *costFunctionManager );
+} // namespace T
 
 CXXTEST_SUPPLY( createCostFunctionManager,
-				ICostFunctionManager *,
-				createCostFunctionManager,
-				( ITableau *tableau ),
-				T::createCostFunctionManager,
-				( tableau ) );
+                ICostFunctionManager *,
+                createCostFunctionManager,
+                ( ITableau * tableau ),
+                T::createCostFunctionManager,
+                ( tableau ) );
 
 CXXTEST_SUPPLY_VOID( discardCostFunctionManager,
-					 discardCostFunctionManager,
-					 ( ICostFunctionManager *costFunctionManager ),
-					 T::discardCostFunctionManager,
-					 ( costFunctionManager ) );
+                     discardCostFunctionManager,
+                     ( ICostFunctionManager * costFunctionManager ),
+                     T::discardCostFunctionManager,
+                     ( costFunctionManager ) );
 
 #endif // __T__CostFunctionManagerFactory_h__
 

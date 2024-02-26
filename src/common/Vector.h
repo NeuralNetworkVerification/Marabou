@@ -16,16 +16,16 @@
 #ifndef __Vector_h__
 #define __Vector_h__
 
+#include "CommonError.h"
+
 #include <algorithm>
 #include <cstdio>
-
-#include "CommonError.h"
 #include <vector>
 
-template<class T>
-class Vector
+template <class T> class Vector
 {
     typedef std::vector<T> Super;
+
 public:
     typedef typename Super::iterator iterator;
     typedef typename Super::const_iterator const_iterator;
@@ -36,26 +36,30 @@ public:
     {
     }
 
-    Vector<T>( const Vector<T> &rhs) = default;
+    Vector<T>( const Vector<T> &rhs ) = default;
 
-    Vector<T>( const std::initializer_list<T> &initializerList ) : _container( initializerList )
+    Vector<T>( const std::initializer_list<T> &initializerList )
+        : _container( initializerList )
     {
     }
 
-    Vector<T>( unsigned size ) : _container( size )
+    Vector<T>( unsigned size )
+        : _container( size )
     {
     }
 
-    Vector<T>( unsigned size, T value ) : _container( size, value )
+    Vector<T>( unsigned size, T value )
+        : _container( size, value )
     {
     }
 
-    template<class InputIt>
-    Vector<T>( InputIt begin, InputIt end) : _container( begin, end )
+    template <class InputIt>
+    Vector<T>( InputIt begin, InputIt end )
+        : _container( begin, end )
     {
     }
 
-    virtual void assign ( unsigned size, T value )
+    virtual void assign( unsigned size, T value )
     {
         _container.assign( size, value );
     }
@@ -63,6 +67,27 @@ public:
     virtual void append( T value )
     {
         _container.push_back( value );
+    }
+
+    void insert( iterator &it, T value )
+    {
+        _container.insert( it, value );
+    }
+
+    void insertAt( unsigned index, T value )
+    {
+        if ( index >= size() )
+            throw CommonError( CommonError::VECTOR_OUT_OF_BOUNDS );
+
+        iterator it = _container.begin();
+
+        while ( index > 0 )
+        {
+            ++it;
+            --index;
+        }
+
+        _container.insert( it, value );
     }
 
     virtual void insertHead( T value )
@@ -124,7 +149,7 @@ public:
     {
         for ( iterator it = _container.begin(); it != _container.end(); ++it )
         {
-            if ( (*it) == value )
+            if ( ( *it ) == value )
             {
                 _container.erase( it );
                 return;
@@ -138,7 +163,7 @@ public:
     {
         for ( iterator it = _container.begin(); it != _container.end(); ++it )
         {
-            if ( (*it) == value )
+            if ( ( *it ) == value )
             {
                 _container.erase( it );
                 return;
@@ -204,6 +229,11 @@ public:
         _container.clear();
     }
 
+    void shuffle()
+    {
+        std::random_shuffle( _container.begin(), _container.end() );
+    }
+
     Vector<T> operator+( const Vector<T> &other )
     {
         Vector<T> output;
@@ -219,7 +249,7 @@ public:
 
     Vector<T> &operator+=( const Vector<T> &other )
     {
-        (*this) = (*this) + other;
+        ( *this ) = ( *this ) + other;
         return *this;
     }
 

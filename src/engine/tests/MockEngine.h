@@ -39,21 +39,21 @@ public:
     {
     }
 
-	bool wasCreated;
-	bool wasDiscarded;
+    bool wasCreated;
+    bool wasDiscarded;
 
-	void mockConstructor()
-	{
-		TS_ASSERT( !wasCreated );
-		wasCreated = true;
-	}
+    void mockConstructor()
+    {
+        TS_ASSERT( !wasCreated );
+        wasCreated = true;
+    }
 
-	void mockDestructor()
-	{
-		TS_ASSERT( wasCreated );
-		TS_ASSERT( !wasDiscarded );
-		wasDiscarded = true;
-	}
+    void mockDestructor()
+    {
+        TS_ASSERT( wasCreated );
+        TS_ASSERT( !wasDiscarded );
+        wasDiscarded = true;
+    }
 
     struct Bound
     {
@@ -92,8 +92,8 @@ public:
         }
     }
 
-    void postContextPopHook() {};
-    void preContextPushHook() {};
+    void postContextPopHook(){};
+    void preContextPushHook(){};
 
     mutable EngineState *lastStoredState;
     void storeState( EngineState &state, TableauStateStorageLevel /*level*/ ) const
@@ -113,7 +113,7 @@ public:
 
     unsigned _timeToSolve;
     IEngine::ExitCode _exitCode;
-    bool solve( unsigned timeoutInSeconds )
+    bool solve( double timeoutInSeconds )
     {
         if ( timeoutInSeconds >= _timeToSolve )
             _exitCode = IEngine::TIMEOUT;
@@ -177,7 +177,7 @@ public:
     {
         if ( !_constraintsToSplit.empty() )
         {
-            PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
+            PiecewiseLinearConstraint *ptr = *_constraintsToSplit.begin();
             _constraintsToSplit.erase( ptr );
             return ptr;
         }
@@ -188,38 +188,56 @@ public:
     PiecewiseLinearConstraint *pickSplitPLConstraintSnC( SnCDivideStrategy /**/ )
     {
         if ( !_constraintsToSplit.empty() )
-            {
-                PiecewiseLinearConstraint * ptr = *_constraintsToSplit.begin();
-                _constraintsToSplit.erase( ptr );
-                return ptr;
-            }
+        {
+            PiecewiseLinearConstraint *ptr = *_constraintsToSplit.begin();
+            _constraintsToSplit.erase( ptr );
+            return ptr;
+        }
         else
             return NULL;
     }
 
-    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/)
+    bool _snc;
+    CVC4::context::Context _context;
+
+    void applySnCSplit( PiecewiseLinearCaseSplit /*split*/, String /*queryId*/ )
     {
+        _snc = true;
+        _context.push();
     }
 
-    void applyAllBoundTightenings() {};
+    bool inSnCMode() const
+    {
+        return _snc;
+    }
 
-    bool applyAllValidConstraintCaseSplits() { return false; };
+    void applyAllBoundTightenings(){};
 
-    CVC4::context::Context _dontCare;
-    CVC4::context::Context &getContext() { return _dontCare; }
+    bool applyAllValidConstraintCaseSplits()
+    {
+        return false;
+    };
 
-    bool consistentBounds() const { return true; }
+    CVC4::context::Context &getContext()
+    {
+        return _context;
+    }
 
-    double explainBound( unsigned /* var */,  bool /* isUpper */ ) const
+    bool consistentBounds() const
+    {
+        return true;
+    }
+
+    double explainBound( unsigned /* var */, bool /* isUpper */ ) const
     {
         return 0.0;
     }
 
-    void updateGroundUpperBound(unsigned /* var */, double /* value */ )
+    void updateGroundUpperBound( unsigned /* var */, double /* value */ )
     {
     }
 
-    void updateGroundLowerBound(unsigned /*var*/, double /*value*/ )
+    void updateGroundLowerBound( unsigned /*var*/, double /*value*/ )
     {
     }
 
@@ -233,7 +251,7 @@ public:
         return NULL;
     }
 
-    void setUNSATCertificateCurrentPointer( UnsatCertificateNode */* node*/ )
+    void setUNSATCertificateCurrentPointer( UnsatCertificateNode * /* node*/ )
     {
     }
 

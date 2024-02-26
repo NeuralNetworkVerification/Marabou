@@ -26,13 +26,13 @@ class EntrySelectionStrategy
 {
 public:
     EntrySelectionStrategy();
-    virtual ~EntrySelectionStrategy() {};
+    virtual ~EntrySelectionStrategy(){};
 
     /*
       Perform any necessary initialization work for this strategy.
       This is done in the engine after the tableau is set up.
     */
-    virtual void initialize( const ITableau & /* tableau */ ) {};
+    virtual void initialize( const ITableau & /* tableau */ ){};
 
     /*
       Choose the entrying variable for the given tableau. Do not pick
@@ -46,17 +46,17 @@ public:
       This hook gets called after the entering and leaving variables
       have been selected, but before the actual pivot.
     */
-    virtual void prePivotHook( const ITableau &/* tableau */, bool /* fakePivot */ ) {};
+    virtual void prePivotHook( const ITableau & /* tableau */, bool /* fakePivot */ ){};
 
     /*
       This hook gets called the pivot operation has been performed.
     */
-    virtual void postPivotHook( const ITableau &/* tableau */, bool /* fakePivot */ ) {};
+    virtual void postPivotHook( const ITableau & /* tableau */, bool /* fakePivot */ ){};
 
     /*
       This hook is called when the tableau has been resized.
     */
-    virtual void resizeHook( const ITableau &/* tableau */ ) {};
+    virtual void resizeHook( const ITableau & /* tableau */ ){};
 
     /*
       For reporting statistics

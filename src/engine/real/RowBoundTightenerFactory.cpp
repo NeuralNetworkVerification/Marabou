@@ -15,18 +15,17 @@
 
 #include "RowBoundTightener.h"
 
-namespace T
+namespace T {
+IRowBoundTightener *createRowBoundTightener( const ITableau &tableau )
 {
-	IRowBoundTightener *createRowBoundTightener( const ITableau &tableau )
-	{
-		return new RowBoundTightener( tableau );
-	}
-
-	void discardRowBoundTightener( IRowBoundTightener *rowBoundTightener )
-	{
-		delete rowBoundTightener;
-	}
+    return new RowBoundTightener( tableau );
 }
+
+void discardRowBoundTightener( IRowBoundTightener *rowBoundTightener )
+{
+    delete rowBoundTightener;
+}
+} // namespace T
 
 //
 // Local Variables:

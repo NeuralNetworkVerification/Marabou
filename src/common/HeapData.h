@@ -21,8 +21,8 @@ class ConstSimpleData;
 class HeapData
 {
 public:
-	HeapData();
-	HeapData( void *data, unsigned size );
+    HeapData();
+    HeapData( void *data, unsigned size );
     HeapData( HeapData &other );
     HeapData( const ConstSimpleData &constSimpleData );
 
@@ -30,27 +30,27 @@ public:
 
     HeapData( const HeapData &other );
 
-	HeapData &operator=( const ConstSimpleData &data );
-	HeapData &operator=( const HeapData &other );
+    HeapData &operator=( const ConstSimpleData &data );
+    HeapData &operator=( const HeapData &other );
     HeapData &operator+=( const ConstSimpleData &data );
     HeapData &operator+=( const HeapData &data );
     bool operator==( const HeapData &other ) const;
     bool operator!=( const HeapData &other ) const;
     bool operator<( const HeapData &other ) const;
-	void *data();
-	const void *data() const;
-	unsigned size() const;
+    void *data();
+    const void *data() const;
+    unsigned size() const;
     void clear();
     const char *asChar() const;
 
 private:
-	void *_data;
-	unsigned _size;
+    void *_data;
+    unsigned _size;
 
-	bool allocated() const;
-	void freeMemory();
-	void freeMemoryIfNeeded();
-	void allocateMemory( unsigned size );
+    bool allocated() const;
+    void freeMemory();
+    void freeMemoryIfNeeded();
+    void allocateMemory( unsigned size );
     void addMemory( unsigned size );
     void copyNewData( const void *newData, unsigned size );
     void adjustSize( unsigned size );

@@ -5,6 +5,7 @@ Top contributors (to current version):
     - Andrew Wu
     - Kyle Julian
     - Teruhiro Tagomori
+    - Min Wu
     
 This file is part of the Marabou project.
 Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
@@ -16,18 +17,18 @@ MarabouNetwork defines an abstract class that represents neural networks with pi
 '''
 
 from maraboupy import MarabouCore
-from maraboupy import MarabouUtils
-
+from maraboupy.parsers.InputQueryBuilder import InputQueryBuilder
 import numpy as np
 
 
-class MarabouNetwork:
+class MarabouNetwork(InputQueryBuilder):
     """Abstract class representing general Marabou network
-    
+
     Attributes:
         numVars (int): Total number of variables to represent network
         equList (list of :class:`~maraboupy.MarabouUtils.Equation`): Network equations
         reluList (list of tuples): List of relu constraint tuples, where each tuple contains the backward and forward variables
+        leakyReluList (list of tuples): List of leaky relu constraint tuples, where each tuple contains the backward and forward variables, and the slope
         sigmoidList (list of tuples): List of sigmoid constraint tuples, where each tuple contains the backward and forward variables
         maxList (list of tuples): List of max constraint tuples, where each tuple conatins the set of input variables and output variable
         absList (list of tuples): List of abs constraint tuples, where each tuple conatins the input variable and the output variable
@@ -38,26 +39,11 @@ class MarabouNetwork:
         outputVars (list of numpy arrays): Output variables
     """
     def __init__(self):
-        """Constructs a MarabouNetwork object and calls function to initialize
         """
+        Constructs a MarabouNetwork object and calls function to initialize
+        """
+        super().__init__()
         self.clear()
-
-    def clear(self):
-        """Reset values to represent empty network
-        """
-        self.numVars = 0
-        self.equList = []
-        self.additionalEquList = [] # used to store user defined equations
-        self.reluList = []
-        self.sigmoidList = []
-        self.maxList = []
-        self.absList = []
-        self.signList = []
-        self.disjunctionList = []
-        self.lowerBounds = dict()
-        self.upperBounds = dict()
-        self.inputVars = []
-        self.outputVars = []
 
     def clearProperty(self):
         """Clear the lower bounds and upper bounds map, and the self.additionEquList
@@ -66,231 +52,14 @@ class MarabouNetwork:
         self.upperBounds.clear()
         self.additionalEquList.clear()
 
-    def getNewVariable(self):
-        """Function to create a new variable
-
-        Returns:
-            (int): New variable number
-
-        :meta private:
-        """
-        self.numVars += 1
-        return self.numVars - 1
-
-    def addEquation(self, x, isProperty=False):
-        """Function to add new equation to the network
-
-        Args:
-            x (:class:`~maraboupy.MarabouUtils.Equation`): New equation to add
-            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
-        """
-        if isProperty:
-            self.additionalEquList += [x]
-        else:
-            self.equList += [x]
-
-    def setLowerBound(self, x, v):
-        """Function to set lower bound for variable
-
-        Args:
-            x (int): Variable number to set
-            v (float): Value representing lower bound
-        """
-        self.lowerBounds[x]=v
-
-    def setUpperBound(self, x, v):
-        """Function to set upper bound for variable
-
-        Args:
-            x (int): Variable number to set
-            v (float): Value representing upper bound
-        """
-        self.upperBounds[x]=v
-
-    def addRelu(self, v1, v2):
-        """Function to add a new Relu constraint
-
-        Args:
-            v1 (int): Variable representing input of Relu
-            v2 (int): Variable representing output of Relu
-        """
-        self.reluList += [(v1, v2)]
-
-    def addSigmoid(self, v1, v2):
-        """Function to add a new Sigmoid constraint
-
-        Args:
-            v1 (int): Variable representing input of Sigmoid
-            v2 (int): Variable representing output of Sigmoid
-        """
-        self.sigmoidList += [(v1, v2)]
-
-    def addMaxConstraint(self, elements, v):
-        """Function to add a new Max constraint
-
-        Args:
-            elements (set of int): Variable representing input to max constraint
-            v (int): Variable representing output of max constraint
-        """
-        self.maxList += [(elements, v)]
-
-    def addAbsConstraint(self, b, f):
-        """Function to add a new Abs constraint
-
-        Args:
-            b (int): Variable representing input of the Abs constraint
-            f (int): Variable representing output of the Abs constraint
-        """
-        self.absList += [(b, f)]
-
-    def addSignConstraint(self, b, f):
-        """Function to add a new Sign constraint
-
-        Args:
-            b (int): Variable representing input of Sign
-            f (int): Variable representing output of Sign
-        """
-        self.signList += [(b, f)]
-
-    def addDisjunctionConstraint(self, disjuncts):
-        """Function to add a new Disjunction constraint
-
-        Args:
-            disjuncts (list of list of Equations): Each inner list represents a disjunct
-        """
-        self.disjunctionList.append(disjuncts)
-
-    def lowerBoundExists(self, x):
-        """Function to check whether lower bound for a variable is known
-
-        Args:
-            x (int): Variable to check
-        """
-        return x in self.lowerBounds
-
-    def upperBoundExists(self, x):
-        """Function to check whether upper bound for a variable is known
-
-        Args:
-            x (int): Variable to check
-        """
-        return x in self.upperBounds
-
-    def addEquality(self, vars, coeffs, scalar, isProperty=False):
-        """Function to add equality constraint to network
-
-        .. math::
-            \sum_i vars_i * coeffs_i = scalar
-
-        Args:
-            vars (list of int): Variable numbers
-            coeffs (list of float): Coefficients
-            scalar (float): Right hand side constant of equation
-            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
-        """
-        assert len(vars)==len(coeffs)
-        e = MarabouUtils.Equation()
-        for i in range(len(vars)):
-            e.addAddend(coeffs[i], vars[i])
-        e.setScalar(scalar)
-        self.addEquation(e, isProperty)
-
-    def addInequality(self, vars, coeffs, scalar, isProperty=False):
-        """Function to add inequality constraint to network
-
-        .. math::
-            \sum_i vars_i * coeffs_i \le scalar
-
-        Args:
-            vars (list of int): Variable numbers
-            coeffs (list of float): Coefficients
-            scalar (float): Right hand side constant of inequality
-            isProperty (bool): If true, this constraint can be removed later by clearProperty() method
-        """
-        assert len(vars)==len(coeffs)
-        e = MarabouUtils.Equation(MarabouCore.Equation.LE)
-        for i in range(len(vars)):
-            e.addAddend(coeffs[i], vars[i])
-        e.setScalar(scalar)
-        self.addEquation(e, isProperty)
-
-    def getMarabouQuery(self):
-        """Function to convert network into Marabou InputQuery
-
-        Returns:
-            :class:`~maraboupy.MarabouCore.InputQuery`
-        """
-        ipq = MarabouCore.InputQuery()
-        ipq.setNumberOfVariables(self.numVars)
-
-        i = 0
-        for inputVarArray in self.inputVars:
-            for inputVar in inputVarArray.flatten():
-                ipq.markInputVariable(inputVar, i)
-                i+=1
-
-        i = 0
-        for outputVarArray in self.outputVars:
-            for outputVar in outputVarArray.flatten():
-                ipq.markOutputVariable(outputVar, i)
-                i+=1
-
-        for e in self.equList:
-            eq = MarabouCore.Equation(e.EquationType)
-            for (c, v) in e.addendList:
-                assert v < self.numVars
-                eq.addAddend(c, v)
-            eq.setScalar(e.scalar)
-            ipq.addEquation(eq)
-
-        for e in self.additionalEquList:
-            eq = MarabouCore.Equation(e.EquationType)
-            for (c, v) in e.addendList:
-                assert v < self.numVars
-                eq.addAddend(c, v)
-            eq.setScalar(e.scalar)
-            ipq.addEquation(eq)
-
-        for r in self.reluList:
-            assert r[1] < self.numVars and r[0] < self.numVars
-            MarabouCore.addReluConstraint(ipq, r[0], r[1])
-
-        for r in self.sigmoidList:
-            assert r[1] < self.numVars and r[0] < self.numVars
-            MarabouCore.addSigmoidConstraint(ipq, r[0], r[1])
-
-        for m in self.maxList:
-            assert m[1] < self.numVars
-            for e in m[0]:
-                assert e < self.numVars
-            MarabouCore.addMaxConstraint(ipq, m[0], m[1])
-
-        for b, f in self.absList:
-            MarabouCore.addAbsConstraint(ipq, b, f)
-
-        for b, f in self.signList:
-            MarabouCore.addSignConstraint(ipq, b, f)
-
-        for disjunction in self.disjunctionList:
-            MarabouCore.addDisjunctionConstraint(ipq, disjunction)
-
-        for l in self.lowerBounds:
-            assert l < self.numVars
-            ipq.setLowerBound(l, self.lowerBounds[l])
-
-        for u in self.upperBounds:
-            assert u < self.numVars
-            ipq.setUpperBound(u, self.upperBounds[u])
-            
-        return ipq
-
-    def solve(self, filename="", verbose=True, options=None):
+    def solve(self, filename="", verbose=True, options=None, propertyFilename=""):
         """Function to solve query represented by this network
 
         Args:
             filename (string): Path for redirecting output
             verbose (bool): If true, print out solution after solve finishes
             options (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options, defaults to None
+            propertyFilename(string): Path for property file
 
         Returns:
             (tuple): tuple containing:
@@ -298,7 +67,9 @@ class MarabouNetwork:
                 - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
+        if propertyFilename:
+            MarabouCore.loadProperty(ipq, propertyFilename)
         if options == None:
             options = MarabouCore.Options()
         exitCode, vals, stats = MarabouCore.solve(ipq, options, str(filename))
@@ -330,7 +101,7 @@ class MarabouNetwork:
                 - bounds (Dict[int, tuple]): Empty dictionary if UNSAT, otherwise a dictionary of bounds for output variables
                 - stats (:class:`~maraboupy.MarabouCore.Statistics`): A Statistics object to how Marabou performed
         """
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
         if options == None:
             options = MarabouCore.Options()
         exitCode, bounds, stats = MarabouCore.calculateBounds(ipq, options, str(filename))
@@ -434,15 +205,6 @@ class MarabouNetwork:
 
         return [vals, stats, maxClass]
 
-    def saveQuery(self, filename=""):
-        """Serializes the inputQuery in the given filename
-
-        Args:
-            filename: (string) file to write serialized inputQuery
-        """
-        ipq = self.getMarabouQuery()
-        MarabouCore.saveQuery(ipq, str(filename))
-
     def evaluateWithMarabou(self, inputValues, filename="evaluateWithMarabou.log", options=None):
         """Function to evaluate network at a given point using Marabou as solver
 
@@ -467,7 +229,7 @@ class MarabouNetwork:
         for x in assignList:
             inputDict[x[0]] = x[1]
 
-        ipq = self.getMarabouQuery()
+        ipq = self.getInputQuery()
         for k in inputDict:
             ipq.setLowerBound(k, inputDict[k])
             ipq.setUpperBound(k, inputDict[k])

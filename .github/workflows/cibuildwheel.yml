@@ -83,7 +83,7 @@ jobs:
 
     steps:
       - name: Download wheelhouse
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheelhouse
           path: wheelhouse
@@ -114,7 +114,7 @@ jobs:
 
     steps:
       - name: Download wheelhouse
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: wheelhouse
           path: wheelhouse

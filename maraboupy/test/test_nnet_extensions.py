@@ -188,7 +188,7 @@ def test_bound_getters():
     """
     nnet_object = Marabou.read_nnet(filename=NETWORK_FILENAME, normalize=False)
 
-    ipq = nnet_object.getMarabouQuery()
+    ipq = nnet_object.getInputQuery()
 
     num_input_vars = ipq.getNumInputVariables()
     assert num_input_vars == nnet_object.inputSize

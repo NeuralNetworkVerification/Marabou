@@ -13,16 +13,17 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+#include "LeakyReluConstraint.h"
+#include "MarabouError.h"
 #include "MockErrno.h"
 #include "MockFileFactory.h"
+#include "NetworkLevelReasoner.h"
 #include "ReluConstraint.h"
-#include "MarabouError.h"
 
+#include <cxxtest/TestSuite.h>
 #include <string.h>
 
 class MockForInputQuery
@@ -48,6 +49,17 @@ public:
     void tearDown()
     {
         TS_ASSERT_THROWS_NOTHING( delete mock );
+    }
+
+    void test_get_new_variable()
+    {
+        InputQuery inputQuery;
+        inputQuery.setNumberOfVariables( 1 );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 1u );
+        TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 1u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 2u );
+        TS_ASSERT_EQUALS( inputQuery.getNewVariable(), 2u );
+        TS_ASSERT_EQUALS( inputQuery.getNumberOfVariables(), 3u );
     }
 
     void test_lower_bounds()
@@ -163,7 +175,7 @@ public:
         inputQuery->setLowerBound( 5, 0.2 );
         inputQuery->setUpperBound( 3, 0.3 );
         inputQuery->setUpperBound( 5, 0.4 );
-        inputQuery->addTranscendentalConstraint( sigmoid1 );
+        inputQuery->addNonlinearConstraint( sigmoid1 );
 
         InputQuery inputQuery2 = *inputQuery;
 
@@ -173,7 +185,7 @@ public:
         TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 3 ), 0.3 );
         TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 5 ), 0.4 );
 
-        auto constraints = inputQuery2.getTranscendentalConstraints();
+        auto constraints = inputQuery2.getNonlinearConstraints();
 
         TS_ASSERT_EQUALS( constraints.size(), 1U );
         SigmoidConstraint *constraint = (SigmoidConstraint *)*constraints.begin();
@@ -193,7 +205,7 @@ public:
         TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 3 ), 0.3 );
         TS_ASSERT_EQUALS( inputQuery2.getUpperBound( 5 ), 0.4 );
 
-        constraints = inputQuery2.getTranscendentalConstraints();
+        constraints = inputQuery2.getNonlinearConstraints();
 
         TS_ASSERT_EQUALS( constraints.size(), 1U );
         constraint = (SigmoidConstraint *)*constraints.begin();
@@ -237,12 +249,60 @@ public:
 
         delete inputQuery;
     }
-};
 
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//
+    void test_construct_leaky_relu_nlr()
+    {
+        // x2 = x0 + x1
+        // x3 = x0 - x1
+        // x4 = lRelu(x2)
+        // x5 = lRelu(x3)
+        // x6 = x2 + x3 + x4
+        InputQuery *inputQuery = new InputQuery;
+        inputQuery->setNumberOfVariables( 7 );
+        Equation eq1;
+        eq1.addAddend( 1, 0 );
+        eq1.addAddend( 1, 1 );
+        eq1.addAddend( -1, 2 );
+        inputQuery->addEquation( eq1 );
+        Equation eq2;
+        eq2.addAddend( 1, 0 );
+        eq2.addAddend( -1, 1 );
+        eq2.addAddend( -1, 3 );
+        inputQuery->addEquation( eq2 );
+        LeakyReluConstraint *r1 = new LeakyReluConstraint( 2, 4, 0.1 );
+        LeakyReluConstraint *r2 = new LeakyReluConstraint( 3, 5, 0.1 );
+        inputQuery->addPiecewiseLinearConstraint( r1 );
+        inputQuery->addPiecewiseLinearConstraint( r2 );
+        Equation eq3;
+        eq3.addAddend( 1, 2 );
+        eq3.addAddend( 1, 3 );
+        eq3.addAddend( 1, 4 );
+        eq3.addAddend( -1, 6 );
+        inputQuery->addEquation( eq3 );
+        inputQuery->markInputVariable( 0, 0 );
+        inputQuery->markInputVariable( 1, 1 );
+        List<Equation> unhandledEquations;
+        Set<unsigned> varsInUnhandledConstraints;
+        TS_ASSERT( inputQuery->constructNetworkLevelReasoner( unhandledEquations,
+                                                              varsInUnhandledConstraints ) );
+        TS_ASSERT( unhandledEquations.empty() );
+        TS_ASSERT( varsInUnhandledConstraints.empty() );
+        NLR::NetworkLevelReasoner *nlr = inputQuery->getNetworkLevelReasoner();
+        TS_ASSERT( nlr->getNumberOfLayers() == 4 );
+        NLR::Layer *layer = nlr->getLayer( 2 );
+        TS_ASSERT( layer->getLayerType() == NLR::Layer::LEAKY_RELU );
+        layer = nlr->getLayer( 3 );
+        TS_ASSERT( layer->getLayerType() == NLR::Layer::WEIGHTED_SUM );
+        TS_ASSERT( layer->getSourceLayers().size() == 2 );
+
+        double input[2];
+        double output[1];
+
+        input[0] = 2;
+        input[1] = -3;
+        double result = 2 - 3 + 2 + 3 - 0.1;
+        nlr->evaluate( input, output );
+        TS_ASSERT_EQUALS( output[0], result );
+        delete inputQuery;
+    }
+};

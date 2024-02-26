@@ -14,11 +14,11 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "List.h"
 #include "MString.h"
 #include "MockErrno.h"
+
+#include <cxxtest/TestSuite.h>
 
 class ListTestSuite : public CxxTest::TestSuite
 {
@@ -198,7 +198,7 @@ public:
 
     void test_initializer_list()
     {
-        List<int> a { 1, 2, 3 };
+        List<int> a{ 1, 2, 3 };
 
         TS_ASSERT_EQUALS( a.size(), 3U );
 
@@ -230,7 +230,7 @@ public:
 
         TS_ASSERT_EQUALS( a.size(), 6U );
 
-        TS_ASSERT_EQUALS( a, List<int> ( { 1, 2, 3, 4, 5, 6 } ) );
+        TS_ASSERT_EQUALS( a, List<int>( { 1, 2, 3, 4, 5, 6 } ) );
     }
 
     void test_reverse_iterator()
@@ -284,10 +284,8 @@ public:
         a.popBack();
         TS_ASSERT( a.empty() );
 
-        TS_ASSERT_THROWS_EQUALS( a.popBack(),
-                                 const CommonError &e,
-                                 e.getCode(),
-                                 CommonError::LIST_IS_EMPTY );
+        TS_ASSERT_THROWS_EQUALS(
+            a.popBack(), const CommonError &e, e.getCode(), CommonError::LIST_IS_EMPTY );
     }
 
     void test_remove_if()
@@ -299,7 +297,7 @@ public:
         a.append( 1 );
         a.append( -2 );
 
-        a.removeIf( [] ( int number ) { return number < 0; } );
+        a.removeIf( []( int number ) { return number < 0; } );
 
         auto it = a.begin();
         TS_ASSERT_EQUALS( *it, 0 );

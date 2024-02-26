@@ -19,6 +19,7 @@
 #include "AcasNnet.h"
 #include "MString.h"
 #include "Vector.h"
+
 #include <cassert>
 #include <iomanip>
 #include <sstream>
@@ -57,7 +58,8 @@ public:
     /*
       Evaluate the network for a given vector of inputs.
     */
-    void evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const;
+    void
+    evaluate( const Vector<double> &inputs, Vector<double> &outputs, unsigned outputSize ) const;
 
     /*
       Returns the input range [min, max] for the input node specified by index.

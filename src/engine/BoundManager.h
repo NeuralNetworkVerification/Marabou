@@ -39,17 +39,17 @@
 #ifndef __BoundManager_h__
 #define __BoundManager_h__
 
-#include "context/cdo.h"
-#include "context/context.h"
 #include "IBoundManager.h"
+#include "IEngine.h"
 #include "IRowBoundTightener.h"
 #include "ITableau.h"
-#include "IEngine.h"
 #include "List.h"
 #include "PlcLemma.h"
 #include "Tightening.h"
 #include "UnsatCertificateNode.h"
 #include "Vector.h"
+#include "context/cdo.h"
+#include "context/context.h"
 
 class ITableau;
 class IEngine;
@@ -98,8 +98,8 @@ public:
     /*
       Get pointers to latest bounds used for access by tableau and tighteners
      */
-    const double * getLowerBounds() const;
-    const double * getUpperBounds() const;
+    const double *getLowerBounds() const;
+    const double *getUpperBounds() const;
 
     /*
        Store and restore local bounds after context advances/backtracks.
@@ -145,7 +145,8 @@ public:
     void registerRowBoundTightener( IRowBoundTightener *ptrRowBoundTightener );
 
     /*
-      Return the content of the object containing all explanations for variable bounds in the tableau.
+      Return the content of the object containing all explanations for variable bounds in the
+      tableau.
     */
     const BoundExplainer *getBoundExplainer() const;
 
@@ -165,7 +166,8 @@ public:
     void updateBoundExplanation( const TableauRow &row, bool isUpper, unsigned var );
 
     /*
-      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var according to the row
+      Given a row as SparseUnsortedList, updates the values of the bound explanations of a var
+      according to the row
     */
     void updateBoundExplanationSparse( const SparseUnsortedList &row, bool isUpper, unsigned var );
 
@@ -182,12 +184,12 @@ public:
     /*
       Artificially update an explanation, without using the recursive rule
     */
-    void setExplanation( const SparseUnsortedList &explanation, unsigned var,  bool isUpper ) const;
+    void setExplanation( const SparseUnsortedList &explanation, unsigned var, bool isUpper ) const;
 
     /*
       Register Engine pointer for callbacks
     */
-    void registerEngine( IEngine *engine);
+    void registerEngine( IEngine *engine );
 
     /*
       Get the index of a variable with inconsistent bounds, if exists, or -1 otherwise
@@ -218,15 +220,15 @@ private:
     CVC4::context::Context &_context;
     unsigned _size;
     unsigned _allocated;
-    ITableau *_tableau; // Used only by callbacks
+    ITableau *_tableau;                     // Used only by callbacks
     IRowBoundTightener *_rowBoundTightener; // Used only by callbacks
     IEngine *_engine;
 
     CVC4::context::CDO<bool> _consistentBounds;
     Tightening _firstInconsistentTightening;
 
-    double * _lowerBounds;
-    double * _upperBounds;
+    double *_lowerBounds;
+    double *_upperBounds;
 
     Vector<CVC4::context::CDO<double> *> _storedLowerBounds;
     Vector<CVC4::context::CDO<double> *> _storedUpperBounds;
@@ -253,9 +255,12 @@ private:
     /*
       Adds a lemma to the UNSATCertificateNode object
      */
-    bool addLemmaExplanationAndTightenBound( unsigned var, double value, BoundType affectedVarBound,
-                                            const List<unsigned> &causingVars, BoundType causingVarBound,
-                                            PiecewiseLinearFunctionType constraintType );
+    bool addLemmaExplanationAndTightenBound( unsigned var,
+                                             double value,
+                                             BoundType affectedVarBound,
+                                             const List<unsigned> &causingVars,
+                                             BoundType causingVarBound,
+                                             PiecewiseLinearFunctionType constraintType );
 
     /*
       Explainer of all bounds

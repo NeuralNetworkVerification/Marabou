@@ -2,7 +2,7 @@
 /*! \file Options.h
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -18,15 +18,15 @@
 
 #include "DivideStrategy.h"
 #include "LPSolverType.h"
+#include "MILPSolverBoundTighteningType.h"
 #include "MString.h"
 #include "Map.h"
-#include "MILPSolverBoundTighteningType.h"
 #include "OptionParser.h"
 #include "SnCDivideStrategy.h"
 #include "SoIInitializationStrategy.h"
 #include "SoISearchStrategy.h"
+#include "SoftmaxBoundType.h"
 #include "SymbolicBoundTighteningType.h"
-
 #include "boost/program_options.hpp"
 
 /*
@@ -48,6 +48,9 @@ public:
         // Dump the bounds of each variable after preprocessing
         DUMP_BOUNDS,
 
+        // Dump the topology of the network
+        DUMP_TOPOLOGY,
+
         // Help flag
         HELP,
 
@@ -63,16 +66,23 @@ public:
         // If false, when multiple threads are allowed, run the DeepSoI-based procedure
         // with a different random seed on each thread. The problem is solved once
         // any of the thread finishes.
-        NO_PARALLEL_DEEPSOI,
+        PARALLEL_DEEPSOI,
 
-        // Export SAT assignment into a file, use EXPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
+        // Export SAT assignment into a file, use EXPORT_ASSIGNMENT_FILE to specify the file
+        // (default: assignment.txt)
         EXPORT_ASSIGNMENT,
 
-        // Import assignment for debugging purposes, use IMPORT_ASSIGNMENT_FILE to specify the file (default: assignment.txt)
+        // Import assignment for debugging purposes, use IMPORT_ASSIGNMENT_FILE to specify the file
+        // (default: assignment.txt)
         DEBUG_ASSIGNMENT,
 
         // Produce proofs of unsatisfiability and check them
-        PRODUCE_PROOFS
+        PRODUCE_PROOFS,
+
+        // If the flag is false, the preprocessor will try to merge two
+        // logically-consecutive weighted sum layers into a single
+        // weighted sum layer, to reduce the number of variables
+        DO_NOT_MERGE_CONSECUTIVE_WEIGHTED_SUM_LAYERS,
     };
 
     enum IntOptions {
@@ -102,9 +112,12 @@ public:
 
         // The number of threads to use for OpenBLAS matrix multiplication.
         NUM_BLAS_THREADS,
+
+        // Maximal number of constraints to refine in incremental linearization
+        NUM_CONSTRAINTS_TO_REFINE_INC_LIN,
     };
 
-    enum FloatOptions{
+    enum FloatOptions {
         // DNC options
         TIMEOUT_FACTOR,
 
@@ -116,6 +129,10 @@ public:
 
         // The beta parameter used in converting the soi f to a probability
         PROBABILITY_DENSITY_PARAMETER,
+
+        // In each iteration of incremental linearization, scale the maximal
+        // number of constraints to refine by this number
+        REFINEMENT_SCALING_FACTOR_INC_LIN,
     };
 
     enum StringOptions {
@@ -130,6 +147,7 @@ public:
         QUERY_DUMP_FILE,
         EXPORT_ASSIGNMENT_FILE_PATH,
         IMPORT_ASSIGNMENT_FILE_PATH,
+        SOFTMAX_BOUND_TYPE,
 
         // The strategy used for soi minimization
         SOI_SEARCH_STRATEGY,
@@ -137,8 +155,7 @@ public:
         SOI_INITIALIZATION_STRATEGY,
 
         // The procedure/solver for solving the LP
-        LP_SOLVER,
-
+        LP_SOLVER
     };
 
     /*
@@ -170,6 +187,7 @@ public:
     SoIInitializationStrategy getSoIInitializationStrategy() const;
     SoISearchStrategy getSoISearchStrategy() const;
     LPSolverType getLPSolverType() const;
+    SoftmaxBoundType getSoftmaxBoundType() const;
 
     /*
       Retrieve the value of the various options, by type
@@ -215,11 +233,3 @@ private:
 };
 
 #endif // __Options_h__
-
-//
-// Local Variables:
-// compile-command: "make -C ../.. "
-// tags-file-name: "../../TAGS"
-// c-basic-offset: 4
-// End:
-//

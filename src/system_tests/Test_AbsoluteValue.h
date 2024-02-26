@@ -13,13 +13,13 @@
 
 **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "AbsoluteValueConstraint.h"
 #include "AcasParser.h"
 #include "Engine.h"
 #include "FloatUtils.h"
 #include "InputQuery.h"
+
+#include <cxxtest/TestSuite.h>
 
 class AbsoluteValueTestSuite : public CxxTest::TestSuite
 {
@@ -163,8 +163,8 @@ public:
         for ( unsigned i = 0; i < 5; ++i )
         {
             unsigned inputVariable = acasParser.getInputVariable( i );
-            AbsoluteValueConstraint *abs = new AbsoluteValueConstraint
-                ( inputVariable, numVariables + i );
+            AbsoluteValueConstraint *abs =
+                new AbsoluteValueConstraint( inputVariable, numVariables + i );
             inputQuery.addPiecewiseLinearConstraint( abs );
         }
 
@@ -191,14 +191,14 @@ public:
         equationOut.setType( Equation::LE );
 
         // minimal - larger <= 0    -->     larger >= minimal
-        equationOut.addAddend( 1 , minimalOutputVar );
+        equationOut.addAddend( 1, minimalOutputVar );
         equationOut.addAddend( -1, largerOutputVar );
         equationOut.setScalar( 0 );
         inputQuery.addEquation( equationOut );
 
         // Run the query
         Engine engine;
-        if( !engine.processInputQuery( inputQuery ) )
+        if ( !engine.processInputQuery( inputQuery ) )
         {
             // No counter example found, this is acceptable
             return;
@@ -206,8 +206,8 @@ public:
 
         TS_ASSERT( engine.getInputQuery()->getNetworkLevelReasoner() );
 
-        auto constraintsInTopologicalOrder = engine.getInputQuery()->
-            getNetworkLevelReasoner()->getConstraintsInTopologicalOrder();
+        auto constraintsInTopologicalOrder =
+            engine.getInputQuery()->getNetworkLevelReasoner()->getConstraintsInTopologicalOrder();
         auto allConstraints = engine.getInputQuery()->getPiecewiseLinearConstraints();
         TS_ASSERT_EQUALS( constraintsInTopologicalOrder.size(), allConstraints.size() );
 

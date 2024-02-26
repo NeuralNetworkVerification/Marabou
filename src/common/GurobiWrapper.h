@@ -20,7 +20,6 @@
 
 #include "MString.h"
 #include "Map.h"
-
 #include "gurobi_c++.h"
 
 class GurobiWrapper
@@ -29,6 +28,7 @@ public:
     enum VariableType {
         CONTINUOUS = 0,
         BINARY = 1,
+        INTEGER = 2,
     };
 
     /*
@@ -81,14 +81,33 @@ public:
     // Add a new EQ constraint, e.g. 3x + 4y = -5
     void addEqConstraint( const List<Term> &terms, double scalar );
 
-    // Add a new LEQ indicator constraint 
-    void addLeqIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+    // Add a piece-wise linear constraint
+    void addPiecewiseLinearConstraint( String sourceVariable,
+                                       String targetVariable,
+                                       unsigned numPoints,
+                                       const double *xPoints,
+                                       const double *yPoints );
+
+    // Add a new LEQ indicator constraint
+    void addLeqIndicatorConstraint( const String binVarName,
+                                    const int binVal,
+                                    const List<Term> &terms,
+                                    double scalar );
 
     // Add a new GEQ indicator constraint
-    void addGeqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+    void addGeqIndicatorConstraint( const String binVarName,
+                                    const int binVal,
+                                    const List<Term> &terms,
+                                    double scalar );
 
     // Add a new EQ indicator constraint
-    void addEqIndicatorConstraint(  const String binVarName, const int binVal, const List<Term> &terms, double scalar );
+    void addEqIndicatorConstraint( const String binVarName,
+                                   const int binVal,
+                                   const List<Term> &terms,
+                                   double scalar );
+
+    // Add a bilinear constraint
+    void addBilinearConstraint( const String input1, const String input2, const String output );
 
     // A cost function to minimize, or an objective function to maximize
     void setCost( const List<Term> &terms, double constant = 0 );
@@ -129,10 +148,20 @@ public:
         _model->getEnv().set( GRB_IntParam_OutputFlag, verbosity );
     }
 
+    inline bool containsVariable( String name ) const
+    {
+        return _nameToVariable.exists( name );
+    }
+
     // Set number of threads
     inline void setNumberOfThreads( unsigned threads )
     {
         _model->getEnv().set( GRB_IntParam_Threads, threads );
+    }
+
+    inline void nonConvex()
+    {
+        _model->getEnv().set( GRB_IntParam_NonConvex, 2 );
     }
 
     // Solve and extract the solution, or the best known bound on the
@@ -149,8 +178,7 @@ public:
     // Check if the assignment exists or not.
     inline bool existsAssignment( const String &variable )
     {
-        return _nameToVariable.exists( variable ) &&
-            _model->get( GRB_IntAttr_SolCount ) > 0;
+        return _nameToVariable.exists( variable ) && _model->get( GRB_IntAttr_SolCount ) > 0;
     }
 
     inline unsigned getNumberOfSimplexIterations()
@@ -192,7 +220,11 @@ private:
 
     void addConstraint( const List<Term> &terms, double scalar, char sense );
     // Add a new indicator constraint
-    void addIndicatorConstraint( const String binVarName, const int binVal, const List<Term> &terms, double scalar, char sense );
+    void addIndicatorConstraint( const String binVarName,
+                                 const int binVal,
+                                 const List<Term> &terms,
+                                 double scalar,
+                                 char sense );
 
     void freeModelIfNeeded();
     void freeMemoryIfNeeded();
@@ -215,53 +247,144 @@ public:
     enum VariableType {
         CONTINUOUS = 0,
         BINARY = 1,
+        INTEGER = 2,
     };
 
     struct Term
     {
-        Term( double, String ) {}
-        Term() {}
+        Term( double, String )
+        {
+        }
+        Term()
+        {
+        }
     };
 
-    GurobiWrapper() {}
-    ~GurobiWrapper() {}
+    GurobiWrapper()
+    {
+    }
+    ~GurobiWrapper()
+    {
+    }
 
-    void addVariable( String, double, double, VariableType type = CONTINUOUS ) { (void)type; }
-    void setLowerBound( String, double ) {};
-    void setUpperBound( String, double ) {};
-    double getLowerBound( const String & ) { return 0; };
-    double getUpperBound( const String & ) { return 0; };
-    void addLeqConstraint( const List<Term> &, double ) {}
-    void addGeqConstraint( const List<Term> &, double ) {}
-    void addEqConstraint( const List<Term> &, double ) {}
-    void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
-    void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
-    void addEqIndicatorConstraint( const String, const int, const List<Term> &, double ) {}
-    void setCost( const List<Term> &, double /* constant */=0 ) {}
-    void setObjective( const List<Term> &, double /* constant */=0 ) {}
-    double getOptimalCostOrObjective() { return 0; };
-    void setCutoff( double ) {};
-    void solve() {}
-    void extractSolution( Map<String, double> &, double & ) {}
-    void reset() {}
-    void resetModel() {}
-    bool optimal() { return true; }
-    bool cutoffOccurred() { return false; };
-    bool infeasible() { return false; };
-    bool timeout() { return false; };
-    bool haveFeasibleSolution() { return true; };
-    void setTimeLimit( double ) {};
-    void setVerbosity( unsigned ) {};
-    void setNumberOfThreads( unsigned ) {};
-    double getObjectiveBound() { return 0; };
-    double getAssignment( const String & ){ return 0; };
-    unsigned getNumberOfSimplexIterations() { return 0; };
-    unsigned getNumberOfNodes() { return 0; };
-    unsigned getStatusCode() { return 0; };
-    void updateModel() {};
-    bool existsAssignment( const String & ){ return false; };
+    void addVariable( String, double, double, VariableType type = CONTINUOUS )
+    {
+        (void)type;
+    }
+    void setLowerBound( String, double ){};
+    void setUpperBound( String, double ){};
+    double getLowerBound( const String & )
+    {
+        return 0;
+    };
+    double getUpperBound( const String & )
+    {
+        return 0;
+    };
+    void addLeqConstraint( const List<Term> &, double )
+    {
+    }
+    void addGeqConstraint( const List<Term> &, double )
+    {
+    }
+    void addEqConstraint( const List<Term> &, double )
+    {
+    }
+    void addPiecewiseLinearConstraint( String, String, unsigned, const double *, const double * )
+    {
+    }
+    void addLeqIndicatorConstraint( const String, const int, const List<Term> &, double )
+    {
+    }
+    void addGeqIndicatorConstraint( const String, const int, const List<Term> &, double )
+    {
+    }
+    void addEqIndicatorConstraint( const String, const int, const List<Term> &, double )
+    {
+    }
+    void addBilinearConstraint( const String, const String, const String )
+    {
+    }
+    void setCost( const List<Term> &, double /* constant */ = 0 )
+    {
+    }
+    void setObjective( const List<Term> &, double /* constant */ = 0 )
+    {
+    }
+    double getOptimalCostOrObjective()
+    {
+        return 0;
+    };
+    void setCutoff( double ){};
+    void solve()
+    {
+    }
+    void extractSolution( Map<String, double> &, double & )
+    {
+    }
+    void reset()
+    {
+    }
+    void resetModel()
+    {
+    }
+    bool optimal()
+    {
+        return true;
+    }
+    bool cutoffOccurred()
+    {
+        return false;
+    };
+    bool infeasible()
+    {
+        return false;
+    };
+    bool timeout()
+    {
+        return false;
+    };
+    bool haveFeasibleSolution()
+    {
+        return true;
+    };
+    void setTimeLimit( double ){};
+    void setVerbosity( unsigned ){};
+    bool containsVariable( String /*name*/ ) const
+    {
+        return false;
+    };
+    void setNumberOfThreads( unsigned ){};
+    void nonConvex(){};
+    double getObjectiveBound()
+    {
+        return 0;
+    };
+    double getAssignment( const String & )
+    {
+        return 0;
+    };
+    unsigned getNumberOfSimplexIterations()
+    {
+        return 0;
+    };
+    unsigned getNumberOfNodes()
+    {
+        return 0;
+    };
+    unsigned getStatusCode()
+    {
+        return 0;
+    };
+    void updateModel(){};
+    bool existsAssignment( const String & )
+    {
+        return false;
+    };
 
-    void dump() {}
+    void dump()
+    {
+    }
     static void log( const String & );
 };
 

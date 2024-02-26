@@ -24,17 +24,17 @@ class String;
 class ConstSimpleData
 {
 public:
-	ConstSimpleData( const void *data, unsigned size );
+    ConstSimpleData( const void *data, unsigned size );
     ConstSimpleData( const HeapData &data );
-	const void *data() const;
+    const void *data() const;
     unsigned size() const;
     const char *asChar() const;
     void hexDump() const;
     String toString() const;
 
 private:
-	const void *_data;
-	unsigned _size;
+    const void *_data;
+    unsigned _size;
 };
 
 #endif // __ConstSimpleData_h__

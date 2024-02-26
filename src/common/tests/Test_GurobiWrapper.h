@@ -14,12 +14,12 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include <cxxtest/TestSuite.h>
-
 #include "FloatUtils.h"
 #include "GurobiWrapper.h"
 #include "MString.h"
 #include "MockErrno.h"
+
+#include <cxxtest/TestSuite.h>
 
 class GurobiWrapperTestSuite : public CxxTest::TestSuite
 {
@@ -82,11 +82,3 @@ public:
 #endif // ENABLE_GUROBI
     }
 };
-
-//
-// Local Variables:
-// compile-command: "make -C ../../.. "
-// tags-file-name: "../../../TAGS"
-// c-basic-offset: 4
-// End:
-//

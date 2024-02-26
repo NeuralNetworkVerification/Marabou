@@ -2,7 +2,7 @@
 /*! \file Marabou.cpp
  ** \verbatim
  ** Top contributors (to current version):
- **   Guy Katz
+ **   Guy Katz, Andrew Wu
  ** This file is part of the Marabou project.
  ** Copyright (c) 2017-2019 by the authors listed in the file AUTHORS
  ** in the top-level source directory) and their institutional affiliations.
@@ -14,17 +14,19 @@
  ** [[ Add lengthier description here ]]
  **/
 
+#include "Marabou.h"
+
 #include "AcasParser.h"
 #include "AutoFile.h"
-#include "GlobalConfiguration.h"
 #include "File.h"
+#include "GlobalConfiguration.h"
 #include "MStringf.h"
-#include "Marabou.h"
+#include "MarabouError.h"
 #include "OnnxParser.h"
 #include "Options.h"
 #include "PropertyParser.h"
-#include "MarabouError.h"
 #include "QueryLoader.h"
+#include "VnnLibParser.h"
 
 #ifdef _WIN32
 #undef ERROR
@@ -33,7 +35,8 @@
 Marabou::Marabou()
     : _acasParser( NULL )
     , _onnxParser( NULL )
-    , _engine()
+    , _cegarSolver( NULL )
+    , _engine( std::unique_ptr<Engine>( new Engine() ) )
 {
 }
 
@@ -64,7 +67,7 @@ void Marabou::run()
     unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
     displayResults( totalElapsed );
 
-    if( Options::get()->getBool( Options::EXPORT_ASSIGNMENT ) )
+    if ( Options::get()->getBool( Options::EXPORT_ASSIGNMENT ) )
         exportAssignment();
 }
 
@@ -78,13 +81,13 @@ void Marabou::prepareInputQuery()
         */
         if ( !File::exists( inputQueryFilePath ) )
         {
-            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
+            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n",
+                    inputQueryFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
 
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
-        _inputQuery.constructNetworkLevelReasoner();
     }
     else
     {
@@ -101,23 +104,23 @@ void Marabou::prepareInputQuery()
 
         if ( !File::exists( networkFilePath ) )
         {
-            printf( "Error: the specified network file (%s) doesn't exist!\n", networkFilePath.ascii() );
+            printf( "Error: the specified network file (%s) doesn't exist!\n",
+                    networkFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
-        if ( ((String) networkFilePath).endsWith( ".onnx" ) )
+        if ( ( (String)networkFilePath ).endsWith( ".onnx" ) )
         {
-            _onnxParser = new OnnxParser( networkFilePath );
-            _onnxParser->generateQuery( _inputQuery );
+            InputQueryBuilder queryBuilder;
+            OnnxParser::parse( queryBuilder, networkFilePath, {}, {} );
+            queryBuilder.generateQuery( _inputQuery );
         }
         else
         {
             _acasParser = new AcasParser( networkFilePath );
             _acasParser->generateQuery( _inputQuery );
         }
-
-        _inputQuery.constructNetworkLevelReasoner();
 
         /*
           Step 2: extract the property in question
@@ -126,7 +129,14 @@ void Marabou::prepareInputQuery()
         if ( propertyFilePath != "" )
         {
             printf( "Property: %s\n", propertyFilePath.ascii() );
-            PropertyParser().parse( propertyFilePath, _inputQuery );
+            if ( propertyFilePath.endsWith( ".vnnlib" ) )
+            {
+                VnnLibParser().parse( propertyFilePath, _inputQuery );
+            }
+            else
+            {
+                PropertyParser().parse( propertyFilePath, _inputQuery );
+            }
         }
         else
             printf( "Property: None\n" );
@@ -148,12 +158,13 @@ void Marabou::prepareInputQuery()
 
 void Marabou::importDebuggingSolution()
 {
-    String fileName=  Options::get()->getString( Options::IMPORT_ASSIGNMENT_FILE_PATH );
+    String fileName = Options::get()->getString( Options::IMPORT_ASSIGNMENT_FILE_PATH );
     AutoFile input( fileName );
 
     if ( !IFile::exists( fileName ) )
     {
-        throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST, Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
+        throw MarabouError( MarabouError::FILE_DOES_NOT_EXIST,
+                            Stringf( "File %s not found.\n", fileName.ascii() ).ascii() );
     }
 
     input->open( IFile::MODE_READ );
@@ -166,7 +177,7 @@ void Marabou::importDebuggingSolution()
     String line;
 
     // Import each assignment
-    for ( unsigned i = 0;  i < numVars; ++i )
+    for ( unsigned i = 0; i < numVars; ++i )
     {
         line = input->readLine();
         List<String> tokens = line.tokenize( "," );
@@ -177,7 +188,7 @@ void Marabou::importDebuggingSolution()
         value = atof( it->ascii() );
         it++;
         ASSERT( it == tokens.end() );
-        _inputQuery.storeDebuggingSolution( var, value);
+        _inputQuery.storeDebuggingSolution( var, value );
     }
 
     input->close();
@@ -194,7 +205,7 @@ void Marabou::exportAssignment() const
     exportFile->write( Stringf( "%u\n", numberOfVariables ) );
 
     // Export each assignment
-    for ( unsigned var = 0;  var < numberOfVariables; ++var )
+    for ( unsigned var = 0; var < numberOfVariables; ++var )
         exportFile->write( Stringf( "%u, %f\n", var, _inputQuery.getSolutionValue( var ) ) );
 
     exportFile->close();
@@ -202,20 +213,44 @@ void Marabou::exportAssignment() const
 
 void Marabou::solveQuery()
 {
-    if ( _engine.processInputQuery( _inputQuery ) )
+    enum {
+        MICROSECONDS_IN_SECOND = 1000000
+    };
+
+    struct timespec start = TimeUtils::sampleMicro();
+    unsigned timeoutInSeconds = Options::get()->getInt( Options::TIMEOUT );
+    if ( _engine->processInputQuery( _inputQuery ) )
     {
-        _engine.solve( Options::get()->getInt( Options::TIMEOUT ) );
-        if ( _engine.shouldProduceProofs() && _engine.getExitCode() == Engine::UNSAT )
-            _engine.certifyUNSATCertificate();
+        _engine->solve( timeoutInSeconds );
+        if ( _engine->shouldProduceProofs() && _engine->getExitCode() == Engine::UNSAT )
+            _engine->certifyUNSATCertificate();
     }
 
-    if ( _engine.getExitCode() == Engine::SAT )
-        _engine.extractSolution( _inputQuery );
+    if ( _engine->getExitCode() == Engine::UNKNOWN )
+    {
+        struct timespec end = TimeUtils::sampleMicro();
+        unsigned long long totalElapsed = TimeUtils::timePassed( start, end );
+        if ( timeoutInSeconds == 0 || totalElapsed < timeoutInSeconds * MICROSECONDS_IN_SECOND )
+        {
+            _cegarSolver = new CEGAR::IncrementalLinearization( _inputQuery, _engine.release() );
+            unsigned long long timeoutInMicroSeconds =
+                ( timeoutInSeconds == 0
+                      ? 0
+                      : timeoutInSeconds * MICROSECONDS_IN_SECOND - totalElapsed );
+            _cegarSolver->setInitialTimeoutInMicroSeconds( timeoutInMicroSeconds );
+            _cegarSolver->solve();
+            _engine = std::unique_ptr<Engine>( _cegarSolver->releaseEngine() );
+        }
+    }
+
+
+    if ( _engine->getExitCode() == Engine::SAT )
+        _engine->extractSolution( _inputQuery );
 }
 
 void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 {
-    Engine::ExitCode result = _engine.getExitCode();
+    Engine::ExitCode result = _engine->getExitCode();
     String resultString;
 
     if ( result == Engine::UNSAT )
@@ -230,7 +265,9 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         printf( "Input assignment:\n" );
         for ( unsigned i = 0; i < _inputQuery.getNumInputVariables(); ++i )
-            printf( "\tx%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
+            printf( "\tx%u = %lf\n",
+                    i,
+                    _inputQuery.getSolutionValue( _inputQuery.inputVariableByIndex( i ) ) );
 
         if ( _inputQuery._networkLevelReasoner )
         {
@@ -257,7 +294,9 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
             printf( "\n" );
             printf( "Output:\n" );
             for ( unsigned i = 0; i < _inputQuery.getNumOutputVariables(); ++i )
-                printf( "\ty%u = %lf\n", i, _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
+                printf( "\ty%u = %lf\n",
+                        i,
+                        _inputQuery.getSolutionValue( _inputQuery.outputVariableByIndex( i ) ) );
             printf( "\n" );
         }
     }
@@ -271,10 +310,15 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
         resultString = "ERROR";
         printf( "Error\n" );
     }
-    else
+    else if ( result == Engine::UNKNOWN )
     {
         resultString = "UNKNOWN";
-        printf( "UNKNOWN EXIT CODE! (this should not happen)" );
+        printf( "UNKNOWN\n" );
+    }
+    else
+    {
+        resultString = "NOT_DONE";
+        printf( "Unexpected exit code! (this should not happen)" );
     }
 
     // Create a summary file, if requested
@@ -292,13 +336,12 @@ void Marabou::displayResults( unsigned long long microSecondsElapsed ) const
 
         // Field #3: number of visited tree states
         summaryFile.write( Stringf( "%u ",
-                                    _engine.getStatistics()->
-                                    getUnsignedAttribute
-                                    ( Statistics::NUM_VISITED_TREE_STATES ) ) );
+                                    _engine->getStatistics()->getUnsignedAttribute(
+                                        Statistics::NUM_VISITED_TREE_STATES ) ) );
 
         // Field #4: average pivot time in micro seconds
-        summaryFile.write( Stringf( "%u",
-                                    _engine.getStatistics()->getAveragePivotTimeInMicro() ) );
+        summaryFile.write(
+            Stringf( "%u", _engine->getStatistics()->getAveragePivotTimeInMicro() ) );
 
         summaryFile.write( "\n" );
     }

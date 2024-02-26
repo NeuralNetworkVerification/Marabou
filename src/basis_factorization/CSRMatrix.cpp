@@ -13,8 +13,9 @@
 
  **/
 
-#include "BasisFactorizationError.h"
 #include "CSRMatrix.h"
+
+#include "BasisFactorizationError.h"
 #include "Debug.h"
 #include "FloatUtils.h"
 #include "MString.h"
@@ -61,13 +62,13 @@ void CSRMatrix::initialize( const double *M, unsigned m, unsigned n )
         for ( unsigned j = 0; j < _n; ++j )
         {
             // Ignore zero entries
-            if ( FloatUtils::isZero( M[i*_n + j] ) )
+            if ( FloatUtils::isZero( M[i * _n + j] ) )
                 continue;
 
             if ( _nnz >= _estimatedNnz )
                 increaseCapacity();
 
-            _A[_nnz] = M[i*_n + j];
+            _A[_nnz] = M[i * _n + j];
             ++_IA[i + 1];
             _JA[_nnz] = j;
 
@@ -92,11 +93,13 @@ void CSRMatrix::initializeToEmpty( unsigned m, unsigned n )
 
     _IA = new unsigned[_m + 1];
     if ( !_IA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::IA" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::IA" );
 
     _JA = new unsigned[_estimatedNnz];
     if ( !_JA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::JA" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::JA" );
 
     std::fill_n( _IA, _m + 1, 0.0 );
     _nnz = 0;
@@ -109,14 +112,16 @@ void CSRMatrix::increaseCapacity()
 
     double *newA = new double[newEstimatedNnz];
     if ( !newA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::newA" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::newA" );
 
     unsigned *newJA = new unsigned[newEstimatedNnz];
     if ( !newJA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::newJA" );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::newJA" );
 
-    memcpy( newA, _A, _estimatedNnz * sizeof(double) );
-    memcpy( newJA, _JA, _estimatedNnz * sizeof(unsigned) );
+    memcpy( newA, _A, _estimatedNnz * sizeof( double ) );
+    memcpy( newJA, _JA, _estimatedNnz * sizeof( unsigned ) );
 
     delete[] _A;
     delete[] _JA;
@@ -138,7 +143,7 @@ void CSRMatrix::addLastRow( const double *row )
 {
     // Array _IA needs to increase by one
     unsigned *newIA = new unsigned[_m + 2];
-    memcpy( newIA, _IA, sizeof(unsigned) * ( _m + 1 ) );
+    memcpy( newIA, _IA, sizeof( unsigned ) * ( _m + 1 ) );
     delete[] _IA;
     _IA = newIA;
 
@@ -188,7 +193,7 @@ void CSRMatrix::addLastColumn( const double *column )
             continue;
 
         // Ignore all rows greater than i
-        while ( arrayIndex > _IA[i+1] - 1 )
+        while ( arrayIndex > _IA[i + 1] - 1 )
         {
             _A[arrayIndex + offset] = _A[arrayIndex];
             _JA[arrayIndex + offset] = _JA[arrayIndex];
@@ -207,7 +212,7 @@ void CSRMatrix::addLastColumn( const double *column )
     {
         if ( !FloatUtils::isZero( column[i] ) )
             ++increase;
-        _IA[i+1] += increase;
+        _IA[i + 1] += increase;
     }
 
     ++_n;
@@ -248,18 +253,21 @@ void CSRMatrix::storeIntoOther( SparseMatrix *other ) const
 
     otherCsr->_A = new double[_estimatedNnz];
     if ( !otherCsr->_A )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherCsrA" );
-    memcpy( otherCsr->_A, _A, sizeof(double) * _estimatedNnz );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::otherCsrA" );
+    memcpy( otherCsr->_A, _A, sizeof( double ) * _estimatedNnz );
 
     otherCsr->_IA = new unsigned[_m + 1];
     if ( !otherCsr->_IA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherCsrIA" );
-    memcpy( otherCsr->_IA, _IA, sizeof(unsigned) * ( _m + 1 ) );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::otherCsrIA" );
+    memcpy( otherCsr->_IA, _IA, sizeof( unsigned ) * ( _m + 1 ) );
 
     otherCsr->_JA = new unsigned[_estimatedNnz];
     if ( !otherCsr->_JA )
-        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED, "CSRMatrix::otherCsrJA" );
-    memcpy( otherCsr->_JA, _JA, sizeof(unsigned) * _estimatedNnz );
+        throw BasisFactorizationError( BasisFactorizationError::ALLOCATION_FAILED,
+                                       "CSRMatrix::otherCsrJA" );
+    memcpy( otherCsr->_JA, _JA, sizeof( unsigned ) * _estimatedNnz );
 }
 
 void CSRMatrix::getRow( unsigned row, SparseUnsortedList *result ) const
@@ -449,7 +457,7 @@ void CSRMatrix::insertElements( const Map<unsigned, Set<CommittedChange>> &inser
           Elements of row i are stored in _A and _JA between
           indices _IA[i] and _IA[i+1] - 1.
         */
-        int j = _IA[i+1] - 1;
+        int j = _IA[i + 1] - 1;
         while ( j >= (int)_IA[i] )
         {
             if ( !rowHasInsertions || nextInsertion == insertions[i].rend() )
@@ -496,7 +504,6 @@ void CSRMatrix::insertElements( const Map<unsigned, Set<CommittedChange>> &inser
                 --newArrayIndex;
             }
         }
-
     }
 
     // Make a final pass to adjust the IA indices
@@ -504,7 +511,7 @@ void CSRMatrix::insertElements( const Map<unsigned, Set<CommittedChange>> &inser
     for ( unsigned i = 0; i < _m; ++i )
     {
         totalAddedSoFar += insertions.exists( i ) ? insertions[i].size() : 0;
-        _IA[i+1] += totalAddedSoFar;
+        _IA[i + 1] += totalAddedSoFar;
     }
 
     _nnz += totalAddedSoFar;
@@ -633,7 +640,7 @@ void CSRMatrix::executeChanges()
 void CSRMatrix::countElements( unsigned *numRowElements, unsigned *numColumnElements )
 {
     for ( unsigned i = 0; i < _m; ++i )
-        numRowElements[i] = _IA[i+1] - _IA[i];
+        numRowElements[i] = _IA[i + 1] - _IA[i];
 
     std::fill_n( numColumnElements, _n, 0 );
     for ( unsigned i = 0; i < _nnz; ++i )
@@ -706,7 +713,6 @@ void CSRMatrix::dump() const
     for ( unsigned i = 0; i < _m + 1; ++i )
         printf( "%5u ", _IA[i] );
     printf( "\n" );
-
 }
 
 void CSRMatrix::dumpDense() const
@@ -718,7 +724,7 @@ void CSRMatrix::dumpDense() const
     {
         for ( unsigned j = 0; j < _n; ++j )
         {
-            printf( "%5.2lf ", work[i*_n + j] );
+            printf( "%5.2lf ", work[i * _n + j] );
         }
         printf( "\n" );
     }
@@ -745,11 +751,11 @@ void CSRMatrix::checkInvariants() const
     for ( unsigned i = 0; i < _m; ++i )
     {
         unsigned start = _IA[i];
-        unsigned end = _IA[i+1];
+        unsigned end = _IA[i + 1];
 
         for ( unsigned j = start; j + 1 < end; ++j )
         {
-            if ( _JA[j] >= _JA[j+1] )
+            if ( _JA[j] >= _JA[j + 1] )
             {
                 printf( "CSRMatrix error! _JA elements not increasing. "
                         "Dumping and terminating\n" );
@@ -764,7 +770,7 @@ void CSRMatrix::clear()
 {
     _nnz = 0;
     for ( unsigned i = 0; i < _m; ++i )
-        _IA[i+1] = 0;
+        _IA[i + 1] = 0;
 }
 
 const double *CSRMatrix::getA() const

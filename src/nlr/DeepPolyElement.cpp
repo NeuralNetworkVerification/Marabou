@@ -32,8 +32,7 @@ DeepPolyElement::DeepPolyElement()
     , _work2SymbolicLb( NULL )
     , _work2SymbolicUb( NULL )
     , _workSymbolicLowerBias( NULL )
-    , _workSymbolicUpperBias( NULL )
-{};
+    , _workSymbolicUpperBias( NULL ){};
 
 unsigned DeepPolyElement::getSize() const
 {
@@ -43,6 +42,11 @@ unsigned DeepPolyElement::getSize() const
 unsigned DeepPolyElement::getLayerIndex() const
 {
     return _layerIndex;
+}
+
+Layer::Type DeepPolyElement::getLayerType() const
+{
+    return _layer->getLayerType();
 }
 
 bool DeepPolyElement::hasPredecessor()

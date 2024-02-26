@@ -66,23 +66,23 @@ def createQuery(args):
         return None, None
 
     if  args.prop != None:
-        query = network.getMarabouQuery()
+        query = network.getInputQuery()
         MarabouCore.loadProperty(query, args.prop)
         return query, network
 
     if args.dataset == 'mnist':
         encode_mnist_linf(network, args.index, args.epsilon, args.target_label)
-        return network.getMarabouQuery(), network
+        return network.getInputQuery(), network
     elif args.dataset == 'cifar10':
         encode_cifar10_linf(network, args.index, args.epsilon, args.target_label)
-        return network.getMarabouQuery(), network
+        return network.getInputQuery(), network
     else:
         """
         ENCODE YOUR CUSTOMIZED PROPERTY HERE!
         """
         print("No property encoded!")
 
-        return network.getMarabouQuery(), network
+        return network.getInputQuery(), network
 
 def encode_mnist_linf(network, index, epsilon, target_label):
     from tensorflow.keras.datasets import mnist
@@ -95,7 +95,7 @@ def encode_mnist_linf(network, index, epsilon, target_label):
     if target_label == -1:
         print("No output constraint!")
     else:
-        outputVars = network.outputVars.flatten()
+        outputVars = network.outputVars[0].flatten()
         for i in range(10):
             if i != target_label:
                 network.addInequality([outputVars[i],
@@ -129,8 +129,8 @@ def encode_cifar10_linf(network, index, epsilon, target_label):
             network.setUpperBound(i, ub[i])
         for i in range(10):
             if i != target_label:
-                network.addInequality([network.outputVars[0][i],
-                                       network.outputVars[0][target_label]],
+                network.addInequality([network.outputVars[0][0][i],
+                                       network.outputVars[0][0][target_label]],
                                       [1, -1], 0)
     return
 

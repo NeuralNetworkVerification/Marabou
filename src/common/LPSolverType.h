@@ -16,8 +16,7 @@
 #ifndef __LPSolverType_h__
 #define __LPSolverType_h__
 
-enum class LPSolverType
-{
+enum class LPSolverType {
     // Native simplex implementation. Open-sourced, more agressive
     // bound derivation, and will support proof-production.
     NATIVE,

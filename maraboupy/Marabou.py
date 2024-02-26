@@ -63,19 +63,18 @@ def read_tf(filename, inputNames=None, outputNames=None, modelType="frozen", sav
     """
     return MarabouNetworkTF(filename, inputNames, outputNames, modelType, savedModelTags)
 
-def read_onnx(filename, inputNames=None, outputNames=None, reindexOutputVars=True):
+def read_onnx(filename, inputNames=None, outputNames=None):
     """Constructs a MarabouNetworkONNX object from an ONNX file
 
     Args:
         filename (str): Path to the ONNX file
         inputNames (list of str, optional): List of node names corresponding to inputs
         outputNames (list of str, optional): List of node names corresponding to outputs
-        reindexOutputVars (bool): Reindex the variables so that the output variables are immediate after input variables
 
     Returns:
         :class:`~maraboupy.MarabouNetworkONNX.MarabouNetworkONNX`
     """
-    return MarabouNetworkONNX(filename, inputNames, outputNames, reindexOutputVars=reindexOutputVars)
+    return MarabouNetworkONNX(filename, inputNames, outputNames)
 
 def read_onnx_with_threshold(filename, inputNames=None, outputNames=None, maxNumberOfLinearEquations=None):
     """Constructs a MarabouNetworkComposition object from an ONNX file
@@ -105,7 +104,7 @@ def load_query(filename):
     """
     return MarabouCore.loadQuery(filename)
 
-def solve_query(ipq, filename="", verbose=True, options=None):
+def solve_query(ipq, filename="", verbose=True, options=None, propertyFilename=""):
     """Function to solve query represented by this network
 
     Args:
@@ -114,6 +113,7 @@ def solve_query(ipq, filename="", verbose=True, options=None):
         filename (str, optional): Path to redirect output to, defaults to ""
         verbose (bool, optional): Whether to print out solution after solve finishes, defaults to True
         options: (:class:`~maraboupy.MarabouCore.Options`): Object for specifying Marabou options
+        propertyFilename (str, optional): Path to property file
 
     Returns:
         (tuple): tuple containing:
@@ -121,6 +121,8 @@ def solve_query(ipq, filename="", verbose=True, options=None):
             - vals (Dict[int, float]): Empty dictionary if UNSAT, otherwise a dictionary of SATisfying values for variables
             - stats (:class:`~maraboupy.MarabouCore.Statistics`, optional): A Statistics object to how Marabou performed
     """
+    if propertyFilename:
+        MarabouCore.loadProperty(ipq, propertyFilename)
     if options is None:
         options = createOptions()
     exitCode, vals, stats = MarabouCore.solve(ipq, options, filename)

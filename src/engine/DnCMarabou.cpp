@@ -14,16 +14,18 @@
  ** [[ Add lengthier description here ]]
  **/
 
-#include "DnCManager.h"
 #include "DnCMarabou.h"
+
+#include "AcasParser.h"
+#include "DnCManager.h"
 #include "File.h"
 #include "MStringf.h"
-#include "Options.h"
-#include "PropertyParser.h"
 #include "MarabouError.h"
 #include "OnnxParser.h"
+#include "Options.h"
+#include "PropertyParser.h"
 #include "QueryLoader.h"
-#include "AcasParser.h"
+#include "VnnLibParser.h"
 
 DnCMarabou::DnCMarabou()
     : _dncManager( nullptr )
@@ -41,13 +43,13 @@ void DnCMarabou::run()
         */
         if ( !File::exists( inputQueryFilePath ) )
         {
-            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n", inputQueryFilePath.ascii() );
+            printf( "Error: the specified inputQuery file (%s) doesn't exist!\n",
+                    inputQueryFilePath.ascii() );
             throw MarabouError( MarabouError::FILE_DOESNT_EXIST, inputQueryFilePath.ascii() );
         }
 
         printf( "InputQuery: %s\n", inputQueryFilePath.ascii() );
         _inputQuery = QueryLoader::loadQuery( inputQueryFilePath );
-        _inputQuery.constructNetworkLevelReasoner();
     }
     else
     {
@@ -59,23 +61,21 @@ void DnCMarabou::run()
         {
             printf( "Error: the specified network file (%s) doesn't exist!\n",
                     networkFilePath.ascii() );
-            throw MarabouError( MarabouError::FILE_DOESNT_EXIST,
-                                networkFilePath.ascii() );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkFilePath.ascii() );
         }
         printf( "Network: %s\n", networkFilePath.ascii() );
 
-        if ( ((String) networkFilePath).endsWith( ".onnx" ) )
+        if ( ( (String)networkFilePath ).endsWith( ".onnx" ) )
         {
-            OnnxParser* _onnxParser = new OnnxParser( networkFilePath );
-            _onnxParser->generateQuery( _inputQuery );
+            InputQueryBuilder queryBuilder;
+            OnnxParser::parse( queryBuilder, networkFilePath, {}, {} );
+            queryBuilder.generateQuery( _inputQuery );
         }
         else
         {
-            AcasParser* _acasParser = new AcasParser( networkFilePath );
+            AcasParser *_acasParser = new AcasParser( networkFilePath );
             _acasParser->generateQuery( _inputQuery );
         }
-
-        _inputQuery.constructNetworkLevelReasoner();
 
         /*
           Step 2: extract the property in question
@@ -84,7 +84,14 @@ void DnCMarabou::run()
         if ( propertyFilePath != "" )
         {
             printf( "Property: %s\n", propertyFilePath.ascii() );
-            PropertyParser().parse( propertyFilePath, _inputQuery );
+            if ( propertyFilePath.endsWith( ".vnnlib" ) )
+            {
+                VnnLibParser().parse( propertyFilePath, _inputQuery );
+            }
+            else
+            {
+                PropertyParser().parse( propertyFilePath, _inputQuery );
+            }
         }
         else
             printf( "Property: None\n" );
@@ -102,8 +109,7 @@ void DnCMarabou::run()
     /*
       Step 3: initialize the DNC core
     */
-    _dncManager = std::unique_ptr<DnCManager>
-        ( new DnCManager( &_inputQuery ) );
+    _dncManager = std::unique_ptr<DnCManager>( new DnCManager( &_inputQuery ) );
 
     struct timespec start = TimeUtils::sampleMicro();
 

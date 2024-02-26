@@ -18,19 +18,20 @@
 
 #include "GurobiWrapper.h"
 #include "LayerOwner.h"
-#include "ParallelSolver.h"
 #include "Map.h"
-#include <climits>
+#include "ParallelSolver.h"
 
 #include <atomic>
-#include <boost/lockfree/queue.hpp>
 #include <boost/chrono.hpp>
+#include <boost/lockfree/queue.hpp>
 #include <boost/thread.hpp>
+#include <climits>
 #include <mutex>
 
 namespace NLR {
 
-#define LPFormulator_LOG(x, ...) LOG(GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x)
+#define LPFormulator_LOG( x, ... )                                                                 \
+    LOG( GlobalConfiguration::PREPROCESSOR_LOGGING, "LP Preprocessor: %s\n", x )
 
 class LPFormulator : public ParallelSolver
 {
@@ -50,8 +51,10 @@ public:
       LP model is adjusted from the previous call, instead of being
       constructed from scratch
     */
-    void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers );
-    void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers, unsigned targetIndex );
+    void optimizeBoundsWithLpRelaxation( const Map<unsigned, Layer *> &layers,
+                                         bool backward = false );
+    void optimizeBoundsOfOneLayerWithLpRelaxation( const Map<unsigned, Layer *> &layers,
+                                                   unsigned targetIndex );
     void optimizeBoundsWithIncrementalLpRelaxation( const Map<unsigned, Layer *> &layers );
 
     /*
@@ -70,43 +73,51 @@ public:
     void createLPRelaxation( const Map<unsigned, Layer *> &layers,
                              GurobiWrapper &gurobi,
                              unsigned lastLayer = UINT_MAX );
-
+    void createLPRelaxationAfter( const Map<unsigned, Layer *> &layers,
+                                  GurobiWrapper &gurobi,
+                                  unsigned firstLayer );
     double solveLPRelaxation( GurobiWrapper &gurobi,
                               const Map<unsigned, Layer *> &layers,
-                              MinOrMax minOrMax, String variableName,
+                              MinOrMax minOrMax,
+                              String variableName,
                               unsigned lastLayer = UINT_MAX );
 
-    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer );
+    void addLayerToModel( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
 private:
-
     LayerOwner *_layerOwner;
     bool _cutoffInUse;
     double _cutoffValue;
 
-    void addInputLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                      const Layer *layer );
+    void addInputLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer );
 
-    void addReluLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                     const Layer *layer );
+    void
+    addReluLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
-    void addSignLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                     const Layer *layer );
+    void addLeakyReluLayerToLpRelaxation( GurobiWrapper &gurobi,
+                                          const Layer *layer,
+                                          bool createVariables );
 
-    void addMaxLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                     const Layer *layer );
+    void
+    addSignLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
+
+    void
+    addMaxLayerToLpRelaxation( GurobiWrapper &gurobi, const Layer *layer, bool createVariables );
 
     void addWeightedSumLayerToLpRelaxation( GurobiWrapper &gurobi,
-                                            const Layer *layer );
+                                            const Layer *layer,
+                                            bool createVariables );
 
-    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args );
+    void optimizeBoundsOfNeuronsWithLpRlaxation( ThreadArgument &args, bool backward );
 
     /*
       Optimize for the min/max value of variableName with respect to the constraints
       encoded in gurobi. If the query is infeasible, *infeasible is set to true.
     */
-    static double optimizeWithGurobi( GurobiWrapper &gurobi, MinOrMax minOrMax,
-                                      String variableName, double cutoffValue,
+    static double optimizeWithGurobi( GurobiWrapper &gurobi,
+                                      MinOrMax minOrMax,
+                                      String variableName,
+                                      double cutoffValue,
                                       std::atomic_bool *infeasible = NULL );
 
     /*

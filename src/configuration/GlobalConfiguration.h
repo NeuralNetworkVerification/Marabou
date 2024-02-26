@@ -28,7 +28,7 @@ public:
     static const double EXPONENTIAL_MOVING_AVERAGE_ALPHA;
 
     // Whether to use SoI instead of Reluplex for local search for satisfying assignments
-    //to non-linear constraint.
+    // to non-linear constraint.
     static bool USE_DEEPSOI_LOCAL_SEARCH;
 
     // The quantity by which the score is bumped up for PLContraints not
@@ -88,18 +88,14 @@ public:
     // elimination.
     static const bool PREPROCESSOR_ELIMINATE_VARIABLES;
 
-    // Toggle whether or not PL constraints will be called upon
+    // Toggle whether or not PL/NL constraints will be called upon
     // to add auxiliary variables and equations after preprocessing.
     static const bool PL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING;
+    static const bool NL_CONSTRAINTS_ADD_AUX_EQUATIONS_AFTER_PREPROCESSING;
 
     // If the difference between a variable's lower and upper bounds is smaller than this
     // threshold, the preprocessor will treat it as fixed.
     static const double PREPROCESSOR_ALMOST_FIXED_THRESHOLD;
-
-    // If the flag is true, the preprocessor will try to merge two
-    // logically-consecutive weighted sum layers into a single
-    // weighted sum layer, to reduce the number of variables
-    static const bool PREPROCESSOR_MERGE_CONSECUTIVE_WEIGHTED_SUMS;
 
     // Maximal rounds of tightening to perform in the preprocessor to avoid non-termination.
     static const unsigned PREPROCESSSING_MAX_TIGHTEING_ROUND;
@@ -118,12 +114,12 @@ public:
     // The threshold of degradation above which restoration is required
     static const double DEGRADATION_THRESHOLD;
 
-    // If a pivot element in a simplex iteration is smaller than this threshold, the engine will attempt
-    // to pick another element.
+    // If a pivot element in a simplex iteration is smaller than this threshold, the engine will
+    // attempt to pick another element.
     static const double ACCEPTABLE_SIMPLEX_PIVOT_THRESHOLD;
 
-    // If true, column-merging equations are given special treatment and cause columns in the tableau
-    // to be merged (instead of a new row added).
+    // If true, column-merging equations are given special treatment and cause columns in the
+    // tableau to be merged (instead of a new row added).
     static const bool USE_COLUMN_MERGING_EQUATIONS;
 
     // If a pivot element in a Gaussian elimination iteration is smaller than this threshold times
@@ -158,7 +154,8 @@ public:
     // How often should projected steepest edge reset the reference space?
     static const unsigned PSE_ITERATIONS_BEFORE_RESET;
 
-    // An error threshold which, when crossed, causes projected steepest edge to reset the reference space
+    // An error threshold which, when crossed, causes projected steepest edge to reset the reference
+    // space
     static const double PSE_GAMMA_ERROR_THRESHOLD;
 
     // PSE's Gamma function's update tolerance
@@ -166,6 +163,9 @@ public:
 
     // The tolerance for checking whether f = Constraint( b ), Constraint \in { ReLU, ABS, Sign}
     static const double CONSTRAINT_COMPARISON_TOLERANCE;
+
+    // Toggle between two types of LSE lower bound for softmax
+    static const double SOFTMAX_LSE2_THRESHOLD;
 
     // Should the initial basis be comprised only of auxiliary (row) variables?
     static const bool ONLY_AUX_INITIAL_BASIS;
@@ -183,8 +183,10 @@ public:
         DISABLE_EXPLICIT_BASIS_TIGHTENING = 2,
     };
 
-    // When doing bound tightening using the explicit basis matrix, should the basis matrix be inverted?
+    // When doing bound tightening using the explicit basis matrix, should the basis matrix be
+    // inverted?
     static const ExplicitBasisBoundTighteningType EXPLICIT_BASIS_BOUND_TIGHTENING_TYPE;
+    static const double EXPLICIT_BASIS_BOUND_TIGHTENING_ROUNDING_CONSTANT;
 
     // When doing explicit bound tightening, should we repeat until saturation?
     static const bool EXPLICIT_BOUND_TIGHTENING_UNTIL_SATURATION;
@@ -206,8 +208,8 @@ public:
     // for any relevant linear connections between the variables?
     static const bool USE_SMART_FIX;
 
-    // A heuristic for selecting which of the broken PL constraints will be repaired next. In this case,
-    // the one that has been repaired the least number of times so far.
+    // A heuristic for selecting which of the broken PL constraints will be repaired next. In this
+    // case, the one that has been repaired the least number of times so far.
     static const bool USE_LEAST_FIX;
 
     /*
@@ -232,20 +234,28 @@ public:
     static const unsigned POLARITY_CANDIDATES_THRESHOLD;
 
     /* The max number of DnC splits
-    */
+     */
     static const unsigned DNC_DEPTH_THRESHOLD;
 
     /* Minimal coefficient of a variable in a Tableau row, that is used for bound tightening
-    */
+     */
     static const double MINIMAL_COEFFICIENT_FOR_TIGHTENING;
 
     /* The tolerance of errors when checking lemmas in the proof-checking process
-    */
+     */
     static const double LEMMA_CERTIFICATION_TOLERANCE;
 
     /* Denote whether proofs should be written as a JSON file
-    */
+     */
     static const bool WRITE_JSON_PROOF;
+
+    /* How many layers after the current layer do we encode in backward analysis.
+     */
+    static const unsigned BACKWARD_BOUND_PROPAGATION_DEPTH;
+
+    /* How many rounds of backward analysis to perform?
+     */
+    static const unsigned MAX_ROUNDS_OF_BACKWARD_ANALYSIS;
 
 #ifdef ENABLE_GUROBI
     /*
@@ -275,6 +285,7 @@ public:
     static const bool ONNX_PARSER_LOGGING;
     static const bool SOI_LOGGING;
     static const bool SCORE_TRACKER_LOGGING;
+    static const bool CEGAR_LOGGING;
 };
 
 #endif // __GlobalConfiguration_h__

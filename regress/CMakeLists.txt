@@ -40,9 +40,9 @@ macro(marabou_add_acasxu_test level net_file prop_num result)
 endmacro()
 
 macro(marabou_add_acasxu_dnc_test level net_file prop_num result)
-    marabou_add_regress_test(${level} 
+    marabou_add_regress_test(${level}
         "${CMAKE_SOURCE_DIR}/resources/nnet/acasxu/${net_file}.nnet"
-        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--snc" "acasxu")
+        "${CMAKE_SOURCE_DIR}/resources/properties/acas_property_${prop_num}.txt" "${result}" "--num-workers=2+--snc+--initial-divides=2" "acasxu")
 endmacro()
 
 macro(marabou_add_mnist_test level net_file property_file result)
@@ -50,7 +50,7 @@ macro(marabou_add_mnist_test level net_file property_file result)
     "${CMAKE_SOURCE_DIR}/resources/nnet/mnist/${net_file}"
     "${CMAKE_SOURCE_DIR}/resources/properties/mnist/${property_file}" "${result}" "" "mnist")
 endmacro()
-            
+
 
 message(${MPS_PARSER_PATH})
 macro(marabou_add_regress_mps_test level net_file result arguments

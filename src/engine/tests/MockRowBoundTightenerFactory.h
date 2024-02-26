@@ -19,32 +19,32 @@
 #include "MockRowBoundTightener.h"
 #include "T/RowBoundTightenerFactory.h"
 
-class MockRowBoundTightenerFactory :
-	public T::Base_createRowBoundTightener,
-	public T::Base_discardRowBoundTightener
+class MockRowBoundTightenerFactory
+    : public T::Base_createRowBoundTightener
+    , public T::Base_discardRowBoundTightener
 {
 public:
-	MockRowBoundTightener mockRowBoundTightener;
+    MockRowBoundTightener mockRowBoundTightener;
 
-	~MockRowBoundTightenerFactory()
-	{
-		if ( mockRowBoundTightener.wasCreated )
-		{
-			TS_ASSERT( mockRowBoundTightener.wasDiscarded );
-		}
-	}
+    ~MockRowBoundTightenerFactory()
+    {
+        if ( mockRowBoundTightener.wasCreated )
+        {
+            TS_ASSERT( mockRowBoundTightener.wasDiscarded );
+        }
+    }
 
-	IRowBoundTightener *createRowBoundTightener( const ITableau &tableau )
-	{
-		mockRowBoundTightener.mockConstructor( tableau );
-		return &mockRowBoundTightener;
-	}
+    IRowBoundTightener *createRowBoundTightener( const ITableau &tableau )
+    {
+        mockRowBoundTightener.mockConstructor( tableau );
+        return &mockRowBoundTightener;
+    }
 
-	void discardRowBoundTightener( IRowBoundTightener *rowBoundTightener )
-	{
-		TS_ASSERT_EQUALS( rowBoundTightener, &mockRowBoundTightener );
-		mockRowBoundTightener.mockDestructor();
-	}
+    void discardRowBoundTightener( IRowBoundTightener *rowBoundTightener )
+    {
+        TS_ASSERT_EQUALS( rowBoundTightener, &mockRowBoundTightener );
+        mockRowBoundTightener.mockDestructor();
+    }
 };
 
 #endif // __MockRowBoundTightenerFactory_h__

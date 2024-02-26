@@ -14,6 +14,7 @@
  **/
 
 #include "DegradationChecker.h"
+
 #include "FloatUtils.h"
 #include "InputQuery.h"
 
