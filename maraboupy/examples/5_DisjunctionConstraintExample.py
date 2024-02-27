@@ -26,7 +26,7 @@ from maraboupy.MarabouCore import StatisticsUnsignedAttribute
 
 # %%
 # Path to NNet file
-nnetFile = "./resources/nnet/mnist/mnist10x10.nnet"
+nnetFile = "../../resources/nnet/mnist/mnist10x10.nnet"
 
 # %%
 # Load the network from NNet file, and set a lower bound on first output variable
