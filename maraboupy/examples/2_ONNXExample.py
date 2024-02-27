@@ -129,4 +129,4 @@ print("\nONNX Evaluation:")
 print(onnxEval)
 print("\nDifference:")
 print(onnxEval - marabouEval)
-assert max(abs(onnxEval - marabouEval)) < 1e-6
+assert max(abs(onnxEval - marabouEval).flatten()) < 1e-6
