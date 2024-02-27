@@ -149,6 +149,12 @@ jobs:
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python -c "import maraboupy"
 
+      - name: Run Python API examples
+        run: |
+            export PYTHONPATH="$PYTHONPATH:../../"
+            for file in *py; do python $file; done
+        working-directory: maraboupy/examples
+
       - name: Generate Python Code Coverage
         if: ${{ ( matrix.compiler == 'g++' ) && ( matrix.build_type == 'Debug' ) }}
         run: python -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
