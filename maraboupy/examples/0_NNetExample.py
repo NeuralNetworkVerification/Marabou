@@ -30,7 +30,7 @@ nnetFile = "../../src/input_parsers/acas_example/ACASXU_run2a_1_1_tiny_2.nnet"
 # %%
 # Load the network from NNet file, and set a lower bound on first output variable
 net1 = Marabou.read_nnet(nnetFile)
-net1.setLowerBound(net1.outputVars[0][0], .5)
+net1.setLowerBound(net1.outputVars[0][0][0], .5)
 
 # %%
 # Solve Marabou query
@@ -59,4 +59,4 @@ outputsExpected = np.array([0.49999678, -0.18876659,  0.80778555, -2.76422264, -
 
 net2 = Marabou.read_nnet(nnetFile)
 outputsMarabou = net2.evaluateWithMarabou([inputs])
-assert max(abs(outputsMarabou.flatten() - outputsExpected)) < 1e-8
+assert max(abs(outputsMarabou[0].flatten() - outputsExpected)) < 1e-8
