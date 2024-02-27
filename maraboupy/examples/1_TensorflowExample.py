@@ -26,8 +26,8 @@ network = Marabou.read_tf(filename)
 # Or, you can specify the operation names of the input and output operations.
 # The default chooses the placeholder operations as input and the last operation as output
 inputNames = ['Placeholder']
-outputName = 'y_out'
-network = Marabou.read_tf(filename = filename, inputNames = inputNames, outputName = outputName)
+outputNames = ['y_out']
+network = Marabou.read_tf(filename = filename, inputNames = inputNames, outputNames = outputNames)
 
 # %%
 # Get the input and output variable numbers; [0] since first dimension is batch size
@@ -43,8 +43,8 @@ network.setUpperBound(inputVars[1], 10.0)
 
 # %%
 # Set output bounds on the second output variable
-network.setLowerBound(outputVars[1], 194.0)
-network.setUpperBound(outputVars[1], 210.0)
+network.setLowerBound(outputVars[0][1], 194.0)
+network.setUpperBound(outputVars[0][1], 210.0)
 
 # %%
 # Call to C++ Marabou solver
