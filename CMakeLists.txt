@@ -4,7 +4,7 @@ project(Marabou)
 set(MARABOU_VERSION 1.0.0)
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ##################
