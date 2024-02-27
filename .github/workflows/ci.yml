@@ -152,7 +152,7 @@ jobs:
       - name: Run Python API examples
         run: |
             export PYTHONPATH="$PYTHONPATH:../../"
-            for file in *py; do python $file; done
+            for file in *py; do python -u $file; done
         working-directory: maraboupy/examples
 
       - name: Generate Python Code Coverage
