@@ -276,6 +276,7 @@ class ONNXParser:
         for attr in node.attribute:
             if attr.name == "value":
                 self.constantMap[nodeName] = numpy_helper.to_array(get_attribute_value(attr))
+                self.shapeMap[nodeName] = self.constantMap[nodeName].shape
                 return
         raise RuntimeError("Could not find value of tensor constant")
 

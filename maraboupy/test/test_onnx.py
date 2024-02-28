@@ -39,6 +39,10 @@ def test_split_onnx():
     os.remove(presplit_filename)
     os.remove(postsplit_filename)
 
+def test_add_constant():
+    filename =  "yizhak_net.onnx"
+    evaluateFile(filename)
+
 def test_split_onnx_error():
     filename = os.path.join(os.path.dirname(__file__), NETWORK_FOLDER, "oneInput_twoBranches.onnx")
     network = Marabou.read_onnx(filename)
