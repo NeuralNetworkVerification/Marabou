@@ -55,8 +55,6 @@ class MarabouNetworkONNX(MarabouNetwork):
 
         self.filename = filename
         self.graph = onnx.load(filename).graph
-        self.maxNumberOfLinearEquations = maxNumberOfLinearEquations
-        self.thresholdReached = False
 
         if os.path.exists('post_split.onnx'):
             os.remove('post_split.onnx')
@@ -90,7 +88,7 @@ class MarabouNetworkONNX(MarabouNetwork):
             initNames = [node.name for node in self.graph.initializer]
             self.outputNames = [out.name for out in self.graph.output if out.name not in initNames]
 
-        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames)
+        ONNXParser.parse(self, self.graph, self.inputNames, self.outputNames, maxNumberOfLinearEquations=maxNumberOfLinearEquations)
 
     def getNode(self, nodeName):
         """Find the node in the graph corresponding to the given name
