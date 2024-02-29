@@ -87,6 +87,8 @@ class ONNXParser:
         for outputName in self.outputNames:
             if outputName in self.constantMap:
                 raise RuntimeError("Output variable %s is a constant, not the output of equations!" % outputName)
+
+        for outputName in self.outputNames:
             # If maxNumberOfLinearEquations is reached, the network is split and the outputVars are not set
             if outputName in self.varMap:
                 self.query.outputVars.extend([self.varMap[outputName]])
