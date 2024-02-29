@@ -15,6 +15,15 @@
 #ifndef __OnnxParser_h__
 #define __OnnxParser_h__
 
+// Okay so getting PyTorch imported is a cludge.
+//
+// First of all the `Warning` macro from CVC4 interferes with that from PyTorch.
+// #undef Warning
+// Next we actually import it.
+// #include <torch/torch.h>
+// Second of all, the `LOG` macro from PyTorch interferes with our `LOG` macro.
+// #undef LOG
+
 #include "InputQuery.h"
 #include "InputQueryBuilder.h"
 #include "List.h"
@@ -25,6 +34,7 @@
 #include "Vector.h"
 #include "onnx.proto3.pb.h"
 
+// Debug::
 #define ONNX_LOG( x, ... ) LOG( GlobalConfiguration::ONNX_PARSER_LOGGING, "OnnxParser: %s\n", x )
 
 

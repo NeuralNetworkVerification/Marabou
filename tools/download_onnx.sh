@@ -17,7 +17,7 @@ cd $mydir
 mkdir -p $onnxdir
 cd $onnxdir
 echo "Downloading ONNX proto file"
-wget -q https://raw.githubusercontent.com/onnx/onnx/v$version/onnx/onnx.proto3 -O onnx.proto3
+wget https://raw.githubusercontent.com/onnx/onnx/v$version/onnx/onnx.proto3 -O onnx.proto3  -q --show-progress --progress=bar:force:noscroll
 
 echo "Compiling the ONNX proto file"
 ../$protobufdir/installed/bin/protoc --cpp_out=. onnx.proto3

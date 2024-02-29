@@ -151,8 +151,8 @@ include_directories(SYSTEM ${ONNX_DIR})
 #############
 # Used currently for efficient tensor operations in the ONNX parser.
 
-set(PYTORCH_VERSION 2.2.0)
-set(PYTORCH_DIR "${TOOLS_DIR}/pytorch-${PYTORCH_VERSION}/libtorch")
+set(PYTORCH_VERSION 2.2.1)
+set(PYTORCH_DIR "${TOOLS_DIR}/libtorch-${PYTORCH_VERSION}")
 list(APPEND CMAKE_PREFIX_PATH ${PYTORCH_DIR})
 # if (NOT ${Torch_FOUND})
 if(NOT EXISTS "${PYTORCH_DIR}")
@@ -160,7 +160,7 @@ if(NOT EXISTS "${PYTORCH_DIR}")
 endif()
 find_package(Torch ${PYTORCH_VERSION} REQUIRED)
 # endif()
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 list(APPEND LIBS ${TORCH_LIBRARIES})
 
 ############
