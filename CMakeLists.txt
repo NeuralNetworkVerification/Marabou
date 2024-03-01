@@ -4,7 +4,7 @@ project(Marabou)
 set(MARABOU_VERSION 1.0.0)
 add_definitions("-DMARABOU_VERSION=\"${MARABOU_VERSION}\"")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ##################
@@ -80,6 +80,8 @@ include_directories(SYSTEM ${CVC4_DIR} ${CVC4_DIR}/include)
 ## Boost ##
 ###########
 
+# Avoid using deprecated operations
+add_definitions(-DBOOST_NO_CXX98_FUNCTION_BASE)
 set(BOOST_VERSION 1.80.0)
 set(BOOST_DIR "${TOOLS_DIR}/boost-${BOOST_VERSION}")
 if (MSVC)
