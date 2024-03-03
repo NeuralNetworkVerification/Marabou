@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <random>
 #include <vector>
 
 template <class T> class Vector
@@ -231,7 +232,10 @@ public:
 
     void shuffle()
     {
-        std::random_shuffle( _container.begin(), _container.end() );
+        std::random_device rd;
+        std::mt19937 g( rd() );
+
+        std::shuffle( _container.begin(), _container.end(), g );
     }
 
     Vector<T> operator+( const Vector<T> &other )

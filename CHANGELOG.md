@@ -11,6 +11,7 @@
   - Dropped support for Python 3.7
   - Now use ONNX 1.15.0 (up from 1.12.0) in both C++ and Python backends.
   - The class `MarabouONNXNetwork` no longer depends on `torch` in Python backend.
+  - Upgrade C++ standard from 11 to 17.
 
 * Marabou now prints errors on `stderr` rather than `stdout`
 
