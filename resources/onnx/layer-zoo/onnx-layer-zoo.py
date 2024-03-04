@@ -300,8 +300,7 @@ def dropout_node():
     node = onnx.helper.make_node(
         "Dropout",
         inputs=[input_name],
-        outputs=[output_name],
-        ratio=0.5
+        outputs=[output_name]
     )
     return ("dropout", node, [2,2], [2,2], [])
 
