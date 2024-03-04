@@ -16,12 +16,12 @@
 #ifndef CVC5__PROP__SAT_H
 #define CVC5__PROP__SAT_H
 
-#include <unordered_set>
-
-#include "context/cdqueue.h"
 #include "context/cdo.h"
-#include "sat_solver_types.h"
+#include "context/cdqueue.h"
 #include "effort.h"
+#include "sat_solver_types.h"
+
+#include <unordered_set>
 
 class Engine;
 
@@ -29,76 +29,76 @@ using namespace CVC4::context;
 
 namespace prop {
 
-  class TheoryEngine;
-  class TNode;
-  class Node;
+class TheoryEngine;
+class TNode;
+class Node;
 /**
  * The proxy class that allows the SatSolver to communicate with the theories
  */
 class TheoryProxy
 {
-  //using NodeSet = CDHashSet<Node>;
+    // using NodeSet = CDHashSet<Node>;
 
- public:
-  TheoryProxy(Engine* theoryEngine);
+public:
+    TheoryProxy( Engine *theoryEngine );
 
-  ~TheoryProxy();
-  void theoryCheck(Effort effort);
+    ~TheoryProxy();
+    void theoryCheck( Effort effort );
 
-  /** Get an explanation for literal `l` and save it on clause `explanation`. */
-  void explainPropagation(SatLiteral l, SatClause& explanation);
-  /** Notify that current propagation inserted at lower level than current.
-   *
-   * This method should be called by the SAT solver when the explanation of the
-   * current propagation is added at lower level than the current user level.
-   * It'll trigger a call to the ProofCnfStream to notify it that the proof of
-   * this propagation should be saved in case it's needed after this user
-   * context is popped.
-   */
-  void notifyCurrPropagationInsertedAtLevel(int explLevel);
-  /** Notify that added clause was inserted at lower level than current.
-   *
-   * As above, but for clauses asserted into the SAT solver. This cannot be done
-   * in terms of "current added clause" because the clause added at a lower
-   * level could be for example a lemma derived at a prior moment whose
-   * assertion the SAT solver delayed.
-   */
-  void notifyClauseInsertedAtLevel(const SatClause& clause, int clLevel);
+    /** Get an explanation for literal `l` and save it on clause `explanation`. */
+    void explainPropagation( SatLiteral l, SatClause &explanation );
+    /** Notify that current propagation inserted at lower level than current.
+     *
+     * This method should be called by the SAT solver when the explanation of the
+     * current propagation is added at lower level than the current user level.
+     * It'll trigger a call to the ProofCnfStream to notify it that the proof of
+     * this propagation should be saved in case it's needed after this user
+     * context is popped.
+     */
+    void notifyCurrPropagationInsertedAtLevel( int explLevel );
+    /** Notify that added clause was inserted at lower level than current.
+     *
+     * As above, but for clauses asserted into the SAT solver. This cannot be done
+     * in terms of "current added clause" because the clause added at a lower
+     * level could be for example a lemma derived at a prior moment whose
+     * assertion the SAT solver delayed.
+     */
+    void notifyClauseInsertedAtLevel( const SatClause &clause, int clLevel );
 
-  void theoryPropagate(SatClause& output);
+    void theoryPropagate( SatClause &output );
 
-  void enqueueTheoryLiteral(const SatLiteral& l);
+    void enqueueTheoryLiteral( const SatLiteral &l );
 
-  SatLiteral getNextTheoryDecisionRequest();
+    SatLiteral getNextTheoryDecisionRequest();
 
-  bool theoryNeedCheck() const;
+    bool theoryNeedCheck() const;
 
-  /**
-   * Notifies of a new variable at a decision level.
-   */
-  void variableNotify(SatVariable var);
+    /**
+     * Notifies of a new variable at a decision level.
+     */
+    void variableNotify( SatVariable var );
 
-  TNode getNode(SatLiteral lit);
+    TNode getNode( SatLiteral lit );
 
-  void notifyRestart();
+    void notifyRestart();
 
-  //bool isDecisionEngineDone();
+    // bool isDecisionEngineDone();
 
-  //bool isDecisionRelevant(SatVariable var);
+    // bool isDecisionRelevant(SatVariable var);
 
-  SatValue getDecisionPolarity(SatVariable var);
+    SatValue getDecisionPolarity( SatVariable var );
 
-   private:
-  /** The theory engine we are using. */
-  Engine* d_theoryEngine;
+private:
+    /** The theory engine we are using. */
+    Engine *d_theoryEngine;
 
-  /** Queue of asserted facts */
-  //CDQueue<TNode> d_queue;
+    /** Queue of asserted facts */
+    // CDQueue<TNode> d_queue;
 
-  /** Whether we have been requested to stop the search */
-  //CDO<bool> d_stopSearch;
+    /** Whether we have been requested to stop the search */
+    // CDO<bool> d_stopSearch;
 }; /* class TheoryProxy */
 
-}  // namespace prop
+} // namespace prop
 
 #endif

@@ -17,125 +17,128 @@
 
 #pragma once
 
+#include "Statistics.h"
 #include "minisat/simp/SimpSolver.h"
 #include "sat_solver_types.h"
 
-#include "Statistics.h"
+template <class Solver> prop::SatLiteral toSatLiteral( typename Solver::TLit lit );
 
 template <class Solver>
-prop::SatLiteral toSatLiteral(typename Solver::TLit lit);
-
-template <class Solver>
-void toSatClause(const typename Solver::TClause& minisat_cl,
-                 prop::SatClause& sat_cl);
+void toSatClause( const typename Solver::TClause &minisat_cl, prop::SatClause &sat_cl );
 
 namespace prop {
 
 class MinisatSatSolver
 {
- public:
-  MinisatSatSolver(Statistics *statistics);
-  ~MinisatSatSolver() ;
+public:
+    MinisatSatSolver( Statistics *statistics );
+    ~MinisatSatSolver();
 
-  static SatVariable     toSatVariable(Minisat::Var var);
-  static Minisat::Lit    toMinisatLit(SatLiteral lit);
-  static SatLiteral      toSatLiteral(Minisat::Lit lit);
-  static SatValue        toSatLiteralValue(Minisat::lbool res);
-  static Minisat::lbool  toMinisatlbool(SatValue val);
-  //(Commented because not in use) static bool            tobool(SatValue val);
+    static SatVariable toSatVariable( Minisat::Var var );
+    static Minisat::Lit toMinisatLit( SatLiteral lit );
+    static SatLiteral toSatLiteral( Minisat::Lit lit );
+    static SatValue toSatLiteralValue( Minisat::lbool res );
+    static Minisat::lbool toMinisatlbool( SatValue val );
+    //(Commented because not in use) static bool            tobool(SatValue val);
 
-  static void  toMinisatClause(SatClause& clause, Minisat::vec<Minisat::Lit>& minisat_clause);
-  static void  toSatClause    (const Minisat::Clause& clause, SatClause& sat_clause);
-  void initialize(CVC4::context::Context* context,
-                  TheoryProxy* theoryProxy,
-                  CVC4::context::UserContext* userContext) ;
+    static void toMinisatClause( SatClause &clause, Minisat::vec<Minisat::Lit> &minisat_clause );
+    static void toSatClause( const Minisat::Clause &clause, SatClause &sat_clause );
+    void initialize( CVC4::context::Context *context,
+                     TheoryProxy *theoryProxy,
+                     CVC4::context::UserContext *userContext );
 
-  void addClause(SatClause& clause, bool removable) ;
-  void addXorClause(SatClause& /*clause*/, bool /*rhs*/, bool /*removable*/)
-  {
-    CVC4::Unreachable() << "Minisat does not support native XOR reasoning";
-  }
+    void addClause( SatClause &clause, bool removable );
+    void addXorClause( SatClause & /*clause*/, bool /*rhs*/, bool /*removable*/ )
+    {
+        CVC4::Unreachable() << "Minisat does not support native XOR reasoning";
+    }
 
-  SatVariable newVar(bool isTheoryAtom,
-                     bool preRegister,
-                     bool canErase) ;
-  SatVariable trueVar()  { return d_minisat->trueVar(); }
-  SatVariable falseVar()  { return d_minisat->falseVar(); }
+    SatVariable newVar( bool isTheoryAtom, bool preRegister, bool canErase );
+    SatVariable trueVar()
+    {
+        return d_minisat->trueVar();
+    }
+    SatVariable falseVar()
+    {
+        return d_minisat->falseVar();
+    }
 
-  SatValue solve() ;
-  SatValue solve(long unsigned int&) ;
-  SatValue solve(const std::vector<SatLiteral>& assumptions) ;
-  void getUnsatAssumptions(std::vector<SatLiteral>& unsat_assumptions) ;
+    SatValue solve();
+    SatValue solve( long unsigned int & );
+    SatValue solve( const std::vector<SatLiteral> &assumptions );
+    void getUnsatAssumptions( std::vector<SatLiteral> &unsat_assumptions );
 
-  bool ok() const ;
+    bool ok() const;
 
-  void interrupt() ;
+    void interrupt();
 
-  SatValue value(SatLiteral l) ;
+    SatValue value( SatLiteral l );
 
-  SatValue modelValue(SatLiteral l) ;
+    SatValue modelValue( SatLiteral l );
 
-  bool properExplanation(SatLiteral lit, SatLiteral expl) const ;
+    bool properExplanation( SatLiteral lit, SatLiteral expl ) const;
 
-  /** Incremental interface */
+    /** Incremental interface */
 
-  unsigned getAssertionLevel() const ;
+    unsigned getAssertionLevel() const;
 
-  void push() ;
+    void push();
 
-  void pop() ;
+    void pop();
 
-  void resetTrail() ;
+    void resetTrail();
 
-  void requirePhase(SatLiteral lit) ;
+    void requirePhase( SatLiteral lit );
 
-  bool isDecision(SatVariable decn) const ;
+    bool isDecision( SatVariable decn ) const;
 
-  /** Return the list of current list of decisions that have been made by the
-   * solver at the point when this function is called.
-   */
-  std::vector<SatLiteral> getDecisions() const ;
+    /** Return the list of current list of decisions that have been made by the
+     * solver at the point when this function is called.
+     */
+    std::vector<SatLiteral> getDecisions() const;
 
-  /** Return the order heap.
-  std::vector<Node> getOrderHeap() const ;
-  */
+    /** Return the order heap.
+    std::vector<Node> getOrderHeap() const ;
+    */
 
-  /** Return decision level at which `lit` was decided on. */
-  int32_t getDecisionLevel(SatVariable v) const ;
+    /** Return decision level at which `lit` was decided on. */
+    int32_t getDecisionLevel( SatVariable v ) const;
 
-  /**
-   * Return user level at which `lit` was introduced.
-   *
-   * Note: The user level is tracked independently in the SAT solver and does
-   * not query the user-context for the user level. The user level in the SAT
-   * solver starts at level 0 and does not include the global push/pop in
-   * the SMT engine.
-   */
-  int32_t getIntroLevel(SatVariable v) const ;
+    /**
+     * Return user level at which `lit` was introduced.
+     *
+     * Note: The user level is tracked independently in the SAT solver and does
+     * not query the user-context for the user level. The user level in the SAT
+     * solver starts at level 0 and does not include the global push/pop in
+     * the SMT engine.
+     */
+    int32_t getIntroLevel( SatVariable v ) const;
 
-  /** Retrieve a pointer to the underlying solver. */
-  Minisat::SimpSolver* getSolver() { return d_minisat; }
+    /** Retrieve a pointer to the underlying solver. */
+    Minisat::SimpSolver *getSolver()
+    {
+        return d_minisat;
+    }
 
- private:
+private:
+    /** The SatSolver used */
+    Minisat::SimpSolver *d_minisat;
 
-  /** The SatSolver used */
-  Minisat::SimpSolver* d_minisat;
+    /** Context we will be using to synchronize the sat solver */
+    CVC4::context::Context *d_context;
 
-  /** Context we will be using to synchronize the sat solver */
-  CVC4::context::Context* d_context;
+    /**
+     * Stores assumptions passed via last solve() call.
+     *
+     * It is used in getUnsatAssumptions() to determine which of the literals in
+     * the final conflict clause are assumptions.
+     */
+    std::unordered_set<SatLiteral, SatLiteralHashFunction> d_assumptions;
 
-  /**
-   * Stores assumptions passed via last solve() call.
-   *
-   * It is used in getUnsatAssumptions() to determine which of the literals in
-   * the final conflict clause are assumptions.
-   */
-  std::unordered_set<SatLiteral, SatLiteralHashFunction> d_assumptions;
+    Statistics *d_statistics;
 
-  Statistics *d_statistics;
-
-  void setupOptions();
+    void setupOptions();
 
 }; /* class MinisatSatSolver */
 
-}  // namespace prop
+} // namespace prop

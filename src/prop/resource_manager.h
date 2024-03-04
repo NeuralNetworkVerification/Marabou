@@ -20,14 +20,13 @@
 #ifndef CVC5__RESOURCE_MANAGER_H
 #define CVC5__RESOURCE_MANAGER_H
 
-#include <stdint.h>
+#include "theory/inference_id.h"
 
 #include <array>
 #include <chrono>
 #include <memory>
+#include <stdint.h>
 #include <vector>
-
-#include "theory/inference_id.h"
 
 namespace cvc5::internal {
 
@@ -40,67 +39,65 @@ class StatisticsRegistry;
  */
 class WallClockTimer
 {
-  /**
-   * The underlying clock that is used.
-   * std::chrono::system_clock represents wall clock time.
-   */
-  using clock = std::chrono::system_clock;
-  /** A time point of the clock we use. */
-  using time_point = std::chrono::time_point<clock>;
+    /**
+     * The underlying clock that is used.
+     * std::chrono::system_clock represents wall clock time.
+     */
+    using clock = std::chrono::system_clock;
+    /** A time point of the clock we use. */
+    using time_point = std::chrono::time_point<clock>;
 
- public:
-  /** Checks whether this timer is active. */
-  bool on() const;
-  /**
-   * Activates this timer with a timeout in milliseconds.
-   * If millis is zero, the timer is deactivated.
-   */
-  void set(uint64_t millis);
-  /** Returns the number of elapsed milliseconds since the last call to set().
-   */
-  uint64_t elapsed() const;
-  /** Checks whether the current timeout has expired. */
-  bool expired() const;
+public:
+    /** Checks whether this timer is active. */
+    bool on() const;
+    /**
+     * Activates this timer with a timeout in milliseconds.
+     * If millis is zero, the timer is deactivated.
+     */
+    void set( uint64_t millis );
+    /** Returns the number of elapsed milliseconds since the last call to set().
+     */
+    uint64_t elapsed() const;
+    /** Checks whether the current timeout has expired. */
+    bool expired() const;
 
- private:
-  /** The start of this timer. */
-  time_point d_start;
-  /** The point in time when this timer expires. */
-  time_point d_limit;
+private:
+    /** The start of this timer. */
+    time_point d_start;
+    /** The point in time when this timer expires. */
+    time_point d_limit;
 };
 
 /** Types of resources. */
-enum class Resource
-{
-  ArithPivotStep,
-  ArithNlCoveringStep,
-  ArithNlLemmaStep,
-  BitblastStep,
-  BvSatStep,
-  CnfStep,
-  DecisionStep,
-  LemmaStep,
-  NewSkolemStep,
-  ParseStep,
-  PreprocessStep,
-  QuantifierStep,
-  RestartStep,
-  RewriteStep,
-  SatConflictStep,
-  TheoryCheckStep,
-  Unknown
+enum class Resource {
+    ArithPivotStep,
+    ArithNlCoveringStep,
+    ArithNlLemmaStep,
+    BitblastStep,
+    BvSatStep,
+    CnfStep,
+    DecisionStep,
+    LemmaStep,
+    NewSkolemStep,
+    ParseStep,
+    PreprocessStep,
+    QuantifierStep,
+    RestartStep,
+    RewriteStep,
+    SatConflictStep,
+    TheoryCheckStep,
+    Unknown
 };
 
-const char* toString(Resource r);
-std::ostream& operator<<(std::ostream& os, Resource r);
+const char *toString( Resource r );
+std::ostream &operator<<( std::ostream &os, Resource r );
 
 namespace resman_detail {
 /** The upper bound of values from the theory::InferenceId enum */
-constexpr std::size_t InferenceIdMax =
-    static_cast<std::size_t>(theory::InferenceId::UNKNOWN);
+constexpr std::size_t InferenceIdMax = static_cast<std::size_t>( theory::InferenceId::UNKNOWN );
 /** The upper bound of values from the Resource enum */
-constexpr std::size_t ResourceMax = static_cast<std::size_t>(Resource::Unknown);
-};  // namespace resman_detail
+constexpr std::size_t ResourceMax = static_cast<std::size_t>( Resource::Unknown );
+}; // namespace resman_detail
 
 /**
  * This class manages resource limits (cumulative or per call) and (per call)
@@ -109,112 +106,117 @@ constexpr std::size_t ResourceMax = static_cast<std::size_t>(Resource::Unknown);
  */
 class ResourceManager
 {
- public:
-  /** Construct a resource manager. */
-  ResourceManager(StatisticsRegistry& statistics_registry,
-                  const Options& options);
-  /** Default destructor. */
-  ~ResourceManager();
-  /** Can not be copied. */
-  ResourceManager(const ResourceManager&) = delete;
-  /** Can not be moved. */
-  ResourceManager(ResourceManager&&) = delete;
-  /** Can not be copied. */
-  ResourceManager& operator=(const ResourceManager&) = delete;
-  /** Can not be moved. */
-  ResourceManager& operator=(ResourceManager&&) = delete;
+public:
+    /** Construct a resource manager. */
+    ResourceManager( StatisticsRegistry &statistics_registry, const Options &options );
+    /** Default destructor. */
+    ~ResourceManager();
+    /** Can not be copied. */
+    ResourceManager( const ResourceManager & ) = delete;
+    /** Can not be moved. */
+    ResourceManager( ResourceManager && ) = delete;
+    /** Can not be copied. */
+    ResourceManager &operator=( const ResourceManager & ) = delete;
+    /** Can not be moved. */
+    ResourceManager &operator=( ResourceManager && ) = delete;
 
-  void setEnabled(bool enabled) { d_enabled = enabled; }
+    void setEnabled( bool enabled )
+    {
+        d_enabled = enabled;
+    }
 
-  /** Checks whether any limit is active. */
-  bool limitOn() const;
+    /** Checks whether any limit is active. */
+    bool limitOn() const;
 
-  /** Checks whether resources have been exhausted. */
-  bool outOfResources() const;
-  /** Checks whether time has been exhausted. */
-  bool outOfTime() const;
-  /** Checks whether any limit has been exhausted. */
-  bool out() const { return outOfResources() || outOfTime(); }
+    /** Checks whether resources have been exhausted. */
+    bool outOfResources() const;
+    /** Checks whether time has been exhausted. */
+    bool outOfTime() const;
+    /** Checks whether any limit has been exhausted. */
+    bool out() const
+    {
+        return outOfResources() || outOfTime();
+    }
 
-  /** Retrieves amount of resources used overall. */
-  uint64_t getResourceUsage() const;
-  /** Retrieves time used over all calls. */
-  uint64_t getTimeUsage() const;
-  /** Retrieves the remaining time until the time limit is reached. */
-  uint64_t getRemainingTime() const;
-  /** Retrieves the remaining number of cumulative resources. */
-  uint64_t getResourceRemaining() const;
+    /** Retrieves amount of resources used overall. */
+    uint64_t getResourceUsage() const;
+    /** Retrieves time used over all calls. */
+    uint64_t getTimeUsage() const;
+    /** Retrieves the remaining time until the time limit is reached. */
+    uint64_t getRemainingTime() const;
+    /** Retrieves the remaining number of cumulative resources. */
+    uint64_t getResourceRemaining() const;
 
-  /**
-   * Spends a given resource. Calls the listener to interrupt the solver if
-   * there are no remaining resources.
-   */
-  void spendResource(Resource r);
-  /**
-   * Spends a given resource. Calls the listener to interrupt the solver if
-   * there are no remaining resources.
-   */
-  void spendResource(theory::InferenceId iid);
+    /**
+     * Spends a given resource. Calls the listener to interrupt the solver if
+     * there are no remaining resources.
+     */
+    void spendResource( Resource r );
+    /**
+     * Spends a given resource. Calls the listener to interrupt the solver if
+     * there are no remaining resources.
+     */
+    void spendResource( theory::InferenceId iid );
 
-  /**
-   * Resets perCall limits to mark the start of a new call,
-   * updates budget for current call and starts the timer
-   */
-  void beginCall();
+    /**
+     * Resets perCall limits to mark the start of a new call,
+     * updates budget for current call and starts the timer
+     */
+    void beginCall();
 
-  /**
-   * Marks the end of a SolverEngine check call, stops the per
-   * call timer.
-   */
-  void endCall();
+    /**
+     * Marks the end of a SolverEngine check call, stops the per
+     * call timer.
+     */
+    void endCall();
 
-  /**
-   * Registers a listener that is notified on a resource out or (per-call)
-   * timeout.
-   */
-  void registerListener(Listener* listener);
+    /**
+     * Registers a listener that is notified on a resource out or (per-call)
+     * timeout.
+     */
+    void registerListener( Listener *listener );
 
- private:
-  const Options& d_options;
+private:
+    const Options &d_options;
 
-  /**
-   * If the resource manager is not enabled, then the checks whether we are out
-   * of resources are disabled. Resources are still spent, however.
-   */
-  bool d_enabled;
+    /**
+     * If the resource manager is not enabled, then the checks whether we are out
+     * of resources are disabled. Resources are still spent, however.
+     */
+    bool d_enabled;
 
-  /** The per-call wall clock timer. */
-  WallClockTimer d_perCallTimer;
+    /** The per-call wall clock timer. */
+    WallClockTimer d_perCallTimer;
 
-  /** The total number of milliseconds used. */
-  uint64_t d_cumulativeTimeUsed;
-  /** The total amount of resources used. */
-  uint64_t d_cumulativeResourceUsed;
+    /** The total number of milliseconds used. */
+    uint64_t d_cumulativeTimeUsed;
+    /** The total amount of resources used. */
+    uint64_t d_cumulativeResourceUsed;
 
-  /** The amount of resources used during this call. */
-  uint64_t d_thisCallResourceUsed;
+    /** The amount of resources used during this call. */
+    uint64_t d_thisCallResourceUsed;
 
-  /**
-   * The resource budget for this call (min between per call
-   * budget and left-over cumulative budget.)
-   */
-  uint64_t d_thisCallResourceBudget;
+    /**
+     * The resource budget for this call (min between per call
+     * budget and left-over cumulative budget.)
+     */
+    uint64_t d_thisCallResourceBudget;
 
-  /** Receives a notification on reaching a limit. */
-  std::vector<Listener*> d_listeners;
+    /** Receives a notification on reaching a limit. */
+    std::vector<Listener *> d_listeners;
 
-  void spendResource(uint64_t amount);
+    void spendResource( uint64_t amount );
 
-  /** Weights for InferenceId resources */
-  std::array<uint64_t, resman_detail::InferenceIdMax + 1> d_infidWeights;
-  /** Weights for Resource resources */
-  std::array<uint64_t, resman_detail::ResourceMax + 1> d_resourceWeights;
+    /** Weights for InferenceId resources */
+    std::array<uint64_t, resman_detail::InferenceIdMax + 1> d_infidWeights;
+    /** Weights for Resource resources */
+    std::array<uint64_t, resman_detail::ResourceMax + 1> d_resourceWeights;
 
-  struct Statistics;
-  /** The statistics object */
-  std::unique_ptr<Statistics> d_statistics;
+    struct Statistics;
+    /** The statistics object */
+    std::unique_ptr<Statistics> d_statistics;
 }; /* class ResourceManager */
 
-}  // namespace cvc5::internal
+} // namespace cvc5::internal
 
 #endif /* CVC5__RESOURCE_MANAGER_H */

@@ -34,17 +34,20 @@ namespace prop {
  * Boolean values of the SAT solver.
  */
 enum SatValue {
-  SAT_VALUE_UNKNOWN,
-  SAT_VALUE_TRUE,
-  SAT_VALUE_FALSE
+    SAT_VALUE_UNKNOWN,
+    SAT_VALUE_TRUE,
+    SAT_VALUE_FALSE
 };
 
 /** Helper function for inverting a SatValue */
-inline SatValue invertValue(SatValue v)
+inline SatValue invertValue( SatValue v )
 {
-  if(v == SAT_VALUE_UNKNOWN) return SAT_VALUE_UNKNOWN;
-  else if(v == SAT_VALUE_TRUE) return SAT_VALUE_FALSE;
-  else return SAT_VALUE_TRUE;
+    if ( v == SAT_VALUE_UNKNOWN )
+        return SAT_VALUE_UNKNOWN;
+    else if ( v == SAT_VALUE_TRUE )
+        return SAT_VALUE_FALSE;
+    else
+        return SAT_VALUE_TRUE;
 }
 
 
@@ -56,119 +59,131 @@ typedef uint64_t SatVariable;
 /**
  * Undefined SAT solver variable.
  */
-const SatVariable undefSatVariable = SatVariable(-1);
+const SatVariable undefSatVariable = SatVariable( -1 );
 
 /**
  * A SAT literal is a variable or an negated variable.
  */
-class SatLiteral {
-
-  /**
-   * The value holds the variable and a bit noting if the variable is negated.
-   */
-  uint64_t d_value;
+class SatLiteral
+{
+    /**
+     * The value holds the variable and a bit noting if the variable is negated.
+     */
+    uint64_t d_value;
 
 public:
+    /**
+     * Construct an undefined SAT literal.
+     */
+    SatLiteral()
+        : d_value( undefSatVariable )
+    {
+    }
 
-  /**
-   * Construct an undefined SAT literal.
-   */
-  SatLiteral()
-  : d_value(undefSatVariable)
-  {}
+    /**
+     * Construct a literal given a possible negated variable.
+     */
+    SatLiteral( SatVariable var, bool negated = false )
+    {
+        d_value = var + var + (int)negated;
+    }
 
-  /**
-   * Construct a literal given a possible negated variable.
-   */
-  SatLiteral(SatVariable var, bool negated = false) {
-    d_value = var + var + (int)negated;
-  }
+    /**
+     * Returns the variable of the literal.
+     */
+    SatVariable getSatVariable() const
+    {
+        return d_value >> 1;
+    }
 
-  /**
-   * Returns the variable of the literal.
-   */
-  SatVariable getSatVariable() const {
-    return d_value >> 1;
-  }
+    /**
+     * Returns true if the literal is a negated variable.
+     */
+    bool isNegated() const
+    {
+        return d_value & 1;
+    }
 
-  /**
-   * Returns true if the literal is a negated variable.
-   */
-  bool isNegated() const {
-    return d_value & 1;
-  }
+    /**
+     * Negate the given literal.
+     */
+    SatLiteral operator~() const
+    {
+        return SatLiteral( getSatVariable(), !isNegated() );
+    }
 
-  /**
-   * Negate the given literal.
-   */
-  SatLiteral operator ~ () const {
-    return SatLiteral(getSatVariable(), !isNegated());
-  }
+    /**
+     * Compare two literals for equality.
+     */
+    bool operator==( const SatLiteral &other ) const
+    {
+        return d_value == other.d_value;
+    }
 
-  /**
-   * Compare two literals for equality.
-   */
-  bool operator == (const SatLiteral& other) const {
-    return d_value == other.d_value;
-  }
+    /**
+     * Compare two literals for dis-equality.
+     */
+    bool operator!=( const SatLiteral &other ) const
+    {
+        return !( *this == other );
+    }
 
-  /**
-   * Compare two literals for dis-equality.
-   */
-  bool operator != (const SatLiteral& other) const {
-    return !(*this == other);
-  }
+    /**
+     * Compare two literals
+     */
+    bool operator<( const SatLiteral &other ) const
+    {
+        return getSatVariable() == other.getSatVariable()
+                 ? isNegated() < other.isNegated()
+                 : getSatVariable() < other.getSatVariable();
+    }
 
-  /**
-   * Compare two literals
-   */
-  bool operator<(const SatLiteral& other) const
-  {
-    return getSatVariable() == other.getSatVariable()
-               ? isNegated() < other.isNegated()
-               : getSatVariable() < other.getSatVariable();
-  }
+    /**
+     * Returns a string representation of the literal.
+     */
+    std::string toString() const
+    {
+        std::ostringstream os;
+        os << ( isNegated() ? "~" : "" ) << getSatVariable();
+        return os.str();
+    }
 
-  /**
-   * Returns a string representation of the literal.
-   */
-  std::string toString() const {
-    std::ostringstream os;
-    os << (isNegated() ? "~" : "") << getSatVariable();
-    return os.str();
-  }
+    /**
+     * Returns the hash value of a literal.
+     */
+    size_t hash() const
+    {
+        return (size_t)d_value;
+    }
 
-  /**
-   * Returns the hash value of a literal.
-   */
-  size_t hash() const {
-    return (size_t)d_value;
-  }
+    uint64_t toInt() const
+    {
+        return d_value;
+    }
 
-  uint64_t toInt() const {
-    return d_value; 
-  }
-  
-  /**
-   * Returns true if the literal is undefined.
-   */
-  bool isNull() const {
-    return getSatVariable() == undefSatVariable;
-  }
+    /**
+     * Returns true if the literal is undefined.
+     */
+    bool isNull() const
+    {
+        return getSatVariable() == undefSatVariable;
+    }
 };
 
 /**
  * A constant representing a undefined literal.
  */
-const SatLiteral undefSatLiteral = SatLiteral(undefSatVariable);
+const SatLiteral undefSatLiteral = SatLiteral( undefSatVariable );
 
 /**
  * Helper for hashing the literals.
  */
-struct SatLiteralHashFunction {
-  inline size_t operator() (const SatLiteral& literal) const {
-    return literal.hash();
-  }
+struct SatLiteralHashFunction
+{
+    inline size_t operator()( const SatLiteral &literal ) const
+    {
+        return literal.hash();
+    }
 };
 
 /**
@@ -178,58 +193,56 @@ typedef std::vector<SatLiteral> SatClause;
 
 struct SatClauseSetHashFunction
 {
-  inline size_t operator()(
-      const std::unordered_set<SatLiteral, SatLiteralHashFunction>& clause)
-      const
-  {
-    size_t acc = 0;
-    for (const auto& l : clause)
+    inline size_t
+    operator()( const std::unordered_set<SatLiteral, SatLiteralHashFunction> &clause ) const
     {
-      acc ^= l.hash();
+        size_t acc = 0;
+        for ( const auto &l : clause )
+        {
+            acc ^= l.hash();
+        }
+        return acc;
     }
-    return acc;
-  }
 };
 
 struct SatClauseLessThan
 {
-  bool operator()(const SatClause& l, const SatClause& r) const;
+    bool operator()( const SatClause &l, const SatClause &r ) const;
 };
 
 /**
  * Each object in the SAT solver, such as as variables and clauses, can be assigned a life span,
  * so that the SAT solver can (or should) remove them when the lifespan is over.
  */
-enum SatSolverLifespan
-{
-  /**
-   * The object should stay forever and never be removed
-   */
-  SAT_LIFESPAN_PERMANENT,
-  /**
-   * The object can be removed at any point when it becomes unnecessary.
-   */
-  SAT_LIFESPAN_REMOVABLE,
-  /**
-   * The object must be removed as soon as the SAT solver exits the search context
-   * where the object got introduced.
-   */
-  SAT_LIFESPAN_SEARCH_CONTEXT_STRICT,
-  /**
-   * The object can be removed when SAT solver exits the search context where the object
-   * got introduced, but can be kept at the solver discretion.
-   */
-  SAT_LIFESPAN_SEARCH_CONTEXT_LENIENT,
-  /**
-   * The object must be removed as soon as the SAT solver exits the user-level context where
-   * the object got introduced.
-   */
-  SAT_LIFESPAN_USER_CONTEXT_STRICT,
-  /**
-   * The object can be removed when the SAT solver exits the user-level context where
-   * the object got introduced.
-   */
-  SAT_LIFESPAN_USER_CONTEXT_LENIENT
+enum SatSolverLifespan {
+    /**
+     * The object should stay forever and never be removed
+     */
+    SAT_LIFESPAN_PERMANENT,
+    /**
+     * The object can be removed at any point when it becomes unnecessary.
+     */
+    SAT_LIFESPAN_REMOVABLE,
+    /**
+     * The object must be removed as soon as the SAT solver exits the search context
+     * where the object got introduced.
+     */
+    SAT_LIFESPAN_SEARCH_CONTEXT_STRICT,
+    /**
+     * The object can be removed when SAT solver exits the search context where the object
+     * got introduced, but can be kept at the solver discretion.
+     */
+    SAT_LIFESPAN_SEARCH_CONTEXT_LENIENT,
+    /**
+     * The object must be removed as soon as the SAT solver exits the user-level context where
+     * the object got introduced.
+     */
+    SAT_LIFESPAN_USER_CONTEXT_STRICT,
+    /**
+     * The object can be removed when the SAT solver exits the user-level context where
+     * the object got introduced.
+     */
+    SAT_LIFESPAN_USER_CONTEXT_LENIENT
 };
 
-}
+} // namespace prop
