@@ -38,7 +38,6 @@
 #include "Options.h"
 #include "PrecisionRestorer.h"
 #include "Preprocessor.h"
-#include "sat_solver_types.h"
 #include "SignalHandler.h"
 #include "SmtCore.h"
 #include "SmtLibWriter.h"
@@ -48,6 +47,7 @@
 #include "SumOfInfeasibilitiesManager.h"
 #include "SymbolicBoundTighteningType.h"
 #include "UnsatCertificateNode.h"
+#include "sat_solver_types.h"
 
 #include <atomic>
 #include <context/context.h>
@@ -64,9 +64,9 @@ class PiecewiseLinearConstraint;
 class String;
 
 namespace prop {
-  class TheoryProxy;
-  class MinisatSatSolver;
-}
+class TheoryProxy;
+class MinisatSatSolver;
+} // namespace prop
 
 
 using CVC4::context::Context;
@@ -910,15 +910,15 @@ private:
     /*
       Map piecewise-linear constraints to SatLiterals
     */
-    typedef std::tuple<PiecewiseLinearConstraint*, PhaseStatus> constraintPhase;
-    Map<constraintPhase, cvc5::internal::prop::SatLiteral> _constraintPhasesToSatLiterals;
-    Map<cvc5::internal::prop::SatLiteral, constraintPhase> _satLiteralsToConstraintPhases;
+    typedef std::tuple<PiecewiseLinearConstraint *, PhaseStatus> constraintPhase;
+    Map<constraintPhase, prop::SatLiteral> _constraintPhasesToSatLiterals;
+    Map<prop::SatLiteral, constraintPhase> _satLiteralsToConstraintPhases;
 
 
     /*
       Map variables to the constraints they participate in
     */
-    Map<unsigned, PiecewiseLinearConstraint*> _variablesToConstraints;
+    Map<unsigned, PiecewiseLinearConstraint *> _variablesToConstraints;
 
     /*
      For each constraint in the list, map its phases to SatLiterals

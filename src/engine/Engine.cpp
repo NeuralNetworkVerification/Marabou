@@ -32,9 +32,8 @@
 #include "TimeUtils.h"
 #include "VariableOutOfBoundDuringOptimizationException.h"
 #include "Vector.h"
-
-#include "theory_proxy.h"
 #include "minisat.h"
+#include "theory_proxy.h"
 
 #include <random>
 
@@ -43,8 +42,8 @@ using namespace prop;
 Engine::Engine()
     : _context()
     , _boundManager( _context )
-    , _satSolver(NULL)
-    , _theoryProxy(NULL)
+    , _satSolver( NULL )
+    , _theoryProxy( NULL )
     , _tableau( _boundManager )
     , _preprocessedQuery( nullptr )
     , _rowBoundTightener( *_tableau )
@@ -83,8 +82,8 @@ Engine::Engine()
     , _satLiteralsToConstraintPhases()
     , _variablesToConstraints()
 {
-    _satSolver = new MinisatSatSolver(&_statistics);
-    _theoryProxy = new TheoryProxy(this);
+    _satSolver = new MinisatSatSolver( &_statistics );
+    _theoryProxy = new TheoryProxy( this );
 
     _smtCore.setStatistics( &_statistics );
     _tableau->setStatistics( &_statistics );
@@ -98,25 +97,29 @@ Engine::Engine()
 
     _boundManager.registerEngine( this );
     _groundBoundManager.registerEngine( this );
-    _statisticsPrintingFrequency =
-        ( _lpSolverType == LPSolverType::NATIVE ) ?
-        GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY :
-        GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI ;
+    _statisticsPrintingFrequency = ( _lpSolverType == LPSolverType::NATIVE )
+                                     ? GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY
+                                     : GlobalConfiguration::STATISTICS_PRINTING_FREQUENCY_GUROBI;
     // SmtCore more or less functions as PropEngine
-    _UNSATCertificateCurrentPointer = _produceUNSATProofs ? new ( true ) CVC4::context::CDO<UnsatCertificateNode*>( &_context, NULL ) : NULL;
+    _UNSATCertificateCurrentPointer =
+        _produceUNSATProofs ? new ( true )
+                                  CVC4::context::CDO<UnsatCertificateNode *>( &_context, NULL )
+                            : NULL;
 }
 
 Engine::~Engine()
 {
-  if ( _satSolver ) {
-    delete _satSolver;
-    _satSolver = NULL;
-  }
+    if ( _satSolver )
+    {
+        delete _satSolver;
+        _satSolver = NULL;
+    }
 
-  if ( _theoryProxy ) {
-    delete _theoryProxy;
-    _theoryProxy = NULL;
-  }
+    if ( _theoryProxy )
+    {
+        delete _theoryProxy;
+        _theoryProxy = NULL;
+    }
 
     if ( _work )
     {
@@ -3833,35 +3836,47 @@ void Engine::extractBounds( InputQuery &inputQuery )
         }
     }
 }
-=======
+
 void Engine::mapConstraintsToSatLiterals( List<PiecewiseLinearConstraint *> constraints )
 {
     unsigned counter = _constraintPhasesToSatLiterals.keys().size();
     for ( auto &plConstraint : constraints )
     {
-        cvc5::internal::prop::SatLiteral positiveLiteral( counter );
-        cvc5::internal::prop::SatLiteral negativeLiteral( counter, true );
+        prop::SatLiteral positiveLiteral( counter );
+        prop::SatLiteral negativeLiteral( counter, true );
 
         if ( plConstraint->getType() == RELU )
         {
-            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, RELU_PHASE_ACTIVE ), positiveLiteral );
-            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, RELU_PHASE_INACTIVE ), negativeLiteral );
-            _satLiteralsToConstraintPhases.setIfDoesNotExist( positiveLiteral, constraintPhase( plConstraint, RELU_PHASE_ACTIVE ) );
-            _satLiteralsToConstraintPhases.setIfDoesNotExist( negativeLiteral, constraintPhase( plConstraint, RELU_PHASE_INACTIVE ) );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist(
+                constraintPhase( plConstraint, RELU_PHASE_ACTIVE ), positiveLiteral );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist(
+                constraintPhase( plConstraint, RELU_PHASE_INACTIVE ), negativeLiteral );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist(
+                positiveLiteral, constraintPhase( plConstraint, RELU_PHASE_ACTIVE ) );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist(
+                negativeLiteral, constraintPhase( plConstraint, RELU_PHASE_INACTIVE ) );
         }
         else if ( plConstraint->getType() == ABSOLUTE_VALUE )
         {
-            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, ABS_PHASE_POSITIVE ), positiveLiteral );
-            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, ABS_PHASE_NEGATIVE ), negativeLiteral );
-            _satLiteralsToConstraintPhases.setIfDoesNotExist( positiveLiteral, constraintPhase( plConstraint, ABS_PHASE_POSITIVE ) );
-            _satLiteralsToConstraintPhases.setIfDoesNotExist( negativeLiteral, constraintPhase( plConstraint, ABS_PHASE_NEGATIVE ) );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist(
+                constraintPhase( plConstraint, ABS_PHASE_POSITIVE ), positiveLiteral );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist(
+                constraintPhase( plConstraint, ABS_PHASE_NEGATIVE ), negativeLiteral );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist(
+                positiveLiteral, constraintPhase( plConstraint, ABS_PHASE_POSITIVE ) );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist(
+                negativeLiteral, constraintPhase( plConstraint, ABS_PHASE_NEGATIVE ) );
         }
         else if ( plConstraint->getType() == SIGN )
         {
-            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, SIGN_PHASE_POSITIVE ), positiveLiteral );
-            _constraintPhasesToSatLiterals.setIfDoesNotExist( constraintPhase( plConstraint, SIGN_PHASE_NEGATIVE ), negativeLiteral );
-            _satLiteralsToConstraintPhases.setIfDoesNotExist( positiveLiteral, constraintPhase( plConstraint, SIGN_PHASE_POSITIVE ) );
-            _satLiteralsToConstraintPhases.setIfDoesNotExist( negativeLiteral, constraintPhase( plConstraint, SIGN_PHASE_NEGATIVE ) );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist(
+                constraintPhase( plConstraint, SIGN_PHASE_POSITIVE ), positiveLiteral );
+            _constraintPhasesToSatLiterals.setIfDoesNotExist(
+                constraintPhase( plConstraint, SIGN_PHASE_NEGATIVE ), negativeLiteral );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist(
+                positiveLiteral, constraintPhase( plConstraint, SIGN_PHASE_POSITIVE ) );
+            _satLiteralsToConstraintPhases.setIfDoesNotExist(
+                negativeLiteral, constraintPhase( plConstraint, SIGN_PHASE_NEGATIVE ) );
         }
 
         ++counter;
