@@ -40,9 +40,7 @@ def test_split_onnx():
     os.remove(postsplit_filename)
 
 def test_dropout():
-    # NOTE: this test is added to pass the CI code coverage test and can be removed after
-    # the C++ onnx parser switch-over is completed.
-    filename =  "layer-zoo/dropout.onnx"
+    filename =  "test_dropout.onnx"
     evaluateFile(filename)
 
 def test_add_constant():
