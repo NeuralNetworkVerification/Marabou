@@ -845,6 +845,10 @@ void OnnxParser::makeMarabouEquations( onnx::NodeProto &node, bool makeEquations
     {
         identity( node );
     }
+    else if ( strcmp( nodeType, "Dropout" ) == 0 )
+    {
+        identity( node );
+    }
     else if ( strcmp( nodeType, "Cast" ) == 0 )
     {
         cast( node );

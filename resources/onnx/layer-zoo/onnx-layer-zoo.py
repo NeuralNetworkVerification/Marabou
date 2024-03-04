@@ -296,6 +296,15 @@ def cast_int_to_float_node():
 
     return ("cast_int_to_float", node, [2,2], [2,2], [cast_node, const_node])
 
+def dropout_node():
+    node = onnx.helper.make_node(
+        "Dropout",
+        inputs=[input_name],
+        outputs=[output_name],
+        ratio=0.5
+    )
+    return ("dropout", node, [2,2], [2,2], [])
+
 ##########
 ## Main ##
 ##########
@@ -322,3 +331,4 @@ if __name__ == "__main__":
     make_network(*sigmoid_node())
     make_network(*tanh_node())
     make_network(*cast_int_to_float_node())
+    make_network(*dropout_node())

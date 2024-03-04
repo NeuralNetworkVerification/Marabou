@@ -163,6 +163,8 @@ class ONNXParser:
             self.constant(node)
         elif node.op_type == 'Identity':
             self.identity(node)
+        elif node.op_type == 'Dropout':
+            self.identity(node)
         elif node.op_type == 'Cast':
             self.cast(node)
         elif node.op_type == 'Reshape':

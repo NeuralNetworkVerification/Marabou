@@ -405,4 +405,11 @@ public:
         };
         run_test( "cast_int_to_float", input, output );
     }
+
+    void test_dropout()
+    {
+        Vector<double> input = { 1, 2, 1.5, -1 };
+        Vector<double> output = { 1, 2, 1.5, -1 };
+        run_test( "dropout", input, output );
+    }
 };
