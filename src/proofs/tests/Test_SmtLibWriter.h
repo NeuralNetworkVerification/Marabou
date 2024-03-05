@@ -43,7 +43,7 @@ public:
         SmtLibWriter::addReLUConstraint( 0, 1, PHASE_NOT_FIXED, instance );
         SmtLibWriter::addSignConstraint( 0, 1, PHASE_NOT_FIXED, instance );
         SmtLibWriter::addAbsConstraint( 0, 1, PHASE_NOT_FIXED, instance );
-        SmtLibWriter::addLeakyReluConstraint( 0, 1, 0.1, PHASE_NOT_FIXED, instance );
+        SmtLibWriter::addLeakyReLUConstraint( 0, 1, 0.1, PHASE_NOT_FIXED, instance );
 
         SmtLibWriter::addMaxConstraint( 1, { 2, 3, 4 }, PHASE_NOT_FIXED, 0, instance );
 
