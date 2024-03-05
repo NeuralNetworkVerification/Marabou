@@ -24,6 +24,25 @@ class OnnxParserTestSuite : public CxxTest::TestSuite
 public:
     const double DELTA = 0.0001;
 
+    void expect_error( String name )
+    {
+        // Extract an input query from the network
+
+        String networkPath = Stringf( "%s/%s.onnx", RESOURCES_DIR "/onnx/layer-zoo", name.ascii() );
+        if ( !File::exists( networkPath ) )
+        {
+            printf( "Error: the specified test inputQuery file (%s) doesn't exist!\n",
+                    networkPath.ascii() );
+            throw MarabouError( MarabouError::FILE_DOESNT_EXIST, networkPath.ascii() );
+        }
+
+        InputQueryBuilder queryBuilder;
+        TS_ASSERT_THROWS_EQUALS( OnnxParser::parse( queryBuilder, networkPath, {}, {} ),
+                                 const MarabouError &e,
+                                 e.getCode(),
+                                 MarabouError::ONNX_PARSER_ERROR );
+    }
+
     void run_test( String name, Vector<double> inputValues, Vector<double> expectedOutputValues )
     {
         // Extract an input query from the network
@@ -411,5 +430,17 @@ public:
         Vector<double> input = { 1, 2, 1.5, -1 };
         Vector<double> output = { 1, 2, 1.5, -1 };
         run_test( "dropout", input, output );
+    }
+
+    void test_dropout_training_mode_false()
+    {
+        Vector<double> input = { 1, 2, 1.5, -1 };
+        Vector<double> output = { 1, 2, 1.5, -1 };
+        run_test( "dropout_training_mode_false", input, output );
+    }
+
+    void test_dropout_training_mode_true()
+    {
+        expect_error( "dropout_training_mode_true" );
     }
 };
