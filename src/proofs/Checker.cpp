@@ -673,7 +673,7 @@ Checker::getCorrespondingLeakyReluConstraint( const List<PiecewiseLinearCaseSpli
             unsigned f = constraintVars.back();
             if ( inactiveSplit.exists( Tightening( b, 0.0, Tightening::UB ) ) &&
                  inactiveSplit.exists( Tightening( f, 0.0, Tightening::UB ) ) &&
-                 ( incativeSplit.size() == 2 ||
+                 ( inactiveSplit.size() == 2 ||
                    inactiveSplit.exists( Tightening( inactiveAux, 0.0, Tightening::UB ) ) ) &&
                  activeSplit.exists( Tightening( b, 0.0, Tightening::LB ) ) &&
                  activeSplit.exists( Tightening( f, 0.0, Tightening::LB ) ) &&
