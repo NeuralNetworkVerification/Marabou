@@ -193,9 +193,8 @@ void SmtLibWriter::addLeakyReLUConstraint( unsigned b,
 {
     if ( status == PHASE_NOT_FIXED )
         instance.append( String( "( assert ( = x" + std::to_string( f ) + " ( ite ( >= x" +
-                                 std::to_string( b ) + " 0 ) x" + std::to_string( b ) + " ( * x" +
-                                 std::to_string( b ) + " " ) +
-                         signedValue( slope ) + " ) ) ) )\n" );
+                                 std::to_string( b ) + " 0 ) x" + std::to_string( b ) + " ( * " +
+                                 signedValue( slope ) + "x" + std::to_string( b ) + " ) ) ) )\n" );
     else if ( status == RELU_PHASE_ACTIVE )
         instance.append( "( assert ( = x" + std::to_string( f ) + " x" + std::to_string( b ) +
                          " ) )\n" );
