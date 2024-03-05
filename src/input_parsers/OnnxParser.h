@@ -20,9 +20,9 @@
 // First of all the `Warning` macro from CVC4 interferes with that from PyTorch.
 #undef Warning
 // Next we actually import it.
-// #include <torch/torch.h>
+#include <torch/torch.h>
 // Second of all, the `LOG` macro from PyTorch interferes with our `LOG` macro.
-// #undef LOG
+#undef LOG
 
 #include "InputQuery.h"
 #include "InputQueryBuilder.h"
