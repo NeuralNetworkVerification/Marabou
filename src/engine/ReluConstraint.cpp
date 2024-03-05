@@ -173,7 +173,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                 // If we're in the active phase, aux should be 0
                 if ( proofs && _auxVarInUse )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _aux, 0, BoundType::UPPER, { variable }, BoundType::LOWER, getType() );
+                        _aux, 0, Tightening::UB, { variable }, Tightening::LB, getType() );
                 else if ( !proofs && _auxVarInUse )
                     _boundManager->tightenUpperBound( _aux, 0 );
 
@@ -187,7 +187,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
             {
                 if ( proofs && _auxVarInUse )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _aux, 0, BoundType::UPPER, { variable }, BoundType::LOWER, getType() );
+                        _aux, 0, Tightening::UB, { variable }, Tightening::LB, getType() );
                 else if ( !proofs && _auxVarInUse )
                     _boundManager->tightenUpperBound( _aux, 0 );
             }
@@ -198,7 +198,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
             {
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, 0, BoundType::UPPER, { variable }, BoundType::LOWER, getType() );
+                        _f, 0, Tightening::UB, { variable }, Tightening::LB, getType() );
                 else
                     _boundManager->tightenUpperBound( _f, 0 );
 
@@ -215,12 +215,8 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
                     if ( _phaseStatus == RELU_PHASE_INACTIVE )
                         _boundManager->tightenUpperBound( _aux, -bound, *_tighteningRow );
                     else if ( _phaseStatus == PHASE_NOT_FIXED )
-                        _boundManager->addLemmaExplanationAndTightenBound( _aux,
-                                                                           -bound,
-                                                                           BoundType::UPPER,
-                                                                           { variable },
-                                                                           BoundType::LOWER,
-                                                                           getType() );
+                        _boundManager->addLemmaExplanationAndTightenBound(
+                            _aux, -bound, Tightening::UB, { variable }, Tightening::LB, getType() );
                 }
                 else
                     _boundManager->tightenUpperBound( _aux, -bound );
@@ -232,7 +228,7 @@ void ReluConstraint::notifyLowerBound( unsigned variable, double newBound )
             {
                 if ( proofs )
                     _boundManager->addLemmaExplanationAndTightenBound(
-                        _f, 0, BoundType::LOWER, { variable }, BoundType::LOWER, getType() );
+                        _f, 0, Tightening::LB, { variable }, Tightening::LB, getType() );
                 else
                     _boundManager->tightenLowerBound( _f, 0 );
             }
@@ -276,12 +272,8 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                     else
                     {
                         if ( FloatUtils::isZero( bound ) )
-                            _boundManager->addLemmaExplanationAndTightenBound( _b,
-                                                                               0,
-                                                                               BoundType::UPPER,
-                                                                               { variable },
-                                                                               BoundType::UPPER,
-                                                                               getType() );
+                            _boundManager->addLemmaExplanationAndTightenBound(
+                                _b, 0, Tightening::UB, { variable }, Tightening::UB, getType() );
                         // Bound cannot be negative if ReLU is inactive
                         else if ( FloatUtils::isNegative( bound ) )
                             throw InfeasibleQueryException();
@@ -297,7 +289,7 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                     // If b has a non-positive upper bound, f's upper bound is 0
                     if ( proofs )
                         _boundManager->addLemmaExplanationAndTightenBound(
-                            _f, 0, BoundType::UPPER, { variable }, BoundType::UPPER, getType() );
+                            _f, 0, Tightening::UB, { variable }, Tightening::UB, getType() );
                     else
                         _boundManager->tightenUpperBound( _f, 0 );
 
@@ -317,9 +309,9 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                         else if ( _phaseStatus == PHASE_NOT_FIXED )
                             _boundManager->addLemmaExplanationAndTightenBound( _f,
                                                                                bound,
-                                                                               BoundType::UPPER,
+                                                                               Tightening::UB,
                                                                                { variable },
-                                                                               BoundType::UPPER,
+                                                                               Tightening::UB,
                                                                                getType() );
                     }
                     else
@@ -335,12 +327,8 @@ void ReluConstraint::notifyUpperBound( unsigned variable, double newBound )
                     else
                     {
                         if ( FloatUtils::isZero( bound ) )
-                            _boundManager->addLemmaExplanationAndTightenBound( _b,
-                                                                               0,
-                                                                               BoundType::LOWER,
-                                                                               { variable },
-                                                                               BoundType::UPPER,
-                                                                               getType() );
+                            _boundManager->addLemmaExplanationAndTightenBound(
+                                _b, 0, Tightening::LB, { variable }, Tightening::UB, getType() );
                         // Bound cannot be negative if ReLU is active
                         else if ( FloatUtils::isNegative( bound ) )
                             throw InfeasibleQueryException();
@@ -1083,6 +1071,7 @@ void ReluConstraint::createTighteningRow()
     _tighteningRow->_row[0] = TableauRow::Entry( _b, 1 );
     _tighteningRow->_row[1] = TableauRow::Entry( _aux, 1 );
     _tighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVars.back(), 1 );
+    _tighteningRow->_scalar = 0;
 }
 
 const List<unsigned> ReluConstraint::getNativeAuxVars() const

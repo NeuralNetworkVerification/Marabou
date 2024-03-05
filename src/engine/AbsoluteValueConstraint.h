@@ -251,14 +251,14 @@ private:
     std::shared_ptr<TableauRow> _negTighteningRow;
 
     /*
-     Create a the tableau row used for explaining bound tightening caused by the constraint
-     stored in _posTighteningRow
+     Create a tableau row used for explaining bound tightening caused by the constraint's positive
+     phase, stored in _posTighteningRow
     */
     void createPosTighteningRow();
 
     /*
-     Create a the tableau row used for explaining bound tightening caused by the constraint
-     Stored in _negTighteningRow
+     Create a tableau row used for explaining bound tightening caused by the constraint's negative
+     phase, stored in _negTighteningRow
     */
     void createNegTighteningRow();
 

@@ -16,7 +16,7 @@
 #ifndef __Tightening_h__
 #define __Tightening_h__
 
-#include "ITableau.h"
+#include <cstdio>
 
 class Tightening
 {

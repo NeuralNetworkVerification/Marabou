@@ -70,8 +70,8 @@ void PrecisionRestorer::restorePrecision( IEngine &engine,
             lowerBoundsBackup[i] = tableau.getLowerBound( i );
             upperBoundsBackup[i] = tableau.getUpperBound( i );
 
-            groundUpperBoundsBackup[i] = engine.getGroundBound( i, BoundType::UPPER );
-            groundLowerBoundsBackup[i] = engine.getGroundBound( i, BoundType::LOWER );
+            groundUpperBoundsBackup[i] = engine.getGroundBound( i, Tightening::UB );
+            groundLowerBoundsBackup[i] = engine.getGroundBound( i, Tightening::LB );
         }
     }
 

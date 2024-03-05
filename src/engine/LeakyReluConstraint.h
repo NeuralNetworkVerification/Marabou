@@ -246,6 +246,9 @@ private:
     unsigned _activeAux;
     unsigned _inactiveAux;
 
+    std::shared_ptr<TableauRow> _activeTighteningRow;
+    std::shared_ptr<TableauRow> _inactiveTighteningRow;
+
     /*
       Denotes which case split to handle first.
       And which phase status to repair a LeakyRelu into.
@@ -265,6 +268,20 @@ private:
     bool haveOutOfBoundVariables() const;
 
     void addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar ) override;
+
+    const List<unsigned> getNativeAuxVars() const override;
+
+    /*
+     Create a the tableau row used for explaining bound tightening caused by the constraint's active
+     phase stored in _activeTighteningRow
+    */
+    void createActiveTighteningRow();
+
+    /*
+      Create a the tableau row used for explaining bound tightening caused by the constraint's
+      inactive phase stored in _inactiveTighteningRow
+    */
+    void createInactiveTighteningRow();
 };
 
 #endif // __LeakyReluConstraint_h__

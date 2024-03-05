@@ -26,6 +26,8 @@
 #include "UnsatCertificateNode.h"
 #include "Vector.h"
 
+#include <iomanip>
+
 /*
   A class responsible for writing Marabou proof instances into JSON format
 */
@@ -98,8 +100,9 @@ private:
     /*
       Write variables bounds to a JSON String
     */
-    static void
-    writeBounds( const Vector<double> &bounds, BoundType isUpper, List<String> &instance );
+    static void writeBounds( const Vector<double> &bounds,
+                             Tightening::BoundType isUpper,
+                             List<String> &instance );
 
     /*
       Write a list a piecewise-linear constraints to a JSON String

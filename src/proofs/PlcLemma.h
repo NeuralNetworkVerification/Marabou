@@ -18,6 +18,7 @@
 #include "PiecewiseLinearConstraint.h"
 #include "PiecewiseLinearFunctionType.h"
 #include "SparseUnsortedList.h"
+#include "Tightening.h"
 #include "Vector.h"
 
 /*
@@ -29,8 +30,8 @@ public:
     PLCLemma( const List<unsigned> &causingVars,
               unsigned affectedVar,
               double bound,
-              BoundType causingVarBound,
-              BoundType affectedVarBound,
+              Tightening::BoundType causingVarBound,
+              Tightening::BoundType affectedVarBound,
               const Vector<SparseUnsortedList> &explanation,
               PiecewiseLinearFunctionType constraintType );
 
@@ -42,8 +43,8 @@ public:
     const List<unsigned> &getCausingVars() const;
     unsigned getAffectedVar() const;
     double getBound() const;
-    BoundType getCausingVarBound() const;
-    BoundType getAffectedVarBound() const;
+    Tightening::BoundType getCausingVarBound() const;
+    Tightening::BoundType getAffectedVarBound() const;
     const List<SparseUnsortedList> &getExplanations() const;
     PiecewiseLinearFunctionType getConstraintType() const;
 
@@ -51,8 +52,8 @@ private:
     const List<unsigned> _causingVars;
     unsigned _affectedVar;
     double _bound;
-    BoundType _causingVarBound;
-    BoundType _affectedVarBound;
+    Tightening::BoundType _causingVarBound;
+    Tightening::BoundType _affectedVarBound;
     List<SparseUnsortedList> _explanations;
     PiecewiseLinearFunctionType _constraintType;
 };
