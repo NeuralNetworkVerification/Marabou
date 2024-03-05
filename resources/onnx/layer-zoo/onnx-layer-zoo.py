@@ -2,6 +2,7 @@
 import numpy as np
 import onnx
 from onnx import TensorProto
+import onnxruntime
 import os
 import sys
 
@@ -24,7 +25,11 @@ def make_network(name, node, input_shape, output_shape, aux_nodes):
     model = onnx.helper.make_model(graph, producer_name=producer_name)
     print(f"Generated {name}.onnx")
     output_dir = os.path.dirname(sys.argv[0])
-    onnx.save(model, os.path.join(output_dir ,f"{name}.onnx"))
+    network_dir = os.path.join(output_dir ,f"{name}.onnx")
+    onnx.save(model, network_dir)
+    # Make sure that the generated graph is a valid model according to onnxruntime.
+    # This avoids generating network with incorrect input datatype.
+    sess = onnxruntime.InferenceSession(network_dir)
 
 def make_constant_float_node(name, values):
     value_array = np.array(values).astype(float)
@@ -332,7 +337,6 @@ def dropout_training_mode_false_node():
 def dropout_training_mode_true_node():
     ratio = make_constant_float_node("ratio", 0.5)
     trainingMode = make_constant_bool_node("trainingMode", True)
-
     node = onnx.helper.make_node(
         "Dropout",
         inputs=[input_name, "ratio", "trainingMode"],
