@@ -54,6 +54,20 @@ def make_constant_int_node(name, values):
         ),
     )
 
+def make_constant_bool_node(name, values):
+    value_array = np.array(values).astype(bool)
+    return onnx.helper.make_node(
+        "Constant",
+        inputs=[],
+        outputs=[name],
+        value=onnx.helper.make_tensor(
+            name="const_tensor",
+            data_type=onnx.TensorProto.BOOL,
+            dims=value_array.shape,
+            vals=value_array.flatten(),
+        ),
+    )
+
 ############
 ## Layers ##
 ############
@@ -304,6 +318,28 @@ def dropout_node():
     )
     return ("dropout", node, [2,2], [2,2], [])
 
+def dropout_training_mode_false_node():
+    ratio = make_constant_float_node("ratio", 0.5)
+    trainingMode = make_constant_bool_node("trainingMode", False)
+    node = onnx.helper.make_node(
+        "Dropout",
+        inputs=[input_name, "ratio", "trainingMode"],
+        outputs=[output_name]
+    )
+    return ("dropout_training_mode_false", node, [2,2], [2,2], [ratio, trainingMode])
+
+
+def dropout_training_mode_true_node():
+    ratio = make_constant_float_node("ratio", 0.5)
+    trainingMode = make_constant_bool_node("trainingMode", True)
+
+    node = onnx.helper.make_node(
+        "Dropout",
+        inputs=[input_name, "ratio", "trainingMode"],
+        outputs=[output_name]
+    )
+    return ("dropout_training_mode_true", node, [2,2], [2,2], [ratio, trainingMode])
+
 ##########
 ## Main ##
 ##########
@@ -331,3 +367,5 @@ if __name__ == "__main__":
     make_network(*tanh_node())
     make_network(*cast_int_to_float_node())
     make_network(*dropout_node())
+    make_network(*dropout_training_mode_false_node())
+    make_network(*dropout_training_mode_true_node())
