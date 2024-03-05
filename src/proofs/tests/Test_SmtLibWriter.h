@@ -159,7 +159,7 @@ public:
 
         // LeakyRelu
         line = file->readLine( '\n' );
-        expectedLine = "( assert ( = x1 ( ite ( >= x0 0 ) x0 ( * x0 ( - 0.1 ) ) ) ) ) ) )";
+        expectedLine = "( assert ( = x1 ( ite ( >= x0 0 ) x0 ( * x0 ( - 0.1 ) ) ) ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         // Max
