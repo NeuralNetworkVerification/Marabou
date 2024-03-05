@@ -26,7 +26,6 @@ BraceWrapping:
   BeforeCatch: 'true'
   BeforeElse: 'true'
   BeforeWhile: 'true'
-BreakInheritanceList: 'BeforeComma'
 ColumnLimit: '100'
 CompactNamespaces: 'false'
 ConstructorInitializerAllOnOneLineOrOnePerLine: 'false'
