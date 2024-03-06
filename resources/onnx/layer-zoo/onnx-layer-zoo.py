@@ -25,11 +25,11 @@ def make_network(name, node, input_shape, output_shape, aux_nodes):
     model = onnx.helper.make_model(graph, producer_name=producer_name)
     print(f"Generated {name}.onnx")
     output_dir = os.path.dirname(sys.argv[0])
-    network_dir = os.path.join(output_dir ,f"{name}.onnx")
-    onnx.save(model, network_dir)
+    network_path = os.path.join(output_dir ,f"{name}.onnx")
+    onnx.save(model, network_path)
     # Make sure that the generated graph is a valid model according to onnxruntime.
     # This avoids generating network with incorrect input datatype.
-    sess = onnxruntime.InferenceSession(network_dir)
+    sess = onnxruntime.InferenceSession(network_path)
 
 def make_constant_float_node(name, values):
     value_array = np.array(values).astype(float)
