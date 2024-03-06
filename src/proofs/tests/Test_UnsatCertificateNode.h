@@ -83,11 +83,11 @@ public:
         Vector<SparseUnsortedList> emptyVec;
 
         auto explanation1 = std::shared_ptr<PLCLemma>(
-            new PLCLemma( { 1 }, 1, 0, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+            new PLCLemma( { 1 }, 1, 0, Tightening::UB, Tightening::UB, emptyVec, RELU ) );
         auto explanation2 = std::shared_ptr<PLCLemma>(
-            new PLCLemma( { 1 }, 1, -1, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+            new PLCLemma( { 1 }, 1, -1, Tightening::UB, Tightening::UB, emptyVec, RELU ) );
         auto explanation3 = std::shared_ptr<PLCLemma>(
-            new PLCLemma( { 1 }, 1, -4, BoundType::UPPER, BoundType::UPPER, emptyVec, RELU ) );
+            new PLCLemma( { 1 }, 1, -4, Tightening::UB, Tightening::UB, emptyVec, RELU ) );
 
         TS_ASSERT( root.getPLCLemmas().empty() );
 

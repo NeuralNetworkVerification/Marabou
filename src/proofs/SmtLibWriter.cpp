@@ -14,8 +14,6 @@
 
 #include "SmtLibWriter.h"
 
-#include <iomanip>
-
 const unsigned SmtLibWriter::SMTLIBWRITER_PRECISION =
     (unsigned)std::log10( 1 / GlobalConfiguration::DEFAULT_EPSILON_FOR_COMPARISONS );
 
@@ -186,6 +184,26 @@ void SmtLibWriter::addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit
 
     instance.append( "\n" );
 }
+
+void SmtLibWriter::addLeakyReLUConstraint( unsigned b,
+                                           unsigned f,
+                                           double slope,
+                                           const PhaseStatus status,
+                                           List<String> &instance )
+{
+    if ( status == PHASE_NOT_FIXED )
+        instance.append( String( "( assert ( = x" + std::to_string( f ) + " ( ite ( >= x" +
+                                 std::to_string( b ) + " 0 ) x" + std::to_string( b ) + " ( * " ) +
+                         signedValue( slope ) + " x" + std::to_string( b ) + " ) ) ) )\n" );
+    else if ( status == RELU_PHASE_ACTIVE )
+        instance.append( "( assert ( = x" + std::to_string( f ) + " x" + std::to_string( b ) +
+                         " ) )\n" );
+    else if ( status == RELU_PHASE_INACTIVE )
+        instance.append(
+            String( "( assert ( = x" + std::to_string( f ) + " x" + std::to_string( b ) ) +
+            signedValue( -slope ) + ") )\n" );
+}
+
 void SmtLibWriter::addTableauRow( const SparseUnsortedList &row, List<String> &instance )
 {
     unsigned size = row.getSize();

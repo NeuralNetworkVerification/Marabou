@@ -17,8 +17,8 @@
 PLCLemma::PLCLemma( const List<unsigned> &causingVars,
                     unsigned affectedVar,
                     double bound,
-                    BoundType causingVarBound,
-                    BoundType affectedVarBound,
+                    Tightening::BoundType causingVarBound,
+                    Tightening::BoundType affectedVarBound,
                     const Vector<SparseUnsortedList> &explanations,
                     PiecewiseLinearFunctionType constraintType )
     : _causingVars( causingVars )
@@ -77,12 +77,12 @@ double PLCLemma::getBound() const
     return _bound;
 }
 
-BoundType PLCLemma::getCausingVarBound() const
+Tightening::BoundType PLCLemma::getCausingVarBound() const
 {
     return _causingVarBound;
 }
 
-BoundType PLCLemma::getAffectedVarBound() const
+Tightening::BoundType PLCLemma::getAffectedVarBound() const
 {
     return _affectedVarBound;
 }

@@ -43,6 +43,7 @@ public:
         SmtLibWriter::addReLUConstraint( 0, 1, PHASE_NOT_FIXED, instance );
         SmtLibWriter::addSignConstraint( 0, 1, PHASE_NOT_FIXED, instance );
         SmtLibWriter::addAbsConstraint( 0, 1, PHASE_NOT_FIXED, instance );
+        SmtLibWriter::addLeakyReLUConstraint( 0, 1, 0.1, PHASE_NOT_FIXED, instance );
 
         SmtLibWriter::addMaxConstraint( 1, { 2, 3, 4 }, PHASE_NOT_FIXED, 0, instance );
 
@@ -154,6 +155,11 @@ public:
         // Absolute Value
         line = file->readLine( '\n' );
         expectedLine = "( assert ( = x1 ( ite ( >= x0 0 ) x0 ( - x0 ) ) ) )";
+        TS_ASSERT_EQUALS( line, expectedLine );
+
+        // LeakyRelu
+        line = file->readLine( '\n' );
+        expectedLine = "( assert ( = x1 ( ite ( >= x0 0 ) x0 ( * 0.1 x0 ) ) ) )";
         TS_ASSERT_EQUALS( line, expectedLine );
 
         // Max

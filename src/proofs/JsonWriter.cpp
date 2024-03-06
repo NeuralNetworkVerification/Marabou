@@ -14,7 +14,6 @@
 
 #include "JsonWriter.h"
 
-#include <iomanip>
 
 const char JsonWriter::AFFECTED_VAR[] = "\"affVar\" : ";
 const char JsonWriter::AFFECTED_BOUND[] = "\"affBound\" : ";
@@ -64,8 +63,8 @@ void JsonWriter::writeProofToJson( const UnsatCertificateNode *root,
 
     // Add initial query information to the instance
     writeInitialTableau( initialTableau, explanationSize, jsonLines );
-    writeBounds( upperBounds, UPPER, jsonLines );
-    writeBounds( lowerBounds, LOWER, jsonLines );
+    writeBounds( upperBounds, Tightening::UB, jsonLines );
+    writeBounds( lowerBounds, Tightening::LB, jsonLines );
     writePiecewiseLinearConstraints( problemConstraints, jsonLines );
 
     // Add UNSAT certificate proof tree object to the instance
@@ -80,10 +79,10 @@ void JsonWriter::writeProofToJson( const UnsatCertificateNode *root,
 }
 
 void JsonWriter::writeBounds( const Vector<double> &bounds,
-                              BoundType isUpper,
+                              Tightening::BoundType isUpper,
                               List<String> &instance )
 {
-    String boundsString = isUpper == UPPER ? UPPER_BOUNDS : LOWER_BOUNDS;
+    String boundsString = isUpper == Tightening::UB ? UPPER_BOUNDS : LOWER_BOUNDS;
 
     boundsString += convertDoubleArrayToString( bounds.data(), bounds.size() );
 
@@ -257,8 +256,8 @@ void JsonWriter::writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCExpla
         instance.append( String( "{" ) );
         instance.append( String( AFFECTED_VAR ) + std::to_string( lemma->getAffectedVar() ) +
                          String( ", " ) );
-        affectedBoundType =
-            lemma->getAffectedVarBound() == UPPER ? String( UPPER_BOUND ) : String( LOWER_BOUND );
+        affectedBoundType = lemma->getAffectedVarBound() == Tightening::UB ? String( UPPER_BOUND )
+                                                                           : String( LOWER_BOUND );
         instance.append( String( AFFECTED_BOUND ) + affectedBoundType + String( ", " ) );
         instance.append( String( BOUND ) + convertDoubleToString( lemma->getBound() ) );
 
@@ -282,8 +281,9 @@ void JsonWriter::writePLCLemmas( const List<std::shared_ptr<PLCLemma>> &PLCExpla
                 instance.append( " ]\n" );
             }
 
-            causingBoundType = lemma->getCausingVarBound() == UPPER ? String( UPPER_BOUND )
-                                                                    : String( LOWER_BOUND );
+            causingBoundType = lemma->getCausingVarBound() == Tightening::UB
+                                 ? String( UPPER_BOUND )
+                                 : String( LOWER_BOUND );
             instance.append( String( CAUSING_BOUND ) + causingBoundType + String( ", " ) );
             instance.append( String( CONSTRAINT ) + std::to_string( lemma->getConstraintType() ) +
                              String( ",\n" ) );

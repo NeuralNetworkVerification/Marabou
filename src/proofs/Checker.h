@@ -17,9 +17,11 @@
 
 #include "AbsoluteValueConstraint.h"
 #include "DisjunctionConstraint.h"
+#include "LeakyReluConstraint.h"
 #include "MaxConstraint.h"
 #include "Set.h"
 #include "Stack.h"
+#include "Tightening.h"
 #include "UnsatCertificateNode.h"
 
 /*
@@ -95,7 +97,12 @@ private:
       Return a change in the ground bounds caused by a Max constraint.
     */
     double checkMaxLemma( const PLCLemma &expl, PiecewiseLinearConstraint &constraint );
-
+    /*
+      Return a change in the ground bounds caused by a ReLU constraint.
+    */
+    double checkLeakyReluLemma( const PLCLemma &expl,
+                                PiecewiseLinearConstraint &constraint,
+                                double epsilon );
     /*
       Checks a contradiction
     */
@@ -146,6 +153,12 @@ private:
     */
     PiecewiseLinearConstraint *
     getCorrespondingDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &splits );
+
+    /*
+     Return a pointer to a LeakyReLU problem constraint representing the split
+   */
+    PiecewiseLinearConstraint *
+    getCorrespondingLeakyReluConstraint( const List<PiecewiseLinearCaseSplit> &splits );
 
     /*
       Return true iff a list of splits represents a splits over a single variable

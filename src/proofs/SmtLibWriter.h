@@ -22,6 +22,8 @@
 #include "SparseUnsortedList.h"
 #include "Vector.h"
 
+#include <iomanip>
+
 /*
  * A class responsible for writing instances of LP+PLC into SMTLIB format
  */
@@ -75,6 +77,15 @@ public:
     */
     static void addDisjunctionConstraint( const List<PiecewiseLinearCaseSplit> &disjuncts,
                                           List<String> &instance );
+
+    /*
+     Adds a line representing a LeakyReLU constraint, in SMTLIB format, to the SMTLIB instance
+    */
+    static void addLeakyReLUConstraint( unsigned b,
+                                        unsigned f,
+                                        double slope,
+                                        const PhaseStatus status,
+                                        List<String> &instance );
 
     /*
       Adds a line representing a Tableau Row, in SMTLIB format, to the SMTLIB instance

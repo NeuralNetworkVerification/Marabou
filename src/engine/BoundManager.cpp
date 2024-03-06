@@ -319,8 +319,8 @@ bool BoundManager::tightenLowerBound( unsigned variable, double value, const Tab
 
     if ( tightened )
     {
-        if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanation( row, BoundType::LOWER, variable );
+        if ( shouldProduceProofs() )
+            _boundExplainer->updateBoundExplanation( row, Tightening::LB, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithLowerBoundUpdate( variable, value );
@@ -334,8 +334,8 @@ bool BoundManager::tightenUpperBound( unsigned variable, double value, const Tab
 
     if ( tightened )
     {
-        if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanation( row, BoundType::UPPER, variable );
+        if ( shouldProduceProofs() )
+            _boundExplainer->updateBoundExplanation( row, Tightening::UB, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithUpperBoundUpdate( variable, value );
@@ -351,8 +351,8 @@ bool BoundManager::tightenLowerBound( unsigned variable,
 
     if ( tightened )
     {
-        if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanationSparse( row, BoundType::LOWER, variable );
+        if ( shouldProduceProofs() )
+            _boundExplainer->updateBoundExplanationSparse( row, Tightening::LB, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithLowerBoundUpdate( variable, value );
@@ -368,8 +368,8 @@ bool BoundManager::tightenUpperBound( unsigned variable,
 
     if ( tightened )
     {
-        if ( _engine->shouldProduceProofs() )
-            _boundExplainer->updateBoundExplanationSparse( row, BoundType::UPPER, variable );
+        if ( shouldProduceProofs() )
+            _boundExplainer->updateBoundExplanationSparse( row, Tightening::UB, variable );
 
         if ( _tableau != nullptr )
             _tableau->updateVariableToComplyWithUpperBoundUpdate( variable, value );
@@ -414,9 +414,9 @@ void BoundManager::updateBoundExplanationSparse( const SparseUnsortedList &row,
 
 bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                        double value,
-                                                       BoundType affectedVarBound,
+                                                       Tightening::BoundType affectedVarBound,
                                                        const List<unsigned> &causingVars,
-                                                       BoundType causingVarBound,
+                                                       Tightening::BoundType causingVarBound,
                                                        PiecewiseLinearFunctionType constraintType )
 {
     if ( !shouldProduceProofs() )
@@ -427,12 +427,12 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
     // Register new ground bound, update certificate, and reset explanation
     Vector<SparseUnsortedList> allExplanations( 0 );
 
-    bool tightened = affectedVarBound == BoundType::UPPER ? tightenUpperBound( var, value )
-                                                          : tightenLowerBound( var, value );
+    bool tightened = affectedVarBound == Tightening::UB ? tightenUpperBound( var, value )
+                                                        : tightenLowerBound( var, value );
 
     if ( tightened )
     {
-        if ( constraintType == RELU || constraintType == SIGN )
+        if ( constraintType == RELU || constraintType == SIGN || constraintType == LEAKY_RELU )
         {
             ASSERT( causingVars.size() == 1 );
             allExplanations.append( getExplanation( causingVars.front(), causingVarBound ) );
@@ -451,14 +451,14 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                 //    Again, two explanations are involved in the proof.
                 // Add zero vectors to maintain consistency of explanations size
                 allExplanations.append(
-                    getExplanation( causingVars.front(), causingVarBound == BoundType::UPPER ) );
+                    getExplanation( causingVars.front(), causingVarBound == Tightening::UB ) );
 
-                allExplanations.append( getExplanation( causingVars.back(), BoundType::LOWER ) );
+                allExplanations.append( getExplanation( causingVars.back(), Tightening::LB ) );
             }
         }
         else if ( constraintType == MAX )
             for ( const auto &element : causingVars )
-                allExplanations.append( getExplanation( element, BoundType::UPPER ) );
+                allExplanations.append( getExplanation( element, Tightening::UB ) );
         else
             throw MarabouError( MarabouError::FEATURE_NOT_YET_SUPPORTED );
 
@@ -470,8 +470,8 @@ bool BoundManager::addLemmaExplanationAndTightenBound( unsigned var,
                                                                         allExplanations,
                                                                         constraintType );
         _engine->getUNSATCertificateCurrentPointer()->addPLCLemma( PLCExpl );
-        affectedVarBound == BoundType::UPPER ? _engine->updateGroundUpperBound( var, value )
-                                             : _engine->updateGroundLowerBound( var, value );
+        affectedVarBound == Tightening::UB ? _engine->updateGroundUpperBound( var, value )
+                                           : _engine->updateGroundLowerBound( var, value );
         resetExplanation( var, affectedVarBound );
     }
     return true;

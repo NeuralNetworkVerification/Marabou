@@ -1591,9 +1591,6 @@ bool Engine::processInputQuery( InputQuery &inputQuery, bool preprocess )
 
 void Engine::performMILPSolverBoundedTightening( InputQuery *inputQuery )
 {
-    if ( _produceUNSATProofs )
-        return;
-
     if ( _networkLevelReasoner && Options::get()->gurobiEnabled() )
     {
         // Obtain from and store bounds into inputquery if it is not null.
@@ -2098,7 +2095,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             if ( _produceUNSATProofs &&
                  FloatUtils::gt( bound._value, _boundManager.getLowerBound( bound._variable ) ) )
             {
-                _boundManager.resetExplanation( variable, BoundType::LOWER );
+                _boundManager.resetExplanation( variable, Tightening::LB );
                 updateGroundLowerBound( variable, bound._value );
                 _boundManager.tightenLowerBound( variable, bound._value );
             }
@@ -2112,7 +2109,7 @@ void Engine::applySplit( const PiecewiseLinearCaseSplit &split )
             if ( _produceUNSATProofs &&
                  FloatUtils::lt( bound._value, _boundManager.getUpperBound( bound._variable ) ) )
             {
-                _boundManager.resetExplanation( variable, BoundType::UPPER );
+                _boundManager.resetExplanation( variable, Tightening::UB );
                 updateGroundUpperBound( variable, bound._value );
                 _boundManager.tightenUpperBound( variable, bound._value );
             }
@@ -2195,6 +2192,7 @@ bool Engine::applyValidConstraintCaseSplit( PiecewiseLinearConstraint *constrain
         PiecewiseLinearCaseSplit validSplit = constraint->getValidCaseSplit();
         _smtCore.recordImpliedValidSplit( validSplit );
         applySplit( validSplit );
+
         if ( _soiManager )
             _soiManager->removeCostComponentFromHeuristicCost( constraint );
         ++_numPlConstraintsDisabledByValidSplits;
@@ -3467,8 +3465,8 @@ bool Engine::validateAllBounds( double epsilon ) const
     bool res = true;
 
     for ( unsigned var = 0; var < _tableau->getN(); ++var )
-        if ( !validateBounds( var, epsilon, BoundType::UPPER ) ||
-             !validateBounds( var, epsilon, BoundType::LOWER ) )
+        if ( !validateBounds( var, epsilon, Tightening::UB ) ||
+             !validateBounds( var, epsilon, Tightening::LB ) )
             res = false;
 
     return res;
@@ -3507,14 +3505,14 @@ unsigned Engine::explainFailureWithTableau()
             _tableau->getTableauRow( i, &boundUpdateRow );
             basicVar = boundUpdateRow._lhs;
 
-            if ( FloatUtils::gt( _boundManager.computeRowBound( boundUpdateRow, BoundType::LOWER ),
+            if ( FloatUtils::gt( _boundManager.computeRowBound( boundUpdateRow, Tightening::LB ),
                                  _boundManager.getUpperBound( basicVar ) ) &&
-                 explainAndCheckContradiction( basicVar, BoundType::LOWER, &boundUpdateRow ) )
+                 explainAndCheckContradiction( basicVar, Tightening::LB, &boundUpdateRow ) )
                 return basicVar;
 
-            if ( FloatUtils::lt( _boundManager.computeRowBound( boundUpdateRow, BoundType::UPPER ),
+            if ( FloatUtils::lt( _boundManager.computeRowBound( boundUpdateRow, Tightening::UB ),
                                  _boundManager.getLowerBound( basicVar ) ) &&
-                 explainAndCheckContradiction( basicVar, BoundType::UPPER, &boundUpdateRow ) )
+                 explainAndCheckContradiction( basicVar, Tightening::UB, &boundUpdateRow ) )
                 return basicVar;
         }
     }
@@ -3545,10 +3543,10 @@ unsigned Engine::explainFailureWithCostFunction()
 
         // Check the basic variable has no slack
         if ( !( !curUpper && FloatUtils::gt( _boundManager.computeSparseRowBound(
-                                                 *costRow, BoundType::LOWER, curBasicVar ),
+                                                 *costRow, Tightening::LB, curBasicVar ),
                                              _boundManager.getUpperBound( curBasicVar ) ) ) &&
              !( curUpper && FloatUtils::lt( _boundManager.computeSparseRowBound(
-                                                *costRow, BoundType::UPPER, curBasicVar ),
+                                                *costRow, Tightening::UB, curBasicVar ),
                                             _boundManager.getLowerBound( curBasicVar ) ) ) )
 
             continue;
@@ -3722,11 +3720,11 @@ const Vector<double> Engine::computeContradiction( unsigned infeasibleVar ) cons
     SparseUnsortedList upperBoundExplanation( 0 );
     SparseUnsortedList lowerBoundExplanation( 0 );
 
-    if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::UPPER ) )
-        upperBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::UPPER );
+    if ( !_boundManager.isExplanationTrivial( infeasibleVar, Tightening::UB ) )
+        upperBoundExplanation = _boundManager.getExplanation( infeasibleVar, Tightening::UB );
 
-    if ( !_boundManager.isExplanationTrivial( infeasibleVar, BoundType::LOWER ) )
-        lowerBoundExplanation = _boundManager.getExplanation( infeasibleVar, BoundType::LOWER );
+    if ( !_boundManager.isExplanationTrivial( infeasibleVar, Tightening::LB ) )
+        lowerBoundExplanation = _boundManager.getExplanation( infeasibleVar, Tightening::LB );
 
     if ( upperBoundExplanation.empty() && lowerBoundExplanation.empty() )
         return Vector<double>( 0 );

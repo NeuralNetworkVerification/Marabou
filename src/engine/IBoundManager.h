@@ -28,18 +28,14 @@
 
 #include "List.h"
 #include "PiecewiseLinearFunctionType.h"
+#include "Tightening.h"
 #include "Vector.h"
 
 #include <cstdint>
 
-enum BoundType : unsigned {
-    LOWER = 0,
-    UPPER = 1,
-};
 class BoundExplainer;
 class SparseUnsortedList;
 class TableauRow;
-class Tightening;
 class ITableau;
 class IRowBoundTightener;
 class IBoundManager
@@ -134,9 +130,9 @@ public:
     virtual bool
     addLemmaExplanationAndTightenBound( unsigned var,
                                         double value,
-                                        BoundType affectedVarBound,
+                                        Tightening::BoundType affectedVarBound,
                                         const List<unsigned> &causingVars,
-                                        BoundType causingVarBound,
+                                        Tightening::BoundType causingVarBound,
                                         PiecewiseLinearFunctionType constraintType ) = 0;
 
     /*

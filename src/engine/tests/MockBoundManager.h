@@ -265,9 +265,9 @@ private:
 
     bool addLemmaExplanationAndTightenBound( unsigned /* var */,
                                              double /* value */,
-                                             BoundType /* affectedVarBound */,
+                                             Tightening::BoundType /* affectedVarBound */,
                                              const List<unsigned> & /* causingVar */,
-                                             BoundType /* causingVarBound */,
+                                             Tightening::BoundType /* causingVarBound */,
                                              PiecewiseLinearFunctionType /* constraintType */ )
     {
         return true;

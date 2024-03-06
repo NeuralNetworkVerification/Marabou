@@ -38,6 +38,8 @@ LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f, double slope )
     , _f( f )
     , _slope( slope )
     , _auxVarsInUse( false )
+    , _activeTighteningRow( NULL )
+    , _inactiveTighteningRow( NULL )
     , _direction( PHASE_NOT_FIXED )
     , _haveEliminatedVariables( false )
 {
@@ -46,7 +48,9 @@ LeakyReluConstraint::LeakyReluConstraint( unsigned b, unsigned f, double slope )
 }
 
 LeakyReluConstraint::LeakyReluConstraint( const String &serializedLeakyRelu )
-    : _haveEliminatedVariables( false )
+    : _activeTighteningRow( NULL )
+    , _inactiveTighteningRow( NULL )
+    , _haveEliminatedVariables( false )
 {
     String constraintType = serializedLeakyRelu.substring( 0, 10 );
     ASSERT( constraintType == String( "leaky_relu" ) );
@@ -171,52 +175,71 @@ void LeakyReluConstraint::notifyLowerBound( unsigned variable, double bound )
          !FloatUtils::gt( bound, getLowerBound( variable ) ) )
         return;
     setLowerBound( variable, bound );
-    checkIfLowerBoundUpdateFixesPhase( variable, bound );
 
     if ( isActive() && _boundManager && !phaseFixed() )
     {
+        bool proofs = _boundManager->shouldProduceProofs();
+
+        if ( proofs )
+        {
+            createActiveTighteningRow();
+            createInactiveTighteningRow();
+        }
+
         // A positive lower bound is always propagated between f and b
         if ( variable == _f || variable == _b )
         {
             if ( FloatUtils::gte( bound, 0 ) )
             {
-                // If we're in the active phase, aux should be 0
-                if ( _auxVarsInUse )
+                // If we're in the active phase, activeAux should be 0
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _activeAux, 0, Tightening::UB, { variable }, Tightening::LB, getType() );
+                else if ( !proofs && _auxVarsInUse )
                     _boundManager->tightenUpperBound( _activeAux, 0 );
 
                 // After updating to active phase
                 unsigned partner = ( variable == _f ) ? _b : _f;
-                _boundManager->tightenLowerBound( partner, bound );
+                _boundManager->tightenLowerBound( partner, bound, *_activeTighteningRow );
             }
-            else if ( variable == _b )
+            else if ( variable == _b && FloatUtils::isNegative( bound ) )
             {
-                _boundManager->tightenLowerBound( _f, _slope * bound );
+                _boundManager->tightenLowerBound( _f, _slope * bound, *_inactiveTighteningRow );
             }
-            else if ( variable == _f )
+            else if ( variable == _f && FloatUtils::isNegative( bound ) )
             {
-                _boundManager->tightenLowerBound( _b, bound / _slope );
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _b, bound / _slope, Tightening::LB, { _f }, Tightening::LB, getType() );
+                else
+                    _boundManager->tightenLowerBound( _b, bound / _slope, *_inactiveTighteningRow );
             }
         }
 
         // A positive lower bound for activeAux means we're inactive: _inactiveAux <= 0
         else if ( _auxVarsInUse && variable == _activeAux && bound > 0 )
         {
-            _boundManager->tightenUpperBound( _inactiveAux, 0 );
+            // Inactive phase
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _inactiveAux, 0, Tightening::UB, { _activeAux }, Tightening::LB, getType() );
+            else
+                _boundManager->tightenUpperBound( _inactiveAux, 0 );
         }
 
         // A positive lower bound for inactiveAux means we're active: _activeAux <= 0
         else if ( _auxVarsInUse && variable == _inactiveAux && bound > 0 )
         {
-            _boundManager->tightenUpperBound( _activeAux, 0 );
-        }
-
-        // Also, if for some reason we only know a negative lower bound for
-        // f, we attempt to tighten it to 0
-        else if ( bound < 0 && variable == _f )
-        {
-            _boundManager->tightenLowerBound( _f, 0 );
+            // Active phase
+            if ( proofs )
+                _boundManager->addLemmaExplanationAndTightenBound(
+                    _activeAux, 0, Tightening::UB, { _inactiveAux }, Tightening::LB, getType() );
+            else
+                _boundManager->tightenUpperBound( _activeAux, 0 );
         }
     }
+
+    checkIfLowerBoundUpdateFixesPhase( variable, bound );
 }
 
 void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
@@ -229,28 +252,51 @@ void LeakyReluConstraint::notifyUpperBound( unsigned variable, double bound )
         return;
 
     setUpperBound( variable, bound );
-    checkIfUpperBoundUpdateFixesPhase( variable, bound );
 
     if ( isActive() && _boundManager && !phaseFixed() )
     {
-        // A positive lower bound is always propagated between f and b
+        bool proofs = _boundManager->shouldProduceProofs();
+
+        if ( proofs )
+        {
+            createActiveTighteningRow();
+            createInactiveTighteningRow();
+        }
+
+        // A positive upper bound is always propagated between f and b
         if ( variable == _f || variable == _b )
         {
             if ( !FloatUtils::isNegative( bound ) )
             {
                 unsigned partner = ( variable == _f ) ? _b : _f;
-                _boundManager->tightenUpperBound( partner, bound );
+                if ( proofs )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        partner, bound, Tightening::UB, { variable }, Tightening::UB, getType() );
+                else
+                    _boundManager->tightenUpperBound( partner, bound );
             }
             else if ( variable == _b )
             {
-                _boundManager->tightenUpperBound( _f, _slope * bound );
+                // A negative upper bound of b implies inactive phase
+                if ( proofs && _auxVarsInUse )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _inactiveAux, 0, Tightening::UB, { _b }, Tightening::UB, getType() );
+
+                _boundManager->tightenUpperBound( _f, _slope * bound, *_inactiveTighteningRow );
             }
             else if ( variable == _f )
             {
-                _boundManager->tightenUpperBound( _b, bound / _slope );
+                // A negative upper bound of f implies inactive phase as well
+                if ( proofs && _auxVarsInUse )
+                    _boundManager->addLemmaExplanationAndTightenBound(
+                        _inactiveAux, 0, Tightening::UB, { _f }, Tightening::UB, getType() );
+
+                _boundManager->tightenUpperBound( _b, bound / _slope, *_inactiveTighteningRow );
             }
         }
     }
+
+    checkIfUpperBoundUpdateFixesPhase( variable, bound );
 }
 
 bool LeakyReluConstraint::participatingVariable( unsigned variable ) const
@@ -904,8 +950,60 @@ void LeakyReluConstraint::updateScoreBasedOnPolarity()
     _score = std::abs( computePolarity() );
 }
 
-// Not supporting proof production yet
-void LeakyReluConstraint::addTableauAuxVar( unsigned /* tableauAuxVar */,
-                                            unsigned /* constraintAuxVar */ )
+const List<unsigned> LeakyReluConstraint::getNativeAuxVars() const
 {
+    if ( _auxVarsInUse )
+        return { _activeAux, _inactiveAux };
+    return {};
+}
+
+void LeakyReluConstraint::addTableauAuxVar( unsigned tableauAuxVar, unsigned constraintAuxVar )
+{
+    ASSERT( constraintAuxVar == _inactiveAux || constraintAuxVar == _activeAux );
+    if ( _tableauAuxVars.size() == 2 )
+        return;
+
+    if ( constraintAuxVar == _inactiveAux )
+    {
+        _tableauAuxVars.append( tableauAuxVar );
+        ASSERT( _tableauAuxVars.back() == tableauAuxVar );
+    }
+    else
+    {
+        _tableauAuxVars.appendHead( tableauAuxVar );
+        ASSERT( _tableauAuxVars.front() == tableauAuxVar );
+    }
+}
+
+void LeakyReluConstraint::createActiveTighteningRow()
+{
+    // Create the row only when needed and when not already created
+    if ( !_boundManager->getBoundExplainer() || _activeTighteningRow || !_auxVarsInUse ||
+         _tableauAuxVars.empty() )
+        return;
+    _activeTighteningRow = std::unique_ptr<TableauRow>( new TableauRow( 3 ) );
+
+    // f = b + aux + counterpart (an additional aux variable of tableau)
+    _activeTighteningRow->_lhs = _f;
+    _activeTighteningRow->_row[0] = TableauRow::Entry( _b, 1 );
+    _activeTighteningRow->_row[1] = TableauRow::Entry( _activeAux, 1 );
+    _activeTighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVars.front(), 1 );
+    _activeTighteningRow->_scalar = 0;
+}
+
+void LeakyReluConstraint::createInactiveTighteningRow()
+{
+    // Create the row only when needed and when not already created
+    if ( !_boundManager->getBoundExplainer() || _inactiveTighteningRow || !_auxVarsInUse ||
+         _tableauAuxVars.empty() )
+        return;
+
+    _inactiveTighteningRow = std::unique_ptr<TableauRow>( new TableauRow( 3 ) );
+
+    // f = b + aux + counterpart (an additional aux variable of tableau)
+    _inactiveTighteningRow->_lhs = _f;
+    _inactiveTighteningRow->_row[0] = TableauRow::Entry( _b, _slope );
+    _inactiveTighteningRow->_row[1] = TableauRow::Entry( _inactiveAux, 1 );
+    _inactiveTighteningRow->_row[2] = TableauRow::Entry( _tableauAuxVars.back(), 1 );
+    _inactiveTighteningRow->_scalar = 0;
 }

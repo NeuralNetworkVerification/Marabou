@@ -153,5 +153,5 @@ double UNSATCertificateUtils::computeCombinationUpperBound( const SparseUnsorted
 
 const Set<PiecewiseLinearFunctionType> UNSATCertificateUtils::getSupportedActivations()
 {
-    return { RELU, SIGN, ABSOLUTE_VALUE, MAX, DISJUNCTION };
+    return { RELU, SIGN, ABSOLUTE_VALUE, MAX, DISJUNCTION, LEAKY_RELU };
 }

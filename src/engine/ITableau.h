@@ -25,6 +25,7 @@
 class EntrySelectionStrategy;
 class Equation;
 class GurobiWrapper;
+class IBoundManager;
 class ICostFunctionManager;
 class PiecewiseLinearCaseSplit;
 class SparseMatrix;
